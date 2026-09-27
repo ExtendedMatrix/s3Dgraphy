@@ -63,8 +63,10 @@ def test_parse_italian_verbose_terms():
         ("Tagliato da",    "is_cut_by"),
         ("Riempie",        "fills"),
         ("Riempito da",    "is_filled_by"),
-        ("Uguale a",       "is_physically_equal_to"),
-        ("Si lega a",      "is_bonded_to"),
+        # canonical spelling since 2026-09-27: `is_physically_equal_to` and
+        # `is_bonded_to` are the datamodel's older spellings (`spelling_of`)
+        ("Uguale a",       "equals"),
+        ("Si lega a",      "bonded_to"),
         ("Si appoggia a",  "abuts"),
         ("Gli si appoggia", "is_abutted_by"),
     ]

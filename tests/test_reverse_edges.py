@@ -132,8 +132,13 @@ def test_a_reverse_is_marked_as_one_and_names_its_canonical():
         "a reverse's allowed_connections are the canonical's, inverted"
     canonical = entries["overlies"]
     assert canonical["is_canonical"] is True and canonical["canonical"] == "overlies"
-    symmetric = entries["is_bonded_to"]
+    symmetric = entries["bonded_to"]
     assert symmetric["is_symmetric"] is True and symmetric["is_canonical"] is True
+    # an older spelling (`spelling_of`, 2026-09-27) is symmetric too, but NOT
+    # canonical: it names the entry it spells, exactly as a reverse does
+    spelling = entries["is_bonded_to"]
+    assert spelling["is_symmetric"] is True and spelling["is_canonical"] is False
+    assert spelling["canonical"] == "bonded_to"
 
 
 def test_the_shape_of_an_entry_did_not_change():
@@ -190,10 +195,19 @@ def test_a_reverse_only_mapping_lands_on_the_canonical():
 def test_a_symmetric_relation_is_not_swapped_and_is_deduplicated():
     """`is_bonded_to` has no reverse in the datamodel, so there is no direction
     to canonicalise to: 1↔3 written from both rows is ONE edge, kept the way it
-    was first met."""
+    was first met.
+
+    Since 2026-09-27 it is stored under its CANONICAL SPELLING, `bonded_to`:
+    the datamodel declares `is_bonded_to` a `spelling_of` it, and canonicalising
+    brings a spelling home the way it brings a reverse home — only without
+    swapping the ends, which a symmetric relation does not have. Off
+    (`canonicalize=False`) the mapping's own name is written, as before."""
     edges = edges_of(canonicalize=True, columns=("si_lega_a",))
-    bonded = [text for text in edges.values() if "is_bonded_to" in text]
-    assert bonded == ["1-is_bonded_to->3"], bonded
+    bonded = [text for text in edges.values() if "bonded_to" in text]
+    assert bonded == ["1-bonded_to->3"], bonded
+    raw = edges_of(canonicalize=False, columns=("si_lega_a",))
+    assert sorted(t for t in raw.values() if "bonded_to" in t) == \
+        ["1-is_bonded_to->3", "3-is_bonded_to->1"], raw
 
 
 def test_nothing_else_in_the_graph_moved():
@@ -212,13 +226,19 @@ def test_nothing_else_in_the_graph_moved():
 
 # ── the truth table is the datamodel ────────────────────────────────────────
 
-def test_the_stratigraphic_set_is_derived_and_still_says_the_same_ten():
-    """Derived from the datamodel now, and the measure is that deriving changed
-    nothing: the ten names this importer has always skipped."""
+def test_the_stratigraphic_set_is_derived_and_says_the_twelve():
+    """Derived from the datamodel: the ten names this importer has always
+    skipped, PLUS — since 2026-09-27 — the canonical spelling of the two
+    symmetric bonds, `bonded_to` and `equals`. The seed now names the canonical
+    pair and the older spellings arrive through `spelling_of`; before, only the
+    older ones were seeded and a mapping naming `bonded_to` without
+    `is_relation` lost the relation to a PropertyNode. No mapping on disk names
+    the canonical pair, so none changed behaviour (measured)."""
     assert set(STRATIGRAPHIC_EDGE_TYPES) == {
         "overlies", "is_overlain_by", "cuts", "is_cut_by",
         "fills", "is_filled_by", "abuts", "is_abutted_by",
         "is_bonded_to", "is_physically_equal_to",
+        "bonded_to", "equals",
     }
     datamodel = get_connections_datamodel()
     for name in STRATIGRAPHIC_EDGE_TYPES:

@@ -65,6 +65,13 @@ from __future__ import annotations
 #: newer ones with English UIs have English. Both are accepted on
 #: import. On serialise we emit the verbose Italian form (or shorthand
 #: tokens for non-canonical unit types — see ``RAPPORTI_SHORTHAND``).
+#:
+#: The two symmetric bonds are written in their CANONICAL spelling,
+#: ``bonded_to`` / ``equals``. The datamodel keeps ``is_bonded_to`` /
+#: ``is_physically_equal_to`` as older spellings (``spelling_of``) — the same
+#: relation, read and never written — and until 2026-09-27 this table wrote
+#: them, so a pyArchInit graph and an xlsx graph carried the same bond under
+#: two names. The serialise side accepts both (see :func:`_as_written`).
 RAPPORTI_TO_EDGE_TYPE: dict[str, str] = {
     # Italian
     "copre": "overlies",
@@ -73,8 +80,8 @@ RAPPORTI_TO_EDGE_TYPE: dict[str, str] = {
     "tagliato da": "is_cut_by",
     "riempie": "fills",
     "riempito da": "is_filled_by",
-    "uguale a": "is_physically_equal_to",
-    "si lega a": "is_bonded_to",
+    "uguale a": "equals",
+    "si lega a": "bonded_to",
     "si appoggia a": "abuts",
     "gli si appoggia": "is_abutted_by",
     # English
@@ -84,8 +91,8 @@ RAPPORTI_TO_EDGE_TYPE: dict[str, str] = {
     "cut by": "is_cut_by",
     "fills": "fills",
     "filled by": "is_filled_by",
-    "same as": "is_physically_equal_to",
-    "bonds with": "is_bonded_to",
+    "same as": "equals",
+    "bonds with": "bonded_to",
     "abuts": "abuts",
     "supports": "is_abutted_by",   # English reciprocal of "Abuts"
 }
@@ -104,8 +111,8 @@ RAPPORTI_TO_EDGE_TYPE: dict[str, str] = {
 #
 # Index → canonical edge type (same order as each language's term list):
 _REL_INDEX_EDGE_TYPE: tuple[str, ...] = (
-    "is_physically_equal_to",  # 0  Uguale a / Same as
-    "is_bonded_to",            # 1  Si lega a / Connected to
+    "equals",                  # 0  Uguale a / Same as
+    "bonded_to",               # 1  Si lega a / Connected to
     "overlies",                # 2  Copre / Covers
     "is_overlain_by",          # 3  Coperto da / Covered by
     "fills",                   # 4  Riempie / Fills
@@ -189,8 +196,8 @@ EDGE_TYPE_TO_RAPPORTI_IT: dict[str, str] = {
     "is_cut_by": "Tagliato da",
     "fills": "Riempie",
     "is_filled_by": "Riempito da",
-    "is_physically_equal_to": "Uguale a",
-    "is_bonded_to": "Si lega a",
+    "equals": "Uguale a",
+    "bonded_to": "Si lega a",
     "abuts": "Si appoggia a",
     "is_abutted_by": "Gli si appoggia",
     "is_after": "Copre",       # default fallback for temporal precedence
@@ -245,8 +252,8 @@ EDGE_TYPE_DIRECTION_FORWARD: dict[str, bool] = {
     "is_cut_by": False,
     "fills": True,
     "is_filled_by": False,
-    "is_physically_equal_to": True,   # equality conventionally `>`
-    "is_bonded_to": True,
+    "equals": True,                   # equality conventionally `>`
+    "bonded_to": True,
     "abuts": True,
     "is_abutted_by": False,
     "is_after": True,
@@ -256,6 +263,40 @@ EDGE_TYPE_DIRECTION_FORWARD: dict[str, bool] = {
     "combines": True,
     "has_property": True,
 }
+
+
+def _as_written(edge_type):
+    """The name the datamodel WRITES for *edge_type*: an older spelling
+    (``spelling_of`` — ``is_bonded_to`` → ``bonded_to``) comes back canonical,
+    every other name (reverses included) unchanged.
+
+    Asked of the connections datamodel, so this module keeps no alias table
+    of its own. Lazy, because this module is imported by light-weight sync
+    paths; if the datamodel cannot be read the name passes through."""
+    try:
+        from ..edges.connections_loader import get_connections_datamodel
+        entry = get_connections_datamodel().get_edge_definition(edge_type) or {}
+    except Exception:                                  # noqa: BLE001
+        return edge_type
+    return entry.get("spelling_of") or edge_type
+
+
+def _add_spellings(table: dict) -> None:
+    """Also key *table* by every older spelling of its keys, derived from the
+    datamodel, so a caller still indexing ``EDGE_TYPE_TO_RAPPORTI_IT
+    ["is_bonded_to"]`` finds «Si lega a». Nothing is typed here."""
+    try:
+        from ..edges.connections_loader import get_connections_datamodel
+        datamodel = get_connections_datamodel()
+    except Exception:                                  # noqa: BLE001
+        return
+    for name, value in list(table.items()):
+        for spelling in datamodel.spellings(name):
+            table.setdefault(spelling, value)
+
+
+_add_spellings(EDGE_TYPE_TO_RAPPORTI_IT)
+_add_spellings(EDGE_TYPE_DIRECTION_FORWARD)
 
 
 # ---------------------------------------------------------------------------
@@ -447,6 +488,7 @@ def select_rapporti_label(edge_type: str,
     ``is_after`` / etc. emit ``>`` (source covers target); their
     inverses emit ``<``.
     """
+    edge_type = _as_written(edge_type)
     src = src_unita_tipo or ""
     tgt = tgt_unita_tipo or ""
     both_canonical = (src in CANONICAL_UNIT_TYPES
@@ -611,7 +653,7 @@ def _source_rapporti_label(src_node, target_us: str, edge_type: str):
         if tgt != str(target_us) or not lbl or lbl in _SHORTHAND_TOKENS:
             continue
         lbl = lbl.capitalize()
-        if RAPPORTI_TO_EDGE_TYPE.get(lbl.lower()) == edge_type:
+        if RAPPORTI_TO_EDGE_TYPE.get(lbl.lower()) == _as_written(edge_type):
             return lbl
         if fallback is None:
             fallback = lbl

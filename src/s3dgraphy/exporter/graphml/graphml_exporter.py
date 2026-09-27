@@ -243,12 +243,16 @@ class GraphMLExporter:
         # originals in addition, `is_before` on an edge would survive
         # alongside its reduction-inferred `is_after` — a visual cycle in
         # yEd between the same two nodes.
-        TOPOLOGICAL_EDGE_TYPES = {
-            'overlies', 'is_overlain_by', 'cuts', 'is_cut_by',
-            'fills', 'is_filled_by', 'abuts', 'is_abutted_by',
-            'is_bonded_to', 'is_physically_equal_to',
-            'is_before', 'is_after',
-        }
+        #
+        # The physical half is the inference engine's own table — the edges it
+        # turns into `is_after` / `has_same_time` — so that what is filtered
+        # here and what is re-expressed below cannot disagree. That table
+        # carries every spelling the datamodel accepts (`bonded_to` AND
+        # `is_bonded_to`, via `spelling_of`); until 2026-09-27 this was a
+        # second hand-written list naming only the older spelling, and a
+        # `bonded_to` edge left raw instead of as `has_same_time`.
+        TOPOLOGICAL_EDGE_TYPES = (set(engine.TOPOLOGICAL_TO_TEMPORAL)
+                                  | {'is_before', 'is_after'})
 
         # Paradata internal edges — handled by ParadataNodeGroup structure,
         # must NOT appear as top-level edges in the swimlane graph.
@@ -1103,24 +1107,36 @@ class GraphMLExporter:
 
         return edge_elem
 
-    # Topological edge types used for relation string computation
+    # Topological edge types used for relation string computation — the ORDER
+    # the string lists them in. Canonical spellings only: an older spelling
+    # (`is_bonded_to`, the datamodel's `spelling_of`) is written under its
+    # canonical name, so `bonded_to` / `equals` are no longer missing from the
+    # string (until 2026-09-27 only the older spelling was listed here).
     _TOPO_EDGE_TYPES = (
         'overlies', 'is_overlain_by', 'cuts', 'is_cut_by',
         'fills', 'is_filled_by', 'abuts', 'is_abutted_by',
-        'is_bonded_to', 'is_physically_equal_to'
+        'bonded_to', 'equals'
     )
 
     def _compute_relations_string(self, us_node) -> str:
         """Return 'overlies: A, B; cuts: C' for outgoing topological edges (non-empty only)."""
         from ...utils.utils import get_base_name
+        from ...edges.connections_loader import get_connections_datamodel
+        datamodel = get_connections_datamodel()
         node_map = {n.node_id: n for n in self.graph.nodes}
         relations: dict = {}
         for edge in self.graph.edges:
-            if edge.edge_source == us_node.node_id and edge.edge_type in self._TOPO_EDGE_TYPES:
+            if edge.edge_source != us_node.node_id:
+                continue
+            edge_type = (datamodel.normalize_edge_name(
+                edge.edge_type, prefer_canonical=False) or edge.edge_type)
+            if edge_type in self._TOPO_EDGE_TYPES:
                 target = node_map.get(edge.edge_target)
                 if target:
                     name = get_base_name(target.name) or target.name
-                    relations.setdefault(edge.edge_type, []).append(name)
+                    names = relations.setdefault(edge_type, [])
+                    if name not in names:
+                        names.append(name)
         if not relations:
             return ""
         parts = []

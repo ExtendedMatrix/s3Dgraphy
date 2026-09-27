@@ -45,9 +45,20 @@ class TemporalInferenceEngine:
             # Ambiguous relations (no clear temporal direction)
             'abuts': None,
             'is_abutted_by': None,
-            'is_bonded_to': None,
-            'is_physically_equal_to': None,
+            'bonded_to': None,
+            'equals': None,
         }
+        # Every OLDER SPELLING of a relation above (`is_bonded_to` for
+        # `bonded_to`, `is_physically_equal_to` for `equals` — the datamodel's
+        # `spelling_of`) reads the same way. Asked of the datamodel, not listed:
+        # until 2026-09-27 the table named only the older spelling and a
+        # `bonded_to` edge was not seen as a physical relation at all.
+        loader = (self.connections_dm
+                  if hasattr(self.connections_dm, 'spellings')
+                  else get_connections_datamodel())
+        for name, direction in list(self.TOPOLOGICAL_TO_TEMPORAL.items()):
+            for spelling in loader.spellings(name):
+                self.TOPOLOGICAL_TO_TEMPORAL.setdefault(spelling, direction)
 
     def extract_temporal_from_graph(self, graph) -> List[Tuple[str, str]]:
         """

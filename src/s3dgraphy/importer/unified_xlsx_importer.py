@@ -122,6 +122,18 @@ _RELATION_TYPES = frozenset({
     "is_part_of",
 })
 
+
+
+def _canonical_spelling(prop_type: str) -> str:
+    """The name the datamodel writes for this PROPERTY_TYPE: an older spelling
+    (`spelling_of`) comes back as its canonical, anything else unchanged —
+    reverses included, which `_RELATION_TYPES` already lists and the edge keeps.
+    Asked of the datamodel so that no second alias table lives here."""
+    from ..edges.connections_loader import get_connections_datamodel
+    entry = get_connections_datamodel().get_edge_definition(prop_type) or {}
+    return str(entry.get("spelling_of") or prop_type)
+
+
 # Property types that mean "temporal seed for chronology resolver"
 _TEMPORAL_PROPERTIES = frozenset({"absolute_time_start", "absolute_time_end"})
 
@@ -548,9 +560,14 @@ class UnifiedXLSXImporter:
                     )
                 self._handle_belongs_to_epoch(
                     target_node, target2 or value_str, row, idx + 2)
-            elif prop_type in _RELATION_TYPES:
+            elif _canonical_spelling(prop_type) in _RELATION_TYPES:
+                # an older spelling (`is_bonded_to`, the datamodel's
+                # `spelling_of`) is the same relation: it becomes the canonical
+                # edge. Until 2026-09-27 it fell to the qualia branch and became
+                # a PropertyNode, without a warning.
                 self._handle_relation(
-                    target_node, target2, prop_type, row, idx + 2)
+                    target_node, target2, _canonical_spelling(prop_type),
+                    row, idx + 2)
             else:
                 # Scalar or temporal qualia.
                 self._handle_qualia(

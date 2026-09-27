@@ -34,9 +34,10 @@ from ..edges.edge import Edge
 # Stratigraphic edge types that define relationships between units.
 # Includes both the canonical direction (what the unified xlsx pipeline
 # emits) and the reverse direction (legacy yEd-sourced graphs may carry
-# them). ``bonded_to`` / ``equals`` are the canonical names; the legacy
-# ``is_bonded_to`` / ``is_physically_equal_to`` aliases are still
-# recognised for older source files.
+# them). ``bonded_to`` / ``equals`` are the canonical names; the older
+# spellings ``is_bonded_to`` / ``is_physically_equal_to`` (the datamodel's
+# ``spelling_of``) are still recognised, and COMPARED under the canonical name
+# (``_canonical_spelling``), so two spellings of one bond are not a conflict.
 STRATIGRAPHIC_EDGE_TYPES = {
     'overlies', 'is_overlain_by',
     'cuts', 'is_cut_by',
@@ -46,6 +47,28 @@ STRATIGRAPHIC_EDGE_TYPES = {
     'is_bonded_to', 'is_physically_equal_to',  # legacy
     'is_after', 'is_before',
 }
+
+
+
+def _canonical_spelling(edge_type: str) -> str:
+    """The datamodel's name for this relation: an older spelling
+    (``spelling_of`` — ``is_bonded_to`` → ``bonded_to``) comes back canonical,
+    everything else (reverses included) unchanged.
+
+    The edge maps below are keyed by THIS, so the same bond carried under two
+    spellings — one graph from pyArchInit, the other from xlsx — is one bond
+    and not ``edge_added`` + ``edge_removed`` (measured 2026-10-18)."""
+    from ..edges.connections_loader import get_connections_datamodel
+    entry = get_connections_datamodel().get_edge_definition(edge_type) or {}
+    return str(entry.get("spelling_of") or edge_type)
+
+
+def _spellings(edge_type: str) -> frozenset:
+    """Every name the datamodel accepts for this relation — what an apply step
+    matches when it looks for the edge a conflict names."""
+    from ..edges.connections_loader import get_connections_datamodel
+    return get_connections_datamodel().spellings(edge_type)
+
 
 # Attribution-bearing keys on an Edge's ``attributes`` dict. The
 # UnifiedXLSXImporter populates these for relational claims.
@@ -507,7 +530,7 @@ class GraphMerger:
                     for edge in graph.edges:
                         if (edge.edge_source == source_node.node_id
                                 and edge.edge_target == target_node.node_id
-                                and edge.edge_type == edge_type):
+                                and edge.edge_type in _spellings(edge_type)):
                             edge_to_remove = edge
                             break
                     if edge_to_remove:
@@ -723,7 +746,7 @@ class GraphMerger:
             return
         for edge in graph.edges:
             if (edge.edge_source == src_id and edge.edge_target == tgt_id
-                    and edge.edge_type == edge_type):
+                    and edge.edge_type in _spellings(edge_type)):
                 if not hasattr(edge, 'attributes') or edge.attributes is None:
                     edge.attributes = {}
                 edge.attributes[attr_key] = conflict.incoming_value
@@ -1036,7 +1059,8 @@ class GraphMerger:
             tn = id_to_name.get(edge.edge_target)
             if not sn or not tn:
                 continue
-            out[(sn, tn, edge.edge_type)] = getattr(edge, 'attributes', {}) or {}
+            out[(sn, tn, _canonical_spelling(edge.edge_type))] = (
+                getattr(edge, 'attributes', {}) or {})
         return out
 
     def _build_edge_map(self, graph: Graph) -> Dict[str, Dict[str, Set[str]]]:
@@ -1060,10 +1084,8 @@ class GraphMerger:
             target_name = id_to_name.get(edge.edge_target)
 
             if source_name and target_name:
-                if source_name not in result:
-                    result[source_name] = {}
-                if edge.edge_type not in result[source_name]:
-                    result[source_name][edge.edge_type] = set()
-                result[source_name][edge.edge_type].add(target_name)
+                edge_type = _canonical_spelling(edge.edge_type)
+                result.setdefault(source_name, {}).setdefault(
+                    edge_type, set()).add(target_name)
 
         return result

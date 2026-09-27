@@ -209,9 +209,11 @@ computed on demand from the JSON datamodel via
 
 **Symmetric edges** (``reverse = None``)
    Direction is meaningless. The exporter emits a single arc with no
-   implicit reverse. Set: ``bonded_to``, ``is_bonded_to``,
-   ``equals``, ``is_physically_equal_to``, ``has_same_time``,
-   ``contrasts_with``, ``generic_connection``.
+   implicit reverse. Set: ``bonded_to``, ``equals``, ``has_same_time``,
+   ``contrasts_with``, ``generic_connection`` — plus ``is_bonded_to`` and
+   ``is_physically_equal_to``, which are not relations of their own but
+   older spellings of ``bonded_to`` and ``equals`` (``spelling_of`` in the
+   datamodel: read, never written).
 
 Why the schema change matters:
 

@@ -16,29 +16,28 @@ from typing import Dict, Any, Optional
 logger = logging.getLogger(__name__)
 
 #: The four directed physical relations plus the two symmetric ones — the SEED
-#: of the set below, and the only part still written by hand. Their reverses are
-#: not listed: the datamodel declares them and repeating them here is how the two
-#: lists come to disagree.
+#: of the set below, and the only part still written by hand. Their reverses and
+#: their older spellings are not listed: the datamodel declares them (`reverse`,
+#: `spelling_of`) and repeating them here is how the two lists come to disagree.
 #:
-#: The symmetric pair is seeded in its LEGACY spelling. The datamodel calls
-#: `bonded_to` and `equals` the canonical forms (v5.0 em_data.xlsx) and
-#: `is_bonded_to` / `is_physically_equal_to` the older spellings of the same
-#: relations — `em.ttl` maps each pair onto ONE property, `em:bondedTo` and
-#: `em:physicallyEquals`. The seed still names the legacy pair because the one
-#: mapping on disk that declares these columns (`generic/excel_to_graphml_mapping`)
-#: names them that way. Seeding the canonical pair as well is a change of
-#: behaviour — a mapping naming `bonded_to` without `is_relation` would stop
-#: turning that column into a property — so it is proposed, not made here
-#: (report 2026-10-18-MICRO-i-nomi-dei-legami-fisici).
+#: The symmetric pair is seeded in its CANONICAL spelling, `bonded_to` / `equals`.
+#: The older spellings `is_bonded_to` / `is_physically_equal_to` — the same
+#: relations, one `em.ttl` property per pair — come in through `spelling_of`, so
+#: a mapping naming either spelling turns that column into an edge and never into
+#: a property. Until 2026-09-27 only the older spelling was seeded, and a mapping
+#: naming the canonical one without `is_relation` lost the relation to a
+#: PropertyNode (measured, report 2026-10-18-MICRO-i-nomi-dei-legami-fisici);
+#: no mapping on disk names the canonical pair, so none changes behaviour.
 _STRATIGRAPHIC_SEED = (
     "overlies", "cuts", "fills", "abuts",
-    "is_bonded_to", "is_physically_equal_to",
+    "bonded_to", "equals",
 )
 
 
 def _stratigraphic_edge_types() -> frozenset:
-    """The seed CLOSED under the datamodel's `reverse` — the truth table is the
-    datamodel, never a second dictionary of inverses in this repo.
+    """The seed CLOSED under the datamodel's `reverse` and `spelling_of` — the
+    truth table is the datamodel, never a second dictionary of inverses or of
+    aliases in this repo.
 
     Falls back to the historical literal if the datamodel cannot be read, because
     an importer that suddenly stopped recognising `is_overlain_by` would fail by
@@ -53,14 +52,17 @@ def _stratigraphic_edge_types() -> frozenset:
             reverse = datamodel.get_reverse_name(name)
             if reverse:
                 names.add(reverse)
+            names.update(datamodel.spellings(name))
     except Exception:                                  # noqa: BLE001
         names.update({"is_overlain_by", "is_cut_by", "is_filled_by",
-                      "is_abutted_by"})
+                      "is_abutted_by", "is_bonded_to",
+                      "is_physically_equal_to"})
     return frozenset(names)
 
 
 #: The edges whose target column is ALREADY an edge and must not also become a
-#: PropertyNode. Ten stratigraphic relations, and until now the list lived twice
+#: PropertyNode. Twelve stratigraphic relations (ten until 2026-09-27, when the
+#: canonical spelling of the two symmetric bonds joined the seed), and the list lived twice
 #: inside this file (once in `_process_properties`, once in
 #: `_process_stratigraphic_relations`) plus a mirrored copy in
 #: `mappings/authoring.py`. One name, imported by all three: two copies of a rule
@@ -80,9 +82,11 @@ def _canonical_relation(source_id: str, target_id: str, edge_type: str):
     the reverse makes the second edge BE the first, and the deterministic
     `{source}_{type}_{target}` id collapses them without a dedup pass.
 
-    A symmetric relation (`reverse: null` in the datamodel — `is_bonded_to`,
+    A symmetric relation (`reverse: null` in the datamodel — `bonded_to`,
     `equals`, `has_same_time`, …) is NOT swapped: there is no canonical direction
     to bring it to, so the pair is deduplicated unordered instead, by the caller.
+    An older spelling of one (`is_bonded_to`, `spelling_of: bonded_to`) comes
+    back under its canonical name, the ends as they were.
 
     An unknown edge type is returned untouched: this function canonicalises, it
     does not validate — `Graph.add_edge` is still the one that refuses.
@@ -96,7 +100,10 @@ def _canonical_relation(source_id: str, target_id: str, edge_type: str):
     if not entry:
         return source_id, target_id, edge_type, False
     if entry.get("is_symmetric"):
-        return source_id, target_id, edge_type, True
+        # an older spelling (`spelling_of`) is the same relation: stored under
+        # the canonical name, ends unchanged — there is no direction to swap
+        return (source_id, target_id,
+                str(entry.get("spelling_of") or edge_type), True)
     if entry.get("is_canonical"):
         return source_id, target_id, edge_type, False
     canonical = str(entry.get("canonical_name") or edge_type)
@@ -604,7 +611,7 @@ class BaseImporter(ABC):
             # nothing changes — no mapping on disk declares it today, so every
             # existing import produces byte-identical output (measured).
             #
-            # The alternative was widening the ten stratigraphic edges above to
+            # The alternative was widening the stratigraphic edges above to
             # every edge type, which would have silently changed what every
             # mapping on disk produces. The flag is the version of this change
             # that can be adopted one mapping at a time.
@@ -805,7 +812,7 @@ class BaseImporter(ABC):
         # Build lookup: relationship columns → edge_type. Two ways in, and the
         # second is the opt-in:
         #
-        #  * one of the ten STRATIGRAPHIC edges — how it has always worked;
+        #  * one of the twelve STRATIGRAPHIC edges — how it has always worked;
         #  * a column that DECLARES `is_relation: true` — then whatever edge the
         #    mapping names is created, `is_after` and `has_documentation`
         #    included. Skipping this half would make the flag a way to LOSE data:

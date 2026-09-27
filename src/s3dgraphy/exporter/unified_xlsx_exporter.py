@@ -288,8 +288,21 @@ class UnifiedXLSXExporter:
             rows.append(self._row(src, tgt, "belongs_to_epoch"))
 
         # 2. Stratigraphic relations (canonical direction only).
+        #
+        # An OLDER SPELLING (`is_bonded_to`, `is_physically_equal_to` — the
+        # datamodel's `spelling_of`) is written under its canonical name: it is
+        # the same relation, and until 2026-09-27 it was dropped here in silence
+        # (0 claims), so a pyArchInit graph lost every bond on the way to xlsx.
+        # The name is asked of the datamodel, not listed. The same fact met
+        # twice — once per spelling, or from both ends of a symmetric relation —
+        # is written once when the two rows say exactly the same thing.
+        from ..edges.connections_loader import get_connections_datamodel
+        datamodel = get_connections_datamodel()
+        written = set()
         for edge in self.graph.edges:
-            if edge.edge_type not in _CANONICAL_RELATIONS:
+            edge_type = (datamodel.normalize_edge_name(
+                edge.edge_type, prefer_canonical=False) or edge.edge_type)
+            if edge_type not in _CANONICAL_RELATIONS:
                 continue
             src = (self._unit_id_by_uuid.get(edge.edge_source)
                    or self._epoch_id_by_uuid.get(edge.edge_source))
@@ -297,8 +310,15 @@ class UnifiedXLSXExporter:
                    or self._epoch_id_by_uuid.get(edge.edge_target))
             if not src or not tgt:
                 continue
-            row = self._row(src, tgt, edge.edge_type)
+            row = self._row(src, tgt, edge_type)
             self._fill_attribution_from_edge(row, edge)
+            key = tuple(str(v) for v in row)
+            if datamodel.is_symmetric(edge_type):
+                mirror = (key[1], key[0]) + key[2:]
+                key = min(key, mirror)
+            if key in written:
+                continue
+            written.add(key)
             rows.append(row)
 
         # 3. Qualia claims — one row per has_property edge.

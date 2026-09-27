@@ -63,8 +63,10 @@ def test_reciprocal_pairs_map_to_inverse_edge_types():
         "cuts": "is_cut_by", "is_cut_by": "cuts",
         "fills": "is_filled_by", "is_filled_by": "fills",
         "abuts": "is_abutted_by", "is_abutted_by": "abuts",
-        "is_physically_equal_to": "is_physically_equal_to",
-        "is_bonded_to": "is_bonded_to",
+        # the symmetric bonds, in the canonical spelling the parse writes
+        # since 2026-09-27 (the datamodel's `spelling_of`)
+        "equals": "equals",
+        "bonded_to": "bonded_to",
     }
     for a, b in pairs:
         et_a, et_b = _REL_INDEX_EDGE_TYPE[a], _REL_INDEX_EDGE_TYPE[b]

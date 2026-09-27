@@ -228,12 +228,18 @@ def test_the_ten_stratigraphic_edges_still_work_without_any_flag():
 
 def test_the_skip_list_lives_in_one_place():
     """It used to be a literal set written twice in `base_importer` and mirrored
-    a third time in `authoring`. Three copies of a rule are three rules."""
+    a third time in `authoring`. Three copies of a rule are three rules.
+
+    TWELVE since 2026-09-27 (ten before): the two symmetric bonds are recognised
+    in BOTH spellings — `bonded_to` / `is_bonded_to`, `equals` /
+    `is_physically_equal_to` — the older one derived from the datamodel's
+    `spelling_of`, not typed. With ten, a mapping naming the canonical spelling
+    without `is_relation` turned the column into a PropertyNode."""
     from s3dgraphy.importer.base_importer import STRATIGRAPHIC_EDGE_TYPES
     from s3dgraphy.mappings.authoring import _importer_skips_property
 
     assert _importer_skips_property() == frozenset(STRATIGRAPHIC_EDGE_TYPES)
-    assert len(STRATIGRAPHIC_EDGE_TYPES) == 10
+    assert len(STRATIGRAPHIC_EDGE_TYPES) == 12
     source = open(
         os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
                      "src", "s3dgraphy", "importer", "base_importer.py"),
@@ -323,14 +329,20 @@ def test_the_edges_group_with_the_datamodels_real_counts():
     # dominio, e diceva comunque un'altra cosa (influenza, non mutua esclusione).
     # L'arco esce sulla sola em:contrastsWith, come is_in_activity prima di lui.
     # I totali non si muovono: CIDOC-CRM 30 -> 29, unmapped 3 -> 4.
-    assert canonical == {"CIDOC-CRM": 29, "CRMarchaeo": 10, "CRMdig": 5,
+    # 27 set 2026, una grafia sola: is_bonded_to and is_physically_equal_to
+    # declare `spelling_of` (bonded_to / equals) and stop counting as canonical
+    # — an older spelling is the same relation under another name, not a
+    # relation of its own. CRMarchaeo 10 -> 8; `count` below does not move,
+    # because both spellings are still listed (the graph still accepts them).
+    assert canonical == {"CIDOC-CRM": 29, "CRMarchaeo": 8, "CRMdig": 5,
                          "HDT-O": 6, "PROV-O": 2, "unmapped": 4}, canonical
-    assert sum(canonical.values()) == 56, "the datamodel's own edge count"
+    assert sum(canonical.values()) == 54, "the datamodel's own relation count"
     listed = {g["ontology"]: g["count"] for g in groups}
     assert listed == {"CIDOC-CRM": 57, "CRMarchaeo": 15, "CRMdig": 10,
                       "HDT-O": 12, "PROV-O": 4, "unmapped": 7}, listed
-    assert sum(listed.values()) == 105, "56 canonical + 49 reverses (7 are "\
-                                        "symmetric and have none)"
+    assert sum(listed.values()) == 105, "54 canonical + 2 older spellings + "\
+                                        "49 reverses (7 are symmetric and "\
+                                        "have none)"
     filtered = {g["ontology"]: [e["edge_type"] for e in g["edges"]]
                 for g in api.mapping_edge_groups("US", "US")}
     assert "is_after" in filtered["CRMarchaeo"], \

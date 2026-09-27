@@ -77,17 +77,24 @@ class ConnectionsDatamodel:
             self._expanded_edges = {}
 
             for edge_name, edge_def in edge_types.items():
-                # Add canonical edge
+                # An OLDER SPELLING (`spelling_of`) is the same relation under
+                # another name: read, never written. It is not canonical, and
+                # its canonical is the entry it spells — the same key a reverse
+                # uses, so `normalize_edge_name` needs no second rule.
+                spelling_of = edge_def.get('spelling_of')
                 self._expanded_edges[edge_name] = {
                     'name': edge_def['name'],
                     'label': edge_def['label'],
                     'description': edge_def.get('description', ''),
                     'mapping': edge_def.get('mapping', {}),
                     'allowed_connections': edge_def['allowed_connections'],
-                    'is_canonical': True,
+                    'is_canonical': not spelling_of,
                     'is_symmetric': edge_def.get('reverse') is None,
                     'reverse_name': edge_def.get('reverse', {}).get('name') if edge_def.get('reverse') else None
                 }
+                if spelling_of:
+                    self._expanded_edges[edge_name]['canonical_name'] = spelling_of
+                    self._expanded_edges[edge_name]['spelling_of'] = spelling_of
 
                 # Generate reverse entry if not symmetric
                 if edge_def.get('reverse') is not None:
@@ -109,6 +116,23 @@ class ConnectionsDatamodel:
                         'canonical_name': edge_name,
                         'reverse_name': None  # Reverse doesn't have its own reverse
                     }
+
+            for edge_name, edge_def in edge_types.items():
+                target = edge_def.get('spelling_of')
+                if target is None:
+                    continue
+                target_def = edge_types.get(target)
+                # Refused, not tolerated: a spelling of a missing entry, of
+                # another spelling, or of a relation with a direction would make
+                # `normalize_edge_name` silently land somewhere else.
+                if target_def is None or target_def.get('spelling_of'):
+                    raise ValueError(
+                        f"{edge_name}: spelling_of {target!r} must name a "
+                        f"canonical edge type")
+                if (edge_def.get('reverse') is None) != (target_def.get('reverse') is None):
+                    raise ValueError(
+                        f"{edge_name}: spelling_of {target!r} — a spelling and "
+                        f"its canonical must be alike symmetric or directed")
 
         except FileNotFoundError:
             raise FileNotFoundError(
@@ -347,9 +371,29 @@ class ConnectionsDatamodel:
         """
         return edge_name in self._expanded_edges
 
+    def spellings(self, edge_name: str) -> frozenset:
+        """Every name the datamodel accepts for this relation, itself included.
+
+        `spellings("bonded_to") == spellings("is_bonded_to") ==
+        {"bonded_to", "is_bonded_to"}`. A READER that must recognise a relation
+        asks this instead of listing two names; a WRITER uses
+        :meth:`normalize_edge_name`. Reverses are NOT spellings (they swap the
+        ends), so `spellings("overlies") == {"overlies"}`. An unknown name comes
+        back as itself.
+        """
+        edge_def = self._expanded_edges.get(edge_name) or {}
+        canonical = edge_def.get('spelling_of') or edge_name
+        return frozenset({canonical} | {
+            name for name, d in self._expanded_edges.items()
+            if d.get('spelling_of') == canonical})
+
     def normalize_edge_name(self, edge_name: str, prefer_canonical: bool = True) -> Optional[str]:
         """
         Normalize an edge name to canonical or preserve direction.
+
+        An older spelling (`spelling_of` in the datamodel) is normalised to its
+        canonical ALWAYS, whatever `prefer_canonical` says: it names the same
+        relation in the same direction, so there is no direction to preserve.
 
         Args:
             edge_name: The edge name to normalize
@@ -363,6 +407,8 @@ class ConnectionsDatamodel:
         if edge_def is None:
             return None
 
+        if edge_def.get('spelling_of'):
+            return edge_def['spelling_of']
         if prefer_canonical and not edge_def['is_canonical']:
             return edge_def['canonical_name']
 

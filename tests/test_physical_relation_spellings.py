@@ -15,10 +15,12 @@ read here, not restated:
 * the pairs are DERIVED: edge types whose `type_tag` resolves, through the RDF
   exporter's `AP11_SUBPROPS`, to the same `em:` property;
 * `em.ttl` must name exactly those edges in the property's `Maps to:` comment;
-* the datamodel must declare exactly one member canonical. Today it does so in
-  PROSE (the description opens with «Canonical»): there is no structured field
-  for an alias that is still read — `deprecated` would drop the edge from RDF
-  (measured) — and adding one is a decision for E.D., proposed in the report;
+* the datamodel must declare exactly one member canonical, and it does so as
+  DATA: every other member carries `spelling_of: <canonical>` (connections
+  datamodel 1.6.20, 2026-09-27) — same relation, same RDF projection, accepted
+  when read, never written. Not `deprecated`, which drops the edge from RDF
+  (measured). The «Canonical…» in the description stays, as an explanation for
+  a human, and is no longer read here;
 * every writer that chooses a spelling must choose the canonical one, and the
   writers that do not yet are pinned BY NAME below, so a new one fails and a
   repaired one forces the list to shrink.
@@ -42,8 +44,8 @@ EM_NS = "https://w3id.org/em/ontology#"
 
 
 def _edge_types() -> dict:
-    # the RAW entries: the expanded view drops `description`, where the
-    # canonical form is declared
+    # the RAW entries, as the JSON has them: `spelling_of` is read from the
+    # source, not from the loader's view of it (the loader is tested apart)
     return get_connections_datamodel()._canonical_edges
 
 
@@ -60,8 +62,8 @@ def _spelling_groups() -> dict:
 
 
 def _declared_canonical(names) -> set:
-    return {n for n in names
-            if str(_edge_types()[n].get("description", "")).startswith("Canonical")}
+    """The members that are NOT a spelling of another — read off the field."""
+    return {n for n in names if not _edge_types()[n].get("spelling_of")}
 
 
 def _canonical_and_aliases():
@@ -103,9 +105,38 @@ def test_every_pair_has_exactly_one_declared_canonical_form():
     for iri, names in _spelling_groups().items():
         chosen = _declared_canonical(names)
         assert len(chosen) == 1, (iri, sorted(names), sorted(chosen))
+        (canonical,) = chosen
+        for name in names - chosen:
+            assert _edge_types()[name]["spelling_of"] == canonical, name
         for name in names:
             assert _edge_types()[name].get("reverse") is None, \
                 f"{name}: a spelling pair is only harmless when symmetric"
+
+
+def test_spelling_of_is_declared_only_inside_a_pair():
+    """The field and the derivation agree the other way round too: no entry
+    outside the pairs claims to be a spelling (a stray `spelling_of` would make
+    `normalize_edge_name` rename an edge that projects elsewhere)."""
+    in_pairs = set().union(*_spelling_groups().values())
+    declared = {n for n, e in _edge_types().items() if e.get("spelling_of")}
+    assert declared and declared <= in_pairs, declared - in_pairs
+
+
+def test_the_loader_exposes_the_field():
+    """What every reader and writer in the code asks — the one door."""
+    dm = get_connections_datamodel()
+    canonical, aliases = _canonical_and_aliases()
+    for name in aliases:
+        target = _edge_types()[name]["spelling_of"]
+        assert dm.normalize_edge_name(name) == target
+        assert dm.normalize_edge_name(name, prefer_canonical=False) == target
+        assert dm.is_canonical(name) is False
+        assert dm.get_edge_definition(name)["canonical_name"] == target
+        assert dm.spellings(name) == dm.spellings(target) >= {name, target}
+    for name in canonical:
+        assert dm.normalize_edge_name(name) == name and dm.is_canonical(name)
+    # a reverse is NOT a spelling: it swaps the ends
+    assert dm.spellings("overlies") == {"overlies"}
 
 
 def test_the_rdf_reader_picks_the_same_canonical_as_the_datamodel():
@@ -119,14 +150,21 @@ def test_the_rdf_reader_picks_the_same_canonical_as_the_datamodel():
 
 # ── the code writes the canonical spelling ──────────────────────────────────
 
-#: Writers that still put the LEGACY spelling into a graph, measured
-#: 2026-10-18. Each is a place where the choice of spelling is made in code or
-#: config; the list may only shrink.
+#: Writers that still put the LEGACY spelling into a graph. Each is a place
+#: where the choice of spelling is made in code or config; the list may only
+#: shrink.
+#:
+#: 2026-10-18: two. 2026-09-27 (una grafia sola): `sync/rapporti.py:
+#: parse_rapporti` REPAIRED — it writes `bonded_to` / `equals` in all ten
+#: languages. What is left was not touched, on purpose:
 KNOWN_LEGACY_WRITERS = {
-    # pyArchInit `rapporti` → edges: "Si lega a" / "Uguale a", in all ten
-    # UI languages (the table `_REL_INDEX_EDGE_TYPE` feeds)
-    "sync/rapporti.py:parse_rapporti",
-    # the one mapping on disk declaring the two columns
+    # The one mapping on disk declaring the two columns, `edge_type:
+    # is_bonded_to` / `is_physically_equal_to`. The importer writes the name the
+    # mapping gives unless `source_settings.canonicalize_reverse` is on (then
+    # `_canonical_relation` brings the spelling home). Left alone because it is
+    # a level-3 file whose vocabulary is E.D.'s to change, and because making
+    # the importer rename by default is the same behaviour change
+    # `canonicalize_reverse` keeps opt-in until EMStudio and Heriverse agree.
     "mappings/generic/excel_to_graphml_mapping.json",
 }
 
@@ -163,3 +201,20 @@ def test_the_writers_that_choose_a_spelling_choose_the_canonical_one():
     assert _legacy_writers() == KNOWN_LEGACY_WRITERS, (
         "a writer changed spelling: if one was repaired, drop it from "
         "KNOWN_LEGACY_WRITERS; if one is new, write the canonical form")
+
+
+def test_a_malformed_spelling_of_is_refused_at_load(tmp_path):
+    """A `spelling_of` naming nothing, another spelling, or a relation with a
+    direction would send `normalize_edge_name` somewhere else in silence — so
+    the loader refuses the file rather than tolerating it."""
+    import pytest
+    from s3dgraphy.edges.connections_loader import ConnectionsDatamodel
+
+    source = PKG / "JSON_config" / "s3Dgraphy_connections_datamodel.json"
+    for bad in ("no_such_edge", "is_physically_equal_to", "overlies"):
+        data = json.loads(source.read_text(encoding="utf-8"))
+        data["edge_types"]["is_bonded_to"]["spelling_of"] = bad
+        path = tmp_path / f"{bad}.json"
+        path.write_text(json.dumps(data), encoding="utf-8")
+        with pytest.raises(ValueError, match="spelling_of"):
+            ConnectionsDatamodel(str(path))

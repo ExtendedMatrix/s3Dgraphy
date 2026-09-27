@@ -332,10 +332,26 @@ Physical Relations
    
    - CRMarchaeo: ``AP11_has_physical_relation``
 
-**bonds_with / is_bonded_by**
-   Structural bonding
-   
-   - CRMarchaeo: ``AP11_has_physical_relation``
+**bonded_to** (older spelling: ``is_bonded_to``)
+   Structural bonding. Symmetric: no reverse.
+
+   - CRMarchaeo: ``AP11_has_physical_relation_to``, projected as ``em:bondedTo``
+
+**equals** (older spelling: ``is_physically_equal_to``)
+   Two unit ids for the same physical entity. Symmetric: no reverse.
+
+   - CRMarchaeo: ``AP11_has_physical_relation_to``, projected as
+     ``em:physicallyEquals``
+
+**Older spellings** (``spelling_of``, connections datamodel 1.6.20)
+   An entry carrying ``spelling_of: <canonical>`` is the SAME relation under
+   an older name: the same RDF projection, **accepted when read, never
+   written**. ``connections_loader`` reports it with ``is_canonical: False``
+   and ``canonical_name`` set, ``normalize_edge_name`` returns the canonical,
+   and ``spellings(name)`` lists every accepted name — readers ask that
+   instead of keeping their own list, writers write the canonical. It is not
+   ``deprecated``: a deprecated edge is dropped from RDF, and pyArchInit data
+   still carries these names. See ``docs/SOURCE_OF_TRUTH.md``.
 
 **leans_against**
    Leaning relationship

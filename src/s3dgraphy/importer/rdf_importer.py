@@ -441,10 +441,11 @@ class _InverseDatamodel:
         subproperty. When that holds, this is a canonicalisation like
         ``has_timebranch → is_in_timebranch``, and it is silent.
 
-        The canonical member is the one the datamodel calls the canonical form —
-        the v5.0 em_data.xlsx spelling, which is the one WITHOUT the directional
-        `is_…` prefix. Returns None when the candidates are not such a family, so
-        every other ambiguity still warns.
+        The canonical member is the one the datamodel declares canonical: the
+        others name it in `spelling_of` (connections 1.6.20). Only for a family
+        without that declaration does the older rule apply — the spelling
+        WITHOUT the directional `is_…` prefix. Returns None when the candidates
+        are not such a family, so every other ambiguity still warns.
         """
         if len(candidates) < 2:
             return None
@@ -459,7 +460,14 @@ class _InverseDatamodel:
             subprops.add(str(iri))
         if len(subprops) != 1:
             return None              # different relations, genuinely ambiguous
-        # the canonical spelling: no directional prefix, shortest wins the tie
+        # the canonical spelling is the one the datamodel DECLARES: every other
+        # member carries `spelling_of` naming it (connections 1.6.20)
+        declared = {(edges.get(n) or {}).get("spelling_of") or n
+                    for n in candidates}
+        if len(declared) == 1:
+            return declared.pop()
+        # a family the datamodel has not (yet) declared: the older rule — no
+        # directional prefix, shortest wins the tie
         return sorted(candidates, key=lambda n: (n.startswith("is_"), len(n), n))[0]
 
     def emits_inverted(self, edge_type: str) -> bool:
