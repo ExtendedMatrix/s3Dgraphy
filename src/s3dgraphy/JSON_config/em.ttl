@@ -13,7 +13,7 @@
 @prefix xsd:       <http://www.w3.org/2001/XMLSchema#> .
 
 # ============================================================================
-# Extended Matrix (EM) Ontology — v1.6.4
+# Extended Matrix (EM) Ontology — v1.6.5
 # ============================================================================
 # Formal extension of the CIDOC-CRM family + HDT-O for the Extended Matrix
 # stratigraphic + paradata + virtual-reconstruction modeling. Companion to
@@ -44,8 +44,8 @@
     dcterms:creator "Emanuele Demetrescu" ;
     dcterms:license <https://creativecommons.org/licenses/by/4.0/> ;
     dcterms:issued "2026-05-23"^^xsd:date ;
-    owl:versionInfo "1.6.2" ;
-    rdfs:comment "Formal ontology for Extended Matrix (EM): a human-readable layout for knowledge graphs of archaeological stratigraphy and virtual reconstruction. Extends CIDOC-CRM, CRMarchaeo, CRMinf, CRMdig, CRMgeo, with PROV-O for agent provenance and HDT-O for digital-twin granularity. This file declares the em: classes and properties introduced in s3dgraphy v1.6.0. v1.6.2 (2026-09-21, CIDOC repair pass): the eight terms the datamodels cited and this file never defined are declared in section 12; em:NodeGroup and em:ParadataNodeGroup leave the undeclared crm:E78_Collection for crm:E73_Information_Object and crm:E89_Propositional_Object; em:SemanticShape leaves crmgeo:SP5 for crm:E73_Information_Object, provisionally; crmarchaeo:AP11_has_physical_relation becomes AP11_has_physical_relation_to, the name CRMarchaeo has used since 2.0; and em:RepresentationModel says what a representation model IS."@en ;
+    owl:versionInfo "1.6.5" ;
+    rdfs:comment "Formal ontology for Extended Matrix (EM): a human-readable layout for knowledge graphs of archaeological stratigraphy and virtual reconstruction. Extends CIDOC-CRM, CRMarchaeo, CRMinf, CRMdig, CRMgeo, with PROV-O for agent provenance and HDT-O for digital-twin granularity. This file declares the em: classes and properties introduced in s3dgraphy v1.6.0. v1.6.2 (2026-09-21, CIDOC repair pass): the eight terms the datamodels cited and this file never defined are declared in section 12; em:NodeGroup and em:ParadataNodeGroup leave the undeclared crm:E78_Collection for crm:E73_Information_Object and crm:E89_Propositional_Object; em:SemanticShape leaves crmgeo:SP5 for crm:E73_Information_Object, provisionally; crmarchaeo:AP11_has_physical_relation becomes AP11_has_physical_relation_to, the name CRMarchaeo has used since 2.0; and em:RepresentationModel says what a representation model IS. v1.6.5 (2026-10-20, MICRO la definizione dell\'unita\'): em:hasDefinition, the DEFINIZIONE of a stratigraphic unit as a subproperty of crm:P2_has_type — declared for the node datamodel 1.6.9 entry StratigraphicNode.properties.definition, not emitted by default (owl:versionInfo was left at 1.6.2 by the 1.6.3/1.6.4 passes and is realigned here)."@en ;
     owl:imports <http://www.cidoc-crm.org/cidoc-crm/> ,
                 <http://www.cidoc-crm.org/extensions/crminf/> ,
                 <http://www.cidoc-crm.org/extensions/crmarchaeo/> ,
@@ -733,5 +733,19 @@ em:hasSemanticShape
     rdfs:comment "An entity is represented, for the purpose of spatial reasoning, by a simplified geometry that STANDS FOR it — a convex hull, a sphere, a proximity volume — as distinct from a geometry that measures it. The two answer different questions: a measured geometry says where the unit was found, a semantic shape says how it is to be reasoned about spatially when its true shape is unknown, irrelevant, or argued. NO SUPERPROPERTY: crmgeo places (SP5 and its neighbourhood) express a place expression, not a schematic stand-in, and since the proxy-as-property change of v1.6.10 the source of this relation includes a PropertyNode — a quale does not occupy a place, so a place-valued property would be false as well as imprecise. The CLASS is ours (em:SemanticShape, itself declared beneath crm:E73_Information_Object) because the stand-in is an information object and not a physical extent. Maps to: connections_datamodel edge has_semantic_shape (source Node, target SemanticShapeNode). Replaces the dead desideratum CIDOC-S3D:hasSymbolicSpatialRepresentation."@en .
 
 # ============================================================================
-# End of em.ttl v1.6.4
+# 13. NODE ELEMENTS — CRMem v1.6.5 (2026-10-20)
+#     Decided by E.D. on 2026-09-27: the definition of a unit is an ELEMENT
+#     OF THE NODE, like name and description — not a qualia.
+# ============================================================================
+
+em:hasDefinition
+    a owl:ObjectProperty ;
+    rdfs:label "has definition"@en ;
+    rdfs:subPropertyOf crm:P2_has_type ;
+    rdfs:domain crmarchaeo:A8_Stratigraphic_Unit ;
+    rdfs:range crm:E55_Type ;
+    rdfs:comment "The DEFINITION of a stratigraphic unit — strato di crollo, riempimento, taglio: the DEFINIZIONE box of the US sheet — as a concept of a controlled vocabulary (a SKOS concept, typed crm:E55_Type). It is a TYPE of the unit and nothing more, which is why it narrows crm:P2_has_type rather than widening anything: every em:hasDefinition triple IS a P2_has_type triple, and a CIDOC-only consumer reading the entailment loses nothing. What the subproperty adds is the ability to tell, in SPARQL, the definition from any other type a unit may carry. NOT EMITTED BY DEFAULT: the exporter writes crm:P2_has_type directly (node datamodel StratigraphicNode.properties.definition.rdf.with_concept), because an unreasoned store would otherwise not see the P2 edge at all; the switch is one line in that entry. A definition that carries only a label and no concept URI projects to nothing (rdf.label_only = null): a word is not a concept. Maps to: node_datamodel StratigraphicNode.properties.definition (em.json data.definition), inherited by every stratigraphic subtype."@en .
+
+# ============================================================================
+# End of em.ttl v1.6.5
 # ============================================================================

@@ -156,17 +156,12 @@ def test_the_rdf_reader_picks_the_same_canonical_as_the_datamodel():
 #:
 #: 2026-10-18: two. 2026-09-27 (una grafia sola): `sync/rapporti.py:
 #: parse_rapporti` REPAIRED — it writes `bonded_to` / `equals` in all ten
-#: languages. What is left was not touched, on purpose:
-KNOWN_LEGACY_WRITERS = {
-    # The one mapping on disk declaring the two columns, `edge_type:
-    # is_bonded_to` / `is_physically_equal_to`. The importer writes the name the
-    # mapping gives unless `source_settings.canonicalize_reverse` is on (then
-    # `_canonical_relation` brings the spelling home). Left alone because it is
-    # a level-3 file whose vocabulary is E.D.'s to change, and because making
-    # the importer rename by default is the same behaviour change
-    # `canonicalize_reverse` keeps opt-in until EMStudio and Heriverse agree.
-    "mappings/generic/excel_to_graphml_mapping.json",
-}
+#: languages. 2026-10-20 (MICRO, decided by E.D. on 2026-09-27):
+#: `mappings/generic/excel_to_graphml_mapping.json` REPAIRED — its `BONDED_TO`
+#: and `EQUALS` columns now declare `edge_type: bonded_to` / `equals`, so the
+#: generic importer writes the canonical name without `canonicalize_reverse`
+#: (which stays opt-in, untouched). None left: the set may only stay empty.
+KNOWN_LEGACY_WRITERS: set = set()
 
 
 def _legacy_writers() -> set:

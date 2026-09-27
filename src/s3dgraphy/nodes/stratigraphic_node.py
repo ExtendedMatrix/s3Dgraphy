@@ -1,11 +1,45 @@
 # 3dgraphy/nodes/stratigraphic_node.py
 
+from typing import Any, Optional, Tuple
+
 from .base_node import Node
+
+
+def definition_parts(value: Any) -> Tuple[Optional[str], Optional[str]]:
+    """``(concept_uri, label)`` of a unit's DEFINITION, or ``(None, None)``.
+
+    The definition is an element of the node (datamodel 1.6.9,
+    ``StratigraphicNode.properties.definition``) whose value is a CONCEPT:
+    ``{concept: <uri>, label: <str>}`` (stratigraph-templates SPEC §1.5). Also
+    read, because data written by hand will carry them: a bare string that is an
+    IRI (a concept without its label) and a bare string that is not (a label
+    without its concept). Nothing is invented for the second: it stays a label.
+    """
+    if isinstance(value, dict):
+        concept = value.get("concept")
+        label = value.get("label")
+        concept = concept.strip() if isinstance(concept, str) and concept.strip() else None
+        label = label.strip() if isinstance(label, str) and label.strip() else None
+        return concept, label
+    if isinstance(value, str) and value.strip():
+        text = value.strip()
+        if text.startswith(("http://", "https://", "urn:")):
+            return text, None
+        return None, text
+    return None, None
+
 
 class StratigraphicNode(Node):
     """
     Base class for all stratigraphic units within the graph structure.
     Inherits from Node and provides additional functionality specific to stratigraphy.
+
+    ``definition`` is the DEFINIZIONE of the unit sheet (strato di crollo,
+    riempimento, taglio…): an element of the node like ``name`` and
+    ``description``, not a qualia. Its value is a controlled-vocabulary concept
+    ``{concept, label}`` (see :func:`definition_parts`); em.json carries it as
+    ``data.definition``, which is also the field a CRDT ``update_field``
+    addresses.
     """
     node_type = "StratigraphicNode"
 
@@ -14,6 +48,7 @@ class StratigraphicNode(Node):
         self.symbol = None
         self.label = None
         self.detailed_description = None  # To avoid conflict with `description`
+        self.definition = None
 
 
 class StratigraphicUnit(StratigraphicNode):

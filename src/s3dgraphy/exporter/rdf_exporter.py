@@ -408,6 +408,21 @@ class _Datamodel:
         mapping = entry.get("mapping") or {}
         return "cidoc" in mapping and not (mapping.get("cidoc") or "").strip()
 
+    def get_node_element_rule(self, node: Any, element: str) -> Optional[Dict[str, Any]]:
+        """The declaration of a NODE ELEMENT (``properties.<element>`` given as
+        an object, e.g. ``StratigraphicNode.properties.definition``), inherited
+        down the class hierarchy: the first class in the MRO of ``node`` (a node
+        or a node class) whose datamodel entry declares it answers. A plain
+        string value (``"name": "P1_is_identified_by"``) is a mapping note, not
+        a declaration, and is not returned."""
+        klass = node if isinstance(node, type) else type(node)
+        for klass in klass.__mro__:
+            entry = self._node_class_index.get(klass.__name__) or {}
+            rule = (entry.get("properties") or {}).get(element)
+            if isinstance(rule, dict):
+                return rule
+        return None
+
     def get_qualia_crm_iri(self, property_type: Optional[str]) -> Optional[URIRef]:
         """Resolve a property_type string to its CIDOC class IRI.
 
@@ -598,6 +613,9 @@ class RDFExporter:
             # what `publish` left out; stays 0 in round_trip, where nothing is
             # left out and saying so is the point
             "removed_hidden": 0,
+            # definitions that carried a label and no concept URI, and so
+            # projected to whatever `rdf.label_only` says (by default: nothing)
+            "definitions_label_only": 0,
         }
 
     @staticmethod
@@ -986,11 +1004,60 @@ class RDFExporter:
         # type, so it belongs here and not in the per-type branches.
         self._serialize_editorial(node, node_iri, ctx)
 
+        # The unit's DEFINITION — an element of the node, declared (and its
+        # projection with it) in the node datamodel.
+        self._serialize_definition(node, node_iri, ctx)
+
         # Type-specific (node_type already computed above for primary IRI logic)
         self._serialize_type_specific(node, node_type, node_iri, ctx,
                                       graph_id=g.graph_id)
 
         self.stats["nodes"] += 1
+
+    def _serialize_definition(self, node: Any, node_iri: URIRef, ctx) -> None:
+        """Project the DEFINITION of a unit (datamodel 1.6.9). THE one place.
+
+        What is emitted is not decided here but read from the datamodel entry
+        ``StratigraphicNode.properties.definition.rdf``, so changing the
+        projection is one line of JSON:
+
+        * the value carries a concept URI →
+          ``<unit> <rdf.with_concept> <concept>`` (default ``crm:P2_has_type``)
+          and ``<concept> rdf:type <rdf.concept_class>`` (``crm:E55_Type``).
+          The label is NOT written on the concept: the concept belongs to its
+          vocabulary, which already labels it, and the label resolves at reading.
+        * the value carries only a label → ``rdf.label_only`` decides: ``null``
+          (default) = no triple, because a word is not a concept and an IRI
+          minted for it would claim a vocabulary entry that does not exist; a
+          property name (e.g. ``crm:P3_has_note``) = that property with the
+          label as a literal. Either way the case is counted in
+          ``stats["definitions_label_only"]``.
+        * no definition, or a node type that does not declare one → nothing.
+        """
+        rule = self.datamodel.get_node_element_rule(node, "definition")
+        if not rule:
+            return
+        data = getattr(node, "data", None)
+        value = data.get("definition") if isinstance(data, dict) else None
+        if value is None:
+            value = getattr(node, "definition", None)
+        from ..nodes.stratigraphic_node import definition_parts
+        concept, label = definition_parts(value)
+        rdf = rule.get("rdf") or {}
+        if concept:
+            predicate = _resolve_prefixed(rdf.get("with_concept"))
+            if predicate is None:
+                return
+            concept_iri = URIRef(concept)
+            ctx.add((node_iri, predicate, concept_iri))
+            concept_class = _resolve_prefixed(rdf.get("concept_class"))
+            if concept_class is not None:
+                ctx.add((concept_iri, RDF.type, concept_class))
+        elif label:
+            self.stats["definitions_label_only"] += 1
+            predicate = _resolve_prefixed(rdf.get("label_only"))
+            if predicate is not None:
+                ctx.add((node_iri, predicate, Literal(label)))
 
     def _serialize_authority_refs(self, node: Any, node_iri: URIRef, ctx) -> None:
         """Emit `data.authority_refs` as SKOS/OWL alignment triples.

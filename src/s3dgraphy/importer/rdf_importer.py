@@ -842,6 +842,7 @@ class RDFImporter:
         # where they are written (`_serialize_editorial`) — one generic pass, not
         # a line in each branch.
         data.update(self._editorial_data(store, ref))
+        data.update(self._definition_data(store, ref, class_name, node_id))
         if data:
             payload["data"] = data
 
@@ -851,6 +852,40 @@ class RDFImporter:
         g.add_node(node, overwrite=True)
         self.stats["nodes"] += 1
         return node_id, class_name
+
+    def _definition_data(self, store: ConjunctiveGraph, ref: URIRef,
+                         class_name: Optional[str],
+                         node_id: str) -> Dict[str, Any]:
+        """The inverse of ``RDFExporter._serialize_definition``, reading the SAME
+        datamodel entry (``properties.definition.rdf``) — so the projection is
+        still decided in one place. A concept comes back as ``{concept}``: the
+        label was never written on it, and resolves at reading. A label comes
+        back only when ``rdf.label_only`` names a property (by default it names
+        none, and a label-only definition does not survive RDF — by design)."""
+        klass = self.inverse.class_by_name.get(class_name or "")
+        if klass is None:
+            return {}
+        rule = self.inverse.dm.get_node_element_rule(klass, "definition")
+        if not rule:
+            return {}
+        rdf = rule.get("rdf") or {}
+        predicate = _resolve_prefixed_name(rdf.get("with_concept"))
+        if predicate is not None:
+            concepts = sorted(str(o) for o in store.objects(ref, predicate)
+                              if isinstance(o, URIRef)
+                              and (o, DCTERMS.identifier, None) not in store)
+            if len(concepts) > 1:
+                self.warnings.append(
+                    f"node '{node_id}': {len(concepts)} definition concepts "
+                    f"{concepts} — kept the first")
+            if concepts:
+                return {"definition": {"concept": concepts[0]}}
+        predicate = _resolve_prefixed_name(rdf.get("label_only"))
+        if predicate is not None:
+            label = self._one_literal(store, ref, predicate)
+            if label:
+                return {"definition": {"label": label}}
+        return {}
 
     def _instantiate(self, node_type: Optional[str], class_name: str,
                      payload: Dict[str, Any]) -> Optional[Node]:

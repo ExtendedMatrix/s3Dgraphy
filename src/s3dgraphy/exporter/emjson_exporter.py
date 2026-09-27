@@ -62,6 +62,7 @@ _LIFTED_ATTRS = (
     "value", "property_type", "url",             # PropertyNode / ResourceNode
     "source",                                     # ExtractorNode
     "symbol", "label",                            # class-level display metadata
+    "definition",                                 # StratigraphicNode (a concept)
 )
 
 

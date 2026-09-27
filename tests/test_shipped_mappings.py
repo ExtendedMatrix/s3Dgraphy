@@ -183,3 +183,57 @@ def test_every_shipped_mapping_carries_a_current_stamp(path):
     mapping = json.loads(Path(path).read_text(encoding="utf-8"))
     assert api.mapping_stamp_check(mapping) == [], (
         f"{os.path.basename(path)}: re-stamp it with api.mapping_stamp")
+
+
+# ── the generic mapping writes the canonical spelling ────────────────────────
+# 2026-10-20 (MICRO, decided by E.D. on 2026-09-27): the `BONDED_TO` and
+# `EQUALS` columns declared `is_bonded_to` / `is_physically_equal_to`, the two
+# older spellings the connections datamodel accepts when read and never writes.
+# They now declare `bonded_to` / `equals`. Measured on a real .xlsx, in the
+# format and sheet the mapping ships with — not on the csv shortcut above.
+
+def _write_minimal_xlsx(path):
+    openpyxl = pytest.importorskip("openpyxl")
+    mapping = json.loads(GENERIC.read_text(encoding="utf-8"))
+    header = list(csv.reader(FIXTURE.open(encoding="utf-8")))[0]
+    rows = [dict.fromkeys(header, None) for _ in range(4)]
+    for row, uid in zip(rows, ("US10", "US11", "US12", "US13")):
+        row.update(ID=uid, TYPE="US", DESCRIPTION=f"unit {uid}")
+    rows[0]["BONDED_TO"] = "US11"
+    rows[2]["EQUALS"] = "US13"
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = mapping["table_settings"]["sheet_name"]
+    ws.append(header)
+    for row in rows:
+        ws.append([row[h] for h in header])
+    wb.save(path)
+    return mapping
+
+
+def test_the_generic_mapping_writes_bonded_to_and_equals(tmp_path):
+    from s3dgraphy.edges.connections_loader import get_connections_datamodel
+
+    xlsx = tmp_path / "minimal.xlsx"
+    mapping = _write_minimal_xlsx(xlsx)
+    res = api.mapping_apply(mapping, str(xlsx), mode="volatile",
+                            mapping_name="excel_to_graphml_mapping")
+    assert res["ok"], res.get("errors")
+    g = res["graph"]
+    names = {n.node_id: getattr(n, "name", n.node_id) for n in g.nodes}
+    physical = {(names[e.edge_source], e.edge_type, names[e.edge_target])
+                for e in g.edges
+                if names.get(e.edge_source, "").startswith("US1")
+                and names.get(e.edge_target, "").startswith("US1")}
+    assert ("US10", "bonded_to", "US11") in physical
+    assert ("US12", "equals", "US13") in physical
+    written = {t for _s, t, _d in physical}
+    assert not written & {"is_bonded_to", "is_physically_equal_to"}
+
+    # a reader that asks by alias still finds them
+    dm = get_connections_datamodel()
+    for legacy, canonical in (("is_bonded_to", "bonded_to"),
+                              ("is_physically_equal_to", "equals")):
+        assert canonical in dm.spellings(legacy)
+        assert dm.normalize_edge_name(legacy) == canonical
+        assert [e for e in g.edges if e.edge_type in dm.spellings(legacy)]
