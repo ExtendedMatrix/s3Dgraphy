@@ -20,11 +20,16 @@ logger = logging.getLogger(__name__)
 #: not listed: the datamodel declares them and repeating them here is how the two
 #: lists come to disagree.
 #:
-#: `bonded_to` and `equals` are AP11 physical relations too and are deliberately
-#: NOT seeded: they are aliases of `is_bonded_to` / `is_physically_equal_to`, and
-#: adding them would widen what the importer treats as edge-only for mappings
-#: that name them today — a silent change of behaviour that belongs in its own
-#: round, not in this one.
+#: The symmetric pair is seeded in its LEGACY spelling. The datamodel calls
+#: `bonded_to` and `equals` the canonical forms (v5.0 em_data.xlsx) and
+#: `is_bonded_to` / `is_physically_equal_to` the older spellings of the same
+#: relations — `em.ttl` maps each pair onto ONE property, `em:bondedTo` and
+#: `em:physicallyEquals`. The seed still names the legacy pair because the one
+#: mapping on disk that declares these columns (`generic/excel_to_graphml_mapping`)
+#: names them that way. Seeding the canonical pair as well is a change of
+#: behaviour — a mapping naming `bonded_to` without `is_relation` would stop
+#: turning that column into a property — so it is proposed, not made here
+#: (report 2026-10-18-MICRO-i-nomi-dei-legami-fisici).
 _STRATIGRAPHIC_SEED = (
     "overlies", "cuts", "fills", "abuts",
     "is_bonded_to", "is_physically_equal_to",
