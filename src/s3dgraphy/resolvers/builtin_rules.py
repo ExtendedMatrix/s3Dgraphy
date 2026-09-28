@@ -61,6 +61,74 @@ def _node_temporal_property(graph, node, property_type):
     return None
 
 
+# ---------------------------------------------------------------------------
+# Containment terminus post quem — READ-TIME, nothing is written
+# ---------------------------------------------------------------------------
+
+def _contained_in(graph, node):
+    """The nodes this one contains: the source end of its ``is_part_of`` edges."""
+    members = []
+    for edge in getattr(graph, "edges", []) or []:
+        if getattr(edge, "edge_type", None) != "is_part_of":
+            continue
+        if getattr(edge, "edge_target", None) != node.node_id:
+            continue
+        member = graph.find_node_by_id(edge.edge_source)
+        if member is not None:
+            members.append(member)
+    return members
+
+
+def containment_tpq(graph, node, _seen=None):
+    """Terminus post quem a node gets from what it contains, computed on read.
+
+    The oldest rule in the trade, and the reason finds are recorded by locus at
+    all: a deposit cannot have formed BEFORE the most recent thing found in it.
+    An Umayyad sherd in a layer says the layer is Umayyad or later; the Iron Age
+    sherd beside it says nothing, because it was already old when it arrived.
+
+    It is a READING, not a value. Nothing is written to the node and nothing
+    reaches the document: change a find's epoch, or move it to another locus,
+    and the next call answers differently. That is the point. A computed date
+    stamped onto a node stops being a consequence and becomes a claim nobody
+    made — and `attributes` are lifted into em.json, so it would travel as one.
+
+    Recurses through nested containment (a fragment inside a reconstructed
+    whole, that whole inside a unit), with a visited set so that a containment
+    cycle in bad data returns instead of spinning.
+
+    Returns ``(value, witness_node)``, or ``None`` when nothing inside is dated.
+    Only the start is read: a find dates the earliest moment the deposit can
+    have formed and says nothing about the latest, so no terminus ante quem is
+    inferred from residual material.
+    """
+    from .property_resolver import resolve, get_rule
+
+    seen = set(_seen or ())
+    if node.node_id in seen:
+        return None
+    seen.add(node.node_id)
+
+    best = None
+    for member in _contained_in(graph, node):
+        candidates = []
+        own = resolve(graph, member, get_rule("absolute_time_start"))
+        if own is not None:
+            candidates.append((float(own), member))
+        nested = containment_tpq(graph, member, seen)
+        if nested is not None:
+            candidates.append((nested[0], member))
+        for value, witness in candidates:
+            if best is None or value > best[0]:
+                best = (value, witness)
+    return best
+
+
+def _containment_tpq_node(graph, node):
+    found = containment_tpq(graph, node)
+    return found[0] if found else None
+
+
 def _absolute_time_start_node(graph, node):
     return _node_temporal_property(graph, node, "absolute_time_start")
 
@@ -390,6 +458,17 @@ EMBARGO_RULE = PropagationRule(
 # Register on import
 # ---------------------------------------------------------------------------
 
+CONTAINMENT_TPQ_RULE = PropagationRule(
+    id="containment_tpq",
+    label="Terminus post quem from contained objects",
+    # Node level only, and deliberately: this is not a scope that falls back to
+    # the swimlane or the canvas. Either something dated is inside this node, or
+    # the reading has nothing to say.
+    node_getter=_containment_tpq_node,
+)
+
+
 for _r in (CHRONOLOGY_START_RULE, CHRONOLOGY_END_RULE,
-           AUTHOR_RULE, LICENSE_RULE, EMBARGO_RULE):
+           AUTHOR_RULE, LICENSE_RULE, EMBARGO_RULE,
+           CONTAINMENT_TPQ_RULE):
     register_rule(_r)

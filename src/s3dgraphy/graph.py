@@ -1055,6 +1055,68 @@ class Graph:
     #   `is_in_functional_unit`  TAG — m:n membership in a Functional Unit,
     #                            which legitimately spans epochs and therefore
     #                            cannot be a swimlane box.
+    def chronology_now(self, node):
+        """What this node's chronology is AT THIS MOMENT. Computes, stores nothing.
+
+        ``calculate_chronology`` is the other thing: it walks the graph once and
+        writes ``CALCUL_START_T`` / ``CALCUL_END_T`` onto the nodes. Those
+        attributes are lifted into ``em.json`` by the exporter — measured on
+        Yavneh Area M4, 482 start values and 381 end values land in the document
+        — so a value computed there stops being a consequence of the graph and
+        travels as if someone had asserted it.
+
+        This reader answers the same question without leaving a trace. Move a
+        find to another locus, correct an epoch, delete a sherd, and the next
+        call says something different, because it reads the graph rather than a
+        stamp of what the graph used to say.
+
+        Returns a dict:
+
+        ``start`` / ``end``
+            the effective bounds right now. ``start`` is the later of what the
+            node declares (or inherits from its epochs) and what the objects
+            inside it require.
+        ``start_from``
+            ``"node"`` or ``"swimlane"`` when the declared value stands,
+            ``"contains"`` when the objects inside are what push it later.
+        ``tpq`` / ``tpq_from``
+            the containment terminus post quem on its own, and the name of the
+            object that carries it — so a reader can say WHICH find dates the
+            unit, which is the first thing an excavator asks.
+        ``conflict``
+            set when the node DECLARES a start earlier than the objects inside
+            it allow. The declared value is returned unchanged: that case is
+            intrusive material, or a find attributed to the wrong unit, or a
+            date to revise, and none of the three is a library's to decide.
+        """
+        from .resolvers import resolve_with_source, get_rule
+        from .resolvers.builtin_rules import containment_tpq
+
+        start, start_from = resolve_with_source(
+            self, node, get_rule("absolute_time_start"))
+        end, _ = resolve_with_source(self, node, get_rule("absolute_time_end"))
+        found = containment_tpq(self, node)
+
+        out = {"start": start, "start_from": start_from if start is not None else None,
+               "end": end, "tpq": None, "tpq_from": None, "conflict": None}
+        if found is None:
+            return out
+
+        tpq, witness = found
+        out["tpq"] = tpq
+        out["tpq_from"] = getattr(witness, "name", witness.node_id)
+
+        if start is None:
+            out["start"], out["start_from"] = tpq, "contains"
+        elif tpq > start:
+            if start_from == "node":
+                out["conflict"] = (
+                    f"declared start {start}, but it contains "
+                    f"'{out['tpq_from']}' which starts at {tpq}")
+            else:
+                out["start"], out["start_from"] = tpq, "contains"
+        return out
+
     CONTAINMENT_EDGE = "is_part_of"
     FUNCTIONAL_UNIT_EDGE = "is_in_functional_unit"
     RM_GROUP_EDGE = "is_in_representation_model_group"
