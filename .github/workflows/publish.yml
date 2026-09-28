@@ -138,6 +138,14 @@ jobs:
     # Quindi si chiede. Se l'attestazione non c'è, il job è ROSSO anche se la
     # wheel è su PyPI: il pacchetto resta pubblicato — non si può disfare, ed è
     # giusto così — ma nessuno legge «verde» e va a dormire.
+    #
+    # Il 28 settembre 2026 questo cancello è diventato rosso su un publish
+    # riuscito: PyPI rispondeva 503 all'endpoint /integrity/ — a ciò che aveva
+    # e a ciò che non aveva — e lo script contava ogni non-200 come «assente».
+    # Venti minuti dopo, stessa versione, 200 con l'attestazione giusta. Ora lo
+    # script ritenta sui 5xx e distingue «non c'è» (404) da «non lo so» (5xx):
+    # il secondo resta rosso, perché non verificato non è verificato, ma dice
+    # di rilanciare invece di mandare a riconfigurare un publisher che funziona.
     - name: La provenance esiste (o il job è rosso)
       if: github.event.inputs.target == 'pypi'
       run: ./scripts/verifica-provenance.sh "${{ steps.versione.outputs.numero }}"
