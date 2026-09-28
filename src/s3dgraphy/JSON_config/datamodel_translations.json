@@ -2328,6 +2328,27 @@
     "de": "Zuschreibung"
    }
   },
+  "boundary_distinctness": {
+   "label": {
+    "en": "Boundary Distinctness",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Nettezza dei limiti",
+    "el": "Ευκρίνεια των ορίων",
+    "he": "חדות הגבולות",
+    "es": "Nitidez de los límites",
+    "pl": "Wyrazistość granic",
+    "ro": "Claritatea limitelor",
+    "fr": "Netteté des limites",
+    "de": "Deutlichkeit der Grenzen"
+   }
+  },
   "bounding_box": {
    "label": {
     "en": "Bounding Box",
@@ -2893,6 +2914,27 @@
     "ro": "Istoricul expozițiilor",
     "fr": "Historique des expositions",
     "de": "Ausstellungsgeschichte"
+   }
+  },
+  "feature_shape": {
+   "label": {
+    "en": "Feature Shape",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Forma dell'unità",
+    "el": "Σχήμα της μονάδας",
+    "he": "צורת היחידה",
+    "es": "Forma de la unidad",
+    "pl": "Kształt jednostki",
+    "ro": "Forma unității",
+    "fr": "Forme de l'unité",
+    "de": "Form der stratigraphischen Einheit"
    }
   },
   "finish": {

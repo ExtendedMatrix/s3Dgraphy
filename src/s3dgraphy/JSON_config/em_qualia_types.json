@@ -1,11 +1,11 @@
 {
     "metadata": {
-      "version": "1.6.1",
-      "last_updated": "2026-08-11",
+      "version": "1.6.2",
+      "last_updated": "2026-09-28",
       "maintainers": ["Emanuel Demetrescu"],
       "license": "CC-BY-SA-4.0",
       "license_note": "Share-alike per allinearsi agli strumenti terminologici da cui questo datamodel prende gli ancoraggi (ICCD CC BY-SA 3.0 IT) e perche' una derivazione resti aperta. Gli identificatori AAT/CIDOC citati nei `mappings` sono RIFERIMENTI, non contenuto incorporato: lo share-alike non si propaga ai vocabolari altrui, che mantengono i propri termini.",
-      "changelog": "v1.6.1: added the spatial qualia `geometry` — the PROXY as a quale. The geometry-without-material of a unit becomes a PropertyNode whose payload is a SemanticShapeNode (has_semantic_shape), so the proxy inherits the paradata chain a lone node could not have, and one proxy can be synthesised from several sources. CIDOC default crmgeo:SP5_Geometric_Place_Expression, flagged `confirm_with: Felicetti` (E36 is the alternative, to be decided together with em:AnnotationRegion). v1.6.0: version realigned to the EM language version (EM 1.6) — supersedes the standalone 4.x line (last was 4.2), so all EM JSON config files now share the 1.6.x scheme. Added optional `rationale` + `example` fields to qualia entries (a plain-language why + a concrete case), shown by the EMStudio vocabulary picker when creating a PropertyNode. Seeded for the temporal qualia (absolute_time_start / absolute_time_end / dating_method); to be filled in for the rest incrementally. Prior (4.x) history: v4.2 added rationale/example scaffolding; v4.1: expanded spatial elevation qualia for pyArchInit us_table quote (all E54_Dimension): elevation_relative, elevation_min_absolute, elevation_max_absolute, elevation_min_relative, elevation_max_relative, elevation_min_usm, elevation_max_usm (the generic 'elevation' = absolute MASL, used by quota_abs). Each pyArchInit quota column maps to its own qualia id so they don't collide on the single-PropertyNode-per-property_name rule. v4.0: verified all v3.0 CIDOC-CRM mappings (correct). Expanded with: volume, area, circumference in dimensional; color, texture, finish, patina, hardness, porosity in material; damage_type, fragility, completeness in state; tool_marks, joining_technique in technical; bounding_box, footprint_area in spatial; duration, terminus_post_quem, terminus_ante_quem, relative_chronology in temporal; ceremonial_function, ritual_function, defensive_function, domestic_function, symbolic_function in telic; school, workshop, period_attribution in stylistic. NEW subcategories: iconographic + semantic under cultural_interpretive (iconographic_subject, narrative_content, iconographic_program, aesthetic_value, religious_significance, monumental_status, attribution). Added provenance_history, exhibition_history, publication_history under administrative; NEW ownership subcategory (current_custodian, ownership_chain). NEW CATEGORY epistemic — meta-qualia central to EM paradata model (confidence_level, certainty_level, uncertainty_factors, methodology_used, validation_method, source_quality, primary_contributor, review_status, last_modified)."
+      "changelog": "v1.6.2: added two descriptive qualia of the stratigraphic unit asked for by the DAI record (iDAI.field Layer, D7/D8) — proposte da Cowork per E.D., 28 set 2026, dalla scheda DAI: `feature_shape` (spatial; the shape in plan or section named with a term, AAT 300056273, E55_Type) and `boundary_distinctness` (material; how sharp the limits are: abrupt / clear / gradual / diffuse, E55_Type, no AAT evident). Both controlled vocabularies with indicative seed values; templates declare their own. v1.6.1: added the spatial qualia `geometry` — the PROXY as a quale. The geometry-without-material of a unit becomes a PropertyNode whose payload is a SemanticShapeNode (has_semantic_shape), so the proxy inherits the paradata chain a lone node could not have, and one proxy can be synthesised from several sources. CIDOC default crmgeo:SP5_Geometric_Place_Expression, flagged `confirm_with: Felicetti` (E36 is the alternative, to be decided together with em:AnnotationRegion). v1.6.0: version realigned to the EM language version (EM 1.6) — supersedes the standalone 4.x line (last was 4.2), so all EM JSON config files now share the 1.6.x scheme. Added optional `rationale` + `example` fields to qualia entries (a plain-language why + a concrete case), shown by the EMStudio vocabulary picker when creating a PropertyNode. Seeded for the temporal qualia (absolute_time_start / absolute_time_end / dating_method); to be filled in for the rest incrementally. Prior (4.x) history: v4.2 added rationale/example scaffolding; v4.1: expanded spatial elevation qualia for pyArchInit us_table quote (all E54_Dimension): elevation_relative, elevation_min_absolute, elevation_max_absolute, elevation_min_relative, elevation_max_relative, elevation_min_usm, elevation_max_usm (the generic 'elevation' = absolute MASL, used by quota_abs). Each pyArchInit quota column maps to its own qualia id so they don't collide on the single-PropertyNode-per-property_name rule. v4.0: verified all v3.0 CIDOC-CRM mappings (correct). Expanded with: volume, area, circumference in dimensional; color, texture, finish, patina, hardness, porosity in material; damage_type, fragility, completeness in state; tool_marks, joining_technique in technical; bounding_box, footprint_area in spatial; duration, terminus_post_quem, terminus_ante_quem, relative_chronology in temporal; ceremonial_function, ritual_function, defensive_function, domestic_function, symbolic_function in telic; school, workshop, period_attribution in stylistic. NEW subcategories: iconographic + semantic under cultural_interpretive (iconographic_subject, narrative_content, iconographic_program, aesthetic_value, religious_significance, monumental_status, attribution). Added provenance_history, exhibition_history, publication_history under administrative; NEW ownership subcategory (current_custodian, ownership_chain). NEW CATEGORY epistemic — meta-qualia central to EM paradata model (confidence_level, certainty_level, uncertainty_factors, methodology_used, validation_method, source_quality, primary_contributor, review_status, last_modified)."
     },
     "qualia_categories": [
       {
@@ -211,6 +211,21 @@
                 "vocabulary_source": "custom",
                 "values": ["smooth", "rough", "granular", "polished", "weathered", "fibrous", "crystalline"],
                 "expected_extractors": ["visual_inspection", "tactile_examination", "microscopic_analysis"]
+              },
+              {
+                "id": "boundary_distinctness",
+                "name": "Boundary Distinctness",
+                "description": "How sharply the unit is set off from the units in contact with it — the clarity of its limits as seen in plan or section (sharp, clear, gradual, diffuse). A judgement on the interface, not on the unit's shape (see feature_shape) nor on its material.",
+                "mappings": {
+                  "cidoc_crm": "E55_Type",
+                  "mapping_note": "E55_Type as every classificatory quale in this file. No Getty AAT concept is evidently this one: left empty on purpose, not forgotten."
+                },
+                "data_type": "controlled_vocabulary",
+                "vocabulary_source": "custom",
+                "values": ["abrupt", "clear", "gradual", "diffuse"],
+                "rationale": "Whether a limit is sharp or diffuse is how an excavator says how much to trust the limit itself: a diffuse boundary means the line on the plan is an interpretation, and the relations drawn across it are weaker. Recording schemes ask it separately from colour and texture (iDAI.field `featureBorders`, the 'clarity' of a horizon in soil description), so it needs its own quale. The seed values follow the soil-description scale (abrupt / clear / gradual / diffuse); a template may declare its own vocabulary (iDAI.field: deutlich, diffus, verwaschen… — a list that also mixes in the topography of the boundary: eben, wellig, gezackt).",
+                "example": "US 3014: upper boundary clear, lower boundary diffuse into US 3021.",
+                "expected_extractors": ["visual_inspection"]
               },
               {
                 "id": "finish",
@@ -577,6 +592,22 @@
                 "rationale": "Before EM 1.6.2 the proxy was a SemanticShapeNode hanging off the unit on its own, and a lone node cannot say where it came from: it had no paradata chain, so 'the proxy of US101' could not be traced to a measurement, a photograph or a reprojection. As a property it inherits the chain every other quale has (extractor → combiner → property), which is also what lets ONE proxy be synthesised from several sources — a 3D model plus a historical photograph — instead of one node per source with nothing to join them.",
                 "example": "The volume of US101 reconstructed from a photogrammetric mesh and a 1931 photograph: one geometry property, two extractors, a combiner, and a SemanticShape carrying the resulting convex hull.",
                 "expected_extractors": ["3d_model_measurement", "photogrammetric_reprojection", "2d_annotation_reprojection", "geometric_calculation"]
+              },
+              {
+                "id": "feature_shape",
+                "name": "Feature Shape",
+                "description": "The shape of the unit in plan or in section, named with a term (circular, oval, rectangular, U-shaped, V-shaped, irregular…). The DESCRIBED shape, as a word; the measured shape is geometry.",
+                "mappings": {
+                  "getty_aat": "300056273",
+                  "cidoc_crm": "E55_Type",
+                  "mapping_note": "AAT 300056273 = shape (form attribute). E55_Type as every classificatory quale in this file."
+                },
+                "data_type": "controlled_vocabulary",
+                "vocabulary_source": "custom",
+                "values": ["circular", "oval", "rectangular", "square", "elongated", "U-shaped", "V-shaped", "basin-shaped", "funnel-shaped", "irregular"],
+                "rationale": "The shape of a pit or a deposit is one of the first things written on a context sheet and one of the most used to compare units, long before (and often instead of) a measured geometry. Kept apart from geometry because the two answer different questions: geometry is WHERE and HOW MUCH, with a proxy behind it; feature_shape is a classification an excavator commits to by eye. Seed values are indicative; a template may declare its own vocabulary (iDAI.field `featureForm`: U-förmig, oval, wannenförmig…).",
+                "example": "US 3009 (cut): U-shaped in section, oval in plan — two properties, the plane said in the paradata or in the template's field.",
+                "expected_extractors": ["visual_inspection", "3d_model_measurement"]
               }
             ]
           },
