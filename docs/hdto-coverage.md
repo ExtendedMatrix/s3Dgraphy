@@ -22,10 +22,11 @@ archaeology authoring concern.
 |----|-------|-------------|--------|
 | HC1 | Heritage Entity | **`HeritageEntityNode`** (`hdto_nodes`, → `hdto:HC1` ⊂ `crm:E1`) | **added** |
 | HC2 | Heritage Digital Twin | `HDTNode` (→ `hdto:HC2`) | mapped |
-| HC3 | Tangible Aspect of an HC1 | specialization of HC1 | defer |
+| HC3 | Tangible Heritage Entity | specialization of HC1 | defer |
 | HC4 | Intangible Heritage Entity | specialization of HC1 | defer |
 | HC5 | Digital Representation | `RepresentationModelNode` family — **Type-A annotated** `hdto:HC5` (keeps `crmdig:D1`) | **annotated** |
-| HC6 | Sensor | — | out-of-scope (IoT / SensorThings) |
+| HC6 | (unlabelled in D7.1 Draft-7) | — | ⚠ see note below |
+| HC8 | 3D Model | `RepresentationModelNode` family, 3D side — declared in D7.1 with `HP21 is 3D representation output of` and `crmdig:D2/L20` | **to map** |
 | HC7 | Digital Audiovisual Object | `RepresentationModel*` covers 3D; AV n/a | defer |
 | HC9 | Study | **`StudyNode`** (`hdto_nodes`, → `hdto:HC9` ⊂ `crm:E7`) | **added** |
 | HC10 | Heritage Valuation | — | defer |
@@ -41,6 +42,19 @@ archaeology authoring concern.
 | HC20 | Criminal Activity | — | out-of-scope |
 
 > HC21–HC29 (SensorThings API module) are a separate D7.1 section, out of P1-C scope.
+
+> ⚠ **Corrected 28 September 2026, measured on `D7.1 - Draft-7-revVQ.docx`.** Two rows of this
+> table were wrong and one was missing. **HC8 3D Model is declared in D7.1** — it has its own
+> section, a scope note, the property `HP21 is 3D representation output of` towards HC1 and an
+> alignment to `crmdig:D2 Digitization Process` / `crmdig:L20 has created` — and this table had no
+> row for it at all; it is the class the case-study alignments in StratiGraph D3.1 use for 3D
+> models, so the omission was ours. **HC6 has no section and no declared label** in that draft: it
+> appears once, parenthetically, attached to «a resource page», so neither «Sensor» (what this
+> table said) nor «Digital Document» nor «Sensor Data» can be confirmed, and HC6 should not be
+> cited until D7.1 settles it. **HC3 is «Tangible Heritage Entity»** in D7.1, not the gloss
+> «Tangible Aspect of an HC1» used here. HC9 Study likewise has a section although it is missing
+> from the draft's own class list.
+
 
 ## Properties (HP1–HP26+) — mostly EDGES, not node types
 
