@@ -1,6 +1,6 @@
 {
   "formal_language": "EM",
-  "version": "1.6.18",
+  "version": "1.6.19",
   "_note_material_vs_qualia_color": [
     "DUE COSE DIVERSE CHE SI CHIAMANO ENTRAMBE color. Non confonderle: e gia successo.",
     "1) QUI, in node_styles.<tipo>.style.material.rgba_color — il COLORE DEL MATERIALE BLENDER del proxy 3D, in float LINEARI. UNA sola chiave: `rgba_color`. Fino a S8 il file ne usava due (`color` sui 13 tipi stratigrafici, `rgba_color` sugli altri) e get_material_color() ne leggeva una sola, restituendo None per 21 tipi su 38; ora sono unificate e la vecchia `color` e letta solo come tolleranza verso file scritti prima. Un tipo che non diventa mai una mesh NON ha material affatto (i contenitori di gruppo, e da S7 i dieci nodi che rendono per icona): per loro get_material_color() torna None, ed e corretto.",
@@ -9,6 +9,7 @@
     "In breve: qui si decide di che colore DISEGNARE una US; li si registra di che colore ERA."
   ],
   "_changelog": {
+    "1.6.19": "THE RIGHT HALF (E.D., 29 Sep 2026, MICRO-cronologia § 4). Seventeen declarations named the wrong half — `2d_file_vect` pointing at a `.png` (AUTH_AI, LIC, EMB, TSU, serUSD) or `2d_file_rast` pointing at an `.svg` (EP, GEO, GRAPH, LINK, RM, RMDoc, RMSF, SE, SS, serUSVs, GCP, RGT). Each duplicated the OTHER field of the same style, so removing it changes nothing icons.ts draws (it dedupes by basename); it only stops a field from lying about its kind. The rule is now enforced by tests/test_visual_assets.py: vect → .svg, rast → .png. AUTH_AI / LIC / EMB are left raster-only on purpose: their vector pictograms exist as drafts in src/2D/bozze/ and are pointed at only after E.D. approves them (NIGHT-GLIFI referto § 5). REMOVAL, no style added.",
     "1.6.18": "THE GLYPHS BECOME PATHS (E.D., 28 Sep 2026). New block `2d_glyphs`: for every 2d_render_glyph_types type and every dtc_kinds glyph, the official pictogram as vector paths (absolute M/L/C/Z, one colour per layer, a closed `_roles` vocabulary saying which colours a consumer may retheme). Generated from the authored SVGs by s3dgraphy.tools.glyphs_from_svg and guarded by tests/test_glyph_paths.py (drift zero). Five pictograms that existed only as PNG (author_ai, license, embargo) or whose vector was not the pictogram (author: a Font Awesome silhouette; narrative: a 617 KB stipple illustration) are redrawn as DRAFTS in src/2D/bozze/ and flagged `draft: true` until E.D. approves them. One aspect corrected: author 0.875 → 0.984 (see 2d_render_glyph_types._aspect_correction_1_6_18). ADDITIVE otherwise: no existing style changed, 2d_file_vect/2d_file_rast kept for consumers that do not read the block.",
     "1.6.16": "Asset declarations made TRUE. Four styles named a 2D file that is not there — SE.png, TSU.svg, serUSD.svg and unknown.png (which never existed) — and GRAPH named two, so it drew no icon at all. icons.ts returns null for a missing file and the canvas quietly draws the shape, so all five failed silently. Now: graph.svg authored (neutral gray, three nodes and their edges, the meta-container), unknown points at the generic_node.svg that exists, the three stale halves name the file that is there. Enforced by tests/test_visual_assets.py; the 16 unmodelled .glb are REPORTED (there and in sync-datamodels.sh), not asserted — a placeholder that looks official is harder to notice than an absence.",
     "1.6.15": "Georeferencing gets its symbol on the canvas: node_styles GCP (GCPSetNode, crosshair) and RGT (RegistrationTransformNode, axes + rotation arc), in the same #FF6600 reference family as GEO/SS/LINK, each with its own 2D icon. ADDITIVE. Also 1.6.14-era: dtc_kinds.process.photogrammetry. Note the limit of a per-TYPE rule: whether a transform is georeferenced or a site-local frame is an INSTANCE fact (data.crs) and is read from the has_gcp_set edge, not from the style.",
@@ -2065,7 +2066,6 @@
     "serUSD": {
       "3d_file": "src/3D/serUSD.glb",
       "2d_file_rast": "src/2D/serUSD.png",
-      "2d_file_vect": "src/2D/serUSD.png",
       "style": {
         "material": {
           "rgba_color": {
@@ -2106,7 +2106,6 @@
     },
     "serUSVs": {
       "file_3d": "src/3D/serUSVs.glb",
-      "2d_file_rast": "src/2D/serUSVs.svg",
       "2d_file_vect": "src/2D/serUSVs.svg",
       "style": {
         "material": {
@@ -2128,7 +2127,6 @@
     "TSU": {
       "3d_file": "src/3D/TSU.glb",
       "2d_file_rast": "src/2D/TSU.png",
-      "2d_file_vect": "src/2D/TSU.png",
       "style": {
         "material": {
           "rgba_color": {
@@ -2173,7 +2171,6 @@
     "SE": {
       "_comment": "Stratigraphic Event: l'ATTO che crea, modifica o distrugge un'unita — un terremoto che fa cadere l'intonaco, una demolizione, l'inizio di un cantiere. Non e materia, e un processo, e per questo non appartiene a nessuna delle famiglie cromatiche della materia (rosso reale, verde/blu virtuale, arancio documentario, giallo special find, grigio negativo). Prende il TEAL della famiglia attivita: un ActivityNodeGroup e un fascio di atti e porta gia la linguetta ciano #CCFFFF, quindi il ciano e l'unico colore del linguaggio che dice gia 'e successo qualcosa' invece di 'qualcosa c'e'. Curato in S10 (2026-08-02): fino ad allora SE portava il segnaposto #BC0000 mai scelto, che per giunta contraddiceva il proprio bordo nero, e il node datamodel dichiarava il simbolo 'to be defined'. Il nero di BR e stato scartato di proposito: un material nero rende un proxy illeggibile in viewport, e i proxy SE si vedono (Heriverse li disegna fra i suoi stratigraphicTypes). POL5 (2026-08-04): l'ICONA e il raster (`2d_icon_prefer: raster`), come per NARR e per la stessa ragione — SE.svg e un tratteggio vettorializzato da 284 KB per un glifo che nessun renderer disegna oltre i 30 px. Il vettore resta dichiarato perche esiste; il flag dice quale dei due DISEGNARE. Il PNG a 256 px e reso DA quell'SVG, quindi i due non possono divergere. Nel grafo SE resta comunque un TRIANGOLO disegnato (shape), non l'icona: il raster serve a palette ed elenchi.",
       "3d_file": "src/3D/SE.glb",
-      "2d_file_rast": "src/2D/SE.svg",
       "2d_file_vect": "src/2D/SE.svg",
       "2d_icon_prefer": "vector",
       "style": {
@@ -2243,7 +2240,6 @@
     },
     "EP": {
       "3d_file": "src/3D/epoch.glb",
-      "2d_file_rast": "src/2D/EpochNode.svg",
       "2d_file_vect": "src/2D/EpochNode.svg",
       "style": {
         "border_color": "#009933",
@@ -2269,7 +2265,6 @@
       "_comment": "AI-assisted author. Same star shape as AUTH for visual family unity, but cyan/blue tones to distinguish at a glance from human author (red/orange). The graphml palette identifies it via the 'AI.' label prefix (em_palette_icons).",
       "file_3d": "src/3D/author_ai.glb",
       "2d_file_rast": "src/2D/author_ai.png",
-      "2d_file_vect": "src/2D/author_ai.png",
       "style": {
         "material": {
           "rgba_color": {
@@ -2290,7 +2285,6 @@
       "_comment": "License node. Shield shape carrying a gold border to read clearly as a rights / legal artifact. Connected via has_license to any Node or to the GraphNode for graph-wide licensing. Graphml palette prefix: 'LI.'.",
       "file_3d": "src/3D/license.glb",
       "2d_file_rast": "src/2D/license.png",
-      "2d_file_vect": "src/2D/license.png",
       "style": {
         "material": {
           "rgba_color": {
@@ -2311,7 +2305,6 @@
       "_comment": "Embargo node. Octagon with red dashed border to read as a temporal restriction (the dashed border encodes 'temporary'). Connected via has_embargo to a Node, LicenseNode or GraphNode. Graphml palette prefix: 'EB.'.",
       "file_3d": "src/3D/embargo.glb",
       "2d_file_rast": "src/2D/embargo.png",
-      "2d_file_vect": "src/2D/embargo.png",
       "style": {
         "material": {
           "rgba_color": {
@@ -2331,7 +2324,6 @@
     "GRAPH": {
       "_comment": "Top-level container node representing the EM graph itself. Anchor for graph-wide metadata propagation (default author, license, embargo, epoch). Rendered as a dashed rounded rectangle to read as a meta-container, neutral gray to stay visually distinct from stratigraphic and paradata nodes. Graphml palette prefix: 'G.'.",
       "file_3d": "src/3D/graph.glb",
-      "2d_file_rast": "src/2D/graph.svg",
       "2d_file_vect": "src/2D/graph.svg",
       "style": {
         "material": {
@@ -2373,7 +2365,6 @@
     },
     "LINK": {
       "file_3d": "src/3D/link.glb",
-      "2d_file_rast": "src/2D/link.svg",
       "2d_file_vect": "src/2D/link.svg",
       "style": {
         "border_color": "#FF6600",
@@ -2386,7 +2377,6 @@
     "GCP": {
       "_comment": "Ground control points — the EVIDENCE behind a registration: which point was seen on which photograph at which pixel, and where it is in the world. The NODE IS THE SET, never the single GCP (data.points), which is why the icon shows one target among several marks. Same orange as the other reference/georeferencing nodes (GEO, SS, LINK) because it is that family; the crosshair shape distinguishes measurement-of-a-place from position-of-a-site. Graphml palette prefix: 'GC.'.",
       "file_3d": "src/3D/gcp_set.glb",
-      "2d_file_rast": "src/2D/gcp_set.svg",
       "2d_file_vect": "src/2D/gcp_set.svg",
       "style": {
         "border_color": "#FF6600",
@@ -2399,7 +2389,6 @@
     "RGT": {
       "_comment": "Registration transform — the SOLUTION: the 7-parameter similarity that places a produced model, with its RMS. Drawn as axes plus a rotation arc. NOTE, and it is a limit of a per-TYPE rule: whether a given transform is georeferenced (data.crs set) or a site-local frame (crs null) is an INSTANCE fact and cannot be encoded here — a reader tells the two modes apart by the presence of the has_gcp_set edge, which is why that edge exists. Graphml palette prefix: 'RG.'.",
       "file_3d": "src/3D/registration_transform.glb",
-      "2d_file_rast": "src/2D/registration_transform.svg",
       "2d_file_vect": "src/2D/registration_transform.svg",
       "style": {
         "border_color": "#FF6600",
@@ -2411,7 +2400,6 @@
     },
     "GEO": {
       "file_3d": "src/3D/geo.glb",
-      "2d_file_rast": "src/2D/geo_position.svg",
       "2d_file_vect": "src/2D/geo_position.svg",
       "style": {
         "border_color": "#FF6600",
@@ -2423,7 +2411,6 @@
     },
     "RM": {
       "file_3d": "src/3D/rm.glb",
-      "2d_file_rast": "src/2D/representation_model.svg",
       "2d_file_vect": "src/2D/representation_model.svg",
       "style": {
         "material": {
@@ -2443,7 +2430,6 @@
     },
     "RMDoc": {
       "file_3d": "src/3D/rmdoc.glb",
-      "2d_file_rast": "src/2D/representation_model_doc.svg",
       "2d_file_vect": "src/2D/representation_model_doc.svg",
       "style": {
         "material": {
@@ -2463,7 +2449,6 @@
     },
     "RMSF": {
       "file_3d": "src/3D/rmsf.glb",
-      "2d_file_rast": "src/2D/representation_model_sf.svg",
       "2d_file_vect": "src/2D/representation_model_sf.svg",
       "style": {
         "material": {
@@ -2483,7 +2468,6 @@
     },
     "SS": {
       "file_3d": "src/3D/ss.glb",
-      "2d_file_rast": "src/2D/semantic_shape.svg",
       "2d_file_vect": "src/2D/semantic_shape.svg",
       "style": {
         "border_color": "#FF6600",

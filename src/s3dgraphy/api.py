@@ -110,6 +110,17 @@ def graph_to_emjson(graph: Graph, layout: Optional[Dict[str, Any]] = None) -> Em
     return build_emjson(graph, layout=layout)
 
 
+def chronology(graph: Graph) -> Dict[str, Any]:
+    """The propagated chronology of a Graph, COMPUTED in memory and not
+    written: ``{"chronology": {node_id: entry}, "warnings": [...]}`` — see
+    :meth:`Graph.chronology` for the entry, whose ``*_relation`` fields say
+    through which stratigraphic relation each bound arrives. The graph is left
+    untouched."""
+    warnings: List[str] = []
+    chron = graph.chronology(warnings=warnings)
+    return {"chronology": chron, "warnings": warnings}
+
+
 # ── validate ────────────────────────────────────────────────────────────────
 def validate(graph: Graph) -> Dict[str, Any]:
     """Read-only structural check of a Graph. Returns

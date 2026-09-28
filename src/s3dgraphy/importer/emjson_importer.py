@@ -88,6 +88,13 @@ def _instantiate(node_type: str, payload: Dict[str, Any],
         cls = Node
 
     data = dict(payload.get("data") or {})
+    # A computed chronology an older writer left in the file (CALCUL_*) is not a
+    # datum: it does not enter the node, where it would pass for something
+    # somebody asserted and — sitting in node.data — win over the next
+    # computation on re-export. It is recomputed from the relations on demand.
+    from ..exporter.emjson_exporter import CALCULATED_KEYS
+    for k in CALCULATED_KEYS:
+        data.pop(k, None)
     kwargs: Dict[str, Any] = {}
     sig = inspect.signature(cls.__init__)
     for pname, param in sig.parameters.items():

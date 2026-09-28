@@ -20,8 +20,9 @@ from .property_resolver import PropagationRule, register_rule
 # Chronology — Layer A seed getters
 # ---------------------------------------------------------------------------
 
-def _node_temporal_property(graph, node, property_type):
-    """Find a PropertyNode of the given type attached to ``node``.
+def _node_temporal_property_found(graph, node, property_type):
+    """``(value, PropertyNode)`` for the first dated PropertyNode of the given
+    type attached to ``node``, or None.
 
     Mirrors Graph._find_temporal_property: matches by ``property_type`` OR by
     node name, and falls back to ``description`` when ``value`` is empty
@@ -55,10 +56,16 @@ def _node_temporal_property(graph, node, property_type):
         if raw is None or raw == "":
             continue
         try:
-            return float(raw)
+            return float(raw), prop
         except (ValueError, TypeError):
             continue
     return None
+
+
+def _node_temporal_property(graph, node, property_type):
+    """The value of :func:`_node_temporal_property_found`, or None."""
+    found = _node_temporal_property_found(graph, node, property_type)
+    return found[0] if found is not None else None
 
 
 # ---------------------------------------------------------------------------
@@ -79,6 +86,83 @@ def _contained_in(graph, node):
     return members
 
 
+def _changed_from(graph, node):
+    """The original this node is a later state of: the target of its
+    ``changed_from`` edge (RSF100b ``changed_from`` SF100), or None."""
+    for edge in getattr(graph, "edges", []) or []:
+        if (getattr(edge, "edge_type", None) == "changed_from"
+                and getattr(edge, "edge_source", None) == node.node_id):
+            original = graph.find_node_by_id(edge.edge_target)
+            if original is not None:
+                return original
+    return None
+
+
+def member_start(graph, member):
+    """The start a CONTAINED member brings to its container: ``(value, original)``.
+
+    Three readings, in order, and the order is the rule (E.D., 28 Sep 2026):
+
+    1. a start WRITTEN on the member itself (its own ``absolute_time_start``);
+    2. if the member is a later state of something (``changed_from``, the reused
+       capital RSF100b ← SF100), the start written on the original — or, when
+       nothing is written there either, the epoch the ORIGINAL was born in. The
+       instance's own epoch is never read: it is the time of the REUSE, i.e. the
+       time of the very wall it would date, and a wall cannot be its own TPQ;
+    3. otherwise the member's resolved start (written or epoch), as before.
+
+    ``original`` is the node the value was read on when it is not the member
+    (case 2), else None. ``(None, None)`` when nothing is dated.
+    """
+    from .property_resolver import resolve, get_rule
+
+    own = _node_temporal_property(graph, member, "absolute_time_start")
+    if own is not None:
+        return own, None
+
+    back = {member.node_id}
+    last = None
+    x = _changed_from(graph, member)
+    while x is not None and x.node_id not in back:
+        back.add(x.node_id)
+        last = x
+        written = _node_temporal_property(graph, x, "absolute_time_start")
+        if written is not None:
+            return written, x
+        x = _changed_from(graph, x)
+    if last is not None:
+        v = resolve(graph, last, get_rule("absolute_time_start"))
+        return (float(v), last) if v is not None else (None, None)
+
+    v = resolve(graph, member, get_rule("absolute_time_start"))
+    return (float(v), None) if v is not None else (None, None)
+
+
+def containment_tpq_detail(graph, node, _seen=None):
+    """Like :func:`containment_tpq`, with the original the date was read on.
+
+    Returns ``(value, witness_member, original_or_None)`` or ``None``.
+    """
+    seen = set(_seen or ())
+    if node.node_id in seen:
+        return None
+    seen.add(node.node_id)
+
+    best = None
+    for member in _contained_in(graph, node):
+        candidates = []
+        value, original = member_start(graph, member)
+        if value is not None:
+            candidates.append((value, member, original))
+        nested = containment_tpq_detail(graph, member, seen)
+        if nested is not None:
+            candidates.append((nested[0], member, nested[2]))
+        for cand in candidates:
+            if best is None or cand[0] > best[0]:
+                best = cand
+    return best
+
+
 def containment_tpq(graph, node, _seen=None):
     """Terminus post quem a node gets from what it contains, computed on read.
 
@@ -89,39 +173,20 @@ def containment_tpq(graph, node, _seen=None):
 
     It is a READING, not a value. Nothing is written to the node and nothing
     reaches the document: change a find's epoch, or move it to another locus,
-    and the next call answers differently. That is the point. A computed date
-    stamped onto a node stops being a consequence and becomes a claim nobody
-    made — and `attributes` are lifted into em.json, so it would travel as one.
+    and the next call answers differently.
 
     Recurses through nested containment (a fragment inside a reconstructed
     whole, that whole inside a unit), with a visited set so that a containment
-    cycle in bad data returns instead of spinning.
+    cycle in bad data returns instead of spinning. A member with no date of its
+    own is read through ``changed_from`` on its original (:func:`member_start`).
 
     Returns ``(value, witness_node)``, or ``None`` when nothing inside is dated.
     Only the start is read: a find dates the earliest moment the deposit can
     have formed and says nothing about the latest, so no terminus ante quem is
     inferred from residual material.
     """
-    from .property_resolver import resolve, get_rule
-
-    seen = set(_seen or ())
-    if node.node_id in seen:
-        return None
-    seen.add(node.node_id)
-
-    best = None
-    for member in _contained_in(graph, node):
-        candidates = []
-        own = resolve(graph, member, get_rule("absolute_time_start"))
-        if own is not None:
-            candidates.append((float(own), member))
-        nested = containment_tpq(graph, member, seen)
-        if nested is not None:
-            candidates.append((nested[0], member))
-        for value, witness in candidates:
-            if best is None or value > best[0]:
-                best = (value, witness)
-    return best
+    found = containment_tpq_detail(graph, node, _seen)
+    return (found[0], found[1]) if found is not None else None
 
 
 def _containment_tpq_node(graph, node):

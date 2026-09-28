@@ -1,0 +1,199 @@
+{
+ "header": {
+  "format": "em.json",
+  "version": "1.0",
+  "datamodel_versions": {
+   "nodes": "1.6.0",
+   "connections": "1.6.2",
+   "qualia": "1.6.0"
+  },
+  "generator": {
+   "tool": "hand-written (design paradata in pancia, 28 set 2026)"
+  }
+ },
+ "graph": {
+  "graph_id": "pancia_A_estrattore_su_RSF",
+  "name": "Pancia A — estrattore su RSF (fuori datamodel 1.6.x)",
+  "nodes": [
+   {
+    "id": "EP_MED",
+    "node_type": "EpochNode",
+    "name": "Medioevo",
+    "data": {
+     "start_time": 1100,
+     "end_time": 1300
+    }
+   },
+   {
+    "id": "EP_ROM",
+    "node_type": "EpochNode",
+    "name": "Età imperiale",
+    "data": {
+     "start_time": 100,
+     "end_time": 300
+    }
+   },
+   {
+    "id": "USM101",
+    "node_type": "US",
+    "name": "USM101",
+    "description": "Muro in blocchetti di tufo con due capitelli di reimpiego"
+   },
+   {
+    "id": "RSF1",
+    "node_type": "RSF",
+    "name": "RSF100b",
+    "description": "Capitello corinzio reimpiegato nel muro (istanza medievale di SF100)"
+   },
+   {
+    "id": "RSF2",
+    "node_type": "RSF",
+    "name": "RSF101b",
+    "description": "Capitello corinzio reimpiegato nel muro (istanza medievale di SF101)"
+   },
+   {
+    "id": "USM101_PD",
+    "node_type": "ParadataNodeGroup",
+    "name": "USM101 · paradata"
+   },
+   {
+    "id": "P_USM_START",
+    "node_type": "property",
+    "name": "absolute_time_start",
+    "description": "post 180 d.C. (TPQ dal capitello RSF1)",
+    "data": {
+     "property_type": "absolute_time_start",
+     "value": "180"
+    }
+   },
+   {
+    "id": "X_USM_START",
+    "node_type": "extractor",
+    "name": "X.01",
+    "description": "Datazione del capitello RSF1 come terminus post quem del muro"
+   },
+   {
+    "id": "US102",
+    "node_type": "US",
+    "name": "US102",
+    "description": "Strato che si appoggia al muro"
+   },
+   {
+    "id": "SF100",
+    "node_type": "SF",
+    "name": "SF100",
+    "description": "Capitello corinzio nella sua vita romana"
+   },
+   {
+    "id": "SF101",
+    "node_type": "SF",
+    "name": "SF101",
+    "description": "Capitello corinzio nella sua vita romana"
+   }
+  ],
+  "edges": [
+   {
+    "id": "USM101_has_first_epoch_EP_MED",
+    "edge_type": "has_first_epoch",
+    "source": "USM101",
+    "target": "EP_MED"
+   },
+   {
+    "id": "RSF1_has_first_epoch_EP_MED",
+    "edge_type": "has_first_epoch",
+    "source": "RSF1",
+    "target": "EP_MED"
+   },
+   {
+    "id": "RSF2_has_first_epoch_EP_MED",
+    "edge_type": "has_first_epoch",
+    "source": "RSF2",
+    "target": "EP_MED"
+   },
+   {
+    "id": "RSF1_is_part_of_USM101",
+    "edge_type": "is_part_of",
+    "source": "RSF1",
+    "target": "USM101"
+   },
+   {
+    "id": "RSF2_is_part_of_USM101",
+    "edge_type": "is_part_of",
+    "source": "RSF2",
+    "target": "USM101"
+   },
+   {
+    "id": "US102_has_first_epoch_EP_MED",
+    "edge_type": "has_first_epoch",
+    "source": "US102",
+    "target": "EP_MED"
+   },
+   {
+    "id": "US102_is_after_USM101",
+    "edge_type": "is_after",
+    "source": "US102",
+    "target": "USM101"
+   },
+   {
+    "id": "USM101_has_paradata_nodegroup_USM101_PD",
+    "edge_type": "has_paradata_nodegroup",
+    "source": "USM101",
+    "target": "USM101_PD"
+   },
+   {
+    "id": "USM101_has_property_P_USM_START",
+    "edge_type": "has_property",
+    "source": "USM101",
+    "target": "P_USM_START"
+   },
+   {
+    "id": "P_USM_START_is_in_paradata_nodegroup_USM101_PD",
+    "edge_type": "is_in_paradata_nodegroup",
+    "source": "P_USM_START",
+    "target": "USM101_PD"
+   },
+   {
+    "id": "X_USM_START_is_in_paradata_nodegroup_USM101_PD",
+    "edge_type": "is_in_paradata_nodegroup",
+    "source": "X_USM_START",
+    "target": "USM101_PD"
+   },
+   {
+    "id": "P_USM_START_has_data_provenance_X_USM_START",
+    "edge_type": "has_data_provenance",
+    "source": "P_USM_START",
+    "target": "X_USM_START"
+   },
+   {
+    "id": "X_USM_START_extracted_from_RSF1",
+    "edge_type": "extracted_from",
+    "source": "X_USM_START",
+    "target": "RSF1"
+   },
+   {
+    "id": "SF100_has_first_epoch_EP_ROM",
+    "edge_type": "has_first_epoch",
+    "source": "SF100",
+    "target": "EP_ROM"
+   },
+   {
+    "id": "RSF1_changed_from_SF100",
+    "edge_type": "changed_from",
+    "source": "RSF1",
+    "target": "SF100"
+   },
+   {
+    "id": "SF101_has_first_epoch_EP_ROM",
+    "edge_type": "has_first_epoch",
+    "source": "SF101",
+    "target": "EP_ROM"
+   },
+   {
+    "id": "RSF2_changed_from_SF101",
+    "edge_type": "changed_from",
+    "source": "RSF2",
+    "target": "SF101"
+   }
+  ]
+ }
+}

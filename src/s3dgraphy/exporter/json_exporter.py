@@ -2,6 +2,7 @@ import json
 import os
 from typing import List, Dict, Any, Optional
 from ..graph import Graph
+from .emjson_exporter import CALCULATED_KEYS
 from ..multigraph.multigraph import get_all_graph_ids, get_graph
 
 class JSONExporter:
@@ -381,8 +382,11 @@ class JSONExporter:
             "description": node.description,
             "data": node.data.copy() if hasattr(node, 'data') else {},
             # Base catch-all: every importer that stashes metadata on
-            # ``node.attributes`` now round-trips through JSON 1.6.
-            "attributes": dict(getattr(node, "attributes", {}) or {}),
+            # ``node.attributes`` now round-trips through JSON 1.6 — except
+            # the computed chronology (CALCUL_*), which is derived state and
+            # never part of an export (emjson_exporter.CALCULATED_KEYS).
+            "attributes": {k: v for k, v in (getattr(node, "attributes", {}) or {}).items()
+                           if k not in CALCULATED_KEYS},
         }
 
         # PropertyNode — value / property_type are instance attrs, units

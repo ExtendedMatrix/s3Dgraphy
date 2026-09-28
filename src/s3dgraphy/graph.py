@@ -656,44 +656,224 @@ class Graph:
     # Relations where target is MORE RECENT than source
     _TARGET_IS_MORE_RECENT = {'is_cut_by', 'is_overlain_by', 'is_filled_by', 'is_before'}
 
+    #: Every stratigraphic type the chronology dates: the datamodel's proper
+    #: units (``family`` real or virtual in s3Dgraphy_node_datamodel.json) plus
+    #: the legacy ``USM`` spelling some importers still produce. ``BR`` and
+    #: ``SE`` are helper nodes (``family`` None): they are not seeded, only
+    #: reached as neighbours of the propagation, exactly as before.
+    #: RSF, TSU, UL, USN, USNt were missing until 1.6 (MICRO-cronologia § 2).
+    CHRONOLOGY_TYPES = ('US', 'USVs', 'USVn', 'VSF', 'SF', 'USD',
+                        'serSU', 'serUSD', 'serUSVn', 'serUSVs', 'USM',
+                        'RSF', 'TSU', 'UL', 'USN', 'USNt')
+
+    #: Where a bound can come from, in :meth:`chronology`'s ``rule`` field.
+    CHRONOLOGY_RULES = ('written', 'epoch', 'contained', 'tpq', 'taq')
+
+    def _chronology_nodes(self):
+        nodes = []
+        for t in self.CHRONOLOGY_TYPES:
+            nodes.extend(self.get_nodes_by_type(t))
+        return nodes
+
+    def chronology(self, warnings=None):
+        """The propagated chronology, COMPUTED IN MEMORY — nothing is written.
+
+        Returns ``{node_id: entry}`` for every node that ends up with a bound::
+
+            {"start": 1100.0, "end": 1300.0,
+             "start_rule": "tpq", "start_source": "USM101",
+             "start_relation": "is_after",
+             "end_rule": "epoch", "end_source": "EP_MED",
+             "end_relation": "has_first_epoch",
+             "rule": "tpq",                  # the start's rule (end's if no start)
+             "contained": {"start": 100.0, "source": "RSF1", "original": "SF100",
+                           "via": ["is_part_of", "changed_from"]}}
+
+        THE PROVENANCE OF A PROPAGATED DATE IS THE RELATION IT TRAVELS ALONG
+        (E.D., 29 Sep 2026): ``is_after`` with that unit, ``is_part_of``,
+        ``changed_from``. The graph already holds those relations, so the date
+        gets no field of its own and is never written — anyone can recompute it,
+        a triple store included. ``*_relation`` and ``*_source`` are only the
+        answer's EXPLANATION, for an interface to say «≥ 1100 · is_after
+        USM101»: the edge type through which the bound reached this node, and
+        the node at its other end.
+
+        ``*_rule`` is one of :data:`CHRONOLOGY_RULES`:
+
+        ``written``    a PropertyNode ``absolute_time_start/end`` on the node
+                       itself (relation ``has_property``, source that
+                       PropertyNode).
+        ``epoch``      the node's epochs (min start / max end over
+                       ``has_first_epoch`` + ``survive_in_epoch``); the source is
+                       the epoch that gives the bound.
+        ``contained``  the latest start among what the node contains
+                       (``is_part_of``, recursive; a member without a date of its
+                       own is read on its original through ``changed_from``); the
+                       source is the member, ``contained.original`` the original,
+                       ``contained.via`` the relations walked.
+        ``tpq`` / ``taq``  pushed along the stratigraphic sequence; the source is
+                       the NEIGHBOUR it came from and the relation is the edge
+                       between them, so a chain reads back step by step.
+
+        A WRITTEN bound is never moved. When what the node contains says it is
+        younger than it declares, ``contained`` is still reported beside it and a
+        warning says so — intrusive material, a misattributed find, or a date to
+        revise, and choosing among the three is not the library's job. Same Hard
+        policy as before for ``tpq``/``taq`` against a written seed.
+
+        ``warnings``: pass a list to receive the cycle / paradox / contradiction
+        messages; nothing is appended to ``self.warnings`` here, so a call has no
+        side effect at all. :meth:`calculate_chronology` is the in-memory writer
+        EM-tools reads.
+        """
+        from .resolvers.builtin_rules import containment_tpq_detail
+
+        sink = warnings if warnings is not None else []
+        strat_nodes = self._chronology_nodes()
+
+        # Pass 0: stratigraphic cycles (AI-extracted graphs can close loops).
+        self._warn_on_stratigraphic_cycles(sink)
+
+        # Pass 1: base bounds — written on the node, else its epochs.
+        state = {}
+        written_start, written_end = {}, {}
+        for node in strat_nodes:
+            st = state.setdefault(node.node_id, self._blank_bounds())
+            for side, written in (("start", written_start), ("end", written_end)):
+                found = self._base_bound(node, side)
+                if found is None:
+                    continue
+                self._set_bound(st, side, *found)
+                if found[1] == "written":
+                    written[node.node_id] = found[0]
+
+        # Pass 2: what the node contains (a container is not older than its
+        # contents). Beside a written start, never over it.
+        for node in strat_nodes:
+            found = containment_tpq_detail(self, node)
+            if found is None:
+                continue
+            value, member, original = found
+            st = state[node.node_id]
+            st["contained"] = {
+                "start": value, "source": member.node_id,
+                "original": original.node_id if original is not None else None,
+                "via": ["is_part_of"] + (["changed_from"] if original is not None else [])}
+            if st["start_rule"] == "written":
+                if st["start"] < value:
+                    label = getattr(node, "name", None) or node.node_id
+                    via = getattr(member, "name", None) or member.node_id
+                    if original is not None:
+                        via += f" ← {getattr(original, 'name', None) or original.node_id}"
+                    sink.append(
+                        f"[chronology contained] node '{label}' declares "
+                        f"absolute_time_start={st['start']} but contains '{via}' "
+                        f"whose start is {value}. Keeping the declared value.")
+            elif st["start"] is None or value > st["start"]:
+                self._set_bound(st, "start", value, "contained", member.node_id, "is_part_of")
+
+        # Pass 3: TPQ/TAQ along the stratigraphic sequence.
+        self._propagate_bounds(strat_nodes, state, written_start, written_end, sink)
+
+        out = {}
+        for nid, st in state.items():
+            if st["start"] is None and st["end"] is None:
+                continue
+            entry = {k: st[k] for k in self._BOUND_KEYS}
+            entry["rule"] = st["start_rule"] or st["end_rule"]
+            if "contained" in st:
+                entry["contained"] = st["contained"]
+            out[nid] = entry
+        return out
+
     def calculate_chronology(self, graph=None):
         """
-        Calculate chronology for all stratigraphic nodes in this graph.
+        Calculate chronology for all stratigraphic nodes and WRITE it on them.
 
-        Protocol (hierarchy: specific > local > general):
-        1. Assign base times from epoch associations (has_first_epoch, survive_in_epoch)
-        2. Override with specific property values (absolute_time_start, absolute_time_end)
-        3. Propagate TPQ/TAQ constraints through stratigraphic relations
+        The in-memory form EM-tools has always used: ``CALCUL_START_T`` /
+        ``CALCUL_END_T`` on ``node.attributes``, warnings on ``self.warnings``.
+        It is now a wrapper of :meth:`chronology`, which computes the same thing
+        without writing. These attributes are in-memory state and never part of
+        a document: the em.json exporter leaves them out
+        (``emjson_exporter.CALCULATED_KEYS``).
+
+        A node the chronology no longer dates loses a stale ``CALCUL_*`` from an
+        earlier run — the old writer never cleared, and a deleted date lingered.
 
         Args:
             graph: Deprecated, ignored. Kept for backwards compatibility.
         """
-        _STRAT_TYPES = ('US', 'USVs', 'USVn', 'VSF', 'SF', 'USD',
-                        'serSU', 'serUSD', 'serUSVn', 'serUSVs', 'USM')
-        strat_nodes = []
-        for t in _STRAT_TYPES:
-            strat_nodes.extend(self.get_nodes_by_type(t))
+        warnings = []
+        chron = self.chronology(warnings=warnings)
+        self.warnings.extend(warnings)
+        for node in self._chronology_nodes():
+            if node.node_id not in chron:
+                node.attributes.pop("CALCUL_START_T", None)
+                node.attributes.pop("CALCUL_END_T", None)
+        for nid, entry in chron.items():
+            node = self.find_node_by_id(nid)
+            if node is None:
+                continue
+            for side, key in (("start", "CALCUL_START_T"), ("end", "CALCUL_END_T")):
+                if entry[side] is not None:
+                    node.attributes[key] = entry[side]
+                else:
+                    node.attributes.pop(key, None)
+        return chron
 
-        # Pass 0: stratigraphic cycle detection. AI-extracted graphs can
-        # close loops (A is_after B is_after A); the TPQ/TAQ BFS handles
-        # them via a visited set but the user must be told. Each cycle is
-        # reported with per-node attribution so the right extractor can
-        # be audited.
-        self._warn_on_stratigraphic_cycles()
+    _BOUND_KEYS = ("start", "end", "start_rule", "end_rule", "start_source",
+                   "end_source", "start_relation", "end_relation")
 
-        # Pass 1: calculate base times (epoch + specific properties)
-        for node in strat_nodes:
-            self._calculate_base_chronology(node)
+    @classmethod
+    def _blank_bounds(cls):
+        return dict.fromkeys(cls._BOUND_KEYS)
 
-        # Pass 2: propagate TPQ/TAQ constraints
-        self._propagate_tpq_taq(strat_nodes)
+    @staticmethod
+    def _set_bound(st, side, value, rule, source, relation):
+        st[side] = value
+        st[side + "_rule"] = rule
+        st[side + "_source"] = source
+        st[side + "_relation"] = relation
 
-    def _warn_on_stratigraphic_cycles(self):
+    def _base_bound(self, node, side):
+        """``(value, rule, source_id, relation)`` for one side, or None.
+
+        The same order as the resolver (``absolute_time_*`` rules): the node's
+        own PropertyNode, then its epochs aggregated (min start / max end). No
+        graph-level default exists for chronology.
+        """
+        from .resolvers import get_rule
+        from .resolvers.builtin_rules import _node_temporal_property_found
+
+        prop_type = "absolute_time_" + side
+        found = _node_temporal_property_found(self, node, prop_type)
+        if found is not None:
+            return found[0], "written", found[1].node_id, "has_property"
+        rule = get_rule(prop_type)
+        values, seen = [], set()
+        for edge_type in ("has_first_epoch", "survive_in_epoch"):
+            for epoch in self.get_connected_epoch_nodes_list_by_edge_type(node, edge_type):
+                if epoch.node_id in seen:
+                    continue
+                seen.add(epoch.node_id)
+                v = rule.swimlane_getter(self, epoch)
+                if v is not None:
+                    values.append((float(v), epoch, edge_type))
+        if not values:
+            return None
+        best = rule.swimlane_aggregate([v for v, _, _ in values])
+        _, epoch, edge_type = next(x for x in values if x[0] == best)
+        return best, "epoch", epoch.node_id, edge_type
+
+    def _warn_on_stratigraphic_cycles(self, sink=None):
         """Detect cycles in the stratigraphic ``is_after`` / ``cuts`` /
         ``overlies`` / ``fills`` partial order and emit a warning per
         cycle, including per-node attribution (who claimed which end of
-        each offending relation).
+        each offending relation). Into ``sink`` when given, else
+        ``self.warnings``.
         """
+        if sink is None:
+            sink = self.warnings
         from .diagnostics import detect_stratigraphic_cycles, format_attribution
 
         cycles = detect_stratigraphic_cycles(self)
@@ -710,36 +890,16 @@ class Graph:
                     attr = format_attribution(self, n, "absolute_time_start")
                 names.append(f"{label}{attr}")
             if len(cycle) == 1:
-                self.warnings.append(
+                sink.append(
                     f"[stratigraphic cycle] self-loop on {names[0]}. "
                     f"Physically impossible; review the extraction."
                 )
             else:
                 chain = " → ".join(names) + f" → {names[0]}"
-                self.warnings.append(
+                sink.append(
                     f"[stratigraphic cycle] {chain}. "
                     f"Physically impossible; review the extractors involved."
                 )
-
-    def _calculate_base_chronology(self, node):
-        """
-        Calculate base chronological times for a node from epochs and properties.
-
-        Delegates to the generic 3-level resolver (DP-32 Layer A) via the
-        ``absolute_time_start`` / ``absolute_time_end`` PropagationRules. The
-        resolution order is identical to the previous hardcoded logic:
-
-            1. Node-level PropertyNode (absolute_time_start / absolute_time_end)
-            2. Swimlane-level EpochNode attributes (min of start_time,
-               max of end_time across has_first_epoch + survive_in_epoch)
-            3. Graph-level (currently no chronology default; rule returns None)
-        """
-        from .resolvers import resolve, get_rule
-
-        start_time = resolve(self, node, get_rule("absolute_time_start"))
-        end_time = resolve(self, node, get_rule("absolute_time_end"))
-
-        self._set_calculated_times(node, start_time, end_time)
 
     def _find_temporal_property(self, node, property_type):
         """
@@ -800,155 +960,93 @@ class Graph:
         from .resolvers import resolve, get_rule
         return resolve(self, node, get_rule(rule_id), default=default)
 
-    def _set_calculated_times(self, node, start_time, end_time):
-        """
-        Set calculated start and end times as node attributes.
-        """
-        if start_time is not None:
-            node.attributes["CALCUL_START_T"] = start_time
-        if end_time is not None:
-            node.attributes["CALCUL_END_T"] = end_time
-
-    def _propagate_tpq_taq(self, strat_nodes):
+    def _propagate_bounds(self, strat_nodes, state, written_start, written_end, sink):
         """
         Propagate Terminus Post Quem (TPQ) and Terminus Ante Quem (TAQ) constraints
-        with coherence checking (DP-32 Layer B, Hard paradox policy).
+        with coherence checking (DP-32 Layer B, Hard paradox policy), on the
+        ``state`` map of :meth:`chronology` — nothing is written on the nodes.
 
         TPQ (propagates upward to more recent nodes):
-            If node A has CALCUL_START_T = X, all nodes that are MORE RECENT than A
-            cannot have CALCUL_START_T < X.
+            If node A starts at X, no node MORE RECENT than A starts before X.
 
         TAQ (propagates downward to more ancient nodes):
-            If node A has CALCUL_END_T = Y, all nodes that are MORE ANCIENT than A
-            cannot have CALCUL_END_T > Y.
+            If node A ends at Y, no node MORE ANCIENT than A ends after Y.
 
-        Only restricts (tightens) derived values; never widens them.
+        Only restricts (tightens) derived values; never widens them. A tightened
+        bound records the NEIGHBOUR it came from and the edge between them —
+        its provenance is that relation.
 
         Paradox policy (Hard):
-            If a node carries an explicit user-declared seed (a PropertyNode
-            absolute_time_start / absolute_time_end) and the incoming
-            stratigraphic constraint would modify that declared value, the
-            propagation is *blocked* at that node: the declared seed is kept,
-            a warning is appended to ``self.warnings``, and BFS does not
-            traverse further through the conflicting node.
+            If a node carries a WRITTEN seed (a PropertyNode absolute_time_start /
+            absolute_time_end) and the incoming stratigraphic constraint would
+            modify it, propagation is *blocked* at that node: the written seed is
+            kept, a warning goes to ``sink``, and BFS does not traverse further
+            through the conflicting node.
         """
-        # --- Collect explicit node-level seeds (before propagation) ---
-        # Only seeds coming from Layer A's node level count as "user-declared".
-        # Values that came from swimlane/graph fallback are derived and freely
-        # overwritable by Layer B tightening.
-        from .resolvers import get_rule
-        start_rule = get_rule("absolute_time_start")
-        end_rule = get_rule("absolute_time_end")
+        from .diagnostics import format_attribution
 
-        explicit_start = {}  # node_id -> float declared at node level
-        explicit_end = {}
-        for n in strat_nodes:
-            s = start_rule.node_getter(self, n)
-            if s is not None:
-                explicit_start[n.node_id] = s
-            e = end_rule.node_getter(self, n)
-            if e is not None:
-                explicit_end[n.node_id] = e
-
-        # --- Build adjacency maps for temporal direction ---
-        more_recent_of = {}  # node_id -> [nodes that are more recent than this node]
-        more_ancient_of = {}  # node_id -> [nodes that are more ancient than this node]
-
+        # node_id -> [(neighbour_id, edge_type)]
+        more_recent_of = {}
+        more_ancient_of = {}
         for edge in self.edges:
-            if edge.edge_type in self._SOURCE_IS_MORE_RECENT:
-                more_recent_of.setdefault(edge.edge_target, []).append(edge.edge_source)
-                more_ancient_of.setdefault(edge.edge_source, []).append(edge.edge_target)
-            elif edge.edge_type in self._TARGET_IS_MORE_RECENT:
-                more_recent_of.setdefault(edge.edge_source, []).append(edge.edge_target)
-                more_ancient_of.setdefault(edge.edge_target, []).append(edge.edge_source)
+            et = edge.edge_type
+            if et in self._SOURCE_IS_MORE_RECENT:
+                more_recent_of.setdefault(edge.edge_target, []).append((edge.edge_source, et))
+                more_ancient_of.setdefault(edge.edge_source, []).append((edge.edge_target, et))
+            elif et in self._TARGET_IS_MORE_RECENT:
+                more_recent_of.setdefault(edge.edge_source, []).append((edge.edge_target, et))
+                more_ancient_of.setdefault(edge.edge_target, []).append((edge.edge_source, et))
 
-        # --- TPQ propagation: start_time propagates upward (to more recent nodes) ---
-        for node in strat_nodes:
-            start_t = node.attributes.get("CALCUL_START_T")
-            if start_t is None:
-                continue
-
-            visited = {node.node_id}
-            queue = list(more_recent_of.get(node.node_id, []))
-
-            while queue:
-                neighbor_id = queue.pop(0)
-                if neighbor_id in visited:
-                    continue
-                visited.add(neighbor_id)
-
-                neighbor = self.find_node_by_id(neighbor_id)
-                if not neighbor or not hasattr(neighbor, 'node_type'):
+        passes = (
+            # side, adjacency, written seeds, rule, "tighter?", wording
+            ("start", more_recent_of, written_start, "tpq",
+             lambda new, cur: cur is None or cur < new,
+             "more recent", "TPQ"),
+            ("end", more_ancient_of, written_end, "taq",
+             lambda new, cur: cur is None or cur > new,
+             "more ancient", "TAQ"),
+        )
+        for side, adjacency, written, rule, tighter, wording, short in passes:
+            for node in strat_nodes:
+                value = state[node.node_id][side]
+                if value is None:
                     continue
 
-                # Paradox check: stratigraphy says neighbor.start >= start_t,
-                # but the user declared a strictly-smaller seed on this neighbor.
-                declared = explicit_start.get(neighbor_id)
-                if declared is not None and start_t > declared:
-                    from .diagnostics import format_attribution
-                    attr = format_attribution(self, neighbor, "absolute_time_start")
-                    neighbor_label = getattr(neighbor, "name", None) or neighbor_id
-                    node_label = getattr(node, "name", None) or node.node_id
-                    self.warnings.append(
-                        f"[chronology paradox] node '{neighbor_label}' declares "
-                        f"absolute_time_start={declared}{attr} but is stratigraphically "
-                        f"more recent than '{node_label}' whose start_time={start_t}. "
-                        f"Keeping declared value; TPQ propagation is stopped at this node."
-                    )
-                    # Hard policy: do not overwrite, do not traverse further.
-                    continue
+                visited = {node.node_id}
+                # (neighbour, the node it is reached from, the edge between them)
+                queue = [(nid, node.node_id, et)
+                         for nid, et in adjacency.get(node.node_id, [])]
+                while queue:
+                    neighbor_id, via_id, edge_type = queue.pop(0)
+                    if neighbor_id in visited:
+                        continue
+                    visited.add(neighbor_id)
 
-                current_start = neighbor.attributes.get("CALCUL_START_T")
-                if current_start is None or current_start < start_t:
-                    neighbor.attributes["CALCUL_START_T"] = start_t
+                    neighbor = self.find_node_by_id(neighbor_id)
+                    if not neighbor or not hasattr(neighbor, 'node_type'):
+                        continue
 
-                for next_id in more_recent_of.get(neighbor_id, []):
-                    if next_id not in visited:
-                        queue.append(next_id)
+                    declared = written.get(neighbor_id)
+                    if declared is not None and tighter(value, declared):
+                        attr = format_attribution(self, neighbor, "absolute_time_" + side)
+                        neighbor_label = getattr(neighbor, "name", None) or neighbor_id
+                        node_label = getattr(node, "name", None) or node.node_id
+                        sink.append(
+                            f"[chronology paradox] node '{neighbor_label}' declares "
+                            f"absolute_time_{side}={declared}{attr} but is stratigraphically "
+                            f"{wording} than '{node_label}' whose {side}_time={value}. "
+                            f"Keeping declared value; {short} propagation is stopped at this node."
+                        )
+                        # Hard policy: do not overwrite, do not traverse further.
+                        continue
 
-        # --- TAQ propagation: end_time propagates downward (to more ancient nodes) ---
-        for node in strat_nodes:
-            end_t = node.attributes.get("CALCUL_END_T")
-            if end_t is None:
-                continue
+                    nst = state.setdefault(neighbor_id, self._blank_bounds())
+                    if tighter(value, nst[side]):
+                        self._set_bound(nst, side, value, rule, via_id, edge_type)
 
-            visited = {node.node_id}
-            queue = list(more_ancient_of.get(node.node_id, []))
-
-            while queue:
-                neighbor_id = queue.pop(0)
-                if neighbor_id in visited:
-                    continue
-                visited.add(neighbor_id)
-
-                neighbor = self.find_node_by_id(neighbor_id)
-                if not neighbor or not hasattr(neighbor, 'node_type'):
-                    continue
-
-                # Paradox check: stratigraphy says neighbor.end <= end_t,
-                # but the user declared a strictly-larger seed on this neighbor.
-                declared = explicit_end.get(neighbor_id)
-                if declared is not None and end_t < declared:
-                    from .diagnostics import format_attribution
-                    attr = format_attribution(self, neighbor, "absolute_time_end")
-                    neighbor_label = getattr(neighbor, "name", None) or neighbor_id
-                    node_label = getattr(node, "name", None) or node.node_id
-                    self.warnings.append(
-                        f"[chronology paradox] node '{neighbor_label}' declares "
-                        f"absolute_time_end={declared}{attr} but is stratigraphically "
-                        f"more ancient than '{node_label}' whose end_time={end_t}. "
-                        f"Keeping declared value; TAQ propagation is stopped at this node."
-                    )
-                    # Hard policy: do not overwrite, do not traverse further.
-                    continue
-
-                current_end = neighbor.attributes.get("CALCUL_END_T")
-                if current_end is None or current_end > end_t:
-                    neighbor.attributes["CALCUL_END_T"] = end_t
-
-                for next_id in more_ancient_of.get(neighbor_id, []):
-                    if next_id not in visited:
-                        queue.append(next_id)
+                    for next_id, et in adjacency.get(neighbor_id, []):
+                        if next_id not in visited:
+                            queue.append((next_id, neighbor_id, et))
 
     def filter_nodes_by_time_range(self, *args):
         """
@@ -1059,11 +1157,14 @@ class Graph:
         """What this node's chronology is AT THIS MOMENT. Computes, stores nothing.
 
         ``calculate_chronology`` is the other thing: it walks the graph once and
-        writes ``CALCUL_START_T`` / ``CALCUL_END_T`` onto the nodes. Those
-        attributes are lifted into ``em.json`` by the exporter — measured on
-        Yavneh Area M4, 482 start values and 381 end values land in the document
-        — so a value computed there stops being a consequence of the graph and
-        travels as if someone had asserted it.
+        writes ``CALCUL_START_T`` / ``CALCUL_END_T`` onto the nodes. Until
+        MICRO-cronologia (29 Sep 2026) those attributes were lifted into
+        ``em.json`` by the exporter — measured on Yavneh Area M4, 482 start
+        values and 381 end values landed in the document — so a value computed
+        there stopped being a consequence of the graph and travelled as if
+        someone had asserted it. The exporter now leaves them out; the date's
+        provenance is the relations the document already holds.
+        :meth:`chronology` is the whole-graph form of this reader.
 
         This reader answers the same question without leaving a trace. Move a
         find to another locus, correct an epoch, delete a sherd, and the next

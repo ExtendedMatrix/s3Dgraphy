@@ -53,6 +53,23 @@ def test_every_declared_2D_icon_is_there():
         "as an error — which is why it is a test:\n  " + "\n  ".join(missing))
 
 
+def test_each_field_names_its_own_half():
+    """`2d_file_vect` is a `.svg`, `2d_file_rast` is a `.png` — the field says
+    what kind of file it is, and until 1.6.19 seventeen of them lied.
+
+    Every one duplicated the OTHER field of its style, so nothing drew wrong:
+    `icons.ts` dedupes by basename. The damage was to the reader who trusts the
+    field name — the glyph tool picks its source from `2d_file_vect` if it is an
+    `.svg`, and a PNG sitting there meant "no vector", said the wrong way round.
+    """
+    wrong = [f"{key}.{field} → {path}"
+             for key, field, path in _declared(("2d_file_vect", "2d_file_rast"))
+             if not path.endswith(".svg" if field == "2d_file_vect" else ".png")]
+    assert not wrong, (
+        "these declarations name the other half (vect must be .svg, rast must "
+        "be .png):\n  " + "\n  ".join(wrong))
+
+
 def test_every_node_type_the_canvas_draws_resolves_to_a_FILE():
     """One level past the declaration: what `icons.ts` would actually reach.
 

@@ -85,6 +85,14 @@ def _json_safe(value: Any) -> bool:
         return False
 
 
+#: The computed chronology `Graph.calculate_chronology` writes on nodes for
+#: in-memory use (EM-tools). DERIVED state: never part of the document, and a
+#: file that carries it from an older writer does not carry it on. Its
+#: provenance is the stratigraphic relations themselves, which the document
+#: does hold — so anyone can recompute it (E.D., 29 Sep 2026).
+CALCULATED_KEYS = ("CALCUL_START_T", "CALCUL_END_T")
+
+
 def _node_payload(node: Any) -> Dict[str, Any]:
     data: Dict[str, Any] = {}
     # A node whose content is richer than a flat dict — a NarrativeNode, whose
@@ -93,13 +101,16 @@ def _node_payload(node: Any) -> Dict[str, Any]:
     to_data = getattr(node, "to_data", None)
     node_data = to_data() if callable(to_data) else getattr(node, "data", None)
     if isinstance(node_data, dict):
-        data.update({k: v for k, v in node_data.items() if _json_safe(v)})
+        data.update({k: v for k, v in node_data.items()
+                     if _json_safe(v) and k not in CALCULATED_KEYS})
     # generic per-node attribute store (the GraphML importer writes Master/
     # Instance document metadata here: is_canonical, certainty_class,
     # border_color, instances) — lossless lift, node.data wins on clashes
     node_attrs = getattr(node, "attributes", None)
     if isinstance(node_attrs, dict):
         for k, v in node_attrs.items():
+            if k in CALCULATED_KEYS:
+                continue  # derived state, see CALCULATED_KEYS
             if k not in data and v not in (None, "") and _json_safe(v):
                 data[k] = v
     for attr in _LIFTED_ATTRS:
