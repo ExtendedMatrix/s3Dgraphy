@@ -155,8 +155,17 @@ units), `TSU` (Technical SU, a working-unit for analyses), `SE`
 | 3 | `START` | Integer year (negative = BCE) |
 | 4 | `END` | Integer year |
 | 5 | `COLOR` | Swimlane fill `#RRGGBB` (optional) |
+| 6 | `PARENT` | `ID` of the epoch this one falls within (optional). Leave empty for a top-level epoch. |
 
-Epochs **must be non-overlapping**. For this case study (Templu Mare,
+**Sub-epochs.** An interval that lies inside another (the Marcomannic Wars,
+166–180, inside the 2nd century AD, 101–200) is a sub-epoch: set its
+`PARENT` to the containing epoch's `ID`; the importer writes
+`has_sub_epoch` PARENT → epoch. Write `PARENT` only when a source states or
+the reading clearly implies the nesting — it is a claim, and the importer
+never deduces it from `START`/`END`. A `PARENT` that is not an `ID` of this
+sheet is ignored with a warning.
+
+Top-level epochs (empty `PARENT`) **must be non-overlapping**. For this case study (Templu Mare,
 Sarmizegetusa Regia), five phases are recommended:
 
 | ID | NAME | START | END |

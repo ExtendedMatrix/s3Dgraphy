@@ -399,9 +399,18 @@ Property Relations
    
    - CIDOC-CRM: ``P43_has_dimension``
    - CRMem: ``em:hasQualia``
-   - CRMarchaeo: ``AP9_took_matter_from``
-   - Source: StratigraphicNode
+   - Source: GraphNode, DocumentNode, RepresentationModelDocNode,
+     StratigraphicNode (every unit subclass, by inheritance), EpochNode
    - Target: PropertyNode
+
+   Every node that accepts properties receives them **directly**
+   (connections 1.6.21, E.D. 2026-09-28, revising 1.6.1, which routed an
+   epoch's properties through a ParadataNodeGroup). The group
+   (``has_paradata_nodegroup`` / ``is_in_paradata_nodegroup``) is a
+   grouping on top: connecting to it equals connecting to each property it
+   holds. Coherence: a PropertyNode in the group of X must also be
+   ``X —has_property→`` it; :func:`s3dgraphy.api.validate` reports the
+   contrary under ``issues``.
 
 Paradata Relations
 ^^^^^^^^^^^^^^^^^^

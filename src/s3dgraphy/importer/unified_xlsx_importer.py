@@ -11,7 +11,8 @@ Unlike the legacy two-file pipeline (MappedXLSXImporter + QualiaImporter),
 this importer consumes a single workbook with five typed sheets:
 
   1. ``Units``     — stratigraphic unit declarations (ID, TYPE, NAME).
-  2. ``Epochs``    — swimlane declarations (ID, NAME, START, END, COLOR).
+  2. ``Epochs``    — swimlane declarations (ID, NAME, START, END, COLOR,
+                      optional PARENT).
   3. ``Claims``    — long-table, one row per claim about a unit/epoch:
                       qualia values, epoch assignment, stratigraphic
                       relations, each with its own attribution.
@@ -51,6 +52,18 @@ Each Claims row is one of:
 
 An Epochs row with an empty ``START`` or ``END`` gets ``None`` for that
 bound — unknown, never 0.
+
+An Epochs row may name a ``PARENT`` (the ``ID`` of another epoch): the
+importer writes ``has_sub_epoch`` PARENT → epoch. The nesting is an
+ASSERTION of the table and is never inferred from START/END — 166–180
+sitting inside 101–200 proves nothing on its own. An unknown PARENT, a
+self-reference or a cycle is a warning and no edge.
+
+Claims about an epoch (``TARGET_ID`` = an Epochs.ID, e.g.
+``absolute_time_start``) attach DIRECTLY: ``EpochNode —has_property→
+PropertyNode`` with the same extractor/document/author/combiner chain as a
+unit's claims (connections datamodel 1.6.21). No ParadataNodeGroup is
+created: a group is a grouping a consumer may add later, not a passage.
 
 Attribution
 -----------
@@ -180,7 +193,7 @@ class UnifiedXLSXImporter:
     #: template, so the two descriptions cannot drift apart in silence.
     _COLUMNS = {
         "Units": ("ID", "TYPE", "NAME"),
-        "Epochs": ("ID", "NAME", "START", "END", "COLOR"),
+        "Epochs": ("ID", "NAME", "START", "END", "COLOR", "PARENT"),
         "Authors": ("ID", "KIND", "DISPLAY_NAME", "ORCID", "AFFILIATION"),
         "Documents": ("ID", "FILENAME", "TITLE", "YEAR", "AUTHOR_IDS",
                       "ROLE", "CONTENT_NATURE", "GEOMETRY"),
@@ -296,6 +309,8 @@ class UnifiedXLSXImporter:
         "Epochs": {
             "EPOCH_ID": "ID",
             "EPOCHS_ID": "ID",
+            "PARENT_ID": "PARENT",
+            "PARENT_EPOCH": "PARENT",
         },
         "Authors": {
             "AUTHOR_ID": "ID",
@@ -474,6 +489,7 @@ class UnifiedXLSXImporter:
                     )
 
     def _parse_epochs(self, df: pd.DataFrame) -> None:
+        parents: Dict[str, str] = {}
         for _, row in df.iterrows():
             eid = _str(row.get("ID"))
             if not eid:
@@ -502,6 +518,50 @@ class UnifiedXLSXImporter:
                     epoch.attributes["fill_color"] = color
             self.graph.add_node(epoch)
             self._epoch_by_id[eid] = epoch
+            parent = _str(row.get("PARENT"))
+            if parent:
+                parents[eid] = parent
+
+        # Second pass, once every epoch exists: a PARENT may be declared on a
+        # later row than its child.
+        for eid, parent in parents.items():
+            self._link_sub_epoch(eid, parent, parents)
+
+    def _link_sub_epoch(self, eid: str, parent: str,
+                        parents: Dict[str, str]) -> None:
+        """``has_sub_epoch`` PARENT → ``eid``, when PARENT is a declared epoch.
+
+        Only what the table states: no nesting is ever deduced from the
+        numbers. A PARENT that is missing, the epoch itself, or that closes a
+        loop (A in B in A) is refused with a warning — the epoch stays a
+        top-level one, which is exactly what it was before the column existed.
+        """
+        if parent == eid:
+            self.warnings.append(
+                f"Epoch '{eid}': PARENT is the epoch itself; no has_sub_epoch.")
+            return
+        parent_node = self._epoch_by_id.get(parent)
+        if parent_node is None:
+            self.warnings.append(
+                f"Epoch '{eid}': PARENT '{parent}' is not declared in Epochs; "
+                f"no has_sub_epoch.")
+            return
+        seen, cur = {eid}, parent
+        while cur in parents:
+            if cur in seen:
+                self.warnings.append(
+                    f"Epoch '{eid}': PARENT '{parent}' closes a cycle of "
+                    f"sub-epochs; no has_sub_epoch.")
+                return
+            seen.add(cur)
+            cur = parents[cur]
+        child = self._epoch_by_id[eid]
+        self.graph.add_edge(
+            edge_id=self._mint("sub_epoch", f"{parent}|{eid}"),
+            edge_source=parent_node.node_id,
+            edge_target=child.node_id,
+            edge_type="has_sub_epoch",
+        )
 
     def _parse_units(self, df: pd.DataFrame) -> None:
         for _, row in df.iterrows():

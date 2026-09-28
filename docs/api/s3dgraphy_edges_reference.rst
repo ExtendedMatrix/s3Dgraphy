@@ -260,9 +260,10 @@ Property and Attribution Relationships
    graph.add_edge("prop001", "US001", "PROP001_material_stone", "has_property")
 
 **Allowed Connections:**
-   - StratigraphicNode → PropertyNode
-   - SpecialFindUnit → PropertyNode
-   - Any Node → PropertyNode
+   - StratigraphicNode (and every unit subclass) → PropertyNode
+   - EpochNode → PropertyNode
+   - GraphNode → PropertyNode
+   - DocumentNode / RepresentationModelDocNode → PropertyNode
 
 **contrasts_with**
 ^^^^^^^^^^^^^^^^^^

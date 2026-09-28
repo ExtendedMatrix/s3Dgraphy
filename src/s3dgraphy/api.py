@@ -114,8 +114,10 @@ def graph_to_emjson(graph: Graph, layout: Optional[Dict[str, Any]] = None) -> Em
 def validate(graph: Graph) -> Dict[str, Any]:
     """Read-only structural check of a Graph. Returns
     ``{ok, stats, warnings, issues}`` — surfaces the graph's own accumulated
-    warnings plus a cheap dangling-edge scan. Minimal and extensible; adds no
-    side effects."""
+    warnings plus a cheap dangling-edge scan and the paradata-group coherence
+    rule (a PropertyNode in X's ParadataNodeGroup must also be X's
+    ``has_property``; see :func:`diagnostics.paradata_group_incoherences`).
+    Minimal and extensible; adds no side effects."""
     nodes = list(getattr(graph, "nodes", []) or [])
     edges = list(getattr(graph, "edges", []) or [])
     ids = {n.node_id for n in nodes}
@@ -125,6 +127,12 @@ def validate(graph: Graph) -> Dict[str, Any]:
             issues.append(f"edge '{getattr(e, 'edge_id', '?')}' has missing source '{e.edge_source}'")
         if e.edge_target not in ids:
             issues.append(f"edge '{getattr(e, 'edge_id', '?')}' has missing target '{e.edge_target}'")
+    from .diagnostics import paradata_group_incoherences
+    for r in paradata_group_incoherences(graph):
+        issues.append(
+            f"property '{r['property_name']}' ({r['property']}) is in the "
+            f"paradata group of '{r['owner_name']}' ({r['owner']}) but "
+            f"'{r['owner_name']}' has no has_property to it")
     warnings = list(getattr(graph, "warnings", []) or [])
     return {
         "ok": not issues,

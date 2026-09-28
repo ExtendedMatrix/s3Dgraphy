@@ -72,7 +72,17 @@ Column      Meaning
             44 BCE). Optional.
 ``END``     Latest TAQ (signed integer year). Optional.
 ``COLOR``   Hex colour for yEd swimlane rendering. Optional.
+``PARENT``  ``ID`` of the epoch this one falls within.
+            Optional (aliases ``PARENT_ID``, ``PARENT_EPOCH``).
 ==========  =================================================
+
+**Sub-epochs.** A row with ``PARENT`` becomes ``has_sub_epoch`` PARENT →
+epoch (the Marcomannic Wars, 166–180, inside the 2nd century AD,
+101–200). The nesting is an assertion of the table and is **never
+inferred** from ``START``/``END``: the same two rows without ``PARENT``
+stay two top-level epochs. A ``PARENT`` that is not an ``ID`` of the
+sheet, the epoch itself, or a loop of parents is a warning and no edge.
+A parent may be declared on a later row than its child.
 
 Claims
 ~~~~~~
@@ -129,6 +139,14 @@ The importer dispatches a Claims row by the semantic class of
   — same as scalar but the PropertyNode's ``property_type`` is set so
   the DP-32 resolver and A.1 compaction pick it up. See
   :doc:`/internals/temporal`.
+
+  When ``TARGET_ID`` is an **epoch**, the property is the epoch's own,
+  attached directly — ``EpochNode —has_property→ PropertyNode`` with the
+  same extractor / document / author / combiner chain as a unit's
+  claim (connections datamodel 1.6.21). The importer creates **no**
+  ParadataNodeGroup: a group is a grouping a consumer may add later, not
+  a passage (see the coherence rule in :func:`s3dgraphy.api.validate`).
+  Before 1.6.21 these edges degraded to ``generic_connection``.
 
 - **Epoch membership** (``has_first_epoch`` / ``belongs_to_epoch``) —
   create a ``has_first_epoch`` edge from ``TARGET_ID`` (unit) to the

@@ -4,6 +4,25 @@ All notable changes to **s3dgraphy** are documented here.
 
 ## [Unreleased]
 
+### Changed (2026-09-28 — an epoch's properties are its own; sub-epochs from `PARENT`)
+Connections datamodel **1.6.21**: `has_property.source` += `EpochNode`,
+`GraphNode` (E.D., revising 1.6.1). Every node that accepts properties
+receives them directly; the ParadataNodeGroup is a grouping on top, not a
+passage.
+
+- `UnifiedXLSXImporter`: a claim whose `TARGET_ID` is an epoch
+  (`absolute_time_start`, …) now lands as `EpochNode —has_property→
+  PropertyNode` with its full paradata chain. It used to degrade silently to
+  `generic_connection`: 29 edges on StratiMiner BM01 v6.2, 39 on BM03 → 0.
+  No ParadataNodeGroup is created.
+- `Epochs.PARENT` (optional; aliases `PARENT_ID`, `PARENT_EPOCH`) →
+  `has_sub_epoch` PARENT → epoch. An assertion, never inferred from
+  START/END; unknown PARENT, self-reference and cycles warn and write nothing.
+  Described in `StratiMiner_Extraction_Prompt.md` (Sheet 2).
+- `api.validate` reports, under `issues`, a PropertyNode that sits in X's
+  ParadataNodeGroup without `X —has_property→` it
+  (`diagnostics.paradata_group_incoherences`).
+
 ### Added (2026-09-20 — FMPXML, a FileMaker export read as the table it is)
 `format_type: "fmpxml"` joins `sqlite`/`xlsx`/`csv`/`xml`, for the
 `FMPXMLRESULT` shape DANA (Israel Antiquities Authority) and many other

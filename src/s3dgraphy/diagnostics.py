@@ -369,3 +369,53 @@ def detect_stratigraphic_cycles(graph) -> List[List[str]]:
                     lowlink[parent] = min(lowlink[parent], lowlink[node])
 
     return sccs
+
+
+# ---------------------------------------------------------------------------
+# Paradata group coherence
+# ---------------------------------------------------------------------------
+
+def paradata_group_incoherences(graph) -> List[dict]:
+    """PropertyNodes that sit in the ParadataNodeGroup of X without being X's.
+
+    Every node that accepts properties receives them DIRECTLY
+    (``X —has_property→ P``, connections datamodel 1.6.21). The group is a
+    grouping on top of that, not a passage: it lets something be connected to
+    the whole set of X's properties at once, or to one of them. So a property
+    in X's group (``P —is_in_paradata_nodegroup→ G`` and
+    ``X —has_paradata_nodegroup→ G``) with no ``X —has_property→ P`` is a group
+    that says more than the graph does — the shape v1.6.1 wrote for an epoch's
+    ``absolute_time_*`` before has_property accepted an EpochNode.
+
+    Only PropertyNode members are checked: extractors, combiners and documents
+    live in a group as the property's provenance, not as the owner's
+    properties. Returns one record per (owner, property) pair,
+    ``{owner, owner_name, group, property, property_name}``; read-only.
+    """
+    by_id = {n.node_id: n for n in graph.nodes}
+    owned = set()
+    owners_of: dict = {}
+    for e in graph.edges:
+        if e.edge_type == "has_property":
+            owned.add((e.edge_source, e.edge_target))
+        elif e.edge_type == "has_paradata_nodegroup":
+            owners_of.setdefault(e.edge_target, []).append(e.edge_source)
+    out: List[dict] = []
+    for e in graph.edges:
+        if e.edge_type != "is_in_paradata_nodegroup":
+            continue
+        prop = by_id.get(e.edge_source)
+        if prop is None or getattr(prop, "node_type", None) != "property":
+            continue
+        for owner_id in owners_of.get(e.edge_target, ()):
+            if (owner_id, prop.node_id) in owned:
+                continue
+            owner = by_id.get(owner_id)
+            out.append({
+                "owner": owner_id,
+                "owner_name": getattr(owner, "name", owner_id),
+                "group": e.edge_target,
+                "property": prop.node_id,
+                "property_name": prop.name,
+            })
+    return out
