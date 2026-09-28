@@ -397,7 +397,9 @@ def test_LO_STILE_C_E_ed_e_quello_della_famiglia_gruppo():
 
 def test_E_LA_VERSIONE_E_STATA_BUMPATA_con_la_sua_riga_di_changelog():
     r = _regole()
-    assert r["version"] == "1.6.17", r["version"]
+    # «almeno», non «uguale»: la versione continua a salire (1.6.18 = 2d_glyphs)
+    # e ciò che questa prova difende è la riga di 1.6.17, non l'ultimo numero
+    assert tuple(map(int, r["version"].split("."))) >= (1, 6, 17), r["version"]
     cl = r["_changelog"]
     riga = cl["1.6.17"] if isinstance(cl, dict) else str(cl[-1])
     assert "RepresentationModelNodeGroup" in riga

@@ -22,6 +22,30 @@ There are four levels, and the arrow points one way: from the top down.
 Loaded through `edges/connections_loader.py` (`get_connections_datamodel()`)
 and the node-datamodel readers.
 
+### Glyphs: the SVG is authored, the JSON is distributed
+
+*Decided by E.D. on 2026-09-28 (em_visual_rules 1.6.18).*
+
+One piece of level 1 has a file **above** it: the pictograms. The nodes the 2D
+scene draws as a glyph (`2d_render_glyph_types`, and the DTC glyphs of
+`dtc_kinds`) carry their drawing inside `em_visual_rules.json` as vector paths,
+in the block `2d_glyphs`. That block is the **distributed truth** — what every
+consumer reads, and the only form of the drawing it may rely on. But nobody
+writes it: it is generated from the **authored source**, an SVG in
+`JSON_config/src/2D/` (`src/2D/dtc/` for DTC, `src/2D/bozze/` for a draft
+awaiting approval).
+
+| To | Do |
+| --- | --- |
+| redraw a glyph | edit its SVG, then `python -m s3dgraphy.tools.glyphs_from_svg --write` |
+| check nothing drifted | `python -m s3dgraphy.tools.glyphs_from_svg --check` (exit 1 on drift) |
+| approve a draft | move it from `src/2D/bozze/` to `src/2D/`, remove its `BOZZA` comment, `--write` |
+| look before approving | `python -m s3dgraphy.tools.glyph_sheet OUT.html` |
+
+`tests/test_glyph_paths.py` fails the moment the SVG and the block disagree, so
+an edit on either side alone does not survive the suite. How a consumer draws an
+entry is in [Drawing a glyph](drawing-a-glyph.md).
+
 ## 2 · `em.ttl` — the ontology, aligned by hand to level 1
 
 `JSON_config/em.ttl` is the companion ontology (namespace `em:`, «CRMem»). It

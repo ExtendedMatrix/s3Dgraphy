@@ -1,6 +1,6 @@
 {
   "formal_language": "EM",
-  "version": "1.6.17",
+  "version": "1.6.18",
   "_note_material_vs_qualia_color": [
     "DUE COSE DIVERSE CHE SI CHIAMANO ENTRAMBE color. Non confonderle: e gia successo.",
     "1) QUI, in node_styles.<tipo>.style.material.rgba_color — il COLORE DEL MATERIALE BLENDER del proxy 3D, in float LINEARI. UNA sola chiave: `rgba_color`. Fino a S8 il file ne usava due (`color` sui 13 tipi stratigrafici, `rgba_color` sugli altri) e get_material_color() ne leggeva una sola, restituendo None per 21 tipi su 38; ora sono unificate e la vecchia `color` e letta solo come tolleranza verso file scritti prima. Un tipo che non diventa mai una mesh NON ha material affatto (i contenitori di gruppo, e da S7 i dieci nodi che rendono per icona): per loro get_material_color() torna None, ed e corretto.",
@@ -9,6 +9,7 @@
     "In breve: qui si decide di che colore DISEGNARE una US; li si registra di che colore ERA."
   ],
   "_changelog": {
+    "1.6.18": "THE GLYPHS BECOME PATHS (E.D., 28 Sep 2026). New block `2d_glyphs`: for every 2d_render_glyph_types type and every dtc_kinds glyph, the official pictogram as vector paths (absolute M/L/C/Z, one colour per layer, a closed `_roles` vocabulary saying which colours a consumer may retheme). Generated from the authored SVGs by s3dgraphy.tools.glyphs_from_svg and guarded by tests/test_glyph_paths.py (drift zero). Five pictograms that existed only as PNG (author_ai, license, embargo) or whose vector was not the pictogram (author: a Font Awesome silhouette; narrative: a 617 KB stipple illustration) are redrawn as DRAFTS in src/2D/bozze/ and flagged `draft: true` until E.D. approves them. One aspect corrected: author 0.875 → 0.984 (see 2d_render_glyph_types._aspect_correction_1_6_18). ADDITIVE otherwise: no existing style changed, 2d_file_vect/2d_file_rast kept for consumers that do not read the block.",
     "1.6.16": "Asset declarations made TRUE. Four styles named a 2D file that is not there — SE.png, TSU.svg, serUSD.svg and unknown.png (which never existed) — and GRAPH named two, so it drew no icon at all. icons.ts returns null for a missing file and the canvas quietly draws the shape, so all five failed silently. Now: graph.svg authored (neutral gray, three nodes and their edges, the meta-container), unknown points at the generic_node.svg that exists, the three stale halves name the file that is there. Enforced by tests/test_visual_assets.py; the 16 unmodelled .glb are REPORTED (there and in sync-datamodels.sh), not asserted — a placeholder that looks official is harder to notice than an absence.",
     "1.6.15": "Georeferencing gets its symbol on the canvas: node_styles GCP (GCPSetNode, crosshair) and RGT (RegistrationTransformNode, axes + rotation arc), in the same #FF6600 reference family as GEO/SS/LINK, each with its own 2D icon. ADDITIVE. Also 1.6.14-era: dtc_kinds.process.photogrammetry. Note the limit of a per-TYPE rule: whether a transform is georeferenced or a site-local frame is an INSTANCE fact (data.crs) and is read from the has_gcp_set edge, not from the style.",
     "1.6.14": "BUGFIX-GLYPH follow-up (2026-08-05, E.D.): SE now renders its GLYPH in the scene (the new SE.svg, a stratigraphic-section box with a writable middle band) instead of a bare triangle, so a name can be written inside it. Added SE to 2d_render_glyph_types (aspect 1.331 from the SVG viewBox) and switched SE 2d_icon_prefer to vector (the raster SE.png is the stale stipple; the new symbol is the SVG). Dropped the interim shape_bbox=square. The shape:triangle stays declared for other consumers but the 2D scene draws the glyph. NOTE: verify the SVG carries a light background for dark-canvas legibility (like combiner.svg).",
@@ -48,12 +49,1849 @@
     "aspect": {
       "extractor": 1.0,
       "combiner": 1.0,
-      "author": 0.875,
+      "author": 0.984,
       "author_ai": 0.984,
       "license": 0.977,
       "embargo": 0.992,
       "narrative": 0.981,
       "SE": 1.331
+    },
+    "_aspect_correction_1_6_18": "author 0.875 → 0.984 (2026-09-30). 0.875 was measured from src/2D/author.svg (448×512), a Font Awesome silhouette that is NOT the palette pictogram; the pictogram (author.png, 126×128, redrawn as src/2D/bozze/author.svg) is 0.984, the same as author_ai. The drawing wins (2d_glyphs rule), and the layout reads this number. Until EMStudio draws 2d_glyphs, sync-datamodels.sh will WARN on author, because icons.ts still resolves the FA author.svg."
+  },
+  "2d_glyphs": {
+    "_comment": "THE PICTOGRAM AS PATHS (E.D.'s decision, 28 Sep 2026). Every node the 2D scene draws as a GLYPH (`2d_render_glyph_types.types`, keyed here by runtime node_type) and every DTC glyph (keyed `dtc:<kind>`, one entry per kind of `dtc_kinds`, so a consumer resolving a node by its data.dtc_kind needs no second lookup) carries its official pictogram — the one of the manual and the yEd palette — as vector paths a consumer draws NATIVELY: canvas `new Path2D(d)`, an SVG <path>, a Blender bezier curve. Sharp at every zoom, and never a file that can be missing: until 1.6.17 EMStudio drawImage'd an SVG or a PNG, which came out soft on WebKit/Retina and failed silently when a declared file was not there. FORMAT: `viewBox` [0,0,w,h] (always from the origin), `aspect` = w/h (must equal what 2d_render_glyph_types.aspect declares for the same key — for a DTC kind, the bare kind, as em-core glyph_aspect(kind) reads it; 1.0 when absent), `layers` painted in order, `source` = the authored SVG it was generated from, `draft: true` while a redrawn glyph waits for E.D.'s approval. Each layer is ONE path in ONE colour — see `_layer`. DRAWING IT: fit the viewBox into the node box with CONTAIN (scale = min(box_w/w, box_h/h), centred), which is exactly what `aspect` exists for. FALLBACK: a type or kind with no entry here is drawn from its node_styles `shape` — the shape keeps its meaning, it is the ripiego for consumers that cannot draw paths, not a second drawing. SOURCE OF TRUTH: the SVG in src/2D/ (or src/2D/bozze/ for a draft, src/2D/dtc/ for DTC) is the AUTHORED source and this block the DISTRIBUTED truth; it is generated by `python -m s3dgraphy.tools.glyphs_from_svg --write` and guarded by tests/test_glyph_paths.py. Never edit it by hand. The 2d_file_vect / 2d_file_rast fields stay for the consumers that do not read this block. `document` and `property` are NOT here: they are drawn with custom geometry (folded sheet, annotation bracket), next round.",
+    "_layer": {
+      "d": "path data, ABSOLUTE M / L / C / Z only (no arcs, no relative commands, no H/V/S/Q/T — all converted by the tool), coordinates in the viewBox, 2 decimals. new Path2D(d) and nothing else.",
+      "role": "one of `_roles` — what the colour is FOR",
+      "fill": "#RRGGBB — the canonical EM colour; a layer has EITHER fill OR stroke",
+      "fill_rule": "\"evenodd\" when present (holes: the author's head, the robot's visor); nonzero otherwise",
+      "stroke": "#RRGGBB — a stroked layer (the DTC set is drawn with strokes)",
+      "stroke_width": "in viewBox units: scale it with the glyph, never a constant pixel width",
+      "line_cap": "round | square when present; butt otherwise",
+      "line_join": "round | bevel when present; miter otherwise",
+      "opacity": "0..1 when present (combiner's 7% veil); 1 otherwise"
+    },
+    "_roles": {
+      "_comment": "CLOSED vocabulary. The hex in a layer is ALWAYS the canonical colour of the EM language; the role only says what that colour does, so a consumer can adapt a theme (dark) without reinventing the drawing. `recolor: true` = a consumer MAY replace the colour with a theme colour of the same function; `false` = it must NOT, ever.",
+      "ink": {
+        "recolor": true,
+        "meaning": "black / near-black linework and solid marks (#000000, the palette ring #333333) → the theme's foreground"
+      },
+      "paper": {
+        "recolor": true,
+        "meaning": "white fields the ink sits on (#FFFFFF) → the theme's surface; keep it contrasting with ink"
+      },
+      "halo": {
+        "recolor": true,
+        "meaning": "a translucent backdrop that lifts the glyph off the canvas (combiner's 7% black disc) → invert it on a dark canvas, keep the opacity"
+      },
+      "ground": {
+        "recolor": false,
+        "meaning": "the neutral EM grey, body or mark (#888687, #8C8C8C, #6E6E6E, #666666…): a mid-grey reads on both themes and is part of the pictogram's identity"
+      },
+      "accent": {
+        "recolor": false,
+        "meaning": "a SEMANTIC colour (an action's ochre, a reference's #FF6600): never touched. None of the current glyphs uses it; it is in the vocabulary so the first one that does has a role that forbids recolouring"
+      }
+    },
+    "extractor": {
+      "viewBox": [
+        0,
+        0,
+        23.51,
+        23.51
+      ],
+      "aspect": 1.0,
+      "layers": [
+        {
+          "d": "M23.32 11.74C23.32 18.13 18.14 23.31 11.75 23.31C5.36 23.31 0.18 18.13 0.18 11.74C0.18 5.35 5.36 0.17 11.75 0.17C18.14 0.17 23.32 5.35 23.32 11.74Z",
+          "role": "ground",
+          "fill": "#888687"
+        },
+        {
+          "d": "M11.05 0.46L11.05 8.3L7.57 8.3L7.57 15.37L11.05 15.37L11.05 23.01L13.66 23.01L17.34 21.87L19.37 20.08L21.55 17.32L22.95 14.22L22.95 11.32L22.13 7.3L19.96 3.96L16.22 1.26L11.75 0.46L11.05 0.46Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M11.75 0.87C17.75 0.87 22.63 5.75 22.63 11.75C22.63 17.75 17.75 22.63 11.75 22.63C5.75 22.63 0.87 17.75 0.87 11.75C0.87 5.75 5.76 0.87 11.75 0.87M11.75 0C5.26 0 0 5.26 0 11.75C0 18.24 5.26 23.5 11.75 23.5C18.24 23.5 23.5 18.24 23.5 11.75C23.5 5.26 18.25 0 11.75 0L11.75 0Z",
+          "role": "ink",
+          "fill": "#000000"
+        },
+        {
+          "d": "M14.73 9.17L19.96 9.17L19.96 14.4L14.73 14.4Z",
+          "role": "ground",
+          "fill": "#888687"
+        },
+        {
+          "d": "M20.46 14.9L14.23 14.9L14.23 8.67L20.46 8.67L20.46 14.9ZM15.23 13.9L19.46 13.9L19.46 9.67L15.23 9.67L15.23 13.9Z",
+          "role": "ink",
+          "fill": "#000000"
+        },
+        {
+          "d": "M7.57 11.82L14.01 11.82L14.01 12.07L7.57 12.07Z",
+          "role": "ink",
+          "fill": "#000000"
+        },
+        {
+          "d": "M11.55 23.01L10.55 23.01L10.55 15.87L7.07 15.87L7.07 7.8L10.55 7.8L10.55 0.46L11.55 0.46L11.55 8.8L8.07 8.8L8.07 14.87L11.55 14.87L11.55 23.01Z",
+          "role": "ink",
+          "fill": "#000000"
+        }
+      ],
+      "source": "src/2D/extractor.svg"
+    },
+    "combiner": {
+      "viewBox": [
+        0,
+        0,
+        26.87,
+        26.87
+      ],
+      "aspect": 1.0,
+      "layers": [
+        {
+          "d": "M12.87 0.41C12.87 0.41 25.58 0.43 26.37 13.7C26.78 20.69 17.35 26.55 13.63 26.44C4.41 26.16 0.76 18.66 0.76 14.8C0.76 10.95 3.51 0.55 12.87 0.41Z",
+          "role": "halo",
+          "fill": "#000000",
+          "opacity": 0.071
+        },
+        {
+          "d": "M1.63 8.08L14.23 4.84L14.23 11.03L0.54 14.64",
+          "role": "ground",
+          "fill": "#868384"
+        },
+        {
+          "d": "M0.67 15.12L0.42 14.15L13.73 10.64L13.73 5.48L1.75 8.56L1.5 7.59L14.1 4.35C14.25 4.31 14.41 4.35 14.53 4.44C14.65 4.53 14.72 4.68 14.72 4.84L14.72 11.03C14.72 11.26 14.57 11.46 14.35 11.51L0.67 15.12Z",
+          "role": "ink",
+          "fill": "#000000"
+        },
+        {
+          "d": "M25.66 17.87L11.57 21.67L11.57 15.48L26.02 11.49",
+          "role": "ground",
+          "fill": "#868384"
+        },
+        {
+          "d": "M11.57 22.17C11.46 22.17 11.35 22.13 11.27 22.07C11.15 21.98 11.07 21.83 11.07 21.67L11.07 15.48C11.07 15.26 11.22 15.06 11.44 15L25.89 11.01L26.16 11.97L12.08 15.86L12.08 21.02L25.54 17.39L25.8 18.35L11.71 22.15C11.71 22.15 11.62 22.17 11.58 22.17Z",
+          "role": "ink",
+          "fill": "#000000"
+        },
+        {
+          "d": "M13.43 1C20.29 1 25.86 6.58 25.86 13.43C25.86 20.28 20.28 25.86 13.43 25.86C6.58 25.86 1 20.29 1 13.43C1 6.57 6.58 1 13.43 1M13.43 0C6.01 0 0 6.01 0 13.43C0 20.85 6.01 26.86 13.43 26.86C20.85 26.86 26.86 20.85 26.86 13.43C26.86 6.01 20.85 0 13.43 0L13.43 0Z",
+          "role": "ink",
+          "fill": "#000000"
+        },
+        {
+          "d": "M13.43 1C20.29 1 25.86 6.58 25.86 13.43C25.86 20.28 20.28 25.86 13.43 25.86C6.58 25.86 1 20.29 1 13.43C1 6.57 6.58 1 13.43 1M13.43 0C6.01 0 0 6.01 0 13.43C0 20.85 6.01 26.86 13.43 26.86C20.85 26.86 26.86 20.85 26.86 13.43C26.86 6.01 20.85 0 13.43 0L13.43 0Z",
+          "role": "ink",
+          "fill": "#000000"
+        },
+        {
+          "d": "M13.43 1C20.29 1 25.86 6.58 25.86 13.43C25.86 20.28 20.28 25.86 13.43 25.86C6.58 25.86 1 20.29 1 13.43C1 6.57 6.58 1 13.43 1M13.43 0C6.01 0 0 6.01 0 13.43C0 20.85 6.01 26.86 13.43 26.86C20.85 26.86 26.86 20.85 26.86 13.43C26.86 6.01 20.85 0 13.43 0Z",
+          "role": "ink",
+          "fill": "#000000"
+        }
+      ],
+      "source": "src/2D/combiner.svg"
+    },
+    "author": {
+      "viewBox": [
+        0,
+        0,
+        126.0,
+        128.0
+      ],
+      "aspect": 0.984,
+      "layers": [
+        {
+          "d": "M91 52.5C91 67.96 78.46 80.5 63 80.5C47.54 80.5 35 67.96 35 52.5C35 37.04 47.54 24.5 63 24.5C78.46 24.5 91 37.04 91 52.5ZM68 51.5C68 48.74 65.76 46.5 63 46.5C60.24 46.5 58 48.74 58 51.5C58 54.26 60.24 56.5 63 56.5C65.76 56.5 68 54.26 68 51.5Z",
+          "role": "ground",
+          "fill": "#8C8C8C",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M49 76L49 86C45 88.5 30 92.5 23 95.5L23 104.6C45.19 126.46 80.81 126.46 103 104.6L103 95.5C96 92.5 81 88.5 77 86L77 76Z",
+          "role": "ground",
+          "fill": "#8C8C8C"
+        },
+        {
+          "d": "M122.5 64C122.5 96.86 95.86 123.5 63 123.5C30.14 123.5 3.5 96.86 3.5 64C3.5 31.14 30.14 4.5 63 4.5C95.86 4.5 122.5 31.14 122.5 64Z",
+          "role": "ink",
+          "stroke": "#333333",
+          "stroke_width": 7.0
+        }
+      ],
+      "source": "src/2D/bozze/author.svg",
+      "draft": true
+    },
+    "author_ai": {
+      "viewBox": [
+        0,
+        0,
+        126.0,
+        128.0
+      ],
+      "aspect": 0.984,
+      "layers": [
+        {
+          "d": "M37.5 26L88.5 26C91.81 26 94.5 28.69 94.5 32L94.5 80C94.5 83.31 91.81 86 88.5 86L37.5 86C34.19 86 31.5 83.31 31.5 80L31.5 32C31.5 28.69 34.19 26 37.5 26ZM45 52L81 52C82.93 52 84.5 53.57 84.5 55.5C84.5 57.43 82.93 59 81 59L45 59C43.07 59 41.5 57.43 41.5 55.5C41.5 53.57 43.07 52 45 52Z",
+          "role": "ground",
+          "fill": "#8C8C8C",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M48.5 84L48.5 93C48.5 97 36 101 24 105.6C45.93 126.17 80.07 126.17 102 105.6C90 101 77.5 97 77.5 93L77.5 84Z",
+          "role": "ground",
+          "fill": "#8C8C8C"
+        },
+        {
+          "d": "M122.5 64C122.5 96.86 95.86 123.5 63 123.5C30.14 123.5 3.5 96.86 3.5 64C3.5 31.14 30.14 4.5 63 4.5C95.86 4.5 122.5 31.14 122.5 64Z",
+          "role": "ink",
+          "stroke": "#333333",
+          "stroke_width": 7.0
+        }
+      ],
+      "source": "src/2D/bozze/author_ai.svg",
+      "draft": true
+    },
+    "license": {
+      "viewBox": [
+        0,
+        0,
+        125.0,
+        128.0
+      ],
+      "aspect": 0.977,
+      "layers": [
+        {
+          "d": "M48 14.5L89 55.5L83 61.5L62.5 41L31 72.5L25 66.5L56.5 35L48 26.5L21 53.5L15 47.5Z",
+          "role": "ground",
+          "fill": "#6E6E6E"
+        },
+        {
+          "d": "M77 113.5L36 72.5L42 66.5L62.5 87L94 55.5L100 61.5L68.5 93L77 101.5L104 74.5L110 80.5Z",
+          "role": "ground",
+          "fill": "#6E6E6E"
+        },
+        {
+          "d": "M62.5 46L80.5 64L62.5 82L44.5 64Z",
+          "role": "ground",
+          "fill": "#6E6E6E"
+        },
+        {
+          "d": "M122 64C122 96.86 95.36 123.5 62.5 123.5C29.64 123.5 3 96.86 3 64C3 31.14 29.64 4.5 62.5 4.5C95.36 4.5 122 31.14 122 64Z",
+          "role": "ink",
+          "stroke": "#333333",
+          "stroke_width": 7.0
+        }
+      ],
+      "source": "src/2D/bozze/license.svg",
+      "draft": true
+    },
+    "embargo": {
+      "viewBox": [
+        0,
+        0,
+        127.0,
+        128.0
+      ],
+      "aspect": 0.992,
+      "layers": [
+        {
+          "d": "M10.53 56.5C14.27 30.12 36.85 10.51 63.5 10.51C90.15 10.51 112.73 30.12 116.47 56.5Z",
+          "role": "ground",
+          "fill": "#6E6E6E"
+        },
+        {
+          "d": "M116.47 71.5C112.73 97.88 90.15 117.49 63.5 117.49C36.85 117.49 14.27 97.88 10.53 71.5Z",
+          "role": "ground",
+          "fill": "#6E6E6E"
+        },
+        {
+          "d": "M123 64C123 96.86 96.36 123.5 63.5 123.5C30.64 123.5 4 96.86 4 64C4 31.14 30.64 4.5 63.5 4.5C96.36 4.5 123 31.14 123 64Z",
+          "role": "ink",
+          "stroke": "#333333",
+          "stroke_width": 7.0
+        }
+      ],
+      "source": "src/2D/bozze/embargo.svg",
+      "draft": true
+    },
+    "narrative": {
+      "viewBox": [
+        0,
+        0,
+        256.0,
+        261.0
+      ],
+      "aspect": 0.981,
+      "layers": [
+        {
+          "d": "M91.5 51L164.5 51C165.88 51 167 52.12 167 53.5L167 63.5C167 64.88 165.88 66 164.5 66L91.5 66C90.12 66 89 64.88 89 63.5L89 53.5C89 52.12 90.12 51 91.5 51Z",
+          "role": "ground",
+          "fill": "#8C8C8C"
+        },
+        {
+          "d": "M96 66L96 84C96 96 118 100 118 110C118 120 96 126 96 140L96 150",
+          "role": "ground",
+          "stroke": "#8C8C8C",
+          "stroke_width": 5.0
+        },
+        {
+          "d": "M160 66L160 84C160 96 138 100 138 110C138 120 160 126 160 140L160 150",
+          "role": "ground",
+          "stroke": "#8C8C8C",
+          "stroke_width": 5.0
+        },
+        {
+          "d": "M110 91L146 91C140 100 132 104 129 108L127 108C124 104 116 100 110 91Z",
+          "role": "ground",
+          "fill": "#8C8C8C"
+        },
+        {
+          "d": "M127 106L129 106L129 130L127 130Z",
+          "role": "ground",
+          "fill": "#8C8C8C"
+        },
+        {
+          "d": "M128 126C134 126 150 140 150 152L128 177L106 152C106 140 122 126 128 126Z",
+          "role": "ground",
+          "fill": "#8C8C8C"
+        },
+        {
+          "d": "M57 143C84 146 112 161 125 183L125 216C112 204 84 198 42 197Z",
+          "role": "ground",
+          "fill": "#8C8C8C"
+        },
+        {
+          "d": "M199 143C172 146 144 161 131 183L131 216C144 204 172 198 214 197Z",
+          "role": "ground",
+          "fill": "#8C8C8C"
+        },
+        {
+          "d": "M44 204C80 205 108 210 128 227C148 210 176 205 212 204",
+          "role": "ground",
+          "stroke": "#8C8C8C",
+          "stroke_width": 5.0,
+          "line_join": "round"
+        },
+        {
+          "d": "M251 130.5C251 198.43 195.93 253.5 128 253.5C60.07 253.5 5 198.43 5 130.5C5 62.57 60.07 7.5 128 7.5C195.93 7.5 251 62.57 251 130.5Z",
+          "role": "ink",
+          "stroke": "#333333",
+          "stroke_width": 10.0
+        }
+      ],
+      "source": "src/2D/bozze/narrative.svg",
+      "draft": true
+    },
+    "SE": {
+      "viewBox": [
+        0,
+        0,
+        183.97,
+        138.25
+      ],
+      "aspect": 1.331,
+      "layers": [
+        {
+          "d": "M4.73 4.73L177.72 2.55L180.27 6.92L180.27 128.19L173.71 133.65L163.52 134.02L148.58 130.01L130.38 131.1L120.91 134.38L105.25 131.47L84.49 135.11L64.1 132.2L40.42 132.2L27.31 131.1L8.74 133.29L3.64 130.38L1.82 126.73Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M74.88 138.1C72.69 137.97 69.84 137.75 68.53 137.59C67.22 137.43 65.01 137.17 63.63 137.01C61.94 136.81 59.73 136.79 56.89 136.95C54.56 137.07 50.27 137.17 47.36 137.16C42.65 137.14 41.5 137.04 36.91 136.26C30.55 135.19 26.39 135.08 21.03 135.86C18.42 136.24 16.11 136.38 12.44 136.37C7.86 136.35 7.27 136.3 5.89 135.75C3.51 134.82 1.91 133.39 0.88 131.31L0 129.51L0 68.13L0 6.74L0.7 5.24C1.59 3.34 3.22 1.71 5.12 0.82L6.61 0.12L91.41 0.04C186.14 -0.04 177.8 -0.21 180.49 1.82C181.84 2.84 183.33 5.03 183.76 6.64C183.93 7.26 184 29.37 183.95 68.69L183.89 129.77L183.11 131.3C182.26 132.98 180.67 134.6 179.06 135.42C177.13 136.41 172.67 137.08 167.22 137.22C161.79 137.36 160.53 137.21 153.06 135.54C149.9 134.83 149.47 134.8 143.14 134.82C136.55 134.85 136.51 134.85 132.03 135.82C123.01 137.78 121.97 137.93 117.61 137.94C113.85 137.95 113.11 137.87 108.74 136.94C103.23 135.78 101.46 135.77 96.34 136.9C94.72 137.25 92.68 137.68 91.81 137.85C89.8 138.25 80.07 138.38 74.88 138.1ZM89.96 131.9C91.27 131.69 93.77 131.21 95.51 130.83C97.26 130.45 100 130.07 101.6 129.99C104.29 129.85 104.87 129.92 109.27 130.86C113.54 131.77 114.42 131.87 117.74 131.86C120.88 131.85 122.04 131.72 125.41 130.99C136.73 128.56 135.29 128.74 143.14 128.74C150.93 128.73 149.52 128.56 159.54 130.71C161.91 131.22 162.73 131.26 167.22 131.13C172.55 130.97 175.77 130.49 176.87 129.68C177.24 129.42 177.74 128.79 178 128.29C178.43 127.46 178.46 126.32 178.4 114.16L178.33 100.93L134.14 100.93C92.28 100.93 48.89 101.06 19.12 101.27L5.69 101.36L5.69 114.58C5.69 128.99 5.67 128.76 7.2 129.79C8.41 130.6 14.49 130.65 19.71 129.89C25.93 128.99 30.87 129.06 37.31 130.14C43.75 131.23 47 131.39 54.2 130.95C59.94 130.61 60.17 130.61 67.2 131.32C75.86 132.18 75.7 132.18 82.29 132.23C85.77 132.26 88.39 132.14 89.96 131.9ZM74.3 126.99C73.15 126.52 72.84 125.19 73.69 124.34C74.14 123.89 74.57 123.81 76.58 123.81C78.37 123.81 79.04 123.91 79.36 124.23C79.8 124.67 79.9 125.84 79.55 126.4C79.08 127.15 75.65 127.53 74.3 126.99ZM20.83 122.23C20.06 121.9 19.71 120.97 20.03 120.12C20.39 119.16 20.67 119.06 23.04 119.06C24.79 119.05 25.27 119.14 25.62 119.54C26.21 120.18 26.18 121.25 25.56 121.8C24.97 122.34 21.75 122.63 20.83 122.23ZM40.35 122.25C39.11 121.92 38.76 120.18 39.76 119.38C40.09 119.13 43.14 119.05 52.95 119.05L65.72 119.05L66.13 119.64C66.67 120.4 66.65 120.98 66.08 121.66C65.62 122.21 65.42 122.22 53.31 122.32C46.55 122.37 40.71 122.34 40.35 122.25ZM99.23 121.66C98.63 121.19 98.53 120.95 98.67 120.27C98.91 119.05 99.46 118.79 101.78 118.79C104.14 118.79 104.91 119.24 104.91 120.62C104.91 121.8 104.09 122.23 101.84 122.23C100.31 122.23 99.81 122.12 99.23 121.66ZM126.4 121.82C125.65 121.29 125.62 120.04 126.34 119.32C126.86 118.8 127.22 118.79 141.63 118.79C158.07 118.79 157.56 118.73 157.56 120.51C157.56 122.28 158.07 122.23 141.68 122.23C128.81 122.23 126.91 122.18 126.4 121.82ZM13.16 111.76C12.74 111.47 12.57 111.08 12.57 110.45C12.57 108.64 11.23 108.73 36.25 108.73C61.27 108.73 59.93 108.64 59.93 110.45C59.93 112.27 61.27 112.17 36.25 112.17C16.31 112.17 13.68 112.13 13.16 111.76ZM73.69 111.64C73.4 111.35 73.16 110.82 73.16 110.45C73.16 110.09 73.4 109.55 73.69 109.26C74.2 108.75 74.58 108.73 85.66 108.71C107.26 108.67 129.04 108.77 129.41 108.91C130.37 109.28 130.16 111.39 129.11 111.86C128.6 112.09 121.48 112.17 101.32 112.17C74.57 112.17 74.21 112.17 73.69 111.64ZM150.02 111.97C149.15 111.77 148.83 111.36 148.83 110.46C148.83 109.93 149.04 109.42 149.38 109.11C149.91 108.63 150.48 108.6 160.26 108.6L170.57 108.6L171.08 109.23C171.74 110.04 171.72 110.91 171.03 111.54C170.5 112.01 169.91 112.04 160.51 112.07C155.03 112.08 150.31 112.04 150.02 111.97ZM178.3 95.63C178.38 95.4 178.43 84.48 178.39 71.35L178.33 47.48L92.01 47.42L5.69 47.35L5.69 71.69L5.69 96.03L91.91 96.03C169.33 96.03 178.16 95.99 178.3 95.63ZM178.41 33.46C178.45 28.08 178.41 23.18 178.33 22.58L178.17 21.49L176 21.08C174.4 20.77 173.45 20.73 172.38 20.91C169 21.48 167.67 21.5 165.65 21.02C162.5 20.28 157.82 20.57 152.14 21.86C148.71 22.63 147.09 22.87 145.34 22.86C143.05 22.85 143.01 22.84 139.78 21.2C135.59 19.08 134.85 19.05 129.56 20.74C123.43 22.71 121.86 22.78 106.49 21.8C101.68 21.49 97.66 21.41 92.47 21.5C84.31 21.66 80.36 22.06 73.29 23.45C67.74 24.54 62.96 24.86 59.72 24.34C57.79 24.03 54.04 22.75 49.61 20.89C44.69 18.83 41.7 18.64 34.09 19.94C28.48 20.9 24.73 21.16 20.64 20.87C18.75 20.73 14.61 20.55 11.44 20.45L5.69 20.29L5.69 31.84L5.69 43.38L92.01 43.32L178.33 43.25ZM74.22 39.68C73.16 38.63 73.89 37.03 75.42 37.03C76.58 37.03 77.27 37.94 76.88 38.96C76.41 40.21 75.1 40.56 74.22 39.68ZM46.28 39.47C45.18 38.74 45.36 36.96 46.58 36.5C47.65 36.09 48.82 36.98 48.82 38.2C48.82 39.2 47.13 40.04 46.28 39.47ZM117.97 39C116.84 37.88 117.59 36.24 119.23 36.24C120.01 36.24 120.78 37.06 120.78 37.9C120.78 38.49 119.64 39.68 119.06 39.68C118.83 39.68 118.34 39.37 117.97 39ZM20.15 38.66C19.69 38.16 19.58 37.12 19.92 36.58C20.29 36 21.44 35.73 22.12 36.07C22.93 36.47 23.13 37.91 22.47 38.64C21.89 39.28 20.72 39.29 20.15 38.66ZM165.76 38.62C164.73 37.59 165.47 35.71 166.91 35.71C168.28 35.71 169 37.72 167.99 38.73C167.42 39.3 166.4 39.25 165.76 38.62ZM82.32 35.57C81.21 34.47 81.84 32.74 83.41 32.58C84.86 32.44 85.62 34.36 84.53 35.44C83.91 36.07 82.88 36.13 82.32 35.57ZM131.8 32.31C130.95 31.37 131.39 29.87 132.62 29.5C133.33 29.29 134.54 30.36 134.54 31.2C134.54 32.51 132.67 33.27 131.8 32.31ZM61.66 31.68C61.06 30.82 61.16 30 61.95 29.38C62.81 28.7 63.14 28.69 63.91 29.32C64.67 29.93 64.74 31.39 64.02 31.91C63.26 32.46 62.13 32.35 61.66 31.68ZM98.62 31.86C97.87 31.34 97.82 29.9 98.51 29.27C99.62 28.26 101.2 29.06 101.2 30.62C101.2 31.47 100.44 32.27 99.62 32.27C99.39 32.27 98.94 32.08 98.62 31.86ZM155.85 30.62C155.29 29.82 155.34 28.93 155.97 28.3C156.67 27.61 157.67 27.63 158.34 28.35C159.42 29.51 158.72 31.21 157.16 31.21C156.54 31.21 156.14 31.03 155.85 30.62ZM37.76 28.95C37.02 28.43 36.96 26.99 37.66 26.36C38.72 25.4 40.42 26.19 40.42 27.64C40.42 29.08 38.97 29.79 37.76 28.95ZM110.07 28.47C109.5 28.05 109.41 26.68 109.92 26.07C110.11 25.84 110.65 25.65 111.13 25.65C112.16 25.65 112.67 26.19 112.67 27.29C112.67 28.19 112.03 28.83 111.13 28.83C110.82 28.83 110.34 28.67 110.07 28.47ZM13.1 27.77C12.38 27.06 12.43 26.3 13.23 25.49C13.72 25 14.06 24.88 14.49 25.01C15.45 25.3 15.74 25.67 15.74 26.57C15.74 28.13 14.17 28.84 13.1 27.77ZM70.91 20.78C75.9 19.82 80.27 19.12 83.74 18.73C88.33 18.22 102.38 18.3 109.93 18.88C117.15 19.44 122.11 19.5 124.35 19.06C125.23 18.88 127.37 18.25 129.12 17.64C131.94 16.66 132.56 16.53 134.71 16.53L137.13 16.53L140.51 18.25C143.72 19.87 144 19.96 145.64 19.93C146.59 19.91 148.8 19.54 150.55 19.1C155.18 17.92 157.3 17.62 161 17.6C163.41 17.59 164.83 17.72 166.23 18.08C168.08 18.55 168.28 18.55 171.06 18.12C173.47 17.75 174.29 17.73 175.97 17.98C177.07 18.15 178.06 18.21 178.15 18.11C178.25 18.01 178.32 15.82 178.3 13.25C178.26 8.06 178.06 7.22 176.62 6.48C175.93 6.12 166.42 6.08 91.89 6.08C24.12 6.09 7.82 6.16 7.33 6.43C6.99 6.62 6.48 7.12 6.2 7.55C5.75 8.24 5.69 8.82 5.69 12.76L5.69 17.19L9.05 17.19C10.9 17.19 14.68 17.38 17.45 17.61C23.98 18.16 27.59 18.01 33.47 16.91C37.03 16.25 38.84 16.05 41.28 16.05C45.29 16.04 46.87 16.42 52.5 18.76C56.54 20.44 58.8 21.18 60.85 21.51C62.54 21.79 67.62 21.42 70.91 20.78Z",
+          "role": "ink",
+          "fill": "#000000"
+        }
+      ],
+      "source": "src/2D/SE.svg"
+    },
+    "dtc:photo": {
+      "viewBox": [
+        0,
+        0,
+        87.12,
+        87.12
+      ],
+      "aspect": 1.0,
+      "layers": [
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.43 66.28 2.43 43.56C2.43 20.84 20.84 2.43 43.56 2.43C66.28 2.43 84.7 20.84 84.7 43.56Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.43 66.28 2.43 43.56C2.43 20.84 20.84 2.43 43.56 2.43C66.28 2.43 84.7 20.84 84.7 43.56Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.5,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M33.96 25.38L69.83 25.38L69.83 48.11L33.96 48.11Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M33.96 25.38L69.83 25.38L69.83 48.11L33.96 48.11Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.0,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M25.13 31.69L60.99 31.69L60.99 54.42L25.13 54.42Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M25.13 31.69L60.99 31.69L60.99 54.42L25.13 54.42Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.0,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M17.04 38.26L52.91 38.26L52.91 60.99L17.04 60.99Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M17.04 38.26L52.91 38.26L52.91 60.99L17.04 60.99Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.0,
+          "line_cap": "round",
+          "line_join": "round"
+        }
+      ],
+      "source": "src/2D/dtc/09_photos.svg"
+    },
+    "dtc:laserscanner": {
+      "viewBox": [
+        0,
+        0,
+        159.73,
+        159.73
+      ],
+      "aspect": 1.0,
+      "layers": [
+        {
+          "d": "M63.94 81.78C56.69 81.58 49.38 82.19 42.17 81.54C37.37 80.56 37.38 75.8 37.55 72.23C37.16 63.33 36.26 54.43 36.31 45.52C36.96 39.98 37.77 34.45 38.52 28.92C42.48 25.66 48.22 26.96 53.04 26.1C59.56 25.59 66.23 24.52 72.7 25.97C76.61 27.83 79.89 31.25 78.75 35.54C78.83 41.41 78.8 47.29 78.77 53.16C83.42 52.39 80.33 46.63 81.61 43.65C81.92 37.72 81.49 31.78 81.48 25.85L86.01 25.48C94.21 23.6 95.51 24.06 99.08 23.78C105.52 23.74 109.57 23.89 115.01 24.98C118.66 25.72 121.01 26.79 123.71 28.18C123.71 34.95 123.88 45.88 123.91 52.65C124.12 60.01 123.79 66.44 123.42 73.33C123.47 76.49 122.06 80.45 118.65 82.18C111.83 83.01 104.95 84.05 98.06 83.84C92.47 82.6 86.8 81.53 81.02 81.69C75.5 81.42 69.97 81.11 64.44 81.17L64.14 81.44L63.94 81.78Z",
+          "role": "ground",
+          "fill": "#DDDDDD",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M63.94 81.78C56.69 81.58 49.38 82.19 42.17 81.54C37.37 80.56 37.38 75.8 37.55 72.23C37.16 63.33 36.26 54.43 36.31 45.52C36.96 39.98 37.77 34.45 38.52 28.92C42.48 25.66 48.22 26.96 53.04 26.1C59.56 25.59 66.23 24.52 72.7 25.97C76.61 27.83 79.89 31.25 78.75 35.54C78.83 41.41 78.8 47.29 78.77 53.16C83.42 52.39 80.33 46.63 81.61 43.65C81.92 37.72 81.49 31.78 81.48 25.85L86.01 25.48C94.21 23.6 95.51 24.06 99.08 23.78C105.52 23.74 109.57 23.89 115.01 24.98C118.66 25.72 121.01 26.79 123.71 28.18C123.71 34.95 123.88 45.88 123.91 52.65C124.12 60.01 123.79 66.44 123.42 73.33C123.47 76.49 122.06 80.45 118.65 82.18C111.83 83.01 104.95 84.05 98.06 83.84C92.47 82.6 86.8 81.53 81.02 81.69C75.5 81.42 69.97 81.11 64.44 81.17L64.14 81.44L63.94 81.78Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.53,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M40.84 28.84C40.03 35.47 38.73 42.06 38.25 48.72L39.73 77.35C40.86 79.87 44.19 80.09 46.74 80.3C52.27 80.9 57.86 80.79 63.41 81.06C63.39 63.01 63.39 44.96 63.69 26.92C56.04 27 48.36 27.5 40.84 28.84Z",
+          "role": "ground",
+          "fill": "#9C9C9C",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M40.84 28.84C40.03 35.47 38.73 42.06 38.25 48.72L39.73 77.35C40.86 79.87 44.19 80.09 46.74 80.3C52.27 80.9 57.86 80.79 63.41 81.06C63.39 63.01 63.39 44.96 63.69 26.92C56.04 27 48.36 27.5 40.84 28.84Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.4,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M86.26 25.25C91.81 24.74 97.38 24.31 102.97 24.38C104.93 24.76 108.21 23.65 109.31 25.26C109.22 27.71 109.34 30.15 109.41 32.61C109.73 41.29 109.92 49.98 109.55 58.67C109.38 65.42 109.31 72.19 108.79 78.93C108.16 82.29 103.98 82.32 101.1 82.6C94.51 82.21 87.89 81.61 81.29 81.89C80.15 79.91 81.05 76.97 80.72 74.63C80.81 66.46 81.18 58.29 81.53 50.12C81.81 45.39 82.29 40.66 81.87 35.92C81.75 32.71 81.65 29.49 81.52 26.28Z",
+          "role": "ground",
+          "fill": "#9C9C9C",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M86.26 25.25C91.81 24.74 97.38 24.31 102.97 24.38C104.93 24.76 108.21 23.65 109.31 25.26C109.22 27.71 109.34 30.15 109.41 32.61C109.73 41.29 109.92 49.98 109.55 58.67C109.38 65.42 109.31 72.19 108.79 78.93C108.16 82.29 103.98 82.32 101.1 82.6C94.51 82.21 87.89 81.61 81.29 81.89C80.15 79.91 81.05 76.97 80.72 74.63C80.81 66.46 81.18 58.29 81.53 50.12C81.81 45.39 82.29 40.66 81.87 35.92C81.75 32.71 81.65 29.49 81.52 26.28Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.53,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M68.71 86.05L68.71 89.77L73.58 90.02L73.72 92.33C73.72 92.33 72.61 93.09 72.47 93.61C72.33 94.12 72.33 94.37 72.33 95.14C72.33 95.91 71.91 98.21 72.05 98.85C72.19 99.49 72.33 100.77 72.33 100.77C72.33 100.77 69.26 101.03 68.57 101.03C67.87 101.03 66.9 101.29 66.9 101.29C66.9 101.29 66.76 102.05 66.06 102.95C65.36 103.85 65.78 103.72 64.67 104.74C63.55 105.77 63.83 105.51 63.55 106.15C63.27 106.79 57.42 121.51 57.42 121.51L57.98 122.79L51.85 135.33C51.85 135.33 60.63 136.61 60.76 135.59C60.9 134.57 65.08 125.35 65.64 125.22C66.2 125.09 66.06 125.22 66.62 124.84C67.17 124.45 70.66 115.62 71.07 116.13C71.49 116.65 71.49 117.16 71.49 117.16C71.49 117.16 72.19 116.52 72.19 117.67C72.19 118.82 71.77 127.65 71.77 127.65L72.19 128.42L71.21 145.73C71.21 145.73 80.96 146.24 81.1 145.73C81.24 145.22 81.66 129.45 82.36 128.81C83.06 128.17 83.2 127.91 83.2 127.91C83.2 127.91 83.33 128.42 83.2 127.01C83.06 125.61 83.61 118.57 83.61 118.57C83.61 118.57 84.59 118.18 84.59 116.77C84.59 115.37 84.87 111.65 85.01 112.42C85.15 113.19 90.02 124.71 90.86 125.09C91.69 125.48 92.39 125.61 92.39 125.61C92.39 125.61 95.73 135.46 96.29 135.33C96.85 135.21 106.04 135.46 105.77 134.95C105.49 134.44 100.05 123.43 100.05 122.66C100.05 121.89 100.05 121.77 99.91 121.25C99.77 120.74 97.13 114.73 96.57 112.93C96.01 111.14 94.48 107.56 94.06 107.05C93.64 106.53 93.64 107.81 92.81 106.15C91.97 104.49 91.69 104.36 91.55 103.33C91.42 102.31 91.55 101.8 91 101.54C90.44 101.29 85.15 101.54 85.15 100.9C85.15 100.26 85.29 97.06 85.29 95.53C85.29 93.99 85.7 93.99 85.29 93.35C84.87 92.71 84.45 92.71 84.45 92.71L84.31 91.69C84.31 91.69 83.47 90.41 84.17 90.28C84.87 90.15 87.1 90.15 87.65 89.89C88.21 89.64 88.91 89.51 88.91 89.51C89.33 88.87 90.16 86.95 89.33 86.57C88.49 86.18 68.71 86.05 68.71 86.05Z",
+          "role": "ink",
+          "fill": "#000000",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M68.71 86.05L68.71 89.77L73.58 90.02L73.72 92.33C73.72 92.33 72.61 93.09 72.47 93.61C72.33 94.12 72.33 94.37 72.33 95.14C72.33 95.91 71.91 98.21 72.05 98.85C72.19 99.49 72.33 100.77 72.33 100.77C72.33 100.77 69.26 101.03 68.57 101.03C67.87 101.03 66.9 101.29 66.9 101.29C66.9 101.29 66.76 102.05 66.06 102.95C65.36 103.85 65.78 103.72 64.67 104.74C63.55 105.77 63.83 105.51 63.55 106.15C63.27 106.79 57.42 121.51 57.42 121.51L57.98 122.79L51.85 135.33C51.85 135.33 60.63 136.61 60.76 135.59C60.9 134.57 65.08 125.35 65.64 125.22C66.2 125.09 66.06 125.22 66.62 124.84C67.17 124.45 70.66 115.62 71.07 116.13C71.49 116.65 71.49 117.16 71.49 117.16C71.49 117.16 72.19 116.52 72.19 117.67C72.19 118.82 71.77 127.65 71.77 127.65L72.19 128.42L71.21 145.73C71.21 145.73 80.96 146.24 81.1 145.73C81.24 145.22 81.66 129.45 82.36 128.81C83.06 128.17 83.2 127.91 83.2 127.91C83.2 127.91 83.33 128.42 83.2 127.01C83.06 125.61 83.61 118.57 83.61 118.57C83.61 118.57 84.59 118.18 84.59 116.77C84.59 115.37 84.87 111.65 85.01 112.42C85.15 113.19 90.02 124.71 90.86 125.09C91.69 125.48 92.39 125.61 92.39 125.61C92.39 125.61 95.73 135.46 96.29 135.33C96.85 135.21 106.04 135.46 105.77 134.95C105.49 134.44 100.05 123.43 100.05 122.66C100.05 121.89 100.05 121.77 99.91 121.25C99.77 120.74 97.13 114.73 96.57 112.93C96.01 111.14 94.48 107.56 94.06 107.05C93.64 106.53 93.64 107.81 92.81 106.15C91.97 104.49 91.69 104.36 91.55 103.33C91.42 102.31 91.55 101.8 91 101.54C90.44 101.29 85.15 101.54 85.15 100.9C85.15 100.26 85.29 97.06 85.29 95.53C85.29 93.99 85.7 93.99 85.29 93.35C84.87 92.71 84.45 92.71 84.45 92.71L84.31 91.69C84.31 91.69 83.47 90.41 84.17 90.28C84.87 90.15 87.1 90.15 87.65 89.89C88.21 89.64 88.91 89.51 88.91 89.51C89.33 88.87 90.16 86.95 89.33 86.57C88.49 86.18 68.71 86.05 68.71 86.05Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.13
+        },
+        {
+          "d": "M66.16 81.15C66.16 81.69 66.5 83.46 66.5 83.46L66.9 85.76L69.61 86.08L85.07 86.58C85.07 86.58 87.93 86.62 88.96 86.53C90 86.44 90.74 86.35 90.74 86.35C90.74 86.35 91.13 86.4 91.23 86.08C91.33 85.76 91.97 82.96 91.97 82.96C91.97 82.96 87.39 82.01 87.04 82.01C86.7 82.01 84.93 82.1 84.58 82.05C84.24 82.01 81.72 81.96 81.23 81.92C80.74 81.87 68.67 81.46 68.42 81.42C68.18 81.37 66.16 81.15 66.16 81.15Z",
+          "role": "ground",
+          "fill": "#9C9C9C",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M66.16 81.15C66.16 81.69 66.5 83.46 66.5 83.46L66.9 85.76L69.61 86.08L85.07 86.58C85.07 86.58 87.93 86.62 88.96 86.53C90 86.44 90.74 86.35 90.74 86.35C90.74 86.35 91.13 86.4 91.23 86.08C91.33 85.76 91.97 82.96 91.97 82.96C91.97 82.96 87.39 82.01 87.04 82.01C86.7 82.01 84.93 82.1 84.58 82.05C84.24 82.01 81.72 81.96 81.23 81.92C80.74 81.87 68.67 81.46 68.42 81.42C68.18 81.37 66.16 81.15 66.16 81.15Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.53,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M155.9 79.86C155.9 121.86 121.86 155.9 79.86 155.9C37.87 155.9 3.82 121.86 3.82 79.86C3.82 37.87 37.87 3.82 79.86 3.82C121.86 3.82 155.9 37.87 155.9 79.86Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.5,
+          "line_cap": "round",
+          "line_join": "round"
+        }
+      ],
+      "source": "src/2D/dtc/10_laserscanner.svg"
+    },
+    "dtc:topographic": {
+      "viewBox": [
+        0,
+        0,
+        87.12,
+        87.12
+      ],
+      "aspect": 1.0,
+      "layers": [
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.43 66.28 2.43 43.56C2.43 20.84 20.84 2.43 43.56 2.43C66.28 2.43 84.7 20.84 84.7 43.56Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.5,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M21.4 21.93L40.62 21.93L40.62 47.84L21.4 47.84Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M21.4 21.93L40.62 21.93L40.62 47.84L21.4 47.84Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.82,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M21.99 22.11L30.96 34.03L40.02 22.21Z",
+          "role": "ink",
+          "fill": "#000000",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M21.99 22.11L30.96 34.03L40.02 22.21Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.77
+        },
+        {
+          "d": "M39.84 47.3L30.94 35.33L21.95 47.21Z",
+          "role": "ink",
+          "fill": "#000000",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M39.84 47.3L30.94 35.33L21.95 47.21Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.77
+        },
+        {
+          "d": "M49.18 40.75L68.39 40.75L68.39 66.65L49.18 66.65Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M49.18 40.75L68.39 40.75L68.39 66.65L49.18 66.65Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.82,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M49.77 40.92L58.74 52.84L67.8 41.02Z",
+          "role": "ink",
+          "fill": "#000000",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M49.77 40.92L58.74 52.84L67.8 41.02Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.77
+        },
+        {
+          "d": "M67.62 66.12L58.72 54.15L49.73 66.02Z",
+          "role": "ink",
+          "fill": "#000000",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M67.62 66.12L58.72 54.15L49.73 66.02Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.77
+        }
+      ],
+      "source": "src/2D/dtc/01_topographicnetwork.svg"
+    },
+    "dtc:photogrammetry": {
+      "viewBox": [
+        0,
+        0,
+        87.12,
+        87.12
+      ],
+      "aspect": 1.0,
+      "layers": [
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.43 66.28 2.43 43.56C2.43 20.84 20.84 2.43 43.56 2.43C66.28 2.43 84.7 20.84 84.7 43.56Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.43 66.28 2.43 43.56C2.43 20.84 20.84 2.43 43.56 2.43C66.28 2.43 84.7 20.84 84.7 43.56Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.5,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M22.28 28.63L22.27 28.03Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M22.28 28.63L22.27 28.03Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 2.77,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M41.22 18.27L41.21 17.68Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M41.22 18.27L41.21 17.68Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 2.77,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M21.32 55.39L21.31 54.79Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M21.32 55.39L21.31 54.79Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 2.77,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M48.53 35.31L48.52 34.71Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M48.53 35.31L48.52 34.71Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 2.77,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M37.16 44.66L37.16 44.06Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M37.16 44.66L37.16 44.06Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 2.77,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M66.32 33.08L66.31 32.49Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M66.32 33.08L66.31 32.49Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 2.77,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M42.03 67L42.02 66.41Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M42.03 67L42.02 66.41Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 2.77,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M58.06 63.85L58.06 63.25Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M58.06 63.85L58.06 63.25Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 2.77,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M54.23 51.95L54.22 51.35Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M54.23 51.95L54.22 51.35Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 2.77,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M21.9 28.66C22.97 27.59 40.83 17.95 40.83 17.95L66.72 33.13L54.4 51.7L58.07 63.59L66.72 33.49L48.87 34.91C48.87 34.91 55.12 51.7 54.4 51.34C53.69 50.99 37.26 43.66 37.26 43.66C37.26 43.66 60.69 63.87 58.02 63.69C55.34 63.51 41.72 67.77 41.72 66.52C41.72 65.27 37.26 44.56 37.26 44.56C37.26 44.56 21.55 55.99 21.55 54.91C21.55 53.84 22.44 27.06 22.62 27.95C22.8 28.84 36.72 44.56 36.72 44.56L48.87 34.56L40.83 18.31",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.6
+        },
+        {
+          "d": "M21.02 55.35L41.79 66.96",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.6
+        }
+      ],
+      "source": "src/2D/dtc/03_mesh.svg"
+    },
+    "dtc:transformation": {
+      "viewBox": [
+        0,
+        0,
+        87.65,
+        87.64
+      ],
+      "aspect": 1.0,
+      "layers": [
+        {
+          "d": "M2.19 44.15L2.19 85.41L43.66 85.41C42.87 84.43 2.19 44.15 2.19 44.15Z",
+          "role": "ink",
+          "fill": "#000000",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M2.19 44.15L2.19 85.41L43.66 85.41C42.87 84.43 2.19 44.15 2.19 44.15Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.01,
+          "line_cap": "round"
+        },
+        {
+          "d": "M84.96 43.82C84.96 66.54 66.55 84.96 43.83 84.96C21.11 84.96 2.69 66.54 2.69 43.82C2.69 21.1 21.11 2.69 43.83 2.69C66.55 2.69 84.96 21.1 84.96 43.82Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M84.96 43.82C84.96 66.54 66.55 84.96 43.83 84.96C21.11 84.96 2.69 66.54 2.69 43.82C2.69 21.1 21.11 2.69 43.83 2.69C66.55 2.69 84.96 21.1 84.96 43.82Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 2.0,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M29.79 66.69C29.36 66.5 29.29 66.34 29.14 65.31C29.07 64.78 28.96 64 28.9 63.6L28.8 62.85L27.94 62.55C27.47 62.39 26.72 62.07 26.27 61.85L25.46 61.44L24.3 62.37C22.84 63.53 22.68 63.62 22.23 63.54C21.92 63.48 21.64 63.23 20.11 61.7C18.62 60.22 18.33 59.88 18.28 59.61C18.2 59.15 18.34 58.89 19.44 57.52L20.37 56.35L19.96 55.54C19.74 55.1 19.43 54.35 19.27 53.87L18.98 53.02L18.63 52.96C18.44 52.92 17.71 52.83 17.02 52.74C16.33 52.66 15.65 52.53 15.52 52.46C15.03 52.21 15 52.03 15 49.38C15 47.72 15.03 46.88 15.11 46.72C15.33 46.24 15.55 46.17 18.18 45.87C18.57 45.83 18.92 45.76 18.95 45.72C18.99 45.68 19.13 45.3 19.27 44.88C19.41 44.46 19.7 43.76 19.91 43.32C20.13 42.88 20.3 42.49 20.3 42.44C20.3 42.36 19.42 41.18 18.76 40.37C18.34 39.86 18.21 39.53 18.28 39.13C18.33 38.88 18.68 38.48 20.12 37.05C22.33 34.84 22.32 34.84 23.51 35.77C24.88 36.85 25.41 37.24 25.51 37.24C25.57 37.24 25.89 37.1 26.22 36.93C26.79 36.65 27.91 36.2 28.53 36C28.82 35.91 28.78 36.09 29.14 33.43C29.29 32.35 29.39 32.17 29.91 32.02C30.38 31.89 34.65 31.92 35.04 32.05C35.52 32.22 35.64 32.53 35.81 34.05C36.03 36.06 35.93 35.87 37.03 36.25C37.54 36.43 38.26 36.73 38.62 36.91C38.97 37.09 39.31 37.24 39.36 37.24C39.45 37.24 40.16 36.71 41.47 35.68C42.52 34.86 42.56 34.87 44.75 37.06C47 39.31 46.99 39.29 45.94 40.59C44.75 42.07 44.57 42.3 44.57 42.4C44.57 42.47 44.75 42.9 44.97 43.36C45.19 43.82 45.48 44.55 45.62 44.97C45.75 45.39 45.87 45.74 45.88 45.76C45.89 45.77 46.62 45.87 47.5 45.96C48.37 46.06 49.2 46.2 49.34 46.27C49.83 46.53 49.88 46.78 49.88 49.37C49.88 52.6 49.95 52.49 47.8 52.74C45.72 52.99 45.92 52.9 45.64 53.74C45.52 54.14 45.22 54.86 44.99 55.35C44.76 55.83 44.57 56.28 44.57 56.34C44.57 56.41 44.71 56.62 44.87 56.82C45.86 58.03 46.39 58.74 46.52 58.99C46.81 59.57 46.7 59.74 44.75 61.69C42.46 63.97 42.59 63.93 41.12 62.79C40.72 62.48 40.33 62.17 40.26 62.11C39.82 61.76 39.45 61.51 39.38 61.51C39.34 61.51 39.01 61.65 38.66 61.82C38.05 62.12 36.94 62.56 36.35 62.74C36.03 62.84 36.02 62.89 35.81 64.74C35.73 65.45 35.6 66.16 35.53 66.3C35.28 66.77 35.02 66.81 32.42 66.81C30.68 66.81 29.99 66.77 29.79 66.69ZM34.51 57.84C37.67 57.04 40.01 54.71 40.91 51.46C41.18 50.47 41.19 48.28 40.91 47.31C40.63 46.29 40.39 45.69 39.97 45.01C38.69 42.87 36.77 41.45 34.37 40.87C33.3 40.61 31.42 40.63 30.33 40.91C27.47 41.64 25.18 43.73 24.22 46.5C23.7 47.97 23.6 49.54 23.9 51.07C24.09 52 24.15 52.18 24.63 53.23C25.69 55.51 28.02 57.32 30.64 57.9C31.7 58.14 33.44 58.11 34.51 57.84ZM55.99 47.14C55.79 46.94 55.72 46.77 55.67 46.35C55.64 46.06 55.56 45.5 55.51 45.1L55.41 44.39L54.64 44.11C54.22 43.96 53.66 43.72 53.4 43.59C53.09 43.43 52.88 43.37 52.81 43.42C52.76 43.47 52.29 43.83 51.78 44.24C51.07 44.79 50.78 44.97 50.57 44.97C50.33 44.97 50.1 44.78 49 43.69C48.29 42.98 47.65 42.29 47.57 42.15C47.38 41.78 47.48 41.5 48.09 40.74C48.39 40.37 48.74 39.94 48.86 39.78L49.08 39.5L48.8 38.95C48.65 38.65 48.42 38.11 48.29 37.75C48.16 37.39 48.03 37.07 48 37.04C47.97 37.01 47.44 36.91 46.82 36.84C45.46 36.66 45.24 36.59 45.12 36.23C44.99 35.85 44.99 32.55 45.13 32.26C45.18 32.14 45.33 32 45.46 31.95C45.71 31.85 46.58 31.71 47.5 31.62L48.04 31.56L48.25 30.92C48.37 30.56 48.6 30 48.77 29.66C48.94 29.32 49.05 29 49.01 28.94C48.97 28.88 48.62 28.43 48.22 27.94C47.17 26.62 47.15 26.7 48.85 25.01C49.64 24.22 50.29 23.65 50.43 23.62C50.74 23.54 50.93 23.64 52.03 24.49L52.93 25.18L53.76 24.79C54.22 24.57 54.78 24.34 55.01 24.28L55.42 24.17L55.57 22.98C55.74 21.6 55.83 21.37 56.2 21.24C56.57 21.11 59.87 21.12 60.16 21.25C60.47 21.39 60.55 21.63 60.72 22.92C60.8 23.55 60.89 24.09 60.92 24.12C60.95 24.15 61.34 24.31 61.79 24.47C62.23 24.63 62.77 24.87 62.98 24.99L63.36 25.21L63.74 24.91C63.95 24.75 64.34 24.43 64.61 24.22C65.31 23.65 65.62 23.52 65.94 23.65C66.09 23.71 66.79 24.35 67.5 25.06C69.14 26.71 69.13 26.63 68.06 27.98C67.65 28.49 67.32 28.99 67.32 29.09C67.32 29.2 67.41 29.44 67.52 29.64C67.64 29.84 67.84 30.33 67.98 30.72C68.13 31.12 68.27 31.47 68.3 31.5C68.33 31.53 68.87 31.62 69.5 31.7C70.67 31.85 71.12 31.99 71.22 32.25C71.32 32.52 71.28 36.05 71.17 36.28C71.03 36.59 70.78 36.67 69.48 36.84C68.86 36.91 68.33 37 68.3 37.02C68.26 37.04 68.14 37.33 68.03 37.67C67.92 38 67.69 38.55 67.53 38.89C67.24 39.49 67.24 39.52 67.39 39.71C67.47 39.82 67.81 40.26 68.15 40.69C68.48 41.11 68.78 41.56 68.81 41.68C68.89 42.03 68.66 42.34 67.29 43.69C66.26 44.7 65.93 44.97 65.74 44.97C65.51 44.97 65.22 44.77 63.58 43.5C63.38 43.35 63.36 43.35 62.89 43.59C62.63 43.72 62.08 43.96 61.66 44.11C60.79 44.43 60.86 44.29 60.66 45.95C60.56 46.79 60.52 46.92 60.3 47.15L60.05 47.4L58.15 47.4L56.25 47.4L55.99 47.14ZM59.96 40.58C61.7 40.06 63.21 38.8 64.01 37.19C64.19 36.85 64.42 36.2 64.53 35.76C65.14 33.32 64.15 30.55 62.13 29.05C61.87 28.86 61.64 28.7 61.61 28.7C61.58 28.7 61.41 28.6 61.22 28.48C61.04 28.36 60.57 28.15 60.17 28.01C59.52 27.78 59.34 27.76 58.19 27.76C57.11 27.75 56.85 27.78 56.31 27.96C54.04 28.73 52.55 30.23 51.84 32.48C51.54 33.44 51.54 35.1 51.84 36.07C52.63 38.58 54.52 40.25 57.16 40.78C57.66 40.87 59.37 40.75 59.96 40.58Z",
+          "role": "ink",
+          "fill": "#000000"
+        }
+      ],
+      "source": "src/2D/dtc/00_transformation.svg"
+    },
+    "dtc:pointcloud": {
+      "viewBox": [
+        0,
+        0,
+        87.12,
+        87.12
+      ],
+      "aspect": 1.0,
+      "layers": [
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.43 66.28 2.43 43.56C2.43 20.84 20.84 2.43 43.56 2.43C66.28 2.43 84.7 20.84 84.7 43.56Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.43 66.28 2.43 43.56C2.43 20.84 20.84 2.43 43.56 2.43C66.28 2.43 84.7 20.84 84.7 43.56Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.5,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M42.64 65.53C40.29 65.29 38.05 64.5 36.13 63.25C34.37 62.11 32.91 60.54 31.94 58.74C31.77 58.43 31.61 58.19 31.56 58.19C31.52 58.19 31.35 58.23 31.18 58.28C29.88 58.66 28.24 58.88 26.35 58.92C23.77 58.98 21.59 58.65 19.38 57.87C16.08 56.7 13.8 54.69 13.08 52.32C12.86 51.61 12.84 50.52 13.02 49.8C13.34 48.49 14.23 47.19 15.49 46.19C16.05 45.73 17.18 44.98 17.3 44.98C17.33 44.98 17.41 44.94 17.47 44.89C17.58 44.81 17.57 44.78 17.24 44.37C16.58 43.56 15.98 42.45 15.7 41.53C15.33 40.33 15.24 38.77 15.46 37.62C16.03 34.75 17.97 32.35 20.84 30.95C22.02 30.38 23.16 30.03 24.45 29.82C25.15 29.71 27.44 29.71 28.15 29.82C29.08 29.97 30.34 30.33 31.17 30.68C31.3 30.74 31.42 30.77 31.43 30.76C31.45 30.74 31.41 30.54 31.34 30.31C30.82 28.63 30.98 26.78 31.78 25.09C32.44 23.71 33.72 22.28 35.16 21.32C37 20.09 39.27 19.26 41.51 19C41.79 18.97 42.24 18.91 42.51 18.87C43.06 18.79 44.6 18.82 45.17 18.93C45.36 18.96 45.74 19.02 46.02 19.06C50.05 19.61 53.64 21.86 55.22 24.84C55.53 25.41 55.85 26.28 55.92 26.71L55.96 26.97L56.81 26.93C59.24 26.82 61.56 27.29 63.55 28.29C64.71 28.88 65.35 29.33 66.18 30.17C67.66 31.65 68.3 33.11 68.29 34.96C68.29 35.59 68.25 35.87 68.12 36.37C67.97 36.98 67.59 37.86 67.34 38.22C67.27 38.31 67.21 38.42 67.21 38.45C67.21 38.48 67.34 38.55 67.51 38.62C68.19 38.89 69.35 39.51 70 39.94C71.94 41.24 73.19 42.85 73.7 44.7C73.85 45.24 73.87 45.44 73.87 46.23C73.88 47.35 73.74 47.94 73.25 48.95C72.69 50.13 71.92 51.07 70.81 51.96C68.74 53.61 66.18 54.6 62.95 55.01C61.61 55.18 58.49 55.07 57.59 54.83C57.47 54.8 57.45 54.82 57.42 55.1C57.39 55.27 57.3 55.72 57.22 56.11C56.31 60.13 52.91 63.58 48.55 64.9C46.9 65.41 46.14 65.52 44.33 65.54C43.54 65.55 42.78 65.55 42.64 65.54ZM45.39 63.04C48.85 62.49 52.11 60.74 54.12 58.34C55.23 57.01 55.99 55.49 56.25 54.04L56.33 53.62L57.84 53.62C61.97 53.61 65.3 52.81 67.64 51.24C69.34 50.1 70.44 48.51 70.72 46.77C70.82 46.13 70.76 45.02 70.59 44.38C70.2 42.92 69.1 41.41 67.77 40.49C67.27 40.15 66.17 39.57 65.87 39.5C65.78 39.47 65.69 39.42 65.67 39.38C65.65 39.34 65.73 39.1 65.83 38.84C66.77 36.57 66.62 34.33 65.4 32.48C63.7 29.91 59.85 28.14 55.97 28.14L55.16 28.14L55.01 27.72C54.76 27.01 54.22 26.01 53.75 25.38C52.01 23.05 49.35 21.61 45.92 21.15C44.97 21.02 43.04 21.01 42.07 21.12C39.78 21.39 37.44 22.19 35.8 23.27C33.01 25.12 31.73 27.65 32.11 30.56C32.17 30.98 32.24 31.4 32.28 31.49C32.31 31.59 32.33 31.67 32.31 31.69C32.3 31.71 32.07 31.65 31.8 31.56C27.96 30.3 22.92 31.37 19.82 34.1C18.62 35.16 17.68 36.58 17.32 37.9C16.73 40.06 17.26 42.42 18.86 44.64C19.05 44.91 19.18 45.14 19.15 45.16C19.12 45.19 18.8 45.4 18.44 45.64C17.64 46.16 16.65 47.12 16.2 47.82C14.62 50.25 15.41 53.23 18.17 55.3C19.65 56.41 21.56 57.17 23.61 57.48C24.62 57.62 26.57 57.62 27.64 57.47C28.67 57.33 30.12 56.96 31.18 56.56C31.65 56.38 32.05 56.25 32.05 56.26C32.06 56.27 32.2 56.53 32.37 56.84C33.58 59.1 35.44 60.92 37.63 61.98C38.76 62.52 40.05 62.91 41.2 63.07C41.47 63.1 41.78 63.14 41.89 63.16C42.32 63.22 44.8 63.14 45.39 63.04Z",
+          "role": "ink",
+          "fill": "#000000"
+        }
+      ],
+      "source": "src/2D/dtc/02_pointcloud.svg"
+    },
+    "dtc:mesh": {
+      "viewBox": [
+        0,
+        0,
+        87.12,
+        87.12
+      ],
+      "aspect": 1.0,
+      "layers": [
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.43 66.28 2.43 43.56C2.43 20.84 20.84 2.43 43.56 2.43C66.28 2.43 84.7 20.84 84.7 43.56Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.43 66.28 2.43 43.56C2.43 20.84 20.84 2.43 43.56 2.43C66.28 2.43 84.7 20.84 84.7 43.56Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.5,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M22.28 28.63L22.27 28.03Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M22.28 28.63L22.27 28.03Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 2.77,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M41.22 18.27L41.21 17.68Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M41.22 18.27L41.21 17.68Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 2.77,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M21.32 55.39L21.31 54.79Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M21.32 55.39L21.31 54.79Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 2.77,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M48.53 35.31L48.52 34.71Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M48.53 35.31L48.52 34.71Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 2.77,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M37.16 44.66L37.16 44.06Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M37.16 44.66L37.16 44.06Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 2.77,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M66.32 33.08L66.31 32.49Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M66.32 33.08L66.31 32.49Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 2.77,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M42.03 67L42.02 66.41Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M42.03 67L42.02 66.41Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 2.77,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M58.06 63.85L58.06 63.25Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M58.06 63.85L58.06 63.25Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 2.77,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M54.23 51.95L54.22 51.35Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M54.23 51.95L54.22 51.35Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 2.77,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M21.9 28.66C22.97 27.59 40.83 17.95 40.83 17.95L66.72 33.13L54.4 51.7L58.07 63.59L66.72 33.49L48.87 34.91C48.87 34.91 55.12 51.7 54.4 51.34C53.69 50.99 37.26 43.66 37.26 43.66C37.26 43.66 60.69 63.87 58.02 63.69C55.34 63.51 41.72 67.77 41.72 66.52C41.72 65.27 37.26 44.56 37.26 44.56C37.26 44.56 21.55 55.99 21.55 54.91C21.55 53.84 22.44 27.06 22.62 27.95C22.8 28.84 36.72 44.56 36.72 44.56L48.87 34.56L40.83 18.31",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.6
+        },
+        {
+          "d": "M21.02 55.35L41.79 66.96",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.6
+        }
+      ],
+      "source": "src/2D/dtc/03_mesh.svg"
+    },
+    "dtc:dem": {
+      "viewBox": [
+        0,
+        0,
+        87.12,
+        87.12
+      ],
+      "aspect": 1.0,
+      "layers": [
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.43 66.28 2.43 43.56C2.43 20.84 20.84 2.43 43.56 2.43C66.28 2.43 84.7 20.84 84.7 43.56Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.5,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M13.33 55.17L21.96 47.34L25.01 39.19L30.59 39.19L35.67 44.29C34.83 46.84 37.17 49.99 39.57 47.47C41.39 45.25 42.92 42.6 43.53 39.77C44.29 35.63 46.4 31.78 46.32 27.48L48.35 17.81C50.07 18.02 51.77 18.46 53.49 18.19C56.53 18.93 55.28 22.79 55.58 25.03C56.54 27.76 56.88 30.78 57.77 33.44L61.55 38.18C63.53 36.72 65.76 40.45 66.95 41.9C67.9 43.76 69.24 46.05 71.27 44.57C73.79 45.61 75.29 48.19 76.57 50.47C77.29 51.99 78.06 53.48 78.8 54.98Z",
+          "role": "ink",
+          "fill": "#000000",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M13.33 55.17L21.96 47.34L25.01 39.19L30.59 39.19L35.67 44.29C34.83 46.84 37.17 49.99 39.57 47.47C41.39 45.25 42.92 42.6 43.53 39.77C44.29 35.63 46.4 31.78 46.32 27.48L48.35 17.81C50.07 18.02 51.77 18.46 53.49 18.19C56.53 18.93 55.28 22.79 55.58 25.03C56.54 27.76 56.88 30.78 57.77 33.44L61.55 38.18C63.53 36.72 65.76 40.45 66.95 41.9C67.9 43.76 69.24 46.05 71.27 44.57C73.79 45.61 75.29 48.19 76.57 50.47C77.29 51.99 78.06 53.48 78.8 54.98Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.0
+        },
+        {
+          "d": "M3.74 55.18L82.94 55.18",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.0
+        }
+      ],
+      "source": "src/2D/dtc/07_DEM.svg"
+    },
+    "dtc:orthophoto": {
+      "viewBox": [
+        0,
+        0,
+        87.12,
+        87.12
+      ],
+      "aspect": 1.0,
+      "layers": [
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.43 66.28 2.43 43.56C2.43 20.84 20.84 2.43 43.56 2.43C66.28 2.43 84.7 20.84 84.7 43.56Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.5,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M18.56 18.22L68.06 18.22L68.06 67.46L18.56 67.46Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.0
+        },
+        {
+          "d": "M18.53 18.18L35.09 18.18L35.09 34.63L18.53 34.63Z",
+          "role": "ink",
+          "fill": "#000000"
+        },
+        {
+          "d": "M18.53 18.18L35.09 18.18L35.09 34.63L18.53 34.63Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.94
+        },
+        {
+          "d": "M35.09 18.18L51.65 18.18L51.65 34.63L35.09 34.63Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.94
+        },
+        {
+          "d": "M51.54 18.18L68.1 18.18L68.1 34.63L51.54 34.63Z",
+          "role": "ink",
+          "fill": "#000000"
+        },
+        {
+          "d": "M51.54 18.18L68.1 18.18L68.1 34.63L51.54 34.63Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.94
+        },
+        {
+          "d": "M18.53 34.6L35.09 34.6L35.09 51.05L18.53 51.05Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.94
+        },
+        {
+          "d": "M35.09 34.6L51.65 34.6L51.65 51.05L35.09 51.05Z",
+          "role": "ink",
+          "fill": "#000000"
+        },
+        {
+          "d": "M35.09 34.6L51.65 34.6L51.65 51.05L35.09 51.05Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.94
+        },
+        {
+          "d": "M51.54 34.6L68.1 34.6L68.1 51.05L51.54 51.05Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.94
+        },
+        {
+          "d": "M18.53 51.03L35.09 51.03L35.09 67.47L18.53 67.47Z",
+          "role": "ink",
+          "fill": "#000000"
+        },
+        {
+          "d": "M18.53 51.03L35.09 51.03L35.09 67.47L18.53 67.47Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.94
+        },
+        {
+          "d": "M35.09 51.03L51.65 51.03L51.65 67.47L35.09 67.47Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.94
+        },
+        {
+          "d": "M51.54 51.03L68.1 51.03L68.1 67.47L51.54 67.47Z",
+          "role": "ink",
+          "fill": "#000000"
+        },
+        {
+          "d": "M51.54 51.03L68.1 51.03L68.1 67.47L51.54 67.47Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.94
+        }
+      ],
+      "source": "src/2D/dtc/08_ortophoto.svg"
+    },
+    "dtc:points": {
+      "viewBox": [
+        0,
+        0,
+        174.24,
+        174.24
+      ],
+      "aspect": 1.0,
+      "layers": [
+        {
+          "d": "M169.39 87.12C169.39 132.56 132.56 169.39 87.12 169.39C41.69 169.39 4.85 132.56 4.85 87.12C4.85 41.68 41.69 4.85 87.12 4.85C132.56 4.85 169.39 41.68 169.39 87.12Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M169.39 87.12C169.39 132.56 132.56 169.39 87.12 169.39C41.69 169.39 4.85 132.56 4.85 87.12C4.85 41.68 41.69 4.85 87.12 4.85C132.56 4.85 169.39 41.68 169.39 87.12Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 3.0,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M45.36 55.67L45.35 54.47Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M45.36 55.67L45.35 54.47Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 5.54,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M83.24 34.96L83.23 33.77Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M83.24 34.96L83.23 33.77Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 5.54,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M43.44 109.18L43.43 107.99Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M43.44 109.18L43.43 107.99Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 5.54,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M97.86 69.03L97.85 67.84Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M97.86 69.03L97.85 67.84Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 5.54,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M75.13 87.73L75.12 86.54Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M75.13 87.73L75.12 86.54Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 5.54,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M133.44 64.57L133.42 63.38Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M133.44 64.57L133.42 63.38Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 5.54,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M84.86 132.42L84.84 131.22Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M84.86 132.42L84.84 131.22Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 5.54,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M116.93 126.1L116.91 124.91Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M116.93 126.1L116.91 124.91Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 5.54,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M109.26 102.31L109.24 101.11Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M109.26 102.31L109.24 101.11Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 5.54,
+          "line_cap": "round",
+          "line_join": "round"
+        }
+      ],
+      "source": "src/2D/dtc/04_points.svg"
+    },
+    "dtc:lines": {
+      "viewBox": [
+        0,
+        0,
+        87.12,
+        87.12
+      ],
+      "aspect": 1.0,
+      "layers": [
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.43 66.28 2.43 43.56C2.43 20.84 20.84 2.43 43.56 2.43C66.28 2.43 84.7 20.84 84.7 43.56Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.43 66.28 2.43 43.56C2.43 20.84 20.84 2.43 43.56 2.43C66.28 2.43 84.7 20.84 84.7 43.56Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.5,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M22.6 27.66L41.04 17.06L66.29 31.2L58.46 62.51L54.42 50.9C54.42 50.9 44.32 66.05 42.55 65.55C40.78 65.04 21.84 54.18 21.84 54.18L37.75 43.57L49.12 33.98",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.0
+        }
+      ],
+      "source": "src/2D/dtc/05_lines.svg"
+    },
+    "dtc:polygons": {
+      "viewBox": [
+        0,
+        0,
+        87.12,
+        87.12
+      ],
+      "aspect": 1.0,
+      "layers": [
+        {
+          "d": "M21.46 55.09C21.46 55.09 41.46 66.7 41.81 66.7C42.17 66.7 57.62 64.56 57.8 64.11C57.97 63.67 64.85 32.24 64.85 32.24C64.85 32.24 42.53 18.22 41.19 18.4C39.85 18.58 21.99 28.31 21.99 28.31Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.0
+        },
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.43 66.28 2.43 43.56C2.43 20.84 20.84 2.43 43.56 2.43C66.28 2.43 84.7 20.84 84.7 43.56Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.5,
+          "line_cap": "round",
+          "line_join": "round"
+        }
+      ],
+      "source": "src/2D/dtc/06_polygons.svg"
+    },
+    "dtc:camera": {
+      "viewBox": [
+        0,
+        0,
+        87.12,
+        87.12
+      ],
+      "aspect": 1.0,
+      "layers": [
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.43 66.28 2.43 43.56C2.43 20.84 20.84 2.43 43.56 2.43C66.28 2.43 84.7 20.84 84.7 43.56Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.43 66.28 2.43 43.56C2.43 20.84 20.84 2.43 43.56 2.43C66.28 2.43 84.7 20.84 84.7 43.56Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.5,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M27 27.5L57 27.5C59.76 27.5 62 29.74 62 32.5L62 54.5C62 57.26 59.76 59.5 57 59.5L27 59.5C24.24 59.5 22 57.26 22 54.5L22 32.5C22 29.74 24.24 27.5 27 27.5Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M27 27.5L57 27.5C59.76 27.5 62 29.74 62 32.5L62 54.5C62 57.26 59.76 59.5 57 59.5L27 59.5C24.24 59.5 22 57.26 22 54.5L22 32.5C22 29.74 24.24 27.5 27 27.5Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.2,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M63.6 39.5L67.4 39.5C68.28 39.5 69 40.22 69 41.1L69 45.9C69 46.78 68.28 47.5 67.4 47.5L63.6 47.5C62.72 47.5 62 46.78 62 45.9L62 41.1C62 40.22 62.72 39.5 63.6 39.5Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M63.6 39.5L67.4 39.5C68.28 39.5 69 40.22 69 41.1L69 45.9C69 46.78 68.28 47.5 67.4 47.5L63.6 47.5C62.72 47.5 62 46.78 62 45.9L62 41.1C62 40.22 62.72 39.5 63.6 39.5Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.2,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M49.5 43.5C49.5 47.64 46.14 51 42 51C37.86 51 34.5 47.64 34.5 43.5C34.5 39.36 37.86 36 42 36C46.14 36 49.5 39.36 49.5 43.5Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.0,
+          "line_cap": "round",
+          "line_join": "round"
+        }
+      ],
+      "source": "src/2D/dtc/11_device_optical.svg"
+    },
+    "dtc:sensor": {
+      "viewBox": [
+        0,
+        0,
+        87.12,
+        87.12
+      ],
+      "aspect": 1.0,
+      "layers": [
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.43 66.28 2.43 43.56C2.43 20.84 20.84 2.43 43.56 2.43C66.28 2.43 84.7 20.84 84.7 43.56Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.43 66.28 2.43 43.56C2.43 20.84 20.84 2.43 43.56 2.43C66.28 2.43 84.7 20.84 84.7 43.56Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.5,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M27 27.5L57 27.5C59.76 27.5 62 29.74 62 32.5L62 54.5C62 57.26 59.76 59.5 57 59.5L27 59.5C24.24 59.5 22 57.26 22 54.5L22 32.5C22 29.74 24.24 27.5 27 27.5Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M27 27.5L57 27.5C59.76 27.5 62 29.74 62 32.5L62 54.5C62 57.26 59.76 59.5 57 59.5L27 59.5C24.24 59.5 22 57.26 22 54.5L22 32.5C22 29.74 24.24 27.5 27 27.5Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.2,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M63.6 39.5L67.4 39.5C68.28 39.5 69 40.22 69 41.1L69 45.9C69 46.78 68.28 47.5 67.4 47.5L63.6 47.5C62.72 47.5 62 46.78 62 45.9L62 41.1C62 40.22 62.72 39.5 63.6 39.5Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M63.6 39.5L67.4 39.5C68.28 39.5 69 40.22 69 41.1L69 45.9C69 46.78 68.28 47.5 67.4 47.5L63.6 47.5C62.72 47.5 62 46.78 62 45.9L62 41.1C62 40.22 62.72 39.5 63.6 39.5Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.2,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M31 43.5C34.67 38.5 38.33 38.5 42 43.5C45.67 48.5 49.33 48.5 53 43.5",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.0,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M33 51.5C36 47.83 39 47.83 42 51.5C45 55.17 48 55.17 51 51.5",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.8,
+          "line_cap": "round",
+          "line_join": "round"
+        }
+      ],
+      "source": "src/2D/dtc/11_device_sensor.svg"
+    },
+    "dtc:drone": {
+      "viewBox": [
+        0,
+        0,
+        87.12,
+        87.12
+      ],
+      "aspect": 1.0,
+      "layers": [
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.43 66.28 2.43 43.56C2.43 20.84 20.84 2.43 43.56 2.43C66.28 2.43 84.7 20.84 84.7 43.56Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.43 66.28 2.43 43.56C2.43 20.84 20.84 2.43 43.56 2.43C66.28 2.43 84.7 20.84 84.7 43.56Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.5,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M27 27.5L57 27.5C59.76 27.5 62 29.74 62 32.5L62 54.5C62 57.26 59.76 59.5 57 59.5L27 59.5C24.24 59.5 22 57.26 22 54.5L22 32.5C22 29.74 24.24 27.5 27 27.5Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M27 27.5L57 27.5C59.76 27.5 62 29.74 62 32.5L62 54.5C62 57.26 59.76 59.5 57 59.5L27 59.5C24.24 59.5 22 57.26 22 54.5L22 32.5C22 29.74 24.24 27.5 27 27.5Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.2,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M63.6 39.5L67.4 39.5C68.28 39.5 69 40.22 69 41.1L69 45.9C69 46.78 68.28 47.5 67.4 47.5L63.6 47.5C62.72 47.5 62 46.78 62 45.9L62 41.1C62 40.22 62.72 39.5 63.6 39.5Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M63.6 39.5L67.4 39.5C68.28 39.5 69 40.22 69 41.1L69 45.9C69 46.78 68.28 47.5 67.4 47.5L63.6 47.5C62.72 47.5 62 46.78 62 45.9L62 41.1C62 40.22 62.72 39.5 63.6 39.5Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.2,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M34 36L50 51M50 36L34 51",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.9,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M36.8 36C36.8 37.55 35.55 38.8 34 38.8C32.45 38.8 31.2 37.55 31.2 36C31.2 34.45 32.45 33.2 34 33.2C35.55 33.2 36.8 34.45 36.8 36Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.0,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M52.8 36C52.8 37.55 51.55 38.8 50 38.8C48.45 38.8 47.2 37.55 47.2 36C47.2 34.45 48.45 33.2 50 33.2C51.55 33.2 52.8 34.45 52.8 36Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.0,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M36.8 51C36.8 52.55 35.55 53.8 34 53.8C32.45 53.8 31.2 52.55 31.2 51C31.2 49.45 32.45 48.2 34 48.2C35.55 48.2 36.8 49.45 36.8 51Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.0,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M52.8 51C52.8 52.55 51.55 53.8 50 53.8C48.45 53.8 47.2 52.55 47.2 51C47.2 49.45 48.45 48.2 50 48.2C51.55 48.2 52.8 49.45 52.8 51Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.0,
+          "line_cap": "round",
+          "line_join": "round"
+        }
+      ],
+      "source": "src/2D/dtc/11_device_drone.svg"
+    },
+    "dtc:computer": {
+      "viewBox": [
+        0,
+        0,
+        87.12,
+        87.12
+      ],
+      "aspect": 1.0,
+      "layers": [
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.43 66.28 2.43 43.56C2.43 20.84 20.84 2.43 43.56 2.43C66.28 2.43 84.7 20.84 84.7 43.56Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.43 66.28 2.43 43.56C2.43 20.84 20.84 2.43 43.56 2.43C66.28 2.43 84.7 20.84 84.7 43.56Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.5,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M27 27.5L57 27.5C59.76 27.5 62 29.74 62 32.5L62 54.5C62 57.26 59.76 59.5 57 59.5L27 59.5C24.24 59.5 22 57.26 22 54.5L22 32.5C22 29.74 24.24 27.5 27 27.5Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M27 27.5L57 27.5C59.76 27.5 62 29.74 62 32.5L62 54.5C62 57.26 59.76 59.5 57 59.5L27 59.5C24.24 59.5 22 57.26 22 54.5L22 32.5C22 29.74 24.24 27.5 27 27.5Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.2,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M63.6 39.5L67.4 39.5C68.28 39.5 69 40.22 69 41.1L69 45.9C69 46.78 68.28 47.5 67.4 47.5L63.6 47.5C62.72 47.5 62 46.78 62 45.9L62 41.1C62 40.22 62.72 39.5 63.6 39.5Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M63.6 39.5L67.4 39.5C68.28 39.5 69 40.22 69 41.1L69 45.9C69 46.78 68.28 47.5 67.4 47.5L63.6 47.5C62.72 47.5 62 46.78 62 45.9L62 41.1C62 40.22 62.72 39.5 63.6 39.5Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.2,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M33 35.5L51 35.5L51 51.5L33 51.5Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.0,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M39 35.5L39 51.5M45 35.5L45 51.5M33 40.8L51 40.8M33 46.2L51 46.2",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.8,
+          "line_cap": "round",
+          "line_join": "round"
+        }
+      ],
+      "source": "src/2D/dtc/11_device_computer.svg"
+    },
+    "dtc:scanner": {
+      "viewBox": [
+        0,
+        0,
+        87.12,
+        87.12
+      ],
+      "aspect": 1.0,
+      "layers": [
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.43 66.28 2.43 43.56C2.43 20.84 20.84 2.43 43.56 2.43C66.28 2.43 84.7 20.84 84.7 43.56Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.43 66.28 2.43 43.56C2.43 20.84 20.84 2.43 43.56 2.43C66.28 2.43 84.7 20.84 84.7 43.56Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.5,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M27 27.5L57 27.5C59.76 27.5 62 29.74 62 32.5L62 54.5C62 57.26 59.76 59.5 57 59.5L27 59.5C24.24 59.5 22 57.26 22 54.5L22 32.5C22 29.74 24.24 27.5 27 27.5Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M27 27.5L57 27.5C59.76 27.5 62 29.74 62 32.5L62 54.5C62 57.26 59.76 59.5 57 59.5L27 59.5C24.24 59.5 22 57.26 22 54.5L22 32.5C22 29.74 24.24 27.5 27 27.5Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.2,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M63.6 39.5L67.4 39.5C68.28 39.5 69 40.22 69 41.1L69 45.9C69 46.78 68.28 47.5 67.4 47.5L63.6 47.5C62.72 47.5 62 46.78 62 45.9L62 41.1C62 40.22 62.72 39.5 63.6 39.5Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M63.6 39.5L67.4 39.5C68.28 39.5 69 40.22 69 41.1L69 45.9C69 46.78 68.28 47.5 67.4 47.5L63.6 47.5C62.72 47.5 62 46.78 62 45.9L62 41.1C62 40.22 62.72 39.5 63.6 39.5Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.2,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M34.5 43.5C34.5 44.6 33.6 45.5 32.5 45.5C31.4 45.5 30.5 44.6 30.5 43.5C30.5 42.4 31.4 41.5 32.5 41.5C33.6 41.5 34.5 42.4 34.5 43.5Z",
+          "role": "ink",
+          "fill": "#000000"
+        },
+        {
+          "d": "M34.5 43.5C34.5 44.6 33.6 45.5 32.5 45.5C31.4 45.5 30.5 44.6 30.5 43.5C30.5 42.4 31.4 41.5 32.5 41.5C33.6 41.5 34.5 42.4 34.5 43.5Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.0,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M34.5 43.5L53 35.5M34.5 43.5L53.5 43.5M34.5 43.5L53 51.5",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.0,
+          "line_cap": "round",
+          "line_join": "round"
+        }
+      ],
+      "source": "src/2D/dtc/11_device_scanner.svg"
+    },
+    "dtc:total_station": {
+      "viewBox": [
+        0,
+        0,
+        87.12,
+        87.12
+      ],
+      "aspect": 1.0,
+      "layers": [
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.43 66.28 2.43 43.56C2.43 20.84 20.84 2.43 43.56 2.43C66.28 2.43 84.7 20.84 84.7 43.56Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.43 66.28 2.43 43.56C2.43 20.84 20.84 2.43 43.56 2.43C66.28 2.43 84.7 20.84 84.7 43.56Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.5,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M27 27.5L57 27.5C59.76 27.5 62 29.74 62 32.5L62 54.5C62 57.26 59.76 59.5 57 59.5L27 59.5C24.24 59.5 22 57.26 22 54.5L22 32.5C22 29.74 24.24 27.5 27 27.5Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M27 27.5L57 27.5C59.76 27.5 62 29.74 62 32.5L62 54.5C62 57.26 59.76 59.5 57 59.5L27 59.5C24.24 59.5 22 57.26 22 54.5L22 32.5C22 29.74 24.24 27.5 27 27.5Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.2,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M63.6 39.5L67.4 39.5C68.28 39.5 69 40.22 69 41.1L69 45.9C69 46.78 68.28 47.5 67.4 47.5L63.6 47.5C62.72 47.5 62 46.78 62 45.9L62 41.1C62 40.22 62.72 39.5 63.6 39.5Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M63.6 39.5L67.4 39.5C68.28 39.5 69 40.22 69 41.1L69 45.9C69 46.78 68.28 47.5 67.4 47.5L63.6 47.5C62.72 47.5 62 46.78 62 45.9L62 41.1C62 40.22 62.72 39.5 63.6 39.5Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.2,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M32 43.5L52 43.5M42 33.5L42 53.5",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.0,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M45.5 43.5C45.5 45.43 43.93 47 42 47C40.07 47 38.5 45.43 38.5 43.5C38.5 41.57 40.07 40 42 40C43.93 40 45.5 41.57 45.5 43.5Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.0,
+          "line_cap": "round",
+          "line_join": "round"
+        }
+      ],
+      "source": "src/2D/dtc/11_device_station.svg"
+    },
+    "dtc:gnss": {
+      "viewBox": [
+        0,
+        0,
+        87.12,
+        87.12
+      ],
+      "aspect": 1.0,
+      "layers": [
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.43 66.28 2.43 43.56C2.43 20.84 20.84 2.43 43.56 2.43C66.28 2.43 84.7 20.84 84.7 43.56Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.43 66.28 2.43 43.56C2.43 20.84 20.84 2.43 43.56 2.43C66.28 2.43 84.7 20.84 84.7 43.56Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.5,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M27 27.5L57 27.5C59.76 27.5 62 29.74 62 32.5L62 54.5C62 57.26 59.76 59.5 57 59.5L27 59.5C24.24 59.5 22 57.26 22 54.5L22 32.5C22 29.74 24.24 27.5 27 27.5Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M27 27.5L57 27.5C59.76 27.5 62 29.74 62 32.5L62 54.5C62 57.26 59.76 59.5 57 59.5L27 59.5C24.24 59.5 22 57.26 22 54.5L22 32.5C22 29.74 24.24 27.5 27 27.5Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.2,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M63.6 39.5L67.4 39.5C68.28 39.5 69 40.22 69 41.1L69 45.9C69 46.78 68.28 47.5 67.4 47.5L63.6 47.5C62.72 47.5 62 46.78 62 45.9L62 41.1C62 40.22 62.72 39.5 63.6 39.5Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M63.6 39.5L67.4 39.5C68.28 39.5 69 40.22 69 41.1L69 45.9C69 46.78 68.28 47.5 67.4 47.5L63.6 47.5C62.72 47.5 62 46.78 62 45.9L62 41.1C62 40.22 62.72 39.5 63.6 39.5Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.2,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M32 50C32 44.48 36.48 40 42 40C47.52 40 52 44.48 52 50",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.0,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M30 50L54 50M42 50L42 55",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.0,
+          "line_cap": "round",
+          "line_join": "round"
+        }
+      ],
+      "source": "src/2D/dtc/11_device_gnss.svg"
     }
   },
   "node_styles": {

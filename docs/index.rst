@@ -491,6 +491,7 @@ Table of Contents
    importers/dual_stack_driver_choice
    exporters/unified_xlsx_exporter
    s3dgraphy_json_config
+   drawing-a-glyph
    s3dgraphy_integration_emtools
 
 .. toctree::

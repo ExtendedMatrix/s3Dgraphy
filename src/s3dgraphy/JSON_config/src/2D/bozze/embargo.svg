@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- BOZZA 2026-09-30, da approvare da E.D. -->
+<!-- embargo — the palette pictogram (refid 7 = src/2D/embargo.png): a no-entry
+     sign. A disc (r 53.5) cut by a horizontal band 15 high, inside the ring with
+     a thin transparent gap. The band is a GAP, not a white bar: in the PNG it is
+     transparent, so on a dark canvas it shows the canvas — faithful, and it is
+     also why nothing here is `paper`. Box 127×128 as in the PNG (aspect 0.992).
+     Colours sampled from the PNG: ring #333333, disc #6E6E6E. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 127 128">
+  <path data-role="ground" fill="#6E6E6E" d="M10.53 56.5A53.5 53.5 0 0 1 116.47 56.5Z"/>
+  <path data-role="ground" fill="#6E6E6E" d="M116.47 71.5A53.5 53.5 0 0 1 10.53 71.5Z"/>
+  <circle data-role="ink" cx="63.5" cy="64" r="59.5" fill="none" stroke="#333333" stroke-width="7"/>
+</svg>

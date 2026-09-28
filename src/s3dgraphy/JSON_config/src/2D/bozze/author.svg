@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- BOZZA 2026-09-30, da approvare da E.D. -->
+<!-- author — the palette pictogram (em_palette_template.graphml, refid 4 =
+     src/2D/author.png) redrawn as geometry, NOT traced: a person in a dark ring.
+     The box is the PNG's own 126×128, so the aspect (0.984) is the one the PNG
+     already declared. Colours sampled from the PNG: ring #333333, figure
+     #8C8C8C, interior TRANSPARENT (as in the PNG — the canvas shows through).
+     The figure is drawn first and the ring over it, so the shoulders can run to
+     the ring's inner edge without a seam. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 126 128">
+  <path data-role="ground" fill="#8C8C8C" fill-rule="evenodd"
+        d="M91 52.5A28 28 0 1 1 35 52.5A28 28 0 1 1 91 52.5Z M68 51.5A5 5 0 1 0 58 51.5A5 5 0 1 0 68 51.5Z"/>
+  <path data-role="ground" fill="#8C8C8C"
+        d="M49 76L49 86C45 88.5 30 92.5 23 95.5L23 104.6A57 57 0 0 0 103 104.6L103 95.5C96 92.5 81 88.5 77 86L77 76Z"/>
+  <circle data-role="ink" cx="63" cy="64" r="59.5" fill="none" stroke="#333333" stroke-width="7"/>
+</svg>

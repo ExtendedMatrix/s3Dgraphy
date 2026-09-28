@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- BOZZA 2026-09-30, da approvare da E.D. -->
+<!-- narrative — E.D.'s hourglass over an open book (POL4, src/2D/EMNarrative.png)
+     redrawn as a GLYPH. The authored EMNarrative.svg stays what it is: an
+     illustration (a stipple trace, 617 KB), which is why NARR draws the raster
+     today. This keeps its composition and drops the stipple: the ring is a
+     plain stroke, the book and the hourglass are flat grey.
+     Box 256×261 as in the PNG (aspect 0.981). Colours sampled from the PNG:
+     ring #333333 (the stipple's darkest tone), figure #8C8C8C, interior
+     transparent. Parts, top to bottom: cap, glass (two stroked curves), upper
+     sand, stream, lower sand, the two pages, the cover under them. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 261">
+  <rect data-role="ground" fill="#8C8C8C" x="89" y="51" width="78" height="15" rx="2.5"/>
+  <path data-role="ground" fill="none" stroke="#8C8C8C" stroke-width="5"
+        d="M96 66L96 84C96 96 118 100 118 110C118 120 96 126 96 140L96 150"/>
+  <path data-role="ground" fill="none" stroke="#8C8C8C" stroke-width="5"
+        d="M160 66L160 84C160 96 138 100 138 110C138 120 160 126 160 140L160 150"/>
+  <path data-role="ground" fill="#8C8C8C" d="M110 91L146 91C140 100 132 104 129 108L127 108C124 104 116 100 110 91Z"/>
+  <rect data-role="ground" fill="#8C8C8C" x="127" y="106" width="2" height="24"/>
+  <path data-role="ground" fill="#8C8C8C" d="M128 126C134 126 150 140 150 152L128 177L106 152C106 140 122 126 128 126Z"/>
+  <path data-role="ground" fill="#8C8C8C" d="M57 143C84 146 112 161 125 183L125 216C112 204 84 198 42 197Z"/>
+  <path data-role="ground" fill="#8C8C8C" d="M199 143C172 146 144 161 131 183L131 216C144 204 172 198 214 197Z"/>
+  <path data-role="ground" fill="none" stroke="#8C8C8C" stroke-width="5" stroke-linejoin="round"
+        d="M44 204C80 205 108 210 128 227C148 210 176 205 212 204"/>
+  <circle data-role="ink" cx="128" cy="130.5" r="123" fill="none" stroke="#333333" stroke-width="10"/>
+</svg>
