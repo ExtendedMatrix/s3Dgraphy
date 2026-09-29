@@ -24,6 +24,34 @@ derivative, a thumbnail, a re-scan). Normalised coordinates survive that: they
 are a statement about the picture, not about a file. It also makes the region
 directly expressible as a W3C Media Fragment (`xywh=percent:…`), which is the
 selector the RDF projection emits.
+
+One node for every PLACE A READING LOOKED AT (E.D. 2026-09-29)
+--------------------------------------------------------------
+The node was born for images. A reading also looks at a passage of a text, at a
+point on a model, along a measured line, along an articulated measure. Those are
+the same thing in the argument — *where, in this source, the reading looked* —
+so they are the same node, told apart by ``geometry_kind``:
+
+  ``region2d``  a rect or polygon on an image (the original case, the default);
+  ``passage``   characters ``start``–``end`` of a text plus the quoted ``text``
+                (W3C TextPositionSelector + TextQuoteSelector: the offsets say
+                where, the quote survives an edit that moves them);
+  ``point``     one or more points on a 3D model;
+  ``line``      two points: a measure;
+  ``polyline``  an open chain of points: an articulated measure.
+
+For the two document kinds the selector lives in the node's data, as it always
+did. For the three 3D kinds **the coordinates do not**: E.D. keeps geometry out
+of the em.json, proxies included, so the vertices are a `.glb` (glTF has native
+POINTS / LINES / LINE_STRIP primitives), linked exactly as a proxy's payload is
+(``has_semantic_shape`` → a SemanticShape whose ``url`` is the file). The node
+keeps only what shows it without opening the file: ``vertex_count`` and, for a
+line or a polyline, the ``length`` with its ``unit`` and ``crs``.
+
+Why not a second class: the shape_kind argument above was about two COORDINATE
+SYSTEMS with two meanings (an image vs the world). This is one meaning — the
+place of the source a reading rests on — and the extractor's relation to it
+(``extracted_from``) is the same in all five cases.
 """
 
 from typing import Any, Dict, List, Optional
@@ -52,8 +80,32 @@ def _norm_pair(pair: Any, where: str) -> List[float]:
     return out
 
 
+#: The five kinds of place a reading can look at. ``region2d`` first: it is the
+#: default, and every region written before 2026-10-06 is one.
+GEOMETRY_KINDS = ("region2d", "passage", "point", "line", "polyline")
+#: The kinds whose coordinates live in a `.glb`, never in the node.
+GLB_KINDS = ("point", "line", "polyline")
+#: The kinds that measure something (a length).
+MEASURE_KINDS = ("line", "polyline")
+#: glTF's own unit, and the frame the proxies are written in: scene-local
+#: (already net of the GeoPositionNode shift), not a projected CRS.
+DEFAULT_UNIT = "m"
+DEFAULT_CRS = "local"
+
+
+def _non_negative_int(value: Any, where: str) -> int:
+    if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+        raise AnnotationRegionError(f"{where} must be a non-negative int, got {value!r}")
+    return value
+
+
 class AnnotationRegionNode(Node):
-    """A region of one image (or one page), in normalised image coordinates.
+    """The place a reading looked at: a region of an image, a passage of a
+    text, or a point / line / polyline on a 3D model (``geometry_kind``).
+
+    Everything below about ``shape_kind`` / ``rect`` / ``points`` / ``page``
+    concerns ``geometry_kind == "region2d"``; the other kinds carry the fields
+    listed after it.
 
     Attributes:
         node_type (str): ``"annotation_region"``.
@@ -67,7 +119,17 @@ class AnnotationRegionNode(Node):
         resource_id (str): the image this region is on. The EDGE
             (``is_on_resource``) is the graph's statement; this field is the
             node's own copy of it, so a region is readable on its own — the same
-            belt-and-braces the other nodes use for their anchors.
+            belt-and-braces the other nodes use for their anchors. For the 3D
+            kinds it is the MODEL (an RM or a 3D document) the geometry is on.
+        geometry_kind (str): one of :data:`GEOMETRY_KINDS`; ``"region2d"``
+            when absent, which is what every older region is.
+        start, end (int): ``passage`` — character offsets into the text as
+            shown, ``0 <= start <= end``.
+        text (str): ``passage`` — the quoted words.
+        vertex_count (int): 3D kinds — how many vertices the `.glb` holds.
+        length (float): ``line`` / ``polyline`` — the measured length, the sum
+            of the segments, in ``unit`` and ``crs``.
+        unit (str), crs (str): of the length; ``"m"`` and ``"local"``.
     """
 
     node_type = "annotation_region"
@@ -87,9 +149,103 @@ class AnnotationRegionNode(Node):
                  points: Optional[List[List[float]]] = None,
                  page: int = 0,
                  resource_id: Optional[str] = None,
-                 description: str = ""):
+                 description: str = "",
+                 geometry_kind: Optional[str] = None,
+                 start: Optional[int] = None,
+                 end: Optional[int] = None,
+                 text: Optional[str] = None,
+                 vertex_count: Optional[int] = None,
+                 length: Optional[float] = None,
+                 unit: Optional[str] = None,
+                 crs: Optional[str] = None):
         super().__init__(node_id=node_id, name=name, description=description)
 
+        kind = geometry_kind or "region2d"
+        if kind not in GEOMETRY_KINDS:
+            raise AnnotationRegionError(
+                f"geometry_kind must be one of {list(GEOMETRY_KINDS)}, got {geometry_kind!r}")
+        self.geometry_kind = kind
+        self.shape_kind: Optional[str] = None
+        self.rect: List[float] = []
+        self.points: List[List[float]] = []
+        self.page = 0
+        self.resource_id = resource_id
+        self.start: Optional[int] = None
+        self.end: Optional[int] = None
+        self.text: Optional[str] = None
+        self.vertex_count: Optional[int] = None
+        self.length: Optional[float] = None
+        self.unit: Optional[str] = None
+        self.crs: Optional[str] = None
+
+        if kind == "region2d":
+            self._init_region2d(shape_kind, rect, points, page)
+        elif kind == "passage":
+            self._init_passage(start, end, text)
+        else:
+            self._init_glb_kind(vertex_count, length, unit, crs)
+
+        self.data: Dict[str, Any] = {"geometry_kind": self.geometry_kind}
+        if kind == "region2d":
+            self.data["shape_kind"] = self.shape_kind
+            self.data["page"] = self.page
+            if self.rect:
+                self.data["rect"] = self.rect
+            if self.points:
+                self.data["points"] = self.points
+        elif kind == "passage":
+            self.data.update({"start": self.start, "end": self.end, "text": self.text})
+        else:
+            if self.vertex_count is not None:
+                self.data["vertex_count"] = self.vertex_count
+            if self.length is not None:
+                self.data.update({"length": self.length, "unit": self.unit,
+                                  "crs": self.crs})
+        if self.resource_id:
+            self.data["resource_id"] = self.resource_id
+
+    # ── one initialiser per family of kinds ─────────────────────────────────
+
+    def _init_passage(self, start, end, text) -> None:
+        if start is None or end is None:
+            raise AnnotationRegionError("a passage needs start and end offsets")
+        self.start = _non_negative_int(start, "passage start")
+        self.end = _non_negative_int(end, "passage end")
+        if self.end < self.start:
+            raise AnnotationRegionError(
+                f"passage end {self.end} comes before start {self.start}")
+        if text is not None and not isinstance(text, str):
+            raise AnnotationRegionError(f"passage text must be a string, got {text!r}")
+        # The quote is what survives an edit of the text; an empty one is allowed
+        # (the offsets still say where) but never invented.
+        self.text = text or ""
+
+    def _init_glb_kind(self, vertex_count, length, unit, crs) -> None:
+        kind = self.geometry_kind
+        if vertex_count is not None:
+            n = _non_negative_int(vertex_count, f"{kind} vertex_count")
+            least = 1 if kind == "point" else 2
+            if n < least:
+                raise AnnotationRegionError(
+                    f"a {kind} needs at least {least} vertices, got {n}")
+            if kind == "line" and n != 2:
+                raise AnnotationRegionError(
+                    f"a line has exactly 2 vertices, got {n} (use polyline)")
+            self.vertex_count = n
+        if length is not None:
+            if kind not in MEASURE_KINDS:
+                raise AnnotationRegionError(
+                    f"a {kind} measures no length; length belongs to "
+                    f"{list(MEASURE_KINDS)}")
+            if isinstance(length, bool) or not isinstance(length, (int, float)) \
+                    or float(length) < 0:
+                raise AnnotationRegionError(
+                    f"length must be a non-negative number, got {length!r}")
+            self.length = float(length)
+            self.unit = unit or DEFAULT_UNIT
+            self.crs = crs or DEFAULT_CRS
+
+    def _init_region2d(self, shape_kind, rect, points, page) -> None:
         if shape_kind in self.FUTURE_SHAPE_KINDS:
             raise AnnotationRegionError(
                 f"shape_kind '{shape_kind}' is declared in the datamodel but not "
@@ -129,18 +285,11 @@ class AnnotationRegionNode(Node):
         if isinstance(page, bool) or not isinstance(page, int) or page < 0:
             raise AnnotationRegionError(f"page must be a non-negative int, got {page!r}")
         self.page = page
-        self.resource_id = resource_id
 
-        self.data: Dict[str, Any] = {
-            "shape_kind": self.shape_kind,
-            "page": self.page,
-        }
-        if self.rect:
-            self.data["rect"] = self.rect
-        if self.points:
-            self.data["points"] = self.points
-        if self.resource_id:
-            self.data["resource_id"] = self.resource_id
+    @property
+    def is_glb_kind(self) -> bool:
+        """True when the coordinates live in a `.glb` and not in this node."""
+        return self.geometry_kind in GLB_KINDS
 
     # ── the selector: one geometry, one string, both ways ────────────────────
     #
@@ -159,7 +308,17 @@ class AnnotationRegionNode(Node):
         Fixed precision on purpose: this string is what the round-trip compares,
         and `repr(float)` differences would show up as a projection that is not
         isomorphic with itself.
+
+        A ``passage`` is the RFC 5147 text fragment ``char=start,end`` — the
+        text/plain twin of the Media Fragment, readable outside EM for the same
+        reason. The 3D kinds have NO selector string: their geometry is the
+        `.glb`, and a string here would be the second copy E.D. keeps out of
+        the json. They return ``""``.
         """
+        if self.geometry_kind == "passage":
+            return f"char={self.start},{self.end}"
+        if self.geometry_kind != "region2d":
+            return ""
         if self.shape_kind == "rect":
             x, y, w, h = self.rect
             return "xywh=percent:" + ",".join(f"{v * 100:.6f}" for v in (x, y, w, h))
@@ -174,6 +333,15 @@ class AnnotationRegionNode(Node):
         wrote, and guessing at a foreign syntax would invent geometry.
         """
         text = (selector or "").strip()
+        if text.startswith("char="):
+            parts = text[len("char="):].split(",")
+            if len(parts) != 2:
+                raise AnnotationRegionError(f"malformed passage selector: {selector!r}")
+            try:
+                start, end = int(parts[0]), int(parts[1])
+            except ValueError:
+                raise AnnotationRegionError(f"malformed passage selector: {selector!r}")
+            return {"geometry_kind": "passage", "start": start, "end": end}
         if text.startswith("xywh=percent:"):
             parts = text[len("xywh=percent:"):].split(",")
             if len(parts) != 4:

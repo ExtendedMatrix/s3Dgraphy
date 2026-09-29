@@ -21,6 +21,10 @@ that builds the whole thing in one deterministic pass — so a canvas, when it
 arrives, has one call to make instead of five nodes and four edges to get right,
 and so the chain is identical whether it came from a UI, a batch import or a test.
 
+Since 2026-10-06 the region is the place of ANY reading (`geometry_kind`:
+region2d, passage, point, line, polyline) and `place_reading` fixes it for an
+extractor that already exists — see :mod:`.reading`.
+
 This module is headless on purpose. No endpoint, no UI: those are the "canvas"
 batch, and they will call `create_annotation_paradata`.
 """
@@ -29,5 +33,14 @@ from .paradata import (
     AnnotationParadataResult,
     create_annotation_paradata,
 )
+from .reading import (
+    ReadingPlaceResult,
+    measure,
+    place_reading,
+    polyline_length,
+    reading_glb_url,
+)
 
-__all__ = ["create_annotation_paradata", "AnnotationParadataResult"]
+__all__ = ["create_annotation_paradata", "AnnotationParadataResult",
+           "place_reading", "ReadingPlaceResult", "measure", "polyline_length",
+           "reading_glb_url"]

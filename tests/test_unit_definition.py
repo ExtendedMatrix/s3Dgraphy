@@ -59,7 +59,9 @@ def test_the_datamodel_declares_definition_on_stratigraphic_node():
     assert entry["rdf"]["with_concept"] == "crm:P2_has_type"
     assert entry["rdf"]["concept_class"] == "crm:E55_Type"
     assert entry["rdf"]["label_only"] is None
-    assert dm["s3Dgraphy_data_model_version"] == "1.6.9"
+    # at least the version that introduced it: a later bump must not turn this red
+    version = tuple(int(x) for x in dm["s3Dgraphy_data_model_version"].split("."))
+    assert version >= (1, 6, 9)
     # declared ONCE, on the parent — not repeated on the subtypes
     for sub in dm["stratigraphic_nodes"]["StratigraphicNode"]["subtypes"].values():
         assert "definition" not in (sub.get("properties") or {})

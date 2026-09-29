@@ -4,6 +4,24 @@ All notable changes to **s3dgraphy** are documented here.
 
 ## [Unreleased]
 
+### Added (2026-10-06 — the place of a reading, part 1: the node)
+E.D. 2026-09-29: the place a reading looked at is ONE node,
+`AnnotationRegionNode`, with a new `geometry_kind`: `region2d` (default — every
+older region), `passage` (`start`, `end`, `text`; selector `char=s,e`),
+`point`, `line`, `polyline` (coordinates in a `.glb`, never in the node, which
+keeps `vertex_count` and, for line/polyline, `length` + `unit` + `crs`).
+- `api.place_reading(graph, extractor_id, on_id, geometry)` fixes the place:
+  `extractor ─extracted_from→ region ─is_on_resource→ on`; placing it again
+  moves the reading (the old `extracted_from` goes, the old region stays).
+- `api.measure(graph, region_id)` → `{length, unit, crs, value}`; `value`
+  (`"1.234 m"`) is what «Usa come valore» writes.
+- Node datamodel 1.6.10; connections 1.6.27: `is_on_resource.target` += the
+  three representation models (a 3D reading sits on a model). The `.glb` is
+  reached with `has_semantic_shape`, the proxy's hinge: no new edge.
+- RDF: `P2_has_type` carries `geometry_kind` for the new kinds, a passage its
+  `char=` selector. The quote and the measure are not projected yet.
+- The 8 shipped mappings re-stamped against the new datamodels.
+
 ### Added (2026-10-05 — the stamp writes and reads its title and description)
 dtcstamp 46b3b78 gave the stamp an optional `self.label` (title) and
 `self.description`, outside `substance`. Now s3Dgraphy uses them:

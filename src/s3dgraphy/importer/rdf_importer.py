@@ -1200,8 +1200,15 @@ class RDFImporter:
             from ..nodes.annotation_region_node import (
                 AnnotationRegionError, AnnotationRegionNode,
             )
+            kind = self._one_literal(store, ref, CRM.P2_has_type)
+            if kind in ("passage", "point", "line", "polyline"):
+                data["geometry_kind"] = str(kind)
             selector = self._one_literal(store, ref, EM.hasSelector)
-            if selector:
+            if data.get("geometry_kind") in ("point", "line", "polyline"):
+                # The geometry is the .glb (has_semantic_shape), not a selector:
+                # its absence is the design, not a loss.
+                pass
+            elif selector:
                 try:
                     data.update(AnnotationRegionNode.parse_selector(str(selector)))
                 except AnnotationRegionError as exc:

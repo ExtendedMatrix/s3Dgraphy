@@ -1525,11 +1525,22 @@ class RDFExporter:
             # a consumer outside EM can resolve `xywh=percent:…` against the
             # image without knowing anything about this datamodel, and the string
             # is derived from the node's own fields rather than stored twice.
+            #
+            # Since 2026-10-06 the node is the place of ANY reading
+            # (geometry_kind). A passage has a selector too (RFC 5147
+            # `char=s,e`); the 3D kinds have none — their geometry is a .glb,
+            # reached through has_semantic_shape like a proxy's — so an empty
+            # selector is emitted as nothing. The kind itself travels as the
+            # P2_has_type a region2d uses for its shape_kind: one type per node.
             selector = getattr(node, "selector", None)
-            if callable(selector):
-                ctx.add((node_iri, EM.hasSelector, Literal(selector())))
+            sel = selector() if callable(selector) else ""
+            if sel:
+                ctx.add((node_iri, EM.hasSelector, Literal(sel)))
+            geometry_kind = getattr(node, "geometry_kind", None) or "region2d"
             shape_kind = getattr(node, "shape_kind", None)
-            if shape_kind:
+            if geometry_kind != "region2d":
+                ctx.add((node_iri, CRM.P2_has_type, Literal(geometry_kind)))
+            elif shape_kind:
                 ctx.add((node_iri, CRM.P2_has_type, Literal(shape_kind)))
             # Page 0 is emitted as NOTHING. A plain image has no page, and
             # asserting `onPage 0` for every region would put a fact in the store

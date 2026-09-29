@@ -1084,6 +1084,30 @@ def create_annotation_paradata(graph: Graph, image_id: str,
                    target_unit_id=target_unit_id, author=author)
 
 
+def place_reading(graph: Graph, extractor_id: str, on_id: Optional[str],
+                  geometry: Dict[str, Any], *, project_root: Optional[str] = None,
+                  author: Optional[str] = None, name: Optional[str] = None):
+    """Where a reading looked, as a node (`AnnotationRegionNode`,
+    ``geometry_kind`` region2d | passage | point | line | polyline):
+    ``extractor ─extracted_from→ region ─is_on_resource→ on``; for the 3D kinds
+    the vertices go to ``readings/<region id>.glb`` (``has_semantic_shape``, the
+    proxy's hinge). See :mod:`s3dgraphy.annotation.reading`."""
+    from .annotation.reading import place_reading as _place
+    return _place(graph, extractor_id, on_id, geometry, project_root=project_root,
+                  author=author, name=name)
+
+
+def measure(graph: Graph, region_id: str, *,
+            project_root: Optional[str] = None) -> Dict[str, Any]:
+    """What a reading's place measures: ``{geometry_kind, vertex_count, length,
+    unit, crs, value}``. ``value`` (``"1.234 m"``) is what «Usa come valore»
+    writes into the property; None for a place that measures no length. With
+    `project_root` the .glb is re-read and the result says whether it agrees
+    with the node (``glb``)."""
+    from .annotation.reading import measure as _measure
+    return _measure(graph, region_id, project_root=project_root)
+
+
 def create_geometry_proxy(graph: Graph, unit_id: str, shape: Dict[str, Any],
                           extractor_sources: Optional[List[str]] = None,
                           author: Optional[str] = None,
