@@ -87,7 +87,7 @@ def layer_problems(layer, vocabulary):
 def test_every_glyph_type_and_every_DTC_kind_has_an_entry():
     rules = _rules()
     entries = _entries(rules)
-    wanted = list(rules["2d_render_glyph_types"]["types"])
+    wanted = tool.glyph_node_types(rules)                  # types + sheet_types
     wanted += [f"dtc:{kind}" for _axis, kind, _g in tool.dtc_kinds(rules)]
     missing = [k for k in wanted if k not in entries]
     assert not missing, (
@@ -153,6 +153,32 @@ def test_aspect_is_the_viewBox_and_the_number_the_layout_reads():
             bad.append(f"{key}: 2d_render_glyph_types.aspect = {declared}, "
                        f"the drawing = {entry['aspect']}")
     assert not bad, "\n  ".join(bad)
+
+
+# ── the sheet (1.6.21) ──────────────────────────────────────────────────────
+
+def test_the_document_is_a_sheet_with_a_border_a_consumer_can_restyle():
+    """The document has paths, its outline is ONE stroked `border` layer, and it
+    is a SHEET — not a centred glyph, because its label sits on the drawing."""
+    rules = _rules()
+    table = rules["2d_render_glyph_types"]
+    assert "document" in table["sheet_types"] and "document" not in table["types"]
+    assert not set(table["sheet_types"]) & set(table["types"])
+    doc = _entries(rules)["document"]
+    assert doc["aspect"] == table["aspect"]["document"] == 0.636
+    borders = [layer for layer in doc["layers"] if layer["role"] == "border"]
+    assert len(borders) == 1 and "stroke" in borders[0], borders
+    # the layer IS the default (Instance) variant, so restyling is a ratio
+    default = rules["document_variant_styles"]["default"]
+    assert borders[0]["stroke"] == default["border_color"].upper()
+    role = rules["2d_glyphs"]["_roles"]["border"]
+    assert role["recolor"] is False                     # data, not theme
+    assert role["restyle_from"] == "document_variant_styles"
+    assert role["restyle_from"] in rules
+    # `border` is the SHEET's outline: no centred glyph may claim it
+    for key, entry in _entries(rules).items():
+        if key not in table["sheet_types"]:
+            assert all(layer["role"] != "border" for layer in entry["layers"]), key
 
 
 # ── drafts ──────────────────────────────────────────────────────────────────

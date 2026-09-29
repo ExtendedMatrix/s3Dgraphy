@@ -6,6 +6,11 @@ of the size the canvas uses, and the paths on a light and on a dark canvas with
 the recolourable roles swapped for theme colours — the check that a role does
 what it says. Drafts come first, because they are the part awaiting a decision.
 
+1.6.21 · the SHEETS (`2d_render_glyph_types.sheet_types`, the document) get a
+section of their own: the author's drawing beside the sheet EMStudio drew by hand
+until then (aspect 0.78), and the paths restyled in every variant of
+`document_variant_styles` — the check that the `border` role does what it says.
+
     python -m s3dgraphy.tools.glyph_sheet OUT.html
 """
 
@@ -54,6 +59,82 @@ def _official(rules: Dict[str, object], key: str, entry: Dict[str, object]) -> L
                 else '<span class="muted">troppo pesante per il foglio</span>')
         cells.append(f'<figure>{body}<figcaption>{label}</figcaption></figure>')
     return cells
+
+
+#: EMStudio renderer.ts (≤ 1.6.20), the hand-drawn sheet: 23.4 × 30, fold 0.32 w
+EMSTUDIO_SHEET = (23.4, 30.0, 0.32)
+
+
+def restyle(entry: Dict[str, object], variant: Dict[str, object],
+            default: Dict[str, object]) -> Dict[str, object]:
+    """The entry with its `border` layers drawn as `variant` says — the rule of
+    `2d_glyphs._roles.border`: colour = border_color, width = the layer's width ×
+    border_width / default.border_width. What a consumer is expected to do."""
+    ratio = float(variant.get("border_width", 1.0)) / float(default.get("border_width", 1.0))
+    layers = []
+    for layer in entry["layers"]:                                          # type: ignore[union-attr]
+        if layer.get("role") == "border":
+            layer = {**layer, "stroke": str(variant.get("border_color", layer["stroke"])).upper(),
+                     "stroke_width": round(float(layer["stroke_width"]) * ratio, 3)}
+        layers.append(layer)
+    return {**entry, "layers": layers}
+
+
+def _unclipped(svg: str, entry: Dict[str, object], pad: float) -> str:
+    """Widen the viewBox by `pad` on every side: a thick border is centred on the
+    outline and reaches past the drawing (the role says: draw it unclipped)."""
+    vb = entry["viewBox"]                                                  # type: ignore[index]
+    old = " ".join(g._num(v) for v in vb)                                  # type: ignore[union-attr]
+    new = " ".join(g._num(v) for v in (-pad, -pad, vb[2] + 2 * pad, vb[3] + 2 * pad))   # type: ignore[index]
+    return svg.replace(f'viewBox="{old}"', f'viewBox="{new}"', 1)
+
+
+def _emstudio_sheet(px: float) -> str:
+    w, h, k = EMSTUDIO_SHEET
+    f = w * k
+    return (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="-1 -1 {w + 2} {h + 2}" '
+            f'height="{px}" width="{g._num(px * (w + 2) / (h + 2))}">'
+            f'<path d="M0 0L{w - f} 0L{w} {f}L{w} {h}L0 {h}Z" fill="#FFFFFF" '
+            f'stroke="#000000" stroke-width="0.6"/>'
+            f'<path d="M{w - f} 0L{w - f} {f}L{w} {f}" fill="none" stroke="#000000" '
+            f'stroke-width="0.3"/></svg>')
+
+
+def sheet_section(rules: Dict[str, object], key: str, entry: Dict[str, object]) -> str:
+    variants = {k: v for k, v in (rules.get("document_variant_styles") or {}).items()   # type: ignore[union-attr]
+                if not k.startswith("_") and isinstance(v, dict)}
+    default = variants.get("default", {})
+    px = BASE_PX * 3
+    w, h, _k = EMSTUDIO_SHEET
+    compare = (''.join(_official(rules, key, entry))
+               + f'<figure><div class="tile light">{g.entry_to_svg(entry, px)}</div>'
+               f'<figcaption>tracciati · aspect {entry["aspect"]}</figcaption></figure>'
+               f'<figure><div class="tile light">{_emstudio_sheet(px)}</div>'
+               f'<figcaption>EMStudio ≤ 1.6.20, a mano · {w}×{h} = {round(w / h, 3)}</figcaption></figure>')
+    tiles = []
+    for name, v in variants.items():
+        e = restyle(entry, v, default)
+        wmax = max(float(layer.get("stroke_width", 0)) for layer in e["layers"]   # type: ignore[union-attr]
+                   if layer.get("role") == "border")
+        svg = _unclipped(g.entry_to_svg(e, BASE_PX * 2), e, wmax / 2)
+        tiles.append(f'<figure><div class="tile light">{svg}</div><figcaption>'
+                     f'{html.escape(name)} · {html.escape(str(v.get("border_color")))} · '
+                     f'{v.get("border_width")}</figcaption></figure>')
+    rows = "".join(
+        f'<tr><td>{html.escape(a)}</td><td>{b}</td><td>{c}</td></tr>' for a, b, c in (
+            ("src/2D/document.svg (d’autore)", "16.11 × 25.34", 0.636),
+            ("palette yEd, nodo documento", "35 × 55", 0.636),
+            ("src/2D/document.png", "128 × 199", 0.643),
+            ("EMStudio renderer.ts, foglio a mano", f"{w} × {h}", round(w / h, 3))))
+    return (f'<section class="glyph"><header><h3>{html.escape(key)}</h3>'
+            f'<span class="badge">foglio · sheet_types</span>'
+            f'<p class="meta">{len(entry["layers"])} strati · aspect {entry["aspect"]} · '  # type: ignore[arg-type]
+            f'etichetta sul foglio, non sotto</p></header>'
+            f'<table><tr><th>disegno</th><th>misura</th><th>aspect</th></tr>{rows}</table>'
+            f'<div class="strip"><div class="group"><h4>a confronto</h4><div class="cells">'
+            f'{compare}</div></div></div>'
+            f'<div class="strip"><div class="group"><h4>ruolo border · document_variant_styles'
+            f'</h4><div class="cells">{"".join(tiles)}</div></div></div></section>')
 
 
 def row(rules: Dict[str, object], key: str, entry: Dict[str, object]) -> str:
@@ -113,7 +194,10 @@ code{font-family:ui-monospace,Menlo,monospace;font-size:13px}
 def build_sheet() -> str:
     rules = g.load_rules()
     block = rules["2d_glyphs"]                                              # type: ignore[index]
+    sheets = set((rules.get("2d_render_glyph_types") or {}).get("sheet_types", []))   # type: ignore[union-attr]
     entries = [(k, v) for k, v in block.items() if not k.startswith("_")]   # type: ignore[union-attr]
+    sheet_entries = [(k, v) for k, v in entries if k in sheets]
+    entries = [(k, v) for k, v in entries if k not in sheets]
     drafts = [(k, v) for k, v in entries if v.get("draft")]
     done = [(k, v) for k, v in entries if not v.get("draft")]
     role_rows = "".join(
@@ -135,6 +219,8 @@ def build_sheet() -> str:
         f'<th>significato</th><th>qui, su scuro</th></tr>{role_rows}</table>'
         f'<h2>Bozze da approvare ({len(drafts)})</h2>'
         + "".join(row(rules, k, v) for k, v in drafts)
+        + f'<h2>Fogli ({len(sheet_entries)})</h2>'
+        + "".join(sheet_section(rules, k, v) for k, v in sheet_entries)
         + f'<h2>Convertiti dai file d’autore ({len(done)})</h2>'
         + "".join(row(rules, k, v) for k, v in done)
         + '</main></body></html>\n')

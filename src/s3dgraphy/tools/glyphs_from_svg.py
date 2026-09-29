@@ -2,8 +2,8 @@
 
 ## Why this exists
 
-The nodes the 2D scene draws as a **glyph** (`2d_render_glyph_types`, plus the
-DTC glyphs) used to reach every consumer as a FILE: EMStudio loaded the SVG or
+The nodes the 2D scene draws as a **glyph** (`2d_render_glyph_types`, its
+`sheet_types`, plus the DTC glyphs) used to reach every consumer as a FILE: EMStudio loaded the SVG or
 the PNG as an image and `drawImage`d it. Two things went wrong with that, and
 neither was a bug in any one consumer:
 
@@ -86,6 +86,7 @@ DECIMALS = 2
 #: which is the truth (datamodel first). :func:`roles` reads the JSON.
 _BOOTSTRAP_ROLES: Dict[str, bool] = {
     "ink": True, "paper": True, "halo": True, "ground": False, "accent": False,
+    "border": False,
 }
 
 
@@ -114,7 +115,7 @@ NOT_A_GLYPH: Dict[str, str] = {
 STYLE_KEY: Dict[str, str] = {
     "extractor": "EXT", "combiner": "COMB", "author": "AUTH",
     "author_ai": "AUTH_AI", "license": "LIC", "embargo": "EMB",
-    "narrative": "NARR", "SE": "SE",
+    "narrative": "NARR", "SE": "SE", "document": "DOC",
 }
 
 _KAPPA = 0.5522847498307936          # a quarter circle as one cubic
@@ -634,12 +635,20 @@ def dtc_kinds(rules: Dict[str, object]) -> Iterator[Tuple[str, str, str]]:
                 yield axis, kind, spec["glyph"]
 
 
+def glyph_node_types(rules: Dict[str, object]) -> List[str]:
+    """The node types that have an entry: the centred glyphs (`types`), then the
+    SHEETS (`sheet_types`, 1.6.21) — drawn from their paths too, but with their
+    label ON the drawing, which is why they are not in `types`."""
+    table = rules.get("2d_render_glyph_types") or {}
+    return list(table.get("types", [])) + list(table.get("sheet_types", []))   # type: ignore[union-attr]
+
+
 def wanted(rules: Dict[str, object]) -> List[Tuple[str, Optional[Path]]]:
     """Every key the block must hold, with the source that wins for it (None
     when there is none — which the check reports, never papers over)."""
     styles = rules.get("node_styles") or {}
     out: List[Tuple[str, Optional[Path]]] = []
-    for nt in (rules.get("2d_render_glyph_types") or {}).get("types", []):  # type: ignore[union-attr]
+    for nt in glyph_node_types(rules):
         cands = [CONFIG / DRAFTS_DIR / f"{nt}.svg"]
         vect = (styles.get(STYLE_KEY.get(nt, nt)) or {}).get("2d_file_vect")   # type: ignore[union-attr]
         if isinstance(vect, str) and vect.endswith(".svg") and vect not in NOT_A_GLYPH:

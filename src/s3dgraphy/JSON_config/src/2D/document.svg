@@ -1,27 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg id="Layer_2" data-name="Layer 2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16.11 25.34">
-  <defs>
-    <style>
-      .cls-1 {
-        fill: #000;
-      }
-
-      .cls-1, .cls-2 {
-        stroke-width: 0px;
-      }
-
-      .cls-2 {
-        fill: #fff;
-      }
-    </style>
-  </defs>
-  <g id="Layer_1-2" data-name="Layer 1">
-    <g>
-      <g>
-        <polygon class="cls-2" points="15.86 25.09 .25 25.09 .25 .25 9.87 .25 15.86 6.4 15.86 25.09"/>
-        <path class="cls-1" d="M16.11,25.34H0V0h9.97l6.14,6.3v19.04ZM.5,24.84h15.11V6.5L9.76.5H.5v24.34Z"/>
-      </g>
-      <path class="cls-1" d="M10,.62l5.51,5.65h-5.51V.62M9.75,0v6.52h6.35L9.75,0h0Z"/>
-    </g>
-  </g>
+<!--
+  The EM document: a sheet with a folded corner (yEd palette: BPMN data object, 35 x 55).
+  Three layers, and the ROLE of each is part of the drawing (em_visual_rules 2d_glyphs._roles):
+    1. the sheet            - paper
+    2. the outline          - border: a consumer restyles it from document_variant_styles
+                              (width = Canonical / Instance, colour = geometry-axis variant).
+                              Its stroke-width 0.5 is the Instance width (border_width 1.0).
+    3. the fold             - ink, always a hairline: it is a fold, not a border.
+  Redrawn 2026-10-02 from the author's file WITHOUT changing a pixel: the outline was an
+  expanded stroke (a filled ring), which nobody can thicken; it is now the stroke itself.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16.11 25.34">
+  <polygon fill="#fff" points="15.86 25.09 .25 25.09 .25 .25 9.87 .25 15.86 6.4"/>
+  <polygon data-role="border" fill="none" stroke="#000" stroke-width="0.5" points="15.86 25.09 .25 25.09 .25 .25 9.87 .25 15.86 6.4"/>
+  <polyline fill="none" stroke="#000" stroke-width="0.25" points="9.875 .25 9.875 6.395 15.86 6.395"/>
 </svg>

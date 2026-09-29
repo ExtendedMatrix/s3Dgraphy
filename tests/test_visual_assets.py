@@ -85,9 +85,9 @@ def test_every_glyph_type_declares_the_svg_its_paths_come_from():
     styles = rules["node_styles"]
     glyphs = rules["2d_glyphs"]
     # node_type → node_styles key, the table the glyph tool itself uses
-    from s3dgraphy.tools.glyphs_from_svg import STYLE_KEY
+    from s3dgraphy.tools.glyphs_from_svg import STYLE_KEY, glyph_node_types
     wrong = []
-    for node_type in rules["2d_render_glyph_types"]["types"]:
+    for node_type in glyph_node_types(rules):              # types + sheet_types
         key = STYLE_KEY.get(node_type)
         entry = glyphs.get(node_type)
         if not key or not entry:
