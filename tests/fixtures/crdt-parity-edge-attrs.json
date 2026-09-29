@@ -1,0 +1,87 @@
+{
+ "note": "CATENA · fixture condivisa Py<->JS: attributi DICHIARATI di un add_edge (inherited di un erede, connections 1.6.23); le chiavi del clock (created_at/by, removed) mandate nell'op sono ignorate.",
+ "section": {
+  "graph_id": "scavo",
+  "name": "Scavo",
+  "nodes": [
+   {
+    "id": "US5",
+    "node_type": "US",
+    "name": "US5",
+    "data": {
+     "created_at": "2026-08-13T10:00:00Z",
+     "created_by": "0000-0002-1825-0097"
+    }
+   },
+   {
+    "id": "USV7",
+    "node_type": "USVs",
+    "name": "USV7",
+    "data": {
+     "created_at": "2026-08-13T10:00:00Z",
+     "created_by": "0000-0002-1825-0097"
+    }
+   },
+   {
+    "id": "P1",
+    "node_type": "property",
+    "name": "material",
+    "description": "travertino",
+    "data": {
+     "created_at": "2026-08-13T10:00:00Z",
+     "created_by": "0000-0002-1825-0097",
+     "property_type": "material"
+    }
+   }
+  ],
+  "edges": []
+ },
+ "ops": [
+  {
+   "op": "add_edge",
+   "id": "US5__has_property__P1",
+   "source": "US5",
+   "target": "P1",
+   "edge_type": "has_property",
+   "ts": "2026-08-13T10:00:00Z",
+   "author": "0000-0002-1825-0097"
+  },
+  {
+   "op": "add_edge",
+   "id": "USV7__has_property__P1",
+   "source": "USV7",
+   "target": "P1",
+   "edge_type": "has_property",
+   "attributes": {
+    "inherited": true
+   },
+   "ts": "2026-08-13T11:00:00Z",
+   "author": "0000-0001-5109-3700"
+  },
+  {
+   "op": "add_edge",
+   "id": "USV7__has_property__P1",
+   "source": "USV7",
+   "target": "P1",
+   "edge_type": "has_property",
+   "ts": "2026-08-13T12:00:00Z",
+   "author": "0000-0002-1825-0097"
+  },
+  {
+   "op": "add_edge",
+   "id": "US5__has_property__P1",
+   "source": "US5",
+   "target": "P1",
+   "edge_type": "has_property",
+   "attributes": {
+    "created_at": "1999-01-01T00:00:00Z",
+    "removed": {
+     "ts": "2026-08-13T12:00:00Z"
+    }
+   },
+   "ts": "2026-08-13T11:00:00Z",
+   "author": "0000-0001-5109-3700"
+  }
+ ],
+ "expected_digest": "sha256:db09aa9b16f1"
+}

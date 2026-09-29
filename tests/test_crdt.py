@@ -642,3 +642,28 @@ def test_gc_keeps_the_state_mergeable():
                                    a["graphs"]["gc"]["nodes"][-1])
     assert crdt.canonical(merged_a.payload) == crdt.canonical(merged_b.payload)
     assert merged_a.payload["description"] == "aggiornata"
+
+
+# ── CATENA · attributi dichiarati di un add_edge (parità Py↔JS) ──────────────
+
+FIXTURE_C = (pathlib.Path(__file__).parent / "fixtures" / "crdt-parity-edge-attrs.json")
+
+
+def test_add_edge_carries_declared_attributes_and_converges():
+    """Un erede dichiarato dal vivo (connections 1.6.23) deve arrivare come
+    dichiarazione: l'op `add_edge` porta `attributes.inherited`, le chiavi del
+    clock mandate nell'op non contano, e l'ordine d'arrivo non cambia lo stato.
+    La stessa fixture la legge EMStudio (`check-crdt.mjs`)."""
+    payload = json.loads(FIXTURE_C.read_text(encoding="utf-8"))
+    section = payload["section"]
+    crdt.apply_ops_to_section(section, payload["ops"])
+    by_id = {e["id"]: e for e in section["edges"]}
+    heir = by_id["USV7__has_property__P1"]["attributes"]
+    assert heir["inherited"] is True
+    first = by_id["US5__has_property__P1"]["attributes"]
+    assert "inherited" not in first and "removed" not in first
+    assert first["created_at"] == "2026-08-13T10:00:00Z", "il clock forgiato nell'op è ignorato"
+    assert _digest(section) == payload["expected_digest"]
+    section2 = json.loads(FIXTURE_C.read_text(encoding="utf-8"))["section"]
+    crdt.apply_ops_to_section(section2, list(reversed(payload["ops"])))
+    assert _digest(section2) == payload["expected_digest"], "l'ordine inverso arriva allo stesso posto"

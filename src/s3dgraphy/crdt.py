@@ -705,6 +705,37 @@ def make_op(kind: str, *, ts: Optional[str] = None, author: Optional[str] = None
     return op
 
 
+#: CATENA (2026-10-05) · the attributes an ``add_edge`` op may DECLARE about the
+#: relation — today ``inherited: True`` on an heir's ``has_property``
+#: (connections 1.6.23, :mod:`s3dgraphy.ownership`). The clock's keys are never
+#: the op's to set: ``created_at``/``created_by`` come from the op's clock and
+#: ``removed`` from a ``remove_edge``. Same rule in EMStudio ``crdt.ts``.
+_EDGE_CLOCK_KEYS = frozenset({REMOVED_KEY, "created_at", "created_by"})
+
+
+def _declared_edge_attributes(raw: Any) -> Dict[str, Any]:
+    if not isinstance(raw, dict):
+        return {}
+    return {k: raw[k] for k in sorted(raw) if k not in _EDGE_CLOCK_KEYS}
+
+
+def _json_key(v: Any) -> str:
+    # the string JSON.stringify gives for the values a declaration holds
+    return json.dumps(v, separators=(",", ":"), ensure_ascii=False)
+
+
+def _merge_declared(attrs: Dict[str, Any], declared: Dict[str, Any]) -> bool:
+    """Fold declarations into an existing edge, commutatively: a key nobody
+    declared is taken; two values of one key settle on the greater JSON (a
+    declaration is not a field edit, so no clock decides). True if it learned."""
+    learned = False
+    for k, v in declared.items():
+        if k not in attrs or _json_key(v) > _json_key(attrs[k]):
+            attrs[k] = v
+            learned = True
+    return learned
+
+
 def apply_op_to_section(section: Dict[str, Any], op: Dict[str, Any]) -> OpResult:
     """Apply ONE operation to an em.json graph section. Pure and testable.
 
@@ -799,18 +830,33 @@ def apply_op_to_section(section: Dict[str, Any], op: Dict[str, Any]) -> OpResult
         }
         if not edge["id"]:
             edge["id"] = f"{edge['source']}__{edge['edge_type']}__{edge['target']}"
+        declared = _declared_edge_attributes(op.get("attributes"))
         triple = (edge["source"], edge["edge_type"], edge["target"])
         for existing in edges:
             if (existing.get("source"), existing.get("edge_type"),
                     existing.get("target")) == triple:
-                mark = Clock.from_dict((existing.get("attributes") or {}).get(REMOVED_KEY))
+                attrs = existing.setdefault("attributes", {})
+                learned = _merge_declared(attrs, declared)
+                # the relation was created by its OLDEST add, whichever arrives
+                # first: without this two adds converge only in one order
+                born = Clock(ts=attrs.get("created_at"), by=attrs.get("created_by"))
+                if clock.stamped and (not born.stamped or clock_order(clock, born) < 0):
+                    attrs.update({"created_at": clock.ts, "created_by": clock.by})
+                    learned = True
+                mark = Clock.from_dict(attrs.get(REMOVED_KEY))
                 if mark.stamped and clock_order(clock, mark) > 0:
                     # an add later than the deletion brings the relation back
-                    existing.get("attributes", {}).pop(REMOVED_KEY, None)
+                    attrs.pop(REMOVED_KEY, None)
                     return OpResult(True, "resurrected")
-                return OpResult(False, "idempotent")
+                if not attrs:
+                    existing.pop("attributes", None)
+                return (OpResult(True, "declared") if learned
+                        else OpResult(False, "idempotent"))
+        attrs = dict(declared)
         if clock.stamped:
-            edge["attributes"] = {"created_at": clock.ts, "created_by": clock.by}
+            attrs.update({"created_at": clock.ts, "created_by": clock.by})
+        if attrs:
+            edge["attributes"] = attrs
         edges.append(edge)
         return OpResult(True, "added")
 
