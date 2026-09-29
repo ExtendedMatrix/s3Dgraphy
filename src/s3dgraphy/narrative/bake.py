@@ -266,6 +266,14 @@ def _unit_text(node: Any) -> str:
     return " — ".join(parts)
 
 
+def _site_position(node: Any) -> Optional[Dict[str, float]]:
+    """`{"lat", "lon"}` from `data.site_position`, or None. Read by one function
+    shared with the scaffolder, so the chapter is born from exactly the position
+    the bake then draws."""
+    from .site_story import site_position_of
+    return site_position_of(node)
+
+
 def _map_block(node: Any, graph: Any, options: Dict[str, Any]) -> BakedBlock:
     """A map baked as coordinates plus a link.
 
@@ -282,26 +290,40 @@ def _map_block(node: Any, graph: Any, options: Dict[str, Any]) -> BakedBlock:
     so instead of pretending.
     """
     data = _node_data(node)
-    epsg = int(data.get("epsg") or 4326)
-    x = float(data.get("shift_x") or 0.0)
-    y = float(data.get("shift_y") or 0.0)
-    rotation = float(data.get("rotation") or 0.0)
     label = getattr(node, "name", "") or getattr(node, "node_id", "")
+    rotation = float(data.get("rotation") or 0.0)
 
-    # THE SITE POSITION (GEO1): a map embed can point at the graph itself, and a
-    # graph's position lives in `site_position` — the symbolic where-is-this-site,
-    # deliberately distinct from the 3D shift. Read here because the client reads
-    # it: with only the shift consulted, the caption said "0.000000, 0.000000"
+    # THE SITE POSITION (GEO1). Two nodes can answer a map embed, and they mean
+    # different things:
+    #
+    # * the GRAPH node — the embed `site_story` writes since the site became the
+    #   chapter's origin — whose position is `site_position`, the symbolic
+    #   where-is-this-site. Its shift, if it had one, would not be read: the
+    #   shift belongs to the 3D scene, and a dot drawn at a scene offset is the
+    #   Gulf-of-Guinea bug `study._spatial_of` warns about;
+    # * a GeoPositionNode — the embed of narratives saved before — which keeps
+    #   its shift (it is still the anchor of the scene) and, when it has none,
+    #   reads the graph's `site_position`, so an old narrative whose scene was
+    #   never shifted still shows the site.
+    #
+    # With only the shift consulted, the caption once said "0.000000, 0.000000"
     # under a figure drawn at the right place (measured in an HTML export). One
     # position, or the two halves of the same block contradict each other.
-    site = data.get("site_position")
-    if isinstance(site, dict) and not x and not y:
-        try:
-            x = float(site.get("lon"))
-            y = float(site.get("lat"))
-            epsg = 4326
-        except (TypeError, ValueError):
-            pass
+    if getattr(node, "node_type", "") == "graph":
+        epsg, x, y = 4326, 0.0, 0.0
+        site = _site_position(node)
+    else:
+        epsg = int(data.get("epsg") or 4326)
+        x = float(data.get("shift_x") or 0.0)
+        y = float(data.get("shift_y") or 0.0)
+        site = _site_position(node)
+        if site is None and not x and not y:
+            site = next((_site_position(n)
+                         for n in (getattr(graph, "nodes", []) or [])
+                         if getattr(n, "node_type", "") == "graph"
+                         and _site_position(n) is not None), None)
+    if site is not None and not x and not y:
+        x, y, epsg = site["lon"], site["lat"], 4326
 
     # NO COORDINATES is a case, not a zero. An anchor with no shift used to bake
     # as "0.000000, 0.000000 (WGS84)" with a link to null island — a position

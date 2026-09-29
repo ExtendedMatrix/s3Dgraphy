@@ -52,6 +52,9 @@ _PHRASES = {
                         "rests on"),
         "where": "Where it is",
         "geo_context": "the geographical context",
+        "site_unplaced": ("the site's position — the graph carries only the "
+                          "georeferencing of the 3D scene, which does not say "
+                          "where the site is: place the site"),
         "epoch_what": "what happens in «{name}»",
         "activity_what": "the activity «{name}»: what was done",
     },
@@ -66,6 +69,9 @@ _PHRASES = {
         "how_to_read": "come si legge questo racconto e su quali fonti si appoggia",
         "where": "Dove si trova",
         "geo_context": "il contesto geografico",
+        "site_unplaced": ("la posizione del sito — il grafo ha solo la "
+                          "georeferenziazione della scena 3D, che non dice "
+                          "dove si trova il sito: il sito va posizionato"),
         "epoch_what": "che cosa accade in «{name}»",
         "activity_what": "l'attività «{name}»: che cosa è stato fatto",
     },
@@ -105,6 +111,7 @@ _PROPERTY_EDGE = "has_property"
 from ..nodes.document_node import DocumentNode as _SourceClass
 from ..nodes.epoch_node import EpochNode as _EpochClass
 from ..nodes.geo_position_node import GeoPositionNode as _GeoClass
+from ..nodes.graph_node import GraphNode as _GraphClass
 from ..nodes.group_node import ActivityNodeGroup as _ActivityClass
 from ..nodes.project_node import ProjectNode as _ProjectClass
 
@@ -270,16 +277,65 @@ def _presentation_chapter(graph, narrative, graph_name, lang=None) -> None:
 # ── 2. Dove si trova ─────────────────────────────────────────────────────────
 
 def _geo_chapter(graph, narrative, lang=None) -> None:
-    """Only if the graph actually has a position. Inventing coordinates for a
-    site would be the worst kind of plausible."""
-    geo = _nodes(graph, _GeoClass)
-    placed = [g for g in geo if _has_coordinates(g)]
-    if not placed:
+    """«Where it is» is born from the SITE, not from the 3D scene.
+
+    The site is `GraphNode.data.site_position` (GEO1) — a place on Earth, the one
+    `study._spatial_of` catalogues and `bake._map_block` draws. The
+    GeoPositionNode is something else: the ANCHOR of the 3D scene, whose shift
+    is an offset for the models, not where the dot goes. The chapter used to be
+    born from the shift and to point the map at the geo node; a site placed only
+    through `site_position` got no chapter at all, and a shifted scene got a map
+    of its origin.
+
+    Three cases:
+
+    * **site_position** → the chapter, a placeholder, and the map embed on the
+      GRAPH node;
+    * **only a shift** → the chapter is born anyway (the graph IS somewhere, the
+      scene says so), but its prose says the site is still to be placed, and
+      the map points at the graph node, which bakes as "position not recorded".
+      No point is derived from the shift: that would be the 3D offset passed off
+      as the site. If the graph has no GraphNode there is nothing honest to point
+      at, and the chapter carries the prose alone;
+    * **neither** → no chapter. Inventing coordinates for a site would be the
+      worst kind of plausible.
+    """
+    site_node = _site_node(graph)
+    placed = [g for g in _nodes(graph, _GeoClass) if _has_coordinates(g)]
+    if site_node is None and not placed:
         return
     chapter = narrative.add_chapter(phrase(lang, "where"), canonical=True)
+    if site_node is not None:
+        chapter.add_prose(phrase(lang, "placeholder",
+                                 what=phrase(lang, "geo_context")))
+        chapter.add_embed(site_node.node_id, "map")
+        return
     chapter.add_prose(phrase(lang, "placeholder",
-                             what=phrase(lang, "geo_context")))
-    chapter.add_embed(placed[0].node_id, "map")
+                             what=phrase(lang, "site_unplaced")))
+    graphs = _nodes(graph, _GraphClass)
+    if graphs:
+        chapter.add_embed(graphs[0].node_id, "map")
+
+
+def _site_node(graph):
+    """The GraphNode that carries a usable `site_position`, or None."""
+    for node in _nodes(graph, _GraphClass):
+        if site_position_of(node) is not None:
+            return node
+    return None
+
+
+def site_position_of(node) -> Optional[Dict[str, float]]:
+    """`{"lat", "lon"}` from a node's `site_position`, or None when it has none
+    or it does not parse. The same test `study._spatial_of` applies."""
+    data = getattr(node, "data", None)
+    site = data.get("site_position") if isinstance(data, dict) else None
+    if not isinstance(site, dict):
+        return None
+    try:
+        return {"lat": float(site["lat"]), "lon": float(site["lon"])}
+    except (KeyError, TypeError, ValueError):
+        return None
 
 
 def _has_coordinates(geo) -> bool:
