@@ -14,7 +14,15 @@ authors:
     orcid: "https://orcid.org/0000-0002-5065-7970"
     affiliation: "CNR-ISPC — Institute of Heritage Science, National Research Council of Italy"
 license: GPL-3.0-or-later
-version: 1.6.0.dev18
+doi: "10.5281/zenodo.20558706"
+identifiers:
+  - type: doi
+    value: "10.5281/zenodo.20558706"
+    description: "Concept DOI: always resolves to the latest version"
+  - type: doi
+    value: "10.5281/zenodo.23039780"
+    description: "Version DOI for 1.6.0.dev22"
+version: 1.6.0.dev22
 repository-code: "https://github.com/ExtendedMatrix/s3Dgraphy"
 keywords:
   - Extended Matrix
