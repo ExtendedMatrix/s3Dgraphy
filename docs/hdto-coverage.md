@@ -1,6 +1,6 @@
 # HDT-O coverage in s3Dgraphy (P1-C)
 
-Audit of HDT-O (ECHOES **D7.1**, May 2024) classes **HC1–HC20** and properties
+Audit of HDT-O (ECHOES **D7.1**, final version V1.0, `doi.org/10.5281/zenodo.20445938`) classes **HC1–HC20** and properties
 **HP1–HP26+** against existing EM node/edge types. Scope of P1-C: *additive* —
 add **only** the genuinely-missing, non-mappable classes as new node types (the
 way `HDTNode → HC2` was seeded), gated out of the stratigrapher palette.
@@ -24,36 +24,62 @@ archaeology authoring concern.
 | HC2 | Heritage Digital Twin | `HDTNode` (→ `hdto:HC2`) | mapped |
 | HC3 | Tangible Heritage Entity | specialization of HC1 | defer |
 | HC4 | Intangible Heritage Entity | specialization of HC1 | defer |
-| HC5 | Digital Representation | `RepresentationModelNode` family — **Type-A annotated** `hdto:HC5` (keeps `crmdig:D1`) | **annotated** |
-| HC6 | (unlabelled in D7.1 Draft-7) | — | ⚠ see note below |
+| HC5 | Digital Representation (⊂ `crmdig:D9 Data Object`; superclass of HC7 and HC8) | `RepresentationModelNode` family — **Type-A annotated** `hdto:HC5` (keeps `crmdig:D1`) | **annotated** |
+| HC6 | Sensor-based Digital Representation (⊂ `crmdig:D9 Data Object`; superclass of HC21, HC30) | — | defer (no sensor evidence from partners yet) |
 | HC8 | 3D Model | `RepresentationModelNode` family, 3D side — declared in D7.1 with `HP21 is 3D representation output of` and `crmdig:D2/L20` | **to map** |
 | HC7 | Digital Audiovisual Object | `RepresentationModel*` covers 3D; AV n/a | defer |
-| HC9 | Study | **`StudyNode`** (`hdto_nodes`, → `hdto:HC9` ⊂ `crm:E7`) | **added** |
+| HC9 | Study (⊂ `crm:E65 Creation`) | **`StudyNode`** (`hdto_nodes`, → `hdto:HC9`) | **added** · ⚠ `hdto_extension.ttl` still declares it ⊂ `crm:E7_Activity` |
 | HC10 | Heritage Valuation | — | defer |
 | HC11 | Digital Twin Maintenance | — | defer (HDT lifecycle) |
 | HC12 | Heritage Declaration Event | — | defer |
 | HC13 | Project | **`ProjectNode`** (`hdto_nodes`, → `hdto:HC13` ⊂ `crm:E7`) | **added** |
 | HC14 | Volatile Digital Object | superclass of HC2 (declared in `hdto_extension.ttl`; `HDTNode` `subclass_of` HC14) | ontology-only |
 | HC15 | Persistent Digital Object | snapshot infrastructure (ttl) | defer / ontology-only |
-| HC16 | Heritage Proposition Set | `GraphNode` = `em:EMGraph` (em.ttl declares `EMGraph ⊂ HC16`) | mapped |
+| HC16 | Heritage Proposition Set (⊂ `crminf:I4 Proposition Set`, `HC15`) | `GraphNode` = `em:EMGraph` (em.ttl declares `EMGraph ⊂ HC16`) | mapped · ⚠ `hdto_extension.ttl` declares it ⊂ `crm:E73` only |
 | HC17 | Observation with Inference | `ParadataNode` — **Type-A annotated** `hdto:HC17` (keeps `crminf:I1`); Extractor/Combiner (I7/I5) remain the interpretation side | **annotated** |
-| HC18 | Provenance Statement | GENESIS-side summary that links into the **DTC chain** (CRMdig + PROV-O); an HC18 links to ≥1 DTC chain. **NOT** Extractor/Combiner (those are CRMinf interpretation / HC17). | defer → DTC profile |
+| HC18 | Provenance Statement (⊂ HC16; ≡ `crminf:I10`) — **provenance in the sense of pedigree**: chain of custody, ownership, display. NOT the DTC/genesis chain, and NOT a reasoning artefact. | — | defer |
 | HC19 | Provenance Assessment | GENESIS-side, paired with HC18 (CRMdig + PROV-O) | defer → DTC profile |
 | HC20 | Criminal Activity | — | out-of-scope |
 
 > HC21–HC29 (SensorThings API module) are a separate D7.1 section, out of P1-C scope.
 
-> ⚠ **Corrected 28 September 2026, measured on `D7.1 - Draft-7-revVQ.docx`.** Two rows of this
-> table were wrong and one was missing. **HC8 3D Model is declared in D7.1** — it has its own
-> section, a scope note, the property `HP21 is 3D representation output of` towards HC1 and an
-> alignment to `crmdig:D2 Digitization Process` / `crmdig:L20 has created` — and this table had no
-> row for it at all; it is the class the case-study alignments in StratiGraph D3.1 use for 3D
-> models, so the omission was ours. **HC6 has no section and no declared label** in that draft: it
-> appears once, parenthetically, attached to «a resource page», so neither «Sensor» (what this
-> table said) nor «Digital Document» nor «Sensor Data» can be confirmed, and HC6 should not be
-> cited until D7.1 settles it. **HC3 is «Tangible Heritage Entity»** in D7.1, not the gloss
-> «Tangible Aspect of an HC1» used here. HC9 Study likewise has a section although it is missing
-> from the draft's own class list.
+> ⚠ **Rewritten 29 September 2026, measured on `D7.1_final.docx`** (Version V1.0, status
+> final; published as Hermon et al. 2026, ECHOES D7.1, `doi.org/10.5281/zenodo.20445938`).
+> This supersedes the correction dated 28 September, which was measured on
+> `D7.1 - Draft-7-revVQ.docx` and is wrong wherever the two differ.
+>
+> **HC6 is labelled after all.** The final text gives it a full section — *HC6 Sensor-based
+> Digital Representation*, subclass of `crmdig:D9 Data Object`, superclass of HC21 and HC30 —
+> so the 28 September statement that HC6 carries no label, and the instruction not to cite it,
+> both fall. The original row of this table, which read «Sensor», was closer to right than the
+> correction that replaced it.
+>
+> **HC9 Study is a subclass of `crm:E65 Creation`,** not of `crm:E7 Activity` as this table
+> and `hdto_extension.ttl` both said. It is the scholarly activity of analysing a heritage
+> entity; its documentary output is a separate thing, joined to it by `HP25 has created`. A
+> report, a field note or a metadata record is therefore never an HC9.
+>
+> **HC16 Heritage Proposition Set is a subclass of `crminf:I4 Proposition Set`** and of HC15,
+> with its identity depending on the total of the propositions it contains. That is the class
+> of an Extended Matrix graph and of a Harris matrix, and `em.ttl` already declares
+> `em:EMGraph ⊂ HC16`. `hdto_extension.ttl` declares HC16 under `crm:E73` alone and should
+> carry the `crminf:I4` parent too.
+>
+> **HC18 Provenance Statement** is `≡ crminf:I10` and concerns pedigree — chain of custody,
+> ownership and display. It is not the genesis/DTC chain, which this table previously implied.
+>
+> **HC8 3D Model and HC3 Tangible Heritage Entity** stand as corrected on 28 September: HC8
+> has its own section with `HP21` and the `crmdig:D2/L20` alignment, and HC3 is «Tangible
+> Heritage Entity».
+>
+> **Three divergences remain open in `hdto_extension.ttl`** and are deliberately not patched
+> here, because that file ships inside the library at the coherence horizon declared in
+> StratiGraph D3.2 Table 1 (library `1.6.0.dev21`) and changing it moves that horizon:
+> `HC9 ⊂ crm:E7_Activity` should be `crm:E65_Creation`; `HC16 ⊂ crm:E73_Information_Object`
+> should also carry `crminf:I4_Proposition_Set`; `HC5 ⊂ crmdig:D1_Digital_Object` should be
+> `crmdig:D9_Data_Object`. To be closed at the next version bump, with the table in D3.2
+> updated in the same move.
+
 
 
 ## Properties (HP1–HP26+) — mostly EDGES, not node types
