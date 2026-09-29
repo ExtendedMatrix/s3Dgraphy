@@ -181,16 +181,51 @@ def test_xlsx_default_leaves_out_and_forced_marks(tmp_path):
 
 # ── RDF ────────────────────────────────────────────────────────────────────
 
-def test_rdf_default_leaves_out(tmp_path):
+def test_rdf_publish_leaves_out(tmp_path):
     pytest.importorskip("rdflib")
     from s3dgraphy.exporter.rdf_exporter import RDFExporter
-    ex = RDFExporter(str(tmp_path / "d.ttl"), format="turtle")
+    ex = RDFExporter(str(tmp_path / "d.ttl"), format="turtle", mode="publish")
     ttl = open(ex.export_single_graph(_graph()), encoding="utf-8").read()
     assert "tufo" not in ttl and "limo sabbioso" not in ttl
     assert ex.stats["ai_unvalidated"] == 2
+    assert api.project_ttl(_graph(), mode="publish").count("tufo") == 0
 
 
-def test_rdf_forced_roundtrip_keeps_the_marker_and_is_isomorphic(tmp_path):
+def test_rdf_round_trip_keeps_the_unvalidated_node_unvalidated(tmp_path):
+    """E.D. 2026-09-29: the round trip is a transformation, not a publication."""
+    rdflib = pytest.importorskip("rdflib")
+    from rdflib.compare import isomorphic
+    from s3dgraphy.exporter.rdf_exporter import RDFExporter
+    from s3dgraphy.importer.rdf_importer import RDFImporter
+
+    ex = RDFExporter(str(tmp_path / "a.ttl"), format="turtle")   # round_trip
+    t1 = ex.export_single_graph(_graph())
+    text = open(t1, encoding="utf-8").read()
+    assert "tufo" in text and "limo sabbioso" in text
+    assert UNVALIDATED_MARK not in text            # carried, not flagged
+    assert ex.stats["ai_unvalidated"] == 0 and ex.excluded == []
+    g2 = RDFImporter().parse(t1)[0]
+    assert {r["node"] for r in unvalidated_ai(g2)} == {"p1", "US6"}
+    assert g2.find_node_by_id("p1").data["ai_assisted"] == {
+        "by": "claude", "model": "claude-opus-5-5"}
+    assert "validated_by" not in g2.find_node_by_id("p1").data
+    t2 = RDFExporter(str(tmp_path / "b.ttl"),
+                     format="turtle").export_single_graph(g2)
+    a, b = rdflib.Graph(), rdflib.Graph()
+    a.parse(t1, format="turtle"); b.parse(t2, format="turtle")
+    assert isomorphic(a, b)
+
+
+def test_rdf_forcing_only_means_something_when_publishing(tmp_path):
+    pytest.importorskip("rdflib")
+    from s3dgraphy.exporter.rdf_exporter import RDFExporter
+    with pytest.raises(ValueError):
+        RDFExporter(str(tmp_path / "x.ttl"), include_unvalidated=True)
+    with pytest.raises(ValueError):
+        api.project_ttl(_graph(), include_unvalidated=True)
+
+
+def test_rdf_forced_publish_keeps_the_marker_and_is_isomorphic(tmp_path):
     rdflib = pytest.importorskip("rdflib")
     from rdflib.compare import isomorphic
     from s3dgraphy.exporter.rdf_exporter import RDFExporter
@@ -198,7 +233,7 @@ def test_rdf_forced_roundtrip_keeps_the_marker_and_is_isomorphic(tmp_path):
 
     g = _graph()
     api.validate_ai(g, "p1", "ed", at="2026-10-04T10:00:00Z")
-    t1 = RDFExporter(str(tmp_path / "a.ttl"), format="turtle",
+    t1 = RDFExporter(str(tmp_path / "a.ttl"), format="turtle", mode="publish",
                      include_unvalidated=True).export_single_graph(g)
     text = open(t1, encoding="utf-8").read()
     assert f"{UNVALIDATED_MARK} limo sabbioso" in text      # unvalidated: marked
@@ -214,7 +249,7 @@ def test_rdf_forced_roundtrip_keeps_the_marker_and_is_isomorphic(tmp_path):
     # the marker triples are not read back as edges
     assert not any(e.edge_target in ("claude", "ed") and e.edge_source in ("p1", "US6")
                    for e in g2.edges)
-    t2 = RDFExporter(str(tmp_path / "b.ttl"), format="turtle",
+    t2 = RDFExporter(str(tmp_path / "b.ttl"), format="turtle", mode="publish",
                      include_unvalidated=True).export_single_graph(g2)
     a, b = rdflib.Graph(), rdflib.Graph()
     a.parse(t1, format="turtle"); b.parse(t2, format="turtle")

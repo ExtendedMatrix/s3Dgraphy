@@ -4,6 +4,18 @@ All notable changes to **s3dgraphy** are documented here.
 
 ## [Unreleased]
 
+### Changed (2026-10-05 — the RDF round trip stays complete)
+E.D. 2026-09-29: the round trip is a technical transformation, not a
+publication. `RDFExporter(mode="round_trip")` (the default, and
+`api.project_ttl` / `api.container_to_ttl`) no longer leaves out AI-made nodes
+no person verified: they travel with their `ai_assisted` marker, unflagged,
+and come back unvalidated (ttl → graph → ttl isomorphic). Only
+`mode="publish"` leaves them out, and with `include_unvalidated=True` carries
+them marked «⚠︎»; `include_unvalidated=True` with `round_trip` is now a
+`ValueError`. `api.container_to_ttl` gains `mode` and `include_unvalidated`.
+The other exits towards others (html, docx, LaTeX, ipynb, xlsx) are unchanged:
+they exclude by default.
+
 ### Changed (2026-10-04 — two English phrases)
 Connections datamodel **1.6.26**: `combines.ui_phrase.as_source` «{node}
 combining {x}» → «{node} of {x}» («Combiner of D.3.1»; the other languages

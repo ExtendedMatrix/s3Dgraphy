@@ -559,6 +559,12 @@ class RDFExporter:
     #: ``removedAt``, no edge dangling on the hole. See
     #: :mod:`s3dgraphy.dissemination` for the per-surface policy.
     #:
+    #: The same line holds for what no person verified (ai_validation, E.D.
+    #: 2026-09-29): the round trip is a technical transformation, not a
+    #: publication, so an AI-made node travels with its ``ai_assisted`` marker
+    #: and comes back unvalidated; ``publish`` is an exit towards others and
+    #: leaves it out, or — ``include_unvalidated=True`` — carries it with «⚠︎».
+    #:
     #: The default is round_trip on purpose: publishing is a deliberate act, and
     #: a projection that silently dropped information would be the wrong kind of
     #: helpful.
@@ -577,8 +583,9 @@ class RDFExporter:
             output_path: target file path (extension auto-fixed by format).
             format: 'turtle' (default), 'n-triples', 'json-ld', 'trig', 'xml'.
             base_uri: base URI for minted node IRIs.
-            mode: 'round_trip' (default, keeps tombstones) or 'publish'
-                (drops them entirely). See :attr:`MODES`.
+            mode: 'round_trip' (default: keeps tombstones and unvalidated AI
+                nodes, so ttl → graph gives back what went in) or 'publish'
+                (drops both). See :attr:`MODES`.
             parent_hdt_iri: if set, every exported EMGraph (HC16) gets a
                 triple `<emgraph> hdto:HP33i_is_proposition_set_of <parent>`
                 binding it as a proposition set of the given HC2 Heritage
@@ -586,12 +593,14 @@ class RDFExporter:
                 rdf:type hdto:HC2_Heritage_Digital_Twin so a SPARQL query
                 can discover the parent without a separate type assertion.
             config_dir: override location of JSON_config/ (default: alongside exporter).
-            include_unvalidated: a node made with AI that no person verified
-                (ai_validation) is left out by default, in both modes; True
-                keeps it, with «⚠︎» at the start of each touched literal and
-                the marker as em:aiAssistedBy / em:aiModel / em:aiPromptRef /
-                em:aiAssistedField. ``self.excluded`` lists what was left out
-                or flagged.
+            include_unvalidated: only for ``publish``. A node made with AI
+                that no person verified (ai_validation) is left out of a
+                publication by default; True keeps it, with «⚠︎» at the start
+                of each touched literal. ``self.excluded`` lists what was left
+                out or flagged. In ``round_trip`` nothing is left out and
+                nothing is flagged — the marker travels as em:aiAssistedBy /
+                em:aiModel / em:aiPromptRef / em:aiAssistedField — so asking
+                for it there is an error, not a no-op.
         """
         fmt = (format or "turtle").lower()
         if fmt not in self.SUPPORTED_FORMATS:
@@ -604,6 +613,10 @@ class RDFExporter:
             raise ValueError(
                 f"Unsupported RDF mode {mode!r}. Supported: {list(self.MODES)}"
             )
+        if include_unvalidated and mode != "publish":
+            raise ValueError(
+                "include_unvalidated only applies to mode='publish': the "
+                "round trip already carries every AI-made node, unflagged")
         self.mode = mode
         self.include_unvalidated = bool(include_unvalidated)
         self.excluded: List[Dict[str, Any]] = []
@@ -625,8 +638,9 @@ class RDFExporter:
             # definitions that carried a label and no concept URI, and so
             # projected to whatever `rdf.label_only` says (by default: nothing)
             "definitions_label_only": 0,
-            # nodes made with AI that no person verified: left out (default)
-            # or kept with the mark (include_unvalidated)
+            # nodes made with AI that no person verified, in `publish`: left
+            # out (default) or kept with the mark (include_unvalidated); 0 in
+            # round_trip, where they travel as they are
             "ai_unvalidated": 0,
         }
 
@@ -798,12 +812,14 @@ class RDFExporter:
             from ..dissemination import live_view
             g, hidden = live_view(g, surface="rdf:publish")
             self.stats["removed_hidden"] += hidden.total
-        # What no person verified is not published (ai_validation): once, here,
-        # for the same reason as the tombstones above.
-        from ..ai_validation import export_view
-        g, ai_rows = export_view(g, include_unvalidated=self.include_unvalidated)
-        self.excluded.extend(ai_rows)
-        self.stats["ai_unvalidated"] += len(ai_rows)
+            # What no person verified is not published (ai_validation): once,
+            # here, for the same reason as the tombstones above. The round trip
+            # skips this on purpose: it is a transformation, not a publication.
+            from ..ai_validation import export_view
+            g, ai_rows = export_view(
+                g, include_unvalidated=self.include_unvalidated)
+            self.excluded.extend(ai_rows)
+            self.stats["ai_unvalidated"] += len(ai_rows)
         graph_iri = self._graph_iri(g)
 
         ctx.add((graph_iri, RDF.type, EM.EMGraph))
@@ -1121,8 +1137,9 @@ class RDFExporter:
         ``em:aiAssistedBy`` → the AuthorAINode, ``em:aiModel``,
         ``em:aiPromptRef`` → the prompt node, one ``em:aiAssistedField`` per
         touched field; ``em:validatedBy`` → the person who verified it and
-        ``em:validatedAt``. Only for a node that carries the marker — and an
-        unverified one reaches here only when the export was forced.
+        ``em:validatedAt``. Only for a node that carries the marker — an
+        unverified one reaches here in every round trip, and in a publication
+        only when it was forced.
         """
         from ..ai_validation import (VALIDATED_AT, VALIDATED_BY, ai_marker,
                                      touched_fields)

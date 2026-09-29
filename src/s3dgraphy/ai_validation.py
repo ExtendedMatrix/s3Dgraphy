@@ -65,6 +65,12 @@ unvalidated AI node is absent (or, with a ``fields`` list, those fields are
 empty), plus the list of what was left out. ``include_unvalidated=True`` keeps
 them, with :data:`UNVALIDATED_MARK` at the start of every touched text field.
 em.json is the record and is never filtered.
+
+Only the exits towards others call it — publication and the exports for third
+parties (html, docx, LaTeX, ipynb, xlsx, RDF ``mode="publish"``). The RDF
+``round_trip`` does not: it is a technical transformation, and ttl → graph must
+give back the same graph, the unvalidated node included, still unvalidated
+(E.D. 2026-09-29).
 """
 
 from __future__ import annotations

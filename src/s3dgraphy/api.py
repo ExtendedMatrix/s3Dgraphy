@@ -278,10 +278,15 @@ def pin_project_version(container, *, at: Optional[str] = None) -> Dict[str, Any
 
 
 def container_to_ttl(container, path: str, *, base_uri: Optional[str] = None,
-                     format: str = "turtle") -> str:
-    """Project → RDF: every member graph plus `prov:wasRevisionOf` / version."""
+                     format: str = "turtle", mode: str = "round_trip",
+                     include_unvalidated: bool = False) -> str:
+    """Project → RDF: every member graph plus `prov:wasRevisionOf` / version.
+
+    `mode` and `include_unvalidated` as in :func:`project_ttl`: the round trip
+    carries everything, ``publish`` is the exit towards others."""
     from .exporter.rdf_exporter import RDFExporter
-    kwargs: Dict[str, Any] = {"format": format}
+    kwargs: Dict[str, Any] = {"format": format, "mode": mode,
+                              "include_unvalidated": include_unvalidated}
     if base_uri:
         kwargs["base_uri"] = base_uri
     return RDFExporter(path, **kwargs).export_container(container)
@@ -1102,15 +1107,16 @@ def project_ttl(graph: Graph, *, base_uri: Optional[str] = None,
                 include_unvalidated: bool = False) -> str:
     """Project a Graph to RDF and return it as a string (default Turtle).
 
-    A node made with AI that no person verified is left out in both modes
-    (:func:`unvalidated_ai`); ``include_unvalidated=True`` keeps it, marked «⚠︎».
-
     `mode` picks which of the two RDF readings you want: ``round_trip``
-    (default) keeps tombstones, because the projection must give back what went
-    in; ``publish`` drops them, because a published graph is a dissemination
-    surface and a deleted US must be ABSENT from it, not marked in it. The
-    policy lives in :mod:`s3dgraphy.dissemination`; publishing is deliberate,
-    so it is never the default.
+    (default) keeps tombstones and every AI-made node no person verified (with
+    its marker, unflagged), because the projection is a technical transformation
+    and must give back what went in; ``publish`` drops both, because a published
+    graph is an exit towards others: a deleted US must be ABSENT from it, and so
+    must what no person verified (:func:`unvalidated_ai`) — unless
+    ``include_unvalidated=True``, which keeps it marked «⚠︎» and is only
+    accepted with ``publish``. The policy lives in :mod:`s3dgraphy.dissemination`
+    and :mod:`s3dgraphy.ai_validation`; publishing is deliberate, so it is never
+    the default.
 
     Raises :class:`MissingDependency` if rdflib is not installed."""
     try:
