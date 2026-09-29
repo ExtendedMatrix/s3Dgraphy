@@ -419,6 +419,14 @@ em:hasQualia
     rdfs:range em:Qualia ;
     rdfs:comment "Links an entity to one of its qualia (a typed property with its own paradata chain)."@en .
 
+em:inheritsQualia
+    a owl:ObjectProperty ;
+    rdfs:label "inherits qualia"@en ;
+    rdfs:subPropertyOf em:hasQualia ;
+    rdfs:domain crm:E1_CRM_Entity ;
+    rdfs:range em:Qualia ;
+    rdfs:comment "The entity INSTANTIATES a qualia another entity created: one property, one value, one paradata chain, several owners (a virtual unit taking the material of the unit it completes; E.D. 2026-09-29). A subproperty of em:hasQualia, so every owner is still found by em:hasQualia; this one says the inheritance was DECLARED and that the subject is not the original owner. Maps to: connections_datamodel edge 'has_property' carrying the edge attribute inherited=true (connections 1.6.23, has_property.owners_note)."@en .
+
 em:hasQualiaType
     a owl:DatatypeProperty ;
     rdfs:label "has qualia type"@en ;

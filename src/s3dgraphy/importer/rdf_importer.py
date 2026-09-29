@@ -172,6 +172,9 @@ ARTEFACT_PREDICATES: Set[URIRef] = {
     PROV.wasAttributedTo,
     PROV.wasInfluencedBy,
     HDTO.HP33i_is_proposition_set_of,
+    # the declaration of an inherited property: read back onto the
+    # has_property edge by _mark_inherited_properties, never an edge of its own
+    EM.inheritsQualia,
 }
 
 #: Predicates the exporter emits as the GENERIC companion of a more specific
@@ -770,6 +773,26 @@ class RDFImporter:
 
         self._rebuild_edges(store, node_prefix, id_of, class_of, g)
         self._rebuild_has_property_from_i17(store, node_prefix, id_of, g)
+        self._mark_inherited_properties(store, id_of, g)
+
+    @staticmethod
+    def _mark_inherited_properties(store: ConjunctiveGraph,
+                                   id_of: Dict[str, str],
+                                   g: S3DGraph) -> None:
+        """Put ``attributes["inherited"]`` back on the has_property edges the
+        exporter declared with ``em:inheritsQualia`` (ownership.py). The
+        has_property itself was already rebuilt from em:hasQualia / the I17."""
+        declared = set()
+        for s, o in store.subject_objects(EM.inheritsQualia):
+            src, tgt = id_of.get(str(s)), id_of.get(str(o))
+            if src and tgt:
+                declared.add((src, tgt))
+        if not declared:
+            return
+        for e in g.edges:
+            if (e.edge_type == "has_property"
+                    and (e.edge_source, e.edge_target) in declared):
+                e.attributes["inherited"] = True
 
     @staticmethod
     def _collect_node_iris(store: ConjunctiveGraph, node_prefix: str) -> List[str]:

@@ -36,6 +36,7 @@ from ..nodes.document_node import DocumentNode
 from ..nodes.extractor_node import ExtractorNode
 from ..nodes.combiner_node import CombinerNode
 from ..nodes.property_node import PropertyNode
+from ..ownership import original_owner
 
 
 # Only the canonical direction for each pair gets emitted. Reverse edges
@@ -364,6 +365,20 @@ class UnifiedXLSXExporter:
                        for e in self.graph.edges)
             )
             if not value and not has_attribution and prop_type in ("string", "definition"):
+                continue
+
+            # A property with several owners (ownership.py) is ONE claim: the
+            # original owner's row carries it with its chain; an inheriting
+            # owner's row names the original in TARGET2_ID and carries only a
+            # COPY of the value (for the reader) and no attribution — the chain
+            # belongs to the property, written once. The importer re-links the
+            # row to the original's property instead of minting a second one.
+            orig = original_owner(self.graph, pn.node_id)
+            orig_host = (self._unit_id_by_uuid.get(orig)
+                         or self._epoch_id_by_uuid.get(orig)) if orig else None
+            if orig_host and edge.edge_source != orig:
+                rows.append(self._row(host_id, orig_host, prop_type,
+                                      value=value, units=units))
                 continue
 
             row = self._row(host_id, "", prop_type, value=value, units=units)

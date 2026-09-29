@@ -271,7 +271,7 @@ One row per asserted fact. **14 fixed columns**:
 | # | Column | Notes |
 |---|--------|-------|
 | 1 | `TARGET_ID` | Subject of the claim. Usually a `Units.ID`; for claims about an epoch itself, an `Epochs.ID`. For relations, the "source" endpoint. |
-| 2 | `TARGET2_ID` | Only for relational claims or `has_first_epoch`. Empty for scalar qualia. |
+| 2 | `TARGET2_ID` | Only for relational claims or `has_first_epoch`. Empty for scalar qualia (the exporter writes it on a scalar row only for a property a unit inherits from another; never fill it when extracting). |
 | 3 | `PROPERTY_TYPE` | Controlled vocabulary (§VOCABULARY). |
 | 4 | `VALUE` | Scalar value (string / number). Empty for relational claims. |
 | 5 | `UNITS` | Unit of measure for numeric values (`m`, `cm`, `kg`, `AD`, `BC`). Optional. |

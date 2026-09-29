@@ -153,6 +153,30 @@ def validate(graph: Graph) -> Dict[str, Any]:
     }
 
 
+# ── a property with more than one owner ─────────────────────────────────────
+def property_owners(graph: Graph, property_id: str) -> List[Dict[str, Any]]:
+    """The owners of a property, the original first: ``[{owner, edge,
+    original, inherited}]``. See :mod:`s3dgraphy.ownership`."""
+    from .ownership import property_owners as _owners
+    return _owners(graph, property_id)
+
+
+def inherit_property(graph: Graph, owner_id: str, property_id: str, *,
+                     edge_id: Optional[str] = None):
+    """Declare that ``owner_id`` instantiates an existing property: one more
+    ``has_property``, marked ``inherited``. The property is not copied and
+    stays in its original owner's ParadataNodeGroup."""
+    from .ownership import inherit_property as _inherit
+    return _inherit(graph, owner_id, property_id, edge_id=edge_id)
+
+
+def shared_properties(graph: Graph) -> List[Dict[str, Any]]:
+    """Every property with more than one owner: ``[{property, owners,
+    original}]``."""
+    from .ownership import shared_properties as _shared
+    return _shared(graph)
+
+
 # ── the em.json CONTAINER: a project is one file ───────────────────────────────
 #
 # An em.json is ALWAYS a container: `{"graphs": {...}}`, 1..N study graphs plus

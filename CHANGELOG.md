@@ -4,6 +4,29 @@ All notable changes to **s3dgraphy** are documented here.
 
 ## [Unreleased]
 
+### Added (2026-10-04 — a property with more than one owner)
+Connections datamodel **1.6.23** (E.D., revisione della scrivania v7): a
+PropertyNode may have more than one incoming `has_property`. A unit
+*instantiates* another's property — a USV/s takes the `material` of the US it
+completes — and the property stays one, with one value and one chain. The
+inheritance is declared, never automatic: the inheriting edge carries
+`attributes["inherited"] = True`. The property stays in its original owner's
+ParadataNodeGroup; see `has_property.owners_note`.
+
+- `s3dgraphy.ownership`: `inherit_property`, `original_owner` (the unmarked
+  edge, else the paradata group, else the earliest `created_at`, else not
+  stated), `property_owners`, `shared_properties`; the same three in `api`.
+- xlsx: an inheriting owner is a Claims row with `TARGET2_ID` = the original
+  owner and a copy of the value; the importer links it to the original's
+  property instead of minting a second one (it used to split the property in
+  two). A row whose original cannot be found warns and stays a claim.
+- RDF: the inheriting `has_property` also goes out as `em:inheritsQualia`
+  (`rdfs:subPropertyOf em:hasQualia`, declared in `em.ttl`); the importer puts
+  the mark back on the edge.
+- Merge: replacing one owner's qualia (`_remove_qualia_subtree`) no longer
+  deletes a property that another owner still has; only that owner's edge goes.
+- GraphML patcher places a shared property beside its original owner.
+
 ### Added (2026-10-02 — the edges learn to speak)
 Connections datamodel **1.6.22**: `edge_types.<edge>.ui_phrase` =
 `{as_source, as_target}`, the phrase a menu uses to create a node linked by

@@ -5,6 +5,18 @@ class PropertyNode(ParadataNode):
     """
     Nodo che rappresenta una proprietà associata a un altro nodo.
 
+    Più proprietari (E.D., revisione della scrivania v7). Una PropertyNode può
+    avere più ``has_property`` entranti: un'unità può ISTANZIARE la proprietà
+    di un'altra (una USV/s prende il ``material`` della US che completa). La
+    proprietà resta UNA — un valore, una catena di paradata — con più
+    proprietari. L'eredità è dichiarata, mai automatica: il secondo
+    ``has_property`` porta ``attributes["inherited"] = True``
+    (``s3dgraphy.ownership.inherit_property``). La proprietà resta nel
+    ParadataNodeGroup del proprietario ORIGINARIO, quello che l'ha creata; gli
+    altri la riferiscono con il loro ``has_property`` e mai con un gruppo.
+    Chi è l'originario lo dice ``ownership.original_owner`` (la marca, poi il
+    gruppo, poi il timbro ``created_at``; altrimenti non è dichiarato).
+
     Attributes:
         value (any): Valore della proprietà.
         property_type (str): Tipo di proprietà (es. "Height", "Length", etc.).

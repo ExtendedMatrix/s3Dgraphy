@@ -792,6 +792,20 @@ class GraphMerger:
                     break
         if pn_to_remove is None:
             return
+        # A property may have more than one owner (inherited, ownership.py):
+        # replacing it for THIS host must not take it away from the others.
+        # Only this host's has_property goes; the property and its chain stay.
+        other_owners = {e.edge_source for e in graph.edges
+                        if e.edge_type == 'has_property'
+                        and e.edge_target == pn_to_remove.node_id
+                        and e.edge_source != host.node_id}
+        if other_owners:
+            for e in [e for e in graph.edges
+                      if e.edge_type == 'has_property'
+                      and e.edge_source == host.node_id
+                      and e.edge_target == pn_to_remove.node_id]:
+                graph.remove_edge(e.edge_id)
+            return
         # BFS: collect reachable subtree (exclude the host itself)
         to_remove = {pn_to_remove.node_id}
         frontier = [pn_to_remove.node_id]

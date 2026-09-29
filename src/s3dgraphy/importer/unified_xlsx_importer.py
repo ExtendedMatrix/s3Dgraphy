@@ -34,6 +34,15 @@ Each Claims row is one of:
   creates a ``PropertyNode`` attached to ``TARGET_ID`` via
   ``has_property``. ``VALUE`` is the qualia content.
 
+* **Inherited qualia** (a scalar ``PROPERTY_TYPE`` WITH a ``TARGET2_ID``):
+  ``TARGET_ID`` instantiates the property that ``TARGET2_ID`` owns (a USV/s
+  taking the ``material`` of the US it completes). No second PropertyNode is
+  minted: ``TARGET_ID —has_property→`` the original's property, marked
+  ``inherited`` (``s3dgraphy.ownership``). ``VALUE`` is a copy for the reader,
+  used only to choose when the original has several properties of that type;
+  the attribution columns are ignored (the chain belongs to the property).
+  Written by the exporter for a property with several owners.
+
 * **Temporal qualia** (``PROPERTY_TYPE`` ∈ {``absolute_time_start``,
   ``absolute_time_end``}):
   same as scalar, but the PropertyNode's ``property_type`` is set so
@@ -222,6 +231,8 @@ class UnifiedXLSXImporter:
         self._document_by_id: Dict[str, DocumentNode] = {}
         self._epoch_by_id: Dict[str, EpochNode] = {}
         self._unit_by_id: Dict[str, object] = {}
+        # Scalar rows with a TARGET2_ID: inherited properties, linked last.
+        self._inherited_rows: List[tuple] = []
 
         # Counters for generating paradata serials on the fly (for
         # extractor / combiner short codes).
@@ -628,10 +639,58 @@ class UnifiedXLSXImporter:
                 self._handle_relation(
                     target_node, target2, _canonical_spelling(prop_type),
                     row, idx + 2)
+            elif target2:
+                # A scalar row that names a second endpoint is an INHERITED
+                # property (ownership.py): TARGET_ID instantiates the property
+                # TARGET2_ID owns. Resolved after every row is read, because
+                # the original's row may come later in the sheet.
+                self._inherited_rows.append(
+                    (target_node, target2, prop_type, value_str, row, idx + 2))
             else:
                 # Scalar or temporal qualia.
                 self._handle_qualia(
                     target_node, prop_type, value, row, idx + 2)
+        self._resolve_inherited_rows()
+
+    def _resolve_inherited_rows(self) -> None:
+        """Link each inheriting row to the property its original owner has.
+
+        The property is found by (original owner, PROPERTY_TYPE), narrowed by
+        VALUE when the original carries more than one of that type. Nothing to
+        link to — an unknown owner, no such property, an ambiguity VALUE does
+        not settle — is a warning, and the row becomes an ordinary claim of its
+        own so its value is not lost.
+        """
+        from ..ownership import inherit_property
+        rows, self._inherited_rows = self._inherited_rows, []
+        for target_node, target2, prop_type, value_str, row, line in rows:
+            orig = (self._unit_by_id.get(target2)
+                    or self._epoch_by_id.get(target2))
+            candidates = []
+            if orig is not None:
+                for e in self.graph.edges:
+                    if (e.edge_type != "has_property"
+                            or e.edge_source != orig.node_id):
+                        continue
+                    pn = self.graph.find_node_by_id(e.edge_target)
+                    if isinstance(pn, PropertyNode) and pn.property_type == prop_type:
+                        candidates.append(pn)
+                if len(candidates) > 1 and value_str:
+                    same = [pn for pn in candidates if (pn.value or "") == value_str]
+                    if same:
+                        candidates = same
+            if orig is None or len(candidates) != 1:
+                why = ("is not declared in Units or Epochs" if orig is None
+                       else f"has {len(candidates)} '{prop_type}' properties")
+                self.warnings.append(
+                    f"Row {line}: '{target_node.name}' inherits '{prop_type}' "
+                    f"from '{target2}', which {why}; the row is read as a "
+                    f"claim of its own.")
+                self._handle_qualia(target_node, prop_type, value_str, row, line)
+                continue
+            inherit_property(
+                self.graph, target_node.node_id, candidates[0].node_id,
+                edge_id=f"{target_node.node_id}_has_prop_{candidates[0].node_id}")
 
     # ------------------------------------------------------------------
     # Claim handlers

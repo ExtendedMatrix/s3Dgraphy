@@ -836,6 +836,18 @@ class RDFExporter:
         for edge in g.edges:
             self._serialize_edge(g, edge, ctx)
 
+        # A property with several owners (ownership.py): every owner's
+        # has_property went out above as em:hasQualia, the inheriting ones are
+        # also declared as em:inheritsQualia (a subproperty), so the original
+        # owner is still readable from the triplestore and the importer can put
+        # the declaration back on the edge.
+        from ..ownership import is_inherited_edge
+        for edge in g.edges:
+            if edge.edge_type == "has_property" and is_inherited_edge(edge):
+                ctx.add((self._node_iri(g.graph_id, edge.edge_source),
+                         EM.inheritsQualia,
+                         self._node_iri(g.graph_id, edge.edge_target)))
+
         # CRMinf belief propositions (J4 → I17) — needs the full edge
         # topology, so it runs as a post-pass after nodes and edges.
         self._emit_belief_propositions(g, ctx)

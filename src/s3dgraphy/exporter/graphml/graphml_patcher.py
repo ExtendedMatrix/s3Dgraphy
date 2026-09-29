@@ -733,7 +733,16 @@ class GraphMLPatcher:
         return (x, y)
 
     def _find_parent_stratigraphic_node(self, node: Node) -> Optional[StratigraphicNode]:
-        """Find the stratigraphic node connected to this paradata node."""
+        """Find the stratigraphic node connected to this paradata node.
+
+        A property with several owners is placed beside its ORIGINAL owner
+        (ownership.py), not beside whichever has_property comes first.
+        """
+        from ...ownership import original_owner
+        orig = self.graph.find_node_by_id(
+            original_owner(self.graph, node.node_id) or "")
+        if isinstance(orig, StratigraphicNode):
+            return orig
         for edge in self.graph.edges:
             if edge.edge_target == node.node_id and edge.edge_type == 'has_property':
                 source = self.graph.find_node_by_id(edge.edge_source)
