@@ -115,11 +115,13 @@ def test_translation_keys_point_to_existing_edges_with_a_phrase():
     edges = _connections()["edge_types"]
     unknown = sorted(k for k in tr if k not in edges)
     assert not unknown, f"translations of edge types that do not exist: {unknown}"
-    orphans = sorted(k for k in tr if "ui_phrase" not in edges[k])
-    assert not orphans, f"translations of a phrase the datamodel no longer has: {orphans}"
-    assert set(tr) == set(_phrased()), "every phrase has its translation entry"
+    # Since 1.3 EVERY edge type has an entry, for its `label`; the phrase fields
+    # are there exactly for the edges that have a phrase.
+    assert set(tr) == set(edges), "every edge type has its translation entry"
     for edge, entry in tr.items():
-        assert set(entry) == {f"ui_phrase_{d}" for d in DIRS}, (edge, sorted(entry))
+        phrases = {f"ui_phrase_{d}" for d in DIRS} if "ui_phrase" in edges[edge] \
+            else set()
+        assert set(entry) == {"label"} | phrases, (edge, sorted(entry))
 
 
 def test_the_english_of_the_sidecar_is_the_datamodel_s():
@@ -136,6 +138,8 @@ def test_every_language_translates_or_falls_back_to_english_on_purpose():
     bad = []
     for edge, entry in doc["edge_types"].items():
         for d in DIRS:
+            if f"ui_phrase_{d}" not in entry:
+                continue        # an edge with a label and no phrase (1.3)
             fe = entry[f"ui_phrase_{d}"]
             for lang in langs[1:]:
                 if f"validated_{lang}" not in fe:
@@ -182,3 +186,38 @@ def test_THE_COUNTEREXAMPLE_a_missing_language_falls_back(monkeypatch):
     del doc["edge_types"]["cuts"]["ui_phrase_as_target"]["it"]
     monkeypatch.setattr(i18n, "_doc", lambda: doc)
     assert i18n.edge_ui_phrase("cuts", "as_target", "it") == "{node} cut by {x}"
+
+
+# ── the edge labels (translations 1.3) ──────────────────────────────────────
+
+def test_every_edge_has_its_label_in_every_language_as_a_draft():
+    """The sub-row of a menu said «Is after» in Italian: the sidecar had no edge
+    names. Now every edge type carries its `label`, English from the connections
+    datamodel, every other language present and NOT validated — E.D. validates."""
+    doc = _translations()
+    edges = _connections()["edge_types"]
+    for edge, definition in edges.items():
+        fe = doc["edge_types"][edge]["label"]
+        assert fe["en"] == definition["label"], edge
+        for lang in doc["languages"][1:]:
+            assert isinstance(fe.get(lang), str) and fe[lang].strip(), (edge, lang)
+            assert fe[f"validated_{lang}"] is False, (edge, lang)
+            assert "{" not in fe[lang], (edge, lang)
+
+
+def test_the_label_reader():
+    assert i18n.edge_label("is_after", "it") == "È posteriore a"
+    assert i18n.edge_label("is_after", "it-IT") == "È posteriore a"
+    assert i18n.edge_label("is_after", "xx") == "Is after"
+    assert i18n.edge_label("no_such_edge", "it") is None
+
+
+def test_the_two_phrases_E_D_sent_back():
+    """MICRO-LEGENDA-2b: «Combinatore che combina X» and «Documento con X»."""
+    assert i18n.edge_ui_phrase("combines", "as_source", "it") == "{node} di {x}"
+    assert i18n.edge_ui_phrase("has_property", "as_source", "it") == \
+        "{node} che ha {x}"
+
+
+def test_the_version_went_up():
+    assert _translations()["version"] == "1.3"

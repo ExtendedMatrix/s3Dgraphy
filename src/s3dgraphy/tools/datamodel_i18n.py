@@ -14,7 +14,7 @@ Shape — one section per kind of key, each keyed by a STABLE identity::
 
     {
       "schema": "s3Dgraphy_datamodel_translations",
-      "version": "1.2",
+      "version": "1.3",
       "languages": ["en", "it", ...],
       "entries": {                      # node classes (EMStudio rules.ts reads this)
         "<Class>": {
@@ -25,9 +25,15 @@ Shape — one section per kind of key, each keyed by a STABLE identity::
       "qualia":               {"<qualia id>":       {"label": {...}}},
       "qualia_categories":    {"<category id>":     {"label": {...}}},
       "qualia_subcategories": {"<subcategory key>": {"label": {...}}},
-      "edge_types":           {"<edge type>":       {"ui_phrase_as_source": {...},
+      "edge_types":           {"<edge type>":       {"label": {...},
+                                                     "ui_phrase_as_source": {...},
                                                      "ui_phrase_as_target": {...}}}
     }
+
+`edge_types.<edge>.label` (1.3) is the edge's own name — «Is after» → «È posteriore
+a» — for EVERY edge type of the connections datamodel, seeded from its `label`:
+the name an inspector, a legend or the sub-row of a menu shows. Before 1.3 the
+sidecar had no edge names, so every interface showed the English one.
 
 `edge_types` (connections 1.6.22: `edge_types.<edge>.ui_phrase`) are the phrases of a menu entry that
 creates a node linked to an existing one («US sopra X», «Proprietà di X»):
@@ -47,6 +53,7 @@ Reading (for StratiField, EMStudio, EMtools — nobody reads the JSON by hand)::
     from s3dgraphy.tools.datamodel_i18n import qualia_label
     qualia_label("thickness", "it")   # → "Spessore"; unknown lang → the English
     edge_ui_phrase("has_property", "as_target", "it")   # → "{node} di {x}"
+    edge_label("is_after", "it")                         # → "È posteriore a"
 
 CLI::
 
@@ -159,14 +166,22 @@ def _collect_qualia_en(qualia: Dict[str, Any]) -> Dict[str, Dict[str, Dict[str, 
 
 
 def _collect_edge_phrases_en(connections: Dict[str, Any]) -> Dict[str, Dict[str, str]]:
-    """{edge type: {"ui_phrase_as_source": ..., "ui_phrase_as_target": ...}} for
-    every edge type that declares a `ui_phrase` (connections 1.6.22)."""
+    """{edge type: {"label": ..., "ui_phrase_as_source": ..., "ui_phrase_as_target":
+    ...}}: the `label` of EVERY edge type (1.3), and the two phrases of every edge
+    type that declares a `ui_phrase` (connections 1.6.22)."""
     out: Dict[str, Dict[str, str]] = {}
     for name, edge in (connections.get("edge_types") or {}).items():
-        phrase = edge.get("ui_phrase") if isinstance(edge, dict) else None
+        if not isinstance(edge, dict):
+            continue
+        fields: Dict[str, str] = {}
+        if isinstance(edge.get("label"), str) and edge["label"].strip():
+            fields["label"] = edge["label"]
+        phrase = edge.get("ui_phrase")
         if isinstance(phrase, dict):
-            out[name] = {f"ui_phrase_{d}": phrase[d] for d in PHRASE_DIRS
-                         if isinstance(phrase.get(d), str)}
+            fields.update({f"ui_phrase_{d}": phrase[d] for d in PHRASE_DIRS
+                           if isinstance(phrase.get(d), str)})
+        if fields:
+            out[name] = fields
     return out
 
 
@@ -188,7 +203,7 @@ def seed(write: bool = True) -> Dict[str, Any]:
         existing = {}
     doc: Dict[str, Any] = {
         "schema": "s3Dgraphy_datamodel_translations",
-        "version": "1.2",
+        "version": "1.3",
         "languages": LANGUAGES,
     }
     for section in SECTIONS:
@@ -307,6 +322,12 @@ def node_label(class_name: str, lang: str = "en") -> Optional[str]:
 
 def node_description(class_name: str, lang: str = "en") -> Optional[str]:
     return translate("entries", class_name, "description", lang)
+
+
+def edge_label(edge_type: str, lang: str = "en") -> Optional[str]:
+    """The name of an edge type in ``lang`` («Is after» → «È posteriore a»),
+    English fallback; ``None`` for an edge type the datamodel does not know."""
+    return translate("edge_types", edge_type, "label", lang)
 
 
 def edge_ui_phrase(edge_type: str, direction: str, lang: str = "en") -> Optional[str]:

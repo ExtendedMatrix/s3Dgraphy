@@ -1,6 +1,6 @@
 {
  "schema": "s3Dgraphy_datamodel_translations",
- "version": "1.2",
+ "version": "1.3",
  "languages": [
   "en",
   "it",
@@ -4577,6 +4577,25 @@
     "ro": "{node} pe care se sprijină {x}",
     "fr": "{node} où s'appuie {x}",
     "de": "{node} (angestoßen von {x})"
+   },
+   "label": {
+    "en": "Abuts",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Si appoggia a",
+    "el": "Ακουμπά σε",
+    "he": "נשען על",
+    "es": "Se apoya en",
+    "pl": "Opiera się o",
+    "ro": "Se sprijină pe",
+    "fr": "S'appuie contre",
+    "de": "Stößt an"
    }
   },
   "bonded_to": {
@@ -4617,6 +4636,25 @@
     "ro": "{node} în legătură cu {x}",
     "fr": "{node} en liaison avec {x}",
     "de": "{node} im Verband mit {x}"
+   },
+   "label": {
+    "en": "Bonded to",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "In legame con",
+    "el": "Δεμένο με",
+    "he": "קשור אל",
+    "es": "Trabado con",
+    "pl": "Związany z",
+    "ro": "Legat de",
+    "fr": "Lié à",
+    "de": "Im Verband mit"
    }
   },
   "changed_from": {
@@ -4657,6 +4695,25 @@
     "ro": "{node} din care provine {x}",
     "fr": "{node} qui devient {x}",
     "de": "{node} (umgewandelt in {x})"
+   },
+   "label": {
+    "en": "Changed from",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Trasformato da",
+    "el": "Μετασχηματίστηκε από",
+    "he": "השתנה מ-",
+    "es": "Transformado a partir de",
+    "pl": "Przekształcony z",
+    "ro": "Transformat din",
+    "fr": "Transformé à partir de",
+    "de": "Hervorgegangen aus"
    }
   },
   "combines": {
@@ -4670,14 +4727,14 @@
     "validated_ro": false,
     "validated_fr": false,
     "validated_de": false,
-    "it": "{node} che combina {x}",
-    "el": "{node} που συνδυάζει {x}",
-    "he": "{node} המשלב את {x}",
-    "es": "{node} que combina {x}",
-    "pl": "{node} łączy {x}",
-    "ro": "{node} care combină {x}",
-    "fr": "{node} qui combine {x}",
-    "de": "{node} (kombiniert {x})"
+    "it": "{node} di {x}",
+    "el": "{node} του {x}",
+    "he": "{node} של {x}",
+    "es": "{node} de {x}",
+    "pl": "{node} dla {x}",
+    "ro": "{node} al lui {x}",
+    "fr": "{node} de {x}",
+    "de": "{node} von {x}"
    },
    "ui_phrase_as_target": {
     "en": "{node} for {x}",
@@ -4697,6 +4754,46 @@
     "ro": "{node} pentru {x}",
     "fr": "{node} pour {x}",
     "de": "{node} für {x}"
+   },
+   "label": {
+    "en": "Combines",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Combina",
+    "el": "Συνδυάζει",
+    "he": "משלב",
+    "es": "Combina",
+    "pl": "Łączy",
+    "ro": "Combină",
+    "fr": "Combine",
+    "de": "Kombiniert"
+   }
+  },
+  "contains_proposition_set": {
+   "label": {
+    "en": "Contains proposition set",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Contiene insieme di proposizioni",
+    "el": "Περιέχει σύνολο προτάσεων",
+    "he": "מכיל אוסף טענות",
+    "es": "Contiene conjunto de proposiciones",
+    "pl": "Zawiera zbiór twierdzeń",
+    "ro": "Conține setul de propoziții",
+    "fr": "Contient un ensemble de propositions",
+    "de": "Enthält Aussagenmenge"
    }
   },
   "contrasts_with": {
@@ -4737,6 +4834,25 @@
     "ro": "{node} în contrast cu {x}",
     "fr": "{node} en contraste avec {x}",
     "de": "{node} im Gegensatz zu {x}"
+   },
+   "label": {
+    "en": "Contrasts with",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "In contrasto con",
+    "el": "Έρχεται σε αντίθεση με",
+    "he": "עומד בניגוד ל-",
+    "es": "Contrasta con",
+    "pl": "Kontrastuje z",
+    "ro": "Contrastează cu",
+    "fr": "Contraste avec",
+    "de": "Steht im Gegensatz zu"
    }
   },
   "cuts": {
@@ -4777,6 +4893,25 @@
     "ro": "{node} cu tăietura {x}",
     "fr": "{node} que {x} coupe",
     "de": "{node} (geschnitten von {x})"
+   },
+   "label": {
+    "en": "Cuts",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Taglia",
+    "el": "Κόβει",
+    "he": "חותך את",
+    "es": "Corta",
+    "pl": "Przecina",
+    "ro": "Taie",
+    "fr": "Coupe",
+    "de": "Schneidet"
    }
   },
   "dtc_derived_from": {
@@ -4817,6 +4952,25 @@
     "ro": "{node} din care derivă {x}",
     "fr": "{node} source de {x}",
     "de": "{node} als Quelle für {x}"
+   },
+   "label": {
+    "en": "DTC output derived from input",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "L'uscita DTC deriva dall'ingresso",
+    "el": "Η έξοδος DTC προέρχεται από την είσοδο",
+    "he": "פלט DTC נגזר מהקלט",
+    "es": "La salida DTC deriva de la entrada",
+    "pl": "Wyjście DTC pochodzi z wejścia",
+    "ro": "Ieșirea DTC derivă din intrare",
+    "fr": "La sortie DTC dérive de l'entrée",
+    "de": "DTC-Ausgabe abgeleitet aus Eingabe"
    }
   },
   "dtc_had_input": {
@@ -4857,6 +5011,25 @@
     "ro": "{node} ca intrare pentru {x}",
     "fr": "{node} en entrée de {x}",
     "de": "{node} als Eingabe für {x}"
+   },
+   "label": {
+    "en": "DTC process had input",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Il processo DTC ha avuto in ingresso",
+    "el": "Η διεργασία DTC είχε ως είσοδο",
+    "he": "לתהליך DTC היה קלט",
+    "es": "El proceso DTC tuvo como entrada",
+    "pl": "Proces DTC miał wejście",
+    "ro": "Procesul DTC a avut ca intrare",
+    "fr": "Le traitement DTC a eu pour entrée",
+    "de": "DTC-Prozess hatte als Eingabe"
    }
   },
   "dtc_had_output": {
@@ -4897,6 +5070,25 @@
     "ro": "{node} ca ieșire din {x}",
     "fr": "{node} en sortie de {x}",
     "de": "{node} als Ausgabe von {x}"
+   },
+   "label": {
+    "en": "DTC process had output",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Il processo DTC ha avuto in uscita",
+    "el": "Η διεργασία DTC είχε ως έξοδο",
+    "he": "לתהליך DTC היה פלט",
+    "es": "El proceso DTC tuvo como salida",
+    "pl": "Proces DTC miał wyjście",
+    "ro": "Procesul DTC a avut ca ieșire",
+    "fr": "Le traitement DTC a eu pour sortie",
+    "de": "DTC-Prozess hatte als Ausgabe"
    }
   },
   "dtc_happened_on_device": {
@@ -4937,6 +5129,25 @@
     "ro": "{node} pentru {x}",
     "fr": "{node} pour {x}",
     "de": "{node} für {x}"
+   },
+   "label": {
+    "en": "Happened on device",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Avvenuto sul dispositivo",
+    "el": "Έγινε στη συσκευή",
+    "he": "התרחש במכשיר",
+    "es": "Ocurrió en el dispositivo",
+    "pl": "Odbył się na urządzeniu",
+    "ro": "A avut loc pe dispozitivul",
+    "fr": "A eu lieu sur l'appareil",
+    "de": "Erfolgte auf Gerät"
    }
   },
   "equals": {
@@ -4977,6 +5188,25 @@
     "ro": "{node} la fel ca {x}",
     "fr": "{node} identique à {x}",
     "de": "{node} gleich {x}"
+   },
+   "label": {
+    "en": "Equals",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Uguale a",
+    "el": "Ταυτίζεται με",
+    "he": "זהה ל-",
+    "es": "Igual a",
+    "pl": "Równa się",
+    "ro": "Identic cu",
+    "fr": "Identique à",
+    "de": "Gleich"
    }
   },
   "extracted_from": {
@@ -5017,6 +5247,25 @@
     "ro": "{node} pentru {x}",
     "fr": "{node} pour {x}",
     "de": "{node} für {x}"
+   },
+   "label": {
+    "en": "Extracted from",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Estratto da",
+    "el": "Εξήχθη από",
+    "he": "חולץ מ-",
+    "es": "Extraído de",
+    "pl": "Wyodrębniony z",
+    "ro": "Extras din",
+    "fr": "Extrait de",
+    "de": "Extrahiert aus"
    }
   },
   "fills": {
@@ -5057,6 +5306,46 @@
     "ro": "{node} cu umplutura {x}",
     "fr": "{node} que {x} comble",
     "de": "{node} (verfüllt von {x})"
+   },
+   "label": {
+    "en": "Fills",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Riempie",
+    "el": "Γεμίζει",
+    "he": "ממלא את",
+    "es": "Rellena",
+    "pl": "Wypełnia",
+    "ro": "Umple",
+    "fr": "Comble",
+    "de": "Verfüllt"
+   }
+  },
+  "generic_connection": {
+   "label": {
+    "en": "Generic connection",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Connessione generica",
+    "el": "Γενική σύνδεση",
+    "he": "חיבור כללי",
+    "es": "Conexión genérica",
+    "pl": "Połączenie ogólne",
+    "ro": "Conexiune generică",
+    "fr": "Connexion générique",
+    "de": "Generische Verbindung"
    }
   },
   "has_author": {
@@ -5097,6 +5386,25 @@
     "ro": "{node} pentru {x}",
     "fr": "{node} de {x}",
     "de": "{node} von {x}"
+   },
+   "label": {
+    "en": "Has author",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Ha autore",
+    "el": "Έχει συντάκτη",
+    "he": "בעל מחבר",
+    "es": "Tiene autor",
+    "pl": "Ma autora",
+    "ro": "Are autorul",
+    "fr": "A pour auteur",
+    "de": "Hat Autor"
    }
   },
   "has_data_provenance": {
@@ -5137,6 +5445,88 @@
     "ro": "{node} pentru {x}",
     "fr": "{node} pour {x}",
     "de": "{node} für {x}"
+   },
+   "label": {
+    "en": "Has data provenance",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Ha provenienza del dato",
+    "el": "Έχει προέλευση δεδομένων",
+    "he": "בעל מקור נתונים",
+    "es": "Tiene procedencia del dato",
+    "pl": "Ma pochodzenie danych",
+    "ro": "Are proveniența datelor",
+    "fr": "A pour provenance de la donnée",
+    "de": "Hat Datenherkunft"
+   }
+  },
+  "has_digital_object_part": {
+   "label": {
+    "en": "Has digital object part",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Ha parte di oggetto digitale",
+    "el": "Έχει τμήμα ψηφιακού αντικειμένου",
+    "he": "בעל חלק של אובייקט דיגיטלי",
+    "es": "Tiene parte de objeto digital",
+    "pl": "Ma część obiektu cyfrowego",
+    "ro": "Are partea de obiect digital",
+    "fr": "A une partie d'objet numérique",
+    "de": "Hat digitalen Objektteil"
+   }
+  },
+  "has_digital_twin": {
+   "label": {
+    "en": "Has digital twin",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Ha gemello digitale",
+    "el": "Έχει ψηφιακό δίδυμο",
+    "he": "בעל תאום דיגיטלי",
+    "es": "Tiene gemelo digital",
+    "pl": "Ma cyfrowego bliźniaka",
+    "ro": "Are geamănul digital",
+    "fr": "A un jumeau numérique",
+    "de": "Hat digitalen Zwilling"
+   }
+  },
+  "has_digital_twin_component": {
+   "label": {
+    "en": "Has digital twin component",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Ha componente del gemello digitale",
+    "el": "Έχει συστατικό ψηφιακού διδύμου",
+    "he": "בעל רכיב של תאום דיגיטלי",
+    "es": "Tiene componente del gemelo digital",
+    "pl": "Ma składnik cyfrowego bliźniaka",
+    "ro": "Are componenta geamănului digital",
+    "fr": "A un composant du jumeau numérique",
+    "de": "Hat Komponente des digitalen Zwillings"
    }
   },
   "has_documentation": {
@@ -5177,6 +5567,25 @@
     "ro": "{node} pentru {x}",
     "fr": "{node} pour {x}",
     "de": "{node} für {x}"
+   },
+   "label": {
+    "en": "Has documentation",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Ha documentazione",
+    "el": "Έχει τεκμηρίωση",
+    "he": "בעל תיעוד",
+    "es": "Tiene documentación",
+    "pl": "Ma dokumentację",
+    "ro": "Are documentația",
+    "fr": "A pour documentation",
+    "de": "Hat Dokumentation"
    }
   },
   "has_embargo": {
@@ -5217,6 +5626,88 @@
     "ro": "{node} pe {x}",
     "fr": "{node} sur {x}",
     "de": "{node} für {x}"
+   },
+   "label": {
+    "en": "Has embargo",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Ha embargo",
+    "el": "Έχει εμπάργκο",
+    "he": "בעל אמברגו",
+    "es": "Tiene embargo",
+    "pl": "Ma embargo",
+    "ro": "Are embargoul",
+    "fr": "A un embargo",
+    "de": "Hat Sperrfrist"
+   }
+  },
+  "has_first_epoch": {
+   "label": {
+    "en": "Has first epoch",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Ha come prima epoca",
+    "el": "Έχει πρώτη εποχή",
+    "he": "בעל תקופה ראשונה",
+    "es": "Tiene como primera época",
+    "pl": "Ma pierwszą epokę",
+    "ro": "Are ca primă epocă",
+    "fr": "A pour première époque",
+    "de": "Hat erste Epoche"
+   }
+  },
+  "has_gcp_set": {
+   "label": {
+    "en": "Solved from control points",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Risolto da punti di controllo",
+    "el": "Υπολογίστηκε από σημεία ελέγχου",
+    "he": "חושב מנקודות בקרה",
+    "es": "Resuelto a partir de puntos de control",
+    "pl": "Wyznaczony z punktów kontrolnych",
+    "ro": "Rezolvat din puncte de control",
+    "fr": "Résolu à partir de points de contrôle",
+    "de": "Berechnet aus Passpunkten"
+   }
+  },
+  "has_geoposition": {
+   "label": {
+    "en": "Has geoposition",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Ha posizione geografica",
+    "el": "Έχει γεωγραφική θέση",
+    "he": "בעל מיקום גאוגרפי",
+    "es": "Tiene posición geográfica",
+    "pl": "Ma pozycję geograficzną",
+    "ro": "Are poziția geografică",
+    "fr": "A une position géographique",
+    "de": "Hat Geoposition"
    }
   },
   "has_license": {
@@ -5257,6 +5748,25 @@
     "ro": "{node} pentru {x}",
     "fr": "{node} pour {x}",
     "de": "{node} für {x}"
+   },
+   "label": {
+    "en": "Has license",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Ha licenza",
+    "el": "Έχει άδεια",
+    "he": "בעל רישיון",
+    "es": "Tiene licencia",
+    "pl": "Ma licencję",
+    "ro": "Are licența",
+    "fr": "A pour licence",
+    "de": "Hat Lizenz"
    }
   },
   "has_linked_resource": {
@@ -5297,6 +5807,25 @@
     "ro": "{node} pentru {x}",
     "fr": "{node} pour {x}",
     "de": "{node} für {x}"
+   },
+   "label": {
+    "en": "Has linked resource",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Ha collegamento",
+    "el": "Έχει σύνδεσμο",
+    "he": "בעל קישור",
+    "es": "Tiene enlace",
+    "pl": "Ma link",
+    "ro": "Are linkul",
+    "fr": "A un lien",
+    "de": "Hat Link"
    }
   },
   "has_paradata_nodegroup": {
@@ -5337,6 +5866,25 @@
     "ro": "{node} pentru {x}",
     "fr": "{node} de {x}",
     "de": "{node} von {x}"
+   },
+   "label": {
+    "en": "Has paradata nodegroup",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Ha gruppo di paradati",
+    "el": "Έχει ομάδα παραδεδομένων",
+    "he": "בעל קבוצת פרה-נתונים",
+    "es": "Tiene grupo de paradatos",
+    "pl": "Ma grupę paradanych",
+    "ro": "Are grupul de paradate",
+    "fr": "A un groupe de paradonnées",
+    "de": "Hat Paradaten-Knotengruppe"
    }
   },
   "has_property": {
@@ -5350,14 +5898,14 @@
     "validated_ro": false,
     "validated_fr": false,
     "validated_de": false,
-    "it": "{node} con {x}",
-    "el": "{node} με {x}",
-    "he": "{node} עם {x}",
-    "es": "{node} con {x}",
+    "it": "{node} che ha {x}",
+    "el": "{node} που έχει {x}",
+    "he": "{node} שיש לו {x}",
+    "es": "{node} que tiene {x}",
     "pl": "{node} z {x}",
-    "ro": "{node} cu {x}",
-    "fr": "{node} avec {x}",
-    "de": "{node} mit {x}"
+    "ro": "{node} care are {x}",
+    "fr": "{node} qui a {x}",
+    "de": "{node} (hat {x})"
    },
    "ui_phrase_as_target": {
     "en": "{node} of {x}",
@@ -5377,6 +5925,109 @@
     "ro": "{node} pentru {x}",
     "fr": "{node} de {x}",
     "de": "{node} von {x}"
+   },
+   "label": {
+    "en": "Has property",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Ha la proprietà",
+    "el": "Έχει ιδιότητα",
+    "he": "בעל תכונה",
+    "es": "Tiene la propiedad",
+    "pl": "Ma właściwość",
+    "ro": "Are proprietatea",
+    "fr": "A pour propriété",
+    "de": "Hat Eigenschaft"
+   }
+  },
+  "has_registration_transform": {
+   "label": {
+    "en": "Placed by",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Posizionato da",
+    "el": "Τοποθετήθηκε από",
+    "he": "מוקם על ידי",
+    "es": "Situado por",
+    "pl": "Umieszczony przez",
+    "ro": "Plasat de",
+    "fr": "Placé par",
+    "de": "Platziert durch"
+   }
+  },
+  "has_representation_model": {
+   "label": {
+    "en": "Has representation model",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Ha modello di rappresentazione",
+    "el": "Έχει μοντέλο αναπαράστασης",
+    "he": "בעל מודל ייצוג",
+    "es": "Tiene modelo de representación",
+    "pl": "Ma model reprezentacji",
+    "ro": "Are modelul de reprezentare",
+    "fr": "A un modèle de représentation",
+    "de": "Hat Repräsentationsmodell"
+   }
+  },
+  "has_representation_model_doc": {
+   "label": {
+    "en": "Has document representation model",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Ha modello di rappresentazione di documento",
+    "el": "Έχει μοντέλο αναπαράστασης εγγράφου",
+    "he": "בעל מודל ייצוג של מסמך",
+    "es": "Tiene modelo de representación documental",
+    "pl": "Ma model reprezentacji dokumentu",
+    "ro": "Are modelul de reprezentare al documentului",
+    "fr": "A un modèle de représentation documentaire",
+    "de": "Hat Repräsentationsmodell Dokument"
+   }
+  },
+  "has_representation_model_sf": {
+   "label": {
+    "en": "Has special find representation model",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Ha modello di rappresentazione di reperto",
+    "el": "Έχει μοντέλο αναπαράστασης ευρήματος",
+    "he": "בעל מודל ייצוג של ממצא",
+    "es": "Tiene modelo de representación de hallazgo",
+    "pl": "Ma model reprezentacji zabytku",
+    "ro": "Are modelul de reprezentare al obiectului",
+    "fr": "A un modèle de représentation d'objet remarquable",
+    "de": "Hat Repräsentationsmodell Einzelfund"
    }
   },
   "has_same_time": {
@@ -5417,6 +6068,67 @@
     "ro": "{node} din același timp cu {x}",
     "fr": "{node} synchrone avec {x}",
     "de": "{node} gleichzeitig mit {x}"
+   },
+   "label": {
+    "en": "Has same time",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Contemporaneo a",
+    "el": "Σύγχρονο με",
+    "he": "בו-זמני עם",
+    "es": "Contemporáneo de",
+    "pl": "Współczesny z",
+    "ro": "Contemporan cu",
+    "fr": "Contemporain de",
+    "de": "Gleichzeitig mit"
+   }
+  },
+  "has_semantic_shape": {
+   "label": {
+    "en": "Has semantic shape",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Ha forma semantica",
+    "el": "Έχει σημασιολογικό σχήμα",
+    "he": "בעל צורה סמנטית",
+    "es": "Tiene forma semántica",
+    "pl": "Ma kształt semantyczny",
+    "ro": "Are forma semantică",
+    "fr": "A une forme sémantique",
+    "de": "Hat semantische Form"
+   }
+  },
+  "has_sub_epoch": {
+   "label": {
+    "en": "Has sub-epoch",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Ha come sotto-epoca",
+    "el": "Έχει υποεποχή",
+    "he": "בעל תת-תקופה",
+    "es": "Tiene subépoca",
+    "pl": "Ma podepokę",
+    "ro": "Are subepoca",
+    "fr": "A pour sous-époque",
+    "de": "Hat Unterepoche"
    }
   },
   "has_timebranch": {
@@ -5457,6 +6169,25 @@
     "ro": "{node} pentru {x}",
     "fr": "{node} de {x}",
     "de": "{node} von {x}"
+   },
+   "label": {
+    "en": "Has timebranch",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Ha il ramo temporale",
+    "el": "Έχει χρονικό κλάδο",
+    "he": "בעל ענף זמן",
+    "es": "Tiene rama temporal",
+    "pl": "Ma gałąź czasową",
+    "ro": "Are ramura temporală",
+    "fr": "A une branche temporelle",
+    "de": "Hat Zeitzweig"
    }
   },
   "has_visual_reference": {
@@ -5497,6 +6228,25 @@
     "ro": "{node} ca referință vizuală pentru {x}",
     "fr": "{node} comme référence visuelle de {x}",
     "de": "{node} als visuelle Referenz für {x}"
+   },
+   "label": {
+    "en": "Has visual reference",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Ha riferimento visivo",
+    "el": "Έχει οπτική αναφορά",
+    "he": "בעל הפניה חזותית",
+    "es": "Tiene referencia visual",
+    "pl": "Ma odniesienie wizualne",
+    "ro": "Are referința vizuală",
+    "fr": "A une référence visuelle",
+    "de": "Hat visuelle Referenz"
    }
   },
   "heritage_part_of": {
@@ -5537,6 +6287,25 @@
     "ro": "{node} care include {x}",
     "fr": "{node} qui inclut {x}",
     "de": "{node} (enthält {x})"
+   },
+   "label": {
+    "en": "Is part of heritage entity",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Fa parte dell'entità patrimoniale",
+    "el": "Είναι μέρος της οντότητας κληρονομιάς",
+    "he": "חלק מישות המורשת",
+    "es": "Es parte de la entidad patrimonial",
+    "pl": "Jest częścią obiektu dziedzictwa",
+    "ro": "Face parte din entitatea patrimonială",
+    "fr": "Fait partie de l'entité patrimoniale",
+    "de": "Ist Teil der Kulturerbe-Entität"
    }
   },
   "includes_study": {
@@ -5577,6 +6346,25 @@
     "ro": "{node} în {x}",
     "fr": "{node} dans {x}",
     "de": "{node} in {x}"
+   },
+   "label": {
+    "en": "Includes study",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Include lo studio",
+    "el": "Περιλαμβάνει τη μελέτη",
+    "he": "כולל את המחקר",
+    "es": "Incluye el estudio",
+    "pl": "Obejmuje badanie",
+    "ro": "Include studiul",
+    "fr": "Inclut l'étude",
+    "de": "Umfasst Studie"
    }
   },
   "is_after": {
@@ -5617,6 +6405,46 @@
     "ro": "{node} sub {x}",
     "fr": "{node} au-dessous de {x}",
     "de": "{node} unter {x}"
+   },
+   "label": {
+    "en": "Is after",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "È posteriore a",
+    "el": "Είναι μεταγενέστερο του",
+    "he": "מאוחר מ-",
+    "es": "Es posterior a",
+    "pl": "Następuje po",
+    "ro": "Este ulterior lui",
+    "fr": "Est postérieur à",
+    "de": "Ist jünger als"
+   }
+  },
+  "is_bonded_to": {
+   "label": {
+    "en": "Is bonded to",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Si lega a",
+    "el": "Είναι δεμένο με",
+    "he": "קשור אל",
+    "es": "Está trabado con",
+    "pl": "Jest związany z",
+    "ro": "Este legat de",
+    "fr": "Est lié à",
+    "de": "Ist im Verband mit"
    }
   },
   "is_in_activity": {
@@ -5657,6 +6485,46 @@
     "ro": "{node} care conține {x}",
     "fr": "{node} qui contient {x}",
     "de": "{node} (enthält {x})"
+   },
+   "label": {
+    "en": "Is in activity",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "È nell'attività",
+    "el": "Ανήκει στη δραστηριότητα",
+    "he": "נמצא בפעילות",
+    "es": "Está en la actividad",
+    "pl": "Należy do działania",
+    "ro": "Este în activitatea",
+    "fr": "Est dans l'activité",
+    "de": "Ist in Aktivität"
+   }
+  },
+  "is_in_functional_unit": {
+   "label": {
+    "en": "Is in functional unit",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "È nell'unità funzionale",
+    "el": "Ανήκει στη λειτουργική μονάδα",
+    "he": "נמצא ביחידה התפקודית",
+    "es": "Está en la unidad funcional",
+    "pl": "Należy do jednostki funkcjonalnej",
+    "ro": "Este în unitatea funcțională",
+    "fr": "Est dans l'unité fonctionnelle",
+    "de": "Ist in Funktionseinheit"
    }
   },
   "is_in_location": {
@@ -5697,6 +6565,25 @@
     "ro": "{node} care conține {x}",
     "fr": "{node} qui contient {x}",
     "de": "{node} (enthält {x})"
+   },
+   "label": {
+    "en": "Is in location",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "È nel luogo",
+    "el": "Βρίσκεται στη θέση",
+    "he": "נמצא במיקום",
+    "es": "Está en el lugar",
+    "pl": "Znajduje się w miejscu",
+    "ro": "Este în locul",
+    "fr": "Est dans le lieu",
+    "de": "Ist an Ort"
    }
   },
   "is_in_paradata_nodegroup": {
@@ -5737,6 +6624,46 @@
     "ro": "{node} care conține {x}",
     "fr": "{node} qui contient {x}",
     "de": "{node} (enthält {x})"
+   },
+   "label": {
+    "en": "Is in paradata nodegroup",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "È nel gruppo di paradati",
+    "el": "Ανήκει στην ομάδα παραδεδομένων",
+    "he": "נמצא בקבוצת פרה-נתונים",
+    "es": "Está en el grupo de paradatos",
+    "pl": "Należy do grupy paradanych",
+    "ro": "Este în grupul de paradate",
+    "fr": "Est dans le groupe de paradonnées",
+    "de": "Ist in Paradaten-Knotengruppe"
+   }
+  },
+  "is_in_representation_model_group": {
+   "label": {
+    "en": "Is in representation model group",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "È nel contenitore RM",
+    "el": "Ανήκει στο δοχείο RM",
+    "he": "נמצא במכל RM",
+    "es": "Está en el contenedor RM",
+    "pl": "Należy do kontenera RM",
+    "ro": "Este în containerul RM",
+    "fr": "Est dans le conteneur RM",
+    "de": "Ist in RM-Container"
    }
   },
   "is_in_timebranch": {
@@ -5777,6 +6704,46 @@
     "ro": "{node} care conține {x}",
     "fr": "{node} qui contient {x}",
     "de": "{node} (enthält {x})"
+   },
+   "label": {
+    "en": "Is in timebranch",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "È nel ramo temporale",
+    "el": "Ανήκει στον χρονικό κλάδο",
+    "he": "נמצא בענף הזמן",
+    "es": "Está en la rama temporal",
+    "pl": "Należy do gałęzi czasowej",
+    "ro": "Este în ramura temporală",
+    "fr": "Est dans la branche temporelle",
+    "de": "Ist in Zeitzweig"
+   }
+  },
+  "is_on_resource": {
+   "label": {
+    "en": "Is on resource",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Sta sulla risorsa",
+    "el": "Βρίσκεται στον πόρο",
+    "he": "נמצא על המשאב",
+    "es": "Está sobre el recurso",
+    "pl": "Znajduje się na zasobie",
+    "ro": "Se află pe resursa",
+    "fr": "Est sur la ressource",
+    "de": "Liegt auf Ressource"
    }
   },
   "is_part_of": {
@@ -5817,6 +6784,46 @@
     "ro": "{node} care include {x}",
     "fr": "{node} qui inclut {x}",
     "de": "{node} (enthält {x})"
+   },
+   "label": {
+    "en": "Is part of",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Fa parte di",
+    "el": "Είναι μέρος του",
+    "he": "חלק מ-",
+    "es": "Es parte de",
+    "pl": "Jest częścią",
+    "ro": "Face parte din",
+    "fr": "Fait partie de",
+    "de": "Ist Teil von"
+   }
+  },
+  "is_physically_equal_to": {
+   "label": {
+    "en": "Is physically equal to",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "È fisicamente uguale a",
+    "el": "Είναι φυσικά ταυτόσημο με",
+    "he": "זהה פיזית ל-",
+    "es": "Es físicamente igual a",
+    "pl": "Jest fizycznie tożsamy z",
+    "ro": "Este fizic identic cu",
+    "fr": "Est physiquement identique à",
+    "de": "Ist physisch identisch mit"
    }
   },
   "overlies": {
@@ -5857,6 +6864,25 @@
     "ro": "{node} peste care stă {x}",
     "fr": "{node} que {x} recouvre",
     "de": "{node} (überlagert von {x})"
+   },
+   "label": {
+    "en": "Overlies",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Copre",
+    "el": "Καλύπτει",
+    "he": "מכסה את",
+    "es": "Cubre",
+    "pl": "Przykrywa",
+    "ro": "Acoperă",
+    "fr": "Recouvre",
+    "de": "Überlagert"
    }
   },
   "study_about_heritage": {
@@ -5897,6 +6923,88 @@
     "ro": "{node} ca obiect de studiu în {x}",
     "fr": "{node} objet de {x}",
     "de": "{node} untersucht in {x}"
+   },
+   "label": {
+    "en": "Study is about heritage entity",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Lo studio riguarda l'entità patrimoniale",
+    "el": "Η μελέτη αφορά την οντότητα κληρονομιάς",
+    "he": "המחקר עוסק בישות המורשת",
+    "es": "El estudio trata de la entidad patrimonial",
+    "pl": "Badanie dotyczy obiektu dziedzictwa",
+    "ro": "Studiul privește entitatea patrimonială",
+    "fr": "L'étude porte sur l'entité patrimoniale",
+    "de": "Studie betrifft Kulturerbe-Entität"
+   }
+  },
+  "study_produced_proposition_set": {
+   "label": {
+    "en": "Study produced proposition set",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Lo studio ha prodotto un insieme di proposizioni",
+    "el": "Η μελέτη παρήγαγε σύνολο προτάσεων",
+    "he": "המחקר הפיק אוסף טענות",
+    "es": "El estudio produjo un conjunto de proposiciones",
+    "pl": "Badanie wytworzyło zbiór twierdzeń",
+    "ro": "Studiul a produs setul de propoziții",
+    "fr": "L'étude a produit un ensemble de propositions",
+    "de": "Studie erzeugte Aussagenmenge"
+   }
+  },
+  "survive_in_epoch": {
+   "label": {
+    "en": "Survives in epoch",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Sopravvive nell'epoca",
+    "el": "Επιβιώνει στην εποχή",
+    "he": "שורד בתקופה",
+    "es": "Sobrevive en la época",
+    "pl": "Przetrwał w epoce",
+    "ro": "Supraviețuiește în epoca",
+    "fr": "Survit dans l'époque",
+    "de": "Besteht fort in Epoche"
+   }
+  },
+  "validated_by": {
+   "label": {
+    "en": "Validated by",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Validato da",
+    "el": "Επικυρώθηκε από",
+    "he": "אומת על ידי",
+    "es": "Validado por",
+    "pl": "Zatwierdzony przez",
+    "ro": "Validat de",
+    "fr": "Validé par",
+    "de": "Validiert von"
    }
   }
  }
