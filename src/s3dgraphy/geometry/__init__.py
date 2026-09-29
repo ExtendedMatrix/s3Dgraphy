@@ -41,6 +41,11 @@ from .store_backed import (
     store_backed_geometry,
 )
 
+# The .glb of a reading's point / line / polyline (glTF POINTS / LINES /
+# LINE_STRIP), written and read by hand — see reading_glb.
+from .reading_glb import ReadingGlbError, glb_bytes, parse_glb, read_glb, write_glb
+
 __all__ = ["create_geometry_proxy", "GeometryProxyResult", "migrate_legacy_proxies",
            "store_backed_geometry", "geometry_summary", "record_for",
-           "is_geometry", "is_resident"]
+           "is_geometry", "is_resident",
+           "write_glb", "read_glb", "glb_bytes", "parse_glb", "ReadingGlbError"]

@@ -217,11 +217,47 @@ def place_reading(graph: Graph, extractor_id: str, on_id: Optional[str],
     return result
 
 
+def reading_shape_id(region_id: str) -> str:
+    """The SemanticShape that carries a reading's .glb — one per region."""
+    return _stable_id(f"reading-shape|{region_id}")
+
+
+def write_reading_glb(project_root: str, region_id: str, kind: str,
+                      vertices: Sequence[Sequence[float]]) -> str:
+    """Write ``<project_root>/readings/<region_id>.glb``; returns the path."""
+    from ..geometry.reading_glb import write_glb
+    path = os.path.join(project_root, *reading_glb_url(region_id).split("/"))
+    return write_glb(path, kind, vertices, name=region_id)
+
+
 def _attach_glb(graph, result, sink, vertices, project_root, author) -> None:
-    """The 3D kinds: the coordinates go to a .glb, the node points at it."""
-    raise AnnotationRegionError(
-        f"geometry_kind '{result.geometry_kind}' needs the glb writer "
-        f"(s3dgraphy.geometry.reading_glb)")
+    """The 3D kinds: the coordinates go to a .glb, the node points at it.
+
+    The hinge is the proxy's, measured: ``Property(geometry)
+    ─has_semantic_shape→ SemanticShape`` whose ``url`` is the file. Here the
+    region is the source (``has_semantic_shape`` admits any Node), and the
+    shape is ``type="generic"`` — it is not a unit's proxy.
+    """
+    from ..nodes.semantic_shape_node import SemanticShapeNode
+
+    url = reading_glb_url(result.region_id)
+    shape_id = reading_shape_id(result.region_id)
+    result.shape_id, result.glb_url = shape_id, url
+    if graph.find_node_by_id(shape_id) is None:
+        shape = SemanticShapeNode(node_id=shape_id, name=f"{result.geometry_kind} glb",
+                                  type="generic", url=url)
+        if author:
+            shape.data["author"] = author
+        graph.add_node(shape)
+        result.created = True
+    _ensure_edge(graph, result.region_id, shape_id, _EDGE_HAS_SEMANTIC_SHAPE, sink)
+    if project_root:
+        result.glb_path = write_reading_glb(project_root, result.region_id,
+                                            result.geometry_kind, vertices)
+    else:
+        result.warnings.append(
+            f"reading: no project_root, so {url} was NOT written; the node points "
+            f"at it — write it with write_reading_glb before saving")
 
 
 def measure(graph: Graph, region_id: str, *,
@@ -250,4 +286,54 @@ def measure(graph: Graph, region_id: str, *,
     }
     if kind in MEASURE_KINDS and length is not None:
         out["value"] = f"{float(length):.3f} {unit or 'm'}"
+    if project_root and kind in GLB_KINDS:
+        out["glb"] = _measure_glb(graph, region_id, kind, data, project_root)
+    return out
+
+
+def _glb_url_of(graph: Graph, region_id: str) -> Optional[str]:
+    for edge in graph.edges:
+        if edge.edge_source == region_id and edge.edge_type == _EDGE_HAS_SEMANTIC_SHAPE:
+            shape = graph.find_node_by_id(edge.edge_target)
+            url = getattr(shape, "url", None) or (getattr(shape, "data", {}) or {}).get("url")
+            if url:
+                return str(url)
+    return None
+
+
+def _measure_glb(graph, region_id, kind, data, project_root) -> Dict[str, Any]:
+    """Re-read the file and say whether it agrees with the node. The node's
+    numbers are a CACHE of the file's (so the value shows without opening it);
+    the file is the geometry, and a disagreement is reported, not repaired."""
+    from ..geometry.reading_glb import ReadingGlbError, read_glb
+
+    url = _glb_url_of(graph, region_id)
+    out: Dict[str, Any] = {"url": url, "path": None, "exists": False,
+                           "vertex_count": None, "length": None, "agrees": None}
+    if not url:
+        out["error"] = "no has_semantic_shape with a url"
+        return out
+    path = os.path.join(project_root, *url.split("/"))
+    out["path"] = path
+    if not os.path.isfile(path):
+        return out
+    out["exists"] = True
+    try:
+        read = read_glb(path)
+    except (OSError, ReadingGlbError) as exc:
+        out["error"] = str(exc)
+        out["agrees"] = False
+        return out
+    verts = read["vertices"]
+    out["vertex_count"] = len(verts)
+    agrees = read["geometry_kind"] == kind and (
+        data.get("vertex_count") in (None, len(verts)))
+    if kind in MEASURE_KINDS:
+        length = polyline_length(verts)
+        out["length"] = length
+        cached = data.get("length")
+        if cached is not None:
+            # float32 in the file, float64 in the node: agree to 1e-5 relative
+            agrees = agrees and abs(length - float(cached)) <= 1e-5 * max(1.0, length)
+    out["agrees"] = agrees
     return out

@@ -4,6 +4,21 @@ All notable changes to **s3dgraphy** are documented here.
 
 ## [Unreleased]
 
+### Added (2026-10-06 — the place of a reading, part 2: the glb)
+- `s3dgraphy.geometry.reading_glb`: `write_glb` / `read_glb` (and
+  `glb_bytes` / `parse_glb`), by hand, no dependency: one float32 VEC3
+  accessor, glTF mode 0 POINTS (point), 1 LINES (line), 3 LINE_STRIP
+  (polyline, open). Coordinates verbatim, in the model's glTF frame (Y-up,
+  scene-local, metres) — the proxies' frame. Checked: Blender 5.1 imports the
+  three as loose vertices, one edge, an open chain.
+- `place_reading` for the 3D kinds: region `─has_semantic_shape→`
+  SemanticShape(`type="generic"`, `url="readings/<region id>.glb"`), the file
+  written under `project_root` beside `proxies/`; without a root the nodes
+  are made and the result warns the file was not written
+  (`write_reading_glb`).
+- `api.measure(…, project_root=…)` re-reads the glb and reports whether it
+  agrees with the node's cached vertex_count/length (`glb.agrees`).
+
 ### Added (2026-10-06 — the place of a reading, part 1: the node)
 E.D. 2026-09-29: the place a reading looked at is ONE node,
 `AnnotationRegionNode`, with a new `geometry_kind`: `region2d` (default — every
