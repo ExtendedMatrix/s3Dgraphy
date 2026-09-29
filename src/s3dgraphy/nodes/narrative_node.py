@@ -267,6 +267,10 @@ class Block:
     prompt_ref: Optional[str] = None
     #: id of the HUMAN AuthorNode who endorsed it. Only a person can.
     validated_by: Optional[str] = None
+    #: when (ISO 8601 UTC). The same name and meaning as ``data.validated_at``
+    #: on a node (``s3dgraphy.ai_validation``); absent on blocks endorsed
+    #: before it existed, which stay endorsed.
+    validated_at: Optional[str] = None
     #: True when `authored_by` names an AI author. Kept on the block because the
     #: block is what travels: a reader must be able to tell, from the text
     #: alone, without resolving the author node first.
@@ -300,13 +304,16 @@ class Block:
             return STATUS_HUMAN
         return STATUS_AI_ENDORSED if self.validated_by else STATUS_AI_DRAFT
 
-    def endorse(self, human_author_id: str) -> None:
+    def endorse(self, human_author_id: str, *, at: Optional[str] = None) -> None:
         """A person vouches for this content. Only meaningful on AI content —
-        human text needs no endorsement, it already has an author."""
+        human text needs no endorsement, it already has an author. ``at`` is
+        the instant (ISO 8601); now when omitted."""
         if not human_author_id:
             raise NarrativeError("an endorsement needs the id of the human "
                                  "author making it")
+        from ..editorial import normalize_instant, now_iso
         self.validated_by = human_author_id
+        self.validated_at = normalize_instant(at) if at else now_iso()
 
     # — helpers ————————————————————————————————————————————————————————
     @classmethod
@@ -349,7 +356,8 @@ class Block:
         # provenance, written only when there is something to say
         for key, value in (("authored_by", self.authored_by),
                            ("prompt_ref", self.prompt_ref),
-                           ("validated_by", self.validated_by)):
+                           ("validated_by", self.validated_by),
+                           ("validated_at", self.validated_at)):
             if value:
                 out[key] = value
         if self.ai_generated:
@@ -367,6 +375,7 @@ class Block:
             authored_by=payload.get("authored_by"),
             prompt_ref=payload.get("prompt_ref"),
             validated_by=payload.get("validated_by"),
+            validated_at=payload.get("validated_at"),
             ai_generated=bool(payload.get("ai_generated", False)),
         )
 

@@ -188,6 +188,41 @@ def shared_properties(graph: Graph) -> List[Dict[str, Any]]:
     return _shared(graph)
 
 
+# ── human authorship with AI support, and its verification ──────────────────
+def unvalidated_ai(graph: Graph) -> List[Dict[str, Any]]:
+    """Every node made with AI (``data.ai_assisted``) that no person has
+    verified (``data.validated_by``): ``[{node, name, node_type, fields, by,
+    model, prompt_ref}]``, ``fields`` None for the whole node. What a default
+    xlsx / RDF / html export leaves out. See :mod:`s3dgraphy.ai_validation`."""
+    from .ai_validation import unvalidated_ai as _unvalidated
+    return _unvalidated(graph)
+
+
+def mark_ai_assisted(graph: Graph, node_id: str, *, by: str,
+                     model: Optional[str] = None,
+                     prompt_ref: Optional[str] = None,
+                     fields: Optional[List[str]] = None) -> Dict[str, Any]:
+    """Mark a node as made with the help of the AuthorAINode ``by``; clears a
+    previous verification. Returns the marker."""
+    from .ai_validation import mark_ai_assisted as _mark
+    node = graph.find_node_by_id(node_id)
+    if node is None:
+        raise KeyError(f"no node {node_id!r}")
+    return _mark(graph, node, by=by, model=model, prompt_ref=prompt_ref,
+                 fields=fields)
+
+
+def validate_ai(graph: Graph, node_id: str, author_id: str, *,
+                at: Optional[str] = None) -> Dict[str, Any]:
+    """A person (an AuthorNode with an ORCID iD, never an AI) verifies an
+    AI-assisted node: writes ``validated_by`` and ``validated_at``."""
+    from .ai_validation import validate_node
+    node = graph.find_node_by_id(node_id)
+    if node is None:
+        raise KeyError(f"no node {node_id!r}")
+    return validate_node(graph, node, author_id, at=at)
+
+
 # ── the em.json CONTAINER: a project is one file ───────────────────────────────
 #
 # An em.json is ALWAYS a container: `{"graphs": {...}}`, 1..N study graphs plus
@@ -1063,8 +1098,12 @@ def create_geometry_proxy(graph: Graph, unit_id: str, shape: Dict[str, Any],
 
 # ── project → TTL / RDF ────────────────────────────────────────────────────────
 def project_ttl(graph: Graph, *, base_uri: Optional[str] = None,
-                fmt: str = "turtle", mode: str = "round_trip") -> str:
+                fmt: str = "turtle", mode: str = "round_trip",
+                include_unvalidated: bool = False) -> str:
     """Project a Graph to RDF and return it as a string (default Turtle).
+
+    A node made with AI that no person verified is left out in both modes
+    (:func:`unvalidated_ai`); ``include_unvalidated=True`` keeps it, marked «⚠︎».
 
     `mode` picks which of the two RDF readings you want: ``round_trip``
     (default) keeps tombstones, because the projection must give back what went
@@ -1085,7 +1124,8 @@ def project_ttl(graph: Graph, *, base_uri: Optional[str] = None,
     try:
         export_single_graph_to_rdf(
             graph, str(tmp_path), format=fmt,
-            base_uri=base_uri or DEFAULT_BASE_URI, mode=mode)
+            base_uri=base_uri or DEFAULT_BASE_URI, mode=mode,
+            include_unvalidated=include_unvalidated)
         return tmp_path.read_text(encoding="utf-8")
     finally:
         tmp_path.unlink(missing_ok=True)

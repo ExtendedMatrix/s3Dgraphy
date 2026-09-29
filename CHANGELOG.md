@@ -4,6 +4,36 @@ All notable changes to **s3dgraphy** are documented here.
 
 ## [Unreleased]
 
+### Added (2026-10-04 — AI support and its verification, on nodes)
+Connections datamodel **1.6.25** (E.D. 2026-09-29): an AI proposal a person
+accepts stays signed by the person, with the mark «supporto AI», and stays
+among the warnings until a person verifies it with their ORCID. The narrative
+blocks already did this; now nodes do, with the same names, in `data`. See
+`validated_by.node_verification_note`; no edge changed.
+
+- `s3dgraphy.ai_validation`: `data.ai_assisted = {model, by, prompt_ref,
+  fields?}` (`by` = the AuthorAINode; no `fields` = the whole node);
+  `data.validated_by` (a human AuthorNode with a well-formed ORCID) and
+  `data.validated_at`. `mark_ai_assisted` (clears a previous verification),
+  `validate_node`, `unvalidated_ai`, `export_view`. The block's word
+  `ai_generated` is read on a node as an alias.
+- `api.unvalidated_ai`, `api.mark_ai_assisted`, `api.validate_ai`.
+- Exports: xlsx (`UnifiedXLSXExporter(..., include_unvalidated=False)`), RDF
+  (`RDFExporter(..., include_unvalidated=False)`, both modes; `project_ttl`)
+  and html/docx (through `bake_narrative`: `excluded_nodes`, `pending_nodes`)
+  leave out unvalidated AI nodes by default — a whole node with its edges, or
+  the listed fields emptied. Forced, each touched text field starts with «⚠︎».
+  em.json is the record and is never filtered.
+- RDF carries the marker as `em:aiAssistedBy` / `em:aiModel` /
+  `em:aiPromptRef` / `em:aiAssistedField` and the verification as
+  `em:validatedBy` (domain widened to crm:E1) / `em:validatedAt`, all declared
+  in `em.ttl`; the importer reads them back into `data` and takes «⚠︎» off
+  the text, so a forced round trip is isomorphic. A forced xlsx read back
+  keeps the node AI-assisted and unverified instead of laundering it.
+- Narrative `Block` gains `validated_at` (set by `endorse`).
+- The CRDT merges `ai_assisted`, `validated_by`, `validated_at` as content,
+  like every `data.*` field (none is in `META_KEYS`).
+
 ### Changed (2026-10-04 — an extractor may read from a unit)
 Connections datamodel **1.6.24** (E.D. 2026-09-29, extending the proposal of
 2026-09-28 on SF/RSF): `extracted_from.target` += `StratigraphicNode`, the

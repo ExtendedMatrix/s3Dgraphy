@@ -708,9 +708,44 @@ em:validatedBy
     a owl:ObjectProperty ;
     rdfs:label "validated by"@en ;
     rdfs:subPropertyOf prov:wasInfluencedBy ;
-    rdfs:domain em:Narrative ;
+    rdfs:domain crm:E1_CRM_Entity ;
     rdfs:range em:HumanAuthor ;
     rdfs:comment "A HUMAN author endorses a piece of content: they have read it and put their name to it (EM Narrative N4, «Who Made This?»). Distinct from em:hasAuthor, and the distinction is the point: hasAuthor says who WROTE it, human or AI; validatedBy says who accepted RESPONSIBILITY for it. The range is em:HumanAuthor and never em:AIAuthor — a model endorsing a model would be a signature with nobody behind it. It is not a quality judgement and not a peer review. The absence of the property IS the unendorsed state, so a machine draft cannot claim an endorsement it never received. Superproperty and domain/range read off the connections datamodel (mapping.cidoc prov:wasInfluencedBy; source NarrativeNode, target AuthorNode). prov:wasInfluencedBy is the domain-neutral anchor because it is true and claims nothing more: endorsement has no exact term in CIDOC-CRM or PROV-O, and the datamodel records that an E13 Attribute Assignment reification is where this would change. Maps to: connections_datamodel edge \'validated_by\'."@en .
+
+em:validatedAt
+    a owl:DatatypeProperty ;
+    rdfs:label "validated at"@en ;
+    rdfs:domain crm:E1_CRM_Entity ;
+    rdfs:range xsd:dateTime ;
+    rdfs:comment "When the person named by em:validatedBy verified the content (connections 1.6.25; s3dgraphy.ai_validation). Maps to: data.validated_at of a node, validated_at of a narrative block."@en .
+
+em:aiAssistedBy
+    a owl:ObjectProperty ;
+    rdfs:label "AI-assisted by"@en ;
+    rdfs:subPropertyOf prov:wasInfluencedBy ;
+    rdfs:domain crm:E1_CRM_Entity ;
+    rdfs:range em:AIAuthor ;
+    rdfs:comment "HUMAN AUTHORSHIP WITH AI SUPPORT (E.D. 2026-09-29): a person made this with the help of a model. The author stays the person; this names the model that helped. Until em:validatedBy is also stated, the content is not verified by anyone, and a default export leaves it out (s3dgraphy.ai_validation). Maps to: data.ai_assisted.by of a node."@en .
+
+em:aiModel
+    a owl:DatatypeProperty ;
+    rdfs:label "AI model"@en ;
+    rdfs:domain crm:E1_CRM_Entity ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The model string of the assistance, as the tool reported it. Maps to: data.ai_assisted.model."@en .
+
+em:aiPromptRef
+    a owl:ObjectProperty ;
+    rdfs:label "AI prompt"@en ;
+    rdfs:domain crm:E1_CRM_Entity ;
+    rdfs:comment "The prompt behind the assistance (a PromptExtractor or prompt document): how the model came to propose it is a source like any other. Maps to: data.ai_assisted.prompt_ref."@en .
+
+em:aiAssistedField
+    a owl:DatatypeProperty ;
+    rdfs:label "AI-assisted field"@en ;
+    rdfs:domain crm:E1_CRM_Entity ;
+    rdfs:range xsd:string ;
+    rdfs:comment "A field the assistance touched, in the CRDT field vocabulary (name, description, data.<key>); absent means the whole node, and the value '*' states the assistance when nothing else about it is known. Maps to: data.ai_assisted.fields."@en .
 
 
 # ============================================================================

@@ -576,7 +576,7 @@ class UnifiedXLSXImporter:
         )
 
     def _parse_units(self, df: pd.DataFrame) -> None:
-        for _, row in df.iterrows():
+        for idx, row in df.iterrows():
             uid = _str(row.get("ID"))
             if not uid:
                 continue
@@ -591,8 +591,29 @@ class UnifiedXLSXImporter:
                            description=name if name != uid else "")
             except TypeError:
                 node = cls(node_id=unit_id, name=uid)
+            self._keep_unvalidated_mark(node, "description", idx + 2)
             self.graph.add_node(node)
             self._unit_by_id[uid] = node
+
+    def _keep_unvalidated_mark(self, node, field, line) -> None:
+        """A forced export writes «⚠︎» before a value no person verified
+        (ai_validation). Read back, the mark comes off the value and goes on
+        the node as ``ai_assisted`` without a verification — so a round trip
+        through a forced xlsx does not turn AI content into human content. The
+        details of the help (model, prompt) did not travel and are not
+        invented."""
+        from ..ai_validation import AI_ASSISTED, _data, strip_mark
+        clean, marked = strip_mark(getattr(node, field, None))
+        if not marked:
+            return
+        setattr(node, field, clean)
+        marker = _data(node).setdefault(AI_ASSISTED, {})
+        marker.setdefault("fields", [])
+        if field not in marker["fields"]:
+            marker["fields"].append(field)
+        self.warnings.append(
+            f"Row {line}: '{node.name}' {field} was exported as not validated "
+            f"by a person; it is read back as AI-assisted and unverified.")
 
     def _parse_claims(self, df: pd.DataFrame) -> None:
         for idx, row in df.iterrows():
@@ -767,6 +788,7 @@ class UnifiedXLSXImporter:
         )
         if units:
             pn.attributes["units"] = units
+        self._keep_unvalidated_mark(pn, "value", line)
         self.graph.add_node(pn)
         # has_property edge from the target to the property
         self.graph.add_edge(

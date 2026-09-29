@@ -232,6 +232,12 @@ def render_html(baked: BakedNarrative, *, generated_at: str = "") -> str:
                       + f" da una persona ({_esc(UNVALIDATED_MARK)}), "
                       + ("incluso" if baked.pending_validation == 1 else "inclusi")
                       + " su richiesta")
+    if getattr(baked, "pending_nodes", 0):
+        n = baked.pending_nodes
+        byline.append(f"{n} " + ("nodo" if n == 1 else "nodi") + " "
+                      + ("non validato" if n == 1 else "non validati")
+                      + f" da una persona ({_esc(UNVALIDATED_MARK)}), "
+                      + ("incluso" if n == 1 else "inclusi") + " su richiesta")
 
     sources = ""
     if baked.citations:

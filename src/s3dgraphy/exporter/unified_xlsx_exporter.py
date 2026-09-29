@@ -107,8 +107,15 @@ class UnifiedXLSXExporter:
     returns a report dict with how many rows were written to each sheet.
     """
 
-    def __init__(self, graph: Graph):
-        self.graph = graph
+    def __init__(self, graph: Graph, *, include_unvalidated: bool = False):
+        # What no person verified is not exported (ai_validation): an
+        # unvalidated AI node is absent — its unit row, its claims, its
+        # relations — unless forced, and then its text starts with «⚠︎».
+        # `excluded` lists the rows so a caller can say so.
+        from ..ai_validation import export_view
+        self.graph, self.excluded = export_view(
+            graph, include_unvalidated=include_unvalidated)
+        self.include_unvalidated = include_unvalidated
         # id_by_node_uuid maps a node.node_id to the short code used in
         # the output sheet. For units/epochs/authors/documents the
         # short code IS node.name; for ExtractorNode it's also
@@ -547,8 +554,10 @@ class UnifiedXLSXExporter:
 # Convenience top-level function
 # ---------------------------------------------------------------------------
 
-def write_unified_xlsx(graph: Graph, path: str) -> Dict[str, int]:
+def write_unified_xlsx(graph: Graph, path: str, *,
+                       include_unvalidated: bool = False) -> Dict[str, int]:
     """One-shot export: build a :class:`UnifiedXLSXExporter` and call
     its ``write`` method. Returns the row-count report.
     """
-    return UnifiedXLSXExporter(graph).write(path)
+    return UnifiedXLSXExporter(
+        graph, include_unvalidated=include_unvalidated).write(path)

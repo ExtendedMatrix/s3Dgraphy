@@ -175,6 +175,11 @@ ARTEFACT_PREDICATES: Set[URIRef] = {
     # the declaration of an inherited property: read back onto the
     # has_property edge by _mark_inherited_properties, never an edge of its own
     EM.inheritsQualia,
+    # the AI marker and the verification of a node: read back into its data
+    # (_ai_data), never edges of their own
+    EM.aiAssistedBy,
+    EM.aiPromptRef,
+    EM.validatedBy,
 }
 
 #: Predicates the exporter emits as the GENERIC companion of a more specific
@@ -865,6 +870,7 @@ class RDFImporter:
         # where they are written (`_serialize_editorial`) — one generic pass, not
         # a line in each branch.
         data.update(self._editorial_data(store, ref))
+        data.update(self._ai_data(store, ref))
         data.update(self._definition_data(store, ref, class_name, node_id))
         if data:
             payload["data"] = data
@@ -872,6 +878,10 @@ class RDFImporter:
         node = self._instantiate(node_type, class_name, payload)
         if node is None:
             return None, None
+        # a forced export wrote «⚠︎» before the touched text; the marker came
+        # back through _ai_data, so the mark comes off the text
+        from ..ai_validation import unflag_node
+        unflag_node(node)
         g.add_node(node, overwrite=True)
         self.stats["nodes"] += 1
         return node_id, class_name
@@ -980,6 +990,44 @@ class RDFImporter:
                 # instant, spelled differently. Canonicalised here so a graph
                 # does not come home with every stamp reworded.
                 out[key] = normalize_instant(value)
+        return out
+
+    def _ai_data(self, store: ConjunctiveGraph, ref: URIRef) -> Dict[str, Any]:
+        """The inverse of ``RDFExporter._serialize_ai``: ``ai_assisted``,
+        ``validated_by``, ``validated_at``. A node reference is given back as
+        the id its own ``dcterms:identifier`` states."""
+        from ..editorial import normalize_instant
+
+        def node_id_of(pred):
+            for o in store.objects(ref, pred):
+                ident = self._one_literal(store, o, DCTERMS.identifier) \
+                    if isinstance(o, URIRef) else None
+                return ident or str(o).rsplit("/", 1)[-1]
+            return None
+
+        out: Dict[str, Any] = {}
+        marker: Dict[str, Any] = {}
+        by = node_id_of(EM.aiAssistedBy)
+        if by:
+            marker["by"] = by
+        model = self._one_literal(store, ref, EM.aiModel)
+        if model:
+            marker["model"] = model
+        prompt = node_id_of(EM.aiPromptRef)
+        if prompt:
+            marker["prompt_ref"] = prompt
+        fields = sorted(str(o) for o in store.objects(ref, EM.aiAssistedField)
+                        if str(o) != "*")
+        if fields:
+            marker["fields"] = fields
+        if marker or (ref, EM.aiAssistedField, None) in store:
+            out["ai_assisted"] = marker
+        validator = node_id_of(EM.validatedBy)
+        if validator:
+            out["validated_by"] = validator
+        at = self._one_literal(store, ref, EM.validatedAt)
+        if at:
+            out["validated_at"] = normalize_instant(at)
         return out
 
     def _type_specific_data(self, store: ConjunctiveGraph, ref: URIRef,

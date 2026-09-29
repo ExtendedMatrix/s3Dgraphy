@@ -176,6 +176,13 @@ class BakedNarrative:
     #: (``narrative_node.unvalidated_for_export``). Empty when forced in — the
     #: blocks are then on the page, marked.
     excluded: List[Dict[str, Any]] = field(default_factory=list)
+    #: The NODES made with AI that no person verified (``ai_validation``) that
+    #: the bake LEFT OUT: an embed of one is dropped, a mention of one is not
+    #: resolved. One row per node (``ai_validation.unvalidated_ai``). Empty when
+    #: forced in — they are then on the page with «⚠︎» at the start of each
+    #: touched field, and counted in ``pending_nodes``.
+    excluded_nodes: List[Dict[str, Any]] = field(default_factory=list)
+    pending_nodes: int = 0
     #: Every embed that did not resolve, collected for the caller. The blocks
     #: carry the same information inline; this is the list you check before
     #: publishing.
@@ -464,6 +471,13 @@ def bake_narrative(graph: Any, narrative_id: str, *,
     if node is None or getattr(node, "node_type", None) != "narrative":
         raise KeyError(f"no narrative node with id {narrative_id!r}")
 
+    # The nodes the page shows come from the export view: what no person
+    # verified is absent (or marked, when forced). The narrative itself is read
+    # from the graph — its AI state is per block, handled below.
+    from ..ai_validation import export_view
+    graph, ai_rows = export_view(graph, include_unvalidated=include_unvalidated)
+    ai_gone = set() if include_unvalidated else {r["node"] for r in ai_rows}
+
     lookup = {getattr(n, "node_id", None): n
               for n in (getattr(graph, "nodes", []) or [])}
     name_of = _name_resolver(lookup)
@@ -473,6 +487,10 @@ def bake_narrative(graph: Any, narrative_id: str, *,
         title=getattr(node, "name", "") or narrative_id,
         description=getattr(node, "description", "") or "",
     )
+    if include_unvalidated:
+        baked.pending_nodes = len(ai_rows)
+    else:
+        baked.excluded_nodes = list(ai_rows)
 
     # ── byline: people are responsible, models assist (N8) ───────────────────
     # The same separation L1 makes for print, for the same reason: a model is not
@@ -536,7 +554,7 @@ def bake_narrative(graph: Any, narrative_id: str, *,
                 # list an embed that points at nothing goes on.
                 text, mentions = substitute_mentions(text, name_of)
                 for mention in mentions:
-                    if not mention.resolved \
+                    if not mention.resolved and mention.ref not in ai_gone \
                             and mention.ref not in baked.unresolved:
                         baked.unresolved.append(mention.ref)
                 baked_chapter.blocks.append(BakedBlock(
@@ -548,6 +566,8 @@ def bake_narrative(graph: Any, narrative_id: str, *,
                 continue
 
             ref = getattr(block, "ref", None)
+            if ref in ai_gone:
+                continue            # listed in baked.excluded_nodes
             view_type = getattr(block, "view_type", "") or ""
             target = lookup.get(ref) if ref else None
             options = dict(getattr(block, "options", None) or {})

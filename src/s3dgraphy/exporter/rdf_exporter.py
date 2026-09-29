@@ -570,7 +570,8 @@ class RDFExporter:
                  base_uri: str = DEFAULT_BASE_URI,
                  parent_hdt_iri: Optional[str] = None,
                  config_dir: Optional[Path] = None,
-                 mode: str = "round_trip"):
+                 mode: str = "round_trip",
+                 include_unvalidated: bool = False):
         """
         Args:
             output_path: target file path (extension auto-fixed by format).
@@ -585,6 +586,12 @@ class RDFExporter:
                 rdf:type hdto:HC2_Heritage_Digital_Twin so a SPARQL query
                 can discover the parent without a separate type assertion.
             config_dir: override location of JSON_config/ (default: alongside exporter).
+            include_unvalidated: a node made with AI that no person verified
+                (ai_validation) is left out by default, in both modes; True
+                keeps it, with «⚠︎» at the start of each touched literal and
+                the marker as em:aiAssistedBy / em:aiModel / em:aiPromptRef /
+                em:aiAssistedField. ``self.excluded`` lists what was left out
+                or flagged.
         """
         fmt = (format or "turtle").lower()
         if fmt not in self.SUPPORTED_FORMATS:
@@ -598,6 +605,8 @@ class RDFExporter:
                 f"Unsupported RDF mode {mode!r}. Supported: {list(self.MODES)}"
             )
         self.mode = mode
+        self.include_unvalidated = bool(include_unvalidated)
+        self.excluded: List[Dict[str, Any]] = []
         self.ext, self.rdflib_format = self.SUPPORTED_FORMATS[fmt]
         self.output_path = self._adjust_extension(output_path)
         self.base_uri = base_uri.rstrip("/") + "/"
@@ -616,6 +625,9 @@ class RDFExporter:
             # definitions that carried a label and no concept URI, and so
             # projected to whatever `rdf.label_only` says (by default: nothing)
             "definitions_label_only": 0,
+            # nodes made with AI that no person verified: left out (default)
+            # or kept with the mark (include_unvalidated)
+            "ai_unvalidated": 0,
         }
 
     @staticmethod
@@ -786,6 +798,12 @@ class RDFExporter:
             from ..dissemination import live_view
             g, hidden = live_view(g, surface="rdf:publish")
             self.stats["removed_hidden"] += hidden.total
+        # What no person verified is not published (ai_validation): once, here,
+        # for the same reason as the tombstones above.
+        from ..ai_validation import export_view
+        g, ai_rows = export_view(g, include_unvalidated=self.include_unvalidated)
+        self.excluded.extend(ai_rows)
+        self.stats["ai_unvalidated"] += len(ai_rows)
         graph_iri = self._graph_iri(g)
 
         ctx.add((graph_iri, RDF.type, EM.EMGraph))
@@ -1016,6 +1034,9 @@ class RDFExporter:
         # type, so it belongs here and not in the per-type branches.
         self._serialize_editorial(node, node_iri, ctx)
 
+        # The AI marker and the person's verification (ai_validation).
+        self._serialize_ai(g, node, node_iri, ctx)
+
         # The unit's DEFINITION — an element of the node, declared (and its
         # projection with it) in the node datamodel.
         self._serialize_definition(node, node_iri, ctx)
@@ -1093,6 +1114,44 @@ class RDFExporter:
                 ref.get("match"), DEFAULT_AUTHORITY_PREDICATE)
             ctx.add((node_iri, pred, URIRef(uri)))
             self.stats["authority_refs"] = self.stats.get("authority_refs", 0) + 1
+
+    def _serialize_ai(self, g: S3DGraph, node: Any, node_iri: URIRef, ctx) -> None:
+        """Emit ``data.ai_assisted`` and the verification of a node.
+
+        ``em:aiAssistedBy`` → the AuthorAINode, ``em:aiModel``,
+        ``em:aiPromptRef`` → the prompt node, one ``em:aiAssistedField`` per
+        touched field; ``em:validatedBy`` → the person who verified it and
+        ``em:validatedAt``. Only for a node that carries the marker — and an
+        unverified one reaches here only when the export was forced.
+        """
+        from ..ai_validation import (VALIDATED_AT, VALIDATED_BY, ai_marker,
+                                     touched_fields)
+        marker = ai_marker(node)
+        if marker is None:
+            return
+        data = getattr(node, "data", {}) or {}
+        if marker.get("by"):
+            ctx.add((node_iri, EM.aiAssistedBy,
+                     self._node_iri(g.graph_id, marker["by"])))
+        if marker.get("model"):
+            ctx.add((node_iri, EM.aiModel, Literal(str(marker["model"]))))
+        if marker.get("prompt_ref"):
+            ctx.add((node_iri, EM.aiPromptRef,
+                     self._node_iri(g.graph_id, marker["prompt_ref"])))
+        for f in touched_fields(node) or []:
+            ctx.add((node_iri, EM.aiAssistedField, Literal(f)))
+        if not (marker.get("by") or marker.get("model")
+                or marker.get("prompt_ref") or touched_fields(node)):
+            # the fact without its detail still has to be stated
+            ctx.add((node_iri, EM.aiAssistedField, Literal("*")))
+        if data.get(VALIDATED_BY):
+            ctx.add((node_iri, EM.validatedBy,
+                     self._node_iri(g.graph_id, data[VALIDATED_BY])))
+            ctx.add((node_iri, PROV.wasInfluencedBy,
+                     self._node_iri(g.graph_id, data[VALIDATED_BY])))
+        if data.get(VALIDATED_AT):
+            ctx.add((node_iri, EM.validatedAt,
+                     Literal(str(data[VALIDATED_AT]), datatype=XSD.dateTime)))
 
     def _serialize_editorial(self, node: Any, node_iri: URIRef, ctx) -> None:
         """Emit the last-hand stamps (AUDIT1) as PROV-O.
@@ -1676,8 +1735,10 @@ def export_single_graph_to_rdf(graph: S3DGraph,
                                format: str = "turtle",
                                base_uri: str = DEFAULT_BASE_URI,
                                parent_hdt_iri: Optional[str] = None,
-                               mode: str = "round_trip") -> str:
+                               mode: str = "round_trip",
+                               include_unvalidated: bool = False) -> str:
     """One-call helper for an in-memory graph."""
     exporter = RDFExporter(output_path, format=format, base_uri=base_uri,
-                           parent_hdt_iri=parent_hdt_iri, mode=mode)
+                           parent_hdt_iri=parent_hdt_iri, mode=mode,
+                           include_unvalidated=include_unvalidated)
     return exporter.export_single_graph(graph)
