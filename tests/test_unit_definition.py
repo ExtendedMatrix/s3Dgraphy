@@ -95,9 +95,13 @@ def test_em_ttl_declares_the_companion_subproperty():
     assert (EM.hasDefinition, RDFS.subPropertyOf, CRM.P2_has_type) in g
     assert (EM.hasDefinition, RDFS.range, CRM.E55_Type) in g
     onto = rdflib.URIRef("https://w3id.org/em/ontology")
-    assert str(g.value(onto, OWL.versionInfo)) == "1.6.5"
+    # declared in 1.6.5; later passes may move the version on, never back
+    def _v(text):
+        return tuple(int(x) for x in str(text).split("."))
+    assert _v(g.value(onto, OWL.versionInfo)) >= (1, 6, 5)
     dm = json.loads(DM.read_text(encoding="utf-8"))
-    assert dm["referenced_ontology_versions"]["CRMem"]["version"] == "1.6.5"
+    assert _v(dm["referenced_ontology_versions"]["CRMem"]["version"]) == \
+        _v(g.value(onto, OWL.versionInfo))
 
 
 # ── 3 · the value ────────────────────────────────────────────────────────────

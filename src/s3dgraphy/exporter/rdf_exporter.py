@@ -70,6 +70,20 @@ CRMARCHAEO = Namespace("http://www.cidoc-crm.org/extensions/crmarchaeo/")
 CRMDIG     = Namespace("http://www.cidoc-crm.org/extensions/crmdig/")
 CRMGEO     = Namespace("http://www.cidoc-crm.org/extensions/crmgeo/")
 HDTO       = Namespace("https://w3id.org/hdto/ontology#")
+# W3C Web Annotation: only the quote of a passage uses it (oa:TextQuoteSelector
+# + oa:exact) — the one piece of a reading's place with no fragment-string form.
+OA         = Namespace("http://www.w3.org/ns/oa#")
+# QUDT units: the E58 Measurement Unit a measured length points at (P91).
+QUDT_UNIT  = Namespace("http://qudt.org/vocab/unit/")
+
+#: The length units a measure is written in → the QUDT unit IRI. A unit not in
+#: this table is minted as `s3d:unit_<u>` rather than dropped or guessed at.
+MEASURE_UNIT_IRI: Dict[str, URIRef] = {
+    "m":  QUDT_UNIT.M,
+    "cm": QUDT_UNIT.CentiM,
+    "mm": QUDT_UNIT.MilliM,
+    "km": QUDT_UNIT.KiloM,
+}
 
 DEFAULT_BASE_URI = "https://w3id.org/em/id/"
 
@@ -82,6 +96,7 @@ PREFIX_MAP: Dict[str, Namespace] = {
     "crmdig":     CRMDIG,
     "crmgeo":     CRMGEO,
     "hdto":       HDTO,
+    "oa":         OA,
     "prov":       PROV,
     "dcterms":    DCTERMS,
     "skos":       Namespace(str(SKOS)),
@@ -1542,6 +1557,17 @@ class RDFExporter:
                 ctx.add((node_iri, CRM.P2_has_type, Literal(geometry_kind)))
             elif shape_kind:
                 ctx.add((node_iri, CRM.P2_has_type, Literal(shape_kind)))
+            if geometry_kind == "passage":
+                self._emit_passage_quote(node_iri, node, ctx)
+            if geometry_kind in ("point", "line", "polyline"):
+                # The coordinates stay in the .glb (the SemanticShape's url,
+                # emitted with the shape); the count only says what to expect.
+                vc = getattr(node, "vertex_count", None)
+                if vc is not None:
+                    ctx.add((node_iri, EM.vertexCount,
+                             Literal(int(vc), datatype=XSD.nonNegativeInteger)))
+                if getattr(node, "length", None) is not None:
+                    self._emit_measure(node_iri, node, ctx)
             # Page 0 is emitted as NOTHING. A plain image has no page, and
             # asserting `onPage 0` for every region would put a fact in the store
             # that nobody stated — and the importer defaults to 0 anyway, so the
@@ -1572,6 +1598,58 @@ class RDFExporter:
             kind = data.get("dtc_kind")
             if kind:
                 ctx.add((node_iri, CRM.P2_has_type, Literal(kind)))
+
+    def _emit_passage_quote(self, node_iri: URIRef, node: Any, ctx) -> None:
+        """The quoted words of a passage, as a W3C TextQuoteSelector.
+
+        The offsets already travel as the RFC 5147 `char=s,e` of
+        em:hasSelector — the text twin of the Media Fragment a region uses, one
+        string like every other selector. The QUOTE has no such string form:
+        the only standard term for it is Web Annotation's, so it is reused
+        rather than minted (`em:quote` would say the same thing to nobody).
+        It is not a second copy of the geometry: the offsets say where, the
+        quote is what survives an edit that moves them.
+
+        The selector is a derived IRI (`<region>/quote`), not a blank node, so
+        the projection stays addressable and the importer's node pass — which
+        reads only subjects carrying dcterms:identifier — never mistakes it for
+        a node. An empty quote is emitted as nothing: the node never invents one.
+        """
+        text = getattr(node, "text", None)
+        if not text:
+            return
+        quote = URIRef(str(node_iri) + "/quote")
+        ctx.add((node_iri, OA.hasSelector, quote))
+        ctx.add((quote, RDF.type, OA.TextQuoteSelector))
+        ctx.add((quote, OA.exact, Literal(text)))
+
+    def _emit_measure(self, node_iri: URIRef, node: Any, ctx) -> None:
+        """The length of a line or polyline as a CIDOC E54 Dimension.
+
+        CIDOC already has the whole shape — P43 has dimension → E54, P90 has
+        value, P91 has unit → E58 — and uses it for exactly this: a measured
+        extent of a thing. An em: literal would hide a number every CRM reader
+        knows how to find. The region is an E36 (⊂ E70 Thing), so P43 is legal
+        on it as it stands.
+
+        The unit is a QUDT unit IRI (E58 is a class; a literal would break the
+        range of P91). The frame the length was measured in (`crs`, "local"
+        for the scene frame) has no CIDOC property on a dimension, so it is
+        em:crs. The dimension is `<region>/length`, typed "length" with P2.
+        """
+        dim = URIRef(str(node_iri) + "/length")
+        ctx.add((node_iri, CRM.P43_has_dimension, dim))
+        ctx.add((dim, RDF.type, CRM.E54_Dimension))
+        ctx.add((dim, CRM.P2_has_type, Literal("length")))
+        ctx.add((dim, CRM.P90_has_value,
+                 Literal(float(node.length), datatype=XSD.double)))
+        unit = getattr(node, "unit", None)
+        if unit:
+            unit_iri = MEASURE_UNIT_IRI.get(unit) or S3D[f"unit_{_iri_local(unit)}"]
+            ctx.add((dim, CRM.P91_has_unit, unit_iri))
+        crs = getattr(node, "crs", None)
+        if crs:
+            ctx.add((dim, EM.crs, Literal(str(crs))))
 
     def _emit_orcid_verification(self, node_iri: URIRef, data: Dict[str, Any],
                                  ctx) -> None:

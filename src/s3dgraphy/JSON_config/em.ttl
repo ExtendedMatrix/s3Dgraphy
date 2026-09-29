@@ -7,13 +7,14 @@
 @prefix crmgeo:    <http://www.cidoc-crm.org/extensions/crmgeo/> .
 @prefix hdto:      <https://w3id.org/hdto/ontology#> .
 @prefix prov:      <http://www.w3.org/ns/prov#> .
+@prefix oa:        <http://www.w3.org/ns/oa#> .
 @prefix dcterms:   <http://purl.org/dc/terms/> .
 @prefix rdfs:      <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix owl:       <http://www.w3.org/2002/07/owl#> .
 @prefix xsd:       <http://www.w3.org/2001/XMLSchema#> .
 
 # ============================================================================
-# Extended Matrix (EM) Ontology — v1.6.5
+# Extended Matrix (EM) Ontology — v1.6.6
 # ============================================================================
 # Formal extension of the CIDOC-CRM family + HDT-O for the Extended Matrix
 # stratigraphic + paradata + virtual-reconstruction modeling. Companion to
@@ -44,8 +45,8 @@
     dcterms:creator "Emanuele Demetrescu" ;
     dcterms:license <https://creativecommons.org/licenses/by/4.0/> ;
     dcterms:issued "2026-05-23"^^xsd:date ;
-    owl:versionInfo "1.6.5" ;
-    rdfs:comment "Formal ontology for Extended Matrix (EM): a human-readable layout for knowledge graphs of archaeological stratigraphy and virtual reconstruction. Extends CIDOC-CRM, CRMarchaeo, CRMinf, CRMdig, CRMgeo, with PROV-O for agent provenance and HDT-O for digital-twin granularity. This file declares the em: classes and properties introduced in s3dgraphy v1.6.0. v1.6.2 (2026-09-21, CIDOC repair pass): the eight terms the datamodels cited and this file never defined are declared in section 12; em:NodeGroup and em:ParadataNodeGroup leave the undeclared crm:E78_Collection for crm:E73_Information_Object and crm:E89_Propositional_Object; em:SemanticShape leaves crmgeo:SP5 for crm:E73_Information_Object, provisionally; crmarchaeo:AP11_has_physical_relation becomes AP11_has_physical_relation_to, the name CRMarchaeo has used since 2.0; and em:RepresentationModel says what a representation model IS. v1.6.5 (2026-10-20, MICRO la definizione dell\'unita\'): em:hasDefinition, the DEFINIZIONE of a stratigraphic unit as a subproperty of crm:P2_has_type — declared for the node datamodel 1.6.9 entry StratigraphicNode.properties.definition, not emitted by default (owl:versionInfo was left at 1.6.2 by the 1.6.3/1.6.4 passes and is realigned here)."@en ;
+    owl:versionInfo "1.6.6" ;
+    rdfs:comment "Formal ontology for Extended Matrix (EM): a human-readable layout for knowledge graphs of archaeological stratigraphy and virtual reconstruction. Extends CIDOC-CRM, CRMarchaeo, CRMinf, CRMdig, CRMgeo, with PROV-O for agent provenance and HDT-O for digital-twin granularity. This file declares the em: classes and properties introduced in s3dgraphy v1.6.0. v1.6.2 (2026-09-21, CIDOC repair pass): the eight terms the datamodels cited and this file never defined are declared in section 12; em:NodeGroup and em:ParadataNodeGroup leave the undeclared crm:E78_Collection for crm:E73_Information_Object and crm:E89_Propositional_Object; em:SemanticShape leaves crmgeo:SP5 for crm:E73_Information_Object, provisionally; crmarchaeo:AP11_has_physical_relation becomes AP11_has_physical_relation_to, the name CRMarchaeo has used since 2.0; and em:RepresentationModel says what a representation model IS. v1.6.5 (2026-10-20, MICRO la definizione dell\'unita\'): em:hasDefinition, the DEFINIZIONE of a stratigraphic unit as a subproperty of crm:P2_has_type — declared for the node datamodel 1.6.9 entry StratigraphicNode.properties.definition, not emitted by default (owl:versionInfo was left at 1.6.2 by the 1.6.3/1.6.4 passes and is realigned here). v1.6.6 (2026-10-07, MICRO la misura in RDF): the place of a reading gets its quote and its measure. The quote of a passage reuses W3C Web Annotation (oa:hasSelector -> oa:TextQuoteSelector, oa:exact) — the only standard term for a quote, which has no fragment-string form; its offsets stay the RFC 5147 em:hasSelector 'char=s,e'. The length of a line or polyline reuses CIDOC (crm:P43_has_dimension -> crm:E54_Dimension, P90_has_value xsd:double, P91_has_unit -> a QUDT unit IRI); two em: terms are new, em:vertexCount and em:crs, for what neither vocabulary says. The .glb of a 3D reading is not described here: its URL is the rdfs:seeAlso of the SemanticShape the region reaches with em:hasSemanticShape, and no coordinate enters RDF."@en ;
     owl:imports <http://www.cidoc-crm.org/cidoc-crm/> ,
                 <http://www.cidoc-crm.org/extensions/crminf/> ,
                 <http://www.cidoc-crm.org/extensions/crmarchaeo/> ,
@@ -354,14 +355,28 @@ em:AnnotationRegion
     a owl:Class ;
     rdfs:label "Annotation Region (2D, image space)"@en ;
     rdfs:subClassOf crm:E36_Visual_Item ;
-    rdfs:comment "A region of ONE IMAGE — or of one page of a multi-page resource — in NORMALISED image coordinates [0,1]: the geometry of a 2D annotation. A region of a visual item IS a visual item, hence E36. DISTINCT from em:SemanticShape, which is 3D geometry of the SCENE (crmgeo:SP5, expressing WHERE a thing is): an AnnotationRegion makes no claim about where anything is, it says which part of which picture was looked at. Distinct from em:Location (E53 Place) for the same reason — a place is in the world, a region is in an image of it. Attached to its image with em:isOnResource (P106i) and is the precise target of em:hasVisualReference from a quale. Geometry travels as a selector literal (em:hasSelector). OPEN: the fine modelling of the geometry itself (selector literal vs a CRMgeo SP* expression) is to be confirmed with Felicetti; the class is decided, the selector is the interoperable form defensible today. SINCE node datamodel 1.6.10 (2026-10-06) the class is the place of ANY reading, told apart by crm:P2_has_type = geometry_kind: region2d (the image case above, default), passage (a text: em:hasSelector 'char=start,end', RFC 5147), point / line / polyline (a 3D model: NO selector, the coordinates are a .glb reached through em:hasSemanticShape, as a proxy's payload is). Maps to: Python AnnotationRegionNode (node_type='annotation_region')."@en .
+    rdfs:comment "A region of ONE IMAGE — or of one page of a multi-page resource — in NORMALISED image coordinates [0,1]: the geometry of a 2D annotation. A region of a visual item IS a visual item, hence E36. DISTINCT from em:SemanticShape, which is 3D geometry of the SCENE (crmgeo:SP5, expressing WHERE a thing is): an AnnotationRegion makes no claim about where anything is, it says which part of which picture was looked at. Distinct from em:Location (E53 Place) for the same reason — a place is in the world, a region is in an image of it. Attached to its image with em:isOnResource (P106i) and is the precise target of em:hasVisualReference from a quale. Geometry travels as a selector literal (em:hasSelector). OPEN: the fine modelling of the geometry itself (selector literal vs a CRMgeo SP* expression) is to be confirmed with Felicetti; the class is decided, the selector is the interoperable form defensible today. SINCE node datamodel 1.6.10 (2026-10-06) the class is the place of ANY reading, told apart by crm:P2_has_type = geometry_kind: region2d (the image case above, default), passage (a text: em:hasSelector 'char=start,end', RFC 5147), point / line / polyline (a 3D model: NO selector, the coordinates are a .glb reached through em:hasSemanticShape, as a proxy's payload is). SINCE v1.6.6 a passage also carries its QUOTE (oa:hasSelector -> oa:TextQuoteSelector with oa:exact, at the derived IRI <region>/quote), a line or polyline its LENGTH (crm:P43_has_dimension -> crm:E54_Dimension at <region>/length, typed 'length' with P2, P90 value, P91 QUDT unit, em:crs) and every 3D kind em:vertexCount. The oa:hasSelector domain entails that a passage region is an oa:SpecificResource — true of it (a part of a source picked by a selector) and left as an entailment, not declared. Maps to: Python AnnotationRegionNode (node_type='annotation_region')."@en .
 
 em:hasSelector
     a owl:DatatypeProperty ;
     rdfs:label "has selector"@en ;
     rdfs:domain em:AnnotationRegion ;
     rdfs:range xsd:string ;
-    rdfs:comment "The geometry of an annotation region as a selector string, in the spirit of the W3C Web Annotation model: a Media Fragment for a rectangle ('xywh=percent:x,y,w,h') or an SVG-style point list for a polygon ('polygon(percent:x1,y1 x2,y2 ...)'). Percent units, so the region is resolution-independent — the same photograph re-exported at another size still resolves it. One string rather than a structure, so a consumer outside EM can act on the region without reading the s3Dgraphy datamodel. Stored in Python as AnnotationRegionNode.shape_kind + rect/points, from which it is derived (never a second copy of the geometry)."@en .
+    rdfs:comment "The geometry of an annotation region as a selector string, in the spirit of the W3C Web Annotation model: a Media Fragment for a rectangle ('xywh=percent:x,y,w,h') or an SVG-style point list for a polygon ('polygon(percent:x1,y1 x2,y2 ...)'). Percent units, so the region is resolution-independent — the same photograph re-exported at another size still resolves it. One string rather than a structure, so a consumer outside EM can act on the region without reading the s3Dgraphy datamodel. Stored in Python as AnnotationRegionNode.shape_kind + rect/points, from which it is derived (never a second copy of the geometry). For a passage it is the RFC 5147 text fragment 'char=start,end' (AnnotationRegionNode.start/end) — the form Web Annotation itself accepts for a FragmentSelector conforming to RFC 5147, so the offsets are not also emitted as an oa:TextPositionSelector (that would be the second copy); the QUOTE, which has no fragment form, goes as oa:TextQuoteSelector."@en .
+
+em:vertexCount
+    a owl:DatatypeProperty ;
+    rdfs:label "vertex count"@en ;
+    rdfs:domain em:AnnotationRegion ;
+    rdfs:range xsd:nonNegativeInteger ;
+    rdfs:comment "How many vertices the .glb of a 3D reading (point, line, polyline) holds — what the region shows about its geometry without opening the file. NOT the geometry: the coordinates are in the .glb only (the rdfs:seeAlso of the SemanticShape reached with em:hasSemanticShape), never in RDF, as they are never in the em.json. Added v1.6.6. Stored in Python as AnnotationRegionNode.vertex_count."@en .
+
+em:crs
+    a owl:DatatypeProperty ;
+    rdfs:label "reference system"@en ;
+    rdfs:domain crm:E54_Dimension ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The frame a measured dimension was taken in: 'local' for the scene-local frame of the model (glTF, net of the GeoPositionNode shift — the frame the proxies are in), or a CRS code such as 'EPSG:3004'. CIDOC has no property for the frame of an E54 (P91 is the unit, not the space), and a crmgeo SP4/Q-property chain would promise a spatial reference system object this model does not have; hence a literal. Added v1.6.6 for the length of a line / polyline reading (<region>/length). Stored in Python as AnnotationRegionNode.crs."@en .
 
 em:onPage
     a owl:DatatypeProperty ;
@@ -790,5 +805,5 @@ em:hasDefinition
     rdfs:comment "The DEFINITION of a stratigraphic unit — strato di crollo, riempimento, taglio: the DEFINIZIONE box of the US sheet — as a concept of a controlled vocabulary (a SKOS concept, typed crm:E55_Type). It is a TYPE of the unit and nothing more, which is why it narrows crm:P2_has_type rather than widening anything: every em:hasDefinition triple IS a P2_has_type triple, and a CIDOC-only consumer reading the entailment loses nothing. What the subproperty adds is the ability to tell, in SPARQL, the definition from any other type a unit may carry. NOT EMITTED BY DEFAULT: the exporter writes crm:P2_has_type directly (node datamodel StratigraphicNode.properties.definition.rdf.with_concept), because an unreasoned store would otherwise not see the P2 edge at all; the switch is one line in that entry. A definition that carries only a label and no concept URI projects to nothing (rdf.label_only = null): a word is not a concept. Maps to: node_datamodel StratigraphicNode.properties.definition (em.json data.definition), inherited by every stratigraphic subtype."@en .
 
 # ============================================================================
-# End of em.ttl v1.6.5
+# End of em.ttl v1.6.6
 # ============================================================================

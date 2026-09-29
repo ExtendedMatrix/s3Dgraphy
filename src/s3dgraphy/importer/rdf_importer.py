@@ -77,6 +77,9 @@ from ..exporter.rdf_exporter import (
     DEFAULT_BASE_URI,
     EM,
     HDTO,
+    MEASURE_UNIT_IRI,
+    OA,
+    S3D,
     _Datamodel,
 )
 
@@ -1218,6 +1221,20 @@ class RDFImporter:
                 self.warnings.append(
                     f"node '{node_id}': an annotation region with no "
                     f"em:hasSelector has no geometry")
+            if data.get("geometry_kind") == "passage":
+                # The quote: the oa:TextQuoteSelector the exporter hangs off
+                # the region (the offsets came back from char= above).
+                for sel in store.objects(ref, OA.hasSelector):
+                    if (sel, RDF.type, OA.TextQuoteSelector) in store:
+                        exact = self._one_literal(store, sel, OA.exact)
+                        if exact is not None:
+                            data["text"] = exact
+                            break
+            if data.get("geometry_kind") in ("point", "line", "polyline"):
+                vc = self._one_literal(store, ref, EM.vertexCount)
+                if vc is not None:
+                    data["vertex_count"] = int(vc)
+                data.update(self._measure_data(store, ref, node_id))
             page = self._one_literal(store, ref, EM.onPage)
             if page is not None:
                 data["page"] = _as_number(page)
@@ -1471,6 +1488,40 @@ class RDFImporter:
             except ValueError:
                 continue
         return out
+
+    def _measure_data(self, store: ConjunctiveGraph, ref: URIRef,
+                      node_id: str) -> Dict[str, Any]:
+        """length / unit / crs from the region's E54 Dimension typed "length".
+
+        The inverse of `RDFExporter._emit_measure`: a QUDT unit IRI comes back
+        as the short unit it was written from, a minted `s3d:unit_<u>` as
+        `<u>`; any other unit IRI is kept whole rather than guessed at.
+        """
+        unit_of = {str(iri): short for short, iri in MEASURE_UNIT_IRI.items()}
+        for dim in store.objects(ref, CRM.P43_has_dimension):
+            if self._one_literal(store, dim, CRM.P2_has_type) != "length":
+                continue
+            value = self._one_literal(store, dim, CRM.P90_has_value)
+            if value is None:
+                continue
+            try:
+                out: Dict[str, Any] = {"length": float(value)}
+            except ValueError:
+                self.warnings.append(
+                    f"node '{node_id}': measured length {value!r} is not a number")
+                return {}
+            unit = self._one_object_text(store, dim, CRM.P91_has_unit)
+            if unit:
+                if unit in unit_of:
+                    unit = unit_of[unit]
+                elif unit.startswith(str(S3D) + "unit_"):
+                    unit = unit[len(str(S3D) + "unit_"):]
+                out["unit"] = unit
+            crs = self._one_literal(store, dim, EM.crs)
+            if crs:
+                out["crs"] = crs
+            return out
+        return {}
 
     @staticmethod
     def _one_literal(store: ConjunctiveGraph, ref: URIRef,

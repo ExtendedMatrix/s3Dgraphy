@@ -4,6 +4,23 @@ All notable changes to **s3dgraphy** are documented here.
 
 ## [Unreleased]
 
+### Added (2026-10-07 — the place of a reading in RDF: the quote and the measure)
+The two fields 1.6.10 left unprojected now travel, and come back.
+- A passage's **quote**: `oa:hasSelector` → `oa:TextQuoteSelector` with
+  `oa:exact`, at `<region>/quote`. W3C Web Annotation is reused because the
+  quote has no fragment-string form and no other standard term; the offsets
+  stay the RFC 5147 `em:hasSelector "char=s,e"` (not also a
+  TextPositionSelector — that would be a second copy).
+- A line's / polyline's **length**: `crm:P43_has_dimension` →
+  `crm:E54_Dimension` at `<region>/length` (`P2_has_type "length"`,
+  `P90_has_value` xsd:double, `P91_has_unit` → QUDT unit IRI for m/cm/mm/km,
+  else `s3d:unit_<u>`, and `em:crs` for the frame). CIDOC already has the
+  shape; a literal would hide the number from every CRM reader.
+- `em:vertexCount` on the 3D kinds. The glb stays a linked resource: its URL is
+  the SemanticShape's `rdfs:seeAlso`; no coordinate enters RDF.
+- em.ttl 1.6.6 (`em:vertexCount`, `em:crs`, `oa:` prefix); node datamodel
+  1.6.11 (mapping text of AnnotationRegionNode only); 8 mappings re-stamped.
+
 ### Changed (2026-10-06 — the place of a reading, part 3: `data.geometry` migrates)
 An extractor's legacy `data.geometry` (EMStudio from 2026-10-05:
 `{kind:"passage", start, end, text}` or `{kind:"point3d", p, on}`) becomes, on
