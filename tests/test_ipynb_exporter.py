@@ -79,10 +79,15 @@ def test_it_carries_no_copy_of_the_graph(study):
     assert "has_first_epoch" not in nb
 
 
-def test_an_unendorsed_draft_says_so_in_the_text(study):
-    """A notebook gets copied, and a badge does not survive copying."""
+def test_an_unvalidated_draft_is_left_out_or_says_so_in_the_text(study):
+    """What no person validated is not printed (E.D., 29 Sep 2026); forced in,
+    it says so in the text — a notebook gets copied, and a badge does not
+    survive copying."""
+    assert api.narrative_unvalidated(study, "narr-1"), "the fixture has one"
     nb = api.export_narrative_ipynb(study, "narr-1")
-    assert "bozza non convalidata" in nb
+    assert "non validato da una persona" not in nb
+    forced = api.export_narrative_ipynb(study, "narr-1", include_unvalidated=True)
+    assert "⚠︎ non validato da una persona" in forced
 
 
 def test_the_loader_cell_can_be_pointed_at_a_url(study):

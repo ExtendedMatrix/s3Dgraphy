@@ -26,7 +26,8 @@ from __future__ import annotations
 import re
 from typing import Any, Dict, List, Optional, Tuple
 
-from ..nodes.narrative_node import (render_mention_tokens,
+from ..nodes.narrative_node import (UNVALIDATED_MARK, UNVALIDATED_NOTICE,
+                                     is_unvalidated, render_mention_tokens,
                                      substitute_mentions)
 
 #: View types that a printed page CITES rather than shows. A source and a document
@@ -288,6 +289,16 @@ _PREAMBLE = (
     "\\usepackage[hidelinks]{hyperref}",   # also gives \\url{} for the bibliography
 )
 
+#: The mark of a paragraph no person validated is ⚠︎ = U+26A0 + the text
+#: variation selector U+FE0E, the same characters as in every other format.
+#: pdfLaTeX has a glyph for neither, so the complete document declares them — a
+#: boxed "!", drawable with no package, and an empty selector — and only when
+#: such a paragraph is actually printed.
+_UNVALIDATED_PREAMBLE = (
+    "\\DeclareUnicodeCharacter{26A0}{\\fbox{\\textbf{!}}}",
+    "\\DeclareUnicodeCharacter{FE0E}{}",
+)
+
 
 def _bibitem_text(entry: str) -> str:
     """A `\\bibitem` line rendered from the BibTeX entry this exporter built.
@@ -318,8 +329,16 @@ def _bibitem_text(entry: str) -> str:
 def export_narrative_latex(graph: Any, narrative_id: str, *,
                            fragment: bool = False,
                            figures: Optional[Dict[str, Any]] = None,
-                           figure_suffix: str = ".pdf") -> Dict[str, str]:
-    """Project one NarrativeNode to `{"tex": ..., "bib": ...}`.
+                           figure_suffix: str = ".pdf",
+                           include_unvalidated: bool = False) -> Dict[str, Any]:
+    """Project one NarrativeNode to `{"tex": ..., "bib": ..., "excluded": [...]}`.
+
+    **What no person validated is not printed** (E.D., 29 Sep 2026): a prose
+    block with `ai_generated` and no `validated_by` is left out, and listed in
+    `excluded` (`narrative_node.unvalidated_for_export`). With
+    `include_unvalidated=True` it is printed with `UNVALIDATED_NOTICE` at its
+    start, and `excluded` is empty. `excluded` is an ADDED key: a caller reading
+    `tex` and `bib` is unaffected.
 
     **`tex` is a COMPLETE, compilable document by default** — preamble,
     `\\begin{document}`, body, `\\end{document}`.
@@ -384,8 +403,13 @@ def export_narrative_latex(graph: Any, narrative_id: str, *,
         if figures:
             lines.append(f"% …and it expects the figures in ./{FIGURE_DIR}/ "
                          f"beside the file that \\input{{}}s this one")
+        if include_unvalidated and node.unvalidated_for_export():
+            lines.append("%   and, for the ⚠︎ mark of unvalidated paragraphs, "
+                         "\\DeclareUnicodeCharacter{26A0} and {FE0E}")
     else:
         lines.extend(_PREAMBLE)
+        if include_unvalidated and node.unvalidated_for_export():
+            lines.extend(_UNVALIDATED_PREAMBLE)
         lines.append(f"\\title{{{latex_escape(title)}}}")
         lines.append("\\date{}")
         lines.append("\\begin{document}")
@@ -404,7 +428,7 @@ def export_narrative_latex(graph: Any, narrative_id: str, *,
     responsible: List[str] = []
     assisting: List[str] = []
     seen_people: set = set()
-    for author_id in node.author_refs():
+    for author_id in node.author_refs(include_unvalidated=include_unvalidated):
         author_node = lookup.get(author_id)
         label = _author_label(author_node) if author_node else author_id
         is_ai = getattr(author_node, "node_type", "") == "author_ai"
@@ -431,21 +455,29 @@ def export_narrative_latex(graph: Any, narrative_id: str, *,
                      + latex_escape(", ".join(assisting))
                      + ". Il testo generato è stato rivisto e avallato da una "
                        "persona, tranne dove indicato.}")
-    pending = node.pending_validation()
+    excluded = [] if include_unvalidated else node.unvalidated_for_export()
+    pending = [b for _c, b in node.blocks_iter()
+               if include_unvalidated and is_unvalidated(b) and (b.text or "").strip()]
+    if excluded:
+        lines.append("")
+        lines.append(f"% {len(excluded)} AI block(s) NOT validated by a person "
+                     f"were left out of this export")
     if pending:
         lines.append("")
-        lines.append(f"% {len(pending)} AI block(s) are NOT endorsed by a person")
+        lines.append(f"% {len(pending)} AI block(s) are NOT validated by a person")
         lines.append("\\noindent\\textbf{Nota.} "
                      + f"{len(pending)} "
                      + ("paragrafo di questo testo è" if len(pending) == 1
                         else "paragrafi di questo testo sono")
-                     + " una bozza generata automaticamente e non ancora "
-                       "avallata; sono segnalati nel testo.")
+                     + " una bozza generata automaticamente e non validata da "
+                       "una persona, inclusa su richiesta; "
+                     + ("è segnalato" if len(pending) == 1 else "sono segnalati")
+                     + f" nel testo con {UNVALIDATED_MARK}.")
 
     # The prompts behind generated text are DocumentNodes, and a prompt is a
     # source: it goes in the bibliography like any other, so "how did the machine
     # come to write this" is answerable from the printed page.
-    for prompt_id in node.prompt_refs():
+    for prompt_id in node.prompt_refs(include_unvalidated=include_unvalidated):
         prompt = lookup.get(prompt_id)
         if prompt is not None:
             cite(prompt)
@@ -472,6 +504,9 @@ def export_narrative_latex(graph: Any, narrative_id: str, *,
             block_type = getattr(block, "block_type", "")
             if block_type == "prose":
                 text = getattr(block, "text", "") or ""
+                unvalidated = is_unvalidated(block)
+                if unvalidated and not include_unvalidated:
+                    continue            # listed in `excluded`
                 if not text.strip():
                     continue
                 # `[[id]]` mentions: resolved before the markdown pass, written
@@ -479,12 +514,13 @@ def export_narrative_latex(graph: Any, narrative_id: str, *,
                 text, mentions = substitute_mentions(text, name_of)
                 body = render_mention_tokens(_markdown_to_latex(text), mentions,
                                              _latex_mention)
-                if getattr(block, "ai_generated", False) \
-                        and not getattr(block, "validated_by", None):
-                    # Said in the text, not only in a comment: an unendorsed
-                    # machine draft that looks identical to endorsed prose on
+                if unvalidated:
+                    # Said in the text, not only in a comment: an unvalidated
+                    # machine draft that looks identical to validated prose on
                     # paper would be the one thing this whole design refuses.
-                    body = ("\\textit{[bozza generata, non avallata]} " + body)
+                    # The mark is the character itself, as in every other
+                    # format; the preamble declares it for pdfLaTeX.
+                    body = ("\\textit{" + UNVALIDATED_NOTICE + "} " + body)
                 lines.append("")
                 lines.append(body)
                 continue
@@ -540,4 +576,4 @@ def export_narrative_latex(graph: Any, narrative_id: str, *,
     bib = bib_header + "\n".join(bib_entries[k] for k in cited_order)
     if cited_order:
         bib += "\n"
-    return {"tex": tex, "bib": bib}
+    return {"tex": tex, "bib": bib, "excluded": excluded}

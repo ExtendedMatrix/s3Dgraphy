@@ -247,13 +247,24 @@ def test_the_byline_keeps_people_apart_from_models():
     assert not any("Claude" in name for name in baked.responsible)
 
 
-def test_unendorsed_prose_is_marked_in_the_bake():
+def test_unvalidated_prose_is_left_out_of_the_bake_and_listed():
     baked = api.bake_narrative(_fixture_graph(), "NARR.portamarina",
                                base_dir=FIXTURE_DIR)
     prose = [b for chapter in baked.chapters for b in chapter.blocks
              if b.kind == "prose"]
+    assert not any(b.unendorsed for b in prose)
+    assert baked.pending_validation == 0
+    assert [(e["chapter"], e["block"]) for e in baked.excluded] == [(3, 3)]
+
+
+def test_unvalidated_prose_forced_in_is_marked_in_the_bake():
+    baked = api.bake_narrative(_fixture_graph(), "NARR.portamarina",
+                               base_dir=FIXTURE_DIR, include_unvalidated=True)
+    prose = [b for chapter in baked.chapters for b in chapter.blocks
+             if b.kind == "prose"]
     assert any(b.unendorsed for b in prose)
     assert baked.pending_validation == sum(1 for b in prose if b.unendorsed)
+    assert baked.excluded == []
 
 
 def test_the_exporter_is_the_only_source_of_the_unendorsed_marker():
@@ -281,8 +292,9 @@ def test_the_exporter_is_the_only_source_of_the_unendorsed_marker():
             "a block's TEXT must not carry the unendorsed marker — the exporter "
             "adds it from ai_generated/validated_by")
 
-    tex = api.export_narrative_latex(graph, "NARR.portamarina")["tex"]
-    assert tex.count("bozza generata, non avallata") == 1
+    tex = api.export_narrative_latex(graph, "NARR.portamarina",
+                                     include_unvalidated=True)["tex"]
+    assert tex.count("⚠︎ non validato da una persona") == 1
 
 
 def test_baking_an_unknown_narrative_raises():
@@ -359,17 +371,23 @@ def test_the_docx_embeds_the_image(tmp_path):
 
 
 @docx_missing
-def test_the_docx_says_in_words_that_a_draft_is_unendorsed():
+def test_the_docx_says_in_words_that_a_draft_is_unvalidated():
     """On paper there is no badge. If this text is not there, an unreviewed
-    machine draft is typographically identical to endorsed prose."""
+    machine draft is typographically identical to validated prose — so it is
+    left out by default, and marked when forced in."""
     import docx
 
     blob = api.export_narrative_docx(_fixture_graph(), "NARR.portamarina",
                                      base_dir=FIXTURE_DIR)
     body = "\n".join(p.text for p in docx.Document(io.BytesIO(blob)).paragraphs)
-    assert "bozza generata, non avallata" in body
+    assert "non validat" not in body
+    blob = api.export_narrative_docx(_fixture_graph(), "NARR.portamarina",
+                                     base_dir=FIXTURE_DIR,
+                                     include_unvalidated=True)
+    body = "\n".join(p.text for p in docx.Document(io.BytesIO(blob)).paragraphs)
+    assert "⚠︎ non validato da una persona" in body
     # And the count is stated up front, so the reader knows before reading.
-    assert "non ancora avallata" in body
+    assert "non validata da una persona" in body
 
 
 @docx_missing

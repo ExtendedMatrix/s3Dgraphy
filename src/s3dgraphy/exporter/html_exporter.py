@@ -33,7 +33,8 @@ import html
 from typing import Any, Dict, List, Optional
 
 from ..narrative.bake import BakedBlock, BakedNarrative
-from ..nodes.narrative_node import render_mention_tokens
+from ..nodes.narrative_node import (UNVALIDATED_MARK, UNVALIDATED_NOTICE,
+                                     render_mention_tokens)
 
 #: Enough CSS to read by, and no more. It travels INSIDE the file: a stylesheet
 #: link would break the promise the format is chosen for.
@@ -68,10 +69,9 @@ h2 { font-size: 1.3rem; margin: 2.2rem 0 .6rem;
 .em-embed img { max-width: 100%; height: auto; border-radius: 4px;
                 display: block; margin: .5rem 0 .25rem; }
 .em-unendorsed { border-left-color: #d08b00; }
-.em-unendorsed::before {
-  content: 'bozza non convalidata'; display: block;
-  font-size: .7rem; text-transform: uppercase; letter-spacing: .06em;
-  color: #d08b00; margin-bottom: .3rem;
+.em-unvalidated {
+  display: block; font-size: .78rem; font-weight: 600;
+  color: #b06f00; margin-bottom: .3rem;
 }
 .em-unresolved { font-weight: 600; color: #b3261e; }
 .em-sources { margin-top: 3rem; }
@@ -146,7 +146,11 @@ def _block(block: BakedBlock) -> str:
     if kind == "prose":
         body = _prose(block.text, getattr(block, "mentions", None))
         if getattr(block, "unendorsed", False):
-            return f'<div class="em-embed em-unendorsed">{body}</div>'
+            # The notice is TEXT, not a CSS `::before`: a pseudo-element is not
+            # copied with the paragraph, and a copied page must still say it.
+            return (f'<div class="em-embed em-unendorsed">'
+                    f'<span class="em-unvalidated">'
+                    f'{_esc(UNVALIDATED_NOTICE)}</span>{body}</div>')
         return body
 
     if kind == "image":
@@ -221,7 +225,13 @@ def render_html(baked: BakedNarrative, *, generated_at: str = "") -> str:
         # responsible, the other assisted.
         byline.append(f"<b>con l'assistenza di</b> {assisting}")
     if baked.pending_validation:
-        byline.append(f"{baked.pending_validation} blocchi in attesa di convalida")
+        byline.append(f"{baked.pending_validation} "
+                      + ("blocco" if baked.pending_validation == 1 else "blocchi")
+                      + " " + ("non validato" if baked.pending_validation == 1
+                               else "non validati")
+                      + f" da una persona ({_esc(UNVALIDATED_MARK)}), "
+                      + ("incluso" if baked.pending_validation == 1 else "inclusi")
+                      + " su richiesta")
 
     sources = ""
     if baked.citations:

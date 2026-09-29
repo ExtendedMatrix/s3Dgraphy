@@ -23,6 +23,7 @@ import io
 from typing import Any, List
 
 from ..narrative.bake import BakedNarrative
+from ..nodes.narrative_node import UNVALIDATED_NOTICE
 
 
 def _require_docx():
@@ -127,8 +128,10 @@ def render_docx(baked: BakedNarrative) -> bytes:
             f"Nota. {count} "
             + ("paragrafo di questo testo è" if count == 1
                else "paragrafi di questo testo sono")
-            + " una bozza generata automaticamente e non ancora avallata; "
-              "sono segnalati nel testo.")
+            + " una bozza generata automaticamente e non validata da una "
+              "persona, inclusa su richiesta; " + ("è segnalato" if count == 1
+                                                  else "sono segnalati")
+            + f" nel testo con {UNVALIDATED_NOTICE.split()[0]}.")
         run.bold = True
 
     for chapter in baked.chapters:
@@ -140,7 +143,7 @@ def render_docx(baked: BakedNarrative) -> bytes:
                     # In the text, not in a comment or a style: a Word file gets
                     # copy-pasted, printed and re-saved, and every one of those
                     # loses anything that is not a character.
-                    flag = paragraph.add_run("[bozza generata, non avallata] ")
+                    flag = paragraph.add_run(UNVALIDATED_NOTICE + " ")
                     flag.italic = True
                     flag.bold = True
                 _add_prose_runs(paragraph, block)

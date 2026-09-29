@@ -67,7 +67,8 @@ from ..exporter.latex_exporter import CITED_VIEW_TYPES  # noqa: E402
 #: tell "a type I know and handle" from "a type that arrived after this code was
 #: written" — the second still bakes, as text, with a note.
 from ..nodes.narrative_node import NARRATIVE_VIEW_TYPES  # noqa: E402,F401
-from ..nodes.narrative_node import substitute_mentions, unresolved_label  # noqa: E402
+from ..nodes.narrative_node import (is_unvalidated,  # noqa: E402
+                                     substitute_mentions, unresolved_label)
 
 #: View types whose static form is a rendered picture this build cannot make:
 #: a 3D scene needs a renderer, a matrix needs the layout engine. They bake to a
@@ -119,8 +120,11 @@ class BakedBlock:
     #: brackets never reach a reader. :attr:`plain_text` is the same text with the
     #: names written plainly, for anything that just wants to read it.
     text: str = ""
-    #: Set for prose that a model drafted and no person has endorsed. A renderer
-    #: MUST show this: on a page there is no badge to fall back on.
+    #: Set for prose that a model drafted and no person has validated. Such a
+    #: block is in a bake ONLY when the caller forced it in
+    #: (``include_unvalidated=True``), and then a renderer MUST put
+    #: ``UNVALIDATED_NOTICE`` at its start: on a page there is no badge to fall
+    #: back on.
     unendorsed: bool = False
     #: The node this block resolved from, for traceability back to the graph.
     ref: str = ""
@@ -164,9 +168,14 @@ class BakedNarrative:
     #: Citations in first-cited order, keyed by the same stable key L1 uses, so a
     #: DocX bibliography and a .bib cannot disagree.
     citations: List[Dict[str, Any]] = field(default_factory=list)
-    #: How many prose blocks are machine drafts nobody has endorsed. A renderer
-    #: puts this in a note; zero is a meaningful answer too.
+    #: How many PRINTED prose blocks are machine drafts nobody has validated —
+    #: zero unless the caller forced them in. A renderer puts this in a note.
     pending_validation: int = 0
+    #: What the bake LEFT OUT because no person validated it (E.D., 29 Sep
+    #: 2026): one row per block, ``{chapter, chapter_title, block, authored_by}``
+    #: (``narrative_node.unvalidated_for_export``). Empty when forced in — the
+    #: blocks are then on the page, marked.
+    excluded: List[Dict[str, Any]] = field(default_factory=list)
     #: Every embed that did not resolve, collected for the caller. The blocks
     #: carry the same information inline; this is the list you check before
     #: publishing.
@@ -417,8 +426,17 @@ def figure_key(view_type: Any, ref: Any) -> str:
 def bake_narrative(graph: Any, narrative_id: str, *,
                    base_dir: Optional[str] = None,
                    figures: Optional[Dict[str, bytes]] = None,
-                   figure_suffix: str = ".png") -> BakedNarrative:
+                   figure_suffix: str = ".png",
+                   include_unvalidated: bool = False) -> BakedNarrative:
     """Resolve one NarrativeNode into a :class:`BakedNarrative`.
+
+    **What no person validated is not printed.** A prose block with
+    ``ai_generated`` and no ``validated_by`` is left out, and listed in
+    ``baked.excluded`` so an interface can say so before exporting. With
+    ``include_unvalidated=True`` it goes in, flagged ``unendorsed``, and every
+    renderer writes ``UNVALIDATED_NOTICE`` at its start. The prompts and the
+    model credits of a left-out block are left out with it: they are sources and
+    assistance of a page that no longer carries that paragraph.
 
     ``base_dir`` is what relative image locators are resolved against — pass the
     folder of the em.json. Without it, only absolute paths resolve.
@@ -454,7 +472,6 @@ def bake_narrative(graph: Any, narrative_id: str, *,
         narrative_id=narrative_id,
         title=getattr(node, "name", "") or narrative_id,
         description=getattr(node, "description", "") or "",
-        pending_validation=len(node.pending_validation()),
     )
 
     # ── byline: people are responsible, models assist (N8) ───────────────────
@@ -463,7 +480,7 @@ def bake_narrative(graph: Any, narrative_id: str, *,
     # accountability to something that cannot be asked a question.
     from ..exporter.latex_exporter import _author_label, _person_key
     seen: set = set()
-    for author_id in node.author_refs():
+    for author_id in node.author_refs(include_unvalidated=include_unvalidated):
         author = lookup.get(author_id)
         label = _author_label(author) if author is not None else author_id
         key = _person_key(label)
@@ -491,10 +508,13 @@ def bake_narrative(graph: Any, narrative_id: str, *,
     # The prompt behind generated text is a source like any other: it belongs in
     # the citations so "how did the machine come to write this" is answerable
     # from the baked text alone.
-    for prompt_id in node.prompt_refs():
+    for prompt_id in node.prompt_refs(include_unvalidated=include_unvalidated):
         prompt = lookup.get(prompt_id)
         if prompt is not None:
             add_citation(prompt)
+
+    if not include_unvalidated:
+        baked.excluded = node.unvalidated_for_export()
 
     for chapter in node.chapters:
         baked_chapter = BakedChapter(
@@ -504,8 +524,13 @@ def bake_narrative(graph: Any, narrative_id: str, *,
         for block in getattr(chapter, "blocks", []) or []:
             if getattr(block, "block_type", "") == "prose":
                 text = getattr(block, "text", "") or ""
+                unvalidated = is_unvalidated(block)
+                if unvalidated and not include_unvalidated:
+                    continue            # listed in baked.excluded above
                 if not text.strip():
                     continue
+                if unvalidated:
+                    baked.pending_validation += 1
                 # A MENTION is resolved like an embed: to the node's name, and a
                 # mention that points at nothing goes on the same `unresolved`
                 # list an embed that points at nothing goes on.
@@ -518,8 +543,7 @@ def bake_narrative(graph: Any, narrative_id: str, *,
                     kind="prose",
                     text=text,
                     mentions=mentions,
-                    unendorsed=bool(getattr(block, "ai_generated", False))
-                    and not getattr(block, "validated_by", None),
+                    unendorsed=unvalidated,
                 ))
                 continue
 

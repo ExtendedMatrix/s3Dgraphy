@@ -253,11 +253,18 @@ def test_one_person_spelled_two_ways_appears_once():
     assert byline.lower().count("demetrescu") == 1, byline
 
 
-def test_an_unendorsed_draft_says_so_in_the_text():
-    """On paper there is no badge. The fixture has exactly one pending block."""
-    tex = api.export_narrative_latex(_fixture_graph(), "NARR.portamarina")["tex"]
-    assert "bozza generata, non avallata" in tex
-    assert tex.count("\\textit{[bozza generata, non avallata]}") == 1
+def test_an_unvalidated_draft_is_left_out_or_says_so_in_the_text():
+    """What no person validated is not printed (E.D., 29 Sep 2026). The fixture
+    has exactly one pending block: left out by default, and listed; forced in,
+    marked in the text — on paper there is no badge."""
+    parts = api.export_narrative_latex(_fixture_graph(), "NARR.portamarina")
+    assert "non validato da una persona" not in parts["tex"]
+    assert [(e["chapter"], e["block"]) for e in parts["excluded"]] == [(3, 3)]
+    forced = api.export_narrative_latex(_fixture_graph(), "NARR.portamarina",
+                                        include_unvalidated=True)
+    tex = forced["tex"]
+    assert tex.count("\\textit{⚠︎ non validato da una persona}") == 1
+    assert forced["excluded"] == []
     # and the reader is warned once, up front, with the count
     assert "1 paragrafo di questo testo è una bozza" in tex
 

@@ -1310,7 +1310,8 @@ def write_ai_draft(graph: Graph, target: str, text: str, *, model: str,
 def export_narrative_latex(graph: Graph, narrative_id: str, *,
                            fragment: bool = False,
                            figures: Optional[Dict[str, Any]] = None,
-                           figure_suffix: str = ".pdf") -> Dict[str, str]:
+                           figure_suffix: str = ".pdf",
+                           include_unvalidated: bool = False) -> Dict[str, Any]:
     """Project a NarrativeNode to LaTeX + BibTeX: ``{"tex": …, "bib": …}``.
 
     An **exporter, not a renderer**: it returns two strings and needs no LaTeX
@@ -1332,7 +1333,8 @@ def export_narrative_latex(graph: Graph, narrative_id: str, *,
     Raises ``KeyError`` if ``narrative_id`` names no narrative in the graph."""
     from .exporter.latex_exporter import export_narrative_latex as _e
     return _e(graph, narrative_id, fragment=fragment, figures=figures,
-              figure_suffix=figure_suffix)
+              figure_suffix=figure_suffix,
+              include_unvalidated=include_unvalidated)
 
 
 def bib_key(node_id: str) -> str:
@@ -1345,7 +1347,8 @@ def bib_key(node_id: str) -> str:
 def bake_narrative(graph: Graph, narrative_id: str, *,
                    base_dir: Optional[str] = None,
                    figures: Optional[Dict[str, bytes]] = None,
-                   figure_suffix: str = ".png") -> Any:
+                   figure_suffix: str = ".png",
+                   include_unvalidated: bool = False) -> Any:
     """Resolve a live narrative into a **static snapshot** (``BakedNarrative``).
 
     A narrative's embeds mean "whatever this node says now" — which is what makes
@@ -1374,14 +1377,16 @@ def bake_narrative(graph: Graph, narrative_id: str, *,
     """
     from .narrative.bake import bake_narrative as _b
     return _b(graph, narrative_id, base_dir=base_dir, figures=figures,
-              figure_suffix=figure_suffix)
+              figure_suffix=figure_suffix,
+              include_unvalidated=include_unvalidated)
 
 
 def export_narrative_html(graph: Graph, narrative_id: str, *,
                           base_dir: Optional[str] = None,
                           generated_at: str = "",
                           figures: Optional[Dict[str, bytes]] = None,
-                          figure_suffix: str = ".png") -> str:
+                          figure_suffix: str = ".png",
+                          include_unvalidated: bool = False) -> str:
     """Render a narrative to **one self-contained HTML file** — the format for
     the reader who is simply handed a link or an attachment.
 
@@ -1405,14 +1410,16 @@ def export_narrative_html(graph: Graph, narrative_id: str, *,
     from .exporter.html_exporter import render_html
     return render_html(bake_narrative(graph, narrative_id, base_dir=base_dir,
                                       figures=figures,
-                                      figure_suffix=figure_suffix),
+                                      figure_suffix=figure_suffix,
+                                      include_unvalidated=include_unvalidated),
                        generated_at=generated_at)
 
 
 def export_narrative_ipynb(graph: Graph, narrative_id: str, *,
                            emjson_url: Optional[str] = None,
                            figures: Optional[Dict[str, bytes]] = None,
-                           figure_suffix: str = ".png") -> str:
+                           figure_suffix: str = ".png",
+                           include_unvalidated: bool = False) -> str:
     """Render a narrative to a **Jupyter notebook** — the fourth output, and the
     only LIVE one.
 
@@ -1439,13 +1446,15 @@ def export_narrative_ipynb(graph: Graph, narrative_id: str, *,
     """
     from .exporter.ipynb_exporter import export_narrative_ipynb as _e
     return _e(graph, narrative_id, emjson_url=emjson_url, figures=figures,
-              figure_suffix=figure_suffix)
+              figure_suffix=figure_suffix,
+              include_unvalidated=include_unvalidated)
 
 
 def export_narrative_docx(graph: Graph, narrative_id: str, *,
                           base_dir: Optional[str] = None,
                           figures: Optional[Dict[str, bytes]] = None,
-                          figure_suffix: str = ".png") -> bytes:
+                          figure_suffix: str = ".png",
+                          include_unvalidated: bool = False) -> bytes:
     """Render a narrative to **.docx** bytes — the format for the normal reader.
 
     Bakes first (:func:`bake_narrative`), then places the result: chapter
@@ -1472,7 +1481,59 @@ def export_narrative_docx(graph: Graph, narrative_id: str, *,
     from .exporter.docx_exporter import render_docx
     return render_docx(bake_narrative(graph, narrative_id, base_dir=base_dir,
                                       figures=figures,
-                                      figure_suffix=figure_suffix))
+                                      figure_suffix=figure_suffix,
+                                      include_unvalidated=include_unvalidated))
+
+
+#: The narrative export formats, as `export_narrative` names them.
+NARRATIVE_EXPORT_FORMATS = ("html", "docx", "latex", "ipynb")
+
+
+def narrative_unvalidated(graph: Graph, narrative_id: str) -> List[Dict[str, Any]]:
+    """What an export of this narrative will LEAVE OUT, asked before exporting.
+
+    **What no person validated is not printed** (E.D., 29 Sep 2026): a prose
+    block a model wrote (`ai_generated`) that no human has validated
+    (`validated_by`) stays out of HTML, DOCX, LaTeX and the notebook unless the
+    export is called with ``include_unvalidated=True`` — and then each such block
+    carries ``⚠︎ non validato da una persona`` at its start, in every format.
+
+    One row per block, ``{chapter, chapter_title, block, authored_by}``,
+    zero-based, in reading order — so an interface can say "these paragraphs
+    will not be printed" and point at them. The four exporters use the same
+    function, so the warning and the export cannot disagree. Raises ``KeyError``
+    for an unknown narrative."""
+    node = graph.find_node_by_id(narrative_id)
+    if node is None or getattr(node, "node_type", None) != "narrative":
+        raise KeyError(f"no narrative node with id {narrative_id!r}")
+    from .nodes.narrative_node import unvalidated_for_export
+    chapters = getattr(node, "chapters", None)
+    if chapters is None:
+        chapters = (getattr(node, "data", None) or {}).get("chapters") or []
+    return unvalidated_for_export(chapters)
+
+
+def export_narrative(graph: Graph, narrative_id: str, fmt: str, *,
+                     include_unvalidated: bool = False,
+                     **options: Any) -> Dict[str, Any]:
+    """Export a narrative in one of ``NARRATIVE_EXPORT_FORMATS`` AND say what was
+    left out: ``{"format", "payload", "excluded"}``.
+
+    ``payload`` is exactly what ``export_narrative_<fmt>`` returns (a str, bytes,
+    or the LaTeX ``{"tex", "bib", ...}`` dict); ``excluded`` is the list
+    :func:`narrative_unvalidated` gives, empty when ``include_unvalidated`` put
+    those blocks on the page (marked). ``options`` go to the format's function
+    (``figures``, ``base_dir``, ``fragment``, ``emjson_url``…)."""
+    functions = {"html": export_narrative_html, "docx": export_narrative_docx,
+                 "latex": export_narrative_latex, "ipynb": export_narrative_ipynb}
+    if fmt not in functions:
+        raise ValueError(f"fmt must be one of {NARRATIVE_EXPORT_FORMATS}, "
+                         f"got {fmt!r}")
+    excluded = [] if include_unvalidated else narrative_unvalidated(graph,
+                                                                    narrative_id)
+    payload = functions[fmt](graph, narrative_id,
+                             include_unvalidated=include_unvalidated, **options)
+    return {"format": fmt, "payload": payload, "excluded": excluded}
 
 
 # ── XLSX mapping ──────────────────────────────────────────────────────────────

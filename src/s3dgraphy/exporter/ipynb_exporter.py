@@ -189,8 +189,12 @@ def _embed_cells(block: Dict[str, Any], index_hint: str,
 def build_notebook(graph: Any, narrative_id: str, *,
                    emjson_url: Optional[str] = None,
                    figures: Optional[Dict[str, bytes]] = None,
-                   figure_suffix: str = ".png") -> Dict[str, Any]:
-    """The notebook, as a dict. Raises ``KeyError`` for an unknown narrative."""
+                   figure_suffix: str = ".png",
+                   include_unvalidated: bool = False) -> Dict[str, Any]:
+    """The notebook, as a dict. Raises ``KeyError`` for an unknown narrative.
+
+    Prose no person validated is left out unless ``include_unvalidated``; what
+    was left out is ``unvalidated_for_export`` of the narrative."""
     from ..narrative.query import narratives
 
     target = next((n for n in narratives(graph)
@@ -199,7 +203,8 @@ def build_notebook(graph: Any, narrative_id: str, *,
         raise KeyError(f"no narrative {narrative_id!r} in this graph")
 
     from ..narrative.bake import _name_resolver
-    from ..nodes.narrative_node import plain_mentions
+    from ..nodes.narrative_node import (UNVALIDATED_NOTICE, is_unvalidated,
+                                        plain_mentions)
     name_of = _name_resolver({getattr(n, "node_id", None): n
                               for n in (getattr(graph, "nodes", []) or [])})
 
@@ -271,10 +276,15 @@ def build_notebook(graph: Any, narrative_id: str, *,
                 # notebook's markdown is the reader's to edit, and the brackets
                 # are authoring syntax, not something to publish.
                 text = plain_mentions(text, name_of)
-                # an unendorsed machine draft says so IN the text: a notebook
-                # gets copied, and a badge does not survive copying
-                if block.get("ai_generated") and not block.get("validated_by"):
-                    text = f"> ⚠︎ *bozza non convalidata*\n>\n> {text}"
+                # an unvalidated machine draft is left out unless forced in,
+                # and then says so IN the text: a notebook gets copied, and a
+                # badge does not survive copying
+                if is_unvalidated(block):
+                    if not include_unvalidated:
+                        continue        # listed by unvalidated_for_export
+                    quoted = "\n".join(f"> {line}" if line else ">"
+                                        for line in text.split("\n"))
+                    text = f"> **{UNVALIDATED_NOTICE}**\n>\n{quoted}"
                 cells.append(_markdown(text + "\n"))
             elif block.get("block_type") == "embed":
                 cells.extend(_embed_cells(block, "index", figures,
@@ -307,9 +317,11 @@ def build_notebook(graph: Any, narrative_id: str, *,
 def export_narrative_ipynb(graph: Any, narrative_id: str, *,
                            emjson_url: Optional[str] = None,
                            figures: Optional[Dict[str, bytes]] = None,
-                           figure_suffix: str = ".png") -> str:
+                           figure_suffix: str = ".png",
+                           include_unvalidated: bool = False) -> str:
     """The notebook as a JSON string, ready to write or serve."""
     return json.dumps(build_notebook(graph, narrative_id,
                                      emjson_url=emjson_url, figures=figures,
-                                     figure_suffix=figure_suffix),
+                                     figure_suffix=figure_suffix,
+                                     include_unvalidated=include_unvalidated),
                       ensure_ascii=False, indent=1)

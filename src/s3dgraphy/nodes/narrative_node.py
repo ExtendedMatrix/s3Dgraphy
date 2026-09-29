@@ -197,6 +197,49 @@ def plain_mentions(text: Optional[str],
     return render_mention_tokens(tokenised, mentions, lambda m: m.label)
 
 
+#: WHAT IS NOT VALIDATED BY A PERSON IS NOT PRINTED (E.D., 29 Sep 2026). A prose
+#: block a machine wrote and nobody has put their name to stays out of every
+#: export (HTML, DOCX, LaTeX, notebook) unless the caller forces it in — and then
+#: it carries this mark, at the start of the block, in the same words in every
+#: format, so a copied page still says it.
+UNVALIDATED_MARK = "\u26a0\ufe0e"
+UNVALIDATED_LABEL = "non validato da una persona"
+UNVALIDATED_NOTICE = f"{UNVALIDATED_MARK} {UNVALIDATED_LABEL}"
+
+
+def is_unvalidated(block: Any) -> bool:
+    """Machine-written prose with no human validation — a :class:`Block` or its
+    serialised dict alike, because the notebook exporter reads the dicts."""
+    get = (block.get if isinstance(block, dict)
+           else lambda key, default=None: getattr(block, key, default))
+    return ((get("block_type", BLOCK_PROSE) or BLOCK_PROSE) == BLOCK_PROSE
+            and bool(get("ai_generated", False))
+            and not get("validated_by", None))
+
+
+def unvalidated_for_export(chapters: Any) -> List[Dict[str, Any]]:
+    """What an export leaves out by default: one row per unvalidated block,
+    ``{chapter, chapter_title, block, authored_by}`` with zero-based indices in
+    reading order — the positions ``query.citations`` uses. It is the list an
+    interface shows BEFORE exporting ("these paragraphs will not be printed").
+
+    ``chapters`` are :class:`Chapter` objects or their dicts.
+    """
+    out: List[Dict[str, Any]] = []
+    for c_index, chapter in enumerate(chapters or []):
+        if isinstance(chapter, dict):
+            title, blocks = chapter.get("title") or "", chapter.get("blocks") or []
+        else:
+            title, blocks = chapter.title or "", chapter.blocks
+        for b_index, block in enumerate(blocks):
+            if is_unvalidated(block):
+                author = (block.get("authored_by") if isinstance(block, dict)
+                          else block.authored_by)
+                out.append({"chapter": c_index, "chapter_title": str(title),
+                            "block": b_index, "authored_by": author})
+    return out
+
+
 class NarrativeError(ValueError):
     """A narrative structure was given something the model does not admit."""
 
@@ -493,19 +536,27 @@ class NarrativeNode(Node):
         """
         return [b for b in self.ai_blocks() if not b.validated_by]
 
-    def prompt_refs(self) -> List[str]:
+    def prompt_refs(self, *, include_unvalidated: bool = True) -> List[str]:
         """The prompts behind the generated content, in order, without repeats.
-        They are DocumentNodes: the prompt is a source, and is cited like one."""
+        They are DocumentNodes: the prompt is a source, and is cited like one.
+
+        ``include_unvalidated=False`` counts only the blocks an export prints:
+        the prompt of a paragraph left out is not a source of the page."""
         seen, out = set(), []
         for _c, block in self.blocks_iter():
+            if not include_unvalidated and is_unvalidated(block):
+                continue
             if block.prompt_ref and block.prompt_ref not in seen:
                 seen.add(block.prompt_ref)
                 out.append(block.prompt_ref)
         return out
 
-    def author_refs(self) -> List[str]:
+    def author_refs(self, *, include_unvalidated: bool = True) -> List[str]:
         """Every author credited anywhere in this narrative — chapters and
-        blocks, plus the endorsers. In order, without repeats."""
+        blocks, plus the endorsers. In order, without repeats.
+
+        ``include_unvalidated=False`` credits only the blocks an export prints:
+        a model whose only paragraph was left out did not assist that page."""
         seen, out = [], []
         def add(value):
             if value and value not in seen:
@@ -514,6 +565,8 @@ class NarrativeNode(Node):
         for chapter in self.chapters:
             add(chapter.authored_by)
             for block in chapter.blocks:
+                if not include_unvalidated and is_unvalidated(block):
+                    continue
                 add(block.authored_by)
                 add(block.validated_by)
         return out
@@ -528,6 +581,11 @@ class NarrativeNode(Node):
         """
         return [ref for ref in self.referenced_ids()
                 if graph.find_node_by_id(ref) is None]
+
+    def unvalidated_for_export(self) -> List[Dict[str, Any]]:
+        """The blocks an export leaves out unless forced — see the module
+        function of the same name."""
+        return unvalidated_for_export(self.chapters)
 
     def endorse_all(self, human_author_id: str) -> int:
         """Vouch for every pending AI block. Returns how many were endorsed.
