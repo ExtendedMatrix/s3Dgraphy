@@ -220,4 +220,13 @@ def test_the_two_phrases_E_D_sent_back():
 
 
 def test_the_version_went_up():
-    assert _translations()["version"] == "1.3"
+    assert _translations()["version"] == "1.4"
+
+
+def test_combines_reads_of_in_english():
+    """MICRO-PARADATA-DATAMODEL (E.D. 29 Sep): «Combiner of D.3.1», not
+    «Combiner combining D.3.1»; has_property «{node} with {x}» kept, it reads
+    for every owner the edge admits."""
+    assert i18n.edge_ui_phrase("combines", "as_source", "en") == "{node} of {x}"
+    assert i18n.edge_ui_phrase("has_property", "as_source", "en") == \
+        "{node} with {x}"

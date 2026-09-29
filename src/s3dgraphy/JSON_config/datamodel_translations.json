@@ -1,6 +1,6 @@
 {
  "schema": "s3Dgraphy_datamodel_translations",
- "version": "1.3",
+ "version": "1.4",
  "languages": [
   "en",
   "it",
@@ -4718,7 +4718,7 @@
   },
   "combines": {
    "ui_phrase_as_source": {
-    "en": "{node} combining {x}",
+    "en": "{node} of {x}",
     "validated_it": false,
     "validated_el": false,
     "validated_he": false,

@@ -4,6 +4,14 @@ All notable changes to **s3dgraphy** are documented here.
 
 ## [Unreleased]
 
+### Changed (2026-10-04 — two English phrases)
+Connections datamodel **1.6.26**: `combines.ui_phrase.as_source` «{node}
+combining {x}» → «{node} of {x}» («Combiner of D.3.1»; the other languages
+already read «di/de/von»). `has_property.ui_phrase.as_source` «{node} with
+{x}» checked for every owner the edge admits (unit, document, RMDoc, epoch,
+graph) and kept. `datamodel_translations.json` **1.4** (the English of that
+phrase).
+
 ### Added (2026-10-04 — AI support and its verification, on nodes)
 Connections datamodel **1.6.25** (E.D. 2026-09-29): an AI proposal a person
 accepts stays signed by the person, with the mark «supporto AI», and stays

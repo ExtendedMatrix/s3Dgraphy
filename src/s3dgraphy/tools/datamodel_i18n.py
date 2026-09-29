@@ -14,7 +14,7 @@ Shape — one section per kind of key, each keyed by a STABLE identity::
 
     {
       "schema": "s3Dgraphy_datamodel_translations",
-      "version": "1.3",
+      "version": "1.4",
       "languages": ["en", "it", ...],
       "entries": {                      # node classes (EMStudio rules.ts reads this)
         "<Class>": {
@@ -203,7 +203,7 @@ def seed(write: bool = True) -> Dict[str, Any]:
         existing = {}
     doc: Dict[str, Any] = {
         "schema": "s3Dgraphy_datamodel_translations",
-        "version": "1.3",
+        "version": "1.4",
         "languages": LANGUAGES,
     }
     for section in SECTIONS:
