@@ -65,6 +65,37 @@ class Graph:
             geo_node = GeoPositionNode(node_id=f"geo_{graph_id}")
             self.add_node(geo_node, overwrite=True)
 
+    # ── the two lists invalidate the indices when they are REPLACED ─────────
+    #
+    # Several modules remove things by assigning a filtered list
+    # (`graph.edges = [e for e in graph.edges if …]`: rights, the importers,
+    # the projectors) and only some of them remembered to mark the indices
+    # stale. The setter says it for all of them. In-place mutation
+    # (`.append`, `.remove`, `edge.edge_type = …`) still goes through the
+    # methods below, which mark it themselves.
+
+    @property
+    def nodes(self):
+        return self._nodes
+
+    @nodes.setter
+    def nodes(self, value):
+        self._nodes = value
+        self._indices_dirty = True
+
+    @property
+    def edges(self):
+        return self._edges
+
+    @edges.setter
+    def edges(self, value):
+        self._edges = value
+        self._indices_dirty = True
+
+    def invalidate_indices(self):
+        """Say the indices are stale, after mutating a list or an edge in place."""
+        self._indices_dirty = True
+
     @property
     def indices(self):
         """Lazy loading degli indici con rebuild automatico se necessario"""
@@ -465,15 +496,22 @@ class Graph:
         return [node for node in self.nodes if node.node_type == node_type]
 
     def remove_node(self, node_id):
-        """Removes a node and all edges connected to it."""
+        """Removes a node and all edges connected to it.
+
+        The indices go stale with it (the list setters mark them): before
+        2026-10-07 they did not, and `find_node_by_id` kept returning the node.
+        """
         self.nodes = [node for node in self.nodes if node.node_id != node_id]
         self.edges = [edge for edge in self.edges if edge.edge_source != node_id and edge.edge_target != node_id]
-        # print(f"Node '{node_id}' and its edges removed successfully.")
 
     def remove_edge(self, edge_id):
-        """Removes an edge from the graph."""
+        """Removes an edge from the graph, and from what the indices answer.
+
+        Before 2026-10-07 the indices were left clean, so the queries by
+        source, target and type still saw the edge; the `edges` setter marks
+        them stale now.
+        """
         self.edges = [edge for edge in self.edges if edge.edge_id != edge_id]
-        # print(f"Edge '{edge_id}' removed successfully.")
 
     def update_node(self, node_id, **kwargs):
         """Updates attributes of an existing node."""
@@ -1680,6 +1718,8 @@ class Graph:
             # Apply refinement if a rule matched
             if new_type:
                 edge.edge_type = new_type
+                # the edge is indexed under its old type
+                self._indices_dirty = True
                 refined_count += 1
                 if verbose:
                     print(f"✅ Refined edge {edge.edge_id}: {original_type} -> {new_type} ({source_type} -> {target_type})")

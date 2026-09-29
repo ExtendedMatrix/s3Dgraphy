@@ -859,6 +859,9 @@ def _promote_legacy_activitynodegroup(graph) -> int:
             except (AttributeError, TypeError):
                 # Edge may freeze edge_type; skip silently.
                 pass
+    # nodes swapped in place and edges retyped: the indices are stale
+    if hasattr(graph, "invalidate_indices"):
+        graph.invalidate_indices()
 
     n_count = len(promotions)
     _warnings.warn(

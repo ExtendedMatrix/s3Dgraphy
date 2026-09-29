@@ -198,8 +198,6 @@ def place_reading(graph: Graph, extractor_id: str, on_id: Optional[str],
                 old = graph.find_node_by_id(edge.edge_target)
                 if getattr(old, "node_type", None) == "annotation_region":
                     graph.remove_edge(edge.edge_id)
-                    # remove_edge does not mark the indices stale; say it here
-                    graph._indices_dirty = True
                     result.replaced.append(edge.edge_target)
                     result.created = True
         _ensure_edge(graph, extractor_id, region_id, _EDGE_EXTRACTED_FROM, sink)

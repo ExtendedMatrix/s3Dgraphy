@@ -726,6 +726,8 @@ class GraphProjector:
             if ut == "__STRAT__" and name in paradata_names:
                 try:
                     graph.nodes.remove(n)
+                    if hasattr(graph, "invalidate_indices"):
+                        graph.invalidate_indices()
                 except (ValueError, AttributeError):
                     pass
 

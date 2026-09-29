@@ -4,6 +4,20 @@ All notable changes to **s3dgraphy** are documented here.
 
 ## [Unreleased]
 
+### Fixed (2026-10-07 — removing an edge removes it from the indices)
+`Graph.remove_edge` and `Graph.remove_node` rebuilt their lists but left the
+indices clean: once built, the queries by source, target and type still saw the
+removed edge, and `find_node_by_id` / `get_nodes_by_type` the removed node.
+- `Graph.nodes` / `Graph.edges` are now properties whose setter marks the
+  indices stale — this covers `remove_*` and every module that removes by
+  assigning a filtered list (rights, importers, projectors).
+- `refine_edge_types` marks them stale when it retypes an edge;
+  `invalidate_indices()` is the public way to say it after an in-place
+  mutation (used by the ingestor's promotion, the projector, the paradata
+  store).
+- `place_reading` no longer sets `_indices_dirty` by hand.
+- The CRDT tombstone works on em.json dicts, not on a `Graph`: no index there.
+
 ### Added (2026-10-07 — the place of a reading in RDF: the quote and the measure)
 The two fields 1.6.10 left unprojected now travel, and come back.
 - A passage's **quote**: `oa:hasSelector` → `oa:TextQuoteSelector` with

@@ -376,6 +376,8 @@ class ParadataStore:
             except Exception:
                 pass
             graph.nodes.append(node)
+            if hasattr(graph, "invalidate_indices"):
+                graph.invalidate_indices()
 
     def _hydrate_paradata_attrs(self, graph) -> None:
         """Re-parse the paradata file and merge the JSON-blob
