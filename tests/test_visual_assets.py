@@ -70,6 +70,39 @@ def test_each_field_names_its_own_half():
         "be .png):\n  " + "\n  ".join(wrong))
 
 
+def test_every_glyph_type_declares_the_svg_its_paths_come_from():
+    """1.6.20 · a glyph type's `2d_file_vect` IS the source of its `2d_glyphs`
+    entry — the file `glyphs_from_svg` built the paths from.
+
+    The two can drift in two ways, both seen: a style that declares no vector
+    although the SVG exists (AUTH_AI, LIC, EMB after 1.6.19 correctly removed a
+    `.png` from the vect field), and one whose declared vector is NOT the glyph
+    (NARR declared the 617 KB illustration, AUTH a Font Awesome silhouette). A
+    consumer that does not read `2d_glyphs` — Blender, the GraphML palette —
+    reads `2d_file_vect`, and must reach the same drawing.
+    """
+    rules = json.loads((CONFIG / "em_visual_rules.json").read_text(encoding="utf-8"))
+    styles = rules["node_styles"]
+    glyphs = rules["2d_glyphs"]
+    # node_type → node_styles key, the table the glyph tool itself uses
+    from s3dgraphy.tools.glyphs_from_svg import STYLE_KEY
+    wrong = []
+    for node_type in rules["2d_render_glyph_types"]["types"]:
+        key = STYLE_KEY.get(node_type)
+        entry = glyphs.get(node_type)
+        if not key or not entry:
+            continue
+        vect = styles.get(key, {}).get("2d_file_vect")
+        if vect != entry["source"]:
+            wrong.append(f"{key}.2d_file_vect = {vect!r}, glyph source {entry['source']!r}")
+    assert not wrong, ("a glyph type must declare the SVG its paths come from:\n  "
+                       + "\n  ".join(wrong))
+    for key in ("AUTH_AI", "LIC", "EMB"):
+        assert styles[key].get("2d_file_vect", "").endswith(".svg"), key
+    assert not any(e.get("draft") for e in glyphs.values() if isinstance(e, dict)), \
+        "no glyph is a draft since 1.6.20"
+
+
 def test_every_node_type_the_canvas_draws_resolves_to_a_FILE():
     """One level past the declaration: what `icons.ts` would actually reach.
 

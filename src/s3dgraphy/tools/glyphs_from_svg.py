@@ -103,11 +103,11 @@ def roles() -> Dict[str, bool]:
 NOT_A_GLYPH: Dict[str, str] = {
     "src/2D/EMNarrative.svg": (
         "an ILLUSTRATION, not a glyph: a stipple trace of 8 paths and ~114k "
-        "coordinates (617 KB) — the reason NARR already says 2d_icon_prefer: "
-        "raster (POL5)"),
-    "src/2D/author.svg": (
-        "a Font Awesome silhouette, white on transparent — not the palette "
-        "pictogram (author.png: grey person in a dark ring, yEd refid 4)"),
+        "coordinates (617 KB). Since 1.6.20 no style declares it (NARR's glyph "
+        "is src/2D/narrative.svg); listed so a future declaration of it cannot "
+        "turn 617 KB of artwork into a glyph by accident"),
+    # `src/2D/author.svg` left this table on 1.6.20: the Font Awesome silhouette
+    # it named is gone, replaced by the approved palette pictogram (E.D., 30 set).
 }
 
 #: node_type → node_styles key, for the glyph types (mirrors icons.ts STYLE_KEY).
