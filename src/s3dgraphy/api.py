@@ -124,10 +124,13 @@ def chronology(graph: Graph) -> Dict[str, Any]:
 # ── validate ────────────────────────────────────────────────────────────────
 def validate(graph: Graph) -> Dict[str, Any]:
     """Read-only structural check of a Graph. Returns
-    ``{ok, stats, warnings, issues}`` — surfaces the graph's own accumulated
+    ``{ok, stats, warnings, issues, info}`` — surfaces the graph's own accumulated
     warnings plus a cheap dangling-edge scan and the paradata-group coherence
     rule (a PropertyNode in X's ParadataNodeGroup must also be X's
     ``has_property``; see :func:`diagnostics.paradata_group_incoherences`).
+    ``info`` holds suggestions that are not problems and do not touch ``ok``:
+    an extractor reading from a unit that has no property of the name it
+    feeds (connections 1.6.24, :func:`diagnostics.extraction_source_hints`).
     Minimal and extensible; adds no side effects."""
     nodes = list(getattr(graph, "nodes", []) or [])
     edges = list(getattr(graph, "edges", []) or [])
@@ -144,12 +147,20 @@ def validate(graph: Graph) -> Dict[str, Any]:
             f"property '{r['property_name']}' ({r['property']}) is in the "
             f"paradata group of '{r['owner_name']}' ({r['owner']}) but "
             f"'{r['owner_name']}' has no has_property to it")
+    from .diagnostics import extraction_source_hints
+    info: List[str] = []
+    for r in extraction_source_hints(graph):
+        info.append(
+            f"extractor '{r['extractor_name']}' reads '{r['property_name']}' "
+            f"from '{r['unit_name']}', which has no '{r['property_name']}' "
+            f"property of its own")
     warnings = list(getattr(graph, "warnings", []) or [])
     return {
         "ok": not issues,
         "stats": {"nodes": len(nodes), "edges": len(edges)},
         "warnings": warnings,
         "issues": issues,
+        "info": info,
     }
 
 

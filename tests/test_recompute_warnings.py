@@ -91,14 +91,27 @@ def test_exactly_one_candidate_is_named():
 
 
 def test_no_possible_relation_is_said_outright():
-    """Extractor → US: the EM chain is US → property → extractor → document,
-    so this pair has no reading in either direction. (This is the Aiano case.)"""
+    """Extractor → property: the EM chain is property → extractor, so this pair
+    has no reading in that direction."""
+    from s3dgraphy.nodes.property_node import PropertyNode
+    g = Graph(graph_id="g")
+    g.add_node(ExtractorNode(node_id="x1", name="SF04.2"))
+    g.add_node(PropertyNode(node_id="p1", name="material"))
+    g.add_edge("e1", "x1", "p1", "generic_connection")
+    msg = _has(state_warnings(g), DEGRADED)[0]
+    assert "outside the EM language" in msg
+
+
+def test_the_aiano_case_now_has_one_reading():
+    """Extractor → unit (the Aiano case, SF04.2 → SF04) was outside the EM
+    language until connections 1.6.24: an extractor may now read from a unit,
+    so the degraded edge has exactly one reading, extracted_from."""
     g = Graph(graph_id="g")
     g.add_node(ExtractorNode(node_id="x1", name="SF04.2"))
     g.add_node(StratigraphicUnit(node_id="us1", name="SF04"))
     g.add_edge("e1", "x1", "us1", "generic_connection")
     msg = _has(state_warnings(g), DEGRADED)[0]
-    assert "outside the EM language" in msg
+    assert "allows exactly 'extracted_from'" in msg
 
 
 def test_edges_hanging_off_an_untyped_node_are_not_repeated():

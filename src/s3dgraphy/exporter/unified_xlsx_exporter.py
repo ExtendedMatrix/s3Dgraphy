@@ -504,8 +504,9 @@ class UnifiedXLSXExporter:
 
         row[ext_col] = extractor_text or ""
         if document_node is not None:
-            row[doc_col] = self._doc_id_by_uuid.get(
-                document_node.node_id, document_node.name or "")
+            row[doc_col] = (self._doc_id_by_uuid.get(document_node.node_id)
+                            or self._unit_id_by_uuid.get(document_node.node_id)
+                            or document_node.name or "")
         if author_node is not None:
             row[auth_col] = self._auth_id_by_uuid.get(
                 author_node.node_id, author_node.name or "")
@@ -525,16 +526,21 @@ class UnifiedXLSXExporter:
         return None
 
     def _extractor_document(self, extractor_node):
-        """First DocumentNode reachable from ``extractor_node`` via
-        ``extracted_from``, or None.
+        """The source an extractor reads from via ``extracted_from``: the first
+        DocumentNode, else (connections 1.6.24) the first stratigraphic unit.
+        None when it has neither. A unit source is written in DOCUMENT_i as its
+        Units.ID, which the importer resolves back to the unit.
         """
+        unit = None
         for edge in self.graph.edges:
             if (edge.edge_source == extractor_node.node_id
                     and edge.edge_type == "extracted_from"):
                 tgt = self.graph.find_node_by_id(edge.edge_target)
                 if isinstance(tgt, DocumentNode):
                     return tgt
-        return None
+                if unit is None and isinstance(tgt, StratigraphicNode):
+                    unit = tgt
+        return unit
 
 
 # ---------------------------------------------------------------------------

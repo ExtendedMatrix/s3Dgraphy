@@ -207,7 +207,10 @@ def _generic_graph():
     g.add_node(GroupNode("G1", "unclassified yEd group"))
     g.add_edge("g_one", "US1", "PD1", "generic_connection")   # 1 candidate
     g.add_edge("g_many", "US1", "US2", "generic_connection")  # many candidates
-    g.add_edge("g_none", "EX1", "US2", "generic_connection")  # no candidate at all
+    # no candidate at all: the chain runs property → extractor, never back.
+    # (It was EX1 → US2 until connections 1.6.24 let an extractor read from a
+    # unit: that pair now has exactly one reading, extracted_from.)
+    g.add_edge("g_none", "EX1", "P1", "generic_connection")
     g.add_edge("g_box", "US1", "G1", "generic_connection")    # untyped endpoint
     return g
 
@@ -224,7 +227,7 @@ def test_diagnose_generic_classifies_recoverable_ambiguous_and_hopeless():
     assert diag["dangling"] == 0
     rows = {(c["source_type"], c["target_type"]): c for c in diag["cases"]}
     assert rows[("US", "ParadataNodeGroup")]["candidates"] == ["has_paradata_nodegroup"]
-    assert rows[("extractor", "US")]["candidates"] == []
+    assert rows[("extractor", "property")]["candidates"] == []
     assert ("US", "Group") not in rows
 
 

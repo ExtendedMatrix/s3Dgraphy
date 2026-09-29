@@ -419,3 +419,84 @@ def paradata_group_incoherences(graph) -> List[dict]:
                 "property_name": prop.name,
             })
     return out
+
+
+# ---------------------------------------------------------------------------
+# An extractor that reads from a unit (connections 1.6.24)
+# ---------------------------------------------------------------------------
+
+def _property_key(prop) -> str:
+    ptype = getattr(prop, "property_type", None)
+    if not ptype or ptype == "string":
+        ptype = getattr(prop, "name", None) or ""
+    return str(ptype)
+
+
+def extraction_source_hints(graph) -> List[dict]:
+    """Extractors that read from a unit which does not have the property fed.
+
+    ``extracted_from`` takes a StratigraphicNode since connections 1.6.24: an
+    extractor may read FROM A UNIT that itself has the property (E.D.
+    2026-09-29). When the unit read from has no property of the same name
+    (``property_type``, else ``name``) as a property the extractor feeds, the
+    reading may still be right — the unit is simply not described yet — so
+    this is a SUGGESTION and never an issue: ``api.validate`` lists it under
+    ``info``.
+
+    A property is fed by an extractor directly (``P —has_data_provenance→ E``)
+    or through a combiner (``P —has_data_provenance→ C —combines→ E``).
+    One record per (extractor, unit, property):
+    ``{extractor, extractor_name, unit, unit_name, property, property_name}``.
+    Read-only.
+    """
+    from .nodes.stratigraphic_node import StratigraphicNode
+    from .nodes.property_node import PropertyNode
+
+    by_id = {n.node_id: n for n in graph.nodes}
+    out_edges: dict = {}
+    for e in graph.edges:
+        out_edges.setdefault((e.edge_source, e.edge_type), []).append(e.edge_target)
+    fed_by: dict = {}          # extractor id → [property]
+    for e in graph.edges:
+        if e.edge_type != "has_data_provenance":
+            continue
+        prop = by_id.get(e.edge_source)
+        if not isinstance(prop, PropertyNode):
+            continue
+        head = by_id.get(e.edge_target)
+        if head is None:
+            continue
+        if getattr(head, "node_type", None) == "combiner":
+            heads = out_edges.get((head.node_id, "combines"), [])
+        else:
+            heads = [head.node_id]
+        for ext_id in heads:
+            fed_by.setdefault(ext_id, []).append(prop)
+
+    def unit_keys(unit_id):
+        return {_property_key(by_id[t])
+                for t in out_edges.get((unit_id, "has_property"), [])
+                if isinstance(by_id.get(t), PropertyNode)}
+
+    out: List[dict] = []
+    for e in graph.edges:
+        if e.edge_type != "extracted_from":
+            continue
+        unit = by_id.get(e.edge_target)
+        if not isinstance(unit, StratigraphicNode):
+            continue
+        ext = by_id.get(e.edge_source)
+        has = unit_keys(unit.node_id)
+        for prop in fed_by.get(e.edge_source, []):
+            key = _property_key(prop)
+            if key in has:
+                continue
+            out.append({
+                "extractor": e.edge_source,
+                "extractor_name": getattr(ext, "name", e.edge_source),
+                "unit": unit.node_id,
+                "unit_name": getattr(unit, "name", unit.node_id),
+                "property": prop.node_id,
+                "property_name": key,
+            })
+    return out

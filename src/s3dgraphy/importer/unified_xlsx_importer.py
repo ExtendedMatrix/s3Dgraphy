@@ -81,7 +81,8 @@ For every claim row, one or two attribution triples
 ``(EXTRACTOR_i, DOCUMENT_i, AUTHOR_i)`` may be present:
 
 * If ``EXTRACTOR_i`` populated: create an ExtractorNode with that text,
-  link ``ExtractorNode → extracted_from → DocumentNode`` and
+  link ``ExtractorNode → extracted_from → DocumentNode`` (or, when
+  ``DOCUMENT_i`` names a Units.ID, ``→ the unit``: connections 1.6.24) and
   ``PropertyNode → has_data_provenance → ExtractorNode``. If
   ``AUTHOR_i`` is also populated, link
   ``ExtractorNode → has_author → AuthorNode/AuthorAINode`` (subclass
@@ -870,7 +871,11 @@ class UnifiedXLSXImporter:
         doc_node = None
         doc_short = "D.00"
         if triple["document_id"]:
-            doc_node = self._document_by_id.get(triple["document_id"])
+            # DOCUMENT_i names a Documents.ID or (connections 1.6.24) a
+            # Units.ID: an extractor may read from a unit. A document wins
+            # when the two catalogs share an id.
+            doc_node = (self._document_by_id.get(triple["document_id"])
+                        or self._unit_by_id.get(triple["document_id"]))
             if doc_node is None:
                 self.warnings.append(
                     f"Row {triple['line']}: unknown DOCUMENT '{triple['document_id']}'; "

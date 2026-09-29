@@ -4,6 +4,24 @@ All notable changes to **s3dgraphy** are documented here.
 
 ## [Unreleased]
 
+### Changed (2026-10-04 — an extractor may read from a unit)
+Connections datamodel **1.6.24** (E.D. 2026-09-29, extending the proposal of
+2026-09-28 on SF/RSF): `extracted_from.target` += `StratigraphicNode`, the
+whole family by class (US, USV/s, USV/n, SF, RSF, VSF, USD, serSU, USN…). An
+extractor may read from a unit that itself has the property it feeds. See
+`extracted_from.unit_source_note`.
+
+- `api.validate` gains `info`, suggestions that do not touch `ok`: an
+  extractor reading from a unit with no property of the name it feeds
+  (`diagnostics.extraction_source_hints`, direct or through a combiner).
+- xlsx: `DOCUMENT_i` may name a `Units.ID`; the exporter writes a unit source
+  that way and the importer resolves it, naming the extractor
+  `<unit>.<nn>` as it names `<document>.<nn>`.
+- The Aiano case (extractor `SF04.2` → `SF04`) is no longer «outside the EM
+  language»: its degraded edge now has one reading, `extracted_from`. Two tests
+  that pinned the old refusal moved to a pair that still has none
+  (extractor → property).
+
 ### Added (2026-10-04 — a property with more than one owner)
 Connections datamodel **1.6.23** (E.D., revisione della scrivania v7): a
 PropertyNode may have more than one incoming `has_property`. A unit
