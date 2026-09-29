@@ -28,7 +28,7 @@ point.
 1. All five sheets are present with the exact headers given below:
    `Units`, `Epochs`, `Claims`, `Authors`, `Documents`.
 2. Every `Claims` row has exactly 14 columns. The quadruple
-   `(EXTRACTOR_N, DOCUMENT_N, AUTHOR_N, AUTHOR_KIND_N)` always moves
+   `(EXTRACTOR_N, SOURCE_N, AUTHOR_N, AUTHOR_KIND_N)` always moves
    together.
 3. If `EXTRACTOR_2` is populated, `COMBINER_REASONING` is **mandatory**.
 4. Every `VALUE` and every `EXTRACTOR_N` excerpt is taken from a real
@@ -38,8 +38,8 @@ point.
    your inference, clearly marked. Never synthesize a pseudo-excerpt
    or a self-justifying sentence.
 5. Every `AUTHOR_N` references an `ID` present in the `Authors` sheet;
-   every `DOCUMENT_N` references an `ID` present in the `Documents`
-   sheet.
+   every `SOURCE_N` references an `ID` present in the `Documents`
+   sheet (or, when the excerpt reads a unit, in the `Units` sheet).
 6. There is **exactly one row** per triple (`TARGET_ID`, `TARGET2_ID`,
    `PROPERTY_TYPE`).
 
@@ -83,8 +83,10 @@ names listed in each sheet schema **verbatim**:
 
 - Do **NOT** prefix `ID` with the sheet name (wrong: `UNIT_ID`,
   `EPOCH_ID`, `DOC_ID`, `AUTHOR_ID`; right: just `ID`).
-- Do **NOT** replace `DOCUMENT_1` / `DOCUMENT_2` with `DOC_ID_1` /
-  `DOC_ID_2` or similar.
+- Do **NOT** replace `SOURCE_1` / `SOURCE_2` with `DOC_ID_1` /
+  `SOURCE_ID_1` or similar. (`DOCUMENT_1` / `DOCUMENT_2` is the older
+  name of the same column: the importer still reads it, but write
+  `SOURCE_N`.)
 - Do **NOT** replace `AUTHOR_1` / `AUTHOR_2` with `AUTHOR_ID_1` /
   `AUTHOR_ID_2`.
 - Do **NOT** add surplus columns such as `CLAIM_ID`, row numbers,
@@ -277,11 +279,11 @@ One row per asserted fact. **14 fixed columns**:
 | 5 | `UNITS` | Unit of measure for numeric values (`m`, `cm`, `kg`, `AD`, `BC`). Optional. |
 | 6 | `COMBINER_REASONING` | Mandatory iff `EXTRACTOR_2` is populated. Explains how the two sources are combined. |
 | 7 | `EXTRACTOR_1` | Verbatim excerpt + pointer from source 1 (e.g. `"groapă care taie C02" [p. 5]`). Empty if the claim is pure inference. |
-| 8 | `DOCUMENT_1` | `Documents.ID` for source 1. |
+| 8 | `SOURCE_1` | What source 1 is: a `Documents.ID`, or a `Units.ID` when the excerpt reads a unit. The importer tells the two apart by the id. |
 | 9 | `AUTHOR_1` | `Authors.ID` of the agent who made **this claim** (not necessarily the document author). |
 | 10 | `AUTHOR_KIND_1` | `author` or `extractor`. |
 | 11 | `EXTRACTOR_2` | Optional second source. |
-| 12 | `DOCUMENT_2` | Second source document id. |
+| 12 | `SOURCE_2` | Second source id (`Documents.ID` or `Units.ID`). |
 | 13 | `AUTHOR_2` | Second source author id. |
 | 14 | `AUTHOR_KIND_2` | `author` or `extractor` for source 2. |
 
@@ -474,8 +476,8 @@ When two sources support the same claim — say Diaconescu 2013 and
 Demetrescu 2012 agree on the dating of US001 — **do not add separate
 rows**. A single `Claims` row with:
 
-- `EXTRACTOR_1` / `DOCUMENT_1` / `AUTHOR_1` / `AUTHOR_KIND_1` = first source
-- `EXTRACTOR_2` / `DOCUMENT_2` / `AUTHOR_2` / `AUTHOR_KIND_2` = second source
+- `EXTRACTOR_1` / `SOURCE_1` / `AUTHOR_1` / `AUTHOR_KIND_1` = first source
+- `EXTRACTOR_2` / `SOURCE_2` / `AUTHOR_2` / `AUTHOR_KIND_2` = second source
 - `COMBINER_REASONING` = synthesis: agree / partial disagreement /
   contradict; which value was chosen as canonical and why.
 
@@ -625,8 +627,8 @@ for idx, row in enumerate(wb['Claims'].iter_rows(min_row=2, values_only=True), s
             continue
         if auth and auth not in authors:
             issues.append(f'row {idx}: AUTHOR_{i} {auth!r} not in Authors')
-        if doc and doc not in documents:
-            issues.append(f'row {idx}: DOCUMENT_{i} {doc!r} not in Documents')
+        if doc and doc not in documents and doc not in units:
+            issues.append(f'row {idx}: SOURCE_{i} {doc!r} not in Documents or Units')
         if kind and kind not in ('author', 'extractor'):
             issues.append(f'row {idx}: AUTHOR_KIND_{i} {kind!r} must be "author" or "extractor"')
         if auth and kind and authors.get(auth) != kind:
@@ -682,7 +684,7 @@ without a paradata chain:
    - optionally one `definition` row per unit with a short description.
 
 In every row, `AUTHOR_1 = A.01`, `AUTHOR_KIND_1 = author`,
-`EXTRACTOR_1` / `DOCUMENT_1` = `""` (empty). The resulting graph has
+`EXTRACTOR_1` / `SOURCE_1` = `""` (empty). The resulting graph has
 the full stratigraphic structure but no paradata chain; the s3Dgraphy
 importer wires the PropertyNodes with a direct `has_author` edge to
 the curator. You can enrich the paradata later by adding rows with
@@ -726,8 +728,8 @@ source / extractor attributions.
 - [ ] Every row has 14 columns.
 - [ ] Every `TARGET_ID` exists in `Units` or `Epochs`.
 - [ ] Every relational claim has a valid `TARGET2_ID`.
-- [ ] Every `AUTHOR_N` references `Authors.ID`; every `DOCUMENT_N`
-      references `Documents.ID`.
+- [ ] Every `AUTHOR_N` references `Authors.ID`; every `SOURCE_N`
+      references `Documents.ID` (or `Units.ID`).
 - [ ] Every `AUTHOR_KIND_N` is `author` or `extractor` and matches
       the `Authors` sheet.
 - [ ] Claims derived by you carry `AUTHOR_KIND = extractor`; claims

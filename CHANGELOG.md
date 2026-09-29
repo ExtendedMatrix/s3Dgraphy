@@ -4,6 +4,20 @@ All notable changes to **s3dgraphy** are documented here.
 
 ## [Unreleased]
 
+### Changed (2026-10-05 — the `SOURCE_i` column in the xlsx)
+E.D. 2026-09-29: the Claims sheet's `DOCUMENT_1` / `DOCUMENT_2` become the
+generic **`SOURCE_1` / `SOURCE_2`**: the id of a document or of a
+stratigraphic unit, the kind resolved from the id (a document first). The
+extractor is named `<source>.<nn>` either way. `DOCUMENT_i` stays valid for
+the sheets already written: the importer (and `api.write_em_data`) reads it
+as `SOURCE_i` without the drift warning; a sheet carrying both keeps
+`SOURCE_i` and fills its blanks from `DOCUMENT_i`, a disagreement is a
+warning. The exporter, `UnifiedXLSXImporter._COLUMNS`, the StratiMiner
+prompt, `em_data_template.xlsx` and the importer docs write `SOURCE_i`. An
+unresolved id is a warning (`unknown SOURCE …`), as an unknown document was.
+An annotation region is a legitimate source in the graph but has no sheet in
+the workbook, so its id does not resolve from a workbook alone.
+
 ### Changed (2026-10-05 — the RDF round trip stays complete)
 E.D. 2026-09-29: the round trip is a technical transformation, not a
 publication. `RDFExporter(mode="round_trip")` (the default, and

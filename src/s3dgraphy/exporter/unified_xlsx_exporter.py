@@ -143,8 +143,8 @@ class UnifiedXLSXExporter:
             ("Epochs",    ["ID", "NAME", "START", "END", "COLOR"]),
             ("Claims",    ["TARGET_ID", "TARGET2_ID", "PROPERTY_TYPE",
                            "VALUE", "UNITS", "COMBINER_REASONING",
-                           "EXTRACTOR_1", "DOCUMENT_1", "AUTHOR_1", "AUTHOR_KIND_1",
-                           "EXTRACTOR_2", "DOCUMENT_2", "AUTHOR_2", "AUTHOR_KIND_2"]),
+                           "EXTRACTOR_1", "SOURCE_1", "AUTHOR_1", "AUTHOR_KIND_1",
+                           "EXTRACTOR_2", "SOURCE_2", "AUTHOR_2", "AUTHOR_KIND_2"]),
             ("Authors",   ["ID", "KIND", "DISPLAY_NAME", "ORCID", "AFFILIATION"]),
             ("Documents", ["ID", "FILENAME", "TITLE", "YEAR", "AUTHOR_IDS"]),
         ]
@@ -405,8 +405,8 @@ class UnifiedXLSXExporter:
              value="", units=""):
         return [target_id, target2_id, property_type, value, units,
                 "",   # COMBINER_REASONING
-                "", "", "", "",   # EXTRACTOR_1/DOCUMENT_1/AUTHOR_1/AUTHOR_KIND_1
-                "", "", "", ""]   # EXTRACTOR_2/DOCUMENT_2/AUTHOR_2/AUTHOR_KIND_2
+                "", "", "", "",   # EXTRACTOR_1/SOURCE_1/AUTHOR_1/AUTHOR_KIND_1
+                "", "", "", ""]   # EXTRACTOR_2/SOURCE_2/AUTHOR_2/AUTHOR_KIND_2
 
     # Column indices inside a Claims row (0-based) — kept in sync with
     # the header list in write().
@@ -457,7 +457,7 @@ class UnifiedXLSXExporter:
 
         if not prov_targets:
             # No extractor chain; if the PN has a direct author, emit
-            # a triple with empty EXTRACTOR / DOCUMENT.
+            # a triple with empty EXTRACTOR / SOURCE.
             if direct_author is not None:
                 self._write_triple(row, 0,
                                    extractor_text="",
@@ -496,7 +496,7 @@ class UnifiedXLSXExporter:
 
     def _write_triple(self, row, idx, *,
                       extractor_text, document_node, author_node) -> None:
-        """Write one attribution quadruple (EXTRACTOR_i / DOCUMENT_i /
+        """Write one attribution quadruple (EXTRACTOR_i / SOURCE_i /
         AUTHOR_i / AUTHOR_KIND_i) into ``row``. ``idx`` is 0 for the
         first triple, 1 for the second.
         """
@@ -535,8 +535,9 @@ class UnifiedXLSXExporter:
     def _extractor_document(self, extractor_node):
         """The source an extractor reads from via ``extracted_from``: the first
         DocumentNode, else (connections 1.6.24) the first stratigraphic unit.
-        None when it has neither. A unit source is written in DOCUMENT_i as its
-        Units.ID, which the importer resolves back to the unit.
+        None when it has neither. The source is written in SOURCE_i as its
+        Documents.ID or Units.ID, and the importer resolves the kind back from
+        the id.
         """
         unit = None
         for edge in self.graph.edges:

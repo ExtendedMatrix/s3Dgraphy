@@ -91,7 +91,7 @@ The heart of the workbook: **one row per asserted fact**. Each row
 declares (a) a *claim target* (a unit, possibly with a secondary target
 for relational claims), (b) the *property/relation type*, (c) the
 *value*, and (d) up to **two attribution triples**
-(``EXTRACTOR_i`` / ``DOCUMENT_i`` / ``AUTHOR_i`` / ``AUTHOR_KIND_i``).
+(``EXTRACTOR_i`` / ``SOURCE_i`` / ``AUTHOR_i`` / ``AUTHOR_KIND_i``).
 
 ============================  ======================================
 Column                         Meaning
@@ -111,9 +111,18 @@ Column                         Meaning
 ``EXTRACTOR_1`` /              Free text describing what the AI
 ``EXTRACTOR_2``                extractor (or human reasoning step)
                                concluded from the source document.
-``DOCUMENT_1`` /               Document catalog ID
-``DOCUMENT_2``                 (e.g. ``D.01``) the claim was
-                               extracted from.
+``SOURCE_1`` /                 What the extractor read: a
+``SOURCE_2``                   Documents ID (e.g. ``D.01``) or
+                               a Units ID (e.g. ``US5``). The
+                               importer resolves the kind from
+                               the id, a document first. The
+                               extractor is named
+                               ``<source>.<nn>`` either way.
+                               ``DOCUMENT_1`` / ``DOCUMENT_2``
+                               is the older name of the same
+                               column, still read as
+                               ``SOURCE_i``; the exporter
+                               writes ``SOURCE_i``.
 ``AUTHOR_1`` /                 Authors catalog ID
 ``AUTHOR_2``                   (e.g. ``A.01`` or ``AI.01``).
 ``AUTHOR_KIND_1`` /            ``"author"`` (transcribed from the
@@ -122,6 +131,11 @@ Column                         Meaning
                                ``"extractor"`` (newly derived by an
                                AI tool — the claim is new).
 ============================  ======================================
+
+An id in ``SOURCE_i`` that is neither a Documents ID nor a Units ID is
+a warning, and the extractor stays without its source. An annotation
+region is a legitimate source in the graph, but no sheet of the
+workbook declares one, so its id cannot resolve from a workbook alone.
 
 Dispatch
 ~~~~~~~~

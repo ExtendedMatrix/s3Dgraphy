@@ -116,7 +116,7 @@ The contract the prompt imposes on the LLM:
 
 **Per-claim attribution**
     Every ``Claims`` row carries up to two attribution triples
-    ``(EXTRACTOR_i, DOCUMENT_i, AUTHOR_i, AUTHOR_KIND_i)``.
+    ``(EXTRACTOR_i, SOURCE_i, AUTHOR_i, AUTHOR_KIND_i)``.
     ``AUTHOR_KIND_i`` is one of:
 
     - ``"author"`` — the claim is *transcribed* from the document

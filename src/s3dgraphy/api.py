@@ -1835,6 +1835,15 @@ def write_em_data(sheets: Dict[str, List[Dict[str, Any]]], path: str
                     f"{name} row {index}: expected an object of "
                     f"column->value, got {type(row).__name__}; skipped")
                 continue
+            # an older column name (DOCUMENT_i → SOURCE_i) is the same
+            # column: written under the canonical name, never dropped
+            legacy = UnifiedXLSXImporter._LEGACY_COLUMNS.get(name, {})
+            row = dict(row)
+            for old_key, new_key in legacy.items():
+                if old_key in row:
+                    value = row.pop(old_key)
+                    if row.get(new_key) in (None, ""):
+                        row[new_key] = value
             for key in row:
                 if key not in header:
                     warnings.append(

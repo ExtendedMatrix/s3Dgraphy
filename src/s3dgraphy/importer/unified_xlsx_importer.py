@@ -78,12 +78,23 @@ Attribution
 -----------
 
 For every claim row, one or two attribution triples
-``(EXTRACTOR_i, DOCUMENT_i, AUTHOR_i)`` may be present:
+``(EXTRACTOR_i, SOURCE_i, AUTHOR_i)`` may be present.
+
+``SOURCE_i`` is generic: it names what the extractor read, and the importer
+resolves the kind from the id — a ``Documents.ID`` (a document wins when the
+two catalogs share an id), else a ``Units.ID`` (an extractor may read from a
+unit: connections 1.6.24). An annotation region (``AnnotationRegionNode``) is
+also a legitimate source, but the workbook has no sheet that declares one, so
+its id cannot resolve here and is reported like any unknown source. An id
+that resolves to nothing is a warning and the extractor stays without its
+source, as an unknown document always did. ``DOCUMENT_i`` is the older name
+of the same column, still read — as ``SOURCE_i``, never lost — for the sheets
+already written; the exporter writes ``SOURCE_i``.
 
 * If ``EXTRACTOR_i`` populated: create an ExtractorNode with that text,
-  link ``ExtractorNode → extracted_from → DocumentNode`` (or, when
-  ``DOCUMENT_i`` names a Units.ID, ``→ the unit``: connections 1.6.24) and
-  ``PropertyNode → has_data_provenance → ExtractorNode``. If
+  link ``ExtractorNode → extracted_from → <the source>`` and
+  ``PropertyNode → has_data_provenance → ExtractorNode``; the extractor is
+  named ``<source>.<nn>`` whatever the source's kind. If
   ``AUTHOR_i`` is also populated, link
   ``ExtractorNode → has_author → AuthorNode/AuthorAINode`` (subclass
   chosen from ``AUTHOR_KIND_i`` and the Authors sheet).
@@ -209,8 +220,17 @@ class UnifiedXLSXImporter:
                       "ROLE", "CONTENT_NATURE", "GEOMETRY"),
         "Claims": ("TARGET_ID", "TARGET2_ID", "PROPERTY_TYPE", "VALUE",
                    "UNITS", "COMBINER_REASONING",
-                   "EXTRACTOR_1", "DOCUMENT_1", "AUTHOR_1", "AUTHOR_KIND_1",
-                   "EXTRACTOR_2", "DOCUMENT_2", "AUTHOR_2", "AUTHOR_KIND_2"),
+                   "EXTRACTOR_1", "SOURCE_1", "AUTHOR_1", "AUTHOR_KIND_1",
+                   "EXTRACTOR_2", "SOURCE_2", "AUTHOR_2", "AUTHOR_KIND_2"),
+    }
+
+    #: Older names a sheet already written may carry, read as the canonical
+    #: column without the "consider updating" warning the drift aliases get:
+    #: they were right when the sheet was written. When a sheet has both, the
+    #: canonical wins cell by cell and the old one fills its blanks — a value
+    #: is never dropped, and a disagreement is a warning.
+    _LEGACY_COLUMNS: Dict[str, Dict[str, str]] = {
+        "Claims": {"DOCUMENT_1": "SOURCE_1", "DOCUMENT_2": "SOURCE_2"},
     }
 
     #: Sheet order for a written workbook: catalogs before the long table, as
@@ -309,7 +329,7 @@ class UnifiedXLSXImporter:
 
     # Per-sheet column aliases. AI agents (and legacy xlsx files) drift
     # toward variant spellings like ``UNIT_ID`` instead of ``ID``,
-    # ``DOC_ID_1`` instead of ``DOCUMENT_1`` or a surplus ``CLAIM_ID``
+    # ``DOC_ID_1`` instead of ``SOURCE_1`` or a surplus ``CLAIM_ID``
     # first column. Normalising on load means every parser downstream
     # can read canonical names without worrying about drift.
     _COLUMN_ALIASES: Dict[str, Dict[str, str]] = {
@@ -344,12 +364,14 @@ class UnifiedXLSXImporter:
         },
         "Claims": {
             # Per-triple document / author variants.
-            "DOC_ID_1": "DOCUMENT_1",
-            "DOCUMENT_ID_1": "DOCUMENT_1",
-            "DOC_1": "DOCUMENT_1",
-            "DOC_ID_2": "DOCUMENT_2",
-            "DOCUMENT_ID_2": "DOCUMENT_2",
-            "DOC_2": "DOCUMENT_2",
+            "DOC_ID_1": "SOURCE_1",
+            "DOCUMENT_ID_1": "SOURCE_1",
+            "DOC_1": "SOURCE_1",
+            "SOURCE_ID_1": "SOURCE_1",
+            "DOC_ID_2": "SOURCE_2",
+            "DOCUMENT_ID_2": "SOURCE_2",
+            "DOC_2": "SOURCE_2",
+            "SOURCE_ID_2": "SOURCE_2",
             "AUTHOR_ID_1": "AUTHOR_1",
             "AUTHOR_ID_2": "AUTHOR_2",
             # Surplus first column some AIs add for row-level keys; harmless,
@@ -371,6 +393,8 @@ class UnifiedXLSXImporter:
                 f"Missing required sheets in {self.filepath}: "
                 f"{', '.join(missing)}. Expected: {', '.join(self._SHEETS)}."
             )
+        for sheet_name, legacy in self._LEGACY_COLUMNS.items():
+            self._read_legacy_columns(sheet_name, sheets[sheet_name], legacy)
         normalised: List[str] = []
         for sheet_name, aliases in self._COLUMN_ALIASES.items():
             df = sheets[sheet_name]
@@ -387,6 +411,26 @@ class UnifiedXLSXImporter:
                 + "; ".join(normalised)
             )
         return sheets
+
+    def _read_legacy_columns(self, sheet_name: str, df: pd.DataFrame,
+                             legacy: Dict[str, str]) -> None:
+        """Fold each older column into its canonical one, in place."""
+        for old, new in legacy.items():
+            if old not in df.columns:
+                continue
+            if new not in df.columns:
+                df.rename(columns={old: new}, inplace=True)
+                continue
+            df[new] = df[new].astype(object)
+            for idx in df.index:
+                a, b = _str(df.at[idx, new]), _str(df.at[idx, old])
+                if b and not a:
+                    df.at[idx, new] = b
+                elif a and b and a != b:
+                    self.warnings.append(
+                        f"{sheet_name} row {idx + 2}: {new}={a!r} and "
+                        f"{old}={b!r} disagree; kept {new}.")
+            df.drop(columns=[old], inplace=True)
 
     # ------------------------------------------------------------------
     # Parsers
@@ -806,7 +850,7 @@ class UnifiedXLSXImporter:
     def _attach_attribution_chain(self, property_node, row, line):
         """Build the ExtractorNode / DocumentNode / AuthorNode chain
         around ``property_node`` using the two optional triples
-        (EXTRACTOR_i, DOCUMENT_i, AUTHOR_i) in the Claims row.
+        (EXTRACTOR_i, SOURCE_i, AUTHOR_i) in the Claims row.
         """
         triples = list(self._iter_attribution_triples(row, line))
 
@@ -851,14 +895,14 @@ class UnifiedXLSXImporter:
     def _iter_attribution_triples(self, row, line):
         for suffix in ("_1", "_2"):
             ext_text = _str(row.get(f"EXTRACTOR{suffix}"))
-            doc_id = _str(row.get(f"DOCUMENT{suffix}"))
+            source_id = _str(row.get(f"SOURCE{suffix}"))
             author_id = _str(row.get(f"AUTHOR{suffix}"))
             kind = (_str(row.get(f"AUTHOR_KIND{suffix}")) or "").lower()
             if not (ext_text or author_id):
                 continue
             yield {
                 "extractor_text": ext_text,
-                "document_id": doc_id,
+                "source_id": source_id,
                 "author_id": author_id,
                 "author_kind": kind,
                 "line": line,
@@ -885,23 +929,19 @@ class UnifiedXLSXImporter:
         self._attach_author_to_origin(ext, triple)
 
     def _create_extractor(self, triple, parent_origin):
-        """Create an ExtractorNode with a ``D.XX.YY`` short code (XX
-        tracking the document's global serial, YY the per-document
-        sequence). When DOCUMENT_i is missing, uses the generic
-        prefix ``D.00``.
+        """Create an ExtractorNode named ``<source>.<nn>`` (``D.01.02`` for a
+        document, ``US5.01`` for a unit), ``nn`` the per-source sequence.
+        When SOURCE_i is missing, uses the generic prefix ``D.00``.
         """
         doc_node = None
         doc_short = "D.00"
-        if triple["document_id"]:
-            # DOCUMENT_i names a Documents.ID or (connections 1.6.24) a
-            # Units.ID: an extractor may read from a unit. A document wins
-            # when the two catalogs share an id.
-            doc_node = (self._document_by_id.get(triple["document_id"])
-                        or self._unit_by_id.get(triple["document_id"]))
+        if triple["source_id"]:
+            doc_node = self._resolve_source(triple["source_id"])
             if doc_node is None:
                 self.warnings.append(
-                    f"Row {triple['line']}: unknown DOCUMENT '{triple['document_id']}'; "
-                    f"extractor will be orphaned from its document."
+                    f"Row {triple['line']}: unknown SOURCE '{triple['source_id']}' "
+                    f"(neither a Documents.ID nor a Units.ID); "
+                    f"extractor will be orphaned from its source."
                 )
             else:
                 doc_short = doc_node.name
@@ -925,6 +965,13 @@ class UnifiedXLSXImporter:
                 edge_type="extracted_from",
             )
         return ext
+
+    def _resolve_source(self, source_id: str):
+        """What ``SOURCE_i`` names: the kind is read from the id. A document
+        wins when the two catalogs share an id; then a unit. None otherwise
+        (an annotation region included: no sheet declares one)."""
+        return (self._document_by_id.get(source_id)
+                or self._unit_by_id.get(source_id))
 
     def _attach_author_to_origin(self, origin_node, triple):
         """Attach a has_author edge from ``origin_node`` (ExtractorNode
