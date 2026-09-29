@@ -4,6 +4,31 @@ All notable changes to **s3dgraphy** are documented here.
 
 ## [Unreleased]
 
+### Added (2026-10-02 — the edges learn to speak)
+Connections datamodel **1.6.22**: `edge_types.<edge>.ui_phrase` =
+`{as_source, as_target}`, the phrase a menu uses to create a node linked by
+that edge («{node} above {x}», «{node} of {x}», «{node} for {x}»), on the 34
+edge types EMStudio's menus can propose (measured). `{node}` is the new node's
+type label, `{x}` the existing node's name; `as_source` when the new node is the
+edge's source. EM language, so it lives here, not in a consumer's i18n.
+
+- `datamodel_translations.json` 1.2: new section `edge_types`, fields
+  `ui_phrase_as_source` / `ui_phrase_as_target`, drafted in all nine languages
+  (`validated_<lang>: false`). `datamodel_i18n.edge_ui_phrase(edge, direction,
+  lang)` reads it with the English fallback; `seed`, `--check`, `stats` and the
+  xlsx cover it.
+- `tests/test_edge_ui_phrases.py`: both placeholders in every language, keys
+  that point to existing edges, the measured menu set covered.
+
+### Added (2026-10-02 — the document is drawn from paths)
+`em_visual_rules` **1.6.21**: `2d_glyphs.document`, generated from
+`src/2D/document.svg`, and `2d_render_glyph_types.aspect.document` = 0.636
+(the drawing and the yEd palette node; EMStudio's 0.78 measured its own
+hand-drawn sheet). New role `border` (restyled from `document_variant_styles`,
+never by a theme) and new list `2d_render_glyph_types.sheet_types`: the
+document has paths but its label sits on the sheet, so it is not in `types`.
+`document.svg` redrawn without changing a pixel so its outline is a stroke.
+
 ### Changed (2026-09-28 — an epoch's properties are its own; sub-epochs from `PARENT`)
 Connections datamodel **1.6.21**: `has_property.source` += `EpochNode`,
 `GraphNode` (E.D., revising 1.6.1). Every node that accepts properties

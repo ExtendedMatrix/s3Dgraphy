@@ -45,10 +45,10 @@
   },
   "relations": [],
   "_validated_against": {
-    "s3dgraphy": "1.6.0.dev20",
+    "s3dgraphy": "1.6.0.dev22",
     "schema_version": "1",
     "node_datamodel": "1.6.9",
-    "connections_datamodel": "1.6.21",
-    "on": "2026-09-28"
+    "connections_datamodel": "1.6.22",
+    "on": "2026-09-29"
   }
 }

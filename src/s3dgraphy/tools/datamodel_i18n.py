@@ -2,7 +2,9 @@
 
 The node datamodel (`s3Dgraphy_node_datamodel.json`) carries English-only
 `description`/`label` per class, and the qualia vocabulary (`em_qualia_types.json`)
-English-only `name` per qualia, category and subcategory. This keeps a **sidecar**
+English-only `name` per qualia, category and subcategory, and the connections
+datamodel (`s3Dgraphy_connections_datamodel.json`) an English-only `ui_phrase`
+per edge type an interface proposes in a menu. This keeps a **sidecar**
 translations file next to them (`datamodel_translations.json`) so the English
 stays the git-diffable source and translations are added without restructuring
 either file (their many consumers keep reading plain strings; `--check` stays
@@ -12,7 +14,7 @@ Shape — one section per kind of key, each keyed by a STABLE identity::
 
     {
       "schema": "s3Dgraphy_datamodel_translations",
-      "version": "1.1",
+      "version": "1.2",
       "languages": ["en", "it", ...],
       "entries": {                      # node classes (EMStudio rules.ts reads this)
         "<Class>": {
@@ -22,8 +24,15 @@ Shape — one section per kind of key, each keyed by a STABLE identity::
       },
       "qualia":               {"<qualia id>":       {"label": {...}}},
       "qualia_categories":    {"<category id>":     {"label": {...}}},
-      "qualia_subcategories": {"<subcategory key>": {"label": {...}}}
+      "qualia_subcategories": {"<subcategory key>": {"label": {...}}},
+      "edge_types":           {"<edge type>":       {"ui_phrase_as_source": {...},
+                                                     "ui_phrase_as_target": {...}}}
     }
+
+`edge_types` (connections 1.6.22: `edge_types.<edge>.ui_phrase`) are the phrases of a menu entry that
+creates a node linked to an existing one («US sopra X», «Proprietà di X»):
+`{node}` is the new node's type label, `{x}` the existing node's name, and every
+translation keeps both.
 
 en is the SOURCE (seeded from the datamodel/qualia file, never edited via xlsx).
 Other languages are translation surface; each carries a per-key
@@ -37,6 +46,7 @@ Reading (for StratiField, EMStudio, EMtools — nobody reads the JSON by hand)::
 
     from s3dgraphy.tools.datamodel_i18n import qualia_label
     qualia_label("thickness", "it")   # → "Spessore"; unknown lang → the English
+    edge_ui_phrase("has_property", "as_target", "it")   # → "{node} di {x}"
 
 CLI::
 
@@ -62,6 +72,7 @@ _HERE = Path(__file__).resolve().parent
 _JSON_CONFIG = _HERE.parent / "JSON_config"
 DATAMODEL = _JSON_CONFIG / "s3Dgraphy_node_datamodel.json"
 QUALIA = _JSON_CONFIG / "em_qualia_types.json"
+CONNECTIONS = _JSON_CONFIG / "s3Dgraphy_connections_datamodel.json"
 TRANSLATIONS = _JSON_CONFIG / "datamodel_translations.json"
 
 # Languages mirror the EMStudio UI locales (en = source/default) + de (DAI).
@@ -74,7 +85,12 @@ SECTIONS: Dict[str, str] = {
     "qualia": "qualia",
     "qualia_categories": "category",
     "qualia_subcategories": "subcategory",
+    "edge_types": "edge",
 }
+#: the two directions of an edge's `ui_phrase`, as fields of the `edge_types`
+#: section — `ui_phrase.as_source` in the datamodel is `ui_phrase_as_source` here
+PHRASE_DIRS = ("as_source", "as_target")
+PHRASE_FIELDS = tuple(f"ui_phrase_{d}" for d in PHRASE_DIRS)
 _PREFIX_TO_SECTION = {v: k for k, v in SECTIONS.items()}
 
 SHEET = "Datamodel strings"
@@ -142,9 +158,22 @@ def _collect_qualia_en(qualia: Dict[str, Any]) -> Dict[str, Dict[str, Dict[str, 
     return out
 
 
+def _collect_edge_phrases_en(connections: Dict[str, Any]) -> Dict[str, Dict[str, str]]:
+    """{edge type: {"ui_phrase_as_source": ..., "ui_phrase_as_target": ...}} for
+    every edge type that declares a `ui_phrase` (connections 1.6.22)."""
+    out: Dict[str, Dict[str, str]] = {}
+    for name, edge in (connections.get("edge_types") or {}).items():
+        phrase = edge.get("ui_phrase") if isinstance(edge, dict) else None
+        if isinstance(phrase, dict):
+            out[name] = {f"ui_phrase_{d}": phrase[d] for d in PHRASE_DIRS
+                         if isinstance(phrase.get(d), str)}
+    return out
+
+
 def _collect_all_en() -> Dict[str, Dict[str, Dict[str, str]]]:
     out = {"entries": _collect_en(_load(DATAMODEL))}
     out.update(_collect_qualia_en(_load(QUALIA)))
+    out["edge_types"] = _collect_edge_phrases_en(_load(CONNECTIONS))
     return out
 
 
@@ -159,7 +188,7 @@ def seed(write: bool = True) -> Dict[str, Any]:
         existing = {}
     doc: Dict[str, Any] = {
         "schema": "s3Dgraphy_datamodel_translations",
-        "version": "1.1",
+        "version": "1.2",
         "languages": LANGUAGES,
     }
     for section in SECTIONS:
@@ -202,12 +231,13 @@ def check() -> int:
 
 def _rows(doc: Dict[str, Any]) -> List[Tuple[str, str, str]]:
     """(section, key, field) present, stable order: nodes, then qualia
-    categories/subcategories/qualia."""
+    categories/subcategories/qualia, then the edge phrases."""
     keys: List[Tuple[str, str, str]] = []
-    for section in ("entries", "qualia_categories", "qualia_subcategories", "qualia"):
+    for section in ("entries", "qualia_categories", "qualia_subcategories", "qualia",
+                    "edge_types"):
         entries = doc.get(section, {})
         for key in sorted(entries):
-            for field in ("label", "description"):
+            for field in ("label", "description") + PHRASE_FIELDS:
                 if field in entries[key]:
                     keys.append((section, key, field))
     return keys
@@ -279,6 +309,16 @@ def node_description(class_name: str, lang: str = "en") -> Optional[str]:
     return translate("entries", class_name, "description", lang)
 
 
+def edge_ui_phrase(edge_type: str, direction: str, lang: str = "en") -> Optional[str]:
+    """The menu phrase for a node created linked by ``edge_type``, with its
+    ``{node}`` / ``{x}`` placeholders left for the caller. ``direction`` is
+    ``as_source`` (the new node is the edge's source) or ``as_target``. English
+    fallback; ``None`` for an edge no menu proposes (no `ui_phrase`)."""
+    if direction not in PHRASE_DIRS:
+        raise ValueError(f"direction must be one of {PHRASE_DIRS}, got {direction!r}")
+    return translate("edge_types", edge_type, f"ui_phrase_{direction}", lang)
+
+
 # ── xlsx surface for the partners ───────────────────────────────────────────
 
 def _xlsx_key(section: str, key: str, field: str) -> str:
@@ -325,7 +365,8 @@ def _status_of(fe: Dict[str, Any], lang: str) -> str:
 _README = [
     ("StratiGraph · datamodel strings", "title"),
     ("The names and definitions the StratiGraph apps take from the Extended Matrix datamodel: "
-     "node types (US, USV, Document…), qualia (length, thickness, colour…) and their categories. "
+     "node types (US, USV, Document…), qualia (length, thickness, colour…) and their categories, "
+     "and the phrases of the linking menu ('{node} above {x}'). "
      "Partners correct it; we regenerate s3Dgraphy's datamodel_translations.json from it.", None),
     (None, None),
     ("How to work in this file", "h"),
@@ -388,6 +429,13 @@ def export_xlsx(path: str, force: bool = False) -> None:
             area = "node type"
             note = (f"Name of the node class {key}" if field == "label" else
                     f"Definition of {key}. Keep class names, node_type values and Python identifiers as they are.")
+        elif section == "edge_types":
+            area = "linking menu"
+            new = "SOURCE" if field == "ui_phrase_as_source" else "TARGET"
+            note = (f"Menu entry that creates a node linked by the relation '{key}'; the new node is the "
+                    f"relation's {new}. Keep {{node}} (the new node's type, e.g. US, Property) and {{x}} "
+                    "(the existing node's name, e.g. US12) exactly as written. The type names differ in "
+                    "gender, so prefer a wording that does not agree with {node}.")
         else:
             area, note = qctx[section].get(key, {}).get("area", section), \
                 qctx[section].get(key, {}).get("note", "")
