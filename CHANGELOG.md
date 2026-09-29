@@ -4,6 +4,21 @@ All notable changes to **s3dgraphy** are documented here.
 
 ## [Unreleased]
 
+### Added (2026-10-05 — the stamp writes and reads its title and description)
+dtcstamp 46b3b78 gave the stamp an optional `self.label` (title) and
+`self.description`, outside `substance`. Now s3Dgraphy uses them:
+- `stamp.emit` writes `self.label` from the resource's `name` (omitted when it
+  repeats the id or the digest) and `self.description` from its description.
+- `stamp.absorb` brings them to the node the stamp feeds as a **marked copy**
+  (`data["copied_from_stamp"] = ["name", "description"]`), never over a name
+  or description a person wrote; a later stamp may update a copy. Also on a
+  deduplicated absorb (the words are not substance), never on a dry run.
+  `AbsorbResult.courtesy` lists the fields copied.
+- The shelf keeps the receipt in dtcstamp's one form: `shelf.shelve_stamp` /
+  `api.shelve_stamp` store `dtcstamp.receipt(stamp)` on
+  `data["stamp_receipt"]`, and `_entry` reports it as `receipt`.
+A stamp without title and description stays valid all the way.
+
 ### Changed (2026-10-05 — the `SOURCE_i` column in the xlsx)
 E.D. 2026-09-29: the Claims sheet's `DOCUMENT_1` / `DOCUMENT_2` become the
 generic **`SOURCE_1` / `SOURCE_2`**: the id of a document or of a

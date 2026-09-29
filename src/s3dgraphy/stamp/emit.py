@@ -274,6 +274,18 @@ def _self_block(resource: Any, warnings: List[str]) -> Dict[str, Any]:
     block: Dict[str, Any] = {"resource_id": resource.node_id}
     digest = _text(data.get("checksum"))
     _put(block, "digest", digest)
+    # Titolo e descrizione (dtcstamp 46b3b78): le parole che una persona legge,
+    # dal `name` e dalla `description` della risorsa. Cortesia e non identità —
+    # stanno fuori da `substance` — e valgono le regole delle etichette: un nome
+    # che ripete l'id (o il digest) non è un titolo e si omette; una descrizione
+    # vuota non si scrive. Nessun taglio qui: `DESCRIPTION_HINT_CHARS` è un
+    # consiglio per chi scrive e per chi mostra, mai un rifiuto.
+    _put(block, "label", _courtesy(getattr(resource, "name", None),
+                                   resource.node_id, digest))
+    # `ResourceNode` tiene la sua descrizione in `data` (il costruttore la mette
+    # lì); l'attributo di `Node` è il ripiego per un nodo scritto altrove.
+    _put(block, "description", _text(data.get("description"))
+         or _text(getattr(resource, "description", None)))
     if digest is None:
         warnings.append(
             "the artifact carries no identity: this stamp names a step but "

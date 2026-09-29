@@ -44,6 +44,8 @@ from .core import (
     save_shelf,
     shelf_entry_status,
     shelf_table,
+    shelve_stamp,
+    STAMP_RECEIPT_KEY,
 )
 
 __all__ = [
@@ -52,6 +54,8 @@ __all__ = [
     "new_shelf",
     "is_shelf",
     "add_to_shelf",
+    "shelve_stamp",
+    "STAMP_RECEIPT_KEY",
     "list_shelf",
     "remove_from_shelf",
     "remove_resource",

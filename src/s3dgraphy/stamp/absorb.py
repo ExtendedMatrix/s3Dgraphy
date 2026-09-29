@@ -58,10 +58,19 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
 
 from dtcstamp import (BadStamp, Disagreement, STAMP_VERSION, clean_stamp,
-                      compare_stamps, read_stamp, substance, validate_stamp)
+                      compare_stamps, read_stamp, stamp_description,
+                      stamp_title, substance, validate_stamp)
 
 from .emit import (EDGE_HAD_INPUT, EDGE_HAD_OUTPUT, SIZE_KEY, emit_stamp,
                    find_resource)
+
+#: I campi del nodo che portano una COPIA delle parole del timbro
+#: (`self.label` → `name`, `self.description` → `description`). Il marchio sta
+#: in `data`, accanto al contenuto: dice a chi legge — e al prossimo
+#: riassorbimento — che quel testo non l'ha scritto una persona su questo nodo,
+#: e che quindi un timbro successivo può aggiornarlo. Un campo che non è qui e
+#: che ha un testo è di una persona, e un timbro non lo tocca.
+COPIED_FROM_STAMP = "copied_from_stamp"
 
 #: L'arco diretto uscita → ingresso, la scorciatoia che il substrato scrive
 #: accanto alla coppia input/output. Stesso nome di `dtc.residency`.
@@ -111,6 +120,10 @@ class AbsorbResult:
     added_nodes: int = 0
     merged_nodes: int = 0
     added_edges: int = 0
+    #: i campi del nodo (`name`, `description`) che hanno ricevuto una COPIA di
+    #: titolo e descrizione del timbro; vuoto se non ne portava o se una persona
+    #: li aveva già scritti
+    courtesy: List[str] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
 
     @property
@@ -129,6 +142,7 @@ class AbsorbResult:
             "theirs": self.theirs,
             "added_nodes": self.added_nodes,
             "merged_nodes": self.merged_nodes,
+            "courtesy": list(self.courtesy),
             "added_edges": self.added_edges,
             "warnings": list(self.warnings),
         }
@@ -157,6 +171,7 @@ def stamp_to_graph(stamp: Dict[str, Any], *, graph_id: Optional[str] = None):
 
     output = ResourceNode(resource_id, name=resource_id)
     _apply_self(output, itself)
+    _apply_courtesy(output, stamp)
     fragment.add_node(output)
 
     how = dict(stamp.get("how") or {})
@@ -267,6 +282,73 @@ def _apply_self(node: Any, itself: Dict[str, Any]) -> None:
             data[SIZE_KEY] = measures[SIZE_KEY]
         if primitives:
             data["primitives"] = primitives
+
+
+def _get_text(node: Any, field_name: str) -> str:
+    """`name` è un attributo; la `description` di una `ResourceNode` sta in
+    `data` (è lì che il costruttore la scrive), e l'attributo di `Node` è il
+    ripiego."""
+    if field_name == "description":
+        data = getattr(node, "data", None) or {}
+        return str(data.get("description") or getattr(node, "description", "")
+                   or "").strip()
+    return str(getattr(node, field_name, "") or "").strip()
+
+
+def _set_text(node: Any, field_name: str, value: str) -> None:
+    setattr(node, field_name, value)
+    if field_name == "description" and isinstance(getattr(node, "data", None), dict):
+        node.data["description"] = value
+
+
+def _written_by_a_person(node: Any, field_name: str) -> bool:
+    """Il campo ha un testo che nessun timbro ha messo lì.
+
+    Un `name` uguale all'id non conta: è il segnaposto che ogni costruttore
+    scrive quando non sa come chiamare la risorsa, non una scelta di qualcuno.
+    """
+    copied = (getattr(node, "data", None) or {}).get(COPIED_FROM_STAMP) or []
+    if field_name in copied:
+        return False
+    text = _get_text(node, field_name)
+    if not text:
+        return False
+    if field_name == "name" and text == str(getattr(node, "node_id", "")):
+        return False
+    return True
+
+
+def _apply_courtesy(node: Any, stamp: Dict[str, Any],
+                    host: Optional[Any] = None) -> List[str]:
+    """Porta titolo e descrizione del timbro nel nodo, **come copia marcata**.
+
+    `host` è il nodo che il grafo ricevente ha già per quella risorsa, se c'è:
+    è lui a dire che cosa ha scritto una persona. Un campo scritto da una
+    persona non si sovrascrive mai — il nodo tiene il suo testo, e il timbro
+    resta il timbro. Un timbro senza titolo né descrizione non tocca niente.
+    Restituisce i campi copiati.
+    """
+    judge = host if host is not None else node
+    words = (("name", stamp_title(stamp)),
+             ("description", stamp_description(stamp)))
+    copied = list((getattr(judge, "data", None) or {}).get(COPIED_FROM_STAMP) or [])
+    done: List[str] = []
+    for field_name, value in words:
+        if not value:
+            continue
+        if _written_by_a_person(judge, field_name):
+            if judge is not node:
+                # il frammento porta il testo della persona, così il merge
+                # non ha niente da cambiare
+                _set_text(node, field_name, _get_text(judge, field_name))
+            continue
+        _set_text(node, field_name, value)
+        if field_name not in copied:
+            copied.append(field_name)
+        done.append(field_name)
+    if copied:
+        node.data[COPIED_FROM_STAMP] = copied
+    return done
 
 
 def _apply_how(node: Any, how: Dict[str, Any]) -> None:
@@ -439,6 +521,11 @@ def absorb_stamp(graph: Any, stamp: Dict[str, Any], *,
             result.deduplicated = True
             result.mine = mine
             result.theirs = theirs
+            # Lo stesso fatto: la sostanza non cambia. Titolo e descrizione non
+            # sono sostanza, e una copia si può ancora portare — mai sopra il
+            # testo di una persona, mai in un dry run.
+            if not dry_run:
+                result.courtesy = _apply_courtesy(existing, stamp)
             mine_at = (mine.get("by") or {}).get("at")
             theirs_at = (theirs.get("by") or {}).get("at")
             if mine_at != theirs_at:
@@ -453,6 +540,19 @@ def absorb_stamp(graph: Any, stamp: Dict[str, Any], *,
         return result
 
     fragment = stamp_to_graph(stamp)
+    if existing is not None:
+        # Il frammento ha giudicato da solo; è il nodo che il grafo ha già a
+        # sapere che cosa ha scritto una persona.
+        output = fragment.find_node_by_id(result.resource_id)
+        if output is not None and output.node_id == existing.node_id:
+            output.data.pop(COPIED_FROM_STAMP, None)
+            output.name = getattr(existing, "name", output.name)
+            _set_text(output, "description", _get_text(existing, "description"))
+            result.courtesy = _apply_courtesy(output, stamp, host=existing)
+    else:
+        output = fragment.find_node_by_id(result.resource_id)
+        result.courtesy = list((getattr(output, "data", None) or {})
+                               .get(COPIED_FROM_STAMP) or [])
     report = merge_graph_into(graph, fragment)
     result.applied = True
     result.added_nodes = report.added_nodes

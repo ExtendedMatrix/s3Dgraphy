@@ -2397,6 +2397,16 @@ def add_to_shelf(shelf: Graph, locator: str, *, resource_id: Optional[str] = Non
               media_type=media_type, size=size, access=access)
 
 
+def shelve_stamp(shelf: Graph, stamp: Dict[str, Any], *,
+                 locator: str = "") -> Dict[str, Any]:
+    """File a stamped artifact on the shelf with its receipt — the one form,
+    ``dtcstamp.receipt``: ``{id, checksum, stamp, parents, title,
+    description}``, returned as the entry's ``receipt``. Title and description
+    land on the entry as a marked copy, never over a person's words."""
+    from .shelf import shelve_stamp as _s
+    return _s(shelf, stamp, locator=locator)
+
+
 def resource_roles() -> Tuple[str, ...]:
     """The two roles a shelf entry may declare, from the class that validates
     them — so a UI enumerates instead of hardcoding: ``("comparandum",

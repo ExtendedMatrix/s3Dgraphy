@@ -112,6 +112,10 @@ def _entry(node: Any) -> Dict[str, Any]:
     # "effective" reading would be this function inventing a claim about
     # somebody's argument (see ResourceNode.ROLES).
     entry["role"] = d.get("role") or None
+    # The receipt of a stamped file, when the shelf keeps one: dtcstamp's own
+    # shape (`receipt()`), stored as it came and never rebuilt here — one form.
+    if isinstance(d.get(STAMP_RECEIPT_KEY), dict):
+        entry["receipt"] = dict(d[STAMP_RECEIPT_KEY])
     entry["effective_scope"] = (
         node.effective_scope() if hasattr(node, "effective_scope")
         else d.get("scope") or "own-study")
@@ -224,6 +228,52 @@ def add_to_shelf(shelf: Any, locator: str, *, resource_id: Optional[str] = None,
                        ("access", access)):
         if value is not None:
             d[key] = value
+    return _entry(node)
+
+
+#: Where a shelf entry keeps the receipt of its stamp (``dtcstamp.receipt``).
+STAMP_RECEIPT_KEY = "stamp_receipt"
+
+
+def shelve_stamp(shelf: Any, stamp: Dict[str, Any], *,
+                 locator: str = "") -> Dict[str, Any]:
+    """File a stamped artifact on the shelf and keep its **receipt**.
+
+    The receipt is :func:`dtcstamp.receipt` — ``{id, checksum, stamp, parents,
+    title, description}`` — and nothing else: there is one form, dtcstamp's, and
+    the shelf stores it as it came, on ``data["stamp_receipt"]``. It is a copy
+    on purpose: it outlives the ``.stamp.json`` beside the file.
+
+    The entry is found as :func:`add_to_shelf` finds one — by content first
+    (``checksum``), then by id — and created bare when there is none. Its
+    ``name`` / ``description`` receive the stamp's title and description **as a
+    marked copy** (``data["copied_from_stamp"]``, the same rule as
+    ``stamp.absorb``): a name or description a person wrote on the entry is
+    never overwritten. Returns the entry (with ``receipt``).
+    """
+    from dtcstamp import receipt as _receipt
+    from ..nodes.resource_node import ResourceNode
+    from ..stamp.absorb import _apply_courtesy
+
+    rec = _receipt(stamp)
+    rid = rec["id"]
+    node = find_by_checksum(shelf, rec.get("checksum", ""))
+    if node is None:
+        node = shelf.find_node_by_id(rid)
+        if node is not None and getattr(node, "node_type", None) != _LINK_TYPE:
+            node = None
+    if node is None:
+        # named by its id: the placeholder the courtesy rule knows is nobody's
+        node = ResourceNode(node_id=rid, name=rid, url=locator or "",
+                            url_type="", description="")
+        shelf.add_node(node)
+    elif locator:
+        _data(node)["url"] = locator
+    d = _data(node)
+    if rec.get("checksum"):
+        d["checksum"] = rec["checksum"]
+    _apply_courtesy(node, stamp)
+    d[STAMP_RECEIPT_KEY] = rec
     return _entry(node)
 
 
