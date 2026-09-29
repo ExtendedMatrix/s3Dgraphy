@@ -154,7 +154,8 @@ def _instantiate(node_type: str, payload: Dict[str, Any],
     return node
 
 
-def parse_emjson(doc: Dict[str, Any]) -> Tuple[Graph, List[str]]:
+def parse_emjson(doc: Dict[str, Any], *,
+                 project_root: Optional[str] = None) -> Tuple[Graph, List[str]]:
     """Parse an already-loaded .em.json dict into a Graph.
 
     **Both shapes are accepted.** An em.json is a CONTAINER since 2026-08-13
@@ -174,7 +175,7 @@ def parse_emjson(doc: Dict[str, Any]) -> Tuple[Graph, List[str]]:
 
     if is_container(doc):
         from ..container import parse_container
-        container, warnings = parse_container(doc)
+        container, warnings = parse_container(doc, project_root=project_root)
         # A SHELF-ONLY container is a real and ordinary file: `save_shelf`
         # writes exactly that. Somebody opening it wants the shelf, so hand it
         # back rather than refusing — the first version raised here, and the
@@ -281,6 +282,19 @@ def parse_emjson(doc: Dict[str, Any]) -> Tuple[Graph, List[str]]:
     # geometry/migrate.py. Idempotent: a graph already in the new shape is a no-op.
     from ..geometry.migrate import migrate_legacy_proxies
     migrate_legacy_proxies(graph)
+
+    # 2026-10-06 · the place of a reading: an extractor's legacy data.geometry
+    # (EMStudio, from 2026-10-05) becomes a place node it extracted_from. A 3D
+    # point needs `project_root` for its .glb; without it the field is kept (the
+    # only copy) and the migration completes on the next open from a file.
+    from ..annotation.migrate_reading import migrate_reading_geometry
+    migration = migrate_reading_geometry(graph, project_root=project_root)
+    warnings.extend(migration["warnings"])
+    for entry in migration["pending"]:
+        warnings.append(
+            f"reading migration: extractor '{entry['extractor_id']}' keeps its "
+            f"data.geometry until the graph is opened from a file — its point "
+            f"needs a folder for readings/{entry['region_id']}.glb")
 
     return graph, warnings
 
@@ -411,4 +425,5 @@ def import_emjson(filepath: str) -> Tuple[Graph, List[str]]:
     """Load a .em.json file. Returns (graph, warnings)."""
     with open(Path(filepath), encoding="utf-8") as f:
         doc = json.load(f)
-    return parse_emjson(doc)
+    # the project folder is the file's: that is where proxies/ and readings/ live
+    return parse_emjson(doc, project_root=str(Path(filepath).resolve().parent))

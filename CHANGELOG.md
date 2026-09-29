@@ -4,6 +4,19 @@ All notable changes to **s3dgraphy** are documented here.
 
 ## [Unreleased]
 
+### Changed (2026-10-06 — the place of a reading, part 3: `data.geometry` migrates)
+An extractor's legacy `data.geometry` (EMStudio from 2026-10-05:
+`{kind:"passage", start, end, text}` or `{kind:"point3d", p, on}`) becomes, on
+opening, a place node it `extracted_from` (`annotation.migrate_reading`, run
+by `parse_emjson` / `parse_container`). The field is read, never written
+again. A point needs a folder for its glb: `load_emjson_file` /
+`load_container_file` pass the file's folder (`project_root`); a dict opened
+in memory keeps the field (the only copy of the coordinates), warns, and the
+next open from a file completes it. `on` is resolved by id, then by the name
+of a model/document (kept as `on_mesh` on the place), then the one document
+the extractor reads. A region of another kind already read shadows the field
+(left alone, reported); an unknown kind is left alone and said.
+
 ### Added (2026-10-06 — the place of a reading, part 2: the glb)
 - `s3dgraphy.geometry.reading_glb`: `write_glb` / `read_glb` (and
   `glb_bytes` / `parse_glb`), by hand, no dependency: one float32 VEC3

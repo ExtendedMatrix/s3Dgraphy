@@ -59,6 +59,7 @@ anybody's disk breaks.
 from __future__ import annotations
 
 import json
+import os
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -230,8 +231,12 @@ def is_dtc_corpus_member(graph_section: Any) -> bool:
     return is_dtc_corpus(graph_section)
 
 
-def parse_container(doc: Dict[str, Any]) -> Tuple[Container, List[str]]:
+def parse_container(doc: Dict[str, Any], *,
+                    project_root: Optional[str] = None) -> Tuple[Container, List[str]]:
     """Read a container OR a legacy single-graph document.
+
+    `project_root` is the project folder (the file's), handed to the load-time
+    migrations that need one — the place of a 3D reading writes its .glb there.
 
     Returns ``(container, warnings)``. A legacy document becomes a
     container-of-one — the same object, so every caller downstream has one shape
@@ -249,7 +254,7 @@ def parse_container(doc: Dict[str, Any]) -> Tuple[Container, List[str]]:
     if not is_container(doc):
         # LEGACY single-graph: read it with the reader that has always read it,
         # then wrap. No second parser, no drift between the two paths.
-        graph, graph_warnings = parse_emjson(doc)
+        graph, graph_warnings = parse_emjson(doc, project_root=project_root)
         container = Container(
             graphs={graph.graph_id: graph},
             active_graph_id=graph.graph_id,
@@ -274,7 +279,8 @@ def parse_container(doc: Dict[str, Any]) -> Tuple[Container, List[str]]:
             "graph": {**section, "graph_id": section.get("graph_id") or member_id},
         }
         try:
-            graph, member_warnings = parse_emjson(member_doc)
+            graph, member_warnings = parse_emjson(member_doc,
+                                                  project_root=project_root)
         except Exception as exc:
             # One unreadable member must not lose the rest of the project.
             warnings.append(f"container member '{member_id}' not readable: {exc}")
@@ -432,7 +438,7 @@ def pin_version(container: Container, *, at: Optional[str] = None) -> Dict[str, 
 def load_container_file(path: str) -> Tuple[Container, List[str]]:
     with open(path, encoding="utf-8") as fh:
         doc = json.load(fh)
-    return parse_container(doc)
+    return parse_container(doc, project_root=os.path.dirname(os.path.abspath(path)))
 
 
 def save_container_file(container: Container, path: str, *,
