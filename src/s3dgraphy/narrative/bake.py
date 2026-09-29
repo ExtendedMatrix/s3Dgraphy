@@ -67,6 +67,7 @@ from ..exporter.latex_exporter import CITED_VIEW_TYPES  # noqa: E402
 #: tell "a type I know and handle" from "a type that arrived after this code was
 #: written" — the second still bakes, as text, with a note.
 from ..nodes.narrative_node import NARRATIVE_VIEW_TYPES  # noqa: E402,F401
+from ..nodes.narrative_node import substitute_mentions, unresolved_label  # noqa: E402
 
 #: View types whose static form is a rendered picture this build cannot make:
 #: a 3D scene needs a renderer, a matrix needs the layout engine. They bake to a
@@ -111,6 +112,12 @@ class BakedBlock:
     bake has already made.
     """
     kind: str
+    #: For ``prose``: the text with every ``[[id]]`` mention replaced by a token
+    #: (see ``narrative_node.substitute_mentions``) and resolved in
+    #: ``mentions``. A renderer escapes the text by its own rules and then
+    #: writes each token as the mentioned node's NAME, in its own italics — the
+    #: brackets never reach a reader. :attr:`plain_text` is the same text with the
+    #: names written plainly, for anything that just wants to read it.
     text: str = ""
     #: Set for prose that a model drafted and no person has endorsed. A renderer
     #: MUST show this: on a page there is no badge to fall back on.
@@ -126,6 +133,14 @@ class BakedBlock:
     #: what it can place and ignores the rest, which is what lets a new view_type
     #: land without touching every renderer.
     meta: Dict[str, Any] = field(default_factory=dict)
+    #: The mentions of a prose block, in the order of their tokens in ``text``.
+    mentions: List[Any] = field(default_factory=list)
+
+    @property
+    def plain_text(self) -> str:
+        from ..nodes.narrative_node import render_mention_tokens
+        return render_mention_tokens(self.text, self.mentions,
+                                     lambda m: m.label)
 
 
 @dataclass
@@ -371,6 +386,21 @@ def _map_block(node: Any, graph: Any, options: Dict[str, Any]) -> BakedBlock:
                       view_type="map", link=link, meta=meta)
 
 
+def _name_resolver(lookup: Dict[Any, Any]):
+    """ref → the node's display name, or None when no node answers — what
+    ``substitute_mentions`` asks. Shared by the exporters that do not bake
+    (LaTeX, notebook), so a mention is named the same way in all four."""
+    def name_of(ref: str) -> Optional[str]:
+        node = lookup.get(ref)
+        if node is None:
+            return None
+        name = getattr(node, "name", None)
+        if isinstance(name, dict):
+            name = name.get("default") or next(iter(name.values()), None)
+        return str(name or getattr(node, "node_id", "") or ref)
+    return name_of
+
+
 # ── the bake ──────────────────────────────────────────────────────────────────
 
 def figure_key(view_type: Any, ref: Any) -> str:
@@ -418,6 +448,7 @@ def bake_narrative(graph: Any, narrative_id: str, *,
 
     lookup = {getattr(n, "node_id", None): n
               for n in (getattr(graph, "nodes", []) or [])}
+    name_of = _name_resolver(lookup)
 
     baked = BakedNarrative(
         narrative_id=narrative_id,
@@ -475,9 +506,18 @@ def bake_narrative(graph: Any, narrative_id: str, *,
                 text = getattr(block, "text", "") or ""
                 if not text.strip():
                     continue
+                # A MENTION is resolved like an embed: to the node's name, and a
+                # mention that points at nothing goes on the same `unresolved`
+                # list an embed that points at nothing goes on.
+                text, mentions = substitute_mentions(text, name_of)
+                for mention in mentions:
+                    if not mention.resolved \
+                            and mention.ref not in baked.unresolved:
+                        baked.unresolved.append(mention.ref)
                 baked_chapter.blocks.append(BakedBlock(
                     kind="prose",
                     text=text,
+                    mentions=mentions,
                     unendorsed=bool(getattr(block, "ai_generated", False))
                     and not getattr(block, "validated_by", None),
                 ))
@@ -492,7 +532,7 @@ def bake_narrative(graph: Any, narrative_id: str, *,
                 baked.unresolved.append(str(ref))
                 baked_chapter.blocks.append(BakedBlock(
                     kind="unresolved",
-                    text=f"[riferimento non risolto: {ref}]",
+                    text=unresolved_label(str(ref)),
                     ref=str(ref or ""), view_type=view_type))
                 continue
 

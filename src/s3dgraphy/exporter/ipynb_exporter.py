@@ -198,6 +198,11 @@ def build_notebook(graph: Any, narrative_id: str, *,
     if target is None:
         raise KeyError(f"no narrative {narrative_id!r} in this graph")
 
+    from ..narrative.bake import _name_resolver
+    from ..nodes.narrative_node import plain_mentions
+    name_of = _name_resolver({getattr(n, "node_id", None): n
+                              for n in (getattr(graph, "nodes", []) or [])})
+
     title = _name(target)
     cells: List[Dict[str, Any]] = [
         _markdown(f"# {title}\n\n"
@@ -262,6 +267,10 @@ def build_notebook(graph: Any, narrative_id: str, *,
                 text = str(block.get("text") or "").strip()
                 if not text:
                     continue
+                # `[[id]]` mentions become the node's name, in plain text: a
+                # notebook's markdown is the reader's to edit, and the brackets
+                # are authoring syntax, not something to publish.
+                text = plain_mentions(text, name_of)
                 # an unendorsed machine draft says so IN the text: a notebook
                 # gets copied, and a badge does not survive copying
                 if block.get("ai_generated") and not block.get("validated_by"):

@@ -26,6 +26,9 @@ from __future__ import annotations
 import re
 from typing import Any, Dict, List, Optional, Tuple
 
+from ..nodes.narrative_node import (render_mention_tokens,
+                                     substitute_mentions)
+
 #: View types that a printed page CITES rather than shows. A source and a document
 #: are things the reader could go and read; everything else in the vocabulary is
 #: something they look at, and becomes a figure.
@@ -254,6 +257,14 @@ def _figure(node: Any, view_type: str, caption_extra: str = "",
     )
 
 
+def _latex_mention(mention: Any) -> str:
+    """A `[[id]]` mention on the printed page: the node's name in `\\emph{}`, or
+    the unresolved wording in bold, as an unresolved embed prints it."""
+    if mention.resolved:
+        return "\\emph{" + latex_escape(mention.label) + "}"
+    return "\\textbf{" + latex_escape(mention.label) + "}"
+
+
 def _unresolved(ref: str) -> str:
     """A reference the graph no longer answers. Stated in the output rather than
     dropped: a silent omission in a printed text is unrecoverable."""
@@ -345,6 +356,8 @@ def export_narrative_latex(graph: Any, narrative_id: str, *,
         raise KeyError(f"no narrative node with id {narrative_id!r}")
 
     lookup = {getattr(n, "node_id", None): n for n in getattr(graph, "nodes", [])}
+    from ..narrative.bake import _name_resolver
+    name_of = _name_resolver(lookup)
     lines: List[str] = []
     bib_entries: Dict[str, str] = {}     # key → entry, so a source cited twice
                                          # yields one entry (dict, not a list)
@@ -461,7 +474,11 @@ def export_narrative_latex(graph: Any, narrative_id: str, *,
                 text = getattr(block, "text", "") or ""
                 if not text.strip():
                     continue
-                body = _markdown_to_latex(text)
+                # `[[id]]` mentions: resolved before the markdown pass, written
+                # after it, so a name is escaped once and emphasised once.
+                text, mentions = substitute_mentions(text, name_of)
+                body = render_mention_tokens(_markdown_to_latex(text), mentions,
+                                             _latex_mention)
                 if getattr(block, "ai_generated", False) \
                         and not getattr(block, "validated_by", None):
                     # Said in the text, not only in a comment: an unendorsed

@@ -25,14 +25,26 @@ says the new thing. That is the whole reason for authoring on the property graph
 instead of pasting text — and it is why :meth:`NarrativeNode.referenced_ids`
 exists rather than a `referenced_names`.
 
+**A mention is a lighter reference, written in the prose.** ``[[<node_id>]]``
+inside the ``text`` of a prose block names a node in passing — «the wall
+[[US.101]] cuts the floor» — without an embed beside the paragraph (E.D., 29 Sep
+2026, desk v9). No new field: the prose stays markdown, and the mention is read
+out of it by :func:`mentions_in`. It COUNTS AS A CITATION: it is in
+:meth:`NarrativeNode.referenced_ids` in order of appearance, it can dangle and is
+reported like an embed that dangles, and ``query.citations`` lists it with
+``kind: "mention"``. The brackets never reach a reader: every exporter writes the
+node's NAME in their place (italic where the format has italics, plain in a
+notebook), via :func:`substitute_mentions`.
+
 Two-tier invariant: this is the **authoring** layer (property graph, em.json).
 RDF is a projection of it, emitted by the exporter — never the other way round.
 """
 
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from .base_node import Node
 
@@ -99,6 +111,90 @@ STATUS_HUMAN = "human"            # written by a person; nothing to endorse
 STATUS_AI_DRAFT = "ai_draft"      # machine-written, NOT yet endorsed
 STATUS_AI_ENDORSED = "ai_endorsed"  # machine-written, a person has vouched for it
 NARRATIVE_STATUSES = (STATUS_HUMAN, STATUS_AI_DRAFT, STATUS_AI_ENDORSED)
+
+
+#: A mention: ``[[<node_id>]]`` in the text of a prose block. The id is what is
+#: between the double brackets, trimmed; it may hold spaces and dots (node ids
+#: are free text) but not a bracket or a line break, so a stray ``[[`` cannot
+#: swallow a paragraph.
+MENTION_PATTERN = re.compile(r"\[\[\s*([^\[\]\n]+?)\s*\]\]")
+
+#: Private-use characters that stand in for a mention between the moment it is
+#: resolved and the moment a renderer formats it. They survive every escape the
+#: exporters apply (HTML, LaTeX, markdown marks), so the NAME can be inserted
+#: after escaping — escaped by the renderer's own rule, in its own italics —
+#: instead of being pushed through a markdown pass it could break (a name with an
+#: asterisk in it would otherwise become emphasis).
+MENTION_OPEN = "\ue000"
+MENTION_CLOSE = "\ue001"
+MENTION_TOKEN = re.compile("\ue000(\\d+)\ue001")
+
+
+def mentions_in(text: Optional[str]) -> List[str]:
+    """The ids mentioned in ``text``, in order of appearance, without repeats."""
+    seen, out = set(), []
+    for match in MENTION_PATTERN.finditer(str(text or "")):
+        ref = match.group(1)
+        if ref not in seen:
+            seen.add(ref)
+            out.append(ref)
+    return out
+
+
+@dataclass
+class Mention:
+    """One mention, resolved for a renderer. ``label`` is the node's name when
+    it resolved; when it did not, the same words an unresolved embed prints."""
+    ref: str
+    label: str
+    resolved: bool
+
+
+def unresolved_label(ref: str) -> str:
+    """What a reference that points at nothing says on the page — one wording
+    for an embed and a mention, so a reader meets one kind of hole."""
+    return f"[riferimento non risolto: {ref}]"
+
+
+def substitute_mentions(text: Optional[str],
+                        name_of: Callable[[str], Optional[str]]
+                        ) -> Tuple[str, List[Mention]]:
+    """Replace every ``[[id]]`` in ``text`` with a token, and resolve it.
+
+    ``name_of(ref)`` returns the node's display name, or None when no node
+    answers to ``ref``. The returned text carries ``MENTION_OPEN<i>MENTION_CLOSE``
+    where mention ``i`` was; a renderer escapes the text by its own rules and
+    then swaps each token for ``mentions[i]`` in its own form
+    (:func:`render_mention_tokens`).
+    """
+    found: List[Mention] = []
+
+    def swap(match: "re.Match") -> str:
+        ref = match.group(1)
+        name = name_of(ref)
+        found.append(Mention(ref=ref,
+                             label=str(name) if name else unresolved_label(ref),
+                             resolved=bool(name)))
+        return f"{MENTION_OPEN}{len(found) - 1}{MENTION_CLOSE}"
+
+    return MENTION_PATTERN.sub(swap, str(text or "")), found
+
+
+def render_mention_tokens(text: str, mentions: List[Mention],
+                          form: Callable[[Mention], str]) -> str:
+    """Swap the tokens :func:`substitute_mentions` left for ``form(mention)``."""
+    def swap(match: "re.Match") -> str:
+        index = int(match.group(1))
+        return form(mentions[index]) if index < len(mentions) else ""
+    return MENTION_TOKEN.sub(swap, text)
+
+
+def plain_mentions(text: Optional[str],
+                   name_of: Callable[[str], Optional[str]]) -> str:
+    """``text`` with every mention written as the plain name (or the unresolved
+    wording) — for a surface with no italics to give it."""
+    tokenised, mentions = substitute_mentions(text, name_of)
+    return render_mention_tokens(tokenised, mentions, lambda m: m.label)
 
 
 class NarrativeError(ValueError):
@@ -185,6 +281,13 @@ class Block:
     def embed(cls, ref: str, view_type: str, **options: Any) -> "Block":
         return cls(block_type=BLOCK_EMBED, ref=ref, view_type=view_type,
                    options=dict(options))
+
+    def mentions(self) -> List[str]:
+        """The ids this block mentions in its prose (``[[id]]``), in order,
+        without repeats. An embed mentions nothing: it IS a reference."""
+        if self.block_type != BLOCK_PROSE:
+            return []
+        return mentions_in(self.text)
 
     def to_dict(self) -> Dict[str, Any]:
         """Only what this block actually carries — an absent key is smaller and
@@ -342,19 +445,32 @@ class NarrativeNode(Node):
 
     def referenced_ids(self) -> List[str]:
         """Every resource this narrative points at, in order of appearance,
-        without repetitions.
+        without repetitions — embeds AND mentions.
 
-        This is what makes "which narratives cite this US" answerable without
-        parsing prose, and what the RDF projection turns into reference
-        predicates.
+        This is what makes "which narratives cite this US" answerable, and what
+        the RDF projection turns into reference predicates. A mention counts: it
+        is a citation written in the sentence instead of beside it.
         """
         seen, out = set(), []
         for chapter in self.chapters:
             for block in chapter.blocks:
-                if block.block_type == BLOCK_EMBED and block.ref \
-                        and block.ref not in seen:
-                    seen.add(block.ref)
-                    out.append(block.ref)
+                refs = ([block.ref] if block.block_type == BLOCK_EMBED
+                        and block.ref else block.mentions())
+                for ref in refs:
+                    if ref not in seen:
+                        seen.add(ref)
+                        out.append(ref)
+        return out
+
+    def mentioned_ids(self) -> List[str]:
+        """Only the ``[[id]]`` mentions, in order of appearance, without
+        repeats — for the caller that needs to tell them from embeds."""
+        seen, out = set(), []
+        for _c, block in self.blocks_iter():
+            for ref in block.mentions():
+                if ref not in seen:
+                    seen.add(ref)
+                    out.append(ref)
         return out
 
     # — authorship and endorsement (N4) ————————————————————————————————
@@ -406,8 +522,9 @@ class NarrativeNode(Node):
         """The referenced ids that no node in ``graph`` answers to.
 
         An embed is a reference, so it can dangle — a source removed from the
-        graph leaves the narrative pointing at nothing. Saying which, instead of
-        rendering a blank, is the same principle as the state warnings.
+        graph leaves the narrative pointing at nothing — and so can a mention,
+        which is reported the same way. Saying which, instead of rendering a
+        blank, is the same principle as the state warnings.
         """
         return [ref for ref in self.referenced_ids()
                 if graph.find_node_by_id(ref) is None]

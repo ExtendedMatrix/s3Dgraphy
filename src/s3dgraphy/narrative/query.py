@@ -88,35 +88,50 @@ def _edges(graph: Any) -> List[Any]:
 
 
 def citations(graph: Any) -> List[Dict[str, Any]]:
-    """Every embed in every narrative, flattened, **with its position**.
+    """Every reference in every narrative, flattened, **with its position**.
 
     The spine the other queries are built on. Each row is one act of citing:
 
         {narrative_id, narrative_name, chapter, chapter_title,
-         block, ref, view_type}
+         block, ref, view_type, kind}
+
+    `kind` says HOW the node is cited: ``"embed"`` — a block of its own, shown
+    with its ``view_type`` — or ``"mention"`` — ``[[id]]`` written inside a prose
+    block, which has no view (``view_type`` is ``""``). A mention is a citation
+    too (E.D., 29 Sep 2026): it enters coverage, the retracted-source check and
+    "which narratives cite this", exactly like an embed. A prose block that
+    mentions the same node twice cites it once.
 
     `chapter` and `block` are zero-based indices in reading order, which is what
     makes "in ordine di blocco" a fact rather than a hope — a caller sorting by
     them gets the sequence the author wrote.
     """
+    from ..nodes.narrative_node import mentions_in
+
     rows: List[Dict[str, Any]] = []
     for narrative in narratives(graph):
         for c_index, chapter in enumerate(_chapters(narrative)):
             for b_index, block in enumerate(_blocks(chapter)):
-                if block.get("block_type") != "embed":
-                    continue
-                ref = str(block.get("ref") or "")
-                if not ref:
-                    continue
-                rows.append({
-                    "narrative_id": narrative.node_id,
-                    "narrative_name": _name(narrative),
-                    "chapter": c_index,
-                    "chapter_title": str(chapter.get("title") or ""),
-                    "block": b_index,
-                    "ref": ref,
-                    "view_type": str(block.get("view_type") or ""),
-                })
+                if block.get("block_type") == "embed":
+                    ref = str(block.get("ref") or "")
+                    cited = [(ref, str(block.get("view_type") or ""), "embed")] \
+                        if ref else []
+                elif block.get("block_type", "prose") == "prose":
+                    cited = [(ref, "", "mention")
+                             for ref in mentions_in(block.get("text"))]
+                else:
+                    cited = []
+                for ref, view_type, kind in cited:
+                    rows.append({
+                        "narrative_id": narrative.node_id,
+                        "narrative_name": _name(narrative),
+                        "chapter": c_index,
+                        "chapter_title": str(chapter.get("title") or ""),
+                        "block": b_index,
+                        "ref": ref,
+                        "view_type": view_type,
+                        "kind": kind,
+                    })
     return rows
 
 

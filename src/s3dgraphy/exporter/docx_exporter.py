@@ -62,6 +62,32 @@ def _add_citation_paragraph(document: Any, entry: dict) -> None:
     document.add_paragraph(", ".join(b for b in bits if b), style=None)
 
 
+def _add_prose_runs(paragraph: Any, block: Any) -> None:
+    """The prose, with each ``[[id]]`` mention written as the node's name in an
+    italic run — or, when it points at nothing, the unresolved wording in bold,
+    as an unresolved embed is. A Word paragraph is a row of runs, so the tokens
+    the bake left are the natural places to cut it."""
+    from ..nodes.narrative_node import MENTION_TOKEN
+
+    text = block.text or ""
+    mentions = list(getattr(block, "mentions", None) or [])
+    cursor = 0
+    for match in MENTION_TOKEN.finditer(text):
+        if match.start() > cursor:
+            paragraph.add_run(text[cursor:match.start()])
+        index = int(match.group(1))
+        if index < len(mentions):
+            mention = mentions[index]
+            run = paragraph.add_run(mention.label)
+            if mention.resolved:
+                run.italic = True
+            else:
+                run.bold = True
+        cursor = match.end()
+    if cursor < len(text):
+        paragraph.add_run(text[cursor:])
+
+
 def render_docx(baked: BakedNarrative) -> bytes:
     """Render a :class:`BakedNarrative` to .docx bytes.
 
@@ -117,7 +143,7 @@ def render_docx(baked: BakedNarrative) -> bytes:
                     flag = paragraph.add_run("[bozza generata, non avallata] ")
                     flag.italic = True
                     flag.bold = True
-                paragraph.add_run(block.text)
+                _add_prose_runs(paragraph, block)
                 continue
 
             if block.kind == "image":

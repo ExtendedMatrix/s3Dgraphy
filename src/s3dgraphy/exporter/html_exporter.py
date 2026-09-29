@@ -33,6 +33,7 @@ import html
 from typing import Any, Dict, List, Optional
 
 from ..narrative.bake import BakedBlock, BakedNarrative
+from ..nodes.narrative_node import render_mention_tokens
 
 #: Enough CSS to read by, and no more. It travels INSIDE the file: a stylesheet
 #: link would break the promise the format is chosen for.
@@ -72,6 +73,7 @@ h2 { font-size: 1.3rem; margin: 2.2rem 0 .6rem;
   font-size: .7rem; text-transform: uppercase; letter-spacing: .06em;
   color: #d08b00; margin-bottom: .3rem;
 }
+.em-unresolved { font-weight: 600; color: #b3261e; }
 .em-sources { margin-top: 3rem; }
 .em-sources li { margin-bottom: .4rem; font-size: .9rem; }
 .em-footer { margin-top: 3.5rem; padding-top: 1rem;
@@ -84,7 +86,16 @@ def _esc(value: Any) -> str:
     return html.escape(str(value or ""), quote=True)
 
 
-def _prose(text: str) -> str:
+def _mention(mention: Any) -> str:
+    """A mention as the reader sees it: the node's name in italics, or — when
+    it points at nothing — the unresolved wording, marked like an unresolved
+    embed."""
+    if getattr(mention, "resolved", False):
+        return f'<em class="em-mention">{_esc(mention.label)}</em>'
+    return f'<span class="em-unresolved">{_esc(mention.label)}</span>'
+
+
+def _prose(text: str, mentions: Optional[List[Any]] = None) -> str:
     """Paragraphs, and the same three marks the editor accepts.
 
     Escaped FIRST, then the marks are re-introduced — so nothing an author typed
@@ -106,6 +117,7 @@ def _prose(text: str) -> str:
                     rebuilt += (f"<{tag}>{parts[i]}</{tag}>"
                                 if i % 2 else parts[i])
                 safe = rebuilt
+        safe = render_mention_tokens(safe, list(mentions or []), _mention)
         out.append(f"<p>{safe.replace(chr(10), '<br>')}</p>")
     return "\n".join(out)
 
@@ -132,7 +144,7 @@ def _block(block: BakedBlock) -> str:
     link = getattr(block, "link", "")
 
     if kind == "prose":
-        body = _prose(block.text)
+        body = _prose(block.text, getattr(block, "mentions", None))
         if getattr(block, "unendorsed", False):
             return f'<div class="em-embed em-unendorsed">{body}</div>'
         return body
