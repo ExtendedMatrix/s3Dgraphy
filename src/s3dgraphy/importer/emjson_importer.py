@@ -68,10 +68,19 @@ def schema_version_of(doc: Dict[str, Any]) -> int:
 # dataset opens on the new model. Add future renames here.
 _LEGACY_NODE_TYPE_ALIASES = {"link": "resource"}  # LinkNode → ResourceNode
 
+# 1.6.12 (E.D., 30 Sep 2026) · a legacy node_type that is not a rename but a
+# type PLUS a datum: ``USM`` was never a type of the datamodel (it rendered
+# untyped), and a masonry unit is a US whose ``stratigraphic_kind`` is masonry.
+# The datum is set only when the file does not state one.
+_LEGACY_NODE_TYPE_MIGRATIONS = {"USM": ("US", {"stratigraphic_kind": "masonry"})}
+
 
 def _instantiate(node_type: str, payload: Dict[str, Any],
                  warnings: List[str]):
     node_type = _LEGACY_NODE_TYPE_ALIASES.get(node_type, node_type)
+    migrated_data: Dict[str, Any] = {}
+    if node_type in _LEGACY_NODE_TYPE_MIGRATIONS:
+        node_type, migrated_data = _LEGACY_NODE_TYPE_MIGRATIONS[node_type]
     cls = Node.node_type_map.get(node_type)
     if cls is None:
         # ``Node`` is not in the map because it is the base class, not a type:
@@ -88,6 +97,8 @@ def _instantiate(node_type: str, payload: Dict[str, Any],
         cls = Node
 
     data = dict(payload.get("data") or {})
+    for k, v in migrated_data.items():
+        data.setdefault(k, v)
     # A computed chronology an older writer left in the file (CALCUL_*) is not a
     # datum: it does not enter the node, where it would pass for something
     # somebody asserted and — sitting in node.data — win over the next
@@ -295,6 +306,12 @@ def parse_emjson(doc: Dict[str, Any], *,
             f"reading migration: extractor '{entry['extractor_id']}' keeps its "
             f"data.geometry until the graph is opened from a file — its point "
             f"needs a folder for readings/{entry['region_id']}.glb")
+
+    # dtc_kinds 1.6.22 · the capture is an acquisition: an acquisition written
+    # in EMStudio's provisional form (`local_import` + `data.capture`) opens as
+    # an acquisition OF that capture. See dtc/capture.py. Idempotent.
+    from ..dtc.capture import migrate_provisional_captures
+    migrate_provisional_captures(graph)
 
     return graph, warnings
 

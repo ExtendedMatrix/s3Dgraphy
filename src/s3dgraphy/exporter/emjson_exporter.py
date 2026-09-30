@@ -63,6 +63,7 @@ _LIFTED_ATTRS = (
     "source",                                     # ExtractorNode
     "symbol", "label",                            # class-level display metadata
     "definition",                                 # StratigraphicNode (a concept)
+    "stratigraphic_kind",                         # StratigraphicUnit (masonry)
 )
 
 

@@ -67,7 +67,7 @@ def import_from_pg(
     """
     from s3dgraphy import Graph
     from s3dgraphy.nodes.property_node import PropertyNode
-    from s3dgraphy.utils.utils import get_stratigraphic_node_class
+    from s3dgraphy.utils.utils import apply_legacy_kind, get_stratigraphic_node_class
 
     mapping = _load_mapping(mapping_name)
     table = mapping["table_settings"]["table_name"]
@@ -119,6 +119,7 @@ def import_from_pg(
             name=node_name,
             description=description,
         )
+        apply_legacy_kind(strat_node, unita_tipo)
         try:
             graph.add_node(strat_node, overwrite=True)
         except Exception:

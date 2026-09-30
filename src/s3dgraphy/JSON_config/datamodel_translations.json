@@ -1,6 +1,6 @@
 {
  "schema": "s3Dgraphy_datamodel_translations",
- "version": "1.4",
+ "version": "1.5",
  "languages": [
   "en",
   "it",
@@ -255,7 +255,7 @@
   },
   "DTCAcquisitionNode": {
    "description": {
-    "en": "A DTC ACQUISITION step: the digital event by which an asset ENTERS this study from an (opaque, Tier-0) external source — a data-transfer / ingestion event, DISTINCT from the genesis DTCProcessNode. Projected as crmdig:D12_Data_Transfer_Event (a subclass of D7_Digital_Machine_Event, ⊂ prov:Activity): 'events that transfer a digital object from one digital carrier to another; normally the digital object remains the same' — the object arrives opaque, no genesis is asserted. Tier 0: single-ring chain — the acquisition event --dtc_had_output[prov:generated]--> the acquired Resource (ResourceNode); the upstream root is an opaque external entity recorded as literals on data (repo/record/agent/retrieved_at/rights), not a genesis sub-graph. data.dtc_kind from the `acquisition` axis (download / ingest / local_import). Keeps genesis != acquisition as distinct TYPES inside the one DTC substrate.",
+    "en": "A DTC ACQUISITION step: the digital event by which an asset ENTERS this study from an (opaque, Tier-0) external source — a data-transfer / ingestion event, DISTINCT from the genesis DTCProcessNode. Projected as crmdig:D12_Data_Transfer_Event (a subclass of D7_Digital_Machine_Event, ⊂ prov:Activity): 'events that transfer a digital object from one digital carrier to another; normally the digital object remains the same' — the object arrives opaque, no genesis is asserted. Tier 0: single-ring chain — the acquisition event --dtc_had_output[prov:generated]--> the acquired Resource (ResourceNode); the upstream root is an opaque external entity recorded as literals on data (repo/record/agent/retrieved_at/rights), not a genesis sub-graph. data.dtc_kind from the `acquisition` axis (two families since 1.6.22 — capture: photo / laserscanner / topographic / gnss_survey / field_drawing / recording_sheet; retrieval: download / local_import / uri_reference / ingest). Keeps genesis != acquisition as distinct TYPES inside the one DTC substrate.",
     "validated_it": false,
     "validated_el": false,
     "validated_he": false,
@@ -264,14 +264,14 @@
     "validated_ro": false,
     "validated_fr": false,
     "validated_de": false,
-    "it": "Un passo di ACQUISIZIONE DTC: l'evento digitale con cui un asset ENTRA in questo studio da una fonte esterna (opaca, Tier-0) — un evento di trasferimento/ingestione di dati, DISTINTO dal DTCProcessNode di genesi. Proiettato come crmdig:D12_Data_Transfer_Event (sottoclasse di D7_Digital_Machine_Event, ⊂ prov:Activity): «eventi che trasferiscono un oggetto digitale da un supporto digitale a un altro; normalmente l'oggetto digitale resta lo stesso» — l'oggetto arriva opaco, nessuna genesi viene asserita. Tier 0: catena ad anello singolo — l'evento di acquisizione --dtc_had_output[prov:generated]--> la risorsa acquisita (ResourceNode); la radice a monte è un'entità esterna opaca registrata come letterali in data (repo/record/agent/retrieved_at/rights), non un sottografo di genesi. data.dtc_kind dall'asse `acquisition` (download / ingest / local_import). Mantiene genesi != acquisizione come TIPI distinti all'interno dell'unico substrato DTC.",
-    "el": "Ένα βήμα ΑΠΟΚΤΗΣΗΣ DTC: το ψηφιακό συμβάν με το οποίο ένα στοιχείο ΕΙΣΕΡΧΕΤΑΙ σε αυτή τη μελέτη από μια (αδιαφανή, Tier-0) εξωτερική πηγή — ένα συμβάν μεταφοράς / εισαγωγής δεδομένων, ΔΙΑΚΡΙΤΟ από τον DTCProcessNode της γένεσης. Προβάλλεται ως crmdig:D12_Data_Transfer_Event (υποκλάση του D7_Digital_Machine_Event, ⊂ prov:Activity): «συμβάντα που μεταφέρουν ένα ψηφιακό αντικείμενο από έναν ψηφιακό φορέα σε άλλον· κανονικά το ψηφιακό αντικείμενο παραμένει το ίδιο» — το αντικείμενο φθάνει αδιαφανές, δεν διατυπώνεται γένεση. Tier 0: αλυσίδα ενός κρίκου — το συμβάν απόκτησης --dtc_had_output[prov:generated]--> ο αποκτηθείς πόρος (ResourceNode)· η ανάντη ρίζα είναι μια αδιαφανής εξωτερική οντότητα καταγεγραμμένη ως literals στο data (repo/record/agent/retrieved_at/rights), όχι ως υπογράφημα γένεσης. Το data.dtc_kind προέρχεται από τον άξονα `acquisition` (download / ingest / local_import). Διατηρεί τη γένεση != απόκτηση ως διακριτούς ΤΥΠΟΥΣ μέσα στο ενιαίο υπόστρωμα DTC.",
-    "he": "שלב רכישה (ACQUISITION) של DTC: האירוע הדיגיטלי שבו נכס נכנס למחקר זה ממקור חיצוני (אטום, Tier-0) — אירוע העברת נתונים / קליטה, הנבדל מ־DTCProcessNode של היווצרות (genesis). מוקרן כ־crmdig:D12_Data_Transfer_Event (תת־מחלקה של D7_Digital_Machine_Event, ⊂ prov:Activity): 'אירועים המעבירים אובייקט דיגיטלי מנשא דיגיטלי אחד לאחר; בדרך כלל האובייקט הדיגיטלי נשאר זהה' — האובייקט מגיע אטום, ואין קביעה של היווצרות. Tier 0: שרשרת בת טבעת אחת — אירוע הרכישה --dtc_had_output[prov:generated]--> המשאב שנרכש (ResourceNode); השורש שבמעלה הזרם הוא ישות חיצונית אטומה הנרשמת כליטרלים ב־data (repo/record/agent/retrieved_at/rights), ולא כתת־גרף של היווצרות. data.dtc_kind לקוח מציר ה־`acquisition` (download / ingest / local_import). שומר על genesis != acquisition כסוגים נפרדים בתוך מצע DTC אחד.",
-    "es": "Un paso de ADQUISICIÓN DTC: el evento digital por el que un activo ENTRA en este estudio desde una fuente externa (opaca, Tier-0) — un evento de transferencia / ingesta de datos, DISTINTO del DTCProcessNode de génesis. Se proyecta como crmdig:D12_Data_Transfer_Event (subclase de D7_Digital_Machine_Event, ⊂ prov:Activity): 'eventos que transfieren un objeto digital de un soporte digital a otro; normalmente el objeto digital sigue siendo el mismo' — el objeto llega opaco, no se afirma ninguna génesis. Tier 0: cadena de un solo eslabón — el evento de adquisición --dtc_had_output[prov:generated]--> el recurso adquirido (ResourceNode); la raíz aguas arriba es una entidad externa opaca registrada como literales en data (repo/record/agent/retrieved_at/rights), no un subgrafo de génesis. data.dtc_kind procede del eje `acquisition` (download / ingest / local_import). Mantiene génesis != adquisición como TIPOS distintos dentro del único sustrato DTC.",
-    "pl": "Krok POZYSKANIA DTC: zdarzenie cyfrowe, przez które zasób WCHODZI do tego opracowania z (nieprzejrzystego, Tier-0) źródła zewnętrznego — zdarzenie transferu / pobrania danych, ODRĘBNE od genezy DTCProcessNode. Rzutowane jako crmdig:D12_Data_Transfer_Event (podklasa D7_Digital_Machine_Event, ⊂ prov:Activity): „zdarzenia przenoszące obiekt cyfrowy z jednego nośnika cyfrowego na inny; zazwyczaj obiekt cyfrowy pozostaje ten sam” — obiekt przybywa jako nieprzejrzysty, żadna geneza nie jest stwierdzana. Tier 0: łańcuch jednoogniwowy — zdarzenie pozyskania --dtc_had_output[prov:generated]--> pozyskany zasób (ResourceNode); źródło nadrzędne to nieprzejrzysta jednostka zewnętrzna zapisana jako literały w data (repo/record/agent/retrieved_at/rights), a nie podgraf genezy. data.dtc_kind pochodzi z osi `acquisition` (download / ingest / local_import). Utrzymuje genezę != pozyskanie jako odrębne TYPY w ramach jednego substratu DTC.",
-    "ro": "Un pas de ACHIZIȚIE DTC: evenimentul digital prin care un bun INTRĂ în acest studiu dintr-o sursă externă (opacă, Tier-0) — un eveniment de transfer / preluare de date, DISTINCT de DTCProcessNode de geneză. Proiectat ca crmdig:D12_Data_Transfer_Event (subclasă a D7_Digital_Machine_Event, ⊂ prov:Activity): „evenimente care transferă un obiect digital de pe un suport digital pe altul; în mod normal obiectul digital rămâne același” — obiectul sosește opac, nu se afirmă nicio geneză. Tier 0: lanț cu un singur inel — evenimentul de achiziție --dtc_had_output[prov:generated]--> Resursa achiziționată (ResourceNode); rădăcina din amonte este o entitate externă opacă, înregistrată ca literali în data (repo/record/agent/retrieved_at/rights), nu un subgraf de geneză. data.dtc_kind provine din axa `acquisition` (download / ingest / local_import). Menține geneza != achiziția ca TIPURI distincte în cadrul unicului substrat DTC.",
-    "fr": "Une étape d'ACQUISITION DTC : l'événement numérique par lequel un objet ENTRE dans cette étude depuis une source externe (opaque, niveau 0) — un événement de transfert / d'ingestion de données, DISTINCT du DTCProcessNode de genèse. Projeté comme crmdig:D12_Data_Transfer_Event (sous-classe de D7_Digital_Machine_Event, ⊂ prov:Activity) : 'events that transfer a digital object from one digital carrier to another; normally the digital object remains the same' — l'objet arrive opaque, aucune genèse n'est affirmée. Niveau 0 : chaîne à un seul anneau — l'événement d'acquisition --dtc_had_output[prov:generated]--> la ressource acquise (ResourceNode) ; la racine amont est une entité externe opaque enregistrée sous forme de littéraux dans data (repo/record/agent/retrieved_at/rights), et non un sous-graphe de genèse. data.dtc_kind provient de l'axe `acquisition` (download / ingest / local_import). Maintient genèse != acquisition comme deux TYPES distincts au sein de l'unique substrat DTC.",
-    "de": "Ein DTC-ERWERBSSCHRITT: das digitale Ereignis, durch das ein Asset aus einer (opaken, Tier-0) externen Quelle in diese Studie EINGEHT — ein Datenübertragungs-/Ingest-Ereignis, VERSCHIEDEN vom Entstehungs-DTCProcessNode. Projiziert als crmdig:D12_Data_Transfer_Event (eine Unterklasse von D7_Digital_Machine_Event, ⊂ prov:Activity): 'Ereignisse, die ein digitales Objekt von einem digitalen Träger auf einen anderen übertragen; normalerweise bleibt das digitale Objekt dasselbe' — das Objekt kommt opak an, es wird keine Entstehung behauptet. Tier 0: Kette mit einem einzigen Glied — das Erwerbsereignis --dtc_had_output[prov:generated]--> die erworbene Ressource (ResourceNode); die vorgelagerte Wurzel ist eine opake externe Entität, die als Literale in data festgehalten wird (repo/record/agent/retrieved_at/rights), nicht als Entstehungs-Teilgraph. data.dtc_kind stammt aus der Achse `acquisition` (download / ingest / local_import). Hält Entstehung != Erwerb als verschiedene TYPEN innerhalb des einen DTC-Substrats auseinander."
+    "it": "Un passo di ACQUISIZIONE DTC: l'evento digitale con cui un asset ENTRA in questo studio da una fonte esterna (opaca, Tier-0) — un evento di trasferimento/ingestione di dati, DISTINTO dal DTCProcessNode di genesi. Proiettato come crmdig:D12_Data_Transfer_Event (sottoclasse di D7_Digital_Machine_Event, ⊂ prov:Activity): «eventi che trasferiscono un oggetto digitale da un supporto digitale a un altro; normalmente l'oggetto digitale resta lo stesso» — l'oggetto arriva opaco, nessuna genesi viene asserita. Tier 0: catena ad anello singolo — l'evento di acquisizione --dtc_had_output[prov:generated]--> la risorsa acquisita (ResourceNode); la radice a monte è un'entità esterna opaca registrata come letterali in data (repo/record/agent/retrieved_at/rights), non un sottografo di genesi. data.dtc_kind dall'asse `acquisition` (due famiglie dalla 1.6.22 — capture: photo / laserscanner / topographic / gnss_survey / field_drawing / recording_sheet; retrieval: download / local_import / uri_reference / ingest). Mantiene genesi != acquisizione come TIPI distinti all'interno dell'unico substrato DTC.",
+    "el": "Ένα βήμα ΑΠΟΚΤΗΣΗΣ DTC: το ψηφιακό συμβάν με το οποίο ένα στοιχείο ΕΙΣΕΡΧΕΤΑΙ σε αυτή τη μελέτη από μια (αδιαφανή, Tier-0) εξωτερική πηγή — ένα συμβάν μεταφοράς / εισαγωγής δεδομένων, ΔΙΑΚΡΙΤΟ από τον DTCProcessNode της γένεσης. Προβάλλεται ως crmdig:D12_Data_Transfer_Event (υποκλάση του D7_Digital_Machine_Event, ⊂ prov:Activity): «συμβάντα που μεταφέρουν ένα ψηφιακό αντικείμενο από έναν ψηφιακό φορέα σε άλλον· κανονικά το ψηφιακό αντικείμενο παραμένει το ίδιο» — το αντικείμενο φθάνει αδιαφανές, δεν διατυπώνεται γένεση. Tier 0: αλυσίδα ενός κρίκου — το συμβάν απόκτησης --dtc_had_output[prov:generated]--> ο αποκτηθείς πόρος (ResourceNode)· η ανάντη ρίζα είναι μια αδιαφανής εξωτερική οντότητα καταγεγραμμένη ως literals στο data (repo/record/agent/retrieved_at/rights), όχι ως υπογράφημα γένεσης. Το data.dtc_kind προέρχεται από τον άξονα `acquisition` (δύο οικογένειες από την 1.6.22 — capture: photo / laserscanner / topographic / gnss_survey / field_drawing / recording_sheet· retrieval: download / local_import / uri_reference / ingest). Διατηρεί τη γένεση != απόκτηση ως διακριτούς ΤΥΠΟΥΣ μέσα στο ενιαίο υπόστρωμα DTC.",
+    "he": "שלב רכישה (ACQUISITION) של DTC: האירוע הדיגיטלי שבו נכס נכנס למחקר זה ממקור חיצוני (אטום, Tier-0) — אירוע העברת נתונים / קליטה, הנבדל מ־DTCProcessNode של היווצרות (genesis). מוקרן כ־crmdig:D12_Data_Transfer_Event (תת־מחלקה של D7_Digital_Machine_Event, ⊂ prov:Activity): 'אירועים המעבירים אובייקט דיגיטלי מנשא דיגיטלי אחד לאחר; בדרך כלל האובייקט הדיגיטלי נשאר זהה' — האובייקט מגיע אטום, ואין קביעה של היווצרות. Tier 0: שרשרת בת טבעת אחת — אירוע הרכישה --dtc_had_output[prov:generated]--> המשאב שנרכש (ResourceNode); השורש שבמעלה הזרם הוא ישות חיצונית אטומה הנרשמת כליטרלים ב־data (repo/record/agent/retrieved_at/rights), ולא כתת־גרף של היווצרות. data.dtc_kind לקוח מציר ה־`acquisition` (שתי משפחות מאז 1.6.22 — capture: photo / laserscanner / topographic / gnss_survey / field_drawing / recording_sheet; retrieval: download / local_import / uri_reference / ingest). שומר על genesis != acquisition כסוגים נפרדים בתוך מצע DTC אחד.",
+    "es": "Un paso de ADQUISICIÓN DTC: el evento digital por el que un activo ENTRA en este estudio desde una fuente externa (opaca, Tier-0) — un evento de transferencia / ingesta de datos, DISTINTO del DTCProcessNode de génesis. Se proyecta como crmdig:D12_Data_Transfer_Event (subclase de D7_Digital_Machine_Event, ⊂ prov:Activity): 'eventos que transfieren un objeto digital de un soporte digital a otro; normalmente el objeto digital sigue siendo el mismo' — el objeto llega opaco, no se afirma ninguna génesis. Tier 0: cadena de un solo eslabón — el evento de adquisición --dtc_had_output[prov:generated]--> el recurso adquirido (ResourceNode); la raíz aguas arriba es una entidad externa opaca registrada como literales en data (repo/record/agent/retrieved_at/rights), no un subgrafo de génesis. data.dtc_kind procede del eje `acquisition` (dos familias desde 1.6.22 — capture: photo / laserscanner / topographic / gnss_survey / field_drawing / recording_sheet; retrieval: download / local_import / uri_reference / ingest). Mantiene génesis != adquisición como TIPOS distintos dentro del único sustrato DTC.",
+    "pl": "Krok POZYSKANIA DTC: zdarzenie cyfrowe, przez które zasób WCHODZI do tego opracowania z (nieprzejrzystego, Tier-0) źródła zewnętrznego — zdarzenie transferu / pobrania danych, ODRĘBNE od genezy DTCProcessNode. Rzutowane jako crmdig:D12_Data_Transfer_Event (podklasa D7_Digital_Machine_Event, ⊂ prov:Activity): „zdarzenia przenoszące obiekt cyfrowy z jednego nośnika cyfrowego na inny; zazwyczaj obiekt cyfrowy pozostaje ten sam” — obiekt przybywa jako nieprzejrzysty, żadna geneza nie jest stwierdzana. Tier 0: łańcuch jednoogniwowy — zdarzenie pozyskania --dtc_had_output[prov:generated]--> pozyskany zasób (ResourceNode); źródło nadrzędne to nieprzejrzysta jednostka zewnętrzna zapisana jako literały w data (repo/record/agent/retrieved_at/rights), a nie podgraf genezy. data.dtc_kind pochodzi z osi `acquisition` (dwie rodziny od 1.6.22 — capture: photo / laserscanner / topographic / gnss_survey / field_drawing / recording_sheet; retrieval: download / local_import / uri_reference / ingest). Utrzymuje genezę != pozyskanie jako odrębne TYPY w ramach jednego substratu DTC.",
+    "ro": "Un pas de ACHIZIȚIE DTC: evenimentul digital prin care un bun INTRĂ în acest studiu dintr-o sursă externă (opacă, Tier-0) — un eveniment de transfer / preluare de date, DISTINCT de DTCProcessNode de geneză. Proiectat ca crmdig:D12_Data_Transfer_Event (subclasă a D7_Digital_Machine_Event, ⊂ prov:Activity): „evenimente care transferă un obiect digital de pe un suport digital pe altul; în mod normal obiectul digital rămâne același” — obiectul sosește opac, nu se afirmă nicio geneză. Tier 0: lanț cu un singur inel — evenimentul de achiziție --dtc_had_output[prov:generated]--> Resursa achiziționată (ResourceNode); rădăcina din amonte este o entitate externă opacă, înregistrată ca literali în data (repo/record/agent/retrieved_at/rights), nu un subgraf de geneză. data.dtc_kind provine din axa `acquisition` (două familii începând cu 1.6.22 — capture: photo / laserscanner / topographic / gnss_survey / field_drawing / recording_sheet; retrieval: download / local_import / uri_reference / ingest). Menține geneza != achiziția ca TIPURI distincte în cadrul unicului substrat DTC.",
+    "fr": "Une étape d'ACQUISITION DTC : l'événement numérique par lequel un objet ENTRE dans cette étude depuis une source externe (opaque, niveau 0) — un événement de transfert / d'ingestion de données, DISTINCT du DTCProcessNode de genèse. Projeté comme crmdig:D12_Data_Transfer_Event (sous-classe de D7_Digital_Machine_Event, ⊂ prov:Activity) : 'events that transfer a digital object from one digital carrier to another; normally the digital object remains the same' — l'objet arrive opaque, aucune genèse n'est affirmée. Niveau 0 : chaîne à un seul anneau — l'événement d'acquisition --dtc_had_output[prov:generated]--> la ressource acquise (ResourceNode) ; la racine amont est une entité externe opaque enregistrée sous forme de littéraux dans data (repo/record/agent/retrieved_at/rights), et non un sous-graphe de genèse. data.dtc_kind provient de l'axe `acquisition` (deux familles depuis 1.6.22 — capture : photo / laserscanner / topographic / gnss_survey / field_drawing / recording_sheet ; retrieval : download / local_import / uri_reference / ingest). Maintient genèse != acquisition comme deux TYPES distincts au sein de l'unique substrat DTC.",
+    "de": "Ein DTC-ERWERBSSCHRITT: das digitale Ereignis, durch das ein Asset aus einer (opaken, Tier-0) externen Quelle in diese Studie EINGEHT — ein Datenübertragungs-/Ingest-Ereignis, VERSCHIEDEN vom Entstehungs-DTCProcessNode. Projiziert als crmdig:D12_Data_Transfer_Event (eine Unterklasse von D7_Digital_Machine_Event, ⊂ prov:Activity): 'Ereignisse, die ein digitales Objekt von einem digitalen Träger auf einen anderen übertragen; normalerweise bleibt das digitale Objekt dasselbe' — das Objekt kommt opak an, es wird keine Entstehung behauptet. Tier 0: Kette mit einem einzigen Glied — das Erwerbsereignis --dtc_had_output[prov:generated]--> die erworbene Ressource (ResourceNode); die vorgelagerte Wurzel ist eine opake externe Entität, die als Literale in data festgehalten wird (repo/record/agent/retrieved_at/rights), nicht als Entstehungs-Teilgraph. data.dtc_kind stammt aus der Achse `acquisition` (zwei Familien seit 1.6.22 — capture: photo / laserscanner / topographic / gnss_survey / field_drawing / recording_sheet; retrieval: download / local_import / uri_reference / ingest). Hält Entstehung != Erwerb als verschiedene TYPEN innerhalb des einen DTC-Substrats auseinander."
    },
    "label": {
     "en": "DTC Acquisition",
@@ -7005,6 +7005,701 @@
     "ro": "Validat de",
     "fr": "Validé par",
     "de": "Validiert von"
+   }
+  }
+ },
+ "dtc_kinds": {
+  "camera": {
+   "label": {
+    "en": "Camera",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Fotocamera",
+    "de": "Kamera",
+    "fr": "Appareil photo",
+    "es": "Cámara",
+    "pl": "Aparat fotograficzny",
+    "ro": "Aparat foto",
+    "el": "Φωτογραφική μηχανή",
+    "he": "מצלמה"
+   }
+  },
+  "classification": {
+   "label": {
+    "en": "Classification",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Classificazione",
+    "de": "Klassifizierung",
+    "fr": "Classification",
+    "es": "Clasificación",
+    "pl": "Klasyfikacja",
+    "ro": "Clasificare",
+    "el": "Ταξινόμηση",
+    "he": "סיווג"
+   }
+  },
+  "computer": {
+   "label": {
+    "en": "Computer",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Computer",
+    "de": "Computer",
+    "fr": "Ordinateur",
+    "es": "Ordenador",
+    "pl": "Komputer",
+    "ro": "Calculator",
+    "el": "Υπολογιστής",
+    "he": "מחשב"
+   }
+  },
+  "decimation": {
+   "label": {
+    "en": "Decimation",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Decimazione",
+    "de": "Dezimierung",
+    "fr": "Décimation",
+    "es": "Decimación",
+    "pl": "Decymacja",
+    "ro": "Decimare",
+    "el": "Αποδεκάτιση",
+    "he": "דצימציה"
+   }
+  },
+  "dem": {
+   "label": {
+    "en": "DEM",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "DEM",
+    "de": "DGM",
+    "fr": "MNT",
+    "es": "MDE",
+    "pl": "NMT",
+    "ro": "MDE",
+    "el": "ΨΜΕ",
+    "he": "DEM"
+   }
+  },
+  "download": {
+   "label": {
+    "en": "Download",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Download",
+    "de": "Download",
+    "fr": "Téléchargement",
+    "es": "Descarga",
+    "pl": "Pobranie",
+    "ro": "Descărcare",
+    "el": "Λήψη",
+    "he": "הורדה"
+   }
+  },
+  "drone": {
+   "label": {
+    "en": "Drone",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Drone",
+    "de": "Drohne",
+    "fr": "Drone",
+    "es": "Dron",
+    "pl": "Dron",
+    "ro": "Dronă",
+    "el": "Drone",
+    "he": "רחפן"
+   }
+  },
+  "family_capture": {
+   "label": {
+    "en": "Capture",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Cattura",
+    "de": "Erfassung",
+    "fr": "Capture",
+    "es": "Captura",
+    "pl": "Rejestracja",
+    "ro": "Captură",
+    "el": "Καταγραφή",
+    "he": "לכידה"
+   }
+  },
+  "family_retrieval": {
+   "label": {
+    "en": "Retrieval",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Recupero",
+    "de": "Abruf",
+    "fr": "Récupération",
+    "es": "Recuperación",
+    "pl": "Pozyskanie",
+    "ro": "Recuperare",
+    "el": "Ανάκτηση",
+    "he": "אחזור"
+   }
+  },
+  "field_drawing": {
+   "label": {
+    "en": "Field drawing",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Disegno sul campo",
+    "de": "Feldzeichnung",
+    "fr": "Dessin de terrain",
+    "es": "Dibujo de campo",
+    "pl": "Rysunek terenowy",
+    "ro": "Desen de teren",
+    "el": "Σχέδιο πεδίου",
+    "he": "שרטוט שדה"
+   }
+  },
+  "format_conversion": {
+   "label": {
+    "en": "Format conversion",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Trasformazione di formato",
+    "de": "Formatkonvertierung",
+    "fr": "Conversion de format",
+    "es": "Conversión de formato",
+    "pl": "Konwersja formatu",
+    "ro": "Conversie de format",
+    "el": "Μετατροπή μορφής",
+    "he": "המרת פורמט"
+   }
+  },
+  "georeferencing": {
+   "label": {
+    "en": "Georeferencing",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Georeferenziazione",
+    "de": "Georeferenzierung",
+    "fr": "Géoréférencement",
+    "es": "Georreferenciación",
+    "pl": "Georeferencja",
+    "ro": "Georeferențiere",
+    "el": "Γεωαναφορά",
+    "he": "ייחוס גיאוגרפי"
+   }
+  },
+  "gnss": {
+   "label": {
+    "en": "GNSS receiver",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Ricevitore GNSS",
+    "de": "GNSS-Empfänger",
+    "fr": "Récepteur GNSS",
+    "es": "Receptor GNSS",
+    "pl": "Odbiornik GNSS",
+    "ro": "Receptor GNSS",
+    "el": "Δέκτης GNSS",
+    "he": "מקלט GNSS"
+   }
+  },
+  "gnss_survey": {
+   "label": {
+    "en": "GNSS survey",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Rilievo GNSS",
+    "de": "GNSS-Vermessung",
+    "fr": "Relevé GNSS",
+    "es": "Levantamiento GNSS",
+    "pl": "Pomiar GNSS",
+    "ro": "Ridicare GNSS",
+    "el": "Αποτύπωση GNSS",
+    "he": "מדידת GNSS"
+   }
+  },
+  "ingest": {
+   "label": {
+    "en": "Ingest",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Ingest",
+    "de": "Ingest",
+    "fr": "Ingestion",
+    "es": "Ingesta",
+    "pl": "Ingest",
+    "ro": "Ingest",
+    "el": "Εισαγωγή (ingest)",
+    "he": "קליטה"
+   }
+  },
+  "laserscanner": {
+   "label": {
+    "en": "Laser scan",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Scansione laser",
+    "de": "Laserscan",
+    "fr": "Numérisation laser",
+    "es": "Escaneo láser",
+    "pl": "Skanowanie laserowe",
+    "ro": "Scanare laser",
+    "el": "Σάρωση λέιζερ",
+    "he": "סריקת לייזר"
+   }
+  },
+  "lines": {
+   "label": {
+    "en": "Lines",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Linee",
+    "de": "Linien",
+    "fr": "Lignes",
+    "es": "Líneas",
+    "pl": "Linie",
+    "ro": "Linii",
+    "el": "Γραμμές",
+    "he": "קווים"
+   }
+  },
+  "local_import": {
+   "label": {
+    "en": "Local import",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Import locale",
+    "de": "Lokaler Import",
+    "fr": "Import local",
+    "es": "Importación local",
+    "pl": "Import lokalny",
+    "ro": "Import local",
+    "el": "Τοπική εισαγωγή",
+    "he": "ייבוא מקומי"
+   }
+  },
+  "mesh": {
+   "label": {
+    "en": "Mesh",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Mesh",
+    "de": "Mesh",
+    "fr": "Maillage",
+    "es": "Malla",
+    "pl": "Siatka",
+    "ro": "Mesh",
+    "el": "Πλέγμα",
+    "he": "רשת (mesh)"
+   }
+  },
+  "orthophoto": {
+   "label": {
+    "en": "Orthophoto",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Ortofoto",
+    "de": "Orthofoto",
+    "fr": "Orthophoto",
+    "es": "Ortofoto",
+    "pl": "Ortofotomapa",
+    "ro": "Ortofoto",
+    "el": "Ορθοφωτογραφία",
+    "he": "אורתופוטו"
+   }
+  },
+  "photo": {
+   "label": {
+    "en": "Photograph",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Fotografia",
+    "de": "Fotografie",
+    "fr": "Photographie",
+    "es": "Fotografía",
+    "pl": "Fotografia",
+    "ro": "Fotografie",
+    "el": "Φωτογραφία",
+    "he": "צילום"
+   }
+  },
+  "photogrammetry": {
+   "label": {
+    "en": "Photogrammetry",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Fotogrammetria",
+    "de": "Photogrammetrie",
+    "fr": "Photogrammétrie",
+    "es": "Fotogrametría",
+    "pl": "Fotogrametria",
+    "ro": "Fotogrammetrie",
+    "el": "Φωτογραμμετρία",
+    "he": "פוטוגרמטריה"
+   }
+  },
+  "pointcloud": {
+   "label": {
+    "en": "Point cloud",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Nuvola di punti",
+    "de": "Punktwolke",
+    "fr": "Nuage de points",
+    "es": "Nube de puntos",
+    "pl": "Chmura punktów",
+    "ro": "Nor de puncte",
+    "el": "Νέφος σημείων",
+    "he": "ענן נקודות"
+   }
+  },
+  "points": {
+   "label": {
+    "en": "Points",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Punti",
+    "de": "Punkte",
+    "fr": "Points",
+    "es": "Puntos",
+    "pl": "Punkty",
+    "ro": "Puncte",
+    "el": "Σημεία",
+    "he": "נקודות"
+   }
+  },
+  "polygons": {
+   "label": {
+    "en": "Polygons",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Poligoni",
+    "de": "Polygone",
+    "fr": "Polygones",
+    "es": "Polígonos",
+    "pl": "Poligony",
+    "ro": "Poligoane",
+    "el": "Πολύγωνα",
+    "he": "מצולעים"
+   }
+  },
+  "recording_sheet": {
+   "label": {
+    "en": "Recording sheet",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Scheda compilata",
+    "de": "Ausgefülltes Formular",
+    "fr": "Fiche remplie",
+    "es": "Ficha cumplimentada",
+    "pl": "Wypełniona karta",
+    "ro": "Fișă completată",
+    "el": "Συμπληρωμένο δελτίο",
+    "he": "טופס תיעוד ממולא"
+   }
+  },
+  "scanner": {
+   "label": {
+    "en": "Scanner",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Scanner",
+    "de": "Scanner",
+    "fr": "Scanner",
+    "es": "Escáner",
+    "pl": "Skaner",
+    "ro": "Scanner",
+    "el": "Σαρωτής",
+    "he": "סורק"
+   }
+  },
+  "sensor": {
+   "label": {
+    "en": "Sensor",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Sensore",
+    "de": "Sensor",
+    "fr": "Capteur",
+    "es": "Sensor",
+    "pl": "Czujnik",
+    "ro": "Senzor",
+    "el": "Αισθητήρας",
+    "he": "חיישן"
+   }
+  },
+  "topographic": {
+   "label": {
+    "en": "Topographic survey",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Rilievo topografico",
+    "de": "Topographische Vermessung",
+    "fr": "Relevé topographique",
+    "es": "Levantamiento topográfico",
+    "pl": "Pomiar topograficzny",
+    "ro": "Ridicare topografică",
+    "el": "Τοπογραφική αποτύπωση",
+    "he": "מדידה טופוגרפית"
+   }
+  },
+  "total_station": {
+   "label": {
+    "en": "Total station",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Stazione totale",
+    "de": "Totalstation",
+    "fr": "Station totale",
+    "es": "Estación total",
+    "pl": "Tachimetr",
+    "ro": "Stație totală",
+    "el": "Γεωδαιτικός σταθμός",
+    "he": "תחנה כוללת"
+   }
+  },
+  "transformation": {
+   "label": {
+    "en": "Transformation",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Trasformazione",
+    "de": "Transformation",
+    "fr": "Transformation",
+    "es": "Transformación",
+    "pl": "Przekształcenie",
+    "ro": "Transformare",
+    "el": "Μετασχηματισμός",
+    "he": "המרה"
+   }
+  },
+  "uri_reference": {
+   "label": {
+    "en": "URI reference",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Riferimento URI",
+    "de": "URI-Verweis",
+    "fr": "Référence URI",
+    "es": "Referencia URI",
+    "pl": "Odwołanie URI",
+    "ro": "Referință URI",
+    "el": "Αναφορά URI",
+    "he": "הפניית URI"
+   }
+  },
+  "vectorization": {
+   "label": {
+    "en": "Vectorization",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Vettorializzazione",
+    "de": "Vektorisierung",
+    "fr": "Vectorisation",
+    "es": "Vectorización",
+    "pl": "Wektoryzacja",
+    "ro": "Vectorizare",
+    "el": "Διανυσματοποίηση",
+    "he": "וקטוריזציה"
    }
   }
  }

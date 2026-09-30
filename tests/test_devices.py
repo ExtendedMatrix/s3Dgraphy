@@ -83,15 +83,18 @@ def test_H3_IL_CONTROESEMPIO_un_genere_inventato_NON_entra():
     assert "camera" in str(caduta.value)
 
 
-def test_H3_laserscanner_NON_e_stato_spostato():
-    """Sta sull'asse `input` e con l'asse `device` è nella casella sbagliata —
-    ma dei timbri già emessi portano quel genere su quell'asse, e muoverlo li
-    invaliderebbe in silenzio. Questa prova esiste perché la prossima persona
-    che lo nota trovi scritto che la decisione è di lasciarlo."""
-    from s3dgraphy.utils.utils import get_dtc_kinds
+def test_H3_laserscanner_ha_cambiato_asse_e_NON_chiave():
+    """Stava sull'asse `input`. Dal 1.6.22 è una cattura dell'asse `acquisition`
+    (decisione di E.D., 30 set) — con la STESSA chiave, perché è la chiave che i
+    timbri e i nodi già scritti portano: l'asse in un timbro non c'è. `input`
+    resta un alias in lettura delle catture, così chi lo chiede trova ancora
+    `laserscanner`. E con l'apparecchio non si confonde: quello è `scanner`."""
+    from s3dgraphy.utils.utils import get_dtc_kind_family, get_dtc_kinds
 
     kinds = get_dtc_kinds()
-    assert "laserscanner" in kinds["input"], "spostato: invalida i timbri emessi"
+    assert "laserscanner" in kinds["acquisition"]
+    assert get_dtc_kind_family("laserscanner") == "capture"
+    assert "laserscanner" in kinds["input"], "l'alias in lettura non risponde"
     assert "laserscanner" not in kinds["device"]
     assert "scanner" in kinds["device"], "l'apparecchio ha la sua voce, distinta"
 

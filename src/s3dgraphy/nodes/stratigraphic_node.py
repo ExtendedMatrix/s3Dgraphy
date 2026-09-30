@@ -1,8 +1,42 @@
 # 3dgraphy/nodes/stratigraphic_node.py
 
+import re
 from typing import Any, Optional, Tuple
 
 from .base_node import Node
+
+#: The node element that says what GENRE of US a unit is (datamodel 1.6.12,
+#: ``StratigraphicUnit.properties.stratigraphic_kind``); em.json carries it as
+#: ``data.stratigraphic_kind``. Absent = an ordinary US, and nothing is written.
+STRATIGRAPHIC_KIND = "stratigraphic_kind"
+
+#: A masonry unit. USM is a RECORDING PRACTICE, not a category of the EM
+#: language (E.D., 30 Sep 2026): a USM is a US whose kind is masonry, and its
+#: name keeps saying USM.
+MASONRY = "masonry"
+
+#: The node_type some writers produced for a masonry unit before 1.6.12. Not a
+#: type of the datamodel: it opens as a US + masonry (emjson_importer).
+LEGACY_USM_NODE_TYPE = "USM"
+
+#: How a masonry unit is recognised from its NAME — the only thing that tells it
+#: apart in a yEd file, because the EM palette draws a USM exactly as a US (the
+#: palette's own US template is labelled USM01). USM and pyArchInit's localized
+#: codes for it (sync/rapporti.UNITA_TIPO_CANONICAL): WSU en/ar, MSE de,
+#: UEM es/ca/pt, USZ ro, ΤΣΜ el. A separator is allowed, a digit is required:
+#: "USM101", "USM 3", "USM-15"; not "USMA" nor a bare "USM".
+_MASONRY_NAME = re.compile(r"^(?:USM|WSU|MSE|UEM|USZ|ΤΣΜ)[\s._-]*\d")
+
+
+def is_masonry_name(name: Any) -> bool:
+    """True when ``name`` reads as a masonry unit's (USM101, WSU 4, MSE-2…)."""
+    return isinstance(name, str) and bool(_MASONRY_NAME.match(name.strip()))
+
+
+def is_masonry(node: Any) -> bool:
+    """True for a US whose ``stratigraphic_kind`` is masonry."""
+    return (getattr(node, "node_type", None) == "US"
+            and getattr(node, STRATIGRAPHIC_KIND, None) == MASONRY)
 
 
 def definition_parts(value: Any) -> Tuple[Optional[str], Optional[str]]:
@@ -52,6 +86,9 @@ class StratigraphicNode(Node):
 
 
 class StratigraphicUnit(StratigraphicNode):
+    """A US. ``stratigraphic_kind`` says its genre when it has one — today only
+    ``"masonry"`` (a USM) — and is ``None`` for an ordinary US. A node element
+    like ``definition``: em.json carries it as ``data.stratigraphic_kind``."""
     node_type = "US"
 
     def __init__(self, node_id, name, description=""):
@@ -59,6 +96,7 @@ class StratigraphicUnit(StratigraphicNode):
         self.symbol = "white rectangle"
         self.label = "US (or SU)"
         self.detailed_description = "Stratigraphic Unit (SU) or negative stratigraphic unit."
+        self.stratigraphic_kind = None
 
 class VirtualStratigraphicUnit(StratigraphicNode):
     """Abstract parent of the virtual stratigraphic units (USV/s, USV/n).

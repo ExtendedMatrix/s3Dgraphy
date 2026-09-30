@@ -13,6 +13,15 @@ Tier 0: the chain has a single ring — the acquisition event ─dtc_had_output�
 acquired Resource (ResourceNode). The upstream root is an opaque external entity,
 recorded as literals on ``data`` (repo/record/agent/retrieved_at/rights), not as a
 genesis sub-graph. ``dtc_kind`` ∈ the ``acquisition`` axis of ``dtc_kinds``.
+
+**Two families on that axis** (em_visual_rules 1.6.22, E.D. 30 Sep 2026), stated
+per kind as ``family``: a **capture** — the object is MADE by the act (photo,
+laserscanner, topographic, gnss_survey, field_drawing, recording_sheet) — and a
+**retrieval** — it arrives already made (download, local_import, uri_reference,
+ingest). One class for both; the family is read from the vocabulary
+(:func:`s3dgraphy.utils.utils.get_dtc_kind_family`), never written on the node.
+The D12 wording above is exact for a retrieval; for a capture it is the seam's
+projection until the mapping is decided (a capture is closer to crmdig:D2/D11).
 """
 
 from .dtc_node import DTCNode
@@ -20,7 +29,7 @@ from .dtc_node import DTCNode
 
 class DTCAcquisitionNode(DTCNode):
     """DTC acquisition/ingestion event (ECHOES DTC profile, acquisition seam).
-    ``dtc_kind`` ∈ the ``acquisition`` vocabulary (download / ingest / local_import)."""
+    ``dtc_kind`` ∈ the ``acquisition`` vocabulary: a capture or a retrieval."""
 
     node_type = "dtc_acquisition"
     dtc_base = "acquisition"

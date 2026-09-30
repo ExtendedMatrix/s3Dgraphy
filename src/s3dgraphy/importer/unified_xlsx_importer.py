@@ -130,7 +130,7 @@ from ..nodes.document_node import (
 from ..nodes.extractor_node import ExtractorNode
 from ..nodes.combiner_node import CombinerNode
 from ..nodes.property_node import PropertyNode
-from ..utils.utils import get_stratigraphic_node_class
+from ..utils.utils import apply_legacy_kind, get_stratigraphic_node_class
 
 
 # Edge types that a Claims row may declare as a relation (TARGET_ID →
@@ -635,6 +635,7 @@ class UnifiedXLSXImporter:
                            description=name if name != uid else "")
             except TypeError:
                 node = cls(node_id=unit_id, name=uid)
+            apply_legacy_kind(node, type_str)
             self._keep_unvalidated_mark(node, "description", idx + 2)
             self.graph.add_node(node)
             self._unit_by_id[uid] = node

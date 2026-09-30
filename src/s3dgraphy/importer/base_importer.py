@@ -9,7 +9,7 @@ from ..graph import Graph
 from ..nodes.base_node import Node
 from ..nodes.property_node import PropertyNode
 from ..edges import Edge
-from ..utils.utils import get_stratigraphic_node_class
+from ..utils.utils import apply_legacy_kind, get_stratigraphic_node_class
 from typing import Dict, Any, Optional
 
 # Configurazione logging opzionale per debug
@@ -528,7 +528,8 @@ class BaseImporter(ABC):
                 name=target_name,
                 description=description
             )
-            
+            apply_legacy_kind(new_node, strat_type)
+
             self.graph.add_node(new_node)
             self._process_properties(row_data, new_node.node_id, new_node)
             return new_node

@@ -378,12 +378,15 @@ def _how_block(graph: Any, process: Optional[Any],
     block: Dict[str, Any] = {"process_id": process.node_id}
 
     # `technique` e `dtc_kind` NON sono lo stesso campo, ed è la scoperta di
-    # questa notte. Il vocabolario `dtc_kinds` ha due voci sull'asse `process` —
-    # `photogrammetry` e `transformation` — mentre l'esempio del formato dice
-    # `"technique": "decimation"`, che lì dentro non c'è e non ci deve entrare:
-    # sono due granularità (l'asse controllato e l'operazione specifica), non due
-    # nomi della stessa cosa. Il formato nominava solo la seconda: senza la prima
-    # il giro completo perderebbe un campo che il nodo valida.
+    # questa notte. Il vocabolario `dtc_kinds` aveva due voci sull'asse `process`
+    # — `photogrammetry` e `transformation` — mentre l'esempio del formato dice
+    # `"technique": "decimation"`: sono due granularità (l'asse controllato e
+    # l'operazione specifica), non due nomi della stessa cosa. Dal 1.6.22
+    # `decimation` è ANCHE un genere dell'asse (decisione di E.D.), e i due campi
+    # restano due: il genere è la voce su cui si interroga, la tecnica la parola
+    # di chi ha fatto il gesto («quadric edge collapse»). Il formato nominava solo
+    # la seconda: senza la prima il giro completo perderebbe un campo che il nodo
+    # valida.
     _put(block, "technique", _text(data.get("technique")))
     _put(block, "dtc_kind", _text(data.get("dtc_kind")))
     if not block.get("technique") and block.get("dtc_kind"):
@@ -397,7 +400,16 @@ def _how_block(graph: Any, process: Optional[Any],
     elif parameters is not None:
         warnings.append("parameters is not a dict and was not emitted")
 
-    _put(block, "acquisition", _acquisition_block(graph, process, data))
+    acquisition = _acquisition_block(graph, process, data)
+    if getattr(process, "node_type", None) == "dtc_acquisition":
+        # LA CATTURA È IL GENERE (dtc_kinds 1.6.22). Un nodo scritto nella forma
+        # provvisoria — `local_import` più `data.capture` — esce nella forma
+        # definitiva: vedi `dtc.capture`.
+        from ..dtc.capture import definitive
+
+        kind, acquisition = definitive(block.get("dtc_kind"), acquisition)
+        _put(block, "dtc_kind", kind)
+    _put(block, "acquisition", acquisition)
 
     _put(block, "software", _software_of(data))
     return block

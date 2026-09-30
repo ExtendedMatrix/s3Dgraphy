@@ -10,7 +10,7 @@ from ..graph import Graph
 from ..nodes.base_node import Node
 from ..nodes.property_node import PropertyNode
 from ..nodes.stratigraphic_node import StratigraphicNode
-from ..utils.utils import get_stratigraphic_node_class
+from ..utils.utils import apply_legacy_kind, get_stratigraphic_node_class
 from ..multigraph.multigraph import multi_graph_manager
 
 # Conservative SQLite identifier whitelist: letters, digits, underscore.
@@ -331,6 +331,7 @@ class PyArchInitImporter(BaseImporter):
                     name=node_name,
                     description=str(description)
                 )
+                apply_legacy_kind(new_node, strat_type)
                 
                 self.graph.add_node(new_node)
                 # print(f"  → Node created with ID: {new_node.node_id}")

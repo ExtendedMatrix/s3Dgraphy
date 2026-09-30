@@ -4,6 +4,46 @@ All notable changes to **s3dgraphy** are documented here.
 
 ## [Unreleased]
 
+### Changed (2026-09-30 — USM is a masonry US)
+USM is a recording practice, not a category of the EM language (E.D.): a masonry
+unit is a **US with `data.stratigraphic_kind = "masonry"`**, and its name keeps
+saying USM. Node datamodel **1.6.12**.
+- `StratigraphicUnit.stratigraphic_kind` — a node element like `definition`
+  (em.json `data.stratigraphic_kind`), absent on an ordinary US; not projected to
+  RDF yet (the fitting term, CRMba B5, is not adopted).
+- **Read migration**: an em.json with `node_type "USM"` — never a type of the
+  datamodel, it opened as an untyped node — opens as US + masonry
+  (`_LEGACY_NODE_TYPE_MIGRATIONS`, next to the `link → resource` alias).
+- **GraphML import** recognises a USM from its NAME (`USM101`, `USM 3`, and
+  pyArchInit's localized WSU / MSE / UEM / USZ / ΤΣΜ): the EM palette draws a USM
+  exactly as a US, so the name is all a yEd file carries. Export is unchanged —
+  same shape, same name — so yEd → em.json → yEd is stable.
+- The type string `USM` (xlsx, pyArchInit `unita_tipo`) now builds a US +
+  masonry instead of a base `StratigraphicNode`; a masonry US goes back to
+  pyArchInit as `unita_tipo = "USM"`.
+
+### Changed (2026-09-30 — the capture is an acquisition)
+em_visual_rules **1.6.22**; datamodel translations **1.5**.
+- The `acquisition` axis of `dtc_kinds` has two families, stated per kind as
+  `family`: **capture** (photo, laserscanner, topographic — moved from `input`
+  with the same keys — plus gnss_survey, field_drawing, recording_sheet) and
+  **retrieval** (download, local_import, uri_reference, ingest). No new node type:
+  `DTCAcquisitionNode` accepts a capture. `input` keeps no entries and is a read
+  alias of the capture family (`get_dtc_kinds()["input"]`);
+  `get_dtc_kind_family(kind)` reads the family.
+- `process` gains decimation, georeferencing, format_conversion, classification,
+  vectorization. The new kinds have no glyph yet.
+- **The stamp's definitive form is `how.dtc_kind = <capture>`.** EMStudio's
+  provisional form (`local_import` + `how.acquisition.capture`, or
+  `data.capture` on the node) is still read — by the absorber, the emitter and
+  the em.json reader — and a stated retrieval other than the placeholder
+  `local_import` is never overwritten (`dtc/capture.py`).
+- **Fixed**: an origin stamp absorbed back became a `DTCProcessNode`
+  «transformation», losing its kind and its facts, and re-absorbing the same
+  stamp disagreed with itself. It now comes back as a `DTCAcquisitionNode`.
+- `datamodel_i18n` has a `dtc_kinds` section (every kind's label, all nine
+  languages as drafts) and `dtc_kind_label(kind, lang)`.
+
 ### Fixed (2026-10-07 — removing an edge removes it from the indices)
 `Graph.remove_edge` and `Graph.remove_node` rebuilt their lists but left the
 indices clean: once built, the queries by source, target and type still saw the

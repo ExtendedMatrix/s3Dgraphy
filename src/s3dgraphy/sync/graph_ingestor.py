@@ -1296,6 +1296,10 @@ def _resolve_unita_tipo(node, attrs: dict) -> str | None:
     has stripped attrs)."""
     if attrs.get("unita_tipo"):
         return str(attrs["unita_tipo"])
+    # 1.6.12 · a masonry US goes back to pyArchInit as a USM row
+    from ..nodes.stratigraphic_node import is_masonry
+    if is_masonry(node):
+        return "USM"
     type_name = type(node).__name__
     return _S3DGRAPHY_TYPE_TO_UNITA_TIPO.get(type_name)
 

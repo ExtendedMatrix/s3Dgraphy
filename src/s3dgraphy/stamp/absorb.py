@@ -61,6 +61,7 @@ from dtcstamp import (BadStamp, Disagreement, STAMP_VERSION, clean_stamp,
                       compare_stamps, read_stamp, stamp_description,
                       stamp_title, substance, validate_stamp)
 
+from ..dtc.capture import upgrade_stamp
 from .emit import (EDGE_HAD_INPUT, EDGE_HAD_OUTPUT, SIZE_KEY, emit_stamp,
                    find_resource)
 
@@ -164,6 +165,7 @@ def stamp_to_graph(stamp: Dict[str, Any], *, graph_id: Optional[str] = None):
     from ..nodes import DTCAcquisitionNode, DTCProcessNode, ResourceNode
 
     validate_stamp(stamp)
+    stamp = upgrade_stamp(stamp)
     itself = dict(stamp.get("self") or {})
     resource_id = str(itself["resource_id"])
     fragment = Graph(graph_id=graph_id or f"stamp:{resource_id}")
@@ -184,11 +186,28 @@ def stamp_to_graph(stamp: Dict[str, Any], *, graph_id: Optional[str] = None):
 
     process_id = str(how.get("process_id") or "").strip() \
         or f"{resource_id}::step"
-    process = DTCProcessNode(
-        process_id,
-        name=str(how.get("technique") or "step"),
-        description="",
-        dtc_kind=_process_kind(how))
+    if _is_origin_acquisition(how, parents):
+        # UN'ORIGINE È UN'ACQUISIZIONE, e torna a esserlo. Fino al 1.6.22 questo
+        # ramo non c'era: un timbro emesso da un `DTCAcquisitionNode` rientrava
+        # come un `DTCProcessNode` di genere `transformation` — il genere
+        # dichiarato cadeva sul default, i fatti del lotto si perdevano, e il
+        # secondo riassorbimento dello STESSO timbro era in disaccordo con il
+        # primo (`how.dtc_kind`: transformation contro local_import). Misurato.
+        process = DTCAcquisitionNode(
+            process_id,
+            name=str(how.get("technique") or "Acquisition"),
+            description="",
+            dtc_kind=str(how["dtc_kind"]))
+        facts = {k: v for k, v in (how.get("acquisition") or {}).items()
+                 if k not in ("device", "location") or not isinstance(v, dict)}
+        if facts:
+            process.data["acquisition"] = facts
+    else:
+        process = DTCProcessNode(
+            process_id,
+            name=str(how.get("technique") or "step"),
+            description="",
+            dtc_kind=_process_kind(how))
     _apply_how(process, how)
     _apply_by(process, stamp.get("by") or {})
     _apply_declared(process, stamp)
@@ -244,6 +263,22 @@ def _strip_born_with(fragment: Any) -> None:
     for node in list(getattr(fragment, "nodes", []) or []):
         if getattr(node, "node_type", None) == "geo_position":
             fragment.remove_node(node.node_id)
+
+
+def _is_origin_acquisition(how: Dict[str, Any], parents: List[Any]) -> bool:
+    """Il passo è un'acquisizione: nessun genitore, e un genere dell'asse
+    `acquisition` — una cattura o un recupero.
+
+    Con dei genitori resta un processo anche se il genere è di acquisizione: il
+    substrato scrive `dtc_had_input` solo da un processo, e un'acquisizione con
+    degli ingressi non è un'origine. Il genere, allora, cade sul default come ha
+    sempre fatto.
+    """
+    from ..nodes.dtc_node import DTC_KINDS
+
+    if parents:
+        return False
+    return str(how.get("dtc_kind") or "").strip() in DTC_KINDS.get("acquisition", ())
 
 
 def _process_kind(how: Dict[str, Any]) -> str:
@@ -508,7 +543,10 @@ def absorb_stamp(graph: Any, stamp: Dict[str, Any], *,
         existing = find_resource(graph, result.digest)
     if existing is not None:
         mine = clean_stamp(emit_stamp(graph, existing.node_id))
-        theirs = clean_stamp(stamp)
+        # la forma provvisoria di una cattura si legge come la definitiva: due
+        # timbri dello stesso atto non sono in disaccordo perché uno dei due è
+        # stato scritto prima del 1.6.22
+        theirs = clean_stamp(upgrade_stamp(stamp))
         differences = compare_stamps(mine, theirs)
         if differences:
             result.disagreements = differences

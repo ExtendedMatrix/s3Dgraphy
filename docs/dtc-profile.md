@@ -101,24 +101,33 @@ is a JSON entry plus a glyph, not a code change.**
 
 The axes currently declared, measured on the shipped file:
 
-- **input** — `photo`, `laserscanner`, `topographic`
-- **process** — `photogrammetry`, `transformation`
-- **acquisition** — `download`, `ingest`, `local_import`, `uri_reference`
+- **acquisition** — two families (since em_visual_rules 1.6.22), stated per kind
+  as `family`:
+  - *capture* — `photo`, `laserscanner`, `topographic`, `gnss_survey`,
+    `field_drawing`, `recording_sheet`: the object is MADE by the act;
+  - *retrieval* — `download`, `local_import`, `uri_reference`, `ingest`: it
+    arrives already made.
+- **process** — `photogrammetry`, `transformation`, `decimation`,
+  `georeferencing`, `format_conversion`, `classification`, `vectorization`
 - **output** — `pointcloud`, `mesh`, `dem`, `orthophoto`, `points`, `lines`, `polygons`
 - **device** — `camera`, `sensor`, `drone`, `computer`, `scanner`, `total_station`, `gnss`
+- **input** — no entries: a read alias of the capture family
+  (`get_dtc_kinds()["input"]`), for readers that still ask it.
 
-The first four axes say what went in, what happened and what came out; `device`
-says what it happened **on**.
+The acquisition, process and output axes say how material entered, what happened
+and what came out; `device` says what it happened **on**.
 
 `dtc_kind` projects as `crm:P2_has_type`.
 
 ```{note}
-**`laserscanner` is on the wrong axis, and is deliberately left there.** It sits
-under `input`, and now that a `device` axis exists a scanner is plainly an
-apparatus rather than an input. Moving it would silently invalidate every stamp
-already emitted carrying that kind on that axis — the exact failure this
-substrate is built against. The `device` axis carries its own `scanner` entry
-instead.
+**The captures left `input` with their keys.** Until 1.6.21 `photo`,
+`laserscanner` and `topographic` sat on an `input` axis that nothing validated
+any more (DTCInputNode is retired). They are now captures of the acquisition
+axis, under the SAME keys — a stamp or a node carries the kind, never the axis,
+so nothing already written changes meaning. A stamp's definitive form is
+`how.dtc_kind = "photo"`; EMStudio's provisional `local_import` +
+`how.acquisition.capture` is still read (`s3dgraphy.dtc.capture`). The apparatus
+stays apart: `laserscanner` is the capture, `device.scanner` the scanner.
 ```
 
 ## EM commons are reused, not duplicated

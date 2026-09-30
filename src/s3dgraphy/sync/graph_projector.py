@@ -146,16 +146,17 @@ def _create_stratigraphic_node_for_unita_tipo(
     Falls back to ``StratigraphicNode`` for unknown types.
     """
     try:
-        from s3dgraphy.utils.utils import get_stratigraphic_node_class
+        from s3dgraphy.utils.utils import (apply_legacy_kind,
+                                           get_stratigraphic_node_class)
     except Exception:
         return None
     try:
         node_class = get_stratigraphic_node_class(unita_tipo)
-        return node_class(
+        return apply_legacy_kind(node_class(
             node_id=str(node_uuid),
             name=str(name),
             description="",
-        )
+        ), unita_tipo)
     except Exception:
         return None
 
@@ -629,6 +630,9 @@ class GraphProjector:
                         except Exception:
                             pass
                 if node is not None:
+                    # a USM row claims the bridge's US: it is a masonry US
+                    from s3dgraphy.utils.utils import apply_legacy_kind
+                    apply_legacy_kind(node, ut_canon)
                     nodes_by_key[(us_name, ut_str)] = node
             # Paradata row (DOC / Combinar / Extractor / property):
             # ALWAYS create a fresh node of the right class. Don't

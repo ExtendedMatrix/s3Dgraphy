@@ -220,7 +220,8 @@ def test_the_two_phrases_E_D_sent_back():
 
 
 def test_the_version_went_up():
-    assert _translations()["version"] == "1.4"
+    # 1.5 (2026-09-30): the `dtc_kinds` section — see test_capture_acquisition
+    assert _translations()["version"] == "1.5"
 
 
 def test_combines_reads_of_in_english():

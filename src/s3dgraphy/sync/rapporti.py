@@ -463,6 +463,11 @@ def resolve_unita_tipo_for_dispatch(node) -> str | None:
     ut = attrs.get("unita_tipo")
     if ut:
         return str(ut)
+    # 1.6.12 · a masonry US is a USM for pyArchInit (its us_table keeps the
+    # recording practice as unita_tipo)
+    from ..nodes.stratigraphic_node import is_masonry
+    if is_masonry(node):
+        return "USM"
     cls_name = type(node).__name__
     return S3DGRAPHY_TYPE_TO_UNITA_TIPO.get(cls_name)
 

@@ -19,6 +19,7 @@ from ..nodes.embargo_node import EmbargoNode
 from ..edges.edge import Edge, EDGE_TYPES
 from ..edges import get_connections_datamodel
 from ..utils.utils import convert_shape2type, get_stratigraphic_node_class
+from ..nodes.stratigraphic_node import MASONRY, is_masonry_name
 import re
 import uuid
 import os
@@ -1409,6 +1410,11 @@ class GraphMLImporter:
                 name=nodename,
                 description=nodedescription
             )
+            # 1.6.12 · a USM is a US + masonry, recognised from its NAME: the EM
+            # palette draws it exactly as a US, so the name is all a yEd file
+            # has. The name stays as it is (USM101).
+            if stratigraphic_node.node_type == "US" and is_masonry_name(nodename):
+                stratigraphic_node.stratigraphic_kind = MASONRY
 
             # Aggiungi attributi di tracciamento
             stratigraphic_node.attributes['original_id'] = original_id

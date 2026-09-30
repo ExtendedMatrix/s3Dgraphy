@@ -191,7 +191,33 @@ def get_stratigraphic_node_class(stratigraphic_type):
         class: The corresponding stratigraphic node class.
     """
     # Usa StratigraphicUnit come fallback se il tipo non è nella mappa
+    #
+    # 1.6.12 · USM (and pyArchInit's localized codes for it) is a US + masonry,
+    # not a type: its class is the US one, and `apply_legacy_kind` sets the
+    # kind on the instance. Before, it fell through to the base
+    # StratigraphicNode, a node the datamodel renders untyped.
+    if stratigraphic_type in MASONRY_TYPE_CODES:
+        return StratigraphicUnit
     return STRATIGRAPHIC_CLASS_MAP.get(stratigraphic_type, StratigraphicNode)
+
+
+#: A type string that names a MASONRY unit: USM and pyArchInit's localized
+#: codes for it (sync/rapporti.UNITA_TIPO_CANONICAL — WSU en/ar, MSE de,
+#: UEM es/ca/pt, USZ ro, ΤΣΜ el).
+MASONRY_TYPE_CODES = frozenset({"USM", "WSU", "MSE", "UEM", "USZ", "ΤΣΜ"})
+
+
+def apply_legacy_kind(node, stratigraphic_type):
+    """After a node was built from a TYPE STRING (an xlsx column, a pyArchInit
+    ``unita_tipo``): a masonry code makes the US a masonry US. Returns the node.
+    A node that already states a kind, or is not a US, is left alone."""
+    from ..nodes.stratigraphic_node import MASONRY, STRATIGRAPHIC_KIND
+
+    if (stratigraphic_type in MASONRY_TYPE_CODES
+            and getattr(node, "node_type", None) == "US"
+            and not getattr(node, STRATIGRAPHIC_KIND, None)):
+        setattr(node, STRATIGRAPHIC_KIND, MASONRY)
+    return node
 
 #: The key the datamodel uses for the material colour, plus the legacy one.
 #:
@@ -370,15 +396,42 @@ def get_dtc_kinds():
     Keys starting with ``_`` (e.g. ``_comment``) are skipped. Adding a new kind
     in the JSON flows through to the DTC node classes' ``kind`` validation with
     no code change.
+
+    An axis that declares ``_alias_of: {axis, family}`` has no entries of its
+    own and answers the kinds of that family on that axis. It is how ``input``
+    still answers since 1.6.22, when its captures became the ``capture`` family
+    of ``acquisition``: a reader asking the old axis gets the kinds it always
+    got, and no kind is listed twice.
     """
     rules = _load_visual_rules()
     section = rules.get("dtc_kinds", {}) or {}
     out = {}
+    aliases = {}
     for base, kinds in section.items():
         if base.startswith("_") or not isinstance(kinds, dict):
             continue
+        alias = kinds.get("_alias_of")
+        if isinstance(alias, dict):
+            aliases[base] = alias
+            continue
         out[base] = tuple(k for k in kinds if not k.startswith("_"))
+    for base, alias in aliases.items():
+        target = section.get(alias.get("axis"), {}) or {}
+        family = alias.get("family")
+        out[base] = tuple(
+            k for k, spec in target.items()
+            if not k.startswith("_") and isinstance(spec, dict)
+            and (family is None or spec.get("family") == family))
     return out
+
+
+def get_dtc_kind_family(kind, axis="acquisition"):
+    """The ``family`` a DTC kind declares on ``axis`` — ``"capture"`` or
+    ``"retrieval"`` on the acquisition axis — or ``None`` when the kind is not
+    on that axis or states none."""
+    rules = _load_visual_rules()
+    spec = ((rules.get("dtc_kinds", {}) or {}).get(axis) or {}).get(kind)
+    return spec.get("family") if isinstance(spec, dict) else None
 
 
 def get_document_variant_style(variant_key: str) -> dict:

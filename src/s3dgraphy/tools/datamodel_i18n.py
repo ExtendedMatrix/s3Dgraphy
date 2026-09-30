@@ -27,8 +27,15 @@ Shape — one section per kind of key, each keyed by a STABLE identity::
       "qualia_subcategories": {"<subcategory key>": {"label": {...}}},
       "edge_types":           {"<edge type>":       {"label": {...},
                                                      "ui_phrase_as_source": {...},
-                                                     "ui_phrase_as_target": {...}}}
+                                                     "ui_phrase_as_target": {...}}},
+      "dtc_kinds":            {"<dtc kind>":        {"label": {...}}}
     }
+
+`dtc_kinds.<kind>.label` (1.5) is the name of a kind of the DTC vocabulary
+(`dtc_kinds` in em_visual_rules.json) — «Photograph» → «Fotografia» — keyed by the
+kind alone, which is unique across the axes (asserted). The two families of the
+acquisition axis are there too, as `family_capture` / `family_retrieval`. An axis
+that is a read alias (`_alias_of`) has no entries of its own and adds nothing.
 
 `edge_types.<edge>.label` (1.3) is the edge's own name — «Is after» → «È posteriore
 a» — for EVERY edge type of the connections datamodel, seeded from its `label`:
@@ -54,6 +61,7 @@ Reading (for StratiField, EMStudio, EMtools — nobody reads the JSON by hand)::
     qualia_label("thickness", "it")   # → "Spessore"; unknown lang → the English
     edge_ui_phrase("has_property", "as_target", "it")   # → "{node} di {x}"
     edge_label("is_after", "it")                         # → "È posteriore a"
+    dtc_kind_label("photo", "it")                        # → "Fotografia"
 
 CLI::
 
@@ -81,6 +89,7 @@ DATAMODEL = _JSON_CONFIG / "s3Dgraphy_node_datamodel.json"
 QUALIA = _JSON_CONFIG / "em_qualia_types.json"
 CONNECTIONS = _JSON_CONFIG / "s3Dgraphy_connections_datamodel.json"
 TRANSLATIONS = _JSON_CONFIG / "datamodel_translations.json"
+VISUAL_RULES = _JSON_CONFIG / "em_visual_rules.json"
 
 # Languages mirror the EMStudio UI locales (en = source/default) + de (DAI).
 LANGUAGES: List[str] = ["en", "it", "el", "he", "es", "pl", "ro", "fr", "de"]
@@ -93,6 +102,7 @@ SECTIONS: Dict[str, str] = {
     "qualia_categories": "category",
     "qualia_subcategories": "subcategory",
     "edge_types": "edge",
+    "dtc_kinds": "dtc",
 }
 #: the two directions of an edge's `ui_phrase`, as fields of the `edge_types`
 #: section — `ui_phrase.as_source` in the datamodel is `ui_phrase_as_source` here
@@ -185,10 +195,32 @@ def _collect_edge_phrases_en(connections: Dict[str, Any]) -> Dict[str, Dict[str,
     return out
 
 
+def _collect_dtc_kinds_en(rules: Dict[str, Any]) -> Dict[str, Dict[str, str]]:
+    """{kind: {"label": ...}} for every kind of every axis of `dtc_kinds`, plus
+    the acquisition families as `family_<name>`. Kinds are unique across the axes
+    (asserted): a palette and a glyph lookup already resolve a kind without its
+    axis, and so does this."""
+    out: Dict[str, Dict[str, str]] = {}
+    for axis, entries in (rules.get("dtc_kinds") or {}).items():
+        if axis.startswith("_") or not isinstance(entries, dict):
+            continue
+        for kind, spec in entries.items():
+            if kind.startswith("_") or not isinstance(spec, dict):
+                continue
+            assert kind not in out, f"dtc kind {kind!r} on two axes"
+            if isinstance(spec.get("label"), str) and spec["label"].strip():
+                out[kind] = {"label": spec["label"]}
+        for fam, spec in (entries.get("_families") or {}).items():
+            if isinstance(spec, dict) and isinstance(spec.get("label"), str):
+                out[f"family_{fam}"] = {"label": spec["label"]}
+    return out
+
+
 def _collect_all_en() -> Dict[str, Dict[str, Dict[str, str]]]:
     out = {"entries": _collect_en(_load(DATAMODEL))}
     out.update(_collect_qualia_en(_load(QUALIA)))
     out["edge_types"] = _collect_edge_phrases_en(_load(CONNECTIONS))
+    out["dtc_kinds"] = _collect_dtc_kinds_en(_load(VISUAL_RULES))
     return out
 
 
@@ -203,7 +235,7 @@ def seed(write: bool = True) -> Dict[str, Any]:
         existing = {}
     doc: Dict[str, Any] = {
         "schema": "s3Dgraphy_datamodel_translations",
-        "version": "1.4",
+        "version": "1.5",
         "languages": LANGUAGES,
     }
     for section in SECTIONS:
@@ -249,7 +281,7 @@ def _rows(doc: Dict[str, Any]) -> List[Tuple[str, str, str]]:
     categories/subcategories/qualia, then the edge phrases."""
     keys: List[Tuple[str, str, str]] = []
     for section in ("entries", "qualia_categories", "qualia_subcategories", "qualia",
-                    "edge_types"):
+                    "edge_types", "dtc_kinds"):
         entries = doc.get(section, {})
         for key in sorted(entries):
             for field in ("label", "description") + PHRASE_FIELDS:
@@ -328,6 +360,12 @@ def edge_label(edge_type: str, lang: str = "en") -> Optional[str]:
     """The name of an edge type in ``lang`` («Is after» → «È posteriore a»),
     English fallback; ``None`` for an edge type the datamodel does not know."""
     return translate("edge_types", edge_type, "label", lang)
+
+
+def dtc_kind_label(kind: str, lang: str = "en") -> Optional[str]:
+    """The name of a DTC kind in ``lang`` («Photograph» → «Fotografia»), English
+    fallback; ``None`` for a kind the vocabulary does not have."""
+    return translate("dtc_kinds", kind, "label", lang)
 
 
 def edge_ui_phrase(edge_type: str, direction: str, lang: str = "en") -> Optional[str]:
@@ -457,6 +495,11 @@ def export_xlsx(path: str, force: bool = False) -> None:
                     f"relation's {new}. Keep {{node}} (the new node's type, e.g. US, Property) and {{x}} "
                     "(the existing node's name, e.g. US12) exactly as written. The type names differ in "
                     "gender, so prefer a wording that does not agree with {node}.")
+        elif section == "dtc_kinds":
+            area = "DTC vocabulary"
+            note = (f"Name of the acquisition family '{key[7:]}'" if key.startswith("family_")
+                    else f"Name of the DTC kind '{key}' (a kind of capture, retrieval, "
+                         "process, output or device in the digital provenance chain)")
         else:
             area, note = qctx[section].get(key, {}).get("area", section), \
                 qctx[section].get(key, {}).get("note", "")

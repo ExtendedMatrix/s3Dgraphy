@@ -1,6 +1,6 @@
 {
  "_generated": "by `python -m s3dgraphy.tools.sync_node_datamodel` — DO NOT hand-edit. The flat class hierarchy (parent/node_type/description) is derived from the Python Node subclasses; hand-authored semantics and CIDOC mappings live in s3Dgraphy_node_datamodel.json.",
- "s3Dgraphy_data_model_version": "1.6.11",
+ "s3Dgraphy_data_model_version": "1.6.12",
  "node_types": {
   "ActivityNodeGroup": {
    "parent": "GroupNode",
@@ -250,7 +250,7 @@
   "StratigraphicUnit": {
    "parent": "StratigraphicNode",
    "node_type": "US",
-   "description": ""
+   "description": "A US. ``stratigraphic_kind`` says its genre when it has one — today only"
   },
   "StructuralVirtualStratigraphicUnit": {
    "parent": "VirtualStratigraphicUnit",
