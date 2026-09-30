@@ -1128,6 +1128,25 @@ def gltf_to_geometry(data: bytes, kind: str) -> Dict[str, Any]:
     return _from(data, kind)
 
 
+def import_aton_scene(scene: Any, graph: Optional[Graph] = None, *,
+                      create_type: str = "US", author: Optional[str] = None):
+    """The convex hulls and spheres of an ATON / Hathor scene
+    (``semanticgraph.nodes[id].convexshapes`` / ``.spheres``) → the proxy of the
+    EM node of the same name (shape ``"<name>_shape"``, the Heriverse rule),
+    created as `create_type` when missing. Returns ``(graph, report)``. See
+    :mod:`s3dgraphy.geometry.aton`."""
+    from .geometry.aton import import_aton_scene as _imp
+    return _imp(scene, graph, create_type=create_type, author=author)
+
+
+def export_aton_scene(graph: Graph, scene: Any = None) -> Dict[str, Any]:
+    """The graph's convex hulls and spheres written into an ATON scene JSON
+    (a copy of `scene` when given: only ``convexshapes`` and ``spheres`` are
+    rewritten). See :mod:`s3dgraphy.geometry.aton`."""
+    from .geometry.aton import export_aton_scene as _exp
+    return _exp(graph, scene)
+
+
 def create_geometry_proxy(graph: Graph, unit_id: str, shape: Dict[str, Any],
                           extractor_sources: Optional[List[str]] = None,
                           author: Optional[str] = None,

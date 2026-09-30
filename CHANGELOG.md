@@ -4,6 +4,24 @@ All notable changes to **s3dgraphy** are documented here.
 
 ## [Unreleased]
 
+### Added (2026-10-11 — convex hulls and spheres of ATON and Hathor)
+`geometry.aton` (also `api.import_aton_scene` / `api.export_aton_scene`). The
+format was measured on ATON's own code: `scene.semanticgraph.nodes[<id>]`
+holds `convexshapes` (one flat `[x,y,z, …]` list per hull) and `spheres`
+(`[x, y, z, r]`), in three.js Y-up coordinates under the semantic root (the
+scenegraph transforms do not apply); `semanticgraph.edges` is
+`{parent: [children]}` with root `"."`.
+- Import: each semantic node becomes the proxy of the EM node of the same name
+  — shape `"<name>_shape"`, the Heriverse rule; US → Property(geometry) → shape
+  through `migrate_legacy_proxies` — created as `create_type` (default `US`)
+  when missing, and listed in the report. A `toYup` node is rotated to Y-up
+  once. Hulls and spheres stay in the shape's data, no resource.
+- Export: the hulls and spheres of every proxy, keyed by the unit's name,
+  written into a copy of the scene (only `convexshapes` / `spheres` rewritten).
+- Tested on ATON's venus and skyphos samples (`tests/fixtures/aton/`):
+  ATON → s3Dgraphy → ATON gives back the same scene, with an em.json round trip
+  in between.
+
 ### Changed (2026-10-11 — the geometry of whoever argues lives in the node)
 node datamodel **1.6.15**, connections datamodel **1.6.29**, CRMem (em.ttl)
 **1.6.8**. Geometry is divided by ORIGIN, not by shape (E.D., 30 Sep): the point
