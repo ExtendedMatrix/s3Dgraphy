@@ -1,7 +1,9 @@
 # Datamodel propagation
 
 *Measured on 2026-09-30: node datamodel 1.6.17, connections 1.6.31, qualia
-1.6.2, `em.ttl` 1.6.9, s3dgraphy 1.6.0.dev24.*
+1.6.2, `em.ttl` 1.6.9, s3dgraphy 1.6.0.dev24. The fingerprint (§1) added on
+2026-10-01: `sha256:12c5d520cf393be752360210a2a1ac7e74cac67169d18edfb005e250f6bd3b91`
+at those versions.*
 
 [Source of truth](SOURCE_OF_TRUTH.md) says **where** a name is declared, and
 that the arrow points one way. This page follows the arrow **out of the
@@ -20,7 +22,9 @@ have to do:
   stratigraph-templates, StratiField).
 
 No tool reads another repository at run time. So every arrow below is a step
-that someone runs.
+that someone runs. What each copy **can** do is check itself: every one of them
+compares what it holds with the datamodel's fingerprint (§1) and names what
+moved.
 
 ## The chain
 
@@ -41,13 +45,19 @@ that someone runs.
       ├── pip / aux file ───► PyArchInit           a contributor: its table enters em.json
       ├── wheel ────────────► EM-blender-tools     graph editor filter, via get_connections_datamodel()
       ├── sync-datamodels.sh► EMStudio             frontend/src/assets/*.json
+      │                                             + datamodel.fingerprint.json
+      │                                             npm run check:datamodel
       └── registry-snapshot ► stratigraph-templates registry/s3dgraphy-snapshot.json
-                                   │ validate / build stop if it diverges
+                                   │ validate / build stop if it diverges,
+                                   │ naming the datamodel (fingerprint)
                                    ▼
-                              dist/schede/<id>/<ver>.json   header + recipe (5 CRDT ops)
+                              dist/schede/<id>/<ver>.json   header (+ datamodel.digest)
+                                   │                        + recipe (5 CRDT ops)
                                    │ sync-schede.sh
                                    ▼
                               StratiField   schede/  →  app/operazioni.plan()
+                                   │ at load: header.datamodel vs its own s3dgraphy
+                                   │ → a notice in the log and on the scheda
                                    │ the same op list, three transports
                                    ├── websocket (seated)       ─┐
                                    ├── POST /v1/rooms/{id}/ops  ─┼─► StratiGraph Server
@@ -80,12 +90,65 @@ says whether it still matches, and
 `tests/test_datamodel_i18n.py::test_committed_sidecar_en_is_in_sync` fails when
 it does not.
 
-### `em.ttl` is aligned by hand
+### The fingerprint: one digest for every copy
+
+`api.datamodel_fingerprint()` (module `s3dgraphy.datamodel`) is **the identity of
+the datamodel a consumer copies**. It covers exactly the six JSON files a
+consumer copies, measured on 2026-10-01:
+
+| Name | File | Version key | Copied by |
+| --- | --- | --- | --- |
+| `nodes` | `s3Dgraphy_node_datamodel.json` | `s3Dgraphy_data_model_version` | EMStudio, templates |
+| `node_registry` | `node_registry.generated.json` | `s3Dgraphy_data_model_version` | EMStudio, templates |
+| `connections` | `s3Dgraphy_connections_datamodel.json` | `s3Dgraphy_connections_model_version` | EMStudio, templates, Heriverse |
+| `visual_rules` | `em_visual_rules.json` | `version` | EMStudio, Heriverse |
+| `qualia` | `em_qualia_types.json` | `metadata.version` | EMStudio, templates, Heriverse |
+| `translations` | `datamodel_translations.json` | `version` | EMStudio |
+
+The other JSONs in `JSON_config` (document and extractor types, palette icons,
+qualia additions) are read only inside this package and do not move the
+fingerprint. `em.ttl` is not JSON: stratigraph-templates compares it term by
+term.
+
+It returns `{digest, versions, digests, files}`: `digest` is `sha256:<hex>` over
+all six, `versions` one version per name, `digests` one digest per file. The
+per-file digests are what lets a copy whose version stayed and whose content
+moved still be **named**.
+
+**The canonical form is RFC 8785** (JSON Canonicalization Scheme): keys sorted by
+UTF-16 code unit, no whitespace, strings escaped as `JSON.stringify` escapes them,
+UTF-8, numbers as ECMAScript writes them. The files are canonicalised in order of
+file name and the bytes concatenated. RFC 8785 because EMStudio computes the same
+digest in JavaScript, and `em_visual_rules.json` holds 139 integral floats that
+`json.dumps` writes `1.0` and `JSON.stringify` writes `1`.
+
+`api.datamodel_differences(expected, found)` names each difference, the copy's
+version first: `nodes 1.6.12 vs 1.6.17`, `visual_rules 1.6.27: same version,
+different content`. Every consumer uses the same wording.
+
+Guards: `tests/test_datamodel_fingerprint.py` (a reordered or reindented file
+keeps the digest, a changed value moves it and names the file, RFC 8785 number
+by number).
+
+### `em.ttl` is aligned by hand, and compared whole
 
 Every `em:` term a datamodel cites must be declared in `JSON_config/em.ttl`. The
 declaration's comment says `Maps to: …`, and `owl:versionInfo` is raised with
-the file. **No test compares the whole of `em.ttl` with the datamodels.** Only
-single alignments have targeted tests, for example
+the file. `tests/test_em_ttl_matches_the_datamodels.py` compares the two sets:
+every value in the six datamodel JSONs that **is** an `em:` term (a class's
+`uri`, an edge's `extension_mapping`, a `subclass_of`, …; prose is not read)
+against every `em:` subject of `em.ttl`.
+
+* **Cited but not declared** fails hard. Today: none.
+* **Declared but cited by no datamodel** does not hold today: 35 terms are
+  emitted by code without the datamodel naming them (the exporter's AP11
+  `type_tag` → `em:abuts`… table, the editorial stamps, the AI support fields,
+  the geometry fields). That test is `xfail(strict=True)`, and
+  `test_the_uncited_terms_are_exactly_the_known_ones` pins the list
+  (`KNOWN_UNCITED`), so it cannot grow or shrink without an edit. Whether each
+  term moves into a datamodel field or stays in code is a decision per term.
+
+Single alignments keep their targeted tests, for example
 `tests/test_physical_relation_spellings.py::test_em_ttl_names_the_same_edges_the_datamodel_maps`
 and `tests/test_unit_definition.py::test_em_ttl_declares_the_companion_subproperty`.
 Checking the CIDOC-family IRIs against the official releases is a script run by
@@ -164,9 +227,10 @@ A recording sheet is data. It is compiled against a **snapshot** of the
 datamodel, not against the live checkout, so a datamodel change reaches a sheet
 only when someone decides it should.
 
-* **`registry/s3dgraphy-snapshot.json`** is the snapshot. It records:
+* **`registry/s3dgraphy-snapshot.json`** is the snapshot (format 4). It records:
   * the node, connections and qualia datamodels, `node_registry.generated.json`,
     and `em.ttl`'s version and terms;
+  * `datamodel`: the fingerprint (§1), computed by s3Dgraphy, not restated;
   * `s3dgraphy.crdt.OPS` and the edges' RDF mapping;
   * the s3Dgraphy commit and dirty flag it was taken from.
 
@@ -174,15 +238,23 @@ only when someone decides it should.
   found through `$STRATIGRAPH_S3DGRAPHY_SRC`, else the sibling
   `../s3Dgraphy/src` (`registry.py` `_CANDIDATE_SRC`).
 * **`validate` and `build` stop if the snapshot and the working tree diverge.**
-  `registry()` compares content, not commits. It raises `RegistryDivergence`,
-  which exits with code 2 and lists each difference. `--snapshot` (before the
-  subcommand) compiles against the snapshot alone.
+  `registry()` compares content, not commits, fingerprint included. It raises
+  `RegistryDivergence`, which exits with code 2 and lists each difference, the
+  datamodels first: `datamodel: nodes 1.6.12 vs 1.6.17`. So a change to the visual
+  rules or the translations alone also stops it: one fingerprint, one decision.
+  A format-3 snapshot (before the fingerprint) is still read, so that its
+  divergence is named. `--snapshot` (before the subcommand) compiles against the
+  snapshot alone.
 * **`stratigraph-templates build`** writes `dist/schede/<id>/<version>.json` and
   `dist/schede/index.json`. Each compiled sheet has a `header` and a `recipe`:
-  * `header.datamodel` holds the datamodel versions it was compiled against
-    (`nodes`, `connections`, `qualia`, `em_ttl`, `s3dgraphy`, `taken_from`).
+  * `header.datamodel` holds one version per datamodel, under the fingerprint's
+    names (`nodes`, `node_registry`, `connections`, `visual_rules`, `qualia`,
+    `translations`), **`digest`, the fingerprint**, and `em_ttl`, `s3dgraphy`,
+    `taken_from`. `dist/schede/index.json` carries the fingerprint too.
   * `header.digest` is the sha256 **of the definition**. It excludes `datamodel`,
-    so a datamodel change that leaves the recipe alone keeps the digest.
+    so a datamodel change that leaves the recipe alone keeps the digest. Versions
+    published before 2026-10-01 have no fingerprint and never will: a published
+    version does not change.
   * `recipe.operations` is the five CRDT operations, copied from the snapshot:
     `add_node`, `update_field`, `remove_node`, `add_edge`, `remove_edge`.
   * A published version never changes. If a new compile of the same version has a
@@ -208,8 +280,21 @@ only when someone decides it should.
   same recipe, and the marks `data.scheda` and `data.scheda_links.<field>`, from
   the graph back to the sheet.
 
-StratiField does **not** compare `header.datamodel` with anything at run time.
-It stores the header, and the digest travels only as provenance on the unit.
+* **At load, StratiField compares `header.datamodel`** (versions and
+  fingerprint) with the s3dgraphy it carries (`app/scheda.py`
+  `check_datamodel`). It **does not block**: the recipe is five operations the
+  room applies with its own s3dgraphy. It makes the difference visible:
+  * `differs`: a warning in the log, once per scheda version
+    («costruita su un altro datamodel: nodi 1.6.12, qui 1.6.17»), and a notice on
+    the scheda, in both views, drawn by `web/scheda.js` `datamodelNotice` from
+    `for_browser()["datamodel_check"]`;
+  * `no_digest` (a scheda compiled before the fingerprint): a softer notice, and
+    `info` in the log;
+  * `aligned`: nothing;
+  * `unchecked`: this node's s3dgraphy cannot compute the fingerprint (a release
+    older than `s3dgraphy.datamodel`).
+* **`sync-schede.sh`** prints the fingerprint of the latest version of each
+  vendored scheda and that of the installed s3dgraphy.
 
 ## 4 · The other tools
 
@@ -218,8 +303,15 @@ It stores the header, and the digest travels only as provenance on the unit.
   datamodel JSONs, `node_registry.generated.json` and `datamodel_translations.json`
   into `frontend/src/assets/`. It also writes
   `crates/em-core/assets/em_visual_rules.core.json` (the visual rules without
-  `2d_glyphs`) and the 2D icons and DTC glyphs. Its Python sidecar separately pins
-  s3dgraphy in `tools/requirements.txt`.
+  `2d_glyphs`) and the 2D icons and DTC glyphs, and
+  `frontend/src/assets/datamodel.fingerprint.json`: the fingerprint of what it
+  copied, recomputed in JavaScript (`frontend/scripts/datamodel-fingerprint.mjs`).
+  **`npm run check:datamodel`** (`frontend/scripts/check-datamodel.mjs`) fails,
+  naming the datamodel, when the copies no longer match that file (edited by
+  hand) or no longer match the sibling s3Dgraphy working tree; with a python
+  that has `s3dgraphy.datamodel` it also checks the JavaScript digest against the
+  Python one. Its Python sidecar separately pins s3dgraphy in
+  `tools/requirements.txt`.
 * **EM-blender-tools.** No copy of the JSON. The graph editor reads the installed
   package: `graph_editor/utils.py` `get_connection_rules()` calls
   `get_connections_datamodel()`, and `with_spellings()` asks `spellings()`.
@@ -258,23 +350,23 @@ editable install:
 | # | Step | Command | Red if skipped |
 | --- | --- | --- | --- |
 | 1 | Raise the file's version and say why in its `description` | edit the JSON | review; `stratigraph-templates` diffs name the versions |
-| 2 | Declare every new `em:` term in `em.ttl`, with `Maps to:`; raise `owl:versionInfo` | edit `em.ttl` | a targeted `test_em_ttl_*` test, if you wrote one; there is no general one |
+| 2 | Declare every new `em:` term in `em.ttl`, with `Maps to:`; raise `owl:versionInfo` | edit `em.ttl` | `tests/test_em_ttl_matches_the_datamodels.py` (a cited term not declared; a new declared term no datamodel cites) |
 | 3 | Regenerate the node registry (node classes changed) | `python -m s3dgraphy.tools.sync_node_datamodel` | `tests/test_node_datamodel_registry.py::test_node_registry_in_sync` |
 | 4 | Regenerate the glyphs (an SVG changed) | `python -m s3dgraphy.tools.glyphs_from_svg --write` | `tests/test_glyph_paths.py` |
 | 5 | Reseed the English translations (a label or description changed) | `python -m s3dgraphy.tools.datamodel_i18n seed` | `tests/test_datamodel_i18n.py::test_committed_sidecar_en_is_in_sync` |
 | 6 | Re-stamp the shipped mappings that you checked | `api.mapping_stamp(mapping)` | `tests/test_shipped_mappings.py` (validation; a stale stamp only warns) |
 | 7 | Run the suite | `python -m pytest` | — |
-| 8 | See who is behind | `python -m s3dgraphy.tools.consumer_drift` · `python -m s3dgraphy.tools.wheel_drift` | `--check` exits 1 for a consumer this project owns |
+| 8 | See who is behind | `python -m s3dgraphy.tools.consumer_drift` · `python -m s3dgraphy.tools.wheel_drift` | `--check` exits 1 for a consumer this project owns and tracks (EMStudio, stratigraph-templates) that is behind or holds an edited copy; every datamodel and the fingerprint are compared, each difference named |
 
 **In the consumers**, from the parent directory that holds the checkouts:
 
 | # | Repository | Command | Red if skipped |
 | --- | --- | --- | --- |
-| 9 | EMStudio | `cd EMStudio/frontend && ./scripts/sync-datamodels.sh`, then review and commit the diff | `consumer_drift --check` (connections version only); `cargo test -p em-core --test visual_rules_core` if the visual rules changed |
+| 9 | EMStudio | `cd EMStudio/frontend && ./scripts/sync-datamodels.sh`, then review and commit the diff (the copies and `datamodel.fingerprint.json`) | `npm run check:datamodel`; `consumer_drift --check`; `cargo test -p em-core --test visual_rules_core` if the visual rules changed |
 | 10 | EM-blender-tools | `cd EM-blender-tools && ./em.sh rebundle` (then `./em.sh manifest 3.11` / `3.13` if the wheel name changed) | `wheel_drift --check` |
-| 11 | stratigraph-templates | `cd stratigraph-templates && .venv/bin/stratigraph-templates registry-snapshot`, read the diff of `registry/`, then `.venv/bin/stratigraph-templates build` | `tests/test_registry.py::test_the_committed_snapshot_is_what_s3dgraphy_declares_today`; every test using the `reg` fixture errors at setup; then `tests/test_build.py::test_the_committed_dist_is_what_the_definitions_compile_to` |
+| 11 | stratigraph-templates | `cd stratigraph-templates && .venv/bin/stratigraph-templates registry-snapshot`, read the diff of `registry/`, then `.venv/bin/stratigraph-templates build` (a datamodel-only change rewrites the current sheets' `header.datamodel`, same digest) | `validate` exits 2 naming the datamodel; `tests/test_registry.py::test_the_committed_snapshot_is_what_s3dgraphy_declares_today`; every test using the `reg` fixture errors at setup; then `tests/test_build.py::test_the_committed_dist_is_what_the_definitions_compile_to`, `tests/test_datamodel_fingerprint.py`, and `test_golden_iccd` (refresh as in step 12) |
 | 12 | stratigraph-templates, if a recipe changed | raise `template.version`, `build` again; refresh the golden file with `STRATIGRAPH_UPDATE_GOLDEN=1 .venv/bin/python -m pytest tests/test_build.py::test_golden_iccd` | `PublishedVersionChanged` from `build`; `tests/test_build.py::test_golden_iccd` |
-| 13 | StratiField | `cd stratigraph-chatbot && ./sync-schede.sh` | `tests/test_la_scheda_diventa_operazioni.py::test_the_vendored_copy_is_the_compiled_form_and_not_stale` (only when the sibling `dist/` exists) |
+| 13 | StratiField | `cd stratigraph-chatbot && ./sync-schede.sh` (it prints both fingerprints) | `tests/test_la_scheda_diventa_operazioni.py::test_the_vendored_copy_is_the_compiled_form_and_not_stale` (only when the sibling `dist/` exists); at run time, the notice on every scheda whose fingerprint is not the node's |
 | 14 | StratiGraph Server, EMStudio sidecar | after a PyPI release: `./bump-s3dgraphy.sh <ver>` in the server; the pin in `EMStudio/tools/requirements.txt` | nothing automatic |
 
 A consumer somebody else owns (Heriverse) being behind is **news to send**, not a
