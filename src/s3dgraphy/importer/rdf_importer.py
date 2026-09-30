@@ -1234,9 +1234,9 @@ class RDFImporter:
                 data["geometry_kind"] = str(kind)
             selector = self._one_literal(store, ref, EM.hasSelector)
             if data.get("geometry_kind") in ("point", "line", "polyline"):
-                # The geometry is the .glb (has_semantic_shape), not a selector:
-                # its absence is the design, not a loss.
-                pass
+                # No selector for a 3D kind: its vertices come back from the
+                # GeoSPARQL WKT of <region>/geometry (node datamodel 1.6.15).
+                data.update(self._wkt_coords(store, ref, node_id))
             elif selector:
                 try:
                     data.update(AnnotationRegionNode.parse_selector(str(selector)))
@@ -1514,6 +1514,25 @@ class RDFImporter:
             except ValueError:
                 continue
         return out
+
+    def _wkt_coords(self, store: ConjunctiveGraph, ref: URIRef,
+                    node_id: str) -> Dict[str, Any]:
+        """coords / crs from ``geo:hasGeometry → geo:asWKT`` — the inverse of
+        the exporter's 3D-reading branch (see geometry/wkt.py). Absent when the
+        vertices are a .glb resource (above the threshold)."""
+        from ..exporter.rdf_exporter import GEO
+        from ..geometry.wkt import WktError, wkt_to_coords
+        for geom in store.objects(ref, GEO.hasGeometry):
+            wkt = self._one_literal(store, geom, GEO.asWKT)
+            if wkt is None:
+                continue
+            try:
+                crs, _shape, coords = wkt_to_coords(wkt)
+            except WktError as exc:
+                self.warnings.append(f"node '{node_id}': geometry not readable ({exc})")
+                return {}
+            return {"coords": coords, "crs": crs}
+        return {}
 
     def _measure_data(self, store: ConjunctiveGraph, ref: URIRef,
                       node_id: str) -> Dict[str, Any]:

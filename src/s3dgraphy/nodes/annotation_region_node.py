@@ -41,12 +41,21 @@ so they are the same node, told apart by ``geometry_kind``:
   ``polyline``  an open chain of points: an articulated measure.
 
 For the two document kinds the selector lives in the node's data, as it always
-did. For the three 3D kinds **the coordinates do not**: E.D. keeps geometry out
-of the em.json, proxies included, so the vertices are a `.glb` (glTF has native
-POINTS / LINES / LINE_STRIP primitives), linked exactly as a proxy's payload is
-(``has_semantic_shape`` → a SemanticShape whose ``url`` is the file). The node
-keeps only what shows it without opening the file: ``vertex_count`` and, for a
-line or a polyline, the ``length`` with its ``unit`` and ``crs``.
+did. **For the three 3D kinds the coordinates live in the node too** (E.D.
+2026-09-30, node datamodel 1.6.15): geometry is divided BY ORIGIN, not by shape.
+The sign of whoever argues — the point of a reading, the line and the polyline
+of a measure — is data of the node, ``data.coords`` (``[[x, y, z], …]`` in the
+scene-local frame, glTF Y-up, metres) with its ``crs`` and, for a line or a
+polyline, the ``length`` and ``unit``. What was ACQUIRED or PROCESSED (a mesh, a
+cloud, a DEM) is a file, a resource with its DTC stamp.
+
+Above a threshold written in the datamodel (``coords.inline_max_vertices``,
+500) the vertices leave the node for a ``.glb`` resource the region reaches with
+``has_linked_resource`` — a measure of 600 vertices is data of a survey more than
+the sign of an argument. The node then keeps ``vertex_count``, ``length``,
+``unit`` and ``crs``, as every 3D region did from 2026-10-06 to 2026-10-11, when
+the vertices always went to ``readings/<id>.glb`` through a SemanticShape: that
+form is migrated on opening (``annotation.migrate_reading``).
 
 Why not a second class: the shape_kind argument above was about two COORDINATE
 SYSTEMS with two meanings (an image vs the world). This is one meaning — the
@@ -54,6 +63,10 @@ place of the source a reading rests on — and the extractor's relation to it
 (``extracted_from``) is the same in all five cases.
 """
 
+import functools
+import json
+import math
+import os
 from typing import Any, Dict, List, Optional
 
 from .base_node import Node
@@ -83,14 +96,60 @@ def _norm_pair(pair: Any, where: str) -> List[float]:
 #: The five kinds of place a reading can look at. ``region2d`` first: it is the
 #: default, and every region written before 2026-10-06 is one.
 GEOMETRY_KINDS = ("region2d", "passage", "point", "line", "polyline")
-#: The kinds whose coordinates live in a `.glb`, never in the node.
+#: The 3D kinds: vertices in the model's frame, in ``data.coords`` (the name
+#: is historical — from 2026-10-06 to 2026-10-11 their vertices were a `.glb`).
 GLB_KINDS = ("point", "line", "polyline")
+SPATIAL_KINDS = GLB_KINDS
+#: Used when the datamodel cannot be read (it always can, in a built package).
+_INLINE_MAX_FALLBACK = 500
 #: The kinds that measure something (a length).
 MEASURE_KINDS = ("line", "polyline")
 #: glTF's own unit, and the frame the proxies are written in: scene-local
 #: (already net of the GeoPositionNode shift), not a projected CRS.
 DEFAULT_UNIT = "m"
 DEFAULT_CRS = "local"
+
+
+@functools.lru_cache(maxsize=1)
+def inline_max_vertices() -> int:
+    """How many vertices a 3D region may carry in ``data.coords`` before they
+    go to a ``.glb`` resource. The value is DATA — node datamodel,
+    ``AnnotationRegionNode.coords.inline_max_vertices`` — not a constant here,
+    so the line between "the sign of an argument" and "a survey" is moved in
+    one place every consumer reads."""
+    path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                        "JSON_config", "s3Dgraphy_node_datamodel.json")
+    try:
+        with open(path, encoding="utf-8") as fh:
+            spec = json.load(fh)["visualization_nodes"]["AnnotationRegionNode"]
+        return int(spec["coords"]["inline_max_vertices"])
+    except (OSError, KeyError, TypeError, ValueError):   # pragma: no cover
+        return _INLINE_MAX_FALLBACK
+
+
+def check_coords(kind: str, coords: Any) -> List[List[float]]:
+    """``[[x, y, z], …]`` as floats for a 3D kind, or raise — the same counts
+    the node enforces on ``vertex_count`` (a point ≥ 1, a line exactly 2, a
+    polyline ≥ 2)."""
+    if not isinstance(coords, (list, tuple)):
+        raise AnnotationRegionError(f"{kind} coords must be [[x, y, z], …], got {coords!r}")
+    out: List[List[float]] = []
+    for i, p in enumerate(coords):
+        if not isinstance(p, (list, tuple)) or len(p) != 3 or any(
+                isinstance(v, bool) or not isinstance(v, (int, float)) for v in p):
+            raise AnnotationRegionError(f"{kind} vertex {i}: expected [x, y, z], got {p!r}")
+        out.append([float(v) for v in p])
+    least = 1 if kind == "point" else 2
+    if len(out) < least:
+        raise AnnotationRegionError(f"a {kind} needs at least {least} vertices, got {len(out)}")
+    if kind == "line" and len(out) != 2:
+        raise AnnotationRegionError(f"a line has exactly 2 vertices, got {len(out)} (use polyline)")
+    return out
+
+
+def chain_length(coords: List[List[float]]) -> float:
+    """Sum of the segments of an OPEN chain (a line is the one-segment case)."""
+    return sum(math.dist(a, b) for a, b in zip(coords, coords[1:]))
 
 
 def _non_negative_int(value: Any, where: str) -> int:
@@ -126,10 +185,15 @@ class AnnotationRegionNode(Node):
         start, end (int): ``passage`` — character offsets into the text as
             shown, ``0 <= start <= end``.
         text (str): ``passage`` — the quoted words.
-        vertex_count (int): 3D kinds — how many vertices the `.glb` holds.
+        coords (list): 3D kinds — ``[[x, y, z], …]`` in the scene-local frame
+            (glTF Y-up, metres); absent when the vertices are in a `.glb`
+            resource (more than :func:`inline_max_vertices`).
+        vertex_count (int): 3D kinds — how many vertices there are (the length
+            of ``coords`` when they are inline).
         length (float): ``line`` / ``polyline`` — the measured length, the sum
             of the segments, in ``unit`` and ``crs``.
-        unit (str), crs (str): of the length; ``"m"`` and ``"local"``.
+        unit (str): of the length; ``"m"``.
+        crs (str): the frame of the coordinates and of the length; ``"local"``.
     """
 
     node_type = "annotation_region"
@@ -157,7 +221,8 @@ class AnnotationRegionNode(Node):
                  vertex_count: Optional[int] = None,
                  length: Optional[float] = None,
                  unit: Optional[str] = None,
-                 crs: Optional[str] = None):
+                 crs: Optional[str] = None,
+                 coords: Optional[List[List[float]]] = None):
         super().__init__(node_id=node_id, name=name, description=description)
 
         kind = geometry_kind or "region2d"
@@ -177,13 +242,14 @@ class AnnotationRegionNode(Node):
         self.length: Optional[float] = None
         self.unit: Optional[str] = None
         self.crs: Optional[str] = None
+        self.coords: List[List[float]] = []
 
         if kind == "region2d":
             self._init_region2d(shape_kind, rect, points, page)
         elif kind == "passage":
             self._init_passage(start, end, text)
         else:
-            self._init_glb_kind(vertex_count, length, unit, crs)
+            self._init_glb_kind(vertex_count, length, unit, crs, coords)
 
         self.data: Dict[str, Any] = {"geometry_kind": self.geometry_kind}
         if kind == "region2d":
@@ -196,11 +262,15 @@ class AnnotationRegionNode(Node):
         elif kind == "passage":
             self.data.update({"start": self.start, "end": self.end, "text": self.text})
         else:
+            if self.coords:
+                self.data["coords"] = self.coords
             if self.vertex_count is not None:
                 self.data["vertex_count"] = self.vertex_count
             if self.length is not None:
                 self.data.update({"length": self.length, "unit": self.unit,
                                   "crs": self.crs})
+            elif self.crs is not None:
+                self.data["crs"] = self.crs
         if self.resource_id:
             self.data["resource_id"] = self.resource_id
 
@@ -220,8 +290,19 @@ class AnnotationRegionNode(Node):
         # (the offsets still say where) but never invented.
         self.text = text or ""
 
-    def _init_glb_kind(self, vertex_count, length, unit, crs) -> None:
+    def _init_glb_kind(self, vertex_count, length, unit, crs, coords=None) -> None:
         kind = self.geometry_kind
+        if coords:
+            self.coords = check_coords(kind, coords)
+            if vertex_count is not None and vertex_count != len(self.coords):
+                raise AnnotationRegionError(
+                    f"{kind}: vertex_count {vertex_count} but {len(self.coords)} coords")
+            vertex_count = len(self.coords)
+            # the length of inline vertices is theirs: computed, never a second
+            # number free to disagree with them
+            if kind in MEASURE_KINDS:
+                length = chain_length(self.coords)
+            self.crs = crs or DEFAULT_CRS
         if vertex_count is not None:
             n = _non_negative_int(vertex_count, f"{kind} vertex_count")
             least = 1 if kind == "point" else 2
@@ -288,7 +369,9 @@ class AnnotationRegionNode(Node):
 
     @property
     def is_glb_kind(self) -> bool:
-        """True when the coordinates live in a `.glb` and not in this node."""
+        """True for the 3D kinds (point, line, polyline). Historical name: their
+        vertices are in ``coords`` unless there are more than
+        :func:`inline_max_vertices` of them."""
         return self.geometry_kind in GLB_KINDS
 
     # ── the selector: one geometry, one string, both ways ────────────────────
@@ -311,9 +394,9 @@ class AnnotationRegionNode(Node):
 
         A ``passage`` is the RFC 5147 text fragment ``char=start,end`` — the
         text/plain twin of the Media Fragment, readable outside EM for the same
-        reason. The 3D kinds have NO selector string: their geometry is the
-        `.glb`, and a string here would be the second copy E.D. keeps out of
-        the json. They return ``""``.
+        reason. The 3D kinds have NO selector string: their vertices are
+        ``coords`` (and leave for RDF as a GeoSPARQL WKT literal, not a
+        selector). They return ``""``.
         """
         if self.geometry_kind == "passage":
             return f"char={self.start},{self.end}"

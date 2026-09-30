@@ -1,4 +1,4 @@
-"""The .glb of a reading (MICRO la geometria della lettura, part 2).
+"""The .glb of a reading (MICRO la geometria della lettura, part 2) — the file.
 
 Point, line and polyline go through write → read with the same coordinates
 (as float32, which glTF requires), and the length comes back.
@@ -10,7 +10,6 @@ import struct
 
 import pytest
 
-from s3dgraphy import api
 from s3dgraphy.geometry.reading_glb import (
     MODES,
     ReadingGlbError,
@@ -19,9 +18,6 @@ from s3dgraphy.geometry.reading_glb import (
     read_glb,
     write_glb,
 )
-from s3dgraphy.graph import Graph
-from s3dgraphy.nodes import ExtractorNode
-from s3dgraphy.nodes.representation_node import RepresentationModelNode
 
 
 def _f32(v):
@@ -84,50 +80,7 @@ def test_a_triangle_mesh_is_not_read_as_a_reading():
         parse_glb(bytes(data))
 
 
-# ── the chain writes the file beside the proxies and measures it ─────────────
-
-def _model_graph():
-    g = Graph(graph_id="g")
-    g.add_node(RepresentationModelNode("RM1", name="RM wall"))
-    g.add_node(ExtractorNode("X1", name="RM wall.1"))
-    return g
-
-
-def test_a_polyline_reading_writes_its_glb_and_measures(tmp_path):
-    g = _model_graph()
-    res = api.place_reading(g, "X1", "RM1", {"geometry_kind": "polyline",
-                                             "vertices": CASES["polyline"]},
-                            project_root=str(tmp_path))
-    assert not res.warnings, res.warnings
-    assert res.glb_url == f"readings/{res.region_id}.glb"
-    assert (tmp_path / "readings" / f"{res.region_id}.glb").is_file()
-    edges = {(e.edge_source, e.edge_type, e.edge_target) for e in g.edges}
-    assert ("X1", "extracted_from", res.region_id) in edges
-    assert (res.region_id, "is_on_resource", "RM1") in edges
-    assert (res.region_id, "has_semantic_shape", res.shape_id) in edges
-    shape = g.find_node_by_id(res.shape_id)
-    assert shape.type == "generic" and shape.data["url"] == res.glb_url
-    region = g.find_node_by_id(res.region_id)
-    # no coordinates in the node — only what shows it without the file
-    assert set(region.data) == {"geometry_kind", "vertex_count", "length", "unit",
-                                "crs", "resource_id"}
-    m = api.measure(g, res.region_id, project_root=str(tmp_path))
-    assert m["glb"]["exists"] and m["glb"]["agrees"] is True
-    assert m["value"] == f"{region.data['length']:.3f} m"
-
-
-def test_a_point_reading_without_a_root_says_the_file_is_not_written():
-    g = _model_graph()
-    res = api.place_reading(g, "X1", "RM1", {"geometry_kind": "point", "p": [1, 2, 3]})
-    assert res.glb_path is None and any("NOT written" in w for w in res.warnings)
-    assert api.measure(g, res.region_id)["value"] is None
-
-
-def test_measure_reports_a_file_that_disagrees(tmp_path):
-    g = _model_graph()
-    res = api.place_reading(g, "X1", "RM1", {"geometry_kind": "line",
-                                             "vertices": CASES["line"]},
-                            project_root=str(tmp_path))
-    write_glb(res.glb_path, "line", [[0, 0, 0], [6, 8, 0]])   # somebody moved it
-    m = api.measure(g, res.region_id, project_root=str(tmp_path))
-    assert m["length"] == 5.0 and m["glb"]["length"] == 10.0 and m["glb"]["agrees"] is False
+# The chain (place_reading → the node) moved to tests/test_reading_coords.py
+# on 2026-10-11: the vertices of a reading are the region's data.coords, and a
+# glb is written only above coords.inline_max_vertices. This module keeps the
+# writer/reader, which the migration and geometry.gltf still use.

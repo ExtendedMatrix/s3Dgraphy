@@ -1,4 +1,4 @@
-"""The place of a reading (node datamodel 1.6.10, connections 1.6.27).
+"""The place of a reading (node datamodel 1.6.10 → 1.6.15, connections 1.6.27 → 1.6.29).
 
 E.D. 2026-09-29: the place a reading looked at is ONE node,
 `AnnotationRegionNode` with `geometry_kind` (region2d | passage | point | line |
@@ -112,21 +112,25 @@ def test_datamodels_declare_the_kinds_and_the_missing_edge():
     entry = node["visualization_nodes"]["AnnotationRegionNode"]
     assert list(entry["geometry_kinds"]) == ["region2d", "passage", "point", "line",
                                              "polyline"]
-    assert "has_semantic_shape" in entry["glb_payload"]["edge"]
+    # 1.6.15: the vertices are the node's; the threshold is DATA
+    assert entry["coords"]["inline_max_vertices"] == 500
+    from s3dgraphy.nodes.annotation_region_node import inline_max_vertices
+    assert inline_max_vertices() == entry["coords"]["inline_max_vertices"]
+    assert "glb_payload" not in entry
     conn = _raw("s3Dgraphy_connections_datamodel.json")
     target = conn["edge_types"]["is_on_resource"]["allowed_connections"]["target"]
     assert {"RepresentationModelNode", "RepresentationModelDocNode",
             "RepresentationModelSpecialFindNode"} <= set(target)
 
 
-def test_the_edges_of_the_chain_are_legal_and_has_linked_resource_is_not():
+def test_the_edges_of_the_chain_are_legal():
     v = Graph.validate_connection
     assert v("extractor", "annotation_region", "extracted_from")
     assert v("annotation_region", "representation_model", "is_on_resource")
     assert v("annotation_region", "document", "is_on_resource")
-    assert v("annotation_region", "semantic_shape", "has_semantic_shape")
-    # measured: the RM's file hinge does not admit a region as its source
-    assert not v("annotation_region", "resource", "has_linked_resource")
+    # connections 1.6.29: above the threshold the region reaches its .glb as a
+    # resource, the hinge of the RM and of the proxy's shape
+    assert v("annotation_region", "resource", "has_linked_resource")
 
 
 # ── the chain and the measure ────────────────────────────────────────────────

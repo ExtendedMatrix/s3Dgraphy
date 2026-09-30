@@ -4,6 +4,32 @@ All notable changes to **s3dgraphy** are documented here.
 
 ## [Unreleased]
 
+### Changed (2026-10-11 — the geometry of whoever argues lives in the node)
+node datamodel **1.6.15**, connections datamodel **1.6.29**, CRMem (em.ttl)
+**1.6.8**. Geometry is divided by ORIGIN, not by shape (E.D., 30 Sep): the point
+of a reading, the line and the polyline of a measure are data of the node.
+- `AnnotationRegionNode` point / line / polyline carry `data.coords`
+  (`[[x, y, z], …]`, scene-local glTF frame, metres) with `crs` and, for a line
+  or a polyline, `length` (computed from the coords) and `unit`.
+  `place_reading` writes no glb and no SemanticShape; `api.measure` reads the
+  coords.
+- The threshold is data: `coords.inline_max_vertices` = 500 in the node
+  datamodel. Above it the vertices go to `readings/<id>.glb`, a `3d_model`
+  resource the region reaches with `has_linked_resource` (new source in
+  connections 1.6.29), with a warning.
+- Migration on opening: a region reaching `readings/<id>.glb` through a
+  SemanticShape (2026-10-06) gets its coords from the file; the shape and its
+  edge leave, the file stays. Without the folder or the file the old form stays
+  and a warning says so.
+- RDF: `<region> geo:hasGeometry <region>/geometry`, `geo:asWKT "<CRS IRI>
+  POINT Z | MULTIPOINT Z | LINESTRING Z (…)"^^geo:wktLiteral` (GeoSPARQL 1.1).
+  `em:LocalSceneFrame` is the IRI of the scene frame, the OGC EPSG IRI of a
+  projected one. The round trip stays isomorphic.
+- `geometry.gltf` (also `api.geometry_to_gltf` / `api.gltf_to_geometry`):
+  `geometry_to_gltf(node) -> bytes`, `gltf_to_geometry(bytes, kind) -> dict`.
+  POINTS, LINE_STRIP, and TRIANGLES for a SemanticShape's convex hulls
+  (hull triangulated here); spheres travel in the glTF `extras`.
+
 ### Changed (2026-10-11 — the proxy reaches its glb through a resource)
 connections datamodel **1.6.28**. The proxy is a property of the US and its
 `.glb` is a `proxy_model` **resource** (E.D., 30 Sep): the SemanticShape

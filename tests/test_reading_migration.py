@@ -2,7 +2,8 @@
 place node the extractor extracted_from (MICRO la geometria della lettura, 3).
 
 The fixture carries the two cases EMStudio writes: a passage of a text and a
-point on a 3D model.
+point on a 3D model. Since 2026-10-11 (node datamodel 1.6.15) the point's
+coordinates land in the region's data.coords: no file, no folder needed.
 """
 
 import copy
@@ -10,7 +11,6 @@ import json
 
 from s3dgraphy import api
 from s3dgraphy.exporter.emjson_exporter import build_emjson
-from s3dgraphy.geometry.reading_glb import read_glb
 from s3dgraphy.importer.emjson_importer import parse_emjson
 
 POINT = [12.5, 1.75, -4.25]
@@ -50,7 +50,7 @@ def _region_of(graph, xid):
     return regs[0]
 
 
-def test_opening_the_file_migrates_both_and_writes_the_point_glb(tmp_path):
+def test_opening_the_file_migrates_both_and_puts_the_point_in_the_node(tmp_path):
     path = tmp_path / "study.em.json"
     path.write_text(json.dumps(_doc()), encoding="utf-8")
     graph, warnings = api.load_emjson_file(str(path))
@@ -66,8 +66,8 @@ def test_opening_the_file_migrates_both_and_writes_the_point_glb(tmp_path):
     # `on` named the model by its name: resolved to the node
     assert any(e.edge_source == point.node_id and e.edge_type == "is_on_resource"
                and e.edge_target == "RM1" for e in graph.edges)
-    glb = tmp_path / "readings" / f"{point.node_id}.glb"
-    assert read_glb(str(glb)) == {"geometry_kind": "point", "vertices": [POINT]}
+    assert point.data["coords"] == [POINT] and point.data["crs"] == "local"
+    assert not (tmp_path / "readings").exists()            # no file any more
 
     # the old field is read, not written again
     for xid in ("X1", "X2"):
@@ -88,25 +88,14 @@ def test_opening_twice_is_a_no_op(tmp_path):
     assert len(first.edges) == len(second.edges)
 
 
-def test_without_a_folder_the_point_keeps_its_only_copy():
+def test_without_a_folder_the_point_migrates_all_the_same():
+    """Until 2026-10-11 the point needed a folder for its glb and stayed
+    `pending` without one; its coordinates are data of the node now."""
     graph, warnings = parse_emjson(copy.deepcopy(_doc()))
-    # the passage needs no file: migrated
-    assert "geometry" not in graph.find_node_by_id("X1").data
-    # the point: region made, coordinates kept where they are, and said so
-    region = _region_of(graph, "X2")
-    assert graph.find_node_by_id("X2").data["geometry"]["p"] == POINT
-    assert any("keeps its data.geometry" in w and region.node_id in w for w in warnings)
-
-
-def test_the_pending_point_completes_on_the_next_open_from_a_file(tmp_path):
-    graph, _ = parse_emjson(copy.deepcopy(_doc()))
-    path = tmp_path / "study.em.json"
-    path.write_text(json.dumps(build_emjson(graph)), encoding="utf-8")
-    again, warnings = api.load_emjson_file(str(path))
-    region = _region_of(again, "X2")
-    assert "geometry" not in again.find_node_by_id("X2").data
-    assert (tmp_path / "readings" / f"{region.node_id}.glb").is_file()
-    assert region.node_id == _region_of(graph, "X2").node_id
+    for xid in ("X1", "X2"):
+        assert "geometry" not in graph.find_node_by_id(xid).data
+    assert _region_of(graph, "X2").data["coords"] == [POINT]
+    assert not [w for w in warnings if "reading migration" in w], warnings
 
 
 def test_a_region_already_read_shadows_the_legacy_field():
@@ -128,7 +117,7 @@ def test_an_unknown_kind_is_left_alone_and_said():
     assert any("'volume'" in w for w in warnings)
 
 
-def test_a_container_file_migrates_its_members_with_the_file_folder(tmp_path):
+def test_a_container_file_migrates_its_members(tmp_path):
     single = _doc()
     container = {"header": single["header"], "active_graph_id": "g",
                  "graphs": {"g": single["graph"]}}
@@ -137,5 +126,5 @@ def test_a_container_file_migrates_its_members_with_the_file_folder(tmp_path):
     loaded, _ = api.load_container_file(str(path))
     graph = loaded.graphs["g"]
     region = _region_of(graph, "X2")
-    assert (tmp_path / "readings" / f"{region.node_id}.glb").is_file()
+    assert region.data["coords"] == [POINT]
     assert "geometry" not in graph.find_node_by_id("X2").data

@@ -307,17 +307,22 @@ def parse_emjson(doc: Dict[str, Any], *,
     warnings.extend(migrate_shape_urls(graph)["warnings"])
 
     # 2026-10-06 · the place of a reading: an extractor's legacy data.geometry
-    # (EMStudio, from 2026-10-05) becomes a place node it extracted_from. A 3D
-    # point needs `project_root` for its .glb; without it the field is kept (the
-    # only copy) and the migration completes on the next open from a file.
-    from ..annotation.migrate_reading import migrate_reading_geometry
+    # (EMStudio, from 2026-10-05) becomes a place node it extracted_from.
+    from ..annotation.migrate_reading import (migrate_reading_geometry,
+                                              migrate_reading_glbs)
     migration = migrate_reading_geometry(graph, project_root=project_root)
     warnings.extend(migration["warnings"])
     for entry in migration["pending"]:
         warnings.append(
             f"reading migration: extractor '{entry['extractor_id']}' keeps its "
-            f"data.geometry until the graph is opened from a file — its point "
+            f"data.geometry until the graph is opened from a file — its place "
             f"needs a folder for readings/{entry['region_id']}.glb")
+
+    # 2026-10-11 · node datamodel 1.6.15: the vertices of a 3D reading are the
+    # region's data.coords. A region still reaching readings/<id>.glb through a
+    # SemanticShape (2026-10-06) is read from the file (it needs the folder:
+    # without it the old form stays, and the warning says so). The file stays.
+    warnings.extend(migrate_reading_glbs(graph, project_root=project_root)["warnings"])
 
     # dtc_kinds 1.6.22 · the capture is an acquisition: an acquisition written
     # in EMStudio's provisional form (`local_import` + `data.capture`) opens as

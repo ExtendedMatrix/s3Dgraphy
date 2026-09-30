@@ -38,11 +38,14 @@ from .reading import (
     measure,
     place_reading,
     polyline_length,
+    attach_reading_resource,
     reading_glb_url,
+    reading_resource_id,
     reading_shape_id,
     write_reading_glb,
 )
 
 __all__ = ["create_annotation_paradata", "AnnotationParadataResult",
            "place_reading", "ReadingPlaceResult", "measure", "polyline_length",
-           "reading_glb_url", "reading_shape_id", "write_reading_glb"]
+           "reading_glb_url", "reading_shape_id", "write_reading_glb",
+           "reading_resource_id", "attach_reading_resource"]

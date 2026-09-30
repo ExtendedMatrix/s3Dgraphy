@@ -5,13 +5,15 @@ node, the same one for every medium (`AnnotationRegionNode`, `geometry_kind`).
 The chain is identical in all five cases::
 
     Extractor ──extracted_from──▶ AnnotationRegion ──is_on_resource──▶ image | text | model
-                                        │
-                                        └─has_semantic_shape─▶ SemanticShape(url = readings/<id>.glb)
-                                                               (point / line / polyline only)
 
-The glb hinge is the proxy's (Property(geometry) ─has_semantic_shape─▶
-SemanticShape.url), measured and reused: no new edge, no coordinates in the
-em.json.
+E.D. 2026-09-30: geometry is divided BY ORIGIN. The point, the line and the
+polyline of a reading are the sign of whoever argues, so their vertices are
+data of the region (``data.coords``, scene-local glTF frame, metres) — no .glb
+and no SemanticShape. Above ``coords.inline_max_vertices`` (node datamodel,
+500) they are more a survey than a sign: they go to ``readings/<id>.glb``, a
+resource the region reaches with ``has_linked_resource``, and a warning says so.
+(From 2026-10-06 to 2026-10-11 every 3D reading was a glb behind a
+SemanticShape; that form is migrated on opening, see :mod:`.migrate_reading`.)
 
 One extractor reads ONE place. Placing it again moves it: the extractor's
 `extracted_from` to the previous region is removed (the region itself stays, it
@@ -23,7 +25,6 @@ edge the datamodel refuses is a warning, never a `generic_connection`.
 
 from __future__ import annotations
 
-import math
 import os
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Sequence
@@ -35,12 +36,18 @@ from ..nodes.annotation_region_node import (
     MEASURE_KINDS,
     AnnotationRegionError,
     AnnotationRegionNode,
+    chain_length,
+    inline_max_vertices,
 )
 from .paradata import AnnotationParadataResult, _ensure_edge, _stable_id
 
 _EDGE_EXTRACTED_FROM = "extracted_from"
 _EDGE_IS_ON_RESOURCE = "is_on_resource"
 _EDGE_HAS_SEMANTIC_SHAPE = "has_semantic_shape"
+_EDGE_HAS_LINKED_RESOURCE = "has_linked_resource"
+#: The resource type of a reading's .glb above the threshold: a glTF file of
+#: geometry (``ResourceNode.RESOURCE_TYPES``); it is not a unit's proxy.
+READING_RESOURCE_TYPE = "3d_model"
 
 
 @dataclass
@@ -51,8 +58,11 @@ class ReadingPlaceResult:
     region_id: str
     on_id: Optional[str]
     geometry_kind: str
+    #: historical (2026-10-06): a reading has no SemanticShape any more
     shape_id: Optional[str] = None
-    #: project-relative path of the .glb (3D kinds), the SemanticShape's url
+    #: the .glb resource, only above ``coords.inline_max_vertices``
+    resource_id: Optional[str] = None
+    #: project-relative path of that .glb
     glb_url: Optional[str] = None
     #: absolute path the .glb was written to, when a project_root was given
     glb_path: Optional[str] = None
@@ -69,6 +79,7 @@ class ReadingPlaceResult:
             "on_id": self.on_id,
             "geometry_kind": self.geometry_kind,
             "shape_id": self.shape_id,
+            "resource_id": self.resource_id,
             "glb_url": self.glb_url,
             "glb_path": self.glb_path,
             "replaced": list(self.replaced),
@@ -80,14 +91,11 @@ class ReadingPlaceResult:
 
 def polyline_length(vertices: Sequence[Sequence[float]]) -> float:
     """Sum of the segments of an OPEN chain (a line is the one-segment case)."""
-    total = 0.0
-    for a, b in zip(vertices, vertices[1:]):
-        total += math.dist([float(v) for v in a], [float(v) for v in b])
-    return total
+    return chain_length([[float(v) for v in p] for p in vertices])
 
 
 def reading_glb_url(region_id: str) -> str:
-    """The .glb of a reading, relative to the project folder.
+    """The .glb of a reading (above the threshold), relative to the project folder.
 
     The rule is the proxies' one, measured in EMtools (graph_updaters.py and the
     Heriverse exporter write ``proxies/<unit name>.glb``): a project-relative
@@ -136,8 +144,10 @@ def place_reading(graph: Graph, extractor_id: str, on_id: Optional[str],
             ``passage``: ``start``, ``end``, ``text``;
             ``point`` / ``line`` / ``polyline``: ``vertices`` = ``[[x,y,z], …]``
             in the model's glTF frame (a single ``p`` is accepted for a point).
-        project_root: the project folder the .glb is written under (3D kinds).
-            Without it the nodes are made and the file is NOT written — the
+            They become the region's ``data.coords``.
+        project_root: the project folder a .glb is written under — only for
+            a 3D reading of more than ``coords.inline_max_vertices`` vertices.
+            Without it the resource is made and the file is NOT written — the
             result says so, and the caller writes it (``write_reading_glb``).
 
     Raises:
@@ -161,9 +171,13 @@ def place_reading(graph: Graph, extractor_id: str, on_id: Optional[str],
                       text=geometry.get("text"))
     else:
         vertices = _vertices(geometry, kind)
-        kwargs["vertex_count"] = len(vertices)
-        if kind in MEASURE_KINDS:
-            kwargs["length"] = polyline_length(vertices)
+        if len(vertices) <= inline_max_vertices():
+            kwargs["coords"] = vertices          # the node computes count and length
+        else:
+            kwargs["vertex_count"] = len(vertices)
+            if kind in MEASURE_KINDS:
+                kwargs["length"] = polyline_length(vertices)
+            kwargs["crs"] = "local"
     probe = AnnotationRegionNode("__probe__", "__probe__", **kwargs)
 
     region_id = _stable_id(_region_key(on_id, kind, geometry, probe, vertices))
@@ -188,8 +202,8 @@ def place_reading(graph: Graph, extractor_id: str, on_id: Optional[str],
         graph.add_node(node)
         result.created = True
 
-    if kind in GLB_KINDS:
-        _attach_glb(graph, result, sink, vertices, project_root, author)
+    if kind in GLB_KINDS and "coords" not in kwargs:
+        _attach_glb_resource(graph, result, sink, vertices, project_root, author)
 
     if extractor is not None:
         for edge in list(graph.edges):
@@ -216,8 +230,14 @@ def place_reading(graph: Graph, extractor_id: str, on_id: Optional[str],
 
 
 def reading_shape_id(region_id: str) -> str:
-    """The SemanticShape that carries a reading's .glb — one per region."""
+    """The SemanticShape that carried a reading's .glb from 2026-10-06 to
+    2026-10-11 — kept so the migration can recognise it."""
     return _stable_id(f"reading-shape|{region_id}")
+
+
+def reading_resource_id(region_id: str) -> str:
+    """The resource holding a reading's .glb, above the threshold — one per region."""
+    return _stable_id(f"reading-resource|{region_id}")
 
 
 def write_reading_glb(project_root: str, region_id: str, kind: str,
@@ -228,33 +248,47 @@ def write_reading_glb(project_root: str, region_id: str, kind: str,
     return write_glb(path, kind, vertices, name=region_id)
 
 
-def _attach_glb(graph, result, sink, vertices, project_root, author) -> None:
-    """The 3D kinds: the coordinates go to a .glb, the node points at it.
+def attach_reading_resource(graph: Graph, region_id: str, url: str, *,
+                            author: Optional[str] = None) -> Dict[str, Any]:
+    """``region ──has_linked_resource──▶ ResourceNode(url, url_type 3d_model)``.
+    Idempotent. Returns ``{resource_id, edge_id, created}``."""
+    from ..nodes.resource_node import ResourceNode
 
-    The hinge is the proxy's, measured: ``Property(geometry)
-    ─has_semantic_shape→ SemanticShape`` whose ``url`` is the file. Here the
-    region is the source (``has_semantic_shape`` admits any Node), and the
-    shape is ``type="generic"`` — it is not a unit's proxy.
-    """
-    from ..nodes.semantic_shape_node import SemanticShapeNode
-
-    url = reading_glb_url(result.region_id)
-    shape_id = reading_shape_id(result.region_id)
-    result.shape_id, result.glb_url = shape_id, url
-    if graph.find_node_by_id(shape_id) is None:
-        shape = SemanticShapeNode(node_id=shape_id, name=f"{result.geometry_kind} glb",
-                                  type="generic", url=url)
+    resource_id = reading_resource_id(region_id)
+    created = False
+    if graph.find_node_by_id(resource_id) is None:
+        res = ResourceNode(node_id=resource_id, name=url.rsplit("/", 1)[-1],
+                           url=url, url_type=READING_RESOURCE_TYPE)
         if author:
-            shape.data["author"] = author
-        graph.add_node(shape)
-        result.created = True
-    _ensure_edge(graph, result.region_id, shape_id, _EDGE_HAS_SEMANTIC_SHAPE, sink)
+            res.data["author"] = author
+        graph.add_node(res)
+        created = True
+    edge_id = _stable_id(f"edge|{region_id}|{_EDGE_HAS_LINKED_RESOURCE}|{resource_id}")
+    if graph.find_edge_by_id(edge_id) is None:
+        graph.add_edge(edge_id, region_id, resource_id, _EDGE_HAS_LINKED_RESOURCE)
+        created = True
+    return {"resource_id": resource_id, "edge_id": edge_id, "created": created}
+
+
+def _attach_glb_resource(graph, result, sink, vertices, project_root, author) -> None:
+    """More vertices than ``coords.inline_max_vertices``: they go to a .glb the
+    region reaches as a RESOURCE (``has_linked_resource``), like a proxy's shape
+    or an RM — and the caller is told, because the node no longer shows them."""
+    url = reading_glb_url(result.region_id)
+    linked = attach_reading_resource(graph, result.region_id, url, author=author)
+    result.resource_id, result.glb_url = linked["resource_id"], url
+    result.edge_ids.append(linked["edge_id"])
+    result.created = result.created or linked["created"]
+    result.warnings.append(
+        f"reading: {len(vertices)} vertices exceed coords.inline_max_vertices "
+        f"({inline_max_vertices()}); the geometry is in {url}, a resource, not in "
+        f"the node")
     if project_root:
         result.glb_path = write_reading_glb(project_root, result.region_id,
                                             result.geometry_kind, vertices)
     else:
         result.warnings.append(
-            f"reading: no project_root, so {url} was NOT written; the node points "
+            f"reading: no project_root, so {url} was NOT written; the resource points "
             f"at it — write it with write_reading_glb before saving")
 
 
@@ -282,26 +316,38 @@ def measure(graph: Graph, region_id: str, *,
         "crs": data.get("crs"),
         "value": None,
     }
+    coords = data.get("coords")
+    if kind in GLB_KINDS and coords:
+        # the vertices are the node's: count and length are read FROM them,
+        # never from a cached number that could disagree
+        out["vertex_count"] = len(coords)
+        out["crs"] = data.get("crs") or "local"
+        if kind in MEASURE_KINDS:
+            length = chain_length([[float(v) for v in p] for p in coords])
+            out["length"], out["unit"] = length, unit or "m"
     if kind in MEASURE_KINDS and length is not None:
         out["value"] = f"{float(length):.3f} {unit or 'm'}"
-    if project_root and kind in GLB_KINDS:
+    if project_root and kind in GLB_KINDS and not coords:
         out["glb"] = _measure_glb(graph, region_id, kind, data, project_root)
     return out
 
 
 def _glb_url_of(graph: Graph, region_id: str) -> Optional[str]:
-    for edge in graph.edges:
-        if edge.edge_source == region_id and edge.edge_type == _EDGE_HAS_SEMANTIC_SHAPE:
-            shape = graph.find_node_by_id(edge.edge_target)
-            url = getattr(shape, "url", None) or (getattr(shape, "data", {}) or {}).get("url")
-            if url:
-                return str(url)
+    """The .glb of a region: its resource (above the threshold), else the
+    SemanticShape of the 2026-10-06 form, not yet migrated."""
+    for edge_type in (_EDGE_HAS_LINKED_RESOURCE, _EDGE_HAS_SEMANTIC_SHAPE):
+        for edge in graph.edges:
+            if edge.edge_source == region_id and edge.edge_type == edge_type:
+                node = graph.find_node_by_id(edge.edge_target)
+                url = getattr(node, "url", None) or (getattr(node, "data", {}) or {}).get("url")
+                if url:
+                    return str(url)
     return None
 
 
 def _measure_glb(graph, region_id, kind, data, project_root) -> Dict[str, Any]:
-    """Re-read the file and say whether it agrees with the node. The node's
-    numbers are a CACHE of the file's (so the value shows without opening it);
+    """Re-read the file of a region whose vertices are NOT inline, and say
+    whether it agrees with the node. The node's numbers are a CACHE of the file's (so the value shows without opening it);
     the file is the geometry, and a disagreement is reported, not repaired."""
     from ..geometry.reading_glb import ReadingGlbError, read_glb
 
@@ -309,7 +355,7 @@ def _measure_glb(graph, region_id, kind, data, project_root) -> Dict[str, Any]:
     out: Dict[str, Any] = {"url": url, "path": None, "exists": False,
                            "vertex_count": None, "length": None, "agrees": None}
     if not url:
-        out["error"] = "no has_semantic_shape with a url"
+        out["error"] = "no .glb resource (has_linked_resource) with a url"
         return out
     path = os.path.join(project_root, *url.split("/"))
     out["path"] = path

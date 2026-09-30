@@ -3,15 +3,16 @@
 MICRO la misura in RDF (2026-10-07). A passage's quote travels as a W3C
 ``oa:TextQuoteSelector`` (its offsets were already ``em:hasSelector
 "char=s,e"``); a line's or polyline's length as a CIDOC ``E54 Dimension``
-(``P43`` → ``P90`` value, ``P91`` QUDT unit, ``em:crs``). A 3D kind's
-coordinates never enter RDF: the ``.glb`` URL does, on its SemanticShape.
+(``P43`` → ``P90`` value, ``P91`` QUDT unit, ``em:crs``). Since 2026-10-11
+(node datamodel 1.6.15) a 3D kind's vertices are the node's and leave as a
+GeoSPARQL WKT literal (``geo:hasGeometry`` → ``geo:asWKT``).
 """
 
 import rdflib
 from rdflib.compare import isomorphic
 
 from s3dgraphy import api
-from s3dgraphy.exporter.rdf_exporter import CRM, EM, OA, QUDT_UNIT
+from s3dgraphy.exporter.rdf_exporter import CRM, EM, GEO, OA, QUDT_UNIT
 from s3dgraphy.graph import Graph
 from s3dgraphy.importer.rdf_importer import RDFImporter
 from s3dgraphy.nodes import DocumentNode, ExtractorNode, RepresentationModelNode
@@ -30,7 +31,7 @@ def _graph(tmp_path):
                                            "vertices": [[0, 0, 0], [1, 0, 0], [1, 2, 0]]},
                           project_root=str(tmp_path))
     assert not p.warnings and not l.warnings, (p.warnings, l.warnings)
-    return g, p.region_id, l.region_id, l.shape_id
+    return g, p.region_id, l.region_id
 
 
 def _ttl(g):
@@ -44,10 +45,10 @@ def _rdf(ttl):
 
 
 def test_the_quote_and_the_measure_are_in_the_projection(tmp_path):
-    g, pid, lid, sid = _graph(tmp_path)
+    g, pid, lid = _graph(tmp_path)
     store = _rdf(_ttl(g))
     by_id = {str(o): s for s, o in store.subject_objects(rdflib.DCTERMS.identifier)}
-    passage, line, shape = by_id[pid], by_id[lid], by_id[sid]
+    passage, line = by_id[pid], by_id[lid]
 
     assert (passage, EM.hasSelector, rdflib.Literal("char=12,36")) in store
     (quote,) = list(store.objects(passage, OA.hasSelector))
@@ -62,17 +63,18 @@ def test_the_quote_and_the_measure_are_in_the_projection(tmp_path):
     assert str(store.value(dim, EM.crs)) == "local"
     assert int(store.value(line, EM.vertexCount)) == 3
 
-    # the glb: its URL on the shape, the shape reached from the region;
-    # not one coordinate anywhere
-    assert (line, EM.hasSemanticShape, shape) in store
-    assert str(store.value(shape, rdflib.RDFS.seeAlso)) == f"readings/{lid}.glb"
-    for s, p, o in store:
-        if s in (line, dim, shape):
-            assert "1 2 0" not in str(o) and "[1," not in str(o)
+    # the vertices: one GeoSPARQL WKT literal, the frame's IRI inside it
+    (geom,) = list(store.objects(line, GEO.hasGeometry))
+    assert (geom, rdflib.RDF.type, GEO.Geometry) in store
+    wkt = store.value(geom, GEO.asWKT)
+    assert wkt.datatype == GEO.wktLiteral
+    assert str(wkt) == ("<https://w3id.org/em/ontology#LocalSceneFrame> "
+                        "LINESTRING Z (0 0 0, 1 0 0, 1 2 0)")
+    assert not list(store.objects(line, EM.hasSemanticShape))
 
 
 def test_passage_and_polyline_survive_the_rdf_round_trip(tmp_path):
-    g, pid, lid, sid = _graph(tmp_path)
+    g, pid, lid = _graph(tmp_path)
     importer = RDFImporter()
     back = importer.parse(_ttl(g))[0]
     assert not importer.warnings, importer.warnings
@@ -80,10 +82,9 @@ def test_passage_and_polyline_survive_the_rdf_round_trip(tmp_path):
         a, b = g.find_node_by_id(nid), back.find_node_by_id(nid)
         assert type(b) is AnnotationRegionNode
         assert b.data == a.data, nid
-    shape = back.find_node_by_id(sid)
-    assert shape.url == f"readings/{lid}.glb"
+    assert back.find_node_by_id(lid).data["coords"] == [[0.0, 0.0, 0.0], [1.0, 0.0, 0.0],
+                                                        [1.0, 2.0, 0.0]]
     types = {(e.edge_source, e.edge_type, e.edge_target) for e in back.edges}
-    assert (lid, "has_semantic_shape", sid) in types
     assert (lid, "is_on_resource", "RM1") in types
     assert ("X1", "extracted_from", pid) in types
 

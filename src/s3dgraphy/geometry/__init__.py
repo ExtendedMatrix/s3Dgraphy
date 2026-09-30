@@ -49,9 +49,14 @@ from .store_backed import (
 # LINE_STRIP), written and read by hand — see reading_glb.
 from .reading_glb import ReadingGlbError, glb_bytes, parse_glb, read_glb, write_glb
 
+# E.D. 2026-09-30: Blender speaks only glTF — the conversion between the
+# geometry a node holds and a .glb is the library's, once (see gltf).
+from .gltf import convex_hull_triangles, geometry_to_gltf, gltf_to_geometry
+
 __all__ = ["create_geometry_proxy", "GeometryProxyResult", "migrate_legacy_proxies",
            "migrate_shape_urls", "PROXY_RESOURCE_TYPE", "proxy_resource_id",
            "link_proxy_resource", "linked_proxy_resources",
            "store_backed_geometry", "geometry_summary", "record_for",
            "is_geometry", "is_resident",
-           "write_glb", "read_glb", "glb_bytes", "parse_glb", "ReadingGlbError"]
+           "write_glb", "read_glb", "glb_bytes", "parse_glb", "ReadingGlbError",
+           "geometry_to_gltf", "gltf_to_geometry", "convex_hull_triangles"]

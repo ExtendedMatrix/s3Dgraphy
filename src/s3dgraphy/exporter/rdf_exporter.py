@@ -75,6 +75,9 @@ HDTO       = Namespace("https://w3id.org/hdto/ontology#")
 OA         = Namespace("http://www.w3.org/ns/oa#")
 # QUDT units: the E58 Measurement Unit a measured length points at (P91).
 QUDT_UNIT  = Namespace("http://qudt.org/vocab/unit/")
+# GeoSPARQL 1.1: the vertices of a 3D reading (node datamodel 1.6.15) leave as
+# one geo:wktLiteral on <region>/geometry — see geometry/wkt.py.
+GEO        = Namespace("http://www.opengis.net/ont/geosparql#")
 
 #: The length units a measure is written in → the QUDT unit IRI. A unit not in
 #: this table is minted as `s3d:unit_<u>` rather than dropped or guessed at.
@@ -97,6 +100,7 @@ PREFIX_MAP: Dict[str, Namespace] = {
     "crmgeo":     CRMGEO,
     "hdto":       HDTO,
     "oa":         OA,
+    "geo":        GEO,
     "prov":       PROV,
     "dcterms":    DCTERMS,
     "skos":       Namespace(str(SKOS)),
@@ -1575,9 +1579,9 @@ class RDFExporter:
             #
             # Since 2026-10-06 the node is the place of ANY reading
             # (geometry_kind). A passage has a selector too (RFC 5147
-            # `char=s,e`); the 3D kinds have none — their geometry is a .glb,
-            # reached through has_semantic_shape like a proxy's — so an empty
-            # selector is emitted as nothing. The kind itself travels as the
+            # `char=s,e`); the 3D kinds have none — their vertices leave as a
+            # GeoSPARQL WKT literal (below) — so an empty selector is emitted
+            # as nothing. The kind itself travels as the
             # P2_has_type a region2d uses for its shape_kind: one type per node.
             selector = getattr(node, "selector", None)
             sel = selector() if callable(selector) else ""
@@ -1592,8 +1596,21 @@ class RDFExporter:
             if geometry_kind == "passage":
                 self._emit_passage_quote(node_iri, node, ctx)
             if geometry_kind in ("point", "line", "polyline"):
-                # The coordinates stay in the .glb (the SemanticShape's url,
-                # emitted with the shape); the count only says what to expect.
+                # node datamodel 1.6.15: the vertices are the node's, and leave
+                # as ONE GeoSPARQL literal (the 3D twin of the 2D Media
+                # Fragment): <region> geo:hasGeometry <region/geometry>, which
+                # geo:asWKT "<CRS IRI> POINT Z / LINESTRING Z (…)". Above the
+                # threshold there are no coords: the .glb resource leaves with
+                # its has_linked_resource (P67), and the count says what is in it.
+                coords = getattr(node, "coords", None) or data.get("coords")
+                if coords:
+                    from ..geometry.wkt import coords_to_wkt
+                    geom = URIRef(str(node_iri) + "/geometry")
+                    ctx.add((node_iri, GEO.hasGeometry, geom))
+                    ctx.add((geom, RDF.type, GEO.Geometry))
+                    ctx.add((geom, GEO.asWKT, Literal(
+                        coords_to_wkt(geometry_kind, coords, getattr(node, "crs", None)),
+                        datatype=GEO.wktLiteral)))
                 vc = getattr(node, "vertex_count", None)
                 if vc is not None:
                     ctx.add((node_iri, EM.vertexCount,
