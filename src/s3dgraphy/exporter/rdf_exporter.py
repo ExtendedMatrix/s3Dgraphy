@@ -1506,6 +1506,20 @@ class RDFExporter:
             if residency:
                 ctx.add((node_iri, EM.residency, Literal(str(residency))))
 
+        elif node_type == "resource_file":
+            # ONE FILE of a resource (E.D. 2026-09-30): where its bytes are and
+            # their digest, with the same two properties the resource uses. The
+            # role and the relative path are on the has_file EDGE, not here.
+            url = data.get("url")
+            if url:
+                if isinstance(url, str) and url.startswith(("http://", "https://")):
+                    ctx.add((node_iri, RDFS.seeAlso, URIRef(url)))
+                else:
+                    ctx.add((node_iri, RDFS.seeAlso, Literal(url)))
+            checksum = data.get("checksum")
+            if checksum:
+                ctx.add((node_iri, EM.checksum, Literal(str(checksum))))
+
         elif node_type == "LocationNodeGroup":
             # The kind (toponym / study / functional) is the discriminator of the
             # spatial plane and is REQUIRED by the constructor — a Location

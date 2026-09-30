@@ -1143,6 +1143,17 @@ class RDFImporter:
                 data["reason"] = reason
             return data
 
+        if node_type == "resource_file":
+            # one file of a resource: where its bytes are and their digest, the
+            # two things the exporter projects (role and path live on has_file)
+            url = self._one_object_text(store, ref, RDFS.seeAlso)
+            if url:
+                data["url"] = url
+            checksum = self._one_literal(store, ref, EM.checksum)
+            if checksum:
+                data["checksum"] = str(checksum)
+            return data
+
         if node_type == "resource":
             url = self._one_object_text(store, ref, RDFS.seeAlso)
             if url:

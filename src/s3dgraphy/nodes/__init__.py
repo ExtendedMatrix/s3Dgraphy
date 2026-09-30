@@ -42,6 +42,9 @@ from .representation_node import (RepresentationModelNode,
                                   RepresentationModelSpecialFindNode)
 from .author_node import AuthorNode, AuthorAINode
 from .resource_node import ResourceNode
+# …and each FILE of a resource (E.D. 2026-09-30): the resource is the set, the
+# file is the member, reached by has_file. Implicit when there is only one.
+from .resource_file_node import ResourceFileNode
 from .embargo_node import EmbargoNode
 from .license_node import LicenseNode
 from .graph_node import GraphNode
@@ -130,6 +133,7 @@ __all__ = [
     "AuthorNode",
     "AuthorAINode",
     "ResourceNode",
+    "ResourceFileNode",
     "EmbargoNode",
     "LicenseNode",
     "GraphNode",

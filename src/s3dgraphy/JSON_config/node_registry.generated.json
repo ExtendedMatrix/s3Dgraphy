@@ -1,6 +1,6 @@
 {
  "_generated": "by `python -m s3dgraphy.tools.sync_node_datamodel` — DO NOT hand-edit. The flat class hierarchy (parent/node_type/description) is derived from the Python Node subclasses; hand-authored semantics and CIDOC mappings live in s3Dgraphy_node_datamodel.json.",
- "s3Dgraphy_data_model_version": "1.6.14",
+ "s3Dgraphy_data_model_version": "1.6.17",
  "node_types": {
   "ActivityNodeGroup": {
    "parent": "GroupNode",
@@ -196,6 +196,11 @@
    "parent": "Node",
    "node_type": null,
    "description": "Base class for all representation nodes in 3D space."
+  },
+  "ResourceFileNode": {
+   "parent": "Node",
+   "node_type": "resource_file",
+   "description": "ONE FILE of a resource — the resource is the set, this is each member."
   },
   "ResourceNode": {
    "parent": "Node",

@@ -2,6 +2,33 @@
 
 All notable changes to **s3dgraphy** are documented here.
 
+## [Unreleased] — to be published as 1.6.0.dev24
+
+Everything in this section came after `fa638ef` («Bump version: 1.6.0.dev22 →
+1.6.0.dev23»). Decision of E.D. of 30 Sep 2026, *la risorsa e i suoi file*.
+
+### Added (2026-10-18 — the resource and its files, part 1: node, edge, packaging)
+node datamodel **1.6.17**, connections **1.6.30**, em_visual_rules **1.6.26**,
+em.ttl **1.6.9**.
+- **`ResourceFileNode`** (`resource_file`, abbreviation FILE, `em:ResourceFile ⊂
+  crmdig:D1_Digital_Object`): ONE FILE of a resource — `url`, `checksum`,
+  `size_bytes`, `media_type`; for a datablock `blend_file` / `datablock` are
+  read from the `blend://` locator and never stored twice. The `ResourceNode` is
+  the set, the `ResourceFileNode` each member.
+- **`has_file` / `is_file_of`** (ResourceNode → ResourceFileNode,
+  `crm:P106_is_composed_of` + `prov:hadMember`), with `role` (`entry_point` |
+  `member`) and `path` (relative to the entry point) in the edge `attributes`.
+  Measured: the attributes survive em.json (schema 1); GraphML carries neither
+  them nor resource nodes, and the datamodel says so.
+- `dtc_derived_from` source/target += `ResourceFileNode` (a corrected texture
+  declares the texture it comes from).
+- `ResourceNode.PACKAGINGS` += **`file_set`** (a few files that call each
+  other) and **`datablock`** (one object inside a file).
+  `effective_packaging()` reads a `blend://` locator as `datablock` and a
+  `.3tz` as `archive` (readings, never written).
+- RDF: the file projects `rdfs:seeAlso` + `em:checksum` and reads back as a
+  `ResourceFileNode`. The eight shipped mappings are re-stamped.
+
 ## [Unreleased] — to be published as 1.6.0.dev23
 
 Everything in this section came AFTER **1.6.0.dev22 as published on PyPI**

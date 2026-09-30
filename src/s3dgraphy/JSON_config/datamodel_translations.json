@@ -1436,6 +1436,46 @@
     "de": "Repräsentationsmodell Einzelfund"
    }
   },
+  "ResourceFileNode": {
+   "description": {
+    "en": "ONE FILE of a resource (E.D. 2026-09-30, «la risorsa e i suoi file»): the ResourceNode is the SET — the handle a person stamps, cites and opens, with name, kind, scope, residency, role, tier, packaging and rights — and the ResourceFileNode is each member: an obj, its mtl and its textures are three files of one resource. Reached by has_file (reverse is_file_of); the ROLE (entry_point | member) and the RELATIVE PATH travel on the EDGE, because the same file (a corrected texture) sits in N resources under N paths. With ONE file the node is IMPLICIT: a ResourceNode with url (and checksum) and no has_file is a resource of one file, and s3dgraphy.resources.files.resource_files shows that file anyway; the node is written only when there are several files or the one file has a stamp or an identity of its own. Fields: url (a path, a file:// / s3:// / http(s):// URI or a blend:// locator), checksum ('sha256:<hex>'; 'emstruct1:<hex>' for a datablock, comparable not verifiable), size_bytes, media_type. For a datablock blend_file and datablock are READ from the blend:// locator (resources/resolver.py, the one place that knows its form), never stored twice. The same file in several resources is ONE node, recognised by its checksum.",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "UN FILE di una risorsa (E.D. 30 set 2026, «la risorsa e i suoi file»): il ResourceNode è l'INSIEME — la maniglia che si timbra, si cita e si apre — e il ResourceFileNode è ogni membro: un obj, il suo mtl e le sue texture sono tre file di una risorsa sola. Raggiunto da has_file; il RUOLO (entry_point | member) e il PERCORSO RELATIVO stanno sull'ARCO, perché lo stesso file sta in più risorse con percorsi diversi. Con UN file il nodo è IMPLICITO: url e checksum restano sul ResourceNode. Per un datablock blend_file e datablock si leggono dal locator blend://, mai scritti due volte.",
+    "el": "ΕΝΑ ΑΡΧΕΙΟ ενός πόρου (E.D. 30/9/2026): ο ResourceNode είναι το ΣΥΝΟΛΟ — η λαβή που σφραγίζεται, παρατίθεται και ανοίγεται — και ο ResourceFileNode κάθε μέλος του: ένα obj, το mtl του και οι υφές του είναι τρία αρχεία ενός πόρου. Συνδέεται με has_file· ο ΡΟΛΟΣ (entry_point | member) και η ΣΧΕΤΙΚΗ ΔΙΑΔΡΟΜΗ βρίσκονται στην ΑΚΜΗ, γιατί το ίδιο αρχείο ανήκει σε πολλούς πόρους με διαφορετικές διαδρομές. Με ΕΝΑ αρχείο ο κόμβος είναι ΣΙΩΠΗΡΟΣ: url και checksum μένουν στον ResourceNode.",
+    "he": "קובץ אחד של משאב (E.D. 30.9.2026): ResourceNode הוא הקבוצה — הידית שמחתימים, מצטטים ופותחים — ו־ResourceFileNode הוא כל חבר בה: קובץ obj, קובץ ה־mtl שלו והטקסטורות שלו הם שלושה קבצים של משאב אחד. מקושר ב־has_file; התפקיד (entry_point | member) והנתיב היחסי נמצאים על הקשת, כי אותו קובץ נמצא בכמה משאבים בנתיבים שונים. עם קובץ אחד הצומת משתמע: url ו־checksum נשארים על ה־ResourceNode.",
+    "es": "UN ARCHIVO de un recurso (E.D. 30 sep 2026): el ResourceNode es el CONJUNTO — el asa que se sella, se cita y se abre — y el ResourceFileNode es cada miembro: un obj, su mtl y sus texturas son tres archivos de un solo recurso. Se alcanza con has_file; el ROL (entry_point | member) y la RUTA RELATIVA están en la ARISTA, porque el mismo archivo está en varios recursos con rutas distintas. Con UN archivo el nodo es IMPLÍCITO: url y checksum quedan en el ResourceNode.",
+    "pl": "JEDEN PLIK zasobu (E.D. 30.09.2026): ResourceNode to ZBIÓR — uchwyt, który się stempluje, cytuje i otwiera — a ResourceFileNode to każdy jego element: obj, jego mtl i tekstury to trzy pliki jednego zasobu. Osiągany przez has_file; ROLA (entry_point | member) i ŚCIEŻKA WZGLĘDNA są na KRAWĘDZI, bo ten sam plik należy do wielu zasobów pod różnymi ścieżkami. Przy JEDNYM pliku węzeł jest DOMYŚLNY: url i checksum zostają w ResourceNode.",
+    "ro": "UN FIȘIER al unei resurse (E.D. 30 sep 2026): ResourceNode este ANSAMBLUL — mânerul care se ștampilează, se citează și se deschide — iar ResourceFileNode este fiecare membru: un obj, mtl-ul său și texturile sale sunt trei fișiere ale unei singure resurse. Atins prin has_file; ROLUL (entry_point | member) și CALEA RELATIVĂ stau pe MUCHIE, pentru că același fișier stă în mai multe resurse cu căi diferite. Cu UN singur fișier nodul este IMPLICIT: url și checksum rămân pe ResourceNode.",
+    "fr": "UN FICHIER d'une ressource (E.D. 30 sept. 2026) : le ResourceNode est l'ENSEMBLE — la poignée que l'on tamponne, cite et ouvre — et le ResourceFileNode chaque membre : un obj, son mtl et ses textures sont trois fichiers d'une seule ressource. Atteint par has_file ; le RÔLE (entry_point | member) et le CHEMIN RELATIF sont sur l'ARÊTE, car le même fichier appartient à plusieurs ressources sous des chemins différents. Avec UN fichier le nœud est IMPLICITE : url et checksum restent sur le ResourceNode.",
+    "de": "EINE DATEI einer Ressource (E.D. 30.09.2026): der ResourceNode ist die MENGE — der Griff, den man stempelt, zitiert und öffnet — und der ResourceFileNode jedes Mitglied: ein obj, sein mtl und seine Texturen sind drei Dateien einer Ressource. Erreicht über has_file; die ROLLE (entry_point | member) und der RELATIVE PFAD stehen auf der KANTE, weil dieselbe Datei in mehreren Ressourcen unter verschiedenen Pfaden liegt. Bei EINER Datei ist der Knoten IMPLIZIT: url und checksum bleiben am ResourceNode."
+   },
+   "label": {
+    "en": "Resource file",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "File della risorsa",
+    "el": "Αρχείο πόρου",
+    "he": "קובץ משאב",
+    "es": "Archivo del recurso",
+    "pl": "Plik zasobu",
+    "ro": "Fișier al resursei",
+    "fr": "Fichier de la ressource",
+    "de": "Datei der Ressource"
+   }
+  },
   "ResourceNode": {
    "description": {
     "en": "Class to represent a link node (ResourceNode) in the graph. Attributes: url (str): URL of the link. url_type (str): Type of URL (e.g., 'External link', 'Image'). description (str): Description of the link.",
@@ -5645,6 +5685,65 @@
     "ro": "Are embargoul",
     "fr": "A un embargo",
     "de": "Hat Sperrfrist"
+   }
+  },
+  "has_file": {
+   "label": {
+    "en": "Has file",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Ha il file",
+    "el": "Έχει αρχείο",
+    "he": "יש קובץ",
+    "es": "Tiene el archivo",
+    "pl": "Ma plik",
+    "ro": "Are fișierul",
+    "fr": "A pour fichier",
+    "de": "Hat die Datei"
+   },
+   "ui_phrase_as_source": {
+    "en": "{node} with file {x}",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "{node} con il file {x}",
+    "el": "{node} με το αρχείο {x}",
+    "he": "{node} עם הקובץ {x}",
+    "es": "{node} con el archivo {x}",
+    "pl": "{node} z plikiem {x}",
+    "ro": "{node} cu fișierul {x}",
+    "fr": "{node} avec le fichier {x}",
+    "de": "{node} mit der Datei {x}"
+   },
+   "ui_phrase_as_target": {
+    "en": "{node} file of {x}",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "{node} file di {x}",
+    "el": "{node} αρχείο του {x}",
+    "he": "{node} קובץ של {x}",
+    "es": "{node} archivo de {x}",
+    "pl": "{node} plik zasobu {x}",
+    "ro": "{node} fișier al {x}",
+    "fr": "{node} fichier de {x}",
+    "de": "{node} Datei von {x}"
    }
   },
   "has_first_epoch": {

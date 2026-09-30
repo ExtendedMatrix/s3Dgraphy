@@ -334,14 +334,16 @@ def test_the_edges_group_with_the_datamodels_real_counts():
     # — an older spelling is the same relation under another name, not a
     # relation of its own. CRMarchaeo 10 -> 8; `count` below does not move,
     # because both spellings are still listed (the graph still accepts them).
-    assert canonical == {"CIDOC-CRM": 29, "CRMarchaeo": 8, "CRMdig": 5,
+    # 18 ott 2026, la risorsa e i suoi file: has_file (crm:P106_is_composed_of)
+    # entra nel bucket CIDOC-CRM. CIDOC-CRM 29 -> 30, totale 54 -> 55.
+    assert canonical == {"CIDOC-CRM": 30, "CRMarchaeo": 8, "CRMdig": 5,
                          "HDT-O": 6, "PROV-O": 2, "unmapped": 4}, canonical
-    assert sum(canonical.values()) == 54, "the datamodel's own relation count"
+    assert sum(canonical.values()) == 55, "the datamodel's own relation count"
     listed = {g["ontology"]: g["count"] for g in groups}
-    assert listed == {"CIDOC-CRM": 57, "CRMarchaeo": 15, "CRMdig": 10,
+    assert listed == {"CIDOC-CRM": 59, "CRMarchaeo": 15, "CRMdig": 10,
                       "HDT-O": 12, "PROV-O": 4, "unmapped": 7}, listed
-    assert sum(listed.values()) == 105, "54 canonical + 2 older spellings + "\
-                                        "49 reverses (7 are symmetric and "\
+    assert sum(listed.values()) == 107, "55 canonical + 2 older spellings + "\
+                                        "50 reverses (7 are symmetric and "\
                                         "have none)"
     filtered = {g["ontology"]: [e["edge_type"] for e in g["edges"]]
                 for g in api.mapping_edge_groups("US", "US")}

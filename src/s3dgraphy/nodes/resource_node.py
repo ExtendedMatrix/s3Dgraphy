@@ -94,7 +94,27 @@ class ResourceNode(Node):
     #: tiles destroys disks and bandwidth alike. A consumer must read that from
     #: the data, not guess it from an extension — guessing from `.zip` works
     #: until the day somebody serves an archive without one, and fails silently.
-    PACKAGINGS = ("file", "directory", "archive")
+    #:
+    #: Two more (E.D. 2026-09-30, *la risorsa e i suoi file*):
+    #:
+    #: * `file_set` — a FEW files that call each other: an obj that names its
+    #:   mtl (`mtllib`), a mtl that names its textures (`map_Kd`), a gltf and
+    #:   its bin, a shp and its companions. Not a `directory`: the folder does
+    #:   not bound the set, the references do — two tiles can share a
+    #:   `textures/` folder and still be two resources. Its members are the
+    #:   ``ResourceFileNode`` s the resource reaches with ``has_file``, one of
+    #:   them the `entry_point`.
+    #: * `datablock` — ONE object inside a file: a mesh inside a ``.blend``,
+    #:   reached by a ``blend://`` locator. It has no canonical bytes of its own
+    #:   (its digest is structural, ``emstruct1:…``, comparable and not
+    #:   verifiable — dtcstamp conformance case 05), and that is what a reader
+    #:   has to know before it tries to open it: no viewer can serve it, Blender
+    #:   can.
+    #:
+    #: A viewer chooses between the REPRESENTATIONS of a thing (sibling
+    #: resources tied by ``dtc_derived_from``) by reading this axis and `tier`
+    #: — see :func:`s3dgraphy.resources.files.pick_representation`.
+    PACKAGINGS = ("file", "directory", "archive", "file_set", "datablock")
 
     def __init__(self, node_id, name="Unnamed Link", url="", url_type="External link",
                  description="", checksum=None, scope=None,
@@ -341,8 +361,9 @@ class ResourceNode(Node):
 
     def effective_packaging(self):
         """The packaging to USE when none was recorded — a reading, from the
-        shape of the locator: a `.zip` is an archive, a trailing slash is a
-        directory, everything else is one file.
+        shape of the locator: a `blend://` locator is a datablock, a `.zip` or
+        a `.3tz` (the 3D Tiles archive, a zip by specification) is an archive, a
+        trailing slash is a directory, everything else is one file.
 
         Deliberately weak, and that is the point of `set_packaging` existing: an
         archive served without a `.zip` in its name reads as a file here, and
@@ -352,7 +373,13 @@ class ResourceNode(Node):
         if recorded:
             return recorded
         url = str(self.data.get("url") or "")
-        if url.lower().endswith(".zip"):
+        # A `blend://` locator names ONE datablock by construction — its form is
+        # `blend://<file>#<Type>/<name>` (resources/resolver.py) — so reading it
+        # as a datablock is not a guess from an extension: it is the locator's
+        # own grammar. The same reading `effective_tier` makes («master»).
+        if url.startswith("blend://"):
+            return "datablock"
+        if url.lower().endswith((".zip", ".3tz")):
             return "archive"
         return "directory" if url.endswith("/") else "file"
 

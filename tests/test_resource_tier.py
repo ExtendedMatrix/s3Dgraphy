@@ -37,7 +37,8 @@ from s3dgraphy.nodes.stratigraphic_node import StratigraphicUnit
 
 def test_i_due_tier_vengono_dalla_classe_che_li_valida():
     assert ResourceNode.TIERS == ("master", "distribution")
-    assert ResourceNode.PACKAGINGS == ("file", "directory", "archive")
+    assert ResourceNode.PACKAGINGS == ("file", "directory", "archive",
+                                       "file_set", "datablock")
 
 
 @pytest.mark.parametrize("inventato", ["intermedio", "published", "lod1", "", None])
