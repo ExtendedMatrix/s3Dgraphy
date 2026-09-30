@@ -1729,7 +1729,7 @@ class GraphMLImporter:
         Returns:
             ResourceNode: The Link node created
         """
-        from ..nodes.resource_node import ResourceNode
+        from ..resources.files import add_resource
         
         resource_node_id = f"{source_node.node_id}_link"
         
@@ -1739,14 +1739,11 @@ class GraphMLImporter:
             return existing_resource_node
         
         # Se non esiste, crealo
-        resource_node = ResourceNode(
-            node_id=resource_node_id,
+        resource_node = add_resource(
+            self.graph, resource_id=resource_node_id,
             name=f"Link to {source_node.name}",
             description=f"Link to {source_node.description}" if source_node.description else "",
-            url=url
-        )
-        
-        self.graph.add_node(resource_node)
+            files=[{"path": url}] if url else [])
         
         # Crea l'edge solo se non esiste già
         edge_id = f"{source_node.node_id}_has_linked_resource_{resource_node_id}"

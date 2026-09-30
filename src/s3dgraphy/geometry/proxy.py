@@ -16,7 +16,7 @@ from ..graph import Graph
 from ..nodes.combiner_node import CombinerNode
 from ..nodes.extractor_node import ExtractorNode
 from ..nodes.property_node import PropertyNode
-from ..nodes.resource_node import ResourceNode
+from ..resources.files import add_resource
 from ..nodes.semantic_shape_node import SemanticShapeNode
 from ..nodes.stratigraphic_node import StratigraphicNode
 
@@ -79,11 +79,10 @@ def link_proxy_resource(graph: Graph, shape_id: str, url: str, *,
     resource_id = proxy_resource_id(shape_id)
     created = False
     if graph.find_node_by_id(resource_id) is None:
-        res = ResourceNode(node_id=resource_id, name=name or url.rsplit("/", 1)[-1] or url,
-                           url=url, url_type=PROXY_RESOURCE_TYPE)
-        if author:
-            res.data["author"] = author
-        graph.add_node(res)
+        add_resource(graph, resource_id=resource_id,
+                     name=name or url.rsplit("/", 1)[-1] or url,
+                     kind=PROXY_RESOURCE_TYPE, files=[{"path": url}] if url else [],
+                     data={"author": author} if author else None)
         created = True
     edge_id = _stable_id(f"edge|{shape_id}|{_EDGE_HAS_LINKED_RESOURCE}|{resource_id}")
     if graph.find_edge_by_id(edge_id) is None:

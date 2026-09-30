@@ -2401,18 +2401,13 @@ def register_resource(graph: Graph, locator: str, *, name: Optional[str] = None,
     an FS-index or MinIO store) is R1/R2, which will resolve the same ID through
     their backends. Returns ``{id, locator, kind}``."""
     import uuid
-    from .nodes.resource_node import ResourceNode
     from .resources import classify_locator
+    from .resources.files import add_resource as _add
 
     rid = resource_id or str(uuid.uuid4())
-    node = ResourceNode(
-        node_id=rid,
-        name=name or "Unnamed Resource",
-        url=locator or "",
-        url_type=url_type or "",
-        description=description or "",
-    )
-    graph.add_node(node)
+    _add(graph, resource_id=rid, name=name or "Unnamed Resource",
+         kind=url_type or "", description=description or "",
+         files=[{"path": locator}] if locator else [])
     return {"id": rid, "locator": locator or "", "kind": classify_locator(locator or "")}
 
 

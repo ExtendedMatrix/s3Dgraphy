@@ -162,7 +162,8 @@ def stamp_to_graph(stamp: Dict[str, Any], *, graph_id: Optional[str] = None):
     e una campagna non c'è una derivazione da scrivere — c'è un evento.
     """
     from ..graph import Graph
-    from ..nodes import DTCAcquisitionNode, DTCProcessNode, ResourceNode
+    from ..nodes import DTCAcquisitionNode, DTCProcessNode
+    from ..resources.files import add_resource
 
     validate_stamp(stamp)
     stamp = upgrade_stamp(stamp)
@@ -171,7 +172,7 @@ def stamp_to_graph(stamp: Dict[str, Any], *, graph_id: Optional[str] = None):
     fragment = Graph(graph_id=graph_id or f"stamp:{resource_id}")
     _strip_born_with(fragment)
 
-    output = ResourceNode(resource_id, name=resource_id)
+    output = add_resource(None, resource_id=resource_id, name=resource_id)
     _apply_self(output, itself)
     _apply_courtesy(output, stamp)
     fragment.add_node(output)
@@ -235,7 +236,8 @@ def stamp_to_graph(stamp: Dict[str, Any], *, graph_id: Optional[str] = None):
             fragment.add_edge(f"{process_id}->{pid}", process_id, pid,
                               EDGE_HAD_INPUT)
             continue
-        node = ResourceNode(pid, name=str(parent.get("label") or pid))
+        node = add_resource(None, resource_id=pid,
+                            name=str(parent.get("label") or pid))
         digest = str(parent.get("digest") or "").strip()
         if digest:
             node.data["checksum"] = digest

@@ -49,7 +49,7 @@ from typing import Any, Dict, List, Optional, Tuple
 from ..graph import Graph
 from ..nodes.annotation_region_node import AnnotationRegionNode
 from ..nodes.base_node import Node
-from ..nodes.resource_node import ResourceNode
+from ..resources.files import add_resource
 from ..nodes.semantic_shape_node import SemanticShapeNode
 from ..nodes.stratigraphic_node import StratigraphicNode
 
@@ -145,11 +145,9 @@ def _model_resource(graph: Graph, url: str, author: Optional[str]) -> Tuple[str,
     if found:
         return found[0].node_id, False
     rid = str(uuid.uuid5(_NS, f"model|{norm(url)}"))
-    res = ResourceNode(node_id=rid, name=url.rsplit("/", 1)[-1] or url, url=url,
-                       url_type="3d_model")
-    if author:
-        res.data["author"] = author
-    graph.add_node(res)
+    add_resource(graph, resource_id=rid, name=url.rsplit("/", 1)[-1] or url,
+                 kind="3d_model", files=[{"path": url}] if url else [],
+                 data={"author": author} if author else None)
     return rid, True
 
 

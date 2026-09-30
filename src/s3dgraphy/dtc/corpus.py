@@ -238,7 +238,7 @@ def mirror_resource(corpus: Any, resource: Any) -> Any:
     Idempotent, and it never overwrites a corpus node that is already richer:
     fields are filled in, not replaced.
     """
-    from ..nodes import ResourceNode
+    from ..resources.files import add_resource
 
     existing = next((n for n in _nodes(corpus)
                      if n.node_id == getattr(resource, "node_id", None)), None)
@@ -246,10 +246,10 @@ def mirror_resource(corpus: Any, resource: Any) -> Any:
             "size", "resource_use")
     source = _data(resource)
     if existing is None:
-        existing = ResourceNode(resource.node_id,
+        url = str(source.get("url") or "")
+        existing = add_resource(corpus, resource_id=resource.node_id,
                                 name=getattr(resource, "name", "") or resource.node_id,
-                                url=str(source.get("url") or ""))
-        corpus.add_node(existing)
+                                files=[{"path": url}] if url else [])
     data = _data(existing)
     if not isinstance(getattr(existing, "data", None), dict):
         existing.data = data

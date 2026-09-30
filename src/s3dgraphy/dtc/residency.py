@@ -137,7 +137,8 @@ def inject_dtc(graph: Any, record: Dict[str, Any], *,
     (so a DTC injected onto a graph that already owns the resources just adds the
     provenance overlay). Returns
     ``{"injector_id", "process_id", "resource_ids", "created"}``."""
-    from ..nodes import DTCProcessNode, ResourceNode
+    from ..nodes import DTCProcessNode
+    from ..resources.files import add_resource
     from ..transforms import mark_as_injected
 
     proc_rec = record["process"]
@@ -162,12 +163,11 @@ def inject_dtc(graph: Any, record: Dict[str, Any], *,
         resource_ids.append(rid)
         node = graph.find_node_by_id(rid)
         if node is None:
-            node = ResourceNode(rid, name=r.get("name") or rid, url=r.get("url") or "")
-            if r.get("dtc_kind") is not None:
-                node.data["dtc_kind"] = r["dtc_kind"]
-            if r.get("resource_type") is not None:
-                node.data["resource_type"] = r["resource_type"]
-            graph.add_node(node)
+            node = add_resource(
+                graph, resource_id=rid, name=r.get("name") or rid,
+                files=[{"path": r["url"]}] if r.get("url") else [],
+                data={k: r[k] for k in ("dtc_kind", "resource_type")
+                      if r.get(k) is not None})
             mark_as_injected(node, injector_id)
             created.append(rid)
 

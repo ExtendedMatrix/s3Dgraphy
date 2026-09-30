@@ -259,16 +259,15 @@ def attach_reading_resource(graph: Graph, region_id: str, url: str, *,
                             author: Optional[str] = None) -> Dict[str, Any]:
     """``region ──has_linked_resource──▶ ResourceNode(url, url_type 3d_model)``.
     Idempotent. Returns ``{resource_id, edge_id, created}``."""
-    from ..nodes.resource_node import ResourceNode
+    from ..resources.files import add_resource
 
     resource_id = reading_resource_id(region_id)
     created = False
     if graph.find_node_by_id(resource_id) is None:
-        res = ResourceNode(node_id=resource_id, name=url.rsplit("/", 1)[-1],
-                           url=url, url_type=READING_RESOURCE_TYPE)
-        if author:
-            res.data["author"] = author
-        graph.add_node(res)
+        add_resource(graph, resource_id=resource_id, name=url.rsplit("/", 1)[-1],
+                     kind=READING_RESOURCE_TYPE,
+                     files=[{"path": url}] if url else [],
+                     data={"author": author} if author else None)
         created = True
     edge_id = _stable_id(f"edge|{region_id}|{_EDGE_HAS_LINKED_RESOURCE}|{resource_id}")
     if graph.find_edge_by_id(edge_id) is None:

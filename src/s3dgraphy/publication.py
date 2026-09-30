@@ -29,7 +29,7 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Sequence
 
 from .graph import Graph
-from .nodes import DTCProcessNode, ResourceNode
+from .nodes import DTCProcessNode
 
 #: Deterministic ids for the promotion chain — the same promotion asked twice is
 #: the same promotion, and re-sending it must not build a second event.
@@ -207,8 +207,9 @@ def promote_resource(graph: Graph, resource_id: str, *, url: str, sha256: str,
     # ── the resource becomes a REFERENCE ─────────────────────────────────────
     resource = graph.find_node_by_id(resource_id)
     if resource is None:
-        resource = ResourceNode(resource_id, name=name or resource_id, url=url)
-        graph.add_node(resource)
+        from .resources.files import add_resource
+        resource = add_resource(graph, resource_id=resource_id,
+                                name=name or resource_id, files=[{"path": url}])
         result.created = True
     else:
         resource.url = url

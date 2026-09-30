@@ -7,6 +7,24 @@ All notable changes to **s3dgraphy** are documented here.
 Everything in this section came after `fa638ef` («Bump version: 1.6.0.dev22 →
 1.6.0.dev23»). Decision of E.D. of 30 Sep 2026, *la risorsa e i suoi file*.
 
+### Changed (2026-10-18 — the resource and its files, part 4: one way to make a resource)
+- `add_resource(graph, *, name, kind, files, packaging, tier, scope,
+  residency, role, derived_from, …)` is THE constructor; `add_file`,
+  `remove_file`, `replace_file` change a composition. The same file in two
+  resources is one `ResourceFileNode` (recognised by checksum) with two paths;
+  same path and different checksum stay two. `replace_file` keeps the old file
+  and declares the new one `dtc_derived_from` it. **No revision edge exists**
+  for resources (measured), so the resource's earlier composition is not a
+  citable node: reported, not invented.
+- The **13** `ResourceNode(...)` calls in 10 modules (api.register_resource,
+  publication, import_graphml, annotation/reading, dtc/residency, dtc/corpus,
+  stamp/absorb ×2, shelf/core ×3, geometry/aton, geometry/proxy) now go
+  through `add_resource`. Measured against `fa638ef`: the 18 resources the 12
+  API-reachable points make, and the 8 the GraphML importer makes from the
+  GreatTemple files, are identical. `photogrammetry/delta.py` writes a node
+  PAYLOAD for the room's op log, not a node, and is left as it is. A test
+  keeps any new direct constructor call out.
+
 ### Added (2026-10-18 — the resource and its files, part 3: the representations)
 - `representations_of(graph, res_id)`: the resources tied by
   `dtc_derived_from`, both directions and transitively, with the `tier` /

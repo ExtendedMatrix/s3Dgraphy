@@ -176,7 +176,7 @@ def add_to_shelf(shelf: Any, locator: str, *, resource_id: Optional[str] = None,
     ``media_type`` / ``size`` / ``access`` are what a URI-only or acquired entry
     knows about itself and the table shows; also written only when given, because
     a resource that never said its size must not start claiming zero."""
-    from ..nodes.resource_node import ResourceNode
+    from ..resources.files import add_resource
     rid = resource_id or str(uuid.uuid4())
     # dedup by CONTENT first: the same bytes under another id are not a second
     # resource. Checked before the id so a re-drag from another folder lands on
@@ -202,10 +202,9 @@ def add_to_shelf(shelf: Any, locator: str, *, resource_id: Optional[str] = None,
             return _entry(twin)
     node = shelf.find_node_by_id(rid)
     if node is None or getattr(node, "node_type", None) != _LINK_TYPE:
-        node = ResourceNode(node_id=rid, name=name or "Unnamed Resource",
-                        url=locator or "", url_type=url_type or "",
-                        description=description or "")
-        shelf.add_node(node)
+        node = add_resource(shelf, resource_id=rid, name=name or "Unnamed Resource",
+                            kind=url_type or "", description=description or "",
+                            files=[{"path": locator}] if locator else [])
     else:
         if locator:
             _data(node)["url"] = locator
@@ -252,7 +251,7 @@ def shelve_stamp(shelf: Any, stamp: Dict[str, Any], *,
     never overwritten. Returns the entry (with ``receipt``).
     """
     from dtcstamp import receipt as _receipt
-    from ..nodes.resource_node import ResourceNode
+    from ..resources.files import add_resource
     from ..stamp.absorb import _apply_courtesy
 
     rec = _receipt(stamp)
@@ -264,9 +263,8 @@ def shelve_stamp(shelf: Any, stamp: Dict[str, Any], *,
             node = None
     if node is None:
         # named by its id: the placeholder the courtesy rule knows is nobody's
-        node = ResourceNode(node_id=rid, name=rid, url=locator or "",
-                            url_type="", description="")
-        shelf.add_node(node)
+        node = add_resource(shelf, resource_id=rid, name=rid, kind="",
+                            files=[{"path": locator}] if locator else [])
     elif locator:
         _data(node)["url"] = locator
     d = _data(node)
@@ -313,7 +311,7 @@ def instantiate_from_shelf(shelf: Any, resource_id: str, target_graph: Any):
     under a new ID — and its capability/origin is preserved. If ``target_graph``
     already references the ID, that existing node is returned (no duplicate). The
     resource STAYS on the shelf (the library keeps it). Returns the target node."""
-    from ..nodes.resource_node import ResourceNode
+    from ..resources.files import add_resource
     src = shelf.find_node_by_id(resource_id)
     if src is None or getattr(src, "node_type", None) != _LINK_TYPE:
         raise ValueError(f"{resource_id!r} is not a resource in the shelf")
@@ -321,11 +319,12 @@ def instantiate_from_shelf(shelf: Any, resource_id: str, target_graph: Any):
     if existing is not None:
         return existing  # already referenced — reuse, do not duplicate
     sd = _data(src)
-    node = ResourceNode(node_id=resource_id,  # SAME stable ID = the reference
-                    name=str(getattr(src, "name", "") or resource_id),
-                    url=sd.get("url", "") or "",
-                    url_type=sd.get("url_type", "") or "",
-                    description=str(getattr(src, "description", "") or ""))
+    url = sd.get("url", "") or ""
+    node = add_resource(None, resource_id=resource_id,  # SAME stable ID = the reference
+                        name=str(getattr(src, "name", "") or resource_id),
+                        kind=sd.get("url_type", "") or "",
+                        description=str(getattr(src, "description", "") or ""),
+                        files=[{"path": url}] if url else [])
     # carry the capability/origin (+ resource_type / dtc_kind) — do not strip
     d = _data(node)
     for k in ("resource_type", "origin", "dtc_kind", "role", "checksum",
