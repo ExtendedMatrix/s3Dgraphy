@@ -1230,10 +1230,15 @@ class RDFImporter:
                 AnnotationRegionError, AnnotationRegionNode,
             )
             kind = self._one_literal(store, ref, CRM.P2_has_type)
-            if kind in ("passage", "point", "line", "polyline"):
+            if kind in ("passage", "point", "line", "polyline", "volume"):
                 data["geometry_kind"] = str(kind)
             selector = self._one_literal(store, ref, EM.hasSelector)
-            if data.get("geometry_kind") in ("point", "line", "polyline"):
+            if data.get("geometry_kind") == "volume":
+                # node datamodel 1.6.16: no selector and no vertices — its
+                # hulls and spheres are the SemanticShape it points at, which
+                # comes back as a node of its own with its edge.
+                pass
+            elif data.get("geometry_kind") in ("point", "line", "polyline"):
                 # No selector for a 3D kind: its vertices come back from the
                 # GeoSPARQL WKT of <region>/geometry (node datamodel 1.6.15).
                 data.update(self._wkt_coords(store, ref, node_id))

@@ -111,7 +111,10 @@ def test_datamodels_declare_the_kinds_and_the_missing_edge():
     node = _raw("s3Dgraphy_node_datamodel.json")
     entry = node["visualization_nodes"]["AnnotationRegionNode"]
     assert list(entry["geometry_kinds"]) == ["region2d", "passage", "point", "line",
-                                             "polyline"]
+                                             "polyline", "volume"]
+    # 1.6.16: the kinds of the node are the kinds of the datamodel
+    from s3dgraphy.nodes.annotation_region_node import GEOMETRY_KINDS
+    assert tuple(entry["geometry_kinds"]) == GEOMETRY_KINDS
     # 1.6.15: the vertices are the node's; the threshold is DATA
     assert entry["coords"]["inline_max_vertices"] == 500
     from s3dgraphy.nodes.annotation_region_node import inline_max_vertices

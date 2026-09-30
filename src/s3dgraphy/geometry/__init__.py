@@ -54,7 +54,8 @@ from .reading_glb import ReadingGlbError, glb_bytes, parse_glb, read_glb, write_
 from .gltf import convex_hull_triangles, geometry_to_gltf, gltf_to_geometry
 
 # ATON / Hathor semantic shapes (convex hulls, spheres) in and out — see aton.
-from .aton import aton_semanticgraph, export_aton_scene, import_aton_scene
+from .aton import (aton_semanticgraph, export_aton_scene, import_aton_scene,
+                   model_of_scene, promote_region_to_proxy)
 
 __all__ = ["create_geometry_proxy", "GeometryProxyResult", "migrate_legacy_proxies",
            "migrate_shape_urls", "PROXY_RESOURCE_TYPE", "proxy_resource_id",
@@ -63,4 +64,5 @@ __all__ = ["create_geometry_proxy", "GeometryProxyResult", "migrate_legacy_proxi
            "is_geometry", "is_resident",
            "write_glb", "read_glb", "glb_bytes", "parse_glb", "ReadingGlbError",
            "geometry_to_gltf", "gltf_to_geometry", "convex_hull_triangles",
-           "import_aton_scene", "export_aton_scene", "aton_semanticgraph"]
+           "import_aton_scene", "export_aton_scene", "aton_semanticgraph",
+           "model_of_scene", "promote_region_to_proxy"]

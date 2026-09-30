@@ -19,8 +19,17 @@ told about:
                                       triangulated here, outward-facing)
 
 Spheres have no glTF primitive; they travel in the file's ``extras``
-(``s3dgraphy.spheres``, ``[[x, y, z, r], …]``) — Blender's importer turns
-``extras`` into custom properties, so they are not lost on the way.
+(``s3dgraphy.spheres``, ``[[x, y, z, r], …]``).
+
+**What Blender does with it** (measured on Blender 5.2.0 and 5.0.1,
+2026-10-15): its importer turns the extras of a glTF NODE into custom
+properties of the object, and ignores the extras of the document. So the kind
+of a reading is also written on the node, as ``em_reading_kind`` — the custom
+property EMtools gives the objects of ``EM_readings`` — and comes back from
+there: Blender's exporter writes an object's custom properties to its node's
+``extras`` (with ``export_extras=True``). Back from Blender, an edges-only mesh
+is mode 1 ``LINES`` with every inner vertex twice (4 vertices → 6): a polyline
+is stitched back into one ordered chain (:func:`stitch_lines`).
 
 **The frame** is the reading_glb one, and for the same reason: coordinates are
 written VERBATIM, in the scene-local glTF frame (Y-up, metres) the proxies are
@@ -50,6 +59,10 @@ READ_MODES = {"point": (POINTS,), "line": (LINE_STRIP, LINES),
               "polyline": (LINE_STRIP, LINES), "convex": (TRIANGLES,)}
 
 _EPS = 1e-9
+
+#: The custom property EMtools gives a reading's object in Blender, and the key
+#: of the glTF node's ``extras`` it travels in both ways.
+READING_KIND_EXTRA = "em_reading_kind"
 
 Vec = List[float]
 
@@ -157,7 +170,8 @@ def convex_hull_triangles(points: Sequence[Sequence[float]]) -> List[Tuple[int, 
 # ── writing ─────────────────────────────────────────────────────────────────
 
 def _glb(primitives: List[Tuple[int, List[Vec]]], *, name: str,
-         extras: Dict[str, Any]) -> bytes:
+         extras: Dict[str, Any],
+         node_extras: Optional[Dict[str, Any]] = None) -> bytes:
     """One node, one mesh, one primitive per (mode, positions); non-indexed."""
     binary = b""
     accessors, views, prims = [], [], []
@@ -185,6 +199,9 @@ def _glb(primitives: List[Tuple[int, List[Vec]]], *, name: str,
         "buffers": [{"byteLength": len(binary)}],
         "extras": {"s3dgraphy": extras},
     }
+    if node_extras:
+        # where Blender's importer reads them (the document's are ignored)
+        doc["nodes"][0]["extras"] = dict(node_extras)
     if not prims:
         # a glTF mesh needs a primitive; spheres only → no mesh at all
         doc.pop("meshes"), doc.pop("accessors"), doc.pop("bufferViews"), doc.pop("buffers")
@@ -253,7 +270,8 @@ def geometry_to_gltf(node: Any) -> bytes:
         except AnnotationRegionError as exc:
             raise ReadingGlbError(str(exc))
         return _glb([(WRITE_MODES[kind], pts)], name=name,
-                    extras={"geometry_kind": kind})
+                    extras={"geometry_kind": kind},
+                    node_extras={READING_KIND_EXTRA: kind})
 
     raise ReadingGlbError(f"'{name}': no glTF form for geometry_kind {kind!r}")
 
@@ -303,32 +321,163 @@ def _positions(doc: Dict[str, Any], binary: bytes, prim: Dict[str, Any]) -> List
     return pts
 
 
-def gltf_to_geometry(data: bytes, kind: str) -> Dict[str, Any]:
+def stitch_lines(pairs: Sequence[Sequence[Sequence[float]]],
+                 tolerance: Optional[float] = None) -> Tuple[Optional[List[Vec]], List[List[Vec]], List[str]]:
+    """``LINES`` segments → ONE ordered open chain, or the pieces and why not.
+
+    `pairs` are the segments (``[a, b]``, what mode 1 holds two vertices at a
+    time). Two vertices closer than `tolerance` (default: the datamodel's
+    ``coords.stitch_tolerance``) are one. The result is a chain only when the
+    segments make exactly one open path: every vertex on at most two segments,
+    two ends, connected, no loop. It starts from the end the first segment
+    touches first, so a chain written in order comes back in its order.
+
+    Returns ``(chain, pieces, warnings)``: `chain` None when there is no single
+    chain — then `pieces` are the connected parts, each walked the same way,
+    and a warning says what was found. Nothing is reordered to make it fit.
+    """
+    from ..nodes.annotation_region_node import stitch_tolerance
+    tol = stitch_tolerance() if tolerance is None else float(tolerance)
+    verts: List[Vec] = []
+
+    def index(p) -> int:
+        for i, q in enumerate(verts):
+            if max(abs(p[k] - q[k]) for k in range(3)) <= tol:
+                return i
+        verts.append([float(c) for c in p])
+        return len(verts) - 1
+
+    segs = []
+    for a, b in pairs:
+        i, j = index(a), index(b)
+        if i != j:                                   # a degenerate segment says nothing
+            segs.append((i, j))
+    adj: Dict[int, List[int]] = {}
+    for i, j in segs:
+        adj.setdefault(i, []).append(j)
+        adj.setdefault(j, []).append(i)
+
+    def walk(start: int, seen: set) -> List[int]:
+        path, prev, cur = [start], None, start
+        seen.add(start)
+        while True:
+            nxt = [n for n in adj.get(cur, []) if n != prev and n not in seen]
+            if not nxt:
+                return path
+            prev, cur = cur, nxt[0]
+            seen.add(cur)
+            path.append(cur)
+
+    # the parts, in the order their first segment appears
+    seen: set = set()
+    parts: List[List[int]] = []
+    order = [i for seg in segs for i in seg]
+    for v in order:
+        if v in seen:
+            continue
+        comp, stack = set(), [v]
+        while stack:
+            x = stack.pop()
+            if x not in comp:
+                comp.add(x)
+                stack.extend(adj.get(x, []))
+        ends = [i for i in order if i in comp and len(adj[i]) == 1]
+        start = ends[0] if ends else v
+        path = walk(start, set())
+        parts.append(path)
+        seen |= comp
+
+    pieces = [[verts[i] for i in p] for p in parts]
+    warnings: List[str] = []
+    branching = sorted(i for i, n in adj.items() if len(n) > 2)
+    loops = [p for p in parts if all(len(adj[i]) == 2 for i in p)]
+    if len(parts) > 1:
+        warnings.append(f"the LINES make {len(parts)} separate chains, not one polyline; "
+                        f"their order is not invented")
+    if branching:
+        warnings.append(f"the LINES branch at {len(branching)} vertex(es): not an open chain")
+    if loops:
+        warnings.append("the LINES close a loop: a polyline is an OPEN chain")
+    if not segs:
+        warnings.append("no segment of non-zero length")
+    if warnings:
+        return None, pieces, warnings
+    return pieces[0], pieces, []
+
+
+def _node_kind(doc: Dict[str, Any]) -> Optional[str]:
+    """The kind the file declares: ``em_reading_kind`` on a node (Blender's
+    export of the custom property, and ours), else our document extras."""
+    for node in doc.get("nodes") or []:
+        kind = (node.get("extras") or {}).get(READING_KIND_EXTRA)
+        if kind:
+            return str(kind)
+    for mesh in doc.get("meshes") or []:
+        kind = (mesh.get("extras") or {}).get(READING_KIND_EXTRA)
+        if kind:
+            return str(kind)
+    kind = ((doc.get("extras") or {}).get("s3dgraphy") or {}).get("geometry_kind")
+    return str(kind) if kind else None
+
+
+def gltf_to_geometry(data: bytes, kind: Optional[str] = None) -> Dict[str, Any]:
     """A .glb → what the node's data holds, for `kind`.
 
     * ``point`` / ``line`` / ``polyline`` → ``{"geometry_kind", "coords"}``
-      from the first primitive of that kind's modes;
+      from the first primitive of that kind's modes. A polyline (or a line)
+      that comes as ``LINES`` pairs — Blender's export of an edges-only mesh —
+      is stitched into one ordered chain (:func:`stitch_lines`); when the pairs
+      are not one open chain the result is ``{"geometry_kind", "pieces",
+      "warnings"}`` and has NO ``coords``: the order is not invented;
     * ``convex`` → ``{"convexshapes": [[x,y,z, …], …], "spheres": [...]}``:
       each TRIANGLES primitive is one hull, given back as its distinct vertices
       (a hull is the set of its points; the triangulation is the viewer's).
 
+    `kind` None: read from the file — the ``em_reading_kind`` extras of a node
+    (where Blender writes the custom property, with ``export_extras=True``), or
+    the ``geometry_kind`` s3Dgraphy writes. A `kind` given and one declared that
+    disagree: the given one is used, and ``warnings`` says so.
+
     Raises:
-        ReadingGlbError: not a GLB, or no primitive of the modes `kind` reads.
+        ReadingGlbError: not a GLB, no kind given nor declared, or no primitive
+            of the modes `kind` reads.
     """
+    doc, binary = _parse(data)
+    declared = _node_kind(doc)
+    warnings: List[str] = []
+    if kind is None:
+        if declared is None:
+            raise ReadingGlbError(
+                f"no kind given and none declared in the file ({READING_KIND_EXTRA} "
+                f"extras); pass one of {list(READ_MODES)}")
+        kind = declared
+    elif declared is not None and declared != kind:
+        warnings.append(f"the file declares {declared!r}; read as {kind!r}")
     if kind not in READ_MODES:
         raise ReadingGlbError(f"kind must be one of {list(READ_MODES)}, got {kind!r}")
-    doc, binary = _parse(data)
     prims = [p for mesh in doc.get("meshes") or [] for p in mesh.get("primitives") or []]
     wanted = READ_MODES[kind]
     if kind != "convex":
         for prim in prims:
-            if prim.get("mode", TRIANGLES) in wanted:
-                pts = _positions(doc, binary, prim)
-                from ..nodes.annotation_region_node import AnnotationRegionError, check_coords
-                try:
-                    return {"geometry_kind": kind, "coords": check_coords(kind, pts)}
-                except AnnotationRegionError as exc:
-                    raise ReadingGlbError(str(exc))
+            mode = prim.get("mode", TRIANGLES)
+            if mode not in wanted:
+                continue
+            pts = _positions(doc, binary, prim)
+            if mode == LINES and kind in ("line", "polyline") and len(pts) > 2:
+                chain, pieces, why = stitch_lines(
+                    [pts[k:k + 2] for k in range(0, len(pts) - len(pts) % 2, 2)])
+                if chain is None:
+                    return {"geometry_kind": kind, "pieces": pieces,
+                            "warnings": warnings + why}
+                pts = chain
+            from ..nodes.annotation_region_node import AnnotationRegionError, check_coords
+            try:
+                out = {"geometry_kind": kind, "coords": check_coords(kind, pts)}
+            except AnnotationRegionError as exc:
+                raise ReadingGlbError(str(exc))
+            if warnings:
+                out["warnings"] = warnings
+            return out
         raise ReadingGlbError(f"no primitive of mode {list(wanted)} for a {kind}")
     hulls = []
     for prim in prims:
@@ -345,10 +494,13 @@ def gltf_to_geometry(data: bytes, kind: str) -> Dict[str, Any]:
     spheres = [list(map(float, s)) for s in extras.get("spheres") or []]
     if not hulls and not spheres:
         raise ReadingGlbError("no TRIANGLES primitive and no spheres for a convex shape")
-    return {"convexshapes": hulls, "spheres": spheres}
+    out = {"convexshapes": hulls, "spheres": spheres}
+    if warnings:
+        out["warnings"] = warnings
+    return out
 
 
-def read_geometry_file(path: str, kind: str) -> Dict[str, Any]:
+def read_geometry_file(path: str, kind: Optional[str] = None) -> Dict[str, Any]:
     """:func:`gltf_to_geometry` of a file on disk."""
     with open(path, "rb") as fh:
         return gltf_to_geometry(fh.read(), kind)

@@ -95,13 +95,19 @@ def _norm_pair(pair: Any, where: str) -> List[float]:
 
 #: The five kinds of place a reading can look at. ``region2d`` first: it is the
 #: default, and every region written before 2026-10-06 is one.
-GEOMETRY_KINDS = ("region2d", "passage", "point", "line", "polyline")
+GEOMETRY_KINDS = ("region2d", "passage", "point", "line", "polyline", "volume")
+#: A volume ON a model: an annotation that encloses a part of it (ATON's convex
+#: hulls and spheres) and is not the proxy of any unit. Its geometry is not in
+#: the region: the region reaches a SemanticShape with ``has_semantic_shape``,
+#: the carrier those numbers already have (node datamodel 1.6.16).
+VOLUME_KINDS = ("volume",)
 #: The 3D kinds: vertices in the model's frame, in ``data.coords`` (the name
 #: is historical — from 2026-10-06 to 2026-10-11 their vertices were a `.glb`).
 GLB_KINDS = ("point", "line", "polyline")
 SPATIAL_KINDS = GLB_KINDS
 #: Used when the datamodel cannot be read (it always can, in a built package).
 _INLINE_MAX_FALLBACK = 500
+_STITCH_TOLERANCE_FALLBACK = 1e-6
 #: The kinds that measure something (a length).
 MEASURE_KINDS = ("line", "polyline")
 #: glTF's own unit, and the frame the proxies are written in: scene-local
@@ -111,19 +117,38 @@ DEFAULT_CRS = "local"
 
 
 @functools.lru_cache(maxsize=1)
+def _coords_spec() -> Dict[str, Any]:
+    path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                        "JSON_config", "s3Dgraphy_node_datamodel.json")
+    try:
+        with open(path, encoding="utf-8") as fh:
+            return dict(json.load(fh)["visualization_nodes"]["AnnotationRegionNode"]["coords"])
+    except (OSError, KeyError, TypeError, ValueError):   # pragma: no cover
+        return {}
+
+
+@functools.lru_cache(maxsize=1)
+def stitch_tolerance() -> float:
+    """How close two vertices must be to be ONE when a polyline comes back as
+    glTF ``LINES`` pairs (Blender writes every inner vertex twice). DATA —
+    ``AnnotationRegionNode.coords.stitch_tolerance`` in the node datamodel, in
+    the coordinates' unit (metres) — like :func:`inline_max_vertices`."""
+    try:
+        return float(_coords_spec()["stitch_tolerance"])
+    except (KeyError, TypeError, ValueError):   # pragma: no cover
+        return _STITCH_TOLERANCE_FALLBACK
+
+
+@functools.lru_cache(maxsize=1)
 def inline_max_vertices() -> int:
     """How many vertices a 3D region may carry in ``data.coords`` before they
     go to a ``.glb`` resource. The value is DATA — node datamodel,
     ``AnnotationRegionNode.coords.inline_max_vertices`` — not a constant here,
     so the line between "the sign of an argument" and "a survey" is moved in
     one place every consumer reads."""
-    path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                        "JSON_config", "s3Dgraphy_node_datamodel.json")
     try:
-        with open(path, encoding="utf-8") as fh:
-            spec = json.load(fh)["visualization_nodes"]["AnnotationRegionNode"]
-        return int(spec["coords"]["inline_max_vertices"])
-    except (OSError, KeyError, TypeError, ValueError):   # pragma: no cover
+        return int(_coords_spec()["inline_max_vertices"])
+    except (KeyError, TypeError, ValueError):   # pragma: no cover
         return _INLINE_MAX_FALLBACK
 
 
@@ -160,7 +185,8 @@ def _non_negative_int(value: Any, where: str) -> int:
 
 class AnnotationRegionNode(Node):
     """The place a reading looked at: a region of an image, a passage of a
-    text, or a point / line / polyline on a 3D model (``geometry_kind``).
+    text, a point / line / polyline on a 3D model, or a volume on it
+    (``geometry_kind``).
 
     Everything below about ``shape_kind`` / ``rect`` / ``points`` / ``page``
     concerns ``geometry_kind == "region2d"``; the other kinds carry the fields
@@ -194,6 +220,12 @@ class AnnotationRegionNode(Node):
             of the segments, in ``unit`` and ``crs``.
         unit (str): of the length; ``"m"``.
         crs (str): the frame of the coordinates and of the length; ``"local"``.
+
+    A ``volume`` carries none of these: it is ON a model (``resource_id``, the
+    ``is_on_resource`` edge) and its convex hulls and spheres are in the
+    SemanticShape it reaches with ``has_semantic_shape`` — an annotation on the
+    asset, not the proxy of a unit (``geometry.aton``,
+    ``api.promote_region_to_proxy``).
     """
 
     node_type = "annotation_region"
@@ -248,6 +280,8 @@ class AnnotationRegionNode(Node):
             self._init_region2d(shape_kind, rect, points, page)
         elif kind == "passage":
             self._init_passage(start, end, text)
+        elif kind in VOLUME_KINDS:
+            pass           # the hulls and spheres are the SemanticShape's
         else:
             self._init_glb_kind(vertex_count, length, unit, crs, coords)
 
@@ -261,6 +295,8 @@ class AnnotationRegionNode(Node):
                 self.data["points"] = self.points
         elif kind == "passage":
             self.data.update({"start": self.start, "end": self.end, "text": self.text})
+        elif kind in VOLUME_KINDS:
+            pass
         else:
             if self.coords:
                 self.data["coords"] = self.coords

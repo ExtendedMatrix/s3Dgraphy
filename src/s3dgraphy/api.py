@@ -1120,23 +1120,40 @@ def geometry_to_gltf(node: Any) -> bytes:
     return _to(node)
 
 
-def gltf_to_geometry(data: bytes, kind: str) -> Dict[str, Any]:
+def gltf_to_geometry(data: bytes, kind: Optional[str] = None) -> Dict[str, Any]:
     """A .glb back to what the node's data holds: ``{"geometry_kind", "coords"}``
     for ``kind`` point / line / polyline, ``{"convexshapes", "spheres"}`` for
-    ``"convex"``. See :mod:`s3dgraphy.geometry.gltf`."""
+    ``"convex"``. `kind` None: read from the file (``em_reading_kind`` in a
+    node's extras — Blender's export of the custom property). A polyline back
+    from Blender as ``LINES`` pairs is stitched into one ordered chain; pairs
+    that are not one chain give ``{"pieces", "warnings"}`` and no ``coords``.
+    See :mod:`s3dgraphy.geometry.gltf`."""
     from .geometry.gltf import gltf_to_geometry as _from
     return _from(data, kind)
 
 
 def import_aton_scene(scene: Any, graph: Optional[Graph] = None, *,
-                      create_type: str = "US", author: Optional[str] = None):
+                      create_type: Optional[str] = None, author: Optional[str] = None):
     """The convex hulls and spheres of an ATON / Hathor scene
-    (``semanticgraph.nodes[id].convexshapes`` / ``.spheres``) → the proxy of the
-    EM node of the same name (shape ``"<name>_shape"``, the Heriverse rule),
-    created as `create_type` when missing. Returns ``(graph, report)``. See
-    :mod:`s3dgraphy.geometry.aton`."""
+    (``semanticgraph.nodes[id].convexshapes`` / ``.spheres``). A semantic id
+    that names an EM unit → that unit's proxy (shape ``"<name>_shape"``, the
+    Heriverse rule). One that names none → by default an annotation on the
+    model: an ``AnnotationRegionNode`` (``geometry_kind`` ``volume``) with the
+    shape, ``is_on_resource`` the model the scene loads — not a unit
+    (``create_type="US"`` asks for the old behaviour explicitly). Returns
+    ``(graph, report)``. See :mod:`s3dgraphy.geometry.aton`."""
     from .geometry.aton import import_aton_scene as _imp
     return _imp(scene, graph, create_type=create_type, author=author)
+
+
+def promote_region_to_proxy(graph: Graph, region_id: str, unit_id: str) -> Dict[str, Any]:
+    """A volume region (an ATON annotation on the model) that is a unit after
+    all: its shape becomes the unit's proxy (US → Property(geometry) → shape);
+    the region leaves the graph, or stays as a trace when something else points
+    at it. Returns ``{property_id, shape_id, unit_id, region_removed,
+    warnings}``. See :func:`s3dgraphy.geometry.aton.promote_region_to_proxy`."""
+    from .geometry.aton import promote_region_to_proxy as _promote
+    return _promote(graph, region_id, unit_id)
 
 
 def export_aton_scene(graph: Graph, scene: Any = None) -> Dict[str, Any]:

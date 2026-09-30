@@ -34,6 +34,10 @@ from typing import Any, Dict, List
 
 from ..graph import Graph
 from ..nodes.property_node import PropertyNode
+
+#: the resource type of a proxy's .glb (``geometry.proxy.PROXY_RESOURCE_TYPE``,
+#: repeated here because proxy.py imports this module's twin lazily)
+PROXY_RESOURCE_TYPE = "proxy_model"
 from ..nodes.stratigraphic_node import StratigraphicNode
 
 # Same namespace family as geometry/proxy.py, so a proxy that is later re-created
@@ -134,8 +138,28 @@ def _reads_a_place(graph: Graph, shape_id: str) -> bool:
     return False
 
 
-#: A recorded kind that already says "three-dimensional" is left as written.
+#: A recorded kind that already says "three-dimensional" is left as written —
+#: unless the shape is a unit's proxy (:func:`_is_geometry_payload`).
 _GEOMETRY_URL_TYPES = ("3d_model", "proxy_model", "point_cloud")
+
+
+def _is_geometry_payload(graph: Graph, shape_id: str) -> bool:
+    """Is the shape the payload of a geometry PROPERTY, i.e. a unit's proxy?"""
+    for edge in graph.edges:
+        if edge.edge_target == shape_id and edge.edge_type == _EDGE_HAS_SEMANTIC_SHAPE:
+            source = graph.find_node_by_id(edge.edge_source)
+            if isinstance(source, PropertyNode) and \
+                    getattr(source, "property_type", None) == GEOMETRY_PROPERTY_TYPE:
+                return True
+    return False
+
+
+def _retype(resource, url_type: str) -> None:
+    data = resource.data if isinstance(getattr(resource, "data", None), dict) else {}
+    data["url_type"] = url_type
+    resource.data = data
+    if hasattr(resource, "url_type"):
+        resource.url_type = url_type
 
 
 def _linked_resource_with_url(graph: Graph, shape_id: str, url: str):
@@ -169,24 +193,35 @@ def migrate_shape_urls(graph: Graph) -> Dict[str, Any]:
         shape), the one :func:`create_geometry_proxy` uses — a second open is a
         no-op, and a migrated proxy and a new one converge;
       · a shape that already reaches a resource with the SAME path (EMtools'
-        Heriverse export hangs one there) reuses it — typed ``proxy_model`` if
-        it said nothing three-dimensional — and just loses its copy of the path; a DIFFERENT path is not guessed
+        Heriverse export hangs one there) reuses it and just loses its copy of
+        the path. The reused resource becomes ``proxy_model`` when the shape is
+        a unit's proxy (the payload of a geometry property), whatever it said
+        before (``External link``, ``3d_model``); a shape that is no unit's
+        proxy keeps a 3D type as written. A DIFFERENT path is not guessed
         between: the url stays and the report says so;
+      · a proxy already migrated by 1.6.0.dev22 (no url left, the reused
+        distribution still ``3d_model``) is repaired: see
+        :func:`_repair_migrated`;
       · the .glb of a reading (a shape hanging off an annotation region) is not
         a proxy and is left to :mod:`s3dgraphy.annotation.migrate_reading`.
 
-    Returns ``{migrated: [{shape_id, resource_id, url}], conflicts, warnings}``.
+    Returns ``{migrated: [{shape_id, resource_id, url}], retyped: [resource_id],
+    conflicts, warnings}``.
     """
     from .proxy import link_proxy_resource, linked_proxy_resources
 
-    report: Dict[str, Any] = {"migrated": [], "conflicts": [], "warnings": []}
+    report: Dict[str, Any] = {"migrated": [], "retyped": [], "conflicts": [],
+                              "warnings": []}
     for node in list(graph.nodes):
         if getattr(node, "node_type", None) != "semantic_shape":
             continue
         data = getattr(node, "data", None)
         data = data if isinstance(data, dict) else {}
         url = str(getattr(node, "url", "") or data.get("url") or "").strip()
-        if not url or _reads_a_place(graph, node.node_id):
+        if not url:
+            _repair_migrated(graph, node, report)
+            continue
+        if _reads_a_place(graph, node.node_id):
             continue
         existing = linked_proxy_resources(graph, node.node_id)
         same_path = _linked_resource_with_url(graph, node.node_id, url)
@@ -195,9 +230,19 @@ def migrate_shape_urls(graph: Graph) -> Dict[str, Any]:
             # glb off the shape (promote_resource, url_type "External link" or
             # "3d_model"): that IS the proxy's resource — reuse it, never a
             # second node for the same path. An untyped one learns its type.
+            #
+            # 2026-10-15: a `3d_model` one too, when the shape is a unit's proxy
+            # (the payload of a geometry property) — `linked_proxy_resources`
+            # knows only `proxy_model`, so left as it was the proxy had a file
+            # nobody found. A shape that is no unit's proxy keeps a 3D type as
+            # written.
             sp_data = same_path.data if isinstance(getattr(same_path, "data", None), dict) else {}
-            if str(sp_data.get("url_type") or "") not in _GEOMETRY_URL_TYPES:
-                sp_data["url_type"] = "proxy_model"
+            recorded = str(sp_data.get("url_type") or "")
+            if recorded != PROXY_RESOURCE_TYPE and (
+                    recorded not in _GEOMETRY_URL_TYPES
+                    or _is_geometry_payload(graph, node.node_id)):
+                _retype(same_path, PROXY_RESOURCE_TYPE)
+                report["retyped"].append(same_path.node_id)
             existing = [same_path]
         if existing:
             urls = {str((getattr(r, "data", None) or {}).get("url") or "") for r in existing}
@@ -219,3 +264,40 @@ def migrate_shape_urls(graph: Graph) -> Dict[str, Any]:
         report["migrated"].append({"shape_id": node.node_id,
                                    "resource_id": resource_id, "url": url})
     return report
+
+
+def _repair_migrated(graph: Graph, shape, report: Dict[str, Any]) -> None:
+    """A proxy migrated by 1.6.0.dev22: the shape's ``url`` is gone and the
+    reused Heriverse distribution kept its ``3d_model``.
+
+    Without the url the path cannot be compared any more, so the resource is
+    recognised by what EMtools' export wrote (``_registra_bake`` →
+    ``promote_resource``, measured on EMtools before 21dcf93): the shape hangs
+    TWO ``3d_model`` resources, the distribution (``tier`` distribution, the
+    ``proxies/…glb``) and the master (``tier`` master, a ``blend://`` locator).
+    Only when the shape is a unit's proxy, reaches no ``proxy_model`` yet and
+    exactly ONE of its resources is a ``3d_model`` distribution that is not a
+    ``blend://`` is that one retyped. Anything else is left as it is.
+    """
+    from .proxy import linked_proxy_resources
+
+    if linked_proxy_resources(graph, shape.node_id) or \
+            not _is_geometry_payload(graph, shape.node_id):
+        return
+    candidates = []
+    for edge in graph.edges:
+        if edge.edge_source != shape.node_id or edge.edge_type != "has_linked_resource":
+            continue
+        res = graph.find_node_by_id(edge.edge_target)
+        data = getattr(res, "data", None) or {}
+        if getattr(res, "node_type", None) == "resource" and \
+                data.get("url_type") == "3d_model" and data.get("tier") == "distribution" \
+                and not str(data.get("url") or "").startswith("blend://"):
+            candidates.append(res)
+    if len(candidates) == 1:
+        _retype(candidates[0], PROXY_RESOURCE_TYPE)
+        report["retyped"].append(candidates[0].node_id)
+    elif len(candidates) > 1:
+        report["warnings"].append(
+            f"proxy migration: shape '{shape.node_id}' has {len(candidates)} 3d_model "
+            f"distributions and no proxy_model; which is its .glb is not guessed")

@@ -34,6 +34,7 @@ from ..nodes.annotation_region_node import (
     GEOMETRY_KINDS,
     GLB_KINDS,
     MEASURE_KINDS,
+    VOLUME_KINDS,
     AnnotationRegionError,
     AnnotationRegionNode,
     chain_length,
@@ -159,6 +160,12 @@ def place_reading(graph: Graph, extractor_id: str, on_id: Optional[str],
     if kind not in GEOMETRY_KINDS:
         raise AnnotationRegionError(
             f"geometry_kind must be one of {list(GEOMETRY_KINDS)}, got {kind!r}")
+    if kind in VOLUME_KINDS:
+        # its hulls and spheres are a SemanticShape's, not vertices of the node
+        raise AnnotationRegionError(
+            "a volume is not placed from vertices: its convex hulls and spheres "
+            "are a SemanticShape the region reaches with has_semantic_shape "
+            "(geometry.aton.import_aton_scene)")
 
     vertices: List[List[float]] = []
     kwargs: Dict[str, Any] = {"geometry_kind": kind, "resource_id": on_id}

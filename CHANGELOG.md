@@ -2,7 +2,111 @@
 
 All notable changes to **s3dgraphy** are documented here.
 
-## [Unreleased]
+## [Unreleased] — to be published as 1.6.0.dev23
+
+Everything in this section came AFTER **1.6.0.dev22 as published on PyPI**
+(28 Sep 2026, 09:39 UTC). Measured, not assumed: the PyPI wheel
+(`sha256 b41c974b…168a3b`, the digest PyPI lists) is byte for byte the tree of
+commit `44820e1` («Bump version: 1.6.0.dev21 → 1.6.0.dev22»), and the source
+now differs from it in 60 `.py` files (11 added, 49 changed, none removed) and
+6 JSON configs: node datamodel 1.6.9 → **1.6.16**, connections 1.6.20 →
+**1.6.29**, em_visual_rules 1.6.17 → **1.6.25**, qualia 1.6.1 → **1.6.2**,
+datamodel translations 1.1 → **1.6**. The `1.6.0.dev22` EMtools bundles is a
+rebuild of the source at `0573ea4`, NOT the PyPI one: same version string,
+different code — hence a dev23.
+
+### Changed (2026-10-15 — an ATON annotation with no EM node is a region on the model)
+node datamodel **1.6.16**. E.D.: an ATON semantic node with no EM node of the
+same name («face», «cracks») is not a stratigraphy.
+- `import_aton_scene` makes it an **`AnnotationRegionNode`** of the new
+  `geometry_kind` **`volume`**, named after the semantic id: it reaches the
+  `"<name>_shape"` SemanticShape (`convexshapes`, `spheres`) with
+  `has_semantic_shape` and the model with `is_on_resource`. ATON does not say
+  which model a semanticgraph is on (measured on `ATON.scenehub.js` and the
+  ten samples): `geometry.aton.model_of_scene` takes the scenegraph node
+  `main` (else the only node with urls) when it loads ONE file; the
+  ResourceNode with that url is reused, or a `3d_model` one is created. Two
+  model nodes and no `main`, or a `main` of several files: no guess, a warning,
+  the region on no resource.
+- **`create_type` default is now `None`** (a region); `create_type="US"` still
+  makes a unit that owns the proxy, explicitly. The report gains `regions` and
+  `model`.
+- With an EM node of the same name nothing changes: the shape becomes its proxy.
+- New **`api.promote_region_to_proxy(graph, region_id, unit_id)`**: the shape
+  becomes the unit's proxy (US → Property(geometry) → shape, the migration's
+  ids — the same place an import with the unit present puts it) and the region
+  **leaves the graph**, since keeping it would assert the volume twice for
+  every reader of `has_semantic_shape`. A region something else points at
+  (an extractor, a property) stays as a trace: it loses the shape, keeps its
+  other edges, records `data.promoted_to`. A re-import after the unit appears
+  does the same promotion.
+- The ATON export keys a region's shape by the region's name: ATON →
+  s3Dgraphy → ATON gives back the same scene (venus, skyphos), with an em.json
+  or an RDF round trip in between (RDF: `P2_has_type "volume"`, no selector).
+- `place_reading` refuses a `volume` (it has no vertices to place).
+
+### Fixed (2026-10-15 — a migrated proxy's resource is a proxy_model)
+`migrate_shape_urls` reused the resource EMtools' Heriverse export hangs off a
+proxy's shape with the same path, but left a `3d_model` one as it was — and
+`linked_proxy_resources` (with it EMtools and the Heriverse JSON) recognises
+only `proxy_model`. Now the reused resource is retyped `proxy_model` whenever
+the shape is a unit's proxy (the payload of a geometry property); a `3d_model`
+that is no unit's proxy (a reading beyond the threshold, a shape no property
+carries) stays `3d_model`. A graph already opened with the 1.6.0.dev22 EMtools
+bundles (shape url gone, distribution still `3d_model`) is repaired on opening:
+the one `3d_model` distribution (`tier` distribution, not `blend://`) of a
+proxy shape with no `proxy_model` is retyped; the `blend://` master is never
+touched, and two candidates are not guessed between. `migrate_shape_urls`
+reports `retyped`. Tested on em.json files written by EMtools' own code before
+21dcf93 (`tests/fixtures/emtools_proxy/`).
+
+### Changed (2026-10-15 — a polyline comes back from Blender stitched)
+node datamodel **1.6.16** (`coords.stitch_tolerance`, 1e-6 m). Measured on
+Blender 5.2.0 and 5.0.1: an edges-only mesh is exported as mode 1 `LINES`,
+every inner vertex twice (4 → 6); its importer ignores the document's
+`extras` and makes a glTF NODE's extras custom properties; its exporter writes
+custom properties to the node's `extras` with `export_extras=True`.
+- `gltf_to_geometry(bytes, "polyline")` stitches consecutive `LINES` pairs
+  that share a vertex (within the tolerance) into ONE ordered open chain,
+  walked from the end the first segment touches. Pairs that are not one chain
+  (two pieces, a branch, a loop) return `{geometry_kind, pieces, warnings}`
+  and **no `coords`** — the order is not invented. New
+  `geometry.gltf.stitch_lines`.
+- `kind` is optional: read from the node's `extras.em_reading_kind` (the
+  custom property EMtools gives a reading), else s3Dgraphy's own
+  `geometry_kind`; a given kind that disagrees is used and reported in
+  `warnings`.
+- `geometry_to_gltf` writes `em_reading_kind` on the glTF node of a reading,
+  so Blender's importer makes it a custom property by itself (verified: the
+  full loop s3Dgraphy → Blender → s3Dgraphy gives back the 4 vertices in order,
+  with no kind passed). Fixtures: glb exported by Blender, in
+  `tests/fixtures/blender_gltf/`.
+
+### Changed (2026-09-29 — in the source since dev22, not logged before)
+- **Qualia** 1.6.2: `feature_shape` (spatial, AAT 300056273) and
+  `boundary_distinctness` (material), from the DAI template (`8e6247b`).
+- **Glyphs as JSON paths** (em_visual_rules 1.6.18 → 1.6.20): the authored
+  SVGs in `JSON_config/src/2D` are the source of truth, `2d_glyphs` their
+  generated paths (`tools.glyphs_from_svg --write / --check`,
+  `tools.glyph_sheet`); author, author_ai, license, embargo and narrative
+  approved (`45410b0`, `78ba92c`).
+- **Chronology on demand**: `Graph.chronology()` computes bounds with their
+  provenance and writes nothing; `CALCUL_*` are stripped on import and export,
+  so a stale computed date never round-trips as authored data;
+  `2d_file_vect`/`2d_file_rast` fixed and checked (`476e808`).
+- **Narrative**: «where it is» comes from `GraphNode.data.site_position`, not
+  from the 3D shift (`ecfa398`); `[[id]]` mentions a node in the prose, counted
+  as a citation (`185a91d`); a block generated by AI and validated by no person
+  is left out of every export and reported, `include_unvalidated=True` forces
+  it in marked «⚠︎» (`a74e030`).
+- **Edge labels** translated for all 56 edge types (translations 1.3,
+  `edge_label(edge, lang)`) (`94b022a`).
+- **CRDT**: an `add_edge` op carries the edge's declared attributes (e.g.
+  `inherited`), merged commutatively (`a0ed377`).
+- HDT-O coverage audit refreshed to D7.1 V1.0 (`2d8afc6`); CITATION.cff.
+- The publish workflow's provenance check retries a 5xx/429 from PyPI's
+  `/integrity/` endpoint (it had failed the dev22 run on a 503 while the
+  attestation existed) (`57c3dc7`).
 
 ### Added (2026-10-11 — convex hulls and spheres of ATON and Hathor)
 `geometry.aton` (also `api.import_aton_scene` / `api.export_aton_scene`). The
@@ -402,6 +506,10 @@ passage.
 - `api.validate` reports, under `issues`, a PropertyNode that sits in X's
   ParadataNodeGroup without `X —has_property→` it
   (`diagnostics.paradata_group_incoherences`).
+
+## [1.6.0.dev22] — 2026-09-28 (PyPI; commit 44820e1)
+
+Everything below was already in the 1.6.0.dev22 wheel on PyPI.
 
 ### Added (2026-09-20 — FMPXML, a FileMaker export read as the table it is)
 `format_type: "fmpxml"` joins `sqlite`/`xlsx`/`csv`/`xml`, for the
