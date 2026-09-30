@@ -1,6 +1,6 @@
 {
   "formal_language": "EM",
-  "version": "1.6.24",
+  "version": "1.6.25",
   "_note_material_vs_qualia_color": [
     "DUE COSE DIVERSE CHE SI CHIAMANO ENTRAMBE color. Non confonderle: e gia successo.",
     "1) QUI, in node_styles.<tipo>.style.material.rgba_color — il COLORE DEL MATERIALE BLENDER del proxy 3D, in float LINEARI. UNA sola chiave: `rgba_color`. Fino a S8 il file ne usava due (`color` sui 13 tipi stratigrafici, `rgba_color` sugli altri) e get_material_color() ne leggeva una sola, restituendo None per 21 tipi su 38; ora sono unificate e la vecchia `color` e letta solo come tolleranza verso file scritti prima. Un tipo che non diventa mai una mesh NON ha material affatto (i contenitori di gruppo, e da S7 i dieci nodi che rendono per icona): per loro get_material_color() torna None, ed e corretto.",
@@ -9,6 +9,7 @@
     "In breve: qui si decide di che colore DISEGNARE una US; li si registra di che colore ERA."
   ],
   "_changelog": {
+    "1.6.25": "THE EIGHT DTC GLYPHS APPROVED (E.D., 30 Sep 2026; MICRO-GEOMETRIA-ORIGINE part 1). The eight drafts of 1.6.23 moved from src/2D/bozze/dtc_<glyph>.svg to src/2D/dtc/<glyph>.svg (12_gnss_survey … 19_vectorization), the BOZZA word removed from their comment, glyphs_from_svg --write rerun: their 2d_glyphs entries no longer carry draft: true. src/2D/bozze/ is empty again. Still without a glyph (open): the four recoveries download, local_import, uri_reference, ingest.",
     "1.6.24": "THE CAPTURE IN RDF (MICRO-GENERI-GLIFI, 30 Sep 2026; proposed by Claude, accepted by E.D.). Six acquisition kinds declare `mapping` — the rdf:type their DTCAcquisitionNode takes INSTEAD of crmdig:D12_Data_Transfer_Event, which describes a transfer: photo, laserscanner → crmdig:D2_Digitization_Process (⊂ D11 ⊂ D7); topographic, gnss_survey → crmdig:D11_Digital_Measurement_Event (⊂ D7); field_drawing, recording_sheet → crm:E65_Creation (⊂ E7; made by hand, the file is their copy). The retrievals (download, local_import, uri_reference, ingest) declare none and stay D12. See dtc_kinds.acquisition._mapping_comment; read by rdf_exporter and rdf_importer through utils.get_dtc_kind_mapping. CRMem (em.ttl) 1.6.6 -> 1.6.7 for the changelog note.",
     "1.6.23": "THE EIGHT DTC GLYPHS, AS DRAFTS (MICRO-GENERI-GLIFI, 30 Sep 2026). The eight kinds 1.6.22 left with glyph: null now name a pictogram — gnss_survey 12_gnss_survey, field_drawing 13_field_drawing, recording_sheet 14_recording_sheet, decimation 15_decimation, georeferencing 16_georeferencing, format_conversion 17_format_conversion, classification 18_classification, vectorization 19_vectorization — drawn by Claude on the 2017 DTC family (circle r 41.14, black stroke, no colour) and marked BOZZA. They live in src/2D/bozze/dtc_<glyph>.svg, so their 2d_glyphs entries carry draft: true and no consumer vendors them as official. APPROVAL IS E.D.'S: move the file to src/2D/dtc/<glyph>.svg (dropping the dtc_ prefix), remove the word BOZZA from its comment, rerun `python -m s3dgraphy.tools.glyphs_from_svg --write`. The four retrieval kinds (download, local_import, uri_reference, ingest) still have glyph: null.",
     "1.6.22": "THE CAPTURE IS AN ACQUISITION (E.D., 30 Sep 2026). The `acquisition` axis of dtc_kinds gains two families, stated per kind as `family`: `capture` (photo, laserscanner, topographic — moved from `input` with the SAME keys — plus gnss_survey, field_drawing, recording_sheet) and `retrieval` (download, local_import, uri_reference, ingest). No new node type: DTCAcquisitionNode now accepts a capture as its dtc_kind. `input` keeps no entries and becomes a read alias of the capture family (`_alias_of`), resolved by get_dtc_kinds. The `process` axis gains decimation, georeferencing, format_conversion, classification, vectorization. The new kinds have NO glyph yet (glyph: null): the pictograms are E.D.'s to draw.",
@@ -772,8 +773,7 @@
           "fill": "#000000"
         }
       ],
-      "source": "src/2D/bozze/dtc_15_decimation.svg",
-      "draft": true
+      "source": "src/2D/dtc/15_decimation.svg"
     },
     "dtc:georeferencing": {
       "viewBox": [
@@ -880,8 +880,7 @@
           "line_join": "round"
         }
       ],
-      "source": "src/2D/bozze/dtc_16_georeferencing.svg",
-      "draft": true
+      "source": "src/2D/dtc/16_georeferencing.svg"
     },
     "dtc:format_conversion": {
       "viewBox": [
@@ -999,8 +998,7 @@
           "line_join": "round"
         }
       ],
-      "source": "src/2D/bozze/dtc_17_format_conversion.svg",
-      "draft": true
+      "source": "src/2D/dtc/17_format_conversion.svg"
     },
     "dtc:classification": {
       "viewBox": [
@@ -1180,8 +1178,7 @@
           "line_join": "round"
         }
       ],
-      "source": "src/2D/bozze/dtc_18_classification.svg",
-      "draft": true
+      "source": "src/2D/dtc/18_classification.svg"
     },
     "dtc:vectorization": {
       "viewBox": [
@@ -1304,8 +1301,7 @@
           "line_join": "round"
         }
       ],
-      "source": "src/2D/bozze/dtc_19_vectorization.svg",
-      "draft": true
+      "source": "src/2D/dtc/19_vectorization.svg"
     },
     "dtc:photo": {
       "viewBox": [
@@ -1626,8 +1622,7 @@
           "fill": "#000000"
         }
       ],
-      "source": "src/2D/bozze/dtc_12_gnss_survey.svg",
-      "draft": true
+      "source": "src/2D/dtc/12_gnss_survey.svg"
     },
     "dtc:field_drawing": {
       "viewBox": [
@@ -1710,8 +1705,7 @@
           "line_join": "round"
         }
       ],
-      "source": "src/2D/bozze/dtc_13_field_drawing.svg",
-      "draft": true
+      "source": "src/2D/dtc/13_field_drawing.svg"
     },
     "dtc:recording_sheet": {
       "viewBox": [
@@ -1833,8 +1827,7 @@
           "line_join": "round"
         }
       ],
-      "source": "src/2D/bozze/dtc_14_recording_sheet.svg",
-      "draft": true
+      "source": "src/2D/dtc/14_recording_sheet.svg"
     },
     "dtc:pointcloud": {
       "viewBox": [
@@ -3732,42 +3725,80 @@
         "glyph": "09_photos",
         "description": "Photographic capture (single image or set): the photographs are MADE here, not brought in.",
         "family": "capture",
-        "mapping": {"cidoc": "crmdig:D2_Digitization_Process", "subclass_of": ["crmdig:D11_Digital_Measurement_Event", "crmdig:D7_Digital_Machine_Event", "prov:Activity"]}
+        "mapping": {
+          "cidoc": "crmdig:D2_Digitization_Process",
+          "subclass_of": [
+            "crmdig:D11_Digital_Measurement_Event",
+            "crmdig:D7_Digital_Machine_Event",
+            "prov:Activity"
+          ]
+        }
       },
       "laserscanner": {
         "label": "Laser scan",
         "glyph": "10_laserscanner",
         "description": "Terrestrial/close-range laser scanning: the scan is made here. The APPARATUS is `device.scanner`.",
         "family": "capture",
-        "mapping": {"cidoc": "crmdig:D2_Digitization_Process", "subclass_of": ["crmdig:D11_Digital_Measurement_Event", "crmdig:D7_Digital_Machine_Event", "prov:Activity"]}
+        "mapping": {
+          "cidoc": "crmdig:D2_Digitization_Process",
+          "subclass_of": [
+            "crmdig:D11_Digital_Measurement_Event",
+            "crmdig:D7_Digital_Machine_Event",
+            "prov:Activity"
+          ]
+        }
       },
       "topographic": {
         "label": "Topographic survey",
         "glyph": "01_topographicnetwork",
         "description": "Total-station / topographic-network survey. The APPARATUS is `device.total_station`.",
         "family": "capture",
-        "mapping": {"cidoc": "crmdig:D11_Digital_Measurement_Event", "subclass_of": ["crmdig:D7_Digital_Machine_Event", "prov:Activity"]}
+        "mapping": {
+          "cidoc": "crmdig:D11_Digital_Measurement_Event",
+          "subclass_of": [
+            "crmdig:D7_Digital_Machine_Event",
+            "prov:Activity"
+          ]
+        }
       },
       "gnss_survey": {
         "label": "GNSS survey",
         "glyph": "12_gnss_survey",
         "description": "Satellite-positioning survey: points measured with a GNSS receiver. The APPARATUS is `device.gnss`.",
         "family": "capture",
-        "mapping": {"cidoc": "crmdig:D11_Digital_Measurement_Event", "subclass_of": ["crmdig:D7_Digital_Machine_Event", "prov:Activity"]}
+        "mapping": {
+          "cidoc": "crmdig:D11_Digital_Measurement_Event",
+          "subclass_of": [
+            "crmdig:D7_Digital_Machine_Event",
+            "prov:Activity"
+          ]
+        }
       },
       "field_drawing": {
         "label": "Field drawing",
         "glyph": "13_field_drawing",
         "description": "A drawing made on site — plan, section, elevation — by hand or on a tablet.",
         "family": "capture",
-        "mapping": {"cidoc": "crm:E65_Creation", "subclass_of": ["crm:E7_Activity", "prov:Activity"]}
+        "mapping": {
+          "cidoc": "crm:E65_Creation",
+          "subclass_of": [
+            "crm:E7_Activity",
+            "prov:Activity"
+          ]
+        }
       },
       "recording_sheet": {
         "label": "Recording sheet",
         "glyph": "14_recording_sheet",
         "description": "A recording sheet filled in (US, USM, SAS…): the record is made by the act of compiling it.",
         "family": "capture",
-        "mapping": {"cidoc": "crm:E65_Creation", "subclass_of": ["crm:E7_Activity", "prov:Activity"]}
+        "mapping": {
+          "cidoc": "crm:E65_Creation",
+          "subclass_of": [
+            "crm:E7_Activity",
+            "prov:Activity"
+          ]
+        }
       },
       "download": {
         "label": "Download",

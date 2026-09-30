@@ -39,7 +39,7 @@ awaiting approval).
 | --- | --- |
 | redraw a glyph | edit its SVG, then `python -m s3dgraphy.tools.glyphs_from_svg --write` |
 | check nothing drifted | `python -m s3dgraphy.tools.glyphs_from_svg --check` (exit 1 on drift) |
-| approve a draft | move it from `src/2D/bozze/` to `src/2D/`, remove its `BOZZA` comment, `--write` |
+| approve a draft | move it from `src/2D/bozze/` to `src/2D/` (a DTC draft `bozze/dtc_<glyph>.svg` to `src/2D/dtc/<glyph>.svg`), remove its `BOZZA` comment, `--write` |
 | look before approving | `python -m s3dgraphy.tools.glyph_sheet OUT.html` |
 
 `tests/test_glyph_paths.py` fails the moment the SVG and the block disagree, so
