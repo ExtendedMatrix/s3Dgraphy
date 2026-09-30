@@ -493,6 +493,25 @@ def content_digest(doc: Dict[str, Any]) -> str:
     return _digest(doc)
 
 
+def datamodel_fingerprint(config_dir: Optional[str] = None) -> Dict[str, Any]:
+    """`{digest, versions, digests, files}` of the datamodel a consumer copies.
+
+    The one question every copy of the datamodel (EMStudio's vendored assets,
+    stratigraph-templates' snapshot, a compiled sheet's header) asks of this
+    library: *am I still what s3Dgraphy declares?* The canonical form is
+    RFC 8785, so a consumer in another language computes the same digest; see
+    :mod:`s3dgraphy.datamodel`.
+    """
+    from .datamodel import datamodel_fingerprint as _fingerprint
+    return _fingerprint(config_dir)
+
+
+def datamodel_differences(expected: Dict[str, Any], found: Dict[str, Any]) -> List[str]:
+    """Named differences between two fingerprints (`nodes 1.6.12 vs 1.6.17`)."""
+    from .datamodel import fingerprint_differences
+    return fingerprint_differences(expected, found)
+
+
 def crdt_stats(doc_or_section: Dict[str, Any]) -> Dict[str, int]:
     """How much bookkeeping a document is carrying: tombstones and field clocks.
 
