@@ -2264,6 +2264,33 @@ def pick_representation(graph: Graph, res_id: str, can_open) -> Dict[str, Any]:
     return _pick(graph, res_id, can_open)
 
 
+# ── the 3D Tiles Archive (.3tz), read without extracting ──────────────────────
+def read_3tz_index(path: str) -> List[Tuple[bytes, int]]:
+    """``[(md5, offset)]`` of a 3tz's ``@3dtilesIndex1@``. See
+    :mod:`s3dgraphy.resources.tiles3tz`."""
+    from .resources.tiles3tz import read_3tz_index as _idx
+    return _idx(path)
+
+
+def read_3tz_entry(path: str, name: str) -> Optional[bytes]:
+    """The bytes of one member of a 3tz, found by the MD5 index; None if absent."""
+    from .resources.tiles3tz import read_3tz_entry as _entry
+    return _entry(path, name)
+
+
+def is_deterministic_3tz(path: str) -> Dict[str, Any]:
+    """Whether a 3tz's digest identifies its content: order, dates, compression,
+    extra fields, index order — criterion by criterion."""
+    from .resources.tiles3tz import is_deterministic_3tz as _det
+    return _det(path)
+
+
+def write_3tz(target: str, source, *, compress: bool = False):
+    """Write a 3tz deterministically from a directory or ``{path: bytes}``."""
+    from .resources.tiles3tz import write_3tz as _write
+    return _write(target, source, compress=compress)
+
+
 # ── resource layer (R0: stable-ID resolver seam) ──────────────────────────────
 # Resources are LinkNodes (E73). Their stable, storage-agnostic ID is the node
 # UUID; the ``url`` is the *current locator*, not the identity. A pluggable

@@ -7,6 +7,24 @@ All notable changes to **s3dgraphy** are documented here.
 Everything in this section came after `fa638ef` («Bump version: 1.6.0.dev22 →
 1.6.0.dev23»). Decision of E.D. of 30 Sep 2026, *la risorsa e i suoi file*.
 
+### Added (2026-10-18 — the resource and its files, part 5: the tileset, for now)
+- A tileset is a resource from its ROOT (`packaging: directory`, one file
+  `tileset.json`, role `entry_point`, the entry point's digest) or ZIPPED
+  (`packaging: archive`, one file). The EMtools Heriverse `_link` form
+  (`checksum_of: entry-point`) reads that way unchanged.
+- New **`s3dgraphy.resources.tiles3tz`** (pure Python, and in `api`):
+  `read_3tz_index`, `read_3tz_entry` (MD5 binary search on
+  `@3dtilesIndex1@`, collisions resolved by the header name, stored / deflate
+  / zstd), `is_deterministic_3tz` (order, zip-epoch dates, stored, no extra
+  fields, sorted index), `write_3tz` (deterministic). Specification v1.3,
+  media type `application/vnd.maxar.archive.3tz+zip`.
+- MEASURED on a copy of `RM/TempluMare_cesium/` (7302 files, 198 361 134 B):
+  3d-tiles-tools 0.5.4 (`--ignore-scripts`: its better-sqlite3 does not build
+  on Node 26) writes a 199 378 562 B 3tz in 2.1 s, stored and in order, but
+  **not deterministic** — every member carries the time of writing, and two
+  conversions differ in 14 606 bytes and in their digest. `write_3tz` makes
+  the same-size archive, same index, same digest twice.
+
 ### Changed (2026-10-18 — the resource and its files, part 4: one way to make a resource)
 - `add_resource(graph, *, name, kind, files, packaging, tier, scope,
   residency, role, derived_from, …)` is THE constructor; `add_file`,
