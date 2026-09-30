@@ -513,6 +513,8 @@ Table of Contents
 
    data-quality
    development
+   SOURCE_OF_TRUTH
+   DATAMODEL_PROPAGATION
 
 .. toctree::
    :maxdepth: 2

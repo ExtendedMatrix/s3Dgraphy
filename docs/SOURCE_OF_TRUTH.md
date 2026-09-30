@@ -129,6 +129,9 @@ The pyArchInit `rapporti` labels (ten relations × ten UI languages) are still
 a table in `sync/rapporti.py`; moving them to a mapping file is proposed in the
 report of 2026-10-19, not done.
 
+What happens after level 4, when the change leaves this repository for the
+tools, is in [Datamodel propagation](DATAMODEL_PROPAGATION.md).
+
 ## The rule, in one line
 
 > If the datamodel can answer, ask it. If it cannot, the fix is a field in the
