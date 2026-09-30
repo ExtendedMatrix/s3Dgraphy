@@ -7,6 +7,21 @@ All notable changes to **s3dgraphy** are documented here.
 Everything in this section came after `fa638ef` («Bump version: 1.6.0.dev22 →
 1.6.0.dev23»). Decision of E.D. of 30 Sep 2026, *la risorsa e i suoi file*.
 
+### Added (2026-10-18 — the resource and its files, part 3: the representations)
+- `representations_of(graph, res_id)`: the resources tied by
+  `dtc_derived_from`, both directions and transitively, with the `tier` /
+  `packaging` a reader uses and whether they were declared. The walk stays
+  inside ONE kind (`url_type`; an unstated kind does not separate): a model is
+  also derived from photographs, and a photograph is not a representation of
+  it — nor is another model made from the same photographs.
+- `pick_representation(graph, res_id, can_open)`: the first one whose
+  packaging the reader opens (the start, then nearest; `preferred` first at
+  equal distance), `picked: None` and a `reason` otherwise. Nothing from an
+  extension.
+- EMtools graphs are recognised without being rewritten: the «internal
+  resource» (`{rm}_res_blend`, `blend://`, no tier nor packaging) reads as
+  master/datablock, its `promote_resource` export as distribution/file.
+
 ### Added (2026-10-18 — the resource and its files, part 2: the implicit file)
 - New module **`s3dgraphy.resources.files`** (and its `api` facade):
   `resource_files(graph, res_id)` → `[{role, path, node, implicit}]`, entry
