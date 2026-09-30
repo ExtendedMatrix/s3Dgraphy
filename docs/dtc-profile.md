@@ -56,7 +56,7 @@ distinguished by type and never conflated:
 | Class | `node_type` | rdf:type | Role |
 |---|---|---|---|
 | `DTCProcessNode` | `dtc_process` | `crmdig:D7_Digital_Machine_Event` ⊂ `prov:Activity` | **Genesis**: the transformation that turns inputs into produced objects |
-| `DTCAcquisitionNode` | `dtc_acquisition` | `crmdig:D12_Data_Transfer_Event` (⊂ D7) | **Acquisition**: how an asset enters this study from an opaque external source |
+| `DTCAcquisitionNode` | `dtc_acquisition` | `crmdig:D12_Data_Transfer_Event` (⊂ D7) for a retrieval; a capture takes its kind's class: `crmdig:D2_Digitization_Process` (photo, laserscanner), `crmdig:D11_Digital_Measurement_Event` (topographic, gnss_survey), `crm:E65_Creation` (field_drawing, recording_sheet) — `dtc_kinds.acquisition.<kind>.mapping` | **Acquisition**: how an asset enters this study — made here (capture) or arriving from an opaque external source (retrieval) |
 | `DTCDeviceNode` | `dtc_device` | `crmdig:D8_Digital_Device` | The apparatus a step happened *on* — context, not a step |
 
 `DTCProcessNode` and `DTCAcquisitionNode` share an abstract base, `DTCNode`

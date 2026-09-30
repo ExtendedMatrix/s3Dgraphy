@@ -20,8 +20,11 @@ laserscanner, topographic, gnss_survey, field_drawing, recording_sheet) — and 
 **retrieval** — it arrives already made (download, local_import, uri_reference,
 ingest). One class for both; the family is read from the vocabulary
 (:func:`s3dgraphy.utils.utils.get_dtc_kind_family`), never written on the node.
-The D12 wording above is exact for a retrieval; for a capture it is the seam's
-projection until the mapping is decided (a capture is closer to crmdig:D2/D11).
+The D12 wording above is exact for a retrieval. A capture takes the RDF class
+its kind declares (em_visual_rules 1.6.24, ``dtc_kinds.acquisition.<kind>.mapping``,
+read by :func:`s3dgraphy.utils.utils.get_dtc_kind_mapping`): photo / laserscanner
+→ crmdig:D2 Digitization Process, topographic / gnss_survey → crmdig:D11 Digital
+Measurement Event, field_drawing / recording_sheet → crm:E65 Creation.
 """
 
 from .dtc_node import DTCNode

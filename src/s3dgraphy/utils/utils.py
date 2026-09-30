@@ -449,6 +449,26 @@ def get_dtc_kind_family(kind, axis="acquisition"):
     return spec.get("family") if isinstance(spec, dict) else None
 
 
+def get_dtc_kind_mapping(kind, axis="acquisition"):
+    """The RDF ``mapping`` a DTC kind declares on ``axis`` —
+    ``{"cidoc": <prefixed class>, "subclass_of": [<prefixed class>, …]}`` — or
+    ``None`` when it declares none and the node's class mapping applies
+    (em_visual_rules 1.6.24: a capture is a D2 / D11 / E65, a retrieval stays
+    the D12 of DTCAcquisitionNode)."""
+    rules = _load_visual_rules()
+    spec = ((rules.get("dtc_kinds", {}) or {}).get(axis) or {}).get(kind)
+    mapping = spec.get("mapping") if isinstance(spec, dict) else None
+    return mapping if isinstance(mapping, dict) and mapping.get("cidoc") else None
+
+
+def get_dtc_kind_mappings(axis="acquisition"):
+    """``{kind: mapping}`` for every kind of ``axis`` that declares one."""
+    rules = _load_visual_rules()
+    entries = (rules.get("dtc_kinds", {}) or {}).get(axis) or {}
+    return {k: m for k in entries if not k.startswith("_")
+            for m in [get_dtc_kind_mapping(k, axis)] if m}
+
+
 def get_document_variant_style(variant_key: str) -> dict:
     """Return the render-style dict for a DocumentNode variant key.
 

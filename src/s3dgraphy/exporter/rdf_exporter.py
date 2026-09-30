@@ -1036,15 +1036,21 @@ class RDFExporter:
         cls_name = type(node).__name__
         node_type = getattr(node, "node_type", None)
 
-        # Primary class — conditional for PropertyNode (qualia takes precedence).
-        primary_iri = self._compute_primary_iri(node, cls_name, node_type)
+        # Primary class — conditional for PropertyNode (qualia takes precedence)
+        # and for an acquisition whose KIND declares its own class (a capture).
+        kind_mapping = self._dtc_kind_mapping(node, node_type)
+        if kind_mapping is not None:
+            primary_iri, superclasses = kind_mapping
+        else:
+            primary_iri = self._compute_primary_iri(node, cls_name, node_type)
+            superclasses = self.datamodel.get_node_superclasses(cls_name)
         if primary_iri is not None:
             ctx.add((node_iri, RDF.type, primary_iri))
         else:
             self.stats["nodes_unmapped"] += 1
 
         # Multi-type via subclass_of
-        for sc in self.datamodel.get_node_superclasses(cls_name):
+        for sc in superclasses:
             ctx.add((node_iri, RDF.type, sc))
 
         # Base triples — label, description, identifier
@@ -1241,6 +1247,29 @@ class RDFExporter:
                      Literal(str(removed["ts"]), datatype=XSD.dateTime)))
             if removed.get("by"):
                 ctx.add((node_iri, EM.removedBy, agent(removed["by"])))
+
+    @staticmethod
+    def _dtc_kind_mapping(node: Any, node_type: Optional[str]
+                          ) -> Optional[Tuple[URIRef, List[URIRef]]]:
+        """``(class, superclasses)`` an ACQUISITION takes from its kind, or
+        ``None`` for the class mapping (em_visual_rules 1.6.24,
+        ``dtc_kinds.acquisition.<kind>.mapping``). A capture is not a transfer:
+        a photograph or a scan is a crmdig:D2 Digitization Process, a survey a
+        crmdig:D11 Digital Measurement Event, a drawing or a sheet made by hand
+        a crm:E65 Creation. A retrieval declares nothing and stays the D12 of
+        DTCAcquisitionNode."""
+        if node_type != "dtc_acquisition":
+            return None
+        from ..utils.utils import get_dtc_kind_mapping
+        kind = (getattr(node, "data", None) or {}).get("dtc_kind")
+        mapping = get_dtc_kind_mapping(kind) if isinstance(kind, str) else None
+        primary = _resolve_prefixed(mapping.get("cidoc")) if mapping else None
+        if primary is None:
+            return None
+        supers = [iri for iri in (_resolve_prefixed(sc)
+                                  for sc in mapping.get("subclass_of") or [])
+                  if iri is not None]
+        return primary, supers
 
     def _compute_primary_iri(self, node: Any, cls_name: str,
                              node_type: Optional[str]) -> Optional[URIRef]:

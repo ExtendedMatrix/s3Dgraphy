@@ -1,6 +1,6 @@
 {
   "formal_language": "EM",
-  "version": "1.6.23",
+  "version": "1.6.24",
   "_note_material_vs_qualia_color": [
     "DUE COSE DIVERSE CHE SI CHIAMANO ENTRAMBE color. Non confonderle: e gia successo.",
     "1) QUI, in node_styles.<tipo>.style.material.rgba_color — il COLORE DEL MATERIALE BLENDER del proxy 3D, in float LINEARI. UNA sola chiave: `rgba_color`. Fino a S8 il file ne usava due (`color` sui 13 tipi stratigrafici, `rgba_color` sugli altri) e get_material_color() ne leggeva una sola, restituendo None per 21 tipi su 38; ora sono unificate e la vecchia `color` e letta solo come tolleranza verso file scritti prima. Un tipo che non diventa mai una mesh NON ha material affatto (i contenitori di gruppo, e da S7 i dieci nodi che rendono per icona): per loro get_material_color() torna None, ed e corretto.",
@@ -9,6 +9,7 @@
     "In breve: qui si decide di che colore DISEGNARE una US; li si registra di che colore ERA."
   ],
   "_changelog": {
+    "1.6.24": "THE CAPTURE IN RDF (MICRO-GENERI-GLIFI, 30 Sep 2026; proposed by Claude, accepted by E.D.). Six acquisition kinds declare `mapping` — the rdf:type their DTCAcquisitionNode takes INSTEAD of crmdig:D12_Data_Transfer_Event, which describes a transfer: photo, laserscanner → crmdig:D2_Digitization_Process (⊂ D11 ⊂ D7); topographic, gnss_survey → crmdig:D11_Digital_Measurement_Event (⊂ D7); field_drawing, recording_sheet → crm:E65_Creation (⊂ E7; made by hand, the file is their copy). The retrievals (download, local_import, uri_reference, ingest) declare none and stay D12. See dtc_kinds.acquisition._mapping_comment; read by rdf_exporter and rdf_importer through utils.get_dtc_kind_mapping. CRMem (em.ttl) 1.6.6 -> 1.6.7 for the changelog note.",
     "1.6.23": "THE EIGHT DTC GLYPHS, AS DRAFTS (MICRO-GENERI-GLIFI, 30 Sep 2026). The eight kinds 1.6.22 left with glyph: null now name a pictogram — gnss_survey 12_gnss_survey, field_drawing 13_field_drawing, recording_sheet 14_recording_sheet, decimation 15_decimation, georeferencing 16_georeferencing, format_conversion 17_format_conversion, classification 18_classification, vectorization 19_vectorization — drawn by Claude on the 2017 DTC family (circle r 41.14, black stroke, no colour) and marked BOZZA. They live in src/2D/bozze/dtc_<glyph>.svg, so their 2d_glyphs entries carry draft: true and no consumer vendors them as official. APPROVAL IS E.D.'S: move the file to src/2D/dtc/<glyph>.svg (dropping the dtc_ prefix), remove the word BOZZA from its comment, rerun `python -m s3dgraphy.tools.glyphs_from_svg --write`. The four retrieval kinds (download, local_import, uri_reference, ingest) still have glyph: null.",
     "1.6.22": "THE CAPTURE IS AN ACQUISITION (E.D., 30 Sep 2026). The `acquisition` axis of dtc_kinds gains two families, stated per kind as `family`: `capture` (photo, laserscanner, topographic — moved from `input` with the SAME keys — plus gnss_survey, field_drawing, recording_sheet) and `retrieval` (download, local_import, uri_reference, ingest). No new node type: DTCAcquisitionNode now accepts a capture as its dtc_kind. `input` keeps no entries and becomes a read alias of the capture family (`_alias_of`), resolved by get_dtc_kinds. The `process` axis gains decimation, georeferencing, format_conversion, classification, vectorization. The new kinds have NO glyph yet (glyph: null): the pictograms are E.D.'s to draw.",
     "1.6.21": "THE DOCUMENT IS DRAWN FROM PATHS (E.D., 1 Oct 2026, MICRO-documento-frasi). (1) `2d_glyphs.document`: the sheet with the folded corner, generated from src/2D/document.svg like every other glyph. (2) Its ASPECT comes from the drawing: 0.636 (16.11 x 25.34), the same as the yEd palette's document node (35 x 55 = 0.636) and document.png (128 x 199 = 0.643). EMStudio's 0.78 was the measure of the sheet its renderer drew by hand (23.4 x 30) and never the manual's: declared at last in `2d_render_glyph_types.aspect.document`, it replaces the fallback em-core and shape-geom.ts carried 'until s3Dgraphy declares it'. (3) NEW ROLE `border` in `2d_glyphs._roles`: the outline of a sheet, restyled by a consumer from `document_variant_styles` (colour = the geometry-axis variant, width = Canonical/Instance), never by a theme. To make it one, src/2D/document.svg was redrawn WITHOUT changing a pixel (Inkscape at 1000 px: 45 anti-aliased edge pixels of 636,000 differ at fuzz 0, none at 25%): the outline was an expanded stroke (a filled ring), which nobody can thicken; it is now the stroke itself, `data-role=\"border\"`, width 0.5 = the Instance width. The fold is an `ink` hairline. (4) NEW LIST `2d_render_glyph_types.sheet_types` = [\"document\"]: the types that have a `2d_glyphs` entry but are NOT centred glyphs, because their label sits ON the drawing (see `_sheet_types_comment` for why the document is not in `types`). em-core already gives it the EM3 box through SHEET_TYPES_PENDING, so the box does not depend on the list. (5) The corner decorator that counts the uses stays the CONSUMER's drawing: it is a count, not part of the pictogram. `property` stays out of 2d_glyphs: a text annotation in a bracket, whose width its text decides. ADDITIVE: no existing entry, style or aspect changed.",
@@ -3715,6 +3716,7 @@
     },
     "acquisition": {
       "_comment": "THE ACQUISITION AXIS HAS TWO FAMILIES (E.D., 30 Sep 2026). The acquisition is the moment material ENTERS a study, and it enters in two ways: it is MADE there (a CAPTURE — the photographs are taken, the wall is scanned, the sheet is filled in) or it ARRIVES already made (a RETRIEVAL — downloaded, imported from a disk, referenced by URI, ingested). One node type for both, DTCAcquisitionNode: no new type. Each kind states its `family`; the families are described in `_families`. The captures lived on the `input` axis until 1.6.21 and moved here with the SAME keys (photo / laserscanner / topographic), so a data.dtc_kind written before still resolves its label and glyph; `input` is kept as a read alias (see its _comment).",
+      "_mapping_comment": "THE RDF CLASS OF AN ACQUISITION IS A FACT OF ITS KIND (1.6.24, E.D. 30 Sep 2026). DTCAcquisitionNode projects as crmdig:D12_Data_Transfer_Event — right for a RETRIEVAL, where the object arrives the same, and wrong for a CAPTURE, which makes it. A kind that declares `mapping` overrides the class for its node: `cidoc` is the rdf:type the exporter writes instead of D12, `subclass_of` the superclasses it adds instead of D12's (D7 + prov:Activity). Photograph, laser scan → crmdig:D2 Digitization Process (⊂ D11 ⊂ D7); topographic and GNSS survey → crmdig:D11 Digital Measurement Event (⊂ D7); field drawing, recording sheet → crm:E65 Creation (⊂ E7): they are made BY HAND and the file is their copy, so no D7 machine event is asserted. The retrievals declare none and stay D12. The RDF importer reads the same table back (an rdf:type in it resolves to DTCAcquisitionNode) and the kind from P2_has_type, so the round trip is isomorphic. Read with utils.get_dtc_kind_mapping.",
       "_families": {
         "capture": {
           "label": "Capture",
@@ -3729,37 +3731,43 @@
         "label": "Photograph",
         "glyph": "09_photos",
         "description": "Photographic capture (single image or set): the photographs are MADE here, not brought in.",
-        "family": "capture"
+        "family": "capture",
+        "mapping": {"cidoc": "crmdig:D2_Digitization_Process", "subclass_of": ["crmdig:D11_Digital_Measurement_Event", "crmdig:D7_Digital_Machine_Event", "prov:Activity"]}
       },
       "laserscanner": {
         "label": "Laser scan",
         "glyph": "10_laserscanner",
         "description": "Terrestrial/close-range laser scanning: the scan is made here. The APPARATUS is `device.scanner`.",
-        "family": "capture"
+        "family": "capture",
+        "mapping": {"cidoc": "crmdig:D2_Digitization_Process", "subclass_of": ["crmdig:D11_Digital_Measurement_Event", "crmdig:D7_Digital_Machine_Event", "prov:Activity"]}
       },
       "topographic": {
         "label": "Topographic survey",
         "glyph": "01_topographicnetwork",
         "description": "Total-station / topographic-network survey. The APPARATUS is `device.total_station`.",
-        "family": "capture"
+        "family": "capture",
+        "mapping": {"cidoc": "crmdig:D11_Digital_Measurement_Event", "subclass_of": ["crmdig:D7_Digital_Machine_Event", "prov:Activity"]}
       },
       "gnss_survey": {
         "label": "GNSS survey",
         "glyph": "12_gnss_survey",
         "description": "Satellite-positioning survey: points measured with a GNSS receiver. The APPARATUS is `device.gnss`.",
-        "family": "capture"
+        "family": "capture",
+        "mapping": {"cidoc": "crmdig:D11_Digital_Measurement_Event", "subclass_of": ["crmdig:D7_Digital_Machine_Event", "prov:Activity"]}
       },
       "field_drawing": {
         "label": "Field drawing",
         "glyph": "13_field_drawing",
         "description": "A drawing made on site — plan, section, elevation — by hand or on a tablet.",
-        "family": "capture"
+        "family": "capture",
+        "mapping": {"cidoc": "crm:E65_Creation", "subclass_of": ["crm:E7_Activity", "prov:Activity"]}
       },
       "recording_sheet": {
         "label": "Recording sheet",
         "glyph": "14_recording_sheet",
         "description": "A recording sheet filled in (US, USM, SAS…): the record is made by the act of compiling it.",
-        "family": "capture"
+        "family": "capture",
+        "mapping": {"cidoc": "crm:E65_Creation", "subclass_of": ["crm:E7_Activity", "prov:Activity"]}
       },
       "download": {
         "label": "Download",

@@ -264,6 +264,29 @@ class _InverseDatamodel:
             iri = self.dm.get_node_primary_iri(name)
             if iri is not None:
                 self.classes_by_iri.setdefault(str(iri), []).append(name)
+        # em_visual_rules 1.6.24 · an acquisition whose KIND declares its own
+        # class (a capture: D2 / D11 / E65, dtc_kinds.acquisition.<kind>.mapping)
+        # is written with that class instead of D12: read it back as the same
+        # DTCAcquisitionNode. The kind itself comes back from P2_has_type.
+        # Its superclasses are the kind's, not the class's: they are redundant
+        # for THAT node (E65's crm:E7_Activity is ActivityNodeGroup's primary).
+        # Kept apart from `classes_by_iri`, which stays the bijective index of
+        # the CLASSES' own primary IRIs.
+        from ..utils.utils import get_dtc_kind_mappings
+        #: kind class IRI → [class names] (always DTCAcquisitionNode today).
+        self.kind_classes_by_iri: Dict[str, List[str]] = {}
+        #: kind class IRI → the superclass IRIs that kind declares.
+        self.kind_superclasses_by_iri: Dict[str, Set[str]] = {}
+        for mapping in get_dtc_kind_mappings("acquisition").values():
+            iri = _resolve_prefixed_name(mapping.get("cidoc"))
+            if iri is not None:
+                names = self.kind_classes_by_iri.setdefault(str(iri), [])
+                if "DTCAcquisitionNode" not in names:
+                    names.append("DTCAcquisitionNode")
+                self.kind_superclasses_by_iri.setdefault(str(iri), set()).update(
+                    str(sc) for sc in (_resolve_prefixed_name(x)
+                                       for x in mapping.get("subclass_of") or [])
+                    if sc is not None)
 
         #: LEGACY index: CIDOC class IRI → [class names] built from
         #: ``mapping.cidoc``, i.e. what each class projected as BEFORE it was
@@ -364,7 +387,8 @@ class _InverseDatamodel:
         """
         candidates: List[str] = []
         for iri in type_iris:
-            for name in self.classes_by_iri.get(iri, []):
+            for name in (self.classes_by_iri.get(iri, [])
+                         + self.kind_classes_by_iri.get(iri, [])):
                 if name not in candidates:
                     candidates.append(name)
         if not candidates:
@@ -395,6 +419,8 @@ class _InverseDatamodel:
             for n in candidates
             for sc in self.dm.get_node_superclasses(n)
         }
+        for iri in type_iris:
+            redundant |= self.kind_superclasses_by_iri.get(iri, set())
         specific = [
             n for n in candidates
             if str(self.dm.get_node_primary_iri(n)) not in redundant

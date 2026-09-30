@@ -4,6 +4,21 @@ All notable changes to **s3dgraphy** are documented here.
 
 ## [Unreleased]
 
+### Changed (2026-09-30 — the capture in RDF)
+em_visual_rules **1.6.24**, node datamodel **1.6.14**, CRMem (em.ttl) **1.6.7**.
+A capture is not a transfer: a `DTCAcquisitionNode` now takes the RDF class its
+kind declares in `dtc_kinds.acquisition.<kind>.mapping`, instead of
+`crmdig:D12_Data_Transfer_Event`:
+- photo, laserscanner → `crmdig:D2_Digitization_Process` (⊂ D11 ⊂ D7);
+- topographic, gnss_survey → `crmdig:D11_Digital_Measurement_Event` (⊂ D7);
+- field_drawing, recording_sheet → `crm:E65_Creation` (⊂ E7) — made by hand,
+  the file is their copy: no machine event is asserted;
+- the retrievals (download, local_import, uri_reference, ingest) stay D12.
+`utils.get_dtc_kind_mapping` reads the rule; the RDF importer reads the same
+table back, and counts the kind's superclasses as redundant (E65's
+`crm:E7_Activity` is ActivityNodeGroup's class: without it the reading depended
+on the order of the types). The round trip stays isomorphic.
+
 ### Added (2026-09-30 — the eight DTC glyphs, as drafts)
 em_visual_rules **1.6.23**. The eight kinds 1.6.22 left without a glyph —
 gnss_survey, field_drawing, recording_sheet, decimation, georeferencing,
