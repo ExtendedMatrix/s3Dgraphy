@@ -7,6 +7,21 @@ All notable changes to **s3dgraphy** are documented here.
 Everything in this section came after `fa638ef` («Bump version: 1.6.0.dev22 →
 1.6.0.dev23»). Decision of E.D. of 30 Sep 2026, *la risorsa e i suoi file*.
 
+### Fixed (2026-09-30 — the two HDT-O declarations against D7.1 final)
+- **`JSON_config/hdto_extension.ttl` v0.3.** The two declarations this file
+  carried against D7.1 final are corrected, both already recorded as open in
+  `docs/hdto-coverage.md`:
+  - **`hdto:HC9_Study`** is a subclass of **`crm:E65_Creation`** (was
+    `crm:E7_Activity`). The study is the scholarly act; its documentary output
+    is a separate thing joined to it by `HP25 has created`, so a report, a
+    field note or a metadata record is never an HC9.
+  - **`hdto:HC16_Heritage_Proposition_Set`** is a subclass of
+    **`crminf:I4_Proposition_Set`** and of **`hdto:HC15_Persistent_Digital_Object`**
+    (was `crm:E73_Information_Object` alone). `crm:E73` is kept so that a
+    CRM-only reader still resolves the class.
+  Measured on `D7.1_final.docx` (Version V1.0, Hermon et al. 2026,
+  `doi.org/10.5281/zenodo.20445938`).
+
 ### Removed (2026-10-20 — the 3tz out of s3Dgraphy)
 - **`write_3tz`** (module and `api`): packing a tileset is data preparation,
   and the writers are 3DSC (`cesium_exporter/archive_3tz.py`) and EMStudio

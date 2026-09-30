@@ -28,14 +28,14 @@ archaeology authoring concern.
 | HC6 | Sensor-based Digital Representation (⊂ `crmdig:D9 Data Object`; superclass of HC21, HC30) | — | defer (no sensor evidence from partners yet) |
 | HC8 | 3D Model | `RepresentationModelNode` family, 3D side — declared in D7.1 with `HP21 is 3D representation output of` and `crmdig:D2/L20` | **to map** |
 | HC7 | Digital Audiovisual Object | `RepresentationModel*` covers 3D; AV n/a | defer |
-| HC9 | Study (⊂ `crm:E65 Creation`) | **`StudyNode`** (`hdto_nodes`, → `hdto:HC9`) | **added** · ⚠ `hdto_extension.ttl` still declares it ⊂ `crm:E7_Activity` |
+| HC9 | Study (⊂ `crm:E65 Creation`) | **`StudyNode`** (`hdto_nodes`, → `hdto:HC9`) | **added** · ✔ `hdto_extension.ttl` v0.3 (30 Sep 2026) declares it ⊂ `crm:E65 Creation` |
 | HC10 | Heritage Valuation | — | defer |
 | HC11 | Digital Twin Maintenance | — | defer (HDT lifecycle) |
 | HC12 | Heritage Declaration Event | — | defer |
 | HC13 | Project | **`ProjectNode`** (`hdto_nodes`, → `hdto:HC13` ⊂ `crm:E7`) | **added** |
 | HC14 | Volatile Digital Object | superclass of HC2 (declared in `hdto_extension.ttl`; `HDTNode` `subclass_of` HC14) | ontology-only |
 | HC15 | Persistent Digital Object | snapshot infrastructure (ttl) | defer / ontology-only |
-| HC16 | Heritage Proposition Set (⊂ `crminf:I4 Proposition Set`, `HC15`) | `GraphNode` = `em:EMGraph` (em.ttl declares `EMGraph ⊂ HC16`) | mapped · ⚠ `hdto_extension.ttl` declares it ⊂ `crm:E73` only |
+| HC16 | Heritage Proposition Set (⊂ `crminf:I4 Proposition Set`, `HC15`) | `GraphNode` = `em:EMGraph` (em.ttl declares `EMGraph ⊂ HC16`) | mapped · ✔ `hdto_extension.ttl` v0.3 (30 Sep 2026) declares it ⊂ `crminf:I4` and `HC15`, keeping `crm:E73` |
 | HC17 | Observation with Inference | `ParadataNode` — **Type-A annotated** `hdto:HC17` (keeps `crminf:I1`); Extractor/Combiner (I7/I5) remain the interpretation side | **annotated** |
 | HC18 | Provenance Statement (⊂ HC16; ≡ `crminf:I10`) — **provenance in the sense of pedigree**: chain of custody, ownership, display. NOT the DTC/genesis chain, and NOT a reasoning artefact. | — | defer |
 | HC19 | Provenance Assessment | GENESIS-side, paired with HC18 (CRMdig + PROV-O) | defer → DTC profile |
