@@ -54,8 +54,9 @@ A file carrying the marker :data:`DRAFT_MARKER` produces an entry with
 official files: EMStudio's `sync-datamodels.sh` vendors every top-level
 `src/2D/*.svg` it can reach and `icons.ts` prefers an SVG over a PNG of the same
 name, so a draft saved as `src/2D/license.svg` would be DRAWN by the next sync —
-before anyone approved it. Approving a draft is: move it up to `src/2D/`, remove
-the marker, rerun this tool.
+before anyone approved it. Approving a draft is: move it up to `src/2D/` (a DTC
+draft `bozze/dtc_<glyph>.svg` to `src/2D/dtc/<glyph>.svg`, without the prefix),
+remove the marker, rerun this tool.
 
     python -m s3dgraphy.tools.glyphs_from_svg            # the table
     python -m s3dgraphy.tools.glyphs_from_svg --check    # exit 1 on drift

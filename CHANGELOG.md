@@ -4,6 +4,17 @@ All notable changes to **s3dgraphy** are documented here.
 
 ## [Unreleased]
 
+### Added (2026-09-30 — the eight DTC glyphs, as drafts)
+em_visual_rules **1.6.23**. The eight kinds 1.6.22 left without a glyph —
+gnss_survey, field_drawing, recording_sheet, decimation, georeferencing,
+format_conversion, classification, vectorization — name a pictogram (12…19),
+drawn on the 2017 DTC family and marked BOZZA. They live in
+`src/2D/bozze/dtc_<glyph>.svg`, so their `2d_glyphs` entries carry
+`"draft": true`. **Approval is E.D.'s**: move the file to
+`src/2D/dtc/<glyph>.svg`, remove the word BOZZA, rerun
+`glyphs_from_svg --write`. `test_visual_assets` accepts a DTC draft (a node-type
+glyph still may not be one).
+
 ### Changed (2026-09-30 — USR / USS are a coating US)
 The genres of a US are a vocabulary written in the datamodel (E.D.): node
 datamodel **1.6.13**, datamodel translations **1.6**.

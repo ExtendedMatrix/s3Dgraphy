@@ -99,8 +99,12 @@ def test_every_glyph_type_declares_the_svg_its_paths_come_from():
                        + "\n  ".join(wrong))
     for key in ("AUTH_AI", "LIC", "EMB"):
         assert styles[key].get("2d_file_vect", "").endswith(".svg"), key
-    assert not any(e.get("draft") for e in glyphs.values() if isinstance(e, dict)), \
-        "no glyph is a draft since 1.6.20"
+    # no glyph of a NODE TYPE is a draft since 1.6.20. A DTC kind's may be (the
+    # eight of 2026-09-30 await E.D.'s approval): test_glyph_paths polices where
+    # a draft lives, and that its file says so
+    assert not any(glyphs.get(nt, {}).get("draft")
+                   for nt in glyph_node_types(rules)), \
+        "no node-type glyph is a draft since 1.6.20"
 
 
 def test_every_node_type_the_canvas_draws_resolves_to_a_FILE():
@@ -191,6 +195,7 @@ def test_the_3D_gap_is_counted_and_named_rather_than_asserted():
 # absence becomes a hole in the canvas that `icons.ts` draws as silence.
 
 DTC_GLYPHS = CONFIG / "src" / "2D" / "dtc"
+DTC_DRAFTS = CONFIG / "src" / "2D" / "bozze"
 
 
 def _kinds():
@@ -211,9 +216,12 @@ def _declared_glyphs(kinds):
 
 
 def test_every_glyph_the_DTC_vocabulary_names_is_drawn():
+    # drawn = the official file, or a DRAFT awaiting approval in src/2D/bozze/
+    # (glyphs_from_svg's rule: bozze/dtc_<glyph>.svg, marked BOZZA)
     missing = [f"dtc_kinds.{axis}.{kind} → src/2D/dtc/{glyph}.svg"
                for axis, kind, glyph in _declared_glyphs(_kinds())
-               if not (DTC_GLYPHS / f"{glyph}.svg").is_file()]
+               if not (DTC_GLYPHS / f"{glyph}.svg").is_file()
+               and not (DTC_DRAFTS / f"dtc_{glyph}.svg").is_file()]
     assert not missing, (
         "the DTC vocabulary names glyphs that have not been drawn. Adding a kind "
         "is meant to be a JSON entry PLUS A SIGN, and this is the half that has "
