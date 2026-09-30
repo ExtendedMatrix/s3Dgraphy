@@ -1,4 +1,4 @@
-"""The 3D Tiles Archive (``.3tz``) — read without extracting.
+"""The 3D Tiles Archive (``.3tz``) — recognised and read, never written here.
 
 Specification: *3D Tiles Archive Format* v1.3
 (github.com/erikdahlstrom/3tz-specification), media type
@@ -12,11 +12,22 @@ Specification: *3D Tiles Archive Format* v1.3
   little-endian uint64 (first bytes 0-7, then 8-15);
 * members stored (0), deflated (8) or Zstandard (93).
 
-Why it is here: for now a tileset is a resource from its ROOT (``tileset.json``,
+Why it is here: a tileset is a resource from its ROOT (``tileset.json``,
 ``packaging: directory``) or from its ZIPPED form (``packaging: archive``, one
-file), decided by E.D. on 30 Sep 2026. A 3tz is the zipped form a viewer can
-seek into — and whether its digest identifies its CONTENT depends on whether it
-was written deterministically, which :func:`is_deterministic_3tz` measures.
+file), decided by E.D. on 30 Sep 2026; a 3tz is the zipped form a viewer can
+seek into. s3Dgraphy RECOGNISES it (``ResourceNode.effective_packaging`` reads a
+``.3tz`` as ``archive``) and READS it (:func:`read_3tz_index`,
+:func:`read_3tz_entry`, :func:`index_is_sorted`) without extracting.
+
+WHO WRITES IT, and why not s3Dgraphy (E.D., 30 Sep 2026): packing a tileset is
+DATA PREPARATION, not the graph's business. The writers are 3DSC
+(``3D-survey-collection/cesium_exporter/archive_3tz.py``) and EMStudio. There is
+ONE profile, 3DSC's, written down in :data:`CANONICAL_3TZ_PROFILE`, and
+:func:`is_canonical_3tz` says whether an archive follows it — the condition for
+its sha256 to identify its content rather than the moment it was packed. The
+canonical form and the digest of the CONTENT (independent of the packing) are
+dtcstamp's to define (next MICRO); the writer that lived here until 20 Oct 2026
+(``write_3tz``) is gone.
 
 Pure Python: ``struct``, ``hashlib``, ``zlib``. Zstandard members need the
 ``zstandard`` package and say so when it is missing.
@@ -30,7 +41,7 @@ import zipfile
 import zlib
 from bisect import bisect_left
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 INDEX_NAME = "@3dtilesIndex1@"
 MEDIA_TYPE_3TZ = "application/vnd.maxar.archive.3tz+zip"
@@ -120,90 +131,114 @@ def index_is_sorted(path: PathLike) -> bool:
     return keys == sorted(keys)
 
 
-def is_deterministic_3tz(path: PathLike) -> Dict[str, object]:
-    """Whether the archive's bytes are a function of its CONTENT alone — the
-    condition for its digest to identify what is inside and not when or how it
-    was packed. Measured, criterion by criterion:
+#: The ONE .3tz profile (E.D., 30 Sep 2026): the archive 3DSC writes. MEASURED
+#: on ``3D-survey-collection/cesium_exporter/archive_3tz.py`` (3DSC commit
+#: ``1430128``, branch ``3DSC-dev-1.7.0``, file sha256 ``3309db81…``), whose
+#: ``write_3tz(src_dir, out_path)`` with its default ``compress=False`` writes:
+#:
+#: * members in path order (``list_entries`` sorts), the index LAST;
+#: * every entry — the index too — dated 1980-01-01 00:00:00 (``FIXED_DATE``);
+#: * every entry STORED (``compress=True`` exists there and is NOT this profile:
+#:   a deflate stream depends on the compressor);
+#: * ``create_system`` 3 (unix, whatever the host) and ``external_attr``
+#:   ``0o100644 << 16``, every entry the index included (``_zinfo``);
+#: * no extra field (zip64 only for an entry of 4 GB or more: ``allowZip64`` and
+#:   ``force_zip64=size >= 0xFFFFFFFF``) and general purpose flags 0;
+#: * ``.DS_Store`` and ``Thumbs.db`` never packed (``SKIP_NAMES``);
+#: * ``tileset.json`` at the root, no ``.3tz`` in any path.
+#:
+#: MEASURED on the base TempluMare (``_base_EMStudio/RM/TempluMare_cesium.3tz``,
+#: 199 378 562 B, sha256 ``232dfcbc148f30e5…``): 7303 entries, all of the above
+#: (and ``create_version`` 20, which Python's zipfile writes and 3DSC does not
+#: set: reported, not required).
+CANONICAL_3TZ_PROFILE: Dict[str, object] = {
+    "source": "3D-survey-collection/cesium_exporter/archive_3tz.py",
+    "source_commit": "1430128",
+    "date_time": (1980, 1, 1, 0, 0, 0),
+    "compress_type": zipfile.ZIP_STORED,
+    "create_system": 3,
+    "external_attr": 0o100644 << 16,
+    "flag_bits": 0,
+    "skip_names": (".DS_Store", "Thumbs.db"),
+}
 
-    * ``entries_in_order`` — members in lexicographic order of their names
-      (the index last, as the spec wants);
-    * ``fixed_dates`` — every member carries the zip epoch, 1980-01-01
-      00:00:00, i.e. NO date. One shared date is not enough: MEASURED on
-      3d-tiles-tools 0.5.4 (18 Oct 2026), every member carries the moment of
-      writing, so two conversions of the same tileset differ in 14 606 bytes
-      and in their digest (``single_date`` reports that weaker property);
-    * ``uncompressed`` — every member stored (method 0): a deflate stream
-      depends on the compressor's version and level;
-    * ``no_extra_fields`` — no extra field (they carry mtimes, uid/gid);
-    * ``index_sorted`` — the index in the spec's order.
+_ZIP64_LIMIT = 0xFFFFFFFF
 
-    ``deterministic`` is True only when all of them hold.
+
+def _needs_zip64(info: zipfile.ZipInfo) -> bool:
+    return max(info.file_size, info.compress_size, info.header_offset) >= _ZIP64_LIMIT
+
+
+def is_canonical_3tz(path: PathLike) -> Dict[str, object]:
+    """Whether the archive follows :data:`CANONICAL_3TZ_PROFILE` — 3DSC's —
+    criterion by criterion, with the reasons when it does not.
+
+    Returns ``{criterion: bool…, "canonical": bool, "reasons": [str…],
+    "members": n, "dates": […], "methods": […], "create_versions": […]}``.
+    The criteria: ``entries_in_order``, ``index_last``, ``index_sorted``,
+    ``fixed_dates``, ``stored``, ``create_system``, ``external_attr``,
+    ``no_extra_fields``, ``flags_clear``, ``tileset_at_root``,
+    ``no_3tz_paths``, ``no_skipped_names``.
+
+    MEASURED (20 Oct 2026): the base TempluMare 3tz is canonical; a 3tz written
+    by 3d-tiles-tools 0.5.4 is NOT, for two reasons: every entry carries the
+    time of writing (two conversions of the same folder, two digests: the one
+    that makes its digest name the moment and not the content), and its file
+    attributes carry the DOS archive bit (``0x81a40020``, not ``0x81a40000``).
+    It is also written with ``create_version`` 45 (reported, not required).
     """
+    prof = CANONICAL_3TZ_PROFILE
     with zipfile.ZipFile(path) as zf:
         infos = zf.infolist()
     members = [i for i in infos if i.filename != INDEX_NAME]
     names = [i.filename for i in members]
-    result = {
-        "entries_in_order": names == sorted(names)
-                            and bool(infos) and infos[-1].filename == INDEX_NAME,
-        "fixed_dates": all(i.date_time == _FIXED_DATE for i in infos),
-        "single_date": len({i.date_time for i in infos}) <= 1,
-        "uncompressed": all(i.compress_type == zipfile.ZIP_STORED for i in infos),
-        "no_extra_fields": all(not i.extra for i in infos),
-        "index_sorted": index_is_sorted(path),
-        "members": len(members),
-        "dates": sorted({i.date_time for i in infos})[:3],
-        "methods": sorted({i.compress_type for i in infos}),
+    index_last = bool(infos) and infos[-1].filename == INDEX_NAME
+    try:
+        index_sorted = index_last and index_is_sorted(path)
+    except ValueError:
+        index_sorted = False
+    checks = {
+        "entries_in_order": names == sorted(names),
+        "index_last": index_last,
+        "index_sorted": index_sorted,
+        "fixed_dates": all(i.date_time == prof["date_time"] for i in infos),
+        "stored": all(i.compress_type == prof["compress_type"] for i in infos),
+        "create_system": all(i.create_system == prof["create_system"] for i in infos),
+        "external_attr": all(i.external_attr == prof["external_attr"] for i in infos),
+        "no_extra_fields": all(not i.extra or _needs_zip64(i) for i in infos),
+        "flags_clear": all(i.flag_bits == prof["flag_bits"] for i in infos),
+        "tileset_at_root": "tileset.json" in names,
+        "no_3tz_paths": not any(".3tz" in n.lower() for n in names),
+        "no_skipped_names": not any(n.rsplit("/", 1)[-1] in prof["skip_names"]
+                                    for n in names),
     }
-    result["deterministic"] = all(result[k] for k in (
-        "entries_in_order", "fixed_dates", "uncompressed", "no_extra_fields",
-        "index_sorted"))
-    return result
-
-
-_FIXED_DATE = (1980, 1, 1, 0, 0, 0)
-
-
-def _members(source: Union[PathLike, Dict[str, bytes]]) -> List[Tuple[str, bytes]]:
-    if isinstance(source, dict):
-        items = [(normalize_path(k), v) for k, v in source.items()]
-    else:
-        root = Path(source)
-        items = [(p.relative_to(root).as_posix(), p.read_bytes())
-                 for p in root.rglob("*") if p.is_file()]
-    return sorted(items)
-
-
-def write_3tz(target: PathLike, source: Union[PathLike, Dict[str, bytes]], *,
-              compress: bool = False) -> Path:
-    """Write a 3tz DETERMINISTICALLY: members in name order, one fixed date,
-    stored (unless ``compress``), no extra fields, the index last and sorted.
-
-    ``source`` is a directory (its tree becomes the archive) or a dict
-    ``{path: bytes}``. Needs ``tileset.json`` at the root. The same content
-    gives the same bytes, so the archive's digest identifies its content."""
-    members = _members(source)
-    if "tileset.json" not in {n for n, _ in members}:
-        raise ValueError("a 3tz needs tileset.json at its root")
-    if any(".3tz" in n for n, _ in members):
-        raise ValueError("a 3tz must not contain '.3tz' in a path (no nesting)")
-    target = Path(target)
-    method = zipfile.ZIP_DEFLATED if compress else zipfile.ZIP_STORED
-    offsets: List[Tuple[bytes, int]] = []
-    with open(target, "wb") as fh:
-        with zipfile.ZipFile(fh, "w") as zf:
-            for name, data in members:
-                info = zipfile.ZipInfo(name, date_time=_FIXED_DATE)
-                info.compress_type = method
-                info.create_system = 0
-                info.external_attr = 0
-                offsets.append((hashlib.md5(name.encode("utf-8")).digest(),
-                                fh.tell()))
-                zf.writestr(info, data)
-            offsets.sort(key=lambda e: md5_key(e[0]))
-            index = b"".join(d + struct.pack("<Q", off) for d, off in offsets)
-            info = zipfile.ZipInfo(INDEX_NAME, date_time=_FIXED_DATE)
-            info.compress_type = zipfile.ZIP_STORED
-            info.create_system = 0
-            zf.writestr(info, index)
-    return target
+    why = {
+        "entries_in_order": "members are not in path order",
+        "index_last": f"{INDEX_NAME} is not the last entry",
+        "index_sorted": "the index is not sorted by MD5",
+        "fixed_dates": "entries carry a date other than 1980-01-01 00:00:00 "
+                       "(the time of writing: the digest names the moment of "
+                       "packing, not the content)",
+        "stored": "entries are compressed",
+        "create_system": "create_system is not 3 (unix)",
+        "external_attr": "file attributes are not 0o100644",
+        "no_extra_fields": "entries carry extra fields",
+        "flags_clear": "general purpose flags are set",
+        "tileset_at_root": "no tileset.json at the root",
+        "no_3tz_paths": "a path contains '.3tz'",
+        "no_skipped_names": ".DS_Store / Thumbs.db are packed",
+    }
+    reasons = [why[k] for k, ok in checks.items() if not ok]
+    if not checks["fixed_dates"]:
+        seen = sorted({i.date_time for i in infos} - {prof["date_time"]})
+        reasons[reasons.index(why["fixed_dates"])] += f": {seen[:3]}"
+    if not checks["external_attr"]:
+        seen = sorted({hex(i.external_attr) for i in infos}
+                      - {hex(prof["external_attr"])})
+        reasons[reasons.index(why["external_attr"])] += \
+            f": {seen[:3]}, not {hex(prof['external_attr'])}"
+    return {**checks, "canonical": not reasons, "reasons": reasons,
+            "members": len(members),
+            "dates": sorted({i.date_time for i in infos})[:3],
+            "methods": sorted({i.compress_type for i in infos}),
+            "create_versions": sorted({i.create_version for i in infos})}

@@ -2281,7 +2281,9 @@ def pick_representation(graph: Graph, res_id: str, can_open) -> Dict[str, Any]:
     return _pick(graph, res_id, can_open)
 
 
-# ── the 3D Tiles Archive (.3tz), read without extracting ──────────────────────
+# ── the 3D Tiles Archive (.3tz), recognised and read, never written here ──────
+# The writers are 3DSC and EMStudio (E.D. 2026-09-30); the canonical form and
+# the content digest belong to dtcstamp. See :mod:`s3dgraphy.resources.tiles3tz`.
 def read_3tz_index(path: str) -> List[Tuple[bytes, int]]:
     """``[(md5, offset)]`` of a 3tz's ``@3dtilesIndex1@``. See
     :mod:`s3dgraphy.resources.tiles3tz`."""
@@ -2295,17 +2297,11 @@ def read_3tz_entry(path: str, name: str) -> Optional[bytes]:
     return _entry(path, name)
 
 
-def is_deterministic_3tz(path: str) -> Dict[str, Any]:
-    """Whether a 3tz's digest identifies its content: order, dates, compression,
-    extra fields, index order — criterion by criterion."""
-    from .resources.tiles3tz import is_deterministic_3tz as _det
-    return _det(path)
-
-
-def write_3tz(target: str, source, *, compress: bool = False):
-    """Write a 3tz deterministically from a directory or ``{path: bytes}``."""
-    from .resources.tiles3tz import write_3tz as _write
-    return _write(target, source, compress=compress)
+def is_canonical_3tz(path: str) -> Dict[str, Any]:
+    """Whether a 3tz follows the one profile, 3DSC's (order, dates, stored,
+    attributes, extra fields, index), criterion by criterion, with the reasons."""
+    from .resources.tiles3tz import is_canonical_3tz as _canon
+    return _canon(path)
 
 
 # ── resource layer (R0: stable-ID resolver seam) ──────────────────────────────

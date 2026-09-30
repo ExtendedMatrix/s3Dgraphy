@@ -7,6 +7,24 @@ All notable changes to **s3dgraphy** are documented here.
 Everything in this section came after `fa638ef` («Bump version: 1.6.0.dev22 →
 1.6.0.dev23»). Decision of E.D. of 30 Sep 2026, *la risorsa e i suoi file*.
 
+### Removed (2026-10-20 — the 3tz out of s3Dgraphy)
+- **`write_3tz`** (module and `api`): packing a tileset is data preparation,
+  and the writers are 3DSC (`cesium_exporter/archive_3tz.py`) and EMStudio
+  (E.D., 30 Sep 2026). s3Dgraphy recognises (`effective_packaging`: `.3tz` →
+  `archive`) and reads (`read_3tz_index`, `read_3tz_entry`, `index_is_sorted`).
+- **`is_deterministic_3tz` → `is_canonical_3tz`**: whether an archive follows
+  THE one profile, 3DSC's, written down in `CANONICAL_3TZ_PROFILE` (3DSC commit
+  `1430128`: path order, index last and sorted, 1980-01-01 on every entry,
+  stored, `create_system` 3, `external_attr` `0o100644 << 16`, no extra field,
+  flags 0, no `.DS_Store`/`Thumbs.db`), criterion by criterion with the
+  reasons. MEASURED: the base `TempluMare_cesium.3tz` (sha256 `232dfcbc…`,
+  7302 members) is canonical; a 3tz by 3d-tiles-tools 0.5.4 is not — the time
+  of writing on every entry (two conversions, two digests) and the DOS archive
+  bit in the attributes (`0x81a40020`).
+- The tests read three small archives written once in
+  `tests/fixtures/tiles3tz/` (with 3DSC's module and with 3d-tiles-tools; the
+  README says how), and the base 3tz when present.
+
 ### Changed (2026-10-20 — the kind and the glyph)
 - `representations_of`: staying inside ONE kind is now written as E.D.'s
   decision (30 Sep 2026), with the example: a glb made from an image is a

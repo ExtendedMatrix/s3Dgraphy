@@ -3,6 +3,11 @@
 Dalla radice (``tileset.json``, ``packaging: directory``, il checksum della sola
 porta) o zippato (``packaging: archive``, un file). Il ``.3tz`` (3D Tiles
 Archive v1.3) si legge senza estrarlo.
+
+MICRO-REVISIONE (20 ott 2026): s3Dgraphy non scrive più ``.3tz``. I test leggono
+tre archivi scritti una volta in ``tests/fixtures/tiles3tz/`` (col modulo di 3DSC
+e con 3d-tiles-tools; il README dice da dove vengono), e il ``.3tz`` della base
+TempluMare quando c'è.
 """
 
 import hashlib
@@ -18,11 +23,17 @@ from s3dgraphy import api
 from s3dgraphy.graph import Graph
 from s3dgraphy.nodes.representation_node import RepresentationModelNode
 from s3dgraphy.publication import promote_resource
-from s3dgraphy.resources.tiles3tz import MEDIA_TYPE_3TZ, md5_key
+from s3dgraphy.resources.tiles3tz import (CANONICAL_3TZ_PROFILE, MEDIA_TYPE_3TZ,
+                                          md5_key)
 
 CESIUM = (Path.home() / "Library" / "CloudStorage" / "OneDrive-CNR" / "Extended Matrix"
           / "EM_CaseStudies" / "01_EM_Tempio Grande" / "_base_EMStudio" / "RM"
           / "TempluMare_cesium")
+BASE_3TZ = CESIUM.parent / "TempluMare_cesium.3tz"
+BASE_3TZ_SHA256 = "232dfcbc148f30e52098fef9c83606a3e1638a106fc0678563e909cde1db0c17"
+FIXTURES = Path(__file__).resolve().parent / "fixtures" / "tiles3tz"
+FROM_3DSC = FIXTURES / "small_3dsc.3tz"
+FROM_TOOLS = (FIXTURES / "small_3dtilestools_a.3tz", FIXTURES / "small_3dtilestools_b.3tz")
 
 TILESET = json.dumps({"asset": {"version": "1.0"}, "geometricError": 10,
                       "root": {"content": {"uri": "Data/c01/e0001.b3dm"},
@@ -84,8 +95,8 @@ def test_la_risorsa_zip_e_un_archivio_di_un_file():
     assert g.find_node_by_id("z").packaging() == "archive"
 
 
-def test_la_risorsa_3tz_e_il_lettore_trova_porta_e_tile(tmp_path):
-    archive = api.write_3tz(tmp_path / "TempluMare.3tz", MEMBERS)
+def test_la_risorsa_3tz_e_il_lettore_trova_porta_e_tile():
+    archive = FROM_3DSC
     g = Graph("g")
     api.add_resource(g, resource_id="t", name="TempluMare.3tz", kind="3d_model",
                      packaging="archive",
@@ -104,31 +115,37 @@ def test_la_risorsa_3tz_e_il_lettore_trova_porta_e_tile(tmp_path):
     assert api.read_3tz_entry(str(archive), "Data/c09/nope.b3dm") is None
 
 
-def test_il_3tz_scritto_da_s3dgraphy_e_deterministico(tmp_path):
-    a = api.write_3tz(tmp_path / "a.3tz", MEMBERS)
-    b = api.write_3tz(tmp_path / "b.3tz", dict(reversed(list(MEMBERS.items()))))
-    assert a.read_bytes() == b.read_bytes()  # lo stesso contenuto, gli stessi byte
-    det = api.is_deterministic_3tz(str(a))
-    assert det["deterministic"] is True and det["members"] == 3
+def test_il_3tz_di_3dsc_e_canonico():
+    # il file scritto col modulo di 3DSC (tests/fixtures/tiles3tz/README.md)
+    assert _sha(FROM_3DSC.read_bytes()) == \
+        "sha256:75b111b73bbd230e5083091304a53e19d1ad4495763b16f318c803bdec86f0bf"
+    out = api.is_canonical_3tz(str(FROM_3DSC))
+    assert out["canonical"] is True and out["reasons"] == []
+    assert out["members"] == 3
+    assert CANONICAL_3TZ_PROFILE["source"].endswith("cesium_exporter/archive_3tz.py")
 
 
-def test_un_3tz_con_la_data_di_scrittura_non_e_deterministico(tmp_path):
-    """Com'è quello di 3d-tiles-tools 0.5.4 (misurato il 18 ott 2026): una data
-    sola, ma è l'ora in cui è stato scritto."""
-    path = tmp_path / "tool.3tz"
-    offsets = []
-    with open(path, "wb") as fh, zipfile.ZipFile(fh, "w") as zf:
-        for name in sorted(MEMBERS):
-            offsets.append((hashlib.md5(name.encode()).digest(), fh.tell()))
-            zf.writestr(zipfile.ZipInfo(name, date_time=(2026, 9, 30, 17, 57, 54)),
-                        MEMBERS[name])
-        offsets.sort(key=lambda e: md5_key(e[0]))
-        zf.writestr(zipfile.ZipInfo("@3dtilesIndex1@", date_time=(2026, 9, 30, 17, 57, 54)),
-                    b"".join(d + struct.pack("<Q", o) for d, o in offsets))
-    det = api.is_deterministic_3tz(str(path))
-    assert det["single_date"] is True and det["fixed_dates"] is False
-    assert det["deterministic"] is False
-    assert api.read_3tz_entry(str(path), "tileset.json") == TILESET
+def test_un_3tz_di_3d_tiles_tools_non_e_canonico_e_dice_perche():
+    """Due conversioni dello stesso albero con 3d-tiles-tools 0.5.4: stesso
+    contenuto, due digest, perché ogni voce porta l'ora della scrittura."""
+    a, b = FROM_TOOLS
+    assert a.read_bytes() != b.read_bytes()
+    for path in FROM_TOOLS:
+        for name, data in MEMBERS.items():
+            assert api.read_3tz_entry(str(path), name) == data
+        out = api.is_canonical_3tz(str(path))
+        assert out["canonical"] is False
+        # due ragioni, misurate: l'ora della scrittura in ogni voce (è quella
+        # che fa due digest) e il bit «archivio» del DOS negli attributi
+        assert out["fixed_dates"] is False and out["external_attr"] is False
+        assert len(out["reasons"]) == 2
+        assert "time of writing" in out["reasons"][0]
+        assert "0x81a40020" in out["reasons"][1]
+        # per tutto il resto è come quello di 3DSC
+        assert all(out[k] for k in ("entries_in_order", "index_last", "index_sorted",
+                                    "stored", "create_system", "no_extra_fields",
+                                    "flags_clear"))
+        assert out["create_versions"] == [45]
 
 
 def test_un_zip_qualunque_non_e_un_3tz(tmp_path):
@@ -137,36 +154,42 @@ def test_un_zip_qualunque_non_e_un_3tz(tmp_path):
         zf.writestr("tileset.json", TILESET)
     with pytest.raises(ValueError):
         api.read_3tz_index(str(path))
-    with pytest.raises(ValueError):
-        api.write_3tz(tmp_path / "x.3tz", {"a.b3dm": b""})  # senza tileset.json
+    out = api.is_canonical_3tz(str(path))
+    assert out["canonical"] is False and out["index_last"] is False
 
 
-@pytest.mark.skipif(not (CESIUM / "tileset.json").exists(),
+def test_s3dgraphy_non_scrive_3tz():
+    """Lo scrittore è di 3DSC ed EMStudio (E.D., 30 set 2026)."""
+    from s3dgraphy.resources import tiles3tz
+    assert not hasattr(api, "write_3tz") and not hasattr(tiles3tz, "write_3tz")
+    assert not hasattr(api, "is_deterministic_3tz")
+
+
+@pytest.mark.skipif(not BASE_3TZ.exists(), reason="base di prova TempluMare assente")
+def test_il_3tz_della_base_templumare_e_canonico():
+    digest = hashlib.sha256()
+    with open(BASE_3TZ, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            digest.update(chunk)
+    assert digest.hexdigest() == BASE_3TZ_SHA256
+    out = api.is_canonical_3tz(str(BASE_3TZ))
+    assert out["canonical"] is True, out["reasons"]
+    assert out["members"] == 7302 and out["create_versions"] == [20]
+
+
+@pytest.mark.skipif(not (BASE_3TZ.exists() and (CESIUM / "tileset.json").exists()),
                     reason="base di prova TempluMare assente")
-def test_su_una_copia_piccola_del_tileset_di_templumare(tmp_path):
-    """Una copia piccola — la radice e UN tile per livello di cartella — mai
-    dentro la base."""
-    small = tmp_path / "cesium"
-    small.mkdir()
-    shutil.copy(CESIUM / "tileset.json", small / "tileset.json")
-    # the levels are named by their first letter: Data/a, Data/b*, then in
-    # each Data/cNN/ a nested tileset.json and a…f — one tile of each
-    chosen = [CESIUM / "Data" / "a.b3dm", sorted((CESIUM / "Data").glob("b*.b3dm"))[0]]
+def test_nel_3tz_della_base_i_tile_sono_quelli_della_cartella():
+    """La radice e UN tile per livello di cartella, letti dal 3tz senza
+    estrarlo e confrontati coi file della cartella (mai scritto nulla)."""
+    chosen = [CESIUM / "tileset.json", CESIUM / "Data" / "a.b3dm",
+              sorted((CESIUM / "Data").glob("b*.b3dm"))[0]]
     sub = sorted(p for p in (CESIUM / "Data").iterdir() if p.is_dir())[0]
     chosen.append(sub / "tileset.json")
     for letter in "abcdef":
         found = sorted(sub.glob(f"{letter}*.b3dm"))
         if found:
             chosen.append(found[0])
-    for src in chosen:
-        dst = small / src.relative_to(CESIUM)
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy(src, dst)
-    archive = api.write_3tz(tmp_path / "small.3tz", small)
-    assert len(api.read_3tz_index(str(archive))) == len(chosen) + 1
     for picked in chosen:
         rel = picked.relative_to(CESIUM).as_posix()
-        assert api.read_3tz_entry(str(archive), rel) == picked.read_bytes(), rel
-    assert api.read_3tz_entry(str(archive), "tileset.json") == \
-        (CESIUM / "tileset.json").read_bytes()
-    assert api.is_deterministic_3tz(str(archive))["deterministic"] is True
+        assert api.read_3tz_entry(str(BASE_3TZ), rel) == picked.read_bytes(), rel
