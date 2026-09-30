@@ -7,6 +7,26 @@ All notable changes to **s3dgraphy** are documented here.
 Everything in this section came after `fa638ef` («Bump version: 1.6.0.dev22 →
 1.6.0.dev23»). Decision of E.D. of 30 Sep 2026, *la risorsa e i suoi file*.
 
+### Added (2026-10-18 — the resource and its files, part 2: the implicit file)
+- New module **`s3dgraphy.resources.files`** (and its `api` facade):
+  `resource_files(graph, res_id)` → `[{role, path, node, implicit}]`, entry
+  point first. A resource with `url` and no `has_file` answers with ONE
+  implicit file (a transient `ResourceFileNode`, never added: reading does not
+  write); a resource with neither answers `[]`.
+- Writing: `add_resource` writes the implicit form for one file (`url`,
+  `checksum`, `size_bytes`, `media_type` on the resource) and file nodes for
+  several — or for one with an `id`/`stamp` of its own. `add_file` moves `url`
+  and `checksum` into the first `ResourceFileNode` (role `entry_point`) ONCE;
+  `remove_file` back to one file brings nothing back. File ids are uuid5 of
+  the checksum (the same bytes are one node) or of resource + path.
+
+### Fixed (2026-10-18)
+- em.json import: a node whose description sits only in `data.description`
+  (EMStudio writes resources that way) lost it — the constructor took the empty
+  top-level one and the leftover loop dropped the other. Measured on
+  `Temple_20260930.em.json`: both graph resources came back with `""` (also at
+  `fa638ef`). The top level still wins; `data.description` is the fallback.
+
 ### Added (2026-10-18 — the resource and its files, part 1: node, edge, packaging)
 node datamodel **1.6.17**, connections **1.6.30**, em_visual_rules **1.6.26**,
 em.ttl **1.6.9**.

@@ -122,7 +122,12 @@ def _instantiate(node_type: str, payload: Dict[str, Any],
         elif pname == "name":
             kwargs[pname] = payload.get("name", payload["id"])
         elif pname == "description":
-            kwargs[pname] = payload.get("description", "")
+            # The top level wins; `data.description` is the fallback. A resource
+            # written with its description only inside `data` (EMStudio does)
+            # lost it here: `description` counted as consumed, so the leftover
+            # loop dropped it too. MEASURED on Temple_20260930.em.json
+            # (2026-10-18): both graph resources came back with "".
+            kwargs[pname] = payload.get("description") or data.get("description") or ""
         elif pname in data:
             kwargs[pname] = data[pname]
         elif param.default is not inspect.Parameter.empty:

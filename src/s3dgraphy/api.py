@@ -2205,6 +2205,65 @@ def scene_extent(graph: Graph) -> Optional[Dict[str, Any]]:
     }
 
 
+# ── the resource and its files (E.D. 2026-09-30) ──────────────────────────────
+# The ResourceNode is the set, the ResourceFileNode each file; with one file the
+# file is implicit. One way to make a resource, one way to read its files, and
+# the representations of a thing chosen by the packaging a reader opens.
+# See :mod:`s3dgraphy.resources.files`.
+def add_resource(graph: Optional[Graph], *, name: str, kind: Optional[str] = None,
+                 files=(), packaging: Optional[str] = None,
+                 tier: Optional[str] = None, scope: Optional[str] = None,
+                 residency: Optional[str] = None, role: Optional[str] = None,
+                 derived_from=None, **kwargs):
+    """Make a resource: THE one constructor (files → implicit or explicit form).
+    Returns the ResourceNode. See :func:`s3dgraphy.resources.files.add_resource`."""
+    from .resources.files import add_resource as _add
+    return _add(graph, name=name, kind=kind, files=files, packaging=packaging,
+                tier=tier, scope=scope, residency=residency, role=role,
+                derived_from=derived_from, **kwargs)
+
+
+def resource_files(graph: Graph, res_id: str) -> List[Dict[str, Any]]:
+    """``[{role, path, node, implicit}]`` — a resource's files, the implicit one
+    of a single-file resource included (never written by reading)."""
+    from .resources.files import resource_files as _files
+    return _files(graph, res_id)
+
+
+def add_file(graph: Graph, res_id: str, **file) -> Dict[str, Any]:
+    """Add a file; one implicit file becomes explicit (url/checksum move, once)."""
+    from .resources.files import add_file as _add_file
+    return _add_file(graph, res_id, **file)
+
+
+def remove_file(graph: Graph, res_id: str, file_id: str) -> Dict[str, Any]:
+    """Take a file out of a resource; the node stays if something else holds it."""
+    from .resources.files import remove_file as _remove
+    return _remove(graph, res_id, file_id)
+
+
+def replace_file(graph: Graph, res_id: str, old_file_id: Optional[str], **new
+                 ) -> Dict[str, Any]:
+    """A corrected file: the new one in, the old one kept and declared its parent."""
+    from .resources.files import replace_file as _replace
+    return _replace(graph, res_id, old_file_id, **new)
+
+
+def representations_of(graph: Graph, res_id: str, *, include_self: bool = False
+                       ) -> List[Dict[str, Any]]:
+    """The resources tied by derivation (both directions, same kind), with tier
+    and packaging."""
+    from .resources.files import representations_of as _reps
+    return _reps(graph, res_id, include_self=include_self)
+
+
+def pick_representation(graph: Graph, res_id: str, can_open) -> Dict[str, Any]:
+    """The first representation a reader can open, by declared packaging;
+    ``picked`` None (and a ``reason``) when none opens."""
+    from .resources.files import pick_representation as _pick
+    return _pick(graph, res_id, can_open)
+
+
 # ── resource layer (R0: stable-ID resolver seam) ──────────────────────────────
 # Resources are LinkNodes (E73). Their stable, storage-agnostic ID is the node
 # UUID; the ``url`` is the *current locator*, not the identity. A pluggable
