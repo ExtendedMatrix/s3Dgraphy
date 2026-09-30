@@ -16,6 +16,7 @@ from ..graph import Graph
 from ..nodes.combiner_node import CombinerNode
 from ..nodes.extractor_node import ExtractorNode
 from ..nodes.property_node import PropertyNode
+from ..nodes.resource_node import ResourceNode
 from ..nodes.semantic_shape_node import SemanticShapeNode
 from ..nodes.stratigraphic_node import StratigraphicNode
 
@@ -31,6 +32,64 @@ _EDGE_HAS_SEMANTIC_SHAPE = "has_semantic_shape"
 _EDGE_HAS_DATA_PROVENANCE = "has_data_provenance"
 _EDGE_EXTRACTED_FROM = "extracted_from"
 _EDGE_COMBINES = "combines"
+_EDGE_HAS_LINKED_RESOURCE = "has_linked_resource"
+
+#: The resource type of a proxy's .glb — one of ``ResourceNode.RESOURCE_TYPES``,
+#: recorded in the resource's ``url_type`` (the field those types live in, and
+#: the one the RDF projection carries as ``crm:P2_has_type``).
+PROXY_RESOURCE_TYPE = "proxy_model"
+
+
+def proxy_resource_id(shape_id: str) -> str:
+    """The ResourceNode holding the .glb of the shape `shape_id` — one per shape.
+
+    Shared by :func:`create_geometry_proxy` and the load-time migration of a
+    shape's legacy ``url`` (:func:`.migrate.migrate_shape_urls`), so a proxy
+    written today and one migrated from an old file land on the same node.
+    """
+    return _stable_id(f"proxy-resource|{shape_id}")
+
+
+def linked_proxy_resources(graph: Graph, shape_id: str) -> List[Any]:
+    """The ``proxy_model`` resources the shape reaches with has_linked_resource."""
+    out = []
+    for edge in graph.edges:
+        if edge.edge_source == shape_id and edge.edge_type == _EDGE_HAS_LINKED_RESOURCE:
+            node = graph.find_node_by_id(edge.edge_target)
+            data = getattr(node, "data", None) or {}
+            if getattr(node, "node_type", None) == "resource" and PROXY_RESOURCE_TYPE in (
+                    data.get("url_type"), data.get("resource_type")):
+                out.append(node)
+    return out
+
+
+def link_proxy_resource(graph: Graph, shape_id: str, url: str, *,
+                        author: Optional[str] = None,
+                        name: Optional[str] = None) -> Dict[str, Any]:
+    """Make the shape reach its .glb through a ``proxy_model`` resource.
+
+    ``SemanticShape ──has_linked_resource──▶ ResourceNode(url, url_type proxy_model)``:
+    the hinge a Representation Model uses for its bytes (P67), so "where is
+    the file of this 3D thing" has one answer for RMs and proxies alike. The
+    resource says nothing about residency or checksum: a project-relative path
+    is a reference until somebody promotes it (DP-76).
+
+    Returns ``{resource_id, edge_id, created}``. Idempotent.
+    """
+    resource_id = proxy_resource_id(shape_id)
+    created = False
+    if graph.find_node_by_id(resource_id) is None:
+        res = ResourceNode(node_id=resource_id, name=name or url.rsplit("/", 1)[-1] or url,
+                           url=url, url_type=PROXY_RESOURCE_TYPE)
+        if author:
+            res.data["author"] = author
+        graph.add_node(res)
+        created = True
+    edge_id = _stable_id(f"edge|{shape_id}|{_EDGE_HAS_LINKED_RESOURCE}|{resource_id}")
+    if graph.find_edge_by_id(edge_id) is None:
+        graph.add_edge(edge_id, shape_id, resource_id, _EDGE_HAS_LINKED_RESOURCE)
+        created = True
+    return {"resource_id": resource_id, "edge_id": edge_id, "created": created}
 
 
 @dataclass
@@ -40,6 +99,8 @@ class GeometryProxyResult:
     property_id: str
     shape_id: str
     unit_id: str
+    #: the ``proxy_model`` resource holding the .glb (when the payload is a url)
+    resource_id: Optional[str] = None
     extractor_ids: List[str] = field(default_factory=list)
     combiner_id: Optional[str] = None
     edge_ids: List[str] = field(default_factory=list)
@@ -51,6 +112,7 @@ class GeometryProxyResult:
             "property_id": self.property_id,
             "shape_id": self.shape_id,
             "unit_id": self.unit_id,
+            "resource_id": self.resource_id,
             "extractor_ids": list(self.extractor_ids),
             "combiner_id": self.combiner_id,
             "edge_ids": list(self.edge_ids),
@@ -118,6 +180,10 @@ def create_geometry_proxy(
         unit_id: the US/USV the geometry belongs to.
         shape: the payload — ``{"url": "...glb"}`` or
             ``{"convexshapes": [[x,y,z, …], …], "spheres": [[x,y,z,r], …]}``.
+            A url is NOT stored on the shape: it becomes a ``proxy_model``
+            ResourceNode the shape reaches with ``has_linked_resource``, as a
+            Representation Model reaches its bytes. Hulls and spheres stay in
+            the shape's data.
         extractor_sources: the ids this geometry was read FROM — a Document, or
             an AnnotationRegion (a 2D annotation, once spatialised, is geometric
             evidence). One source → one extractor; several → several extractors
@@ -169,7 +235,6 @@ def create_geometry_proxy(
             # this payload is — the word now names the ROLE of the carrier, not
             # a standalone node kind (see the datamodel's re-read of the field).
             type="proxy",
-            url=str(shape.get("url") or ""),
             convexshapes=[list(part) for part in (shape.get("convexshapes") or [])],
             spheres=[list(s) for s in (shape.get("spheres") or [])],
         )
@@ -193,6 +258,13 @@ def create_geometry_proxy(
             prop.data["author"] = author
         graph.add_node(prop)
         result.created = True
+
+    url = str(shape.get("url") or "").strip()
+    if url:
+        linked = link_proxy_resource(graph, shape_id, url, author=author)
+        result.resource_id = linked["resource_id"]
+        result.edge_ids.append(linked["edge_id"])
+        result.created = result.created or linked["created"]
 
     _ensure_edge(graph, property_id, shape_id, _EDGE_HAS_SEMANTIC_SHAPE, result)
     if unit is not None and isinstance(unit, StratigraphicNode):

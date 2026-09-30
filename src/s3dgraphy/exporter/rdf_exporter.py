@@ -1553,9 +1553,12 @@ class RDFExporter:
             shape_type = getattr(node, "type", None)
             if shape_type:
                 ctx.add((node_iri, CRM.P2_has_type, Literal(shape_type)))
-            # The .glb form of the same payload: same predicate a ResourceNode
-            # uses for its file, so "where the bytes are" reads the same way
-            # everywhere.
+            # The .glb of a proxy is a proxy_model RESOURCE (connections
+            # 1.6.28): it leaves with that ResourceNode (rdfs:seeAlso + P2) and
+            # the shape's has_linked_resource edge (crm:P67_refers_to), like an
+            # RM's bytes. A LEGACY url still on an in-memory shape (a graph not
+            # opened from an em.json, so never migrated) is kept as it always
+            # was, with the ResourceNode's own predicate.
             url = getattr(node, "url", None) or (data.get("url") if data else None)
             if url:
                 if isinstance(url, str) and url.startswith(("http://", "https://")):

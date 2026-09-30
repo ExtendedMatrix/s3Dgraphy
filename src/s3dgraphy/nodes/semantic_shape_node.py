@@ -12,7 +12,13 @@ class SemanticShapeNode(Node):
     Attributes:
         node_type (str): Tipo di nodo, impostato su "semantic_shape".
         type (str): Il tipo specifico di forma semantica ("proxy" o "generic").
-        url (str): URL della risorsa proxy (es. file .glb).
+        url (str): LEGACY — il percorso del .glb, letto e mai più scritto.
+            Da connections 1.6.28 la forma raggiunge il suo .glb con
+            ``has_linked_resource`` → ``ResourceNode(url_type="proxy_model")``,
+            come un Representation Model raggiunge i suoi byte; all'apertura di
+            un em.json un ``url`` rimasto diventa quella risorsa
+            (``geometry.migrate.migrate_shape_urls``). Convessi e sfere restano
+            qui, nei dati della forma.
         convexshapes (List[List[float]]): Lista di forme convesse.
         spheres (List[List[float]]): Lista di sfere (x, y, z, raggio).
     """
@@ -49,12 +55,15 @@ class SemanticShapeNode(Node):
         self.convexshapes = convexshapes or []
         self.spheres = spheres or []
         
-        # Struttura data per serializzazione
+        # Struttura data per serializzazione. `url` solo se c'è: è legacy
+        # (connections 1.6.28), e una chiave vuota su ogni forma direbbe che
+        # la forma ha un posto per un percorso che non deve più tenere.
         self.data = {
-            "url": self.url,
             "convexshapes": self.convexshapes,
             "spheres": self.spheres
         }
+        if self.url:
+            self.data["url"] = self.url
 
     def add_convex_shape(self, vertices: List[float]) -> None:
         """
@@ -99,7 +108,10 @@ class SemanticShapeNode(Node):
             url (str): URL della risorsa.
         """
         self.url = url
-        self.data["url"] = url
+        if url:
+            self.data["url"] = url
+        else:
+            self.data.pop("url", None)
 
     def to_dict(self) -> Dict[str, Any]:
         """

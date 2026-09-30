@@ -297,8 +297,14 @@ def parse_emjson(doc: Dict[str, Any], *,
     # EM 1.6.2 · one-shot legacy migration of the proxy: a bare SemanticShape
     # hanging off a unit becomes a geometry Property carrying that shape. See
     # geometry/migrate.py. Idempotent: a graph already in the new shape is a no-op.
-    from ..geometry.migrate import migrate_legacy_proxies
+    from ..geometry.migrate import migrate_legacy_proxies, migrate_shape_urls
     migrate_legacy_proxies(graph)
+
+    # connections 1.6.28 · the proxy's .glb is a RESOURCE: a shape still
+    # carrying its path in `url` reaches it with has_linked_resource →
+    # ResourceNode(proxy_model) instead. After the step above, so EMtools'
+    # older US → shape(url = proxies/<US>.glb) is covered too. Idempotent.
+    warnings.extend(migrate_shape_urls(graph)["warnings"])
 
     # 2026-10-06 · the place of a reading: an extractor's legacy data.geometry
     # (EMStudio, from 2026-10-05) becomes a place node it extracted_from. A 3D

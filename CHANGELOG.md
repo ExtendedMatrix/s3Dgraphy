@@ -4,6 +4,31 @@ All notable changes to **s3dgraphy** are documented here.
 
 ## [Unreleased]
 
+### Changed (2026-10-11 — the proxy reaches its glb through a resource)
+connections datamodel **1.6.28**. The proxy is a property of the US and its
+`.glb` is a `proxy_model` **resource** (E.D., 30 Sep): the SemanticShape
+reaches it with `has_linked_resource` → `ResourceNode(url_type proxy_model)`,
+the hinge a Representation Model uses for its bytes (P67). `SemanticShapeNode`
+joins the sources of `has_linked_resource`.
+- `create_geometry_proxy` writes the resource (`proxy_resource_id`, uuid5 of the
+  shape), never the shape's `url`; hulls and spheres stay in the shape's data.
+- `SemanticShape.url` is read and not written: on opening an em.json,
+  `geometry.migrate.migrate_shape_urls` turns a leftover `url` into the
+  resource (idempotent), after `migrate_legacy_proxies` — so EMtools' older
+  `US → has_semantic_shape → '<US>_shape'(url proxies/<US>.glb)` is covered. A
+  resource EMtools' Heriverse export already hangs off the shape with the same
+  path is reused (typed `proxy_model` if it said nothing 3D), never doubled.
+- `store_backed_geometry` binds a resident proxy to its property **and unit**.
+- The Heriverse JSON projects the resource's path back on
+  `semantic_shapes[id].data.url`, where Heriverse.js looks for it.
+- The eight shipped mappings re-stamped against connections 1.6.28.
+
+### Changed (2026-10-11 — the eight DTC glyphs approved)
+em_visual_rules **1.6.25**. E.D. approved the eight drafts of 1.6.23: they
+moved to `src/2D/dtc/<glyph>.svg`, the word BOZZA removed, and their
+`2d_glyphs` entries no longer carry `"draft": true`. The four recoveries
+(download, local_import, uri_reference, ingest) still have no glyph.
+
 ### Changed (2026-09-30 — the capture in RDF)
 em_visual_rules **1.6.24**, node datamodel **1.6.14**, CRMem (em.ttl) **1.6.7**.
 A capture is not a transfer: a `DTCAcquisitionNode` now takes the RDF class its

@@ -21,6 +21,10 @@ twin, for geometry, of ``importer.emjson_importer._migrate_legacy_graph_scope``
   · a legacy proxy is exactly a ``has_semantic_shape`` edge whose SOURCE is a
     stratigraphic unit. The NEW edge (property → shape) is a ``has_semantic_shape``
     too, but its source is a PropertyNode, so it is never mistaken for legacy.
+
+Since connections 1.6.28 a second step, :func:`migrate_shape_urls`, moves the
+path of a proxy's .glb from the shape's own ``url`` to a ``proxy_model``
+ResourceNode the shape reaches with ``has_linked_resource``.
 """
 
 from __future__ import annotations
@@ -112,4 +116,106 @@ def migrate_legacy_proxies(graph: Graph) -> Dict[str, Any]:
         report["migrated"] += 1
         report["property_ids"].append(property_id)
 
+    return report
+
+
+# ---------------------------------------------------------------------------
+# 2026-10-11 · the proxy's .glb is a RESOURCE (connections 1.6.28)
+# ---------------------------------------------------------------------------
+
+def _reads_a_place(graph: Graph, shape_id: str) -> bool:
+    """Is this shape the .glb of a READING (annotation region → shape)? Those
+    are not proxies: their vertices go into the region (annotation.reading)."""
+    for edge in graph.edges:
+        if edge.edge_target == shape_id and edge.edge_type == _EDGE_HAS_SEMANTIC_SHAPE:
+            source = graph.find_node_by_id(edge.edge_source)
+            if getattr(source, "node_type", None) == "annotation_region":
+                return True
+    return False
+
+
+#: A recorded kind that already says "three-dimensional" is left as written.
+_GEOMETRY_URL_TYPES = ("3d_model", "proxy_model", "point_cloud")
+
+
+def _linked_resource_with_url(graph: Graph, shape_id: str, url: str):
+    for edge in graph.edges:
+        if edge.edge_source == shape_id and edge.edge_type == "has_linked_resource":
+            node = graph.find_node_by_id(edge.edge_target)
+            data = getattr(node, "data", None) or {}
+            if getattr(node, "node_type", None) == "resource" and \
+                    str(data.get("url") or "").strip() == url:
+                return node
+    return None
+
+
+def migrate_shape_urls(graph: Graph) -> Dict[str, Any]:
+    """A SemanticShape's legacy ``url`` becomes a ``proxy_model`` resource.
+
+    Until connections 1.6.28 the shape carried the path of its .glb in its own
+    ``url``; from 1.6.28 it reaches it the way a Representation Model reaches
+    its bytes::
+
+        SemanticShape ──has_linked_resource──▶ ResourceNode(url, url_type proxy_model)
+
+    The ``url`` is READ here and never written again: once the resource exists
+    the field is emptied, so the path has one home. Same rules as
+    :func:`migrate_legacy_proxies`, and run after it — so the older form
+    EMtools still writes (US ──has_semantic_shape──▶ shape with
+    ``url = proxies/<US>.glb``) first becomes a geometry property and then gets
+    its resource:
+
+      · the resource id is :func:`.proxy.proxy_resource_id` (``uuid5`` of the
+        shape), the one :func:`create_geometry_proxy` uses — a second open is a
+        no-op, and a migrated proxy and a new one converge;
+      · a shape that already reaches a resource with the SAME path (EMtools'
+        Heriverse export hangs one there) reuses it — typed ``proxy_model`` if
+        it said nothing three-dimensional — and just loses its copy of the path; a DIFFERENT path is not guessed
+        between: the url stays and the report says so;
+      · the .glb of a reading (a shape hanging off an annotation region) is not
+        a proxy and is left to :mod:`s3dgraphy.annotation.migrate_reading`.
+
+    Returns ``{migrated: [{shape_id, resource_id, url}], conflicts, warnings}``.
+    """
+    from .proxy import link_proxy_resource, linked_proxy_resources
+
+    report: Dict[str, Any] = {"migrated": [], "conflicts": [], "warnings": []}
+    for node in list(graph.nodes):
+        if getattr(node, "node_type", None) != "semantic_shape":
+            continue
+        data = getattr(node, "data", None)
+        data = data if isinstance(data, dict) else {}
+        url = str(getattr(node, "url", "") or data.get("url") or "").strip()
+        if not url or _reads_a_place(graph, node.node_id):
+            continue
+        existing = linked_proxy_resources(graph, node.node_id)
+        same_path = _linked_resource_with_url(graph, node.node_id, url)
+        if not existing and same_path is not None:
+            # EMtools' Heriverse export already hangs the distribution of the
+            # glb off the shape (promote_resource, url_type "External link" or
+            # "3d_model"): that IS the proxy's resource — reuse it, never a
+            # second node for the same path. An untyped one learns its type.
+            sp_data = same_path.data if isinstance(getattr(same_path, "data", None), dict) else {}
+            if str(sp_data.get("url_type") or "") not in _GEOMETRY_URL_TYPES:
+                sp_data["url_type"] = "proxy_model"
+            existing = [same_path]
+        if existing:
+            urls = {str((getattr(r, "data", None) or {}).get("url") or "") for r in existing}
+            if url not in urls:
+                report["conflicts"].append(node.node_id)
+                report["warnings"].append(
+                    f"proxy migration: shape '{node.node_id}' has url {url!r} but "
+                    f"already reaches {sorted(urls)} as its proxy_model resource; "
+                    f"url left on the shape")
+                continue
+            resource_id = existing[0].node_id
+        else:
+            linked = link_proxy_resource(graph, node.node_id, url,
+                                         author=data.get("author"))
+            resource_id = linked["resource_id"]
+        node.url = ""
+        data.pop("url", None)
+        node.data = data
+        report["migrated"].append({"shape_id": node.node_id,
+                                   "resource_id": resource_id, "url": url})
     return report

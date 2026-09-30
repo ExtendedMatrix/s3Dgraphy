@@ -5,6 +5,11 @@ published asset (`publication.promote_resource`, `put_asset`); this is the
 question the consuming side asks: *of everything this graph says exists in three
 dimensions, what can I fetch right now?*
 
+A PROXY is listed like an RM (connections 1.6.28): its SemanticShape reaches the
+.glb with ``has_linked_resource`` → ``ResourceNode(url_type proxy_model)``, so a
+resident one is a record of ``kind: "proxy"`` whose ``bind`` names the property
+and the unit it belongs to.
+
 It belongs in the library and not in EMtools for the reason every walk does: the
 graph knows the shape of its own statements, and a consumer that re-derived them
 would drift the day a facet is added. Blender should ask "what is there?" and
@@ -176,6 +181,28 @@ def _binds(graph: Any, node_id: str, by_id: Dict[str, Any]) -> List[Dict[str, st
             "name": str(getattr(node, "name", "") or ""),
             "via": etype,
         })
+    # A proxy's shape is reached from its Property(geometry), and the property
+    # from the unit: the UNIT is where the mesh goes, so it is listed too
+    # (connections 1.6.28: the shape reaches its glb as a proxy_model resource,
+    # and a consumer binding it should not have to walk the chain itself).
+    for bind in list(out):
+        if bind["node_type"] != "property" or bind["via"] != "has_semantic_shape":
+            continue
+        for edge in _alive_edges(graph):
+            if str(getattr(edge, "edge_type", "")) != "has_property" \
+                    or getattr(edge, "edge_target", None) != bind["id"]:
+                continue
+            unit_id = getattr(edge, "edge_source", None)
+            unit = by_id.get(unit_id or "")
+            if unit is None or unit_id in seen:
+                continue
+            seen.add(unit_id)
+            out.append({
+                "id": str(unit_id),
+                "node_type": str(getattr(unit, "node_type", "") or ""),
+                "name": str(getattr(unit, "name", "") or ""),
+                "via": "has_property",
+            })
     return out
 
 

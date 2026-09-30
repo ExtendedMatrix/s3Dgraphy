@@ -315,6 +315,18 @@ class JSONExporter:
                 
             elif node.node_type == "semantic_shape":
                 node_data = self._prepare_node_data(node)
+                # connections 1.6.28 · the proxy's .glb is a proxy_model
+                # RESOURCE, no longer the shape's own url. Heriverse loads a
+                # proxy from `semantic_shapes[id].data.url` (Heriverse.js,
+                # createSemanticNodeFromShape), so this surface PROJECTS the
+                # resource's path back there: a derived copy for the viewer,
+                # the graph keeps one home for it.
+                if not node_data["data"].get("url"):
+                    from ..geometry.proxy import linked_proxy_resources
+                    linked = linked_proxy_resources(graph, node.node_id)
+                    url = (getattr(linked[0], "data", None) or {}).get("url") if linked else None
+                    if url:
+                        node_data["data"]["url"] = url
                 nodes["semantic_shapes"][node.node_id] = node_data
                 
             elif node.node_type == "representation_model":
