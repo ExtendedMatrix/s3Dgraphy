@@ -22,7 +22,8 @@ seek into. s3Dgraphy RECOGNISES it (``ResourceNode.effective_packaging`` reads a
 WHO WRITES IT, and why not s3Dgraphy (E.D., 30 Sep 2026): packing a tileset is
 DATA PREPARATION, not the graph's business. The writers are 3DSC
 (``3D-survey-collection/cesium_exporter/archive_3tz.py``) and EMStudio. There is
-ONE profile, 3DSC's, written down in :data:`CANONICAL_3TZ_PROFILE`, and
+ONE profile, 3DSC's, written down in :data:`CANONICAL_3TZ_PROFILE` (its
+source text: ``dtcstamp/profiles/3tz.md``), and
 :func:`is_canonical_3tz` says whether an archive follows it — the condition for
 its sha256 to identify its content rather than the moment it was packed. The
 canonical form and the digest of the CONTENT (independent of the packing) are
@@ -37,6 +38,7 @@ from __future__ import annotations
 
 import hashlib
 import struct
+import unicodedata
 import zipfile
 import zlib
 from bisect import bisect_left
@@ -143,9 +145,20 @@ def index_is_sorted(path: PathLike) -> bool:
 #: * ``create_system`` 3 (unix, whatever the host) and ``external_attr``
 #:   ``0o100644 << 16``, every entry the index included (``_zinfo``);
 #: * no extra field (zip64 only for an entry of 4 GB or more: ``allowZip64`` and
-#:   ``force_zip64=size >= 0xFFFFFFFF``) and general purpose flags 0;
+#:   ``force_zip64=size >= 0xFFFFFFFF``);
+#: * general purpose flags 0 on an ASCII name and ``0x800`` (bit 11, «the name
+#:   is UTF-8») on a non-ASCII one, and nothing else: it is what Python's
+#:   ``zipfile`` writes, and it depends on the name alone (E.D., 30 Sep 2026;
+#:   MEASURED 22 Oct 2026: until then this profile asked flags 0 everywhere and
+#:   called 3DSC's own archive of ``Data/città.b3dm`` not canonical);
+#: * every name in Unicode NFC: macOS hands names over in NFD, and without
+#:   normalising the same folder gives one sha256 on a Mac and another on Linux
+#:   or Windows (3DSC normalises from 22 Oct 2026);
 #: * ``.DS_Store`` and ``Thumbs.db`` never packed (``SKIP_NAMES``);
 #: * ``tileset.json`` at the root, no ``.3tz`` in any path.
+#:
+#: The source text of the profile is ``dtcstamp/profiles/3tz.md``; this
+#: constant and ``dtcstamp.CANONICAL_3TZ`` say the same thing.
 #:
 #: MEASURED on the base TempluMare (``_base_EMStudio/RM/TempluMare_cesium.3tz``,
 #: 199 378 562 B, sha256 ``232dfcbc148f30e5…``): 7303 entries, all of the above
@@ -158,8 +171,11 @@ CANONICAL_3TZ_PROFILE: Dict[str, object] = {
     "compress_type": zipfile.ZIP_STORED,
     "create_system": 3,
     "external_attr": 0o100644 << 16,
-    "flag_bits": 0,
+    "flag_bits_ascii": 0,
+    "flag_bits_non_ascii": 0x800,
+    "name_form": "NFC",
     "skip_names": (".DS_Store", "Thumbs.db"),
+    "profile_text": "dtcstamp/profiles/3tz.md",
 }
 
 _ZIP64_LIMIT = 0xFFFFFFFF
@@ -167,6 +183,11 @@ _ZIP64_LIMIT = 0xFFFFFFFF
 
 def _needs_zip64(info: zipfile.ZipInfo) -> bool:
     return max(info.file_size, info.compress_size, info.header_offset) >= _ZIP64_LIMIT
+
+
+def _expected_flags(name: str) -> int:
+    prof = CANONICAL_3TZ_PROFILE
+    return prof["flag_bits_ascii"] if name.isascii() else prof["flag_bits_non_ascii"]
 
 
 def is_canonical_3tz(path: PathLike) -> Dict[str, object]:
@@ -177,8 +198,9 @@ def is_canonical_3tz(path: PathLike) -> Dict[str, object]:
     "members": n, "dates": […], "methods": […], "create_versions": […]}``.
     The criteria: ``entries_in_order``, ``index_last``, ``index_sorted``,
     ``fixed_dates``, ``stored``, ``create_system``, ``external_attr``,
-    ``no_extra_fields``, ``flags_clear``, ``tileset_at_root``,
-    ``no_3tz_paths``, ``no_skipped_names``.
+    ``no_extra_fields``, ``flags`` (0 on an ASCII name, 0x800 on a non-ASCII
+    one), ``names_nfc``, ``tileset_at_root``, ``no_3tz_paths``,
+    ``no_skipped_names``.
 
     MEASURED (20 Oct 2026): the base TempluMare 3tz is canonical; a 3tz written
     by 3d-tiles-tools 0.5.4 is NOT, for two reasons: every entry carries the
@@ -198,7 +220,8 @@ def is_canonical_3tz(path: PathLike) -> Dict[str, object]:
     except ValueError:
         index_sorted = False
     checks = {
-        "entries_in_order": names == sorted(names),
+        "entries_in_order": [n.encode("utf-8") for n in names]
+                            == sorted(n.encode("utf-8") for n in names),
         "index_last": index_last,
         "index_sorted": index_sorted,
         "fixed_dates": all(i.date_time == prof["date_time"] for i in infos),
@@ -206,7 +229,9 @@ def is_canonical_3tz(path: PathLike) -> Dict[str, object]:
         "create_system": all(i.create_system == prof["create_system"] for i in infos),
         "external_attr": all(i.external_attr == prof["external_attr"] for i in infos),
         "no_extra_fields": all(not i.extra or _needs_zip64(i) for i in infos),
-        "flags_clear": all(i.flag_bits == prof["flag_bits"] for i in infos),
+        "flags": all(i.flag_bits == _expected_flags(i.filename) for i in infos),
+        "names_nfc": all(unicodedata.normalize(prof["name_form"], i.filename)
+                         == i.filename for i in infos),
         "tileset_at_root": "tileset.json" in names,
         "no_3tz_paths": not any(".3tz" in n.lower() for n in names),
         "no_skipped_names": not any(n.rsplit("/", 1)[-1] in prof["skip_names"]
@@ -223,7 +248,10 @@ def is_canonical_3tz(path: PathLike) -> Dict[str, object]:
         "create_system": "create_system is not 3 (unix)",
         "external_attr": "file attributes are not 0o100644",
         "no_extra_fields": "entries carry extra fields",
-        "flags_clear": "general purpose flags are set",
+        "flags": "general purpose flags other than 0 on an ASCII name and "
+                 "0x800 on a non-ASCII one",
+        "names_nfc": "names are not in Unicode NFC (a name as macOS gives it, "
+                     "NFD: the same folder would give another sha256 elsewhere)",
         "tileset_at_root": "no tileset.json at the root",
         "no_3tz_paths": "a path contains '.3tz'",
         "no_skipped_names": ".DS_Store / Thumbs.db are packed",
@@ -237,6 +265,14 @@ def is_canonical_3tz(path: PathLike) -> Dict[str, object]:
                       - {hex(prof["external_attr"])})
         reasons[reasons.index(why["external_attr"])] += \
             f": {seen[:3]}, not {hex(prof['external_attr'])}"
+    if not checks["names_nfc"]:
+        seen = [i.filename for i in infos
+                if unicodedata.normalize(prof["name_form"], i.filename) != i.filename]
+        reasons[reasons.index(why["names_nfc"])] += f": {seen[:3]}"
+    if not checks["flags"]:
+        seen = [(i.filename, hex(i.flag_bits)) for i in infos
+                if i.flag_bits != _expected_flags(i.filename)]
+        reasons[reasons.index(why["flags"])] += f": {seen[:3]}"
     return {**checks, "canonical": not reasons, "reasons": reasons,
             "members": len(members),
             "dates": sorted({i.date_time for i in infos})[:3],

@@ -125,6 +125,65 @@ def test_il_3tz_di_3dsc_e_canonico():
     assert CANONICAL_3TZ_PROFILE["source"].endswith("cesium_exporter/archive_3tz.py")
 
 
+NONASCII_3DSC = FIXTURES / "small_3dsc_nonascii.3tz"
+NFD_1430128 = FIXTURES / "small_3dsc1430128_nfd.3tz"
+CITTA_NFC = "Data/citt\u00e0.b3dm"
+
+
+def test_un_nome_non_ascii_scritto_da_3dsc_e_canonico():
+    """MICRO-PROFILO-3TZ (22 ott 2026): il flag 0x800 è del profilo, esattamente
+    sui nomi non ASCII. È il caso 23 della conformità di dtcstamp."""
+    assert _sha(NONASCII_3DSC.read_bytes()) == \
+        "sha256:29b06145656c39cd3dcbf82b35245cd73614248fde71dc89b57aa55fa0d69d19"
+    out = api.is_canonical_3tz(str(NONASCII_3DSC))
+    assert out["canonical"] is True, out["reasons"]
+    assert out["flags"] is True and out["names_nfc"] is True
+    with zipfile.ZipFile(NONASCII_3DSC) as zf:
+        flags = {i.filename: i.flag_bits for i in zf.infolist()}
+    assert flags[CITTA_NFC] == 0x800
+    assert all(v == 0 for k, v in flags.items() if k.isascii())
+    assert api.read_3tz_entry(str(NONASCII_3DSC), CITTA_NFC) == b"b3dm" + b"\x03" * 100
+
+
+def test_lo_stesso_nome_in_nfd_non_e_canonico():
+    """Lo stesso albero con il nome in NFD (come lo dà macOS), impacchettato dal
+    modulo di 3DSC com'era a 1430128, prima che normalizzasse."""
+    import unicodedata
+    out = api.is_canonical_3tz(str(NFD_1430128))
+    assert out["canonical"] is False
+    assert out["names_nfc"] is False
+    assert [k for k, v in out.items() if v is False] == ["names_nfc", "canonical"]
+    assert len(out["reasons"]) == 1 and "NFC" in out["reasons"][0]
+    assert unicodedata.normalize("NFD", CITTA_NFC) in out["reasons"][0]
+    assert _sha(NFD_1430128.read_bytes()) != _sha(NONASCII_3DSC.read_bytes())
+
+
+def test_il_profilo_ammette_0x800_solo_sui_nomi_non_ascii(tmp_path):
+    """Il bit 0x800 su un nome ASCII non è del profilo. Messo nei byte (zipfile
+    lo ricalcola dal nome quando scrive): intestazione locale e directory
+    centrale di ``tileset.json``."""
+    raw = bytearray(FROM_3DSC.read_bytes())
+    patched = 0
+    # (signature, offset of the flags, of the name length, of the name)
+    for sig, flag_at, nlen_at, name_at in ((b"PK\x03\x04", 6, 26, 30),
+                                           (b"PK\x01\x02", 8, 28, 46)):
+        pos = raw.find(sig)
+        while pos != -1:
+            nlen = struct.unpack_from("<H", raw, pos + nlen_at)[0]
+            if raw[pos + name_at:pos + name_at + nlen] == b"tileset.json":
+                raw[pos + flag_at + 1] |= 0x08            # 0x800, high byte
+                patched += 1
+            pos = raw.find(sig, pos + 4)
+    assert patched == 2
+    (tmp_path / "x.3tz").write_bytes(bytes(raw))
+    out = api.is_canonical_3tz(str(tmp_path / "x.3tz"))
+    assert out["flags"] is False and out["canonical"] is False
+    assert any("tileset.json" in r for r in out["reasons"])
+    assert CANONICAL_3TZ_PROFILE["flag_bits_ascii"] == 0
+    assert CANONICAL_3TZ_PROFILE["flag_bits_non_ascii"] == 0x800
+    assert CANONICAL_3TZ_PROFILE["profile_text"] == "dtcstamp/profiles/3tz.md"
+
+
 def test_un_3tz_di_3d_tiles_tools_non_e_canonico_e_dice_perche():
     """Due conversioni dello stesso albero con 3d-tiles-tools 0.5.4: stesso
     contenuto, due digest, perché ogni voce porta l'ora della scrittura."""
@@ -144,7 +203,7 @@ def test_un_3tz_di_3d_tiles_tools_non_e_canonico_e_dice_perche():
         # per tutto il resto è come quello di 3DSC
         assert all(out[k] for k in ("entries_in_order", "index_last", "index_sorted",
                                     "stored", "create_system", "no_extra_fields",
-                                    "flags_clear"))
+                                    "flags", "names_nfc"))
         assert out["create_versions"] == [45]
 
 

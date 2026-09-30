@@ -7,6 +7,20 @@ All notable changes to **s3dgraphy** are documented here.
 Everything in this section came after `fa638ef` («Bump version: 1.6.0.dev22 →
 1.6.0.dev23»). Decision of E.D. of 30 Sep 2026, *la risorsa e i suoi file*.
 
+### Changed (2026-10-22 — the one 3tz profile: 0x800 and NFC)
+- **`CANONICAL_3TZ_PROFILE` / `is_canonical_3tz`** follow
+  `dtcstamp/profiles/3tz.md`, the source text of the profile: general-purpose
+  flags **0 on an ASCII name, `0x800` on a non-ASCII one**, and nothing else
+  (criterion `flags`, was `flags_clear` = 0 everywhere, which called 3DSC's own
+  archive of `Data/città.b3dm` not canonical); every name in **Unicode NFC**
+  (new criterion `names_nfc`: a name in NFD, as macOS gives it, makes the same
+  folder give another sha256 elsewhere). The profile keys are now
+  `flag_bits_ascii`, `flag_bits_non_ascii`, `name_form`, `profile_text`.
+- Two fixtures in `tests/fixtures/tiles3tz/`: `small_3dsc_nonascii.3tz`
+  (canonical, written by 3DSC's module) and `small_3dsc1430128_nfd.3tz` (the
+  same tree with the name in NFD, packed by the module as it was at `1430128`:
+  not canonical, for that reason only).
+
 ### Fixed (2026-09-30 — the two HDT-O declarations against D7.1 final)
 - **`JSON_config/hdto_extension.ttl` v0.3.** The two declarations this file
   carried against D7.1 final are corrected, both already recorded as open in

@@ -2299,7 +2299,8 @@ def read_3tz_entry(path: str, name: str) -> Optional[bytes]:
 
 def is_canonical_3tz(path: str) -> Dict[str, Any]:
     """Whether a 3tz follows the one profile, 3DSC's (order, dates, stored,
-    attributes, extra fields, index), criterion by criterion, with the reasons."""
+    attributes, extra fields, flags, NFC names, index), criterion by criterion,
+    with the reasons. Source text of the profile: ``dtcstamp/profiles/3tz.md``."""
     from .resources.tiles3tz import is_canonical_3tz as _canon
     return _canon(path)
 

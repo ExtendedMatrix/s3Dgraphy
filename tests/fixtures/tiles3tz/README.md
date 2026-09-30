@@ -35,3 +35,21 @@ Scritti con `3d-tiles-tools` 0.5.4 (installato con `npm install --ignore-scripts
 | `_b` | `7086f47152d6909b941353d8740a06e2a341de1f89eb7aa76c658d18146b744e` | 2026-09-30 20:05:56 |
 
 Stesso contenuto, due digest: ogni voce porta l’ora in cui è stata scritta (in UTC: la console diceva 22:05 locali), e `create_version` 45 invece di 20. Negli attributi, in più, il bit «archivio» del DOS: `external_attr` `0x81a40020` invece di `0x81a40000`. Per il resto, stored, in ordine, `create_system` 3, nessun campo extra, indice ordinato: come quello di 3DSC.
+
+# Due `.3tz` con un nome non ASCII (MICRO-PROFILO-3TZ, 22 ott 2026)
+
+Lo stesso albero di tre file, con un nome non ASCII (è il caso `23` della conformità di dtcstamp):
+
+| percorso | byte |
+|---|---|
+| `tileset.json` | come sopra, ma la radice punta a `Data/città.b3dm` |
+| `Data/città.b3dm` | `b"b3dm" + b"\x03" * 100` |
+| `Data/c02/e0002.b3dm` | `b"b3dm" + b"\x02" * 200` |
+
+## `small_3dsc_nonascii.3tz` — canonico
+
+Scritto col modulo di 3DSC **dopo** la correzione NFC (ramo `3DSC-dev-1.7.0`, non committato al 22 ott; sha256 del file `518ca8ff…`). sha256 `29b06145656c39cd3dcbf82b35245cd73614248fde71dc89b57aa55fa0d69d19`, 1018 B; `content_digest` `sha256:c03e9083db54a0f680a6ec9f485b9de40e52391b78cf03d23716b69a88d89422`. La voce `Data/città.b3dm` porta il flag `0x800`, le altre `0`. Lo stesso albero con il nome scritto in NFD sul disco dà lo stesso file, byte per byte.
+
+## `small_3dsc1430128_nfd.3tz` — non canonico: il nome in NFD
+
+Lo stesso albero con `città` scritto in **NFD** sul disco (`a` + U+0300, come lo dà macOS), impacchettato col modulo di 3DSC **com'era a `1430128`** (`git show 1430128:cesium_exporter/archive_3tz.py`, sha256 `3309db81…`), che non normalizzava. sha256 `3630301e521981c7e92b0bc4ddacd692eac1efb279922c42137c531f2c01f4f0`, 1020 B: stesso contenuto, altro digest. Unica ragione di `is_canonical_3tz`: il nome non è NFC.
