@@ -16,14 +16,15 @@ term a datamodel cites is declared» was a measure made by hand
 A cited term that `em.ttl` does not declare makes a triple no reasoner knows:
 that direction holds today and fails hard.
 
-A declared term that no datamodel cites is the other direction, and TODAY IT
-DOES NOT HOLD: 35 terms are emitted by code (the RDF exporter's `type_tag` →
-subproperty table, the stamps, the AI support fields, the geometry fields)
-without the datamodel naming them. The test is marked as expected to fail, with
-the list, and `em.ttl` is NOT corrected by hand here: whether each term belongs
-in a datamodel field or the exporter's table is a decision per term. A second
-test pins the list, so the set cannot grow — or shrink — without somebody
-editing it on purpose.
+A declared term that no datamodel cites is the other direction. Until
+2026-10-01 it did not hold: 35 terms were emitted by code (the RDF exporter's
+`type_tag` → subproperty table, the stamps, the AI support fields, the geometry
+fields) without the datamodel naming them. E.D. decided that day that the
+datamodel JSON is the truth: 30 are now cited (node datamodel 1.6.18,
+connections 1.6.32, qualia 1.6.3), and the rest are EXCEPTIONS, each with its
+reason written in `EM_TTL_EXCEPTIONS`. The test is hard both ways: a term
+neither cited nor excepted fails, an exception without a reason fails, and an
+exception that has become cited (or left em.ttl) fails until it is taken off.
 """
 
 from __future__ import annotations
@@ -44,23 +45,36 @@ rdflib = pytest.importorskip("rdflib")
 EM = "https://w3id.org/em/ontology#"
 _CURIE = re.compile(r"^em:([A-Za-z_]\w*)$")
 
-#: Declared in em.ttl, cited by no datamodel JSON (measured 2026-10-01, em.ttl
-#: 1.6.9, nodes 1.6.17, connections 1.6.31). Grouped by who emits them today.
-KNOWN_UNCITED = {
-    # physical-relation subproperties: the exporter maps mapping.type_tag to them
-    # (rdf_exporter.py, the AP11 table); the edge entry names only AP11
-    "abuts", "cuts", "fills", "overlies", "bondedTo", "physicallyEquals",
-    # editorial stamps and tombstones (editorial.py, crdt)
-    "createdBy", "lastEditedBy", "modifiedAt", "removedAt", "removedBy",
-    # AI support and verification on nodes (ai_validation.py)
-    "aiAssistedBy", "aiAssistedField", "aiModel", "aiPromptRef", "validatedAt",
-    "modelIdentifier", "promptReference", "confidenceLevel", "orcidVerified",
-    # geometry and place
-    "convexShape", "sphere", "crs", "LocalSceneFrame",
-    # the rest
-    "checksum", "derivedFromDocument", "hasQualiaType", "hypothesizedBy",
-    "inheritsQualia", "propagation", "reconstructsAbsent", "reconstructsFrom",
-    "residency", "resourceScope", "wasReusedFrom",
+#: Declared in em.ttl and cited by no datamodel, ON PURPOSE: term -> the reason.
+#: Measured 2026-10-26 (em.ttl 1.6.9, nodes 1.6.18, connections 1.6.32): the five
+#: terms of the EM theory of virtual, documentary, reassembled and reused units
+#: that no code writes and no edge of the graph carries.
+_NO_EDGE = ("a term of the ontology without an edge in the graph; "
+            "it is added when one is needed")
+EM_TTL_EXCEPTIONS = {
+    # VirtualSU -> crminf:I1_Argumentation. A virtual unit reaches its reasoning
+    # through has_paradata_nodegroup (a ParadataNodeGroup, E89, not an I1) or
+    # through its properties' has_data_provenance: no edge unit -> argumentation.
+    "hypothesizedBy": _NO_EDGE,
+    # VirtualSU -> the absent A8 it stands for. The absent unit is not a node:
+    # no edge between two stratigraphic nodes means "reconstructs".
+    "reconstructsAbsent": _NO_EDGE,
+    # DocumentaryVirtualSU -> E31. Nearest: has_documentation (P70i) from ANY
+    # StratigraphicNode to a DocumentNode; as its extension it would be written
+    # for every source, and extension_when guards only the target class.
+    "derivedFromDocument": _NO_EDGE + (
+        " (nearest: has_documentation from a USD, which would need a guard on "
+        "the source class that the exporter does not have)"),
+    # VirtualSpecialFind -> DisplacedSpecialFind. Nearest: SF is_part_of VSF,
+    # the OTHER direction; the exporter writes an extension only in the core's.
+    "reconstructsFrom": _NO_EDGE + (
+        " (nearest: the reverse of is_part_of SF -> VSF; the exporter writes an "
+        "extension only in the direction of the core predicate)"),
+    # ReusedSpecialFind -> the ORIGINAL context. is_part_of from an RSF names the
+    # host it is in now, not the one it was taken from.
+    "wasReusedFrom": _NO_EDGE + (
+        " (is_part_of from an RSF is the host it sits in now, not the context "
+        "it was taken from)"),
 }
 
 
@@ -104,18 +118,39 @@ def test_every_em_term_a_datamodel_cites_is_declared_in_em_ttl():
     assert not missing, f"cited by a datamodel, not declared in em.ttl: {missing}"
 
 
-@pytest.mark.xfail(strict=True, reason=(
-    "35 em: terms are declared in em.ttl and emitted by code, cited by no datamodel "
-    "JSON (see KNOWN_UNCITED); a decision per term, not a hand fix of em.ttl"))
-def test_every_em_term_declared_in_em_ttl_is_cited_by_a_datamodel():
-    extra = sorted(_declared() - set(_cited()))
-    assert not extra, f"declared in em.ttl, cited by no datamodel: {extra}"
+def test_every_em_term_declared_in_em_ttl_is_cited_or_an_exception():
+    extra = sorted(_declared() - set(_cited()) - set(EM_TTL_EXCEPTIONS))
+    assert not extra, (
+        f"declared in em.ttl, cited by no datamodel and not an exception: {extra}")
 
 
-def test_the_uncited_terms_are_exactly_the_known_ones():
-    extra = _declared() - set(_cited())
-    assert extra - KNOWN_UNCITED == set(), (
-        f"NEW terms in em.ttl that no datamodel cites: {sorted(extra - KNOWN_UNCITED)}")
-    assert KNOWN_UNCITED - extra == set(), (
-        f"these are now cited (or gone): take them off KNOWN_UNCITED: "
-        f"{sorted(KNOWN_UNCITED - extra)}")
+def test_every_exception_has_its_reason():
+    blank = sorted(t for t, why in EM_TTL_EXCEPTIONS.items()
+                   if not isinstance(why, str) or not why.strip())
+    assert not blank, f"an exception without a reason: {blank}"
+
+
+def test_the_exceptions_are_still_exceptions():
+    declared, cited = _declared(), set(_cited())
+    gone = sorted(set(EM_TTL_EXCEPTIONS) - declared)
+    assert not gone, f"no longer declared in em.ttl: take them off EM_TTL_EXCEPTIONS: {gone}"
+    now_cited = sorted(set(EM_TTL_EXCEPTIONS) & cited)
+    assert not now_cited, (
+        f"now cited by a datamodel: take them off EM_TTL_EXCEPTIONS: {now_cited}")
+
+
+def test_the_ap11_table_is_read_from_the_datamodel():
+    """The exporter's type_tag -> subproperty table is the datamodel's, and it
+    is the one the exporter held by hand until connections 1.6.31."""
+    from s3dgraphy.exporter.rdf_exporter import AP11_SUBPROPS, ap11_subprops
+    conn = json.loads((JSON_CONFIG / DATAMODEL_FILES["connections"][0])
+                      .read_text(encoding="utf-8"))
+    assert AP11_SUBPROPS == ap11_subprops(conn)
+    assert {tag: str(iri)[len(EM):] for tag, iri in AP11_SUBPROPS.items()} == {
+        "abuts": "abuts", "cuts": "cuts", "fills": "fills", "overlies": "overlies",
+        "bonded to": "bondedTo", "is bonded to": "bondedTo",
+        "equals": "physicallyEquals"}
+    for name, entry in conn["edge_types"].items():
+        mapping = entry.get("mapping") or {}
+        if mapping.get("type_tag"):
+            assert mapping.get("subproperty", "").startswith("em:"), name

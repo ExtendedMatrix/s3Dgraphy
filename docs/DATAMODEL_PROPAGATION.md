@@ -140,13 +140,21 @@ every value in the six datamodel JSONs that **is** an `em:` term (a class's
 against every `em:` subject of `em.ttl`.
 
 * **Cited but not declared** fails hard. Today: none.
-* **Declared but cited by no datamodel** does not hold today: 35 terms are
-  emitted by code without the datamodel naming them (the exporter's AP11
-  `type_tag` → `em:abuts`… table, the editorial stamps, the AI support fields,
-  the geometry fields). That test is `xfail(strict=True)`, and
-  `test_the_uncited_terms_are_exactly_the_known_ones` pins the list
-  (`KNOWN_UNCITED`), so it cannot grow or shrink without an edit. Whether each
-  term moves into a datamodel field or stays in code is a decision per term.
+* **Declared but cited by no datamodel** fails too, unless the term is in
+  `EM_TTL_EXCEPTIONS` with its reason written (an exception without a reason
+  fails, and so does one that has since become cited). Since 2026-10-26 (nodes
+  1.6.18, connections 1.6.32, qualia 1.6.3) 30 of the 35 terms the code wrote
+  without a citation are cited where they belong: the stamps, the tombstone,
+  the AI marker and the verification as `properties` of the base `Node`; the
+  AP11 subproperties as `mapping.subproperty` of each physical edge (the
+  exporter's `AP11_SUBPROPS` is now read from there); the resource, shape,
+  region, author and qualia terms on their classes. The five exceptions are
+  terms of the EM theory (`hypothesizedBy`, `reconstructsAbsent`,
+  `derivedFromDocument`, `reconstructsFrom`, `wasReusedFrom`) that no edge of the
+  graph carries yet.
+
+  **A new `em:` term** goes into `em.ttl` AND into the datamodel field the code
+  writes it from, in the same change; the test says which one is missing.
 
 Single alignments keep their targeted tests, for example
 `tests/test_physical_relation_spellings.py::test_em_ttl_names_the_same_edges_the_datamodel_maps`

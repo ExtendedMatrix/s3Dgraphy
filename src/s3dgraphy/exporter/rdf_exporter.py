@@ -215,15 +215,29 @@ def _resolve_prefixed(name: Optional[str]) -> Optional[URIRef]:
 # AP11 type_tag → em: subproperty (CRMarchaeo physical relation discrimination)
 # ─────────────────────────────────────────────────────────────────────────────
 
-AP11_SUBPROPS: Dict[str, URIRef] = {
-    "abuts":        EM.abuts,
-    "cuts":         EM.cuts,
-    "fills":        EM.fills,
-    "overlies":     EM.overlies,
-    "bonded to":    EM.bondedTo,
-    "is bonded to": EM.bondedTo,
-    "equals":       EM.physicallyEquals,
-}
+def ap11_subprops(connections_datamodel: Dict[str, Any]) -> Dict[str, URIRef]:
+    """``type_tag`` → ``em:`` subproperty, read from the connections datamodel.
+
+    Every edge of the AP11 family declares both in its ``mapping``
+    (``"type_tag": "bonded to"``, ``"subproperty": "em:bondedTo"``, connections
+    1.6.32). Two spellings of one relation share a subproperty, so the table
+    has fewer values than keys. A tag without a subproperty is left out: the
+    edge still leaves as the generic AP11.
+    """
+    out: Dict[str, URIRef] = {}
+    for entry in (connections_datamodel.get("edge_types") or {}).values():
+        mapping = (entry or {}).get("mapping") or {}
+        tag, sub = mapping.get("type_tag"), mapping.get("subproperty")
+        if tag and isinstance(sub, str) and sub.startswith("em:"):
+            out.setdefault(tag, EM[sub[len("em:"):]])
+    return out
+
+
+with open(Path(__file__).parent.parent / "JSON_config" / "s3Dgraphy_connections_datamodel.json",
+          encoding="utf-8") as _fh:
+    #: Until connections 1.6.31 this was a list of its own, here; now the
+    #: datamodel holds the pairing and this is read from it once.
+    AP11_SUBPROPS: Dict[str, URIRef] = ap11_subprops(json.load(_fh))
 
 
 # ─────────────────────────────────────────────────────────────────────────────
