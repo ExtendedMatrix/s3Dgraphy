@@ -221,7 +221,8 @@ def test_the_two_phrases_E_D_sent_back():
 
 def test_the_version_went_up():
     # 1.5 (2026-09-30): the `dtc_kinds` section — see test_capture_acquisition
-    assert _translations()["version"] == "1.5"
+    # 1.6 (2026-09-30): the `stratigraphic_kinds` section — see test_coating_unit
+    assert _translations()["version"] == "1.6"
 
 
 def test_combines_reads_of_in_english():

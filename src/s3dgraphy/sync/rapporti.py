@@ -317,10 +317,13 @@ _add_spellings(EDGE_TYPE_DIRECTION_FORWARD)
 #:   US  → US (it/fr/ro) · SU (en/ar) · SE (de) · UE (es/ca/pt) · ΣΜ (el)
 #:   USM → USM (it/fr) · WSU (en/ar) · MSE (de) · UEM (es/ca/pt) ·
 #:         USZ (ro) · ΤΣΜ (el)
+#:   USR → USR · USS (its English translation, *surface*; 1.6.13, E.D.).
+#:         Not localized by pyArchInit: the two codes are the EM ones.
 UNITA_TIPO_CANONICAL: dict[str, str] = {
     "US": "US", "SU": "US", "SE": "US", "UE": "US", "ΣΜ": "US",
     "USM": "USM", "WSU": "USM", "MSE": "USM", "UEM": "USM",
     "USZ": "USM", "ΤΣΜ": "USM",
+    "USR": "USR", "USS": "USR",
 }
 
 
@@ -404,7 +407,7 @@ _US_PREFIX_PATTERN = _re.compile(
     # NEUTRAL unit's token has to come first — otherwise a name like "USNt 12"
     # gets "USN" stripped and keeps a stray "t 12". USN itself is unchanged and is
     # pyArchInit's own code for the negativa, which is why it was already here.
-    r"USNt|USM|USD|USN|"
+    r"USNt|USM|USR|USS|USD|USN|"
     r"VSF|SF|"
     r"CON|"
     r"WSU|MSE|TSU|SUS|UE|UM|UC|UL|"
@@ -464,10 +467,12 @@ def resolve_unita_tipo_for_dispatch(node) -> str | None:
     if ut:
         return str(ut)
     # 1.6.12 · a masonry US is a USM for pyArchInit (its us_table keeps the
-    # recording practice as unita_tipo)
-    from ..nodes.stratigraphic_node import is_masonry
-    if is_masonry(node):
-        return "USM"
+    # recording practice as unita_tipo); 1.6.13 · a coating US a USR, or the
+    # code it came in with (USS, WSU…)
+    from ..nodes.stratigraphic_node import unit_code
+    code = unit_code(node)
+    if code:
+        return code
     cls_name = type(node).__name__
     return S3DGRAPHY_TYPE_TO_UNITA_TIPO.get(cls_name)
 

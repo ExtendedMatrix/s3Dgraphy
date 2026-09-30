@@ -28,8 +28,14 @@ Shape — one section per kind of key, each keyed by a STABLE identity::
       "edge_types":           {"<edge type>":       {"label": {...},
                                                      "ui_phrase_as_source": {...},
                                                      "ui_phrase_as_target": {...}}},
-      "dtc_kinds":            {"<dtc kind>":        {"label": {...}}}
+      "dtc_kinds":            {"<dtc kind>":        {"label": {...}}},
+      "stratigraphic_kinds":  {"<kind>":            {"label": {...}}}
     }
+
+`stratigraphic_kinds.<kind>.label` (1.6) is the label of a genre of US — the
+`stratigraphic_kind` node element of the datamodel, seeded from its `labels`:
+«masonry» → «muraria», «coating» → «di rivestimento» — what an inspector writes
+next to the type («US · muraria»).
 
 `dtc_kinds.<kind>.label` (1.5) is the name of a kind of the DTC vocabulary
 (`dtc_kinds` in em_visual_rules.json) — «Photograph» → «Fotografia» — keyed by the
@@ -103,6 +109,7 @@ SECTIONS: Dict[str, str] = {
     "qualia_subcategories": "subcategory",
     "edge_types": "edge",
     "dtc_kinds": "dtc",
+    "stratigraphic_kinds": "strat_kind",
 }
 #: the two directions of an edge's `ui_phrase`, as fields of the `edge_types`
 #: section — `ui_phrase.as_source` in the datamodel is `ui_phrase_as_source` here
@@ -216,11 +223,34 @@ def _collect_dtc_kinds_en(rules: Dict[str, Any]) -> Dict[str, Dict[str, str]]:
     return out
 
 
+def _collect_stratigraphic_kinds_en(dm: Dict[str, Any]) -> Dict[str, Dict[str, str]]:
+    """{kind: {"label": ...}} from every ``stratigraphic_kind`` node element of
+    the datamodel (its ``labels``)."""
+    out: Dict[str, Dict[str, str]] = {}
+
+    def walk(o: Any) -> None:
+        if isinstance(o, dict):
+            el = o.get("stratigraphic_kind")
+            if isinstance(el, dict) and isinstance(el.get("labels"), dict):
+                for kind, label in el["labels"].items():
+                    if isinstance(label, str) and label.strip():
+                        out[kind] = {"label": label}
+            for v in o.values():
+                walk(v)
+        elif isinstance(o, list):
+            for v in o:
+                walk(v)
+
+    walk(dm)
+    return out
+
+
 def _collect_all_en() -> Dict[str, Dict[str, Dict[str, str]]]:
     out = {"entries": _collect_en(_load(DATAMODEL))}
     out.update(_collect_qualia_en(_load(QUALIA)))
     out["edge_types"] = _collect_edge_phrases_en(_load(CONNECTIONS))
     out["dtc_kinds"] = _collect_dtc_kinds_en(_load(VISUAL_RULES))
+    out["stratigraphic_kinds"] = _collect_stratigraphic_kinds_en(_load(DATAMODEL))
     return out
 
 
@@ -235,7 +265,7 @@ def seed(write: bool = True) -> Dict[str, Any]:
         existing = {}
     doc: Dict[str, Any] = {
         "schema": "s3Dgraphy_datamodel_translations",
-        "version": "1.5",
+        "version": "1.6",
         "languages": LANGUAGES,
     }
     for section in SECTIONS:
@@ -281,7 +311,7 @@ def _rows(doc: Dict[str, Any]) -> List[Tuple[str, str, str]]:
     categories/subcategories/qualia, then the edge phrases."""
     keys: List[Tuple[str, str, str]] = []
     for section in ("entries", "qualia_categories", "qualia_subcategories", "qualia",
-                    "edge_types", "dtc_kinds"):
+                    "edge_types", "dtc_kinds", "stratigraphic_kinds"):
         entries = doc.get(section, {})
         for key in sorted(entries):
             for field in ("label", "description") + PHRASE_FIELDS:
@@ -366,6 +396,12 @@ def dtc_kind_label(kind: str, lang: str = "en") -> Optional[str]:
     """The name of a DTC kind in ``lang`` («Photograph» → «Fotografia»), English
     fallback; ``None`` for a kind the vocabulary does not have."""
     return translate("dtc_kinds", kind, "label", lang)
+
+
+def stratigraphic_kind_label(kind: str, lang: str = "en") -> Optional[str]:
+    """The label of a genre of US in ``lang`` («masonry» → «muraria»), English
+    fallback; ``None`` for a kind the datamodel does not have."""
+    return translate("stratigraphic_kinds", kind, "label", lang)
 
 
 def edge_ui_phrase(edge_type: str, direction: str, lang: str = "en") -> Optional[str]:
@@ -495,6 +531,11 @@ def export_xlsx(path: str, force: bool = False) -> None:
                     f"relation's {new}. Keep {{node}} (the new node's type, e.g. US, Property) and {{x}} "
                     "(the existing node's name, e.g. US12) exactly as written. The type names differ in "
                     "gender, so prefer a wording that does not agree with {node}.")
+        elif section == "stratigraphic_kinds":
+            area = "US genres"
+            note = (f"Label of the genre '{key}' of a stratigraphic unit, written after "
+                    "the type in an inspector («US · masonry»); an adjective where the "
+                    "language allows it")
         elif section == "dtc_kinds":
             area = "DTC vocabulary"
             note = (f"Name of the acquisition family '{key[7:]}'" if key.startswith("family_")

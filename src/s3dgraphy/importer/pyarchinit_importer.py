@@ -331,7 +331,13 @@ class PyArchInitImporter(BaseImporter):
                     name=node_name,
                     description=str(description)
                 )
-                apply_legacy_kind(new_node, strat_type)
+                # the row's own unita_tipo says the genre (USM, USR, USS…):
+                # the mapping's node_type is the class, always 'US' here.
+                # Measured 1.6.13: before, only the mapping's type was read,
+                # and a USM row from SQLite came in as a plain US.
+                apply_legacy_kind(new_node,
+                                  str(row_dict.get('unita_tipo') or '').strip()
+                                  or strat_type)
                 
                 self.graph.add_node(new_node)
                 # print(f"  → Node created with ID: {new_node.node_id}")

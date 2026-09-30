@@ -4,6 +4,29 @@ All notable changes to **s3dgraphy** are documented here.
 
 ## [Unreleased]
 
+### Changed (2026-09-30 — USR / USS are a coating US)
+The genres of a US are a vocabulary written in the datamodel (E.D.): node
+datamodel **1.6.13**, datamodel translations **1.6**.
+- `stratigraphic_kind` gains **`coating`** — plaster, floors, revetments: the
+  USR (*rivestimento*) and its English translation USS (*surface*), the same
+  thing in two languages. The enum now carries `labels`, `codes` and
+  `default_code` per kind; the labels are translated (section
+  `stratigraphic_kinds`, `stratigraphic_kind_label()`: «muraria», «di
+  rivestimento»).
+- New node element **`source_code`** (em.json `data.source_code`): the code a
+  unit came in with when it is not its kind's default (USS, WSU…), so the way
+  back to pyArchInit gives the same code. A USR or a USM writes nothing.
+- Recognised like the USM: from the NAME (GraphML, and now also an xlsx row
+  typed `US`), from the TYPE string (xlsx `TYPE`, pyArchInit `unita_tipo`), and
+  a legacy em.json with `node_type "USR"` / `"USS"` opens as US + coating.
+- **Fixed**: the pyArchInit SQLite importer read the unit type only from the
+  mapping (`US`), never from the row's `unita_tipo`: a USM row came in as a
+  plain US. It now reads the row.
+- `yed_classifier` separates the two: USM → `US_MASONRY`, USR / USS → the new
+  `US_COATING` (before, all three were masonry and reached pyArchInit as
+  `unita_tipo = "USM"`, with the prefix left in `us`). `strip_us_prefix` and
+  `UNITA_TIPO_CANONICAL` know USR / USS (USS → USR).
+
 ### Changed (2026-09-30 — USM is a masonry US)
 USM is a recording practice, not a category of the EM language (E.D.): a masonry
 unit is a **US with `data.stratigraphic_kind = "masonry"`**, and its name keeps

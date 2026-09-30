@@ -72,6 +72,7 @@ log = logging.getLogger(__name__)
 _SQL_US_KINDS: frozenset = frozenset({
     ClassificationKind.US_REAL,
     ClassificationKind.US_MASONRY,
+    ClassificationKind.US_COATING,
     ClassificationKind.US_DOCUMENTARY,
     # User-feedback 2026-05-13: virtual stratigraphic units are still
     # "unità tipo" — they belong to us_table (with different
@@ -236,6 +237,9 @@ def _resolve_unita_tipo(c: ClassifiedNode) -> str | None:
     the static map can't represent that. For other kinds, the static
     map is authoritative.
     """
+    if c.user_kind == ClassificationKind.US_COATING:
+        # USR or USS: the code the label came in with (1.6.13)
+        return "USS" if c.label[:3].upper() == "USS" else "USR"
     if c.user_kind == ClassificationKind.USV_FORMAL:
         # Read the first 3 or 4 characters of the label, prefer the
         # 4-char variant when the 4th char is a recognised suffix

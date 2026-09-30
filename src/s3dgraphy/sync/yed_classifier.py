@@ -29,6 +29,10 @@ class ClassificationKind(str, Enum):
     """Leaf classification destinations (14 values since EXTRACTOR added)."""
     US_REAL          = "us_real"
     US_MASONRY       = "us_masonry"
+    # 1.6.13 · USR / USS (its English translation) are the COATING units —
+    # plaster, floors, revetments — not masonry: until 1.6.12 they went to
+    # US_MASONRY and reached pyArchInit as unita_tipo 'USM'.
+    US_COATING       = "us_coating"
     US_DOCUMENTARY   = "us_documentary"
     USV_VIRTUAL      = "usv_virtual"
     USV_FORMAL       = "usv_formal"
@@ -54,7 +58,8 @@ class ClassificationKind(str, Enum):
 DEFAULT_CLASSIFIER_RULES: list[tuple[re.Pattern, ClassificationKind]] = [
     (re.compile(r"^USVs\d*$|^USVn\d*$"),            ClassificationKind.USV_FORMAL),
     (re.compile(r"^USV\d+"),                        ClassificationKind.USV_VIRTUAL),
-    (re.compile(r"^USM\d+|^USR\d+|^USS\d+"),        ClassificationKind.US_MASONRY),
+    (re.compile(r"^USM\d+"),                        ClassificationKind.US_MASONRY),
+    (re.compile(r"^USR\d+|^USS\d+"),               ClassificationKind.US_COATING),
     (re.compile(r"^USD\d+"),                        ClassificationKind.US_DOCUMENTARY),
     (re.compile(r"^US\d+"),                         ClassificationKind.US_REAL),
     (re.compile(r"^VSF\d+"),                        ClassificationKind.VIRTUAL_FIND),

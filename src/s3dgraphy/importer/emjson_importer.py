@@ -71,8 +71,14 @@ _LEGACY_NODE_TYPE_ALIASES = {"link": "resource"}  # LinkNode → ResourceNode
 # 1.6.12 (E.D., 30 Sep 2026) · a legacy node_type that is not a rename but a
 # type PLUS a datum: ``USM`` was never a type of the datamodel (it rendered
 # untyped), and a masonry unit is a US whose ``stratigraphic_kind`` is masonry.
-# The datum is set only when the file does not state one.
-_LEGACY_NODE_TYPE_MIGRATIONS = {"USM": ("US", {"stratigraphic_kind": "masonry"})}
+# The datum is set only when the file does not state one. 1.6.13 · the same for
+# the coating, USR and USS (its English translation); USS keeps its code in
+# ``source_code``, so that pyArchInit gets back the code the unit came in with.
+_LEGACY_NODE_TYPE_MIGRATIONS = {
+    "USM": ("US", {"stratigraphic_kind": "masonry"}),
+    "USR": ("US", {"stratigraphic_kind": "coating"}),
+    "USS": ("US", {"stratigraphic_kind": "coating", "source_code": "USS"}),
+}
 
 
 def _instantiate(node_type: str, payload: Dict[str, Any],

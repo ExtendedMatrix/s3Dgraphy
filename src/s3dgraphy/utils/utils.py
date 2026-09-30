@@ -10,6 +10,12 @@ This module includes helper functions for node type conversion based on YED node
 """
 
 from ..nodes.stratigraphic_node import (
+    COATING,
+    KIND_OF_CODE,
+    KIND_TYPE_CODES,
+    MASONRY,
+    kind_of_name,
+    set_kind,
     StratigraphicNode,
     StratigraphicUnit,
     NegativeStratigraphicUnit,
@@ -195,8 +201,9 @@ def get_stratigraphic_node_class(stratigraphic_type):
     # 1.6.12 · USM (and pyArchInit's localized codes for it) is a US + masonry,
     # not a type: its class is the US one, and `apply_legacy_kind` sets the
     # kind on the instance. Before, it fell through to the base
-    # StratigraphicNode, a node the datamodel renders untyped.
-    if stratigraphic_type in MASONRY_TYPE_CODES:
+    # StratigraphicNode, a node the datamodel renders untyped. 1.6.13 · the
+    # same for USR / USS, a US + coating.
+    if stratigraphic_type in KIND_OF_CODE:
         return StratigraphicUnit
     return STRATIGRAPHIC_CLASS_MAP.get(stratigraphic_type, StratigraphicNode)
 
@@ -204,19 +211,27 @@ def get_stratigraphic_node_class(stratigraphic_type):
 #: A type string that names a MASONRY unit: USM and pyArchInit's localized
 #: codes for it (sync/rapporti.UNITA_TIPO_CANONICAL — WSU en/ar, MSE de,
 #: UEM es/ca/pt, USZ ro, ΤΣΜ el).
-MASONRY_TYPE_CODES = frozenset({"USM", "WSU", "MSE", "UEM", "USZ", "ΤΣΜ"})
+MASONRY_TYPE_CODES = frozenset(KIND_TYPE_CODES[MASONRY])
+
+#: A type string that names a COATING unit: USR and USS, its English
+#: translation (1.6.13). pyArchInit localizes neither.
+COATING_TYPE_CODES = frozenset(KIND_TYPE_CODES[COATING])
 
 
 def apply_legacy_kind(node, stratigraphic_type):
     """After a node was built from a TYPE STRING (an xlsx column, a pyArchInit
-    ``unita_tipo``): a masonry code makes the US a masonry US. Returns the node.
-    A node that already states a kind, or is not a US, is left alone."""
-    from ..nodes.stratigraphic_node import MASONRY, STRATIGRAPHIC_KIND
-
-    if (stratigraphic_type in MASONRY_TYPE_CODES
-            and getattr(node, "node_type", None) == "US"
-            and not getattr(node, STRATIGRAPHIC_KIND, None)):
-        setattr(node, STRATIGRAPHIC_KIND, MASONRY)
+    ``unita_tipo``): a masonry code makes the US a masonry US, a coating code
+    a coating US, and the code is kept when it is not the kind's default (USS,
+    WSU…). A plain ``US`` (or no type) falls back to the NAME, as the GraphML
+    importer does: an xlsx row typed US and named USR101 is a coating. Returns
+    the node. A node that already states a kind, or is not a US, is left
+    alone."""
+    code = stratigraphic_type if isinstance(stratigraphic_type, str) else None
+    kind = KIND_OF_CODE.get(code)
+    if kind is None and code in (None, "", "US"):
+        kind, code = kind_of_name(getattr(node, "name", None))
+    if kind is not None:
+        set_kind(node, kind, code)
     return node
 
 #: The key the datamodel uses for the material colour, plus the legacy one.

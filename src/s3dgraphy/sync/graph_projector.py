@@ -616,7 +616,7 @@ class GraphProjector:
             # DOC.01 — DOC.01 might claim the bridge's '01' placeholder
             # before US01 row is iterated).
             if node is None and ut_canon in (
-                "US", "USM", "USD", "USV", "USVs", "USVn", "USVc",
+                "US", "USM", "USR", "USD", "USV", "USVs", "USVn", "USVc",
                 "SF", "VSF", "RSF",
             ):
                 node = nodes_by_key.pop((us_name, "__STRAT__"), None)
@@ -630,9 +630,11 @@ class GraphProjector:
                         except Exception:
                             pass
                 if node is not None:
-                    # a USM row claims the bridge's US: it is a masonry US
+                    # a USM row claims the bridge's US: it is a masonry US (a
+                    # USR / USS row: a coating US). The ORIGINAL code, so a
+                    # USS or a WSU is kept as the code it came in with.
                     from s3dgraphy.utils.utils import apply_legacy_kind
-                    apply_legacy_kind(node, ut_canon)
+                    apply_legacy_kind(node, ut_str)
                     nodes_by_key[(us_name, ut_str)] = node
             # Paradata row (DOC / Combinar / Extractor / property):
             # ALWAYS create a fresh node of the right class. Don't

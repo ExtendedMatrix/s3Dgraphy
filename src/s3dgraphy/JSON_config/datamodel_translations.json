@@ -1,6 +1,6 @@
 {
  "schema": "s3Dgraphy_datamodel_translations",
- "version": "1.5",
+ "version": "1.6",
  "languages": [
   "en",
   "it",
@@ -7700,6 +7700,50 @@
     "ro": "Vectorizare",
     "el": "Διανυσματοποίηση",
     "he": "וקטוריזציה"
+   }
+  }
+ },
+ "stratigraphic_kinds": {
+  "coating": {
+   "label": {
+    "en": "coating",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "di rivestimento",
+    "de": "Verkleidung",
+    "el": "επένδυσης",
+    "he": "ציפוי",
+    "es": "de revestimiento",
+    "pl": "okładzinowa",
+    "ro": "de îmbrăcăminte",
+    "fr": "de revêtement"
+   }
+  },
+  "masonry": {
+   "label": {
+    "en": "masonry",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "muraria",
+    "de": "Mauerwerk",
+    "el": "τοιχοποιίας",
+    "he": "בנייה",
+    "es": "muraria",
+    "pl": "murowana",
+    "ro": "de zidărie",
+    "fr": "maçonnée"
    }
   }
  }

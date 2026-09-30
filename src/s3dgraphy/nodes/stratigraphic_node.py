@@ -19,24 +19,104 @@ MASONRY = "masonry"
 #: type of the datamodel: it opens as a US + masonry (emjson_importer).
 LEGACY_USM_NODE_TYPE = "USM"
 
-#: How a masonry unit is recognised from its NAME — the only thing that tells it
-#: apart in a yEd file, because the EM palette draws a USM exactly as a US (the
-#: palette's own US template is labelled USM01). USM and pyArchInit's localized
+#: A coating unit — plaster, floor, revetment (1.6.13, E.D. 30 Sep 2026). Two
+#: codes, the same thing in two languages: USR (rivestimento) and USS (surface,
+#: its English translation). Like the USM, a recording practice: a US whose
+#: kind is coating, and its name keeps saying USR / USS.
+COATING = "coating"
+
+#: The node element that keeps the CODE a unit came in with, when it is not the
+#: default code of its kind (USS for a coating, WSU for a masonry…), so that the
+#: way back to pyArchInit gives the same code (datamodel 1.6.13,
+#: ``StratigraphicUnit.properties.source_code``; em.json ``data.source_code``).
+SOURCE_CODE = "source_code"
+
+#: Type strings that name a unit of a given kind. USM and pyArchInit's localized
 #: codes for it (sync/rapporti.UNITA_TIPO_CANONICAL): WSU en/ar, MSE de,
-#: UEM es/ca/pt, USZ ro, ΤΣΜ el. A separator is allowed, a digit is required:
-#: "USM101", "USM 3", "USM-15"; not "USMA" nor a bare "USM".
-_MASONRY_NAME = re.compile(r"^(?:USM|WSU|MSE|UEM|USZ|ΤΣΜ)[\s._-]*\d")
+#: UEM es/ca/pt, USZ ro, ΤΣΜ el. The coating has no localized code in pyArchInit
+#: (its UNIT_TYPE_ABBREV localizes only US and USM): USR and USS.
+KIND_TYPE_CODES = {
+    MASONRY: ("USM", "WSU", "MSE", "UEM", "USZ", "ΤΣΜ"),
+    COATING: ("USR", "USS"),
+}
+
+#: The code a kind goes back with when the unit did not come in with another.
+KIND_DEFAULT_CODE = {MASONRY: "USM", COATING: "USR"}
+
+#: code → kind, from the table above.
+KIND_OF_CODE = {code: kind for kind, codes in KIND_TYPE_CODES.items()
+                for code in codes}
+
+#: How a unit's kind is recognised from its NAME — the only thing that tells it
+#: apart in a yEd file, because the EM palette draws a USM or a USR exactly as a
+#: US (the palette's own US template is labelled USM01). A separator is allowed,
+#: a digit is required: "USM101", "USR 3", "USS-15"; not "USMA" nor a bare "USM".
+_KIND_NAME = re.compile(
+    r"^(?P<code>" + "|".join(KIND_OF_CODE) + r")[\s._-]*\d")
+
+
+def kind_of_name(name: Any) -> Tuple[Optional[str], Optional[str]]:
+    """``(kind, code)`` a unit's name reads as (``("coating", "USS")`` for
+    USS12), or ``(None, None)`` for any other name."""
+    if not isinstance(name, str):
+        return None, None
+    m = _KIND_NAME.match(name.strip())
+    if not m:
+        return None, None
+    return KIND_OF_CODE[m.group("code")], m.group("code")
 
 
 def is_masonry_name(name: Any) -> bool:
     """True when ``name`` reads as a masonry unit's (USM101, WSU 4, MSE-2…)."""
-    return isinstance(name, str) and bool(_MASONRY_NAME.match(name.strip()))
+    return kind_of_name(name)[0] == MASONRY
+
+
+def is_coating_name(name: Any) -> bool:
+    """True when ``name`` reads as a coating unit's (USR101, USS 3…)."""
+    return kind_of_name(name)[0] == COATING
 
 
 def is_masonry(node: Any) -> bool:
     """True for a US whose ``stratigraphic_kind`` is masonry."""
     return (getattr(node, "node_type", None) == "US"
             and getattr(node, STRATIGRAPHIC_KIND, None) == MASONRY)
+
+
+def is_coating(node: Any) -> bool:
+    """True for a US whose ``stratigraphic_kind`` is coating."""
+    return (getattr(node, "node_type", None) == "US"
+            and getattr(node, STRATIGRAPHIC_KIND, None) == COATING)
+
+
+def set_kind(node: Any, kind: str, code: Optional[str] = None) -> Any:
+    """Give a US its kind, and keep ``code`` when it is not the kind's default
+    one. A node that is not a US, or states ANOTHER kind, is left alone; one
+    that states the same kind only learns the code, if it has none (the
+    pyArchInit projector builds the node from the canonical code, USR, and then
+    tells it the row's own, USS)."""
+    if getattr(node, "node_type", None) != "US":
+        return node
+    stated = getattr(node, STRATIGRAPHIC_KIND, None)
+    if stated and stated != kind:
+        return node
+    setattr(node, STRATIGRAPHIC_KIND, kind)
+    if code and code != KIND_DEFAULT_CODE.get(kind) \
+            and not getattr(node, SOURCE_CODE, None):
+        setattr(node, SOURCE_CODE, code)
+    return node
+
+
+def unit_code(node: Any) -> Optional[str]:
+    """The code a US of a kind goes back to pyArchInit with: the one it came in
+    with, or its kind's default (USM, USR). ``None`` for a US without a kind."""
+    kind = getattr(node, STRATIGRAPHIC_KIND, None) \
+        if getattr(node, "node_type", None) == "US" else None
+    if kind not in KIND_DEFAULT_CODE:
+        return None
+    code = getattr(node, SOURCE_CODE, None)
+    if code and KIND_OF_CODE.get(code) == kind:
+        return code
+    return KIND_DEFAULT_CODE[kind]
 
 
 def definition_parts(value: Any) -> Tuple[Optional[str], Optional[str]]:
@@ -86,9 +166,11 @@ class StratigraphicNode(Node):
 
 
 class StratigraphicUnit(StratigraphicNode):
-    """A US. ``stratigraphic_kind`` says its genre when it has one — today only
-    ``"masonry"`` (a USM) — and is ``None`` for an ordinary US. A node element
-    like ``definition``: em.json carries it as ``data.stratigraphic_kind``."""
+    """A US. ``stratigraphic_kind`` says its genre when it has one —
+    ``"masonry"`` (a USM) or ``"coating"`` (a USR / USS) — and is ``None`` for
+    an ordinary US. A node element like ``definition``: em.json carries it as
+    ``data.stratigraphic_kind``. ``source_code`` keeps the code it came in with
+    when that is not its kind's default (USS, WSU…)."""
     node_type = "US"
 
     def __init__(self, node_id, name, description=""):
@@ -97,6 +179,7 @@ class StratigraphicUnit(StratigraphicNode):
         self.label = "US (or SU)"
         self.detailed_description = "Stratigraphic Unit (SU) or negative stratigraphic unit."
         self.stratigraphic_kind = None
+        self.source_code = None
 
 class VirtualStratigraphicUnit(StratigraphicNode):
     """Abstract parent of the virtual stratigraphic units (USV/s, USV/n).
