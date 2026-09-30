@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- resource_file — un file di una risorsa (ResourceFileNode, FILE): foglio con l'angolo piegato e il segno del digest.
+     Disegnata da Claude il 30 set 2026 per decisione di E.D. (MICRO-REVISIONE, 20 ott 2026), sul segno della famiglia
+     DTC del 2017 (cerchio r 41.14, tratto nero, nessun colore). Non è un glifo DTC: è il glifo di un tipo di nodo,
+     dichiarato da em_visual_rules.node_styles.FILE.2d_file_vect e letto da EMStudio come quello di LINK. -->
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="24.587820mm" height="24.587820mm" viewBox="0 0 87.1222 87.1222">
+  <g id="layer1">
+    <circle cx="43.5611" cy="43.5611" r="41.13567" style="fill:#ffffff;stroke:#000000;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round" />
+    <path d="M 27,18 L 51,18 L 61,28 L 61,69 L 27,69 Z" style="fill:#ffffff;stroke:#000000;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"/>
+    <path d="M 51,18 L 51,28 L 61,28" style="fill:none;stroke:#000000;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"/>
+    <path d="M 38,41 L 36,59 M 46,41 L 44,59 M 33,47 L 50,47 M 32,53 L 49,53" style="fill:none;stroke:#000000;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round"/>
+  </g>
+</svg>

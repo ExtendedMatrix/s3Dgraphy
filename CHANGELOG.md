@@ -7,6 +7,15 @@ All notable changes to **s3dgraphy** are documented here.
 Everything in this section came after `fa638ef` («Bump version: 1.6.0.dev22 →
 1.6.0.dev23»). Decision of E.D. of 30 Sep 2026, *la risorsa e i suoi file*.
 
+### Changed (2026-10-20 — the kind and the glyph)
+- `representations_of`: staying inside ONE kind is now written as E.D.'s
+  decision (30 Sep 2026), with the example: a glb made from an image is a
+  derivation of it, not a representation. Test added.
+- The glyph of `FILE` (ResourceFileNode), drawn by Claude on E.D.'s decision:
+  `src/2D/resource_file.svg`, declared by `node_styles.FILE.2d_file_vect`
+  (em_visual_rules **1.6.27**). A node-type glyph read as a file like LINK's,
+  not a DTC glyph and not a `2d_glyphs` entry.
+
 ### Changed (2026-10-20 — the revision of a resource)
 - New edge **`was_revision_of` / `had_revision`**, `ResourceNode → ResourceNode`
   (connections datamodel **1.6.31**): `prov:wasRevisionOf`, CIDOC projection

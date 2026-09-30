@@ -188,12 +188,16 @@ def representations_of(graph, res_id: str, *, include_self: bool = False
     reading :meth:`ResourceNode.effective_tier` / ``effective_packaging``
     makes); the ``*_declared`` twins say whether anybody wrote them.
 
-    **The walk stays inside one kind.** A model is derived from photographs too
-    (``dtc_derived_from`` model → photos), and a photograph is not a
-    representation of the model: a viewer that can open a ``file`` would
-    otherwise be handed a jpg. So a resource of another kind is neither
-    returned nor walked THROUGH — two models made from the same photographs are
-    two things, not two representations of one.
+    **The walk stays inside one kind** — a DECISION of E.D. (30 Sep 2026, after
+    the report of 18 Oct), not a heuristic. ``dtc_derived_from`` says «made
+    from», and «made from» crosses kinds: a model is derived from photographs,
+    a glb can be made from an image. A glb made from an image is a DERIVATION
+    of the image, not a representation of it: the two are different things. So
+    a resource of another kind (``url_type``) is neither returned nor walked
+    THROUGH — a viewer that opens a ``file`` is never handed the jpg, and two
+    models made from the same photographs are two things, not two
+    representations of one. A kind nobody stated (empty, ``unknown``, the
+    constructor's ``External link``) does not separate: it is not a claim.
 
     ``relation``, at distance 1: ``source`` (the start was derived FROM it —
     the master of a distribution) or ``derived`` (it was derived from the start

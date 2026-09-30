@@ -130,3 +130,16 @@ def test_il_file_torna_da_rdf_come_file_e_non_come_risorsa(tmp_path):
     assert isinstance(back.find_node_by_id("res:podio"), ResourceNode)
     assert back.find_node_by_id("file:obj").data.get("checksum") == SHA
     assert any(e.edge_type == "has_file" for e in back.edges)
+
+
+def test_il_file_ha_il_suo_glifo_dove_lo_legge_emstudio():
+    """MICRO-REVISIONE (20 ott 2026): il glifo di FILE è un file dichiarato da
+    `node_styles.FILE.2d_file_vect`, come quello di LINK, e sta in cima a
+    `src/2D/` col nome del node_type (dove icons.ts e sync-datamodels.sh lo
+    trovano). Non è un glifo DTC e non entra in `2d_glyphs`."""
+    rules = json.loads((CONFIG / "em_visual_rules.json").read_text())
+    vect = rules["node_styles"]["FILE"]["2d_file_vect"]
+    assert vect == "src/2D/resource_file.svg"
+    assert (CONFIG / vect).is_file()
+    assert "BOZZA" not in (CONFIG / vect).read_text()
+    assert "resource_file" not in rules["2d_glyphs"]

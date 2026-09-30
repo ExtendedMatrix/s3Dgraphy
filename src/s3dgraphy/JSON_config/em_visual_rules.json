@@ -1,6 +1,6 @@
 {
   "formal_language": "EM",
-  "version": "1.6.26",
+  "version": "1.6.27",
   "_note_material_vs_qualia_color": [
     "DUE COSE DIVERSE CHE SI CHIAMANO ENTRAMBE color. Non confonderle: e gia successo.",
     "1) QUI, in node_styles.<tipo>.style.material.rgba_color — il COLORE DEL MATERIALE BLENDER del proxy 3D, in float LINEARI. UNA sola chiave: `rgba_color`. Fino a S8 il file ne usava due (`color` sui 13 tipi stratigrafici, `rgba_color` sugli altri) e get_material_color() ne leggeva una sola, restituendo None per 21 tipi su 38; ora sono unificate e la vecchia `color` e letta solo come tolleranza verso file scritti prima. Un tipo che non diventa mai una mesh NON ha material affatto (i contenitori di gruppo, e da S7 i dieci nodi che rendono per icona): per loro get_material_color() torna None, ed e corretto.",
@@ -9,6 +9,7 @@
     "In breve: qui si decide di che colore DISEGNARE una US; li si registra di che colore ERA."
   ],
   "_changelog": {
+    "1.6.27": "THE GLYPH OF THE FILE (MICRO-REVISIONE, 20 Oct 2026, decision of E.D. 30 Sep 2026: Claude draws it). node_styles.FILE.2d_file_vect: src/2D/link.svg -> src/2D/resource_file.svg, a sheet with a folded corner and the digest sign inside the 2017 DTC circle. WHERE, MEASURED: a resource takes its sign from node_styles.<KEY>.2d_file_vect (LINK -> src/2D/link.svg), a FILE, which EMStudio's icons.ts resolves (declaration, then src/2D/<node_type>.svg) and sync-datamodels.sh vendors from the top level of src/2D/. It is NOT a DTC glyph (dtc_kinds name the glyphs of DTC kinds, and a file is a node type, not a kind) and NOT a 2d_glyphs entry: LINK is not in 2d_render_glyph_types either, and joining that list would change how the label is laid out, which nobody asked. Still no .glb (as before). The dashed border and the LINK colour stay.",
     "1.6.26": "THE FILE OF A RESOURCE (MICRO-RISORSA-FILE, 18 Oct 2026, decision of E.D. 30 Sep 2026). node_styles += FILE for ResourceFileNode (node datamodel 1.6.17): the LINK chain glyph and colour with a DASHED border — a file is a member of the resource it hangs from, the same family and not a second resource. NO NEW GLYPH: it reuses src/2D/link.svg, declares no .glb (LINK's src/3D/link.glb is itself among the missing 3D models, and a new type must not add to that gap), and a sign of its own is left to E.D.",
     "1.6.25": "THE EIGHT DTC GLYPHS APPROVED (E.D., 30 Sep 2026; MICRO-GEOMETRIA-ORIGINE part 1). The eight drafts of 1.6.23 moved from src/2D/bozze/dtc_<glyph>.svg to src/2D/dtc/<glyph>.svg (12_gnss_survey … 19_vectorization), the BOZZA word removed from their comment, glyphs_from_svg --write rerun: their 2d_glyphs entries no longer carry draft: true. src/2D/bozze/ is empty again. Still without a glyph (open): the four recoveries download, local_import, uri_reference, ingest.",
     "1.6.24": "THE CAPTURE IN RDF (MICRO-GENERI-GLIFI, 30 Sep 2026; proposed by Claude, accepted by E.D.). Six acquisition kinds declare `mapping` — the rdf:type their DTCAcquisitionNode takes INSTEAD of crmdig:D12_Data_Transfer_Event, which describes a transfer: photo, laserscanner → crmdig:D2_Digitization_Process (⊂ D11 ⊂ D7); topographic, gnss_survey → crmdig:D11_Digital_Measurement_Event (⊂ D7); field_drawing, recording_sheet → crm:E65_Creation (⊂ E7; made by hand, the file is their copy). The retrievals (download, local_import, uri_reference, ingest) declare none and stay D12. See dtc_kinds.acquisition._mapping_comment; read by rdf_exporter and rdf_importer through utils.get_dtc_kind_mapping. CRMem (em.ttl) 1.6.6 -> 1.6.7 for the changelog note.",
@@ -3347,7 +3348,7 @@
       "label_position": "over"
     },
     "FILE": {
-      "2d_file_vect": "src/2D/link.svg",
+      "2d_file_vect": "src/2D/resource_file.svg",
       "style": {
         "border_color": "#FF6600",
         "fill_color": "#FFFFFF",

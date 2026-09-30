@@ -160,3 +160,20 @@ def test_i_grafi_di_emtools_si_riconoscono_senza_riscriverli():
     after = {n.node_id: dict(n.data) for n in g.nodes
              if getattr(n, "node_type", None) == "resource"}
     assert before == after  # leggere non ha scritto niente
+
+
+def test_un_glb_ricavato_da_un_immagine_e_una_derivazione_non_una_rappresentazione():
+    """Decisione di E.D. (30 set 2026): le rappresentazioni si cercano dentro un
+    solo genere. Il glb deriva dall'immagine, ma non la rappresenta: nessuno dei
+    due compare fra le rappresentazioni dell'altro, e un visualizzatore che apre
+    `file` partendo dall'immagine riceve l'immagine, non il glb."""
+    g = Graph("g")
+    api.add_resource(g, resource_id="img", name="rilievo.jpg", kind="image",
+                     packaging="file", files=[{"path": "rilievo.jpg"}])
+    api.add_resource(g, resource_id="glb", name="rilievo.glb", kind="3d_model",
+                     packaging="file", derived_from=["img"],
+                     files=[{"path": "rilievo.glb"}])
+    assert api.representations_of(g, "img") == []
+    assert api.representations_of(g, "glb") == []
+    assert api.pick_representation(g, "img", WEB)["picked"]["id"] == "img"
+    assert api.pick_representation(g, "glb", {"file"})["picked"]["id"] == "glb"
