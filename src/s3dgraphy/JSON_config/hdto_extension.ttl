@@ -10,7 +10,7 @@
 @prefix dcterms:   <http://purl.org/dc/terms/> .
 
 # ============================================================================
-# HDT-O — Heritage Digital Twin Ontology — s3dgraphy alignment layer (v0.2)
+# HDT-O — Heritage Digital Twin Ontology — s3dgraphy alignment layer (v0.3)
 # ============================================================================
 #
 # Reconciled with ECHOES Deliverable D7.1 "The Digital Commons" (May 2024).
@@ -22,7 +22,14 @@
 #          Namespace placeholder (w3id.org/hdto/) — to be replaced when the
 #          official HDT-O resolvable IRI is published by the ECHOES consortium.
 # Author:  Emanuele Demetrescu (s3dgraphy v1.6.0 integration)
-# Date:    2026-05-23
+# Date:    2026-09-30 (v0.3; v0.2 2026-05-23)
+#
+# v0.3 (2026-09-30): the two declarations this file carried against D7.1 final
+#          are corrected. HC9 Study becomes a subclass of crm:E65 Creation (was
+#          crm:E7 Activity) and HC16 Heritage Proposition Set becomes a subclass
+#          of crminf:I4 Proposition Set and HC15 Persistent Digital Object (was
+#          crm:E73 Information Object alone). Both were recorded as open in
+#          docs/hdto-coverage.md, measured on D7.1_final.docx.
 # License: CC-BY-4.0
 #
 # What this file does:
@@ -87,15 +94,17 @@ hdto:HC15_Persistent_Digital_Object
 hdto:HC16_Heritage_Proposition_Set
     a owl:Class ;
     rdfs:label "Heritage Proposition Set"@en ;
-    rdfs:subClassOf crm:E73_Information_Object ;
-    rdfs:comment "A named graph carrying a set of formal propositions about (or related to) heritage entities. The atomic content unit that an HC2 Heritage Digital Twin aggregates: an HC2 'contains' (HP33) one or more HC16 instances. Version chains across editing actions are documented via HP30 added content / HP31 deleted content / HP32 replaced. An s3dgraphy em:EMGraph IS a Heritage Proposition Set (formally declared in em.ttl via owl:equivalentClass / subClassOf)."@en .
+    rdfs:subClassOf crminf:I4_Proposition_Set ,
+                    hdto:HC15_Persistent_Digital_Object ,
+                    crm:E73_Information_Object ;
+    rdfs:comment "A named graph carrying a set of formal propositions about (or related to) heritage entities. The atomic content unit that an HC2 Heritage Digital Twin aggregates: an HC2 'contains' (HP33) one or more HC16 instances. Per D7.1 (final, V1.0) a subclass of crminf:I4 Proposition Set and of HC15 Persistent Digital Object; crm:E73 Information Object is kept so that a CRM-only reader still resolves it. Version chains across editing actions are documented via HP30 added content / HP31 deleted content / HP32 replaced. An s3dgraphy em:EMGraph IS a Heritage Proposition Set (formally declared in em.ttl via owl:equivalentClass / subClassOf)."@en .
 
 
 hdto:HC9_Study
     a owl:Class ;
     rdfs:label "Study"@en ;
-    rdfs:subClassOf crm:E7_Activity ;
-    rdfs:comment "A scholarly activity (research, analysis or documentation, in any SSH / natural / exact-science domain) about a Heritage Entity (HC1), explicating a disciplinary focus and the part of the entity investigated. A study is about (HP23) one or more HC1 and has created (HP25) documentary outputs (crm:E31 Document) — in s3dgraphy the EM proposition set (HC16 / em:EMGraph). ECHOES D7.1."@en .
+    rdfs:subClassOf crm:E65_Creation ;
+    rdfs:comment "A scholarly activity (research, analysis or documentation, in any SSH / natural / exact-science domain) about a Heritage Entity (HC1), explicating a disciplinary focus and the part of the entity investigated. A study is about (HP23) one or more HC1 and has created (HP25) documentary outputs (crm:E31 Document) — in s3dgraphy the EM proposition set (HC16 / em:EMGraph). A subclass of crm:E65 Creation: the study is the scholarly act, and its documentary output is a separate thing joined to it by HP25, so a report, a field note or a metadata record is never an HC9. ECHOES D7.1 (final, V1.0)."@en .
 
 hdto:HC13_Project
     a owl:Class ;
