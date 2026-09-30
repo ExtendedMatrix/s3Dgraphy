@@ -7,6 +7,25 @@ All notable changes to **s3dgraphy** are documented here.
 Everything in this section came after `fa638ef` («Bump version: 1.6.0.dev22 →
 1.6.0.dev23»). Decision of E.D. of 30 Sep 2026, *la risorsa e i suoi file*.
 
+### Changed (2026-10-20 — the revision of a resource)
+- New edge **`was_revision_of` / `had_revision`**, `ResourceNode → ResourceNode`
+  (connections datamodel **1.6.31**): `prov:wasRevisionOf`, CIDOC projection
+  `crmdig:L21_used_as_derivation_source` (CRMdig has no term for a revision).
+  The name is the one the em.json container already used for a
+  `ProjectVersion` (a field of a document version, projected as
+  `prov:wasRevisionOf`), now widened to resources (E.D. 2026-09-30). Label
+  translated in draft in the 9 languages; the 8 shipped mappings re-stamped.
+- **`replace_file` makes a new version of the resource** instead of changing
+  it: a new `ResourceNode` with the same fields (not those of the old bytes nor
+  the old stamps) and a derived, stable id; the same files but the replaced
+  one (same roles, paths, order); the new file `dtc_derived_from` the old file;
+  `new ──was_revision_of──▶ old`. The old resource stays exactly as it was,
+  citable. What pointed at it does not move: the result lists it
+  (`pointing_at_old`, and `old_derived_from`) and the caller decides.
+- `api.revisions_of(graph, res_id)` (the chain, oldest first) and
+  `api.current_revision(graph, res_id)` (the newest). A fork is a ValueError,
+  not a silent pick.
+
 ### Added (2026-10-18 — the resource and its files, part 5: the tileset, for now)
 - A tileset is a resource from its ROOT (`packaging: directory`, one file
   `tileset.json`, role `entry_point`, the entry point's digest) or ZIPPED

@@ -2244,9 +2244,26 @@ def remove_file(graph: Graph, res_id: str, file_id: str) -> Dict[str, Any]:
 
 def replace_file(graph: Graph, res_id: str, old_file_id: Optional[str], **new
                  ) -> Dict[str, Any]:
-    """A corrected file: the new one in, the old one kept and declared its parent."""
+    """A corrected file makes a NEW VERSION of the resource: same fields, same
+    files but the replaced one (the new file ``dtc_derived_from`` the old), and
+    ``new ──was_revision_of──▶ old``. The old one stays as it was; what pointed
+    at it does not move — the result lists it (``pointing_at_old``) and the
+    caller decides. Returns ``{…, new_resource_id, pointing_at_old, …}``."""
     from .resources.files import replace_file as _replace
     return _replace(graph, res_id, old_file_id, **new)
+
+
+def revisions_of(graph: Graph, res_id: str) -> List[str]:
+    """The chain of revisions ``res_id`` is in, oldest first (``was_revision_of``);
+    a fork is a ValueError, not a silent pick."""
+    from .resources.files import revisions_of as _revs
+    return _revs(graph, res_id)
+
+
+def current_revision(graph: Graph, res_id: str) -> str:
+    """The newest revision of the chain ``res_id`` is in (itself if never revised)."""
+    from .resources.files import current_revision as _current
+    return _current(graph, res_id)
 
 
 def representations_of(graph: Graph, res_id: str, *, include_self: bool = False

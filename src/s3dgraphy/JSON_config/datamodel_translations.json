@@ -7105,6 +7105,27 @@
     "fr": "Validé par",
     "de": "Validiert von"
    }
+  },
+  "was_revision_of": {
+   "label": {
+    "en": "Was revision of",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "È una revisione di",
+    "el": "Είναι αναθεώρηση του",
+    "he": "הוא גרסה מתוקנת של",
+    "es": "Es una revisión de",
+    "pl": "Jest rewizją",
+    "ro": "Este o revizie a",
+    "fr": "Est une révision de",
+    "de": "Ist eine Revision von"
+   }
   }
  },
  "dtc_kinds": {

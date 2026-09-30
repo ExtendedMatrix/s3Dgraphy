@@ -27,12 +27,12 @@ WRITING
     file, or when the one file has an identity of its own (an ``id`` given by
     the caller, a stamp receipt, or a parent it was derived from).
 
-WHAT IS NOT HERE, and why: no edge says «this resource is a REVISION of that
-one» (measured on the connections datamodel 1.6.30: none of the 57 edges does).
-:func:`replace_file` therefore keeps the old file in the graph and declares the
-new one ``dtc_derived_from`` it, but the resource's own earlier composition is
-not a citable node — that needs a revision edge E.D. has not decided
-(see the report of 18 Oct 2026).
+REVISIONS (E.D. 30 Sep 2026, after the report of 18 Oct): replacing a file
+makes a NEW resource that ``was_revision_of`` the old one (connections
+datamodel 1.6.31, ``prov:wasRevisionOf``). The old resource stays as it was,
+citable with its old files; what pointed at it is not moved here — the caller
+is told who that is and decides. :func:`revisions_of` / :func:`current_revision`
+read the chain.
 """
 
 from __future__ import annotations
@@ -43,6 +43,7 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence
 
 EDGE_HAS_FILE = "has_file"
 EDGE_DERIVED_FROM = "dtc_derived_from"
+EDGE_REVISION_OF = "was_revision_of"
 FILE_ROLES = ("entry_point", "member")
 
 #: One namespace for every id minted here, so the same file gets the same id in
@@ -294,8 +295,9 @@ def _has_identity(spec: Dict[str, Any]) -> bool:
     return bool(spec.get("id") or spec.get("stamp"))
 
 
-def _write_file(graph, res_id: str, spec: Dict[str, Any], role: str):
-    """Create (or reuse by checksum) the file node and its has_file edge."""
+def _file_node(graph, res_id: str, spec: Dict[str, Any]):
+    """Create (or reuse by id, then by checksum) a file node — no edge.
+    Returns ``(node, path)``."""
     from ..nodes.resource_file_node import ResourceFileNode
 
     locator = _locator(spec)
@@ -315,6 +317,12 @@ def _write_file(graph, res_id: str, spec: Dict[str, Any], role: str):
             if spec.get("stamp"):
                 _data(node)["stamp_receipt"] = spec["stamp"]
             graph.add_node(node)
+    return node, path
+
+
+def _write_file(graph, res_id: str, spec: Dict[str, Any], role: str):
+    """Create (or reuse by checksum) the file node and its has_file edge."""
+    node, path = _file_node(graph, res_id, spec)
     edge_id = f"{res_id}__has_file__{node.node_id}"
     edge = graph.find_edge_by_id(edge_id)
     if edge is None:
@@ -506,42 +514,153 @@ def remove_file(graph, res_id: str, file_id: str) -> Dict[str, Any]:
             "entry_point_left": left}
 
 
+#: What a revision does NOT copy from the resource it revises: the fields that
+#: describe the old BYTES (the new bytes are described by the new files) and the
+#: hands and receipts of the old resource (a stamp names the content it was
+#: taken on, an editorial stamp the hand that wrote it: neither is inherited).
+_NOT_REVISED = frozenset({"url", "checksum", "checksum_of", "size_bytes",
+                          "media_type", "stamp_receipt", "created_by",
+                          "created_at", "modified_by", "modified_at"})
+
+
+def revision_id_for(res_id: str, old_file_id: str, checksum: str) -> str:
+    """The id of the revision of ``res_id`` that replaces ``old_file_id`` with
+    the bytes ``checksum``: derived, so the same replacement made twice lands
+    on the same resource."""
+    return str(uuid.uuid5(_NS, f"revision|{res_id}|{old_file_id}|{checksum}"))
+
+
+def _implicit_file_node(graph, res):
+    """The one implicit file of ``res`` written as a node of its own — and
+    nothing else: the resource keeps its ``url`` and ``checksum`` and gets no
+    ``has_file`` edge, because the resource being revised stays as it was. The
+    node is found again by its checksum by whoever meets the same bytes."""
+    d = _data(res)
+    url = d.get("url") or ""
+    spec = {"path": _leaf(url), "url": url, "checksum": d.get("checksum"),
+            "size_bytes": d.get("size_bytes"), "media_type": d.get("media_type")}
+    node, _ = _file_node(graph, res.node_id,
+                         {k: v for k, v in spec.items() if v is not None})
+    return node
+
+
 def replace_file(graph, res_id: str, old_file_id: Optional[str], *,
                  checksum: str, path: Optional[str] = None,
                  size_bytes: Optional[int] = None,
                  media_type: Optional[str] = None, url: Optional[str] = None,
                  declare_parent: bool = True) -> Dict[str, Any]:
-    """A corrected file (a texture): the resource takes the new one and the OLD
-    ONE STAYS in the graph, citable by its id.
+    """A corrected file (a texture) makes a NEW VERSION of the resource
+    (E.D. 30 Sep 2026: ``was_revision_of`` widened to resources).
 
-    The new file keeps the old one's role and path (unless ``path`` changes it)
-    and, with ``declare_parent``, declares ``dtc_derived_from`` the old file —
-    which also gives it an identity of its own, so a resource of one implicit
-    file is written out first (``old_file_id=None`` names that implicit file).
+    * a new ``ResourceNode`` with the same fields (not those that describe the
+      old bytes, nor the old stamps: see ``_NOT_REVISED``) and a DERIVED id
+      (:func:`revision_id_for`), so doing it twice changes nothing;
+    * the same files but the replaced one, with the same roles and paths; the
+      new file takes the old one's role and path (unless ``path`` changes it)
+      and, with ``declare_parent``, declares ``dtc_derived_from`` the old file;
+    * ``new ──was_revision_of──▶ old``.
 
-    NOT done, because the datamodel has no edge for it: saying that the
-    resource *after* is a revision of the resource *before*. See the module
-    docstring. Returns ``{old_file_id, new_file_id, role, path}``."""
+    The OLD resource is left as it was — its files, its fields, its edges —
+    and stays citable. ``old_file_id=None`` names the implicit file of a
+    resource of one file; that file is written as a node (it is now a parent)
+    without touching the old resource.
+
+    Nothing that pointed at the old resource moves: a Representation Model, a
+    property, a document still points at it. The function says who they are
+    (``pointing_at_old``: every edge INTO the old resource but its revisions)
+    and which resources the old one was derived from (``old_derived_from``,
+    not copied: a derivation is a claim somebody makes), and the caller
+    decides.
+
+    Returns ``{old_resource_id, new_resource_id, old_file_id, new_file_id,
+    role, path, pointing_at_old: [{edge_id, edge_type, source}],
+    old_derived_from: [id…]}``."""
+    res = _node(graph, res_id)
+    if res is None or not _is_resource(res):
+        raise ValueError(f"{res_id!r} is not a resource of this graph")
+    files = resource_files(graph, res_id)
     if old_file_id is None:
-        mat = _materialize_implicit(graph, res_id)
-        if mat is None:
+        old = next((f for f in files if f["implicit"]), None)
+        if old is None:
             raise ValueError(f"{res_id!r} has no implicit file to replace")
-        old_file_id = mat.node_id
-    old = next((f for f in resource_files(graph, res_id)
-                if f["node"] is not None and f["node"].node_id == old_file_id), None)
-    if old is None:
-        raise ValueError(f"{old_file_id!r} is not a file of {res_id!r}")
+        old_file_id = _implicit_file_node(graph, res).node_id
+    else:
+        old = next((f for f in files if not f["implicit"]
+                    and f["node"].node_id == old_file_id), None)
+        if old is None:
+            raise ValueError(f"{old_file_id!r} is not a file of {res_id!r}")
+    new_id = revision_id_for(res_id, old_file_id, checksum)
     new_path = path or old["path"]
     spec = {k: v for k, v in dict(path=new_path, checksum=checksum,
                                   size_bytes=size_bytes, media_type=media_type,
                                   url=url or new_path).items() if v is not None}
-    for e in _file_edges(graph, res_id):
-        if e.edge_target == old_file_id:
-            graph.remove_edge(e.edge_id)
-    new = _write_file(graph, res_id, spec, old["role"])
-    if declare_parent and new.node_id != old_file_id:
-        edge_id = f"{new.node_id}~>{old_file_id}"
-        if graph.find_edge_by_id(edge_id) is None:
-            graph.add_edge(edge_id, new.node_id, old_file_id, EDGE_DERIVED_FROM)
-    return {"old_file_id": old_file_id, "new_file_id": new.node_id,
-            "role": old["role"], "path": new_path}
+    if _node(graph, new_id) is None:
+        kept = {k: v for k, v in _data(res).items() if k not in _NOT_REVISED}
+        add_resource(graph, name=res.name, resource_id=new_id, data=kept)
+        new_file = None
+        for f in files:
+            if f is old:
+                new_file = _write_file(graph, new_id, spec, old["role"])
+            else:
+                _write_file(graph, new_id, {"id": f["node"].node_id,
+                                            "path": f["path"]}, f["role"])
+        if declare_parent and new_file.node_id != old_file_id:
+            edge_id = f"{new_file.node_id}~>{old_file_id}"
+            if graph.find_edge_by_id(edge_id) is None:
+                graph.add_edge(edge_id, new_file.node_id, old_file_id,
+                               EDGE_DERIVED_FROM)
+        graph.add_edge(f"{new_id}~revision~>{res_id}", new_id, res_id,
+                       EDGE_REVISION_OF)
+    new_file_id = next(f["node"].node_id for f in resource_files(graph, new_id)
+                       if f["path"] == new_path)
+    return {"old_resource_id": res_id, "new_resource_id": new_id,
+            "old_file_id": old_file_id, "new_file_id": new_file_id,
+            "role": old["role"], "path": new_path,
+            "pointing_at_old": [{"edge_id": e.edge_id, "edge_type": e.edge_type,
+                                 "source": e.edge_source} for e in graph.edges
+                                if e.edge_target == res_id
+                                and e.edge_type != EDGE_REVISION_OF],
+            "old_derived_from": sorted(e.edge_target for e in graph.edges
+                                       if e.edge_source == res_id
+                                       and e.edge_type == EDGE_DERIVED_FROM)}
+
+
+def revisions_of(graph, res_id: str) -> List[str]:
+    """The chain of revisions ``res_id`` belongs to, OLDEST FIRST, the start
+    included wherever it sits. A resource never revised is a chain of one.
+
+    A fork (two revisions of one resource) or a merge (one resource revising
+    two) has no single order: that is a ValueError naming the resources, not a
+    silent pick — which branch is current is for whoever made them to say."""
+    start = _node(graph, res_id)
+    if start is None or not _is_resource(start):
+        raise ValueError(f"{res_id!r} is not a resource of this graph")
+    newer, older = {}, {}
+    for e in graph.edges:
+        if e.edge_type == EDGE_REVISION_OF:
+            older.setdefault(e.edge_source, set()).add(e.edge_target)
+            newer.setdefault(e.edge_target, set()).add(e.edge_source)
+    chain, seen = [res_id], {res_id}
+    for steps, before in ((older, True), (newer, False)):
+        cur = res_id
+        while steps.get(cur):
+            nxt = sorted(steps[cur])
+            if len(nxt) > 1:
+                what = "is a revision of" if before else "has the revisions"
+                raise ValueError(f"{cur!r} {what} {nxt}: the chain of revisions "
+                                 f"branches here and has no single order")
+            cur = nxt[0]
+            if cur in seen:
+                raise ValueError(f"the revisions of {res_id!r} loop at {cur!r}")
+            seen.add(cur)
+            if before:
+                chain.insert(0, cur)
+            else:
+                chain.append(cur)
+    return chain
+
+
+def current_revision(graph, res_id: str) -> str:
+    """The newest resource of the chain ``res_id`` belongs to (``res_id``
+    itself when nothing revises it). See :func:`revisions_of`."""
+    return revisions_of(graph, res_id)[-1]

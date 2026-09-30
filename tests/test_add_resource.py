@@ -55,34 +55,43 @@ def test_senza_checksum_il_file_e_della_sua_risorsa():
 
 
 def test_replace_file_tiene_il_vecchio_e_lo_dichiara_padre():
-    """Una texture corretta (i `cc_T_…png` di TempluMare)."""
+    """Una texture corretta (i `cc_T_…png` di TempluMare). Dal 20 ott 2026 la
+    sostituzione fa una revisione della risorsa (test_resource_revision.py);
+    qui resta ciò che valeva già: il file nuovo prende ruolo e percorso, deriva
+    dal vecchio, e il vecchio resta nel grafo."""
     g = Graph("g")
     _tile(g, "a")
     old = next(f for f in api.resource_files(g, "a") if f["path"] == "textures/T.jpg")
     out = api.replace_file(g, "a", old["node"].node_id, checksum=SHA["cc"],
                            path="textures/cc_T.png", media_type="image/png")
     assert out["role"] == "member" and out["path"] == "textures/cc_T.png"
-    paths = [f["path"] for f in api.resource_files(g, "a")]
+    new = out["new_resource_id"]
+    paths = [f["path"] for f in api.resource_files(g, new)]
     assert "textures/cc_T.png" in paths and "textures/T.jpg" not in paths
-    # la vecchia resta nel grafo, citabile per id, e il nuovo file ne deriva
+    # il vecchio file resta nel grafo, citabile per id, e il nuovo ne deriva
     assert g.find_node_by_id(old["node"].node_id) is not None
     assert any(e.edge_type == "dtc_derived_from"
                and e.edge_source == out["new_file_id"]
                and e.edge_target == out["old_file_id"] for e in g.edges)
     # obj e mtl restano identici
-    assert {f["path"] for f in api.resource_files(g, "a")} >= {"a.obj", "a.mtl"}
+    assert {f["path"] for f in api.resource_files(g, new)} >= {"a.obj", "a.mtl"}
 
 
 def test_replace_file_di_una_risorsa_di_un_file_la_scrive_prima():
+    """Il file implicito diventa un nodo (ora è un padre) senza toccare la
+    risorsa vecchia, che resta di un file implicito."""
     g = Graph("g")
     api.add_resource(g, resource_id="r", name="r",
                      files=[{"path": "T.jpg", "checksum": SHA["jpg"]}])
     out = api.replace_file(g, "r", None, checksum=SHA["cc"], path="cc_T.png")
     old = g.find_node_by_id(out["old_file_id"])
     assert isinstance(old, ResourceFileNode) and old.checksum == SHA["jpg"]
-    files = api.resource_files(g, "r")
+    files = api.resource_files(g, out["new_resource_id"])
     assert len(files) == 1 and files[0]["node"].checksum == SHA["cc"]
     assert files[0]["role"] == "entry_point" and not files[0]["implicit"]
+    before = api.resource_files(g, "r")
+    assert len(before) == 1 and before[0]["implicit"]
+    assert before[0]["node"].checksum == SHA["jpg"]
 
 
 def test_derived_from_scrive_la_derivazione():

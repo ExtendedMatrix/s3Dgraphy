@@ -108,8 +108,9 @@ def test_le_versioni_del_datamodel_sono_salite():
     conn = json.loads((CONFIG / "s3Dgraphy_connections_datamodel.json").read_text())
     assert node["s3Dgraphy_data_model_version"] == "1.6.17"
     assert node["description"].startswith("v1.6.17")
-    assert conn["s3Dgraphy_connections_model_version"] == "1.6.30"
-    assert conn["description"].startswith("v1.6.30")
+    # 1.6.31 dal 20 ott 2026 (was_revision_of); la voce 1.6.30 resta nella storia
+    assert conn["s3Dgraphy_connections_model_version"] == "1.6.31"
+    assert "v1.6.30 (LA RISORSA E I SUOI FILE" in conn["description"]
     entry = node["reference_nodes"]["ResourceFileNode"]
     assert entry["mapping"]["cidoc"] == "crmdig:D1_Digital_Object"
     rules = json.loads((CONFIG / "em_visual_rules.json").read_text())
