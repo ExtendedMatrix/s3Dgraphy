@@ -1142,17 +1142,17 @@ def apply_mapping(mapping: Dict[str, Any], source: str, *,
 
     added_nodes = [n for n in target.nodes if n.node_id not in before_nodes]
     lang_of_source = normalized["source_settings"].get("source_lang")
-    lang_written = 0
-    if lang_of_source:
-        from ..language import declare_source_language
-        try:
-            lang_written = declare_source_language(
-                target, [n.node_id for n in added_nodes], lang_of_source)
-        except ValueError as exc:
-            return {"ok": False, "mode": mode, "rows": 0, "nodes_added": 0,
-                    "edges_added": 0, "unmatched": [], "unmatched_count": 0,
-                    "warnings": warnings, "errors": [str(exc)]}
-        lang_written += int(getattr(importer, "source_lang_written", 0) or 0)
+    # dev27, rule A1: the nodes this import made are born in the source's
+    # language, else the study's — always written, also when equal to the study
+    from ..language import declare_source_language
+    try:
+        lang_written = declare_source_language(
+            target, [n.node_id for n in added_nodes], lang_of_source)
+    except ValueError as exc:
+        return {"ok": False, "mode": mode, "rows": 0, "nodes_added": 0,
+                "edges_added": 0, "unmatched": [], "unmatched_count": 0,
+                "warnings": warnings, "errors": [str(exc)]}
+    lang_written += int(getattr(importer, "source_lang_written", 0) or 0)
     added_edges = [e for e in target.edges if e.edge_id not in before_edges]
     stamp = injector or f"mapping:{mapping_name or 'inline'}"
     if mode == "volatile":

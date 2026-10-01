@@ -131,13 +131,41 @@ def set_working_language(graph: Any, tag: Optional[str]) -> Optional[str]:
     return value
 
 
+#: Node types whose ``data.lang`` is NOT the language of their own text, and so
+#: neither enters the cascade nor is written at birth (dev27, *il testo, la
+#: risorsa e la selezione*, E.D. 2026-10-01):
+#:
+#: * ``resource`` — its ``data.lang`` is the language of the CONTENT of the file
+#:   (a PDF in Latin, a page with Latin and Italian facing: one tag or a list).
+#:   It says what the file is made of, not what its description is written in;
+#: * ``resource_file`` — a file of a resource: no text of its own;
+#: * ``translation`` — its ``data.lang`` is the language of ARRIVAL, written by
+#:   :func:`s3dgraphy.translation.add_translation`;
+#: * ``graph`` — the graph-self node holds the study's working language in
+#:   ``data.language``; it is not a text.
+NOT_TEXT_LANGUAGE_TYPES = frozenset({"resource", "resource_file", "translation",
+                                     "graph"})
+
+
+def _node_type_of(node: Any) -> Optional[str]:
+    if isinstance(node, dict):
+        return node.get("type") or node.get("node_type")
+    return getattr(node, "node_type", None)
+
+
 def node_language(node: Any) -> Optional[str]:
     """The language the node itself declares (``data.lang``), or ``None``.
 
     A value that is not a tag (written before the check existed, or by hand in
     the file) is not a declaration a literal can carry — RDF would be invalid —
     so it reads as none and the cascade goes on to the study. The writers refuse
-    such a value; this reader only declines to repeat it."""
+    such a value; this reader only declines to repeat it.
+
+    A resource's ``data.lang`` is the language of its CONTENT
+    (:data:`NOT_TEXT_LANGUAGE_TYPES`) and is not read here: a Latin PDF does not
+    make its Italian description Latin. See :func:`content_languages`."""
+    if _node_type_of(node) in ("resource", "resource_file"):
+        return None
     data = getattr(node, "data", None)
     value = data.get(NODE_LANG_KEY) if isinstance(data, dict) else None
     if is_language_tag(value):
@@ -145,37 +173,109 @@ def node_language(node: Any) -> Optional[str]:
     return None
 
 
-def declare_source_language(graph: Any, node_ids: Any,
-                            source_lang: Optional[str]) -> int:
-    """The language of an INGESTED source, written on the nodes made from it.
+def birth_language(graph: Any, lang: Optional[str] = None) -> Optional[str]:
+    """The language a node is BORN in: ``lang`` when the caller knows it (the
+    source's, the one declared by the form), else the study's working language
+    AT THIS MOMENT, else ``None`` — an unknown language is never invented. An
+    invalid ``lang`` raises ``ValueError`` (nothing is written)."""
+    if isinstance(lang, str) and lang.strip():
+        return check_language_tag(lang)
+    return working_language(graph) if graph is not None else None
 
-    Le traduzioni (E.D. 2026-10-01): an importer that knows the language of
-    its source (``source_lang``, an argument or the mapping's
-    ``source_settings.source_lang``) writes it as ``data.lang`` on the nodes it
-    CREATED — and only when it differs from the study's working language,
-    because the same language would be the cascade's second step written
-    twice. A node that already declares a language keeps it; the graph-self
-    node is not a text. An invalid tag raises ``ValueError`` before anything is
-    written. Returns how many nodes were given the language."""
-    if source_lang is None or (isinstance(source_lang, str) and not source_lang.strip()):
-        return 0
-    tag = check_language_tag(source_lang)
-    if same_language(tag, working_language(graph)):
-        return 0
-    wanted = set(node_ids)
-    count = 0
-    for node in getattr(graph, "nodes", []) or []:
-        if node.node_id not in wanted or getattr(node, "node_type", "") == "graph":
-            continue
+
+def stamp_birth_language(node: Any, tag: Optional[str]) -> bool:
+    """Write ``data.lang`` on a node that is being BORN (dev27, rule A1).
+
+    *il testo, la risorsa e la selezione* (E.D., 2026-10-01): ``data.lang`` is
+    written always at birth — the rule StratiField follows since ``6e915ff``,
+    now for every writer — and says in which language the text was born, EVEN
+    when it is the study's: when the study's language later changes, the nodes
+    already written stay in theirs. Works on a Node or on an em.json node dict.
+
+    Not written: when ``tag`` is None (the language is not known: the node stays
+    counted among the texts without a language); when the node already declares
+    one; on the types whose ``data.lang`` is not the language of their text
+    (:data:`NOT_TEXT_LANGUAGE_TYPES`). Returns True when it wrote."""
+    if not tag or _node_type_of(node) in NOT_TEXT_LANGUAGE_TYPES:
+        return False
+    if isinstance(node, dict):
+        data = node.get("data")
+        if not isinstance(data, dict):
+            data = node["data"] = {}
+    else:
         data = getattr(node, "data", None)
         if not isinstance(data, dict):
             data = {}
             try:
                 node.data = data
             except AttributeError:
-                continue
-        if node_language(node):
-            continue
-        data[NODE_LANG_KEY] = tag
-        count += 1
+                return False
+    if is_language_tag(data.get(NODE_LANG_KEY)):
+        return False
+    data[NODE_LANG_KEY] = tag
+    return True
+
+
+def stamp_born_nodes(graph: Any, before: Any, lang: Optional[str] = None) -> int:
+    """:func:`stamp_birth_language` on every node of ``graph`` whose id is not
+    in ``before`` (the ids there before a writer ran): the one call the ``api``
+    writers make after creating. Returns how many were given the language."""
+    tag = birth_language(graph, lang)
+    if not tag:
+        return 0
+    seen = set(before)
+    return sum(1 for n in getattr(graph, "nodes", []) or []
+               if n.node_id not in seen and stamp_birth_language(n, tag))
+
+
+def content_languages(resource: Any) -> list:
+    """The languages of the CONTENT of a resource (its ``data.lang``: one tag or
+    a list, «latino e italiano a fronte» = ``["la", "it"]``), in the order
+    written; ``[]`` when none was declared. Values that are not tags are
+    skipped, as :func:`node_language` skips them."""
+    data = resource.get("data") if isinstance(resource, dict) else getattr(resource, "data", None)
+    value = data.get(NODE_LANG_KEY) if isinstance(data, dict) else None
+    values = value if isinstance(value, (list, tuple)) else [value]
+    return [v.strip() for v in values if is_language_tag(v)]
+
+
+def set_content_languages(resource: Any, tags: Any) -> list:
+    """Declare the languages of a resource's content (``data.lang``): one tag or
+    a list; ``None`` / ``[]`` retracts. One tag is stored as a string, more as a
+    list. Every tag is checked first; an invalid one raises ``ValueError`` and
+    nothing is written."""
+    if _node_type_of(resource) != "resource":
+        raise ValueError("the language of a content is declared on a resource")
+    values = [] if tags in (None, "") else (
+        list(tags) if isinstance(tags, (list, tuple)) else [tags])
+    checked = [check_language_tag(t) for t in values]
+    data = resource.setdefault("data", {}) if isinstance(resource, dict) else resource.data
+    if not checked:
+        data.pop(NODE_LANG_KEY, None)
+    else:
+        data[NODE_LANG_KEY] = checked[0] if len(checked) == 1 else checked
+    return checked
+
+
+def declare_source_language(graph: Any, node_ids: Any,
+                            source_lang: Optional[str]) -> int:
+    """The language of an INGESTED source, written on the nodes made from it.
+
+    Le traduzioni (E.D. 2026-10-01), revised by dev27 (rule A1, *il testo, la
+    risorsa e la selezione*): an importer writes ``data.lang`` on the nodes it
+    CREATED — the source's language when it knows it (``source_lang``, an
+    argument or the mapping's ``source_settings.source_lang``), else the
+    study's working language at this moment — ALWAYS, also when it is the
+    study's (dev26 wrote it only when it differed). A node that already declares
+    a language keeps it; the graph-self node and the resources are not texts
+    (:func:`stamp_birth_language`). An invalid tag raises ``ValueError`` before
+    anything is written. Returns how many nodes were given the language."""
+    tag = birth_language(graph, source_lang)
+    if not tag:
+        return 0
+    wanted = set(node_ids)
+    count = 0
+    for node in getattr(graph, "nodes", []) or []:
+        if node.node_id in wanted and stamp_birth_language(node, tag):
+            count += 1
     return count

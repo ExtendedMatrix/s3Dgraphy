@@ -198,14 +198,18 @@ def test_the_source_language_is_written_on_what_the_import_creates(tmp_path):
     assert root.data["language"] == "it" and "lang" not in root.data
 
 
-def test_the_source_language_equal_to_the_study_is_not_written(tmp_path):
+def test_the_source_language_equal_to_the_study_is_written_too(tmp_path):
+    """dev27, rule A1 (E.D. 2026-10-01): data.lang is written ALWAYS at birth,
+    also when equal to the study's (dev26 wrote it only when it differed)."""
     graph = Graph(graph_id="scavo")
     api.set_working_language(graph, "it")
     graph, report = _apply(tmp_path, _titled(tmp_path / "t.xlsx"),
                            _mapping(source_lang="it"), graph=graph)
-    assert report["source_lang_written"] == 0
-    assert not any("lang" in (getattr(n, "data", None) or {})
-                   for n in graph.nodes)
+    units = [n for n in graph.nodes if n.node_type == "US"]
+    assert units and report["source_lang_written"] >= len(units)
+    assert all(n.data.get("lang") == "it" for n in units)
+    root = next(n for n in graph.nodes if n.node_type == "graph")
+    assert "lang" not in root.data
 
 
 def test_the_mapping_declares_the_source_language(tmp_path):

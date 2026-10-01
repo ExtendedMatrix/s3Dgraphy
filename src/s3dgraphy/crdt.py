@@ -766,6 +766,12 @@ def apply_op_to_section(section: Dict[str, Any], op: Dict[str, Any]) -> OpResult
         _stamp_payload(payload, clock, creation=True)
         existing = by_id.get(node_id)
         if existing is None:
+            # dev27, rule A1: a node born here carries the language it is born
+            # in. The op's own data.lang wins (the producer knows the form's
+            # language); else the study's working language as this section
+            # declares it; else nothing — never invented.
+            from .language import stamp_birth_language
+            stamp_birth_language(payload, _section_language(section))
             nodes.append(payload)
             return OpResult(True, "added", node_id)
         # already there: the same id is the same node, so this is a merge, not a
@@ -902,6 +908,22 @@ def _refused_language(data: Any) -> Optional[str]:
         return (f"data.{key} {value!r} is not a language tag (BCP 47: 'it', "
                 f"'en-GB', 'und'): nothing was written")
     return None
+
+
+def _section_language(section: Dict[str, Any]) -> Optional[str]:
+    """The study's working language as an em.json graph section declares it:
+    the graph-self node's ``data.language``, else the section's own
+    ``data.language`` (the legacy spelling :func:`s3dgraphy.language.
+    working_language` falls back to). None when undeclared or not a tag."""
+    from .language import STUDY_LANG_KEY, is_language_tag
+    for node in section.get("nodes") or []:
+        if isinstance(node, dict) and node.get("type") == "graph":
+            value = (node.get("data") or {}).get(STUDY_LANG_KEY)
+            if is_language_tag(value):
+                return value.strip()
+    value = (section.get("data") or {}).get(STUDY_LANG_KEY) \
+        if isinstance(section.get("data"), dict) else None
+    return value.strip() if is_language_tag(value) else None
 
 
 #: the data keys that hold a language tag

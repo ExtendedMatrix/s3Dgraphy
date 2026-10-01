@@ -223,6 +223,19 @@ def validate_ai(graph: Graph, node_id: str, author_id: str, *,
     return validate_node(graph, node, author_id, at=at)
 
 
+def _ids(graph: Optional[Graph]) -> set:
+    return {n.node_id for n in getattr(graph, "nodes", []) or []}
+
+
+def _born(graph: Optional[Graph], before: set) -> None:
+    """dev27, rule A1: the nodes a writer of this surface just created are born
+    in the study's working language (``data.lang``, always written, also when
+    equal to the study's). See :func:`s3dgraphy.language.stamp_born_nodes`."""
+    if graph is not None:
+        from .language import stamp_born_nodes
+        stamp_born_nodes(graph, before)
+
+
 def _node_of(graph: Graph, node):
     if isinstance(node, str):
         found = graph.find_node_by_id(node)
@@ -955,11 +968,14 @@ def declare_derivation(graph: Graph, output: str, inputs: Any, *,
     extra: Dict[str, Any] = {}
     if dtc_kind is not None:
         extra["dtc_kind"] = dtc_kind
-    return _declare(graph, output, list(inputs or ()), tool=tool,
-                    process_id=process_id, technique=technique,
-                    parameters=parameters,
-                    software=list(software) if software else None,
-                    name=name, author=author, at=at, **extra)
+    before = _ids(graph)
+    out = _declare(graph, output, list(inputs or ()), tool=tool,
+                   process_id=process_id, technique=technique,
+                   parameters=parameters,
+                   software=list(software) if software else None,
+                   name=name, author=author, at=at, **extra)
+    _born(graph, before)
+    return out
 
 
 def derivation_chain(graph: Graph, resource: str) -> Dict[str, Any]:
@@ -1200,8 +1216,11 @@ def create_annotation_paradata(graph: Graph, image_id: str,
     See :mod:`s3dgraphy.annotation`.
     """
     from .annotation import create_annotation_paradata as _create
-    return _create(graph, image_id, region, interpretation, property_type,
-                   target_unit_id=target_unit_id, author=author)
+    before = _ids(graph)
+    out = _create(graph, image_id, region, interpretation, property_type,
+                  target_unit_id=target_unit_id, author=author)
+    _born(graph, before)
+    return out
 
 
 def place_reading(graph: Graph, extractor_id: str, on_id: Optional[str],
@@ -1215,8 +1234,11 @@ def place_reading(graph: Graph, extractor_id: str, on_id: Optional[str],
     id>.glb`` resource (``has_linked_resource``), with a warning. See
     :mod:`s3dgraphy.annotation.reading`."""
     from .annotation.reading import place_reading as _place
-    return _place(graph, extractor_id, on_id, geometry, project_root=project_root,
-                  author=author, name=name)
+    before = _ids(graph)
+    out = _place(graph, extractor_id, on_id, geometry, project_root=project_root,
+                 author=author, name=name)
+    _born(graph, before)
+    return out
 
 
 def measure(graph: Graph, region_id: str, *,
@@ -1263,7 +1285,10 @@ def import_aton_scene(scene: Any, graph: Optional[Graph] = None, *,
     (``create_type="US"`` asks for the old behaviour explicitly). Returns
     ``(graph, report)``. See :mod:`s3dgraphy.geometry.aton`."""
     from .geometry.aton import import_aton_scene as _imp
-    return _imp(scene, graph, create_type=create_type, author=author)
+    before = _ids(graph)
+    graph, report = _imp(scene, graph, create_type=create_type, author=author)
+    _born(graph, before)
+    return graph, report
 
 
 def promote_region_to_proxy(graph: Graph, region_id: str, unit_id: str) -> Dict[str, Any]:
@@ -1297,8 +1322,11 @@ def create_geometry_proxy(graph: Graph, unit_id: str, shape: Dict[str, Any],
     See :mod:`s3dgraphy.geometry`.
     """
     from .geometry import create_geometry_proxy as _create
-    return _create(graph, unit_id, shape, extractor_sources=extractor_sources,
-                   author=author, name=name)
+    before = _ids(graph)
+    out = _create(graph, unit_id, shape, extractor_sources=extractor_sources,
+                  author=author, name=name)
+    _born(graph, before)
+    return out
 
 
 # ── project → TTL / RDF ────────────────────────────────────────────────────────
@@ -1582,9 +1610,12 @@ def write_ai_draft(graph: Graph, target: str, text: str, *, model: str,
 
     Nothing here validates anything — validation is an act by a person (N4)."""
     from .narrative.generation import write_ai_draft as _w
-    return _w(graph, target, text, model=model, version=version, date=date,
-              prompt=prompt, narrative_id=narrative_id,
-              chapter_title=chapter_title)
+    before = _ids(graph)
+    out = _w(graph, target, text, model=model, version=version, date=date,
+             prompt=prompt, narrative_id=narrative_id,
+             chapter_title=chapter_title)
+    _born(graph, before)
+    return out
 
 
 # ── EM Narrative — print projection (L1) ──────────────────────────────────────

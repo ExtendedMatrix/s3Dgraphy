@@ -439,13 +439,13 @@ class MappedXLSXImporter(BaseImporter):
             self._process_epochs()
             self._process_stratigraphic_relations()
 
-            # The language of the source, on the nodes this import made
-            if source_lang:
-                from ..language import declare_source_language
-                created = [n.node_id for n in self.graph.nodes
-                           if n.node_id not in nodes_before]
-                self.source_lang_written = declare_source_language(
-                    self.graph, created, source_lang)
+            # The language the nodes this import made are born in: the
+            # source's, else the study's (dev27, rule A1: always written)
+            from ..language import declare_source_language
+            created = [n.node_id for n in self.graph.nodes
+                       if n.node_id not in nodes_before]
+            self.source_lang_written = declare_source_language(
+                self.graph, created, source_lang)
 
             # Summary
             # print(f"\n=== Import Summary ===")
