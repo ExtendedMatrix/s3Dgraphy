@@ -108,7 +108,9 @@ The axes currently declared, measured on the shipped file:
   - *retrieval* — `download`, `local_import`, `uri_reference`, `ingest`: it
     arrives already made.
 - **process** — `photogrammetry`, `transformation`, `decimation`,
-  `georeferencing`, `format_conversion`, `classification`, `vectorization`
+  `georeferencing`, `format_conversion`, `export`, `lod_generation`, `tiling`,
+  `packing`, `classification`, `vectorization` (the four gestures of whoever
+  exports since visual rules 1.6.29, dev28)
 - **output** — `pointcloud`, `mesh`, `dem`, `orthophoto`, `points`, `lines`, `polygons`
 - **device** — `camera`, `sensor`, `drone`, `computer`, `scanner`, `total_station`, `gnss`
 - **input** — no entries: a read alias of the capture family
