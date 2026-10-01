@@ -7375,6 +7375,27 @@
     "he": "רחפן"
    }
   },
+  "export": {
+   "label": {
+    "en": "Export",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Esportazione",
+    "de": "Export",
+    "fr": "Exportation",
+    "es": "Exportación",
+    "pl": "Eksport",
+    "ro": "Export",
+    "el": "Εξαγωγή",
+    "he": "ייצוא"
+   }
+  },
   "family_capture": {
    "label": {
     "en": "Capture",
@@ -7606,6 +7627,27 @@
     "he": "ייבוא מקומי"
    }
   },
+  "lod_generation": {
+   "label": {
+    "en": "LOD generation",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Generazione di LOD",
+    "de": "LOD-Erzeugung",
+    "fr": "Génération de LOD",
+    "es": "Generación de LOD",
+    "pl": "Generowanie LOD",
+    "ro": "Generare LOD",
+    "el": "Δημιουργία LOD",
+    "he": "יצירת LOD"
+   }
+  },
   "mesh": {
    "label": {
     "en": "Mesh",
@@ -7646,6 +7688,27 @@
     "ro": "Ortofoto",
     "el": "Ορθοφωτογραφία",
     "he": "אורתופוטו"
+   }
+  },
+  "packing": {
+   "label": {
+    "en": "Packing",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Impacchettamento",
+    "de": "Paketierung",
+    "fr": "Empaquetage",
+    "es": "Empaquetado",
+    "pl": "Pakowanie",
+    "ro": "Împachetare",
+    "el": "Συσκευασία",
+    "he": "אריזה"
    }
   },
   "photo": {
@@ -7814,6 +7877,27 @@
     "ro": "Senzor",
     "el": "Αισθητήρας",
     "he": "חיישן"
+   }
+  },
+  "tiling": {
+   "label": {
+    "en": "Tiling",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Suddivisione in tile",
+    "de": "Kachelung",
+    "fr": "Tuilage",
+    "es": "Teselado",
+    "pl": "Kafelkowanie",
+    "ro": "Împărțire în tile",
+    "el": "Διαίρεση σε πλακίδια",
+    "he": "חלוקה לאריחים"
    }
   },
   "topographic": {
