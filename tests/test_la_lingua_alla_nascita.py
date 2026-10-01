@@ -106,10 +106,17 @@ def _section(lang="it", key="node_type"):
     return {"nodes": nodes, "edges": []}
 
 
+def _old_op(kind, **fields):
+    """An op as a producer before dev28 sent it: no data.lang, and not built by
+    make_op, which now requires it (decision 12). The CRDT still reads it —
+    with the study's language as a fallback, said and counted."""
+    return {"op": kind, **fields}
+
+
 def test_the_crdt_reads_the_study_language_as_em_json_spells_it():
     for key in ("node_type", "type"):
         sec = _section("la", key=key)
-        apply_op_to_section(sec, make_op(
+        apply_op_to_section(sec, _old_op(
             "add_node", ts="2026-10-31T09:00:00Z",
             node={"id": "u", "node_type": "US", "name": "US 1"}))
         assert next(n for n in sec["nodes"] if n["id"] == "u")["data"]["lang"] == "la", key
@@ -117,7 +124,7 @@ def test_the_crdt_reads_the_study_language_as_em_json_spells_it():
 
 def test_the_crdt_writes_the_language_of_a_new_node():
     sec = _section("it")
-    op = make_op("add_node", ts="2026-10-31T09:00:00Z", author="0000-0002-1825-0097",
+    op = _old_op("add_node", ts="2026-10-31T09:00:00Z", author="0000-0002-1825-0097",
                  node={"id": "us1", "node_type": "US", "name": "US 1",
                        "description": "strato"})
     assert apply_op_to_section(sec, op).applied
@@ -136,7 +143,7 @@ def test_the_crdt_keeps_the_language_the_op_carries():
 
 def test_the_crdt_without_a_study_language_writes_none():
     sec = _section(None)
-    op = make_op("add_node", ts="2026-10-31T09:00:00Z",
+    op = _old_op("add_node", ts="2026-10-31T09:00:00Z",
                  node={"id": "us1", "node_type": "US", "name": "US 1"})
     apply_op_to_section(sec, op)
     assert "lang" not in (next(n for n in sec["nodes"] if n["id"] == "us1")
@@ -147,7 +154,7 @@ def test_a_merge_never_rewrites_the_language():
     sec = _section("it")
     sec["nodes"].append({"id": "us1", "node_type": "US", "name": "US 1",
                          "data": {"created_at": "2026-10-30T09:00:00Z"}})
-    op = make_op("add_node", ts="2026-10-31T09:00:00Z",
+    op = _old_op("add_node", ts="2026-10-31T09:00:00Z",
                  node={"id": "us1", "node_type": "US", "name": "US 1"})
     apply_op_to_section(sec, op)
     assert "lang" not in next(n for n in sec["nodes"] if n["id"] == "us1")["data"]

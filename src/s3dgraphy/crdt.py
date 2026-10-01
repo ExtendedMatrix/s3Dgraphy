@@ -679,11 +679,58 @@ class OpResult:
     reason: str = ""
     node_id: Optional[str] = None
     fields: List[FieldOutcome] = field(default_factory=list)
+    #: dev28 · where the language of a node BORN by this op came from:
+    #: ``op`` (the op carried it — the rule), ``study_fallback`` (an old op
+    #: without it: the section's study language, the reading of ``ad0bd61``,
+    #: kept only as a fallback and counted), ``none`` (an old op and no study
+    #: language either). None for anything that is not a text being born.
+    language: Optional[str] = None
 
     def as_dict(self) -> Dict[str, Any]:
-        return {"applied": self.applied, "reason": self.reason,
-                "node_id": self.node_id,
-                "fields": [f.as_dict() for f in self.fields]}
+        out = {"applied": self.applied, "reason": self.reason,
+               "node_id": self.node_id,
+               "fields": [f.as_dict() for f in self.fields]}
+        if self.language is not None:
+            out["language"] = self.language
+        return out
+
+
+#: dev28 · the three answers of :attr:`OpResult.language`.
+LANGUAGE_FROM_OP = "op"
+LANGUAGE_FROM_STUDY = "study_fallback"
+LANGUAGE_NONE = "none"
+
+
+def is_text_node(payload: Any) -> bool:
+    """Whether a node payload carries a text whose language ``data.lang`` is:
+    every type but :data:`s3dgraphy.language.NOT_TEXT_LANGUAGE_TYPES`. A payload
+    that names no type is a text (the strict side: nothing is exempted by
+    omission)."""
+    from .language import NOT_TEXT_LANGUAGE_TYPES
+    if not isinstance(payload, dict):
+        return False
+    kind = payload.get("node_type") or payload.get("type")
+    return kind not in NOT_TEXT_LANGUAGE_TYPES
+
+
+def op_language(op: Dict[str, Any]) -> Optional[str]:
+    """The ``data.lang`` an ``add_node`` op carries, when it is a tag."""
+    from .language import is_language_tag
+    payload = op.get("node") or op.get("data") or {}
+    lang = (payload.get("data") or {}).get("lang") if isinstance(payload, dict) else None
+    return lang.strip() if is_language_tag(lang) else None
+
+
+def language_fallbacks(results: Sequence["OpResult"]) -> Dict[str, int]:
+    """How many nodes were born by OLD ops — without ``data.lang`` — and where
+    their language came from: ``{"study_fallback": n, "none": m}``. The number a
+    relay or a merge says aloud, because those languages may differ between two
+    copies of the same room."""
+    out = {LANGUAGE_FROM_STUDY: 0, LANGUAGE_NONE: 0}
+    for r in results:
+        if r.language in out:
+            out[r.language] += 1
+    return out
 
 
 def op_clock(op: Dict[str, Any]) -> Clock:
@@ -698,6 +745,23 @@ def make_op(kind: str, *, ts: Optional[str] = None, author: Optional[str] = None
         raise ValueError(f"unknown operation '{kind}' (known: {', '.join(OPS)})")
     op: Dict[str, Any] = {"op": kind}
     op.update(fields)
+    if kind == "add_node":
+        # dev28 (E.D., 1 Oct 2026, decision 12): the language a node is born in
+        # travels IN THE OP, and it is the producer's to put there. Read from
+        # each copy's study at arrival, two copies of one room could write two
+        # languages for the same node; written once by whoever creates the
+        # node, every copy writes the same. `und` says «not known» without
+        # guessing.
+        payload = op.get("node") or op.get("data") or {}
+        declared = (payload.get("data") or {}).get("lang") if isinstance(payload, dict) else None
+        # ABSENT is refused here; a value that is not a tag goes on to the CRDT,
+        # which refuses it with its own reason (dev27) — one refusal per defect
+        if is_text_node(payload) and declared in (None, ""):
+            raise ValueError(
+                f"add_node of '{payload.get('id') or op.get('id')}': a node with "
+                f"a text is born with data.lang in the op (a BCP 47 tag; 'und' "
+                f"when nobody knows) — the producer decides it once, so that "
+                f"every copy writes the same")
     if ts:
         op["ts"] = ts
     if author:
@@ -769,14 +833,23 @@ def apply_op_to_section(section: Dict[str, Any], op: Dict[str, Any]) -> OpResult
         _stamp_payload(payload, clock, creation=True, auth=auth)
         existing = by_id.get(node_id)
         if existing is None:
-            # dev27, rule A1: a node born here carries the language it is born
-            # in. The op's own data.lang wins (the producer knows the form's
-            # language); else the study's working language as this section
-            # declares it; else nothing — never invented.
-            from .language import stamp_birth_language
-            stamp_birth_language(payload, _section_language(section))
+            # dev28, decision 12: the language is IN THE OP (make_op requires it
+            # of a producer). An op without it is an OLD op — from a producer
+            # before dev28 — and only for those the section's study language is
+            # read, as dev27 (ad0bd61) did; that is said in the result and
+            # counted (language_fallbacks), because two copies with two study
+            # languages write two languages for it. Never invented beyond that.
+            language = None
+            if is_text_node(payload):
+                if op_language(op) is not None:
+                    language = LANGUAGE_FROM_OP
+                else:
+                    from .language import stamp_birth_language
+                    language = (LANGUAGE_FROM_STUDY
+                                if stamp_birth_language(payload, _section_language(section))
+                                else LANGUAGE_NONE)
             nodes.append(payload)
-            return OpResult(True, "added", node_id)
+            return OpResult(True, "added", node_id, language=language)
         # already there: the same id is the same node, so this is a merge, not a
         # duplicate — which is exactly what makes `add` idempotent in an OR-Set
         outcome = merge_payloads(existing, payload)

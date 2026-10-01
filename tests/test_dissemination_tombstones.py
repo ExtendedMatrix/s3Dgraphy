@@ -39,11 +39,11 @@ def _section():
     an edge that died, and an edge left DANGLING by a dead endpoint."""
     section = {"graph_id": "tomb", "nodes": [], "edges": []}
     ops = [
-        api.make_op("add_node", id="us1", node={"node_type": "US", "name": "US 1"},
+        api.make_op("add_node", id="us1", node={"node_type": "US", "name": "US 1", "data": {"lang": "it"}},
                     ts=BORN, author="scavatrice"),
-        api.make_op("add_node", id="us2", node={"node_type": "US", "name": "US 2"},
+        api.make_op("add_node", id="us2", node={"node_type": "US", "name": "US 2", "data": {"lang": "it"}},
                     ts=BORN, author="scavatrice"),
-        api.make_op("add_node", id="us3", node={"node_type": "US", "name": "US 3"},
+        api.make_op("add_node", id="us3", node={"node_type": "US", "name": "US 3", "data": {"lang": "it"}},
                     ts=BORN, author="scavatrice"),
         api.make_op("add_edge", source="us1", target="us2", edge_type="is_after",
                     ts=LINKED, author="scavatrice"),

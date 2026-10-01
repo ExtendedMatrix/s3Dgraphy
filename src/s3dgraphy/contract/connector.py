@@ -493,8 +493,16 @@ def apply_delta(section: Dict[str, Any], descriptor: ConnectorDescriptor,
     applied = {"nodes": 0, "edges": 0}
     refused: List[Dict[str, Any]] = []
 
+    from ..crdt import _section_language, is_text_node
+    study_lang = _section_language(section)
     for node in delta.nodes:
         payload = dict(node)
+        if is_text_node(payload) and not (payload.get("data") or {}).get("lang"):
+            # dev28: the producer puts the language in the op. This seam is the
+            # producer for a connector's delta: the study it writes into, or
+            # `und` — decided once here, the same in every copy
+            payload["data"] = {**(payload.get("data") or {}),
+                               "lang": study_lang or "und"}
         if volatile:
             data = dict(payload.get("data") or {})
             data[VOLATILE_KEY] = injector

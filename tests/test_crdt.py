@@ -74,7 +74,7 @@ def test_1_two_op_logs_converge_whatever_the_order():
     l2 = [
         crdt.make_op("update_field", node_id="US1", field="description",
                      value="muro di fondazione", ts=T3, author=BRUNO),
-        crdt.make_op("add_node", node=_node("US2"), ts=T2, author=BRUNO),
+        crdt.make_op("add_node", node=_node("US2", lang="it"), ts=T2, author=BRUNO),
     ]
 
     a = _section(base)
@@ -125,7 +125,7 @@ def test_2_applying_the_same_op_twice_changes_nothing():
 
 def test_2b_add_node_twice_is_one_node():
     section = _section()
-    op = crdt.make_op("add_node", node=_node("US9"), ts=T1, author=ANNA)
+    op = crdt.make_op("add_node", node=_node("US9", lang="it"), ts=T1, author=ANNA)
     crdt.apply_op_to_section(section, op)
     before = _digest(section)
     crdt.apply_op_to_section(section, op)

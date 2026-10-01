@@ -186,10 +186,10 @@ def published_section() -> dict:
     section = {"nodes": [], "edges": []}
     ops = [
         make_op("add_node", node={"id": "us-1", "node_type": "US",
-                                  "name": "US 1"}, author=AUTHOR,
+                                  "name": "US 1", "data": {"lang": "it"}}, author=AUTHOR,
                 ts="2026-08-22T10:00:00+00:00"),
         make_op("add_node", node={"id": "us-2", "node_type": "US",
-                                  "name": "US 2"}, author=AUTHOR,
+                                  "name": "US 2", "data": {"lang": "it"}}, author=AUTHOR,
                 ts="2026-08-22T10:00:01+00:00"),
         make_op("add_edge", id="e1", source="us-1", target="us-2",
                 edge_type="is_before", author=AUTHOR,
