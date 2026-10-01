@@ -43,7 +43,7 @@
     "s3dgraphy": "1.6.0.dev25",
     "schema_version": "1",
     "node_datamodel": "1.6.19",
-    "connections_datamodel": "1.6.32",
+    "connections_datamodel": "1.6.33",
     "on": "2026-10-01"
   }
 }

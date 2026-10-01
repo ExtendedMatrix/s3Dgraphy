@@ -48,7 +48,11 @@ _CURIE = re.compile(r"^em:([A-Za-z_]\w*)$")
 #: Declared in em.ttl and cited by no datamodel, ON PURPOSE: term -> the reason.
 #: Measured 2026-10-26 (em.ttl 1.6.9, nodes 1.6.18, connections 1.6.32): the five
 #: terms of the EM theory of virtual, documentary, reassembled and reused units
-#: that no code writes and no edge of the graph carries.
+#: that no code writes and no edge of the graph carries. Three since connections
+#: 1.6.33 (MICRO la lingua dei dati, part H, decided by E.D. 2026-10-01):
+#: em:derivedFromDocument leaves with has_documentation from a USD
+#: (extension_when.source_node_class) and em:reconstructsFrom with is_part_of
+#: SF -> VSF, read from the whole (inverse_extension), so both are cited there.
 _NO_EDGE = ("a term of the ontology without an edge in the graph; "
             "it is added when one is needed")
 EM_TTL_EXCEPTIONS = {
@@ -59,17 +63,6 @@ EM_TTL_EXCEPTIONS = {
     # VirtualSU -> the absent A8 it stands for. The absent unit is not a node:
     # no edge between two stratigraphic nodes means "reconstructs".
     "reconstructsAbsent": _NO_EDGE,
-    # DocumentaryVirtualSU -> E31. Nearest: has_documentation (P70i) from ANY
-    # StratigraphicNode to a DocumentNode; as its extension it would be written
-    # for every source, and extension_when guards only the target class.
-    "derivedFromDocument": _NO_EDGE + (
-        " (nearest: has_documentation from a USD, which would need a guard on "
-        "the source class that the exporter does not have)"),
-    # VirtualSpecialFind -> DisplacedSpecialFind. Nearest: SF is_part_of VSF,
-    # the OTHER direction; the exporter writes an extension only in the core's.
-    "reconstructsFrom": _NO_EDGE + (
-        " (nearest: the reverse of is_part_of SF -> VSF; the exporter writes an "
-        "extension only in the direction of the core predicate)"),
     # ReusedSpecialFind -> the ORIGINAL context. is_part_of from an RSF names the
     # host it is in now, not the one it was taken from.
     "wasReusedFrom": _NO_EDGE + (

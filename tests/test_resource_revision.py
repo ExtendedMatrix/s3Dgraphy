@@ -145,8 +145,9 @@ def test_l_arco_nel_datamodel():
     dm = get_connections_datamodel()
     assert dm.get_reverse_name("was_revision_of") == "had_revision"
     raw = json.loads((CONFIG / "s3Dgraphy_connections_datamodel.json").read_text())
-    # 1.6.32 dal 26 ott 2026 (termini di em.ttl); la voce 1.6.31 resta nella storia
-    assert raw["s3Dgraphy_connections_model_version"] == "1.6.32"
+    # 1.6.33 dal 27 ott 2026 (la lingua dei dati, parte H); la voce 1.6.31
+    # resta nella storia
+    assert raw["s3Dgraphy_connections_model_version"] == "1.6.33"
     assert "v1.6.31 (LA REVISIONE DELLA RISORSA" in raw["description"]
     entry = raw["edge_types"]["was_revision_of"]
     assert entry["allowed_connections"]["source"] == ["ResourceNode"]

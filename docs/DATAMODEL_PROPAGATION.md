@@ -159,9 +159,11 @@ against every `em:` subject of `em.ttl`.
   the AI marker and the verification as `properties` of the base `Node`; the
   AP11 subproperties as `mapping.subproperty` of each physical edge (the
   exporter's `AP11_SUBPROPS` is now read from there); the resource, shape,
-  region, author and qualia terms on their classes. The five exceptions are
-  terms of the EM theory (`hypothesizedBy`, `reconstructsAbsent`,
-  `derivedFromDocument`, `reconstructsFrom`, `wasReusedFrom`) that no edge of the
+  region, author and qualia terms on their classes. Since connections 1.6.33
+  two more leave with the edge nearest to them: `derivedFromDocument` with
+  `has_documentation` from a USD, `reconstructsFrom` with `is_part_of` SF → VSF
+  read from the whole. The three exceptions left are terms of the EM theory
+  (`hypothesizedBy`, `reconstructsAbsent`, `wasReusedFrom`) that no edge of the
   graph carries yet.
 
   **A new `em:` term** goes into `em.ttl` AND into the datamodel field the code

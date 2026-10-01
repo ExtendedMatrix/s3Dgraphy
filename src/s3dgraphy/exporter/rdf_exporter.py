@@ -420,12 +420,53 @@ class _Datamodel:
 
         Returns None when no guard is declared, meaning no restriction.
         """
+        classes = (self.get_extension_condition(edge_type) or {}).get("target_node_class")
+        return list(classes) if classes else None
+
+    def get_extension_condition(self, edge_type: str) -> Optional[Dict[str, List[str]]]:
+        """The whole ``mapping.extension_when`` of an edge: the classes the
+        LOGICAL source (``source_node_class``) and target (``target_node_class``)
+        must have for the extension predicate to be emitted. None when the
+        extension is unconditional.
+
+        The target guard came first (is_part_of → AP21i, 2026-09-25); the source
+        guard is has_documentation → em:derivedFromDocument (connections 1.6.33),
+        whose domain is the USD, the side the edge starts from."""
         edges = self.connections_datamodel.get("edge_types", {})
         canonical, _inv = self.resolve_edge_direction(edge_type)
         entry = edges.get(canonical) or {}
         when = (entry.get("mapping") or {}).get("extension_when") or {}
-        classes = when.get("target_node_class")
-        return list(classes) if classes else None
+        out = {key: list(when[key]) for key in ("source_node_class", "target_node_class")
+               if when.get(key)}
+        return out or None
+
+    def get_inverse_extension(self, edge_type: str
+                              ) -> Optional[Tuple[URIRef, Dict[str, List[str]]]]:
+        """``mapping.inverse_extension``: a predicate that restates the edge FROM
+        THE OTHER SIDE (``<target> pred <source>``), and the classes the logical
+        source and target must have. is_part_of → em:reconstructsFrom (a VSF is
+        reconstructed from the SF that is part of it), connections 1.6.33."""
+        edges = self.connections_datamodel.get("edge_types", {})
+        canonical, _inv = self.resolve_edge_direction(edge_type)
+        entry = edges.get(canonical) or {}
+        inverse = (entry.get("mapping") or {}).get("inverse_extension") or {}
+        predicate = _resolve_prefixed(inverse.get("predicate"))
+        if predicate is None:
+            return None
+        when = inverse.get("when") or {}
+        return predicate, {key: list(when[key])
+                           for key in ("source_node_class", "target_node_class")
+                           if when.get(key)}
+
+    def inverse_extension_predicates(self) -> List[URIRef]:
+        """Every predicate declared as an inverse_extension — the importer skips
+        them, since the edge comes back from its core predicate."""
+        out = []
+        for edge_type in (self.connections_datamodel.get("edge_types") or {}):
+            found = self.get_inverse_extension(edge_type)
+            if found is not None and found[0] not in out:
+                out.append(found[0])
+        return out
 
     def edge_predicate_declared_absent(self, edge_type: str) -> bool:
         """True when the datamodel says, in so many words, that this edge has
@@ -1906,6 +1947,28 @@ class RDFExporter:
         node = g.find_node_by_id(edge.edge_source if inverted else edge.edge_target)
         return type(node).__name__ if node is not None else ""
 
+    @staticmethod
+    def _logical_source_class(g: S3DGraph, edge: Any, inverted: bool) -> str:
+        """Class name of the node the edge starts FROM once direction is
+        resolved — the twin of :meth:`_logical_target_class`, failing closed
+        the same way."""
+        node = g.find_node_by_id(edge.edge_target if inverted else edge.edge_source)
+        return type(node).__name__ if node is not None else ""
+
+    def _condition_holds(self, g: S3DGraph, edge: Any, inverted: bool,
+                         condition: Optional[Dict[str, List[str]]]) -> bool:
+        """``{source_node_class, target_node_class}`` against the logical ends
+        of the edge; no condition holds always."""
+        if not condition:
+            return True
+        sources = condition.get("source_node_class")
+        if sources and self._logical_source_class(g, edge, inverted) not in sources:
+            return False
+        targets = condition.get("target_node_class")
+        if targets and self._logical_target_class(g, edge, inverted) not in targets:
+            return False
+        return True
+
     def _serialize_edge(self, g: S3DGraph, edge: Any, ctx) -> None:
         edge_type = edge.edge_type
         predicate, ext_iri, type_tag, deprecated = self.datamodel.get_edge_mapping(edge_type)
@@ -1972,12 +2035,19 @@ class RDFExporter:
             # resolvable, so expressive SPARQL works without inference
             # while CRM-only readers still see the core predicate.
             if ext_iri is not None and ext_iri != predicate:
-                guard = self.datamodel.get_extension_guard(edge_type)
-                if guard is None or self._logical_target_class(g, edge, inverted) in guard:
+                if self._condition_holds(g, edge, inverted,
+                                         self.datamodel.get_extension_condition(edge_type)):
                     ctx.add((source_iri, ext_iri, target_iri))
                 else:
                     self.stats["edges_extension_skipped_guard"] = (
                         self.stats.get("edges_extension_skipped_guard", 0) + 1)
+            # The same edge read from the other side, where the datamodel
+            # declares it (is_part_of → <VSF> em:reconstructsFrom <SF>).
+            inverse = self.datamodel.get_inverse_extension(edge_type)
+            if inverse is not None and self._condition_holds(g, edge, inverted, inverse[1]):
+                ctx.add((target_iri, inverse[0], source_iri))
+                self.stats["edges_inverse_extension"] = (
+                    self.stats.get("edges_inverse_extension", 0) + 1)
             self.stats["edges_emitted"] += 1
         elif self.datamodel.edge_predicate_declared_absent(edge_type):
             # The datamodel states there is no predicate for this edge. Say

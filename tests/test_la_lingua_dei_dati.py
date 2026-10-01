@@ -9,6 +9,9 @@ Every guard is shown on a case that makes it fire:
 * never declared = untagged and counted; declared unknown = @und, not counted;
 * an invalid tag is refused where it would be written, and nothing is written;
 * em.json → TTL → em.json gives back data.lang exactly where it was.
+
+And part H (decided by E.D. 2026-10-01): em:derivedFromDocument from a USD's
+has_documentation, em:reconstructsFrom from a VSF to the SF that is part of it.
 """
 
 from __future__ import annotations
@@ -16,7 +19,7 @@ from __future__ import annotations
 import pytest
 
 rdflib = pytest.importorskip("rdflib")
-from rdflib import Literal, Namespace  # noqa: E402
+from rdflib import Literal, Namespace, URIRef  # noqa: E402
 from rdflib.namespace import DCTERMS, RDFS  # noqa: E402
 
 from s3dgraphy import api  # noqa: E402
@@ -30,9 +33,11 @@ from s3dgraphy.language import (check_language_tag, is_language_tag,  # noqa: E4
 from s3dgraphy.nodes.document_node import DocumentNode  # noqa: E402
 from s3dgraphy.nodes.property_node import PropertyNode  # noqa: E402
 from s3dgraphy.nodes.stratigraphic_node import (  # noqa: E402
-    SpecialFindUnit, StratigraphicUnit)
+    DocumentaryStratigraphicUnit, SpecialFindUnit, StratigraphicUnit,
+    VirtualSpecialFindUnit)
 
 CRM = Namespace("http://www.cidoc-crm.org/cidoc-crm/")
+EM = Namespace("https://w3id.org/em/ontology#")
 
 
 def _export(graph, tmp_path, name="g.ttl"):
@@ -282,3 +287,78 @@ def test_untagged_literals_still_read(tmp_path):
     us = back.find_node_by_id("us1")
     assert us.description == "muro in opera laterizia"
     assert "lang" not in (getattr(us, "data", None) or {})
+
+
+# ── part H: two em.ttl terms from edges that were already there ──────────────
+
+def _documented(unit):
+    g = Graph("doc")
+    g.add_node(unit)
+    g.add_node(DocumentNode("d1", "D.1", "pianta del 1890"))
+    g.add_edge("e1", unit.node_id, "d1", "has_documentation")
+    return g
+
+
+def test_a_usd_is_derived_from_its_document(tmp_path):
+    g = _documented(DocumentaryStratigraphicUnit("usd1", "USD 1", ""))
+    exporter, store, _ = _export(g, tmp_path)
+    usd, doc = _iri(exporter, g, "usd1"), _iri(exporter, g, "d1")
+    assert (usd, CRM.P70i_is_documented_in, doc) in store
+    assert (usd, EM.derivedFromDocument, doc) in store
+
+
+def test_a_us_is_only_documented(tmp_path):
+    g = _documented(StratigraphicUnit("us1", "US 1", ""))
+    exporter, store, _ = _export(g, tmp_path)
+    us, doc = _iri(exporter, g, "us1"), _iri(exporter, g, "d1")
+    assert (us, CRM.P70i_is_documented_in, doc) in store
+    assert (None, EM.derivedFromDocument, None) not in store
+
+
+def _reassembled():
+    g = Graph("vsf")
+    g.add_node(SpecialFindUnit("sf1", "SF 1", ""))
+    g.add_node(VirtualSpecialFindUnit("vsf1", "VSF 1", ""))
+    g.add_node(StratigraphicUnit("us1", "US 1", ""))
+    g.add_edge("e1", "sf1", "vsf1", "is_part_of")
+    g.add_node(SpecialFindUnit("sf2", "SF 2", ""))
+    g.add_edge("e2", "sf2", "us1", "is_part_of")
+    return g
+
+
+def test_a_vsf_is_reconstructed_from_the_sf_part_of_it(tmp_path):
+    g = _reassembled()
+    exporter, store, _ = _export(g, tmp_path)
+    sf, vsf = _iri(exporter, g, "sf1"), _iri(exporter, g, "vsf1")
+    assert (sf, CRM.P46i_forms_part_of, vsf) in store
+    assert (vsf, EM.reconstructsFrom, sf) in store
+    # a SF inside a US is containment and nothing more
+    assert len(list(store.triples((None, EM.reconstructsFrom, None)))) == 1
+
+
+def test_a_reverse_drawn_has_part_still_reconstructs(tmp_path):
+    g = Graph("vsf_rev")
+    g.add_node(SpecialFindUnit("sf1", "SF 1", ""))
+    g.add_node(VirtualSpecialFindUnit("vsf1", "VSF 1", ""))
+    g.add_edge("e1", "vsf1", "sf1", "has_part")
+    exporter, store, _ = _export(g, tmp_path)
+    sf, vsf = _iri(exporter, g, "sf1"), _iri(exporter, g, "vsf1")
+    assert (vsf, EM.reconstructsFrom, sf) in store
+
+
+@pytest.mark.parametrize("build", [
+    lambda: _documented(DocumentaryStratigraphicUnit("usd1", "USD 1", "")),
+    _reassembled,
+])
+def test_part_h_round_trips_without_extra_edges(tmp_path, build):
+    from rdflib.compare import isomorphic
+    g = build()
+    importer = RDFImporter()
+    _e, store1, path = _export(g, tmp_path, "a.ttl")
+    back = importer.parse(path)[0]
+    edges = lambda gr: sorted((e.edge_source, e.edge_type, e.edge_target)  # noqa: E731
+                              for e in gr.edges)
+    assert edges(back) == edges(g), importer.warnings
+    assert not [w for w in importer.warnings if "matches no edge type" in w]
+    _e, store2, _ = _export(back, tmp_path, "b.ttl")
+    assert isomorphic(store1, store2)

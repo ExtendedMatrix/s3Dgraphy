@@ -6,12 +6,12 @@ All notable changes to **s3dgraphy** are documented here.
 
 Everything in this section came after `42ea27c` («Bump version: 1.6.0.dev24 →
 1.6.0.dev25», on PyPI 2026-10-01). Decisions of E.D.: the language of the data
-(28 Sep 2026). Datamodel at this point: node datamodel **1.6.19**, connections
-1.6.32, qualia
+(28 Sep 2026) and the two em.ttl terms from the exporter (1 Oct 2026). Datamodel
+at this point: node datamodel **1.6.19**, connections **1.6.33**, qualia
 **1.6.4**, visual rules 1.6.27, translations 1.6, `em.ttl` 1.6.9 (not touched:
 language tags are standard RDF); fingerprint moves from `sha256:aab44dda…` to
-`sha256:b7506d75…` — on purpose: the `natural_language` marker is
-datamodel.
+`sha256:133a6d19…` (`b7506d75…` after the language alone, `544d21e`) — on
+purpose: the `natural_language` marker and the two em.ttl terms are datamodel.
 
 ### Added (2026-10-27 — the language of the data)
 - **Language tags on texts, invariant names.** The datamodel marks what is text
@@ -44,6 +44,19 @@ datamodel.
   `data.lang` exactly where it was. Declared limit: a `data.lang` EQUAL to the
   study's language comes back as the study's (same language, no redundant
   declaration). Untagged literals read as before.
+
+### Added (2026-10-27 — two em.ttl terms from the exporter, part H)
+- **`em:derivedFromDocument`** leaves beside `P70i` when the source of
+  `has_documentation` is a USD (or a series of USD): connections 1.6.33,
+  `extension_when.source_node_class` — the guard may now name the source class
+  as well as the target (`_Datamodel.get_extension_condition`).
+- **`em:reconstructsFrom`** leaves as `<VSF> em:reconstructsFrom <SF>` when a
+  SpecialFindUnit `is_part_of` a VirtualSpecialFindUnit: the new
+  `mapping.inverse_extension`, read by the exporter and skipped by the importer
+  (the edge comes back from P46i).
+- Both leave `EM_TTL_EXCEPTIONS`, which keeps three (`hypothesizedBy`,
+  `reconstructsAbsent`, `wasReusedFrom`). Registry regenerated, shipped mappings
+  re-stamped.
 
 ## [1.6.0.dev25] — 2026-10-01 (PyPI; commit 42ea27c)
 

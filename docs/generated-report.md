@@ -12,7 +12,7 @@ Every figure on this page is read off the datamodels and the installed package a
 | --- | --- |
 | s3dgraphy (library) | 1.6.0.dev25 |
 | nodes datamodel | 1.6.19 |
-| connections datamodel | 1.6.32 |
+| connections datamodel | 1.6.33 |
 | qualia datamodel | 1.6.4 |
 | CIDOC-CRM | 7.1.3 |
 | CRMarchaeo | 2.1.1 |
@@ -95,7 +95,7 @@ Edge types carrying a second, extension predicate beside (or instead of) the CID
 
 | Ontology | Edge types |
 | --- | --- |
-| em | 13 |
+| em | 14 |
 | CRMarchaeo | 11 |
 | prov | 6 |
 | CIDOC-CRM | 5 |

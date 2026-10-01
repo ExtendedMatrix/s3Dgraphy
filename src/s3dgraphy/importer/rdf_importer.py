@@ -360,13 +360,19 @@ class _InverseDatamodel:
             # would leave on P46i alone, find `is_part_of` missing from the
             # signature index, and be declined by the strict pass. Measured:
             # the Templumare round trip lost its is_part_of edges.
-            if (self.dm.get_extension_guard(edge_type) is not None
+            if (self.dm.get_extension_condition(edge_type) is not None
                     and pred is not None
                     and str(pred) not in GENERIC_COMPANION_PREDICATES):
                 self.edges_by_signature.setdefault(str(pred), []).append(edge_type)
             if pred is not None:
                 self.edges_by_core.setdefault(str(pred), []).append(edge_type)
                 self.core_of_edge[edge_type] = str(pred)
+
+        #: predicates that restate an edge FROM THE OTHER SIDE (connections
+        #: `mapping.inverse_extension`: is_part_of → <VSF> em:reconstructsFrom
+        #: <SF>). The edge comes back from its core predicate; these are skipped.
+        self.inverse_extension_predicates: Set[str] = {
+            str(p) for p in self.dm.inverse_extension_predicates()}
 
     # ── node class ──────────────────────────────────────────────────────────
 
@@ -1397,7 +1403,8 @@ class RDFImporter:
             s_text, o_text = str(s), str(o)
             if s_text not in id_of or o_text not in id_of:
                 continue
-            if p in ARTEFACT_PREDICATES:
+            if (p in ARTEFACT_PREDICATES
+                    or str(p) in self.inverse.inverse_extension_predicates):
                 self.stats["artefacts_skipped"] += 1
                 continue
             if p == RDF.type:
