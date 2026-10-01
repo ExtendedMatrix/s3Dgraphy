@@ -371,3 +371,40 @@ def test_part_h_round_trips_without_extra_edges(tmp_path, build):
     assert not [w for w in importer.warnings if "matches no edge type" in w]
     _e, store2, _ = _export(back, tmp_path, "b.ttl")
     assert isomorphic(store1, store2)
+
+
+# ── the doubtful qualia, measured (le traduzioni, part C; E.D. 2026-10-01) ────
+
+_PROSE_QUALIA = {
+    "intervention_history": "restauro del 1934, consolidamento con malta di calce",
+    "provenance_history": "scavi Boni 1899; poi Antiquarium Forense",
+    "exhibition_history": "mostra «Roma antica», 1911",
+    "publication_history": "Boni 1900, p. 12; Lanciani 1902",
+    "ownership_chain": "collezione Farnese, poi Borbone",
+}
+
+
+@pytest.mark.parametrize("quale", sorted(_PROSE_QUALIA))
+def test_each_marked_quale_leaves_with_its_tag(tmp_path, quale):
+    g = Graph("qualia")
+    g.add_node(PropertyNode("p1", quale, value=_PROSE_QUALIA[quale],
+                            property_type=quale))
+    g.add_node(PropertyNode("p2", "inventory_number", value="MNR 12345",
+                            property_type="inventory_number"))
+    api.set_working_language(g, "it")
+    exporter, store, _ = _export(g, tmp_path)
+    prose = _one(store, _iri(exporter, g, "p1"), CRM.P90_has_value)
+    assert prose == Literal(_PROSE_QUALIA[quale], lang="it")
+    code = _one(store, _iri(exporter, g, "p2"), CRM.P90_has_value)
+    assert code.language is None
+
+
+def test_attribution_has_fields_and_no_note_so_it_is_not_marked():
+    """Measured: its schema is an actor reference, a closed list and a float.
+    The rule marks only the note, and there is none."""
+    dm = _Datamodel()
+    node = PropertyNode("p", "attribution", value="attributed to Phidias",
+                        property_type="attribution")
+    assert not dm.is_natural_language(node, "value")
+    assert sorted(dm._qualia_natural_language) == sorted(
+        ["narrative_content", *_PROSE_QUALIA])

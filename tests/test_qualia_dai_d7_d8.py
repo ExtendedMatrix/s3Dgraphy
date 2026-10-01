@@ -65,9 +65,9 @@ def test_mappings_claim_only_what_is_evident(qualia_doc):
 
 def test_the_version_and_the_changelog_say_so(qualia_doc):
     meta = qualia_doc["metadata"]
-    # 1.6.4 dal 27 ott 2026 (narrative_content marcata natural_language); la
-    # voce 1.6.2 resta nella storia
-    assert meta["version"] == "1.6.4"
+    # 1.6.5 dal 29 ott 2026 (le qualia dubbie, misurate); la voce 1.6.2
+    # resta nella storia
+    assert meta["version"] == "1.6.5"
     head = meta["changelog"].split(" v1.6.2:", 1)[1].split(" v1.6.1:")[0]
     assert "feature_shape" in head and "boundary_distinctness" in head
     assert "proposte da Cowork per E.D., 28 set 2026, dalla scheda DAI" in head
