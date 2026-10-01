@@ -37,6 +37,7 @@ from typing import Any, Dict, List, Optional
 EDGE_HAS_TRANSLATION = "has_translation"
 EDGE_HAS_AUTHOR = "has_author"
 EDGE_FROM_EDITION = "extracted_from"
+EDGE_REVISION = "was_revision_of"
 
 #: ``uuid5`` namespace of the translation ids: the same translation (node,
 #: field, language, translator, method, original text) is the same node, so
@@ -299,3 +300,94 @@ def add_translation(graph: Any, node: Any, field: str, lang: str, text: str, *,
     if ai_id:
         mark_ai_assisted(graph, t, by=ai_id, model=model)
     return t
+
+
+# ── the realignment (dev27, *il testo, la risorsa e la selezione*) ───────────
+
+def successor_of(graph: Any, translation: Any) -> Optional[Any]:
+    """The translation that realigned this one (the source of a
+    ``was_revision_of`` that targets it), or None."""
+    tid = getattr(translation, "node_id", translation)
+    for e in getattr(graph, "edges", []) or []:
+        if e.edge_type == EDGE_REVISION and e.edge_target == tid:
+            t = graph.find_node_by_id(e.edge_source)
+            if t is not None and _is_translation(t):
+                return t
+    return None
+
+
+def predecessor_of(graph: Any, translation: Any) -> Optional[Any]:
+    """The translation this one realigned (the target of its
+    ``was_revision_of``), or None."""
+    tid = getattr(translation, "node_id", translation)
+    for e in getattr(graph, "edges", []) or []:
+        if e.edge_type == EDGE_REVISION and e.edge_source == tid:
+            t = graph.find_node_by_id(e.edge_target)
+            if t is not None and _is_translation(t):
+                return t
+    return None
+
+
+def is_superseded(graph: Any, translation: Any) -> bool:
+    """True when a newer translation realigned this one: it is history now —
+    kept, with who made it and who verified it — and waits for nobody."""
+    return graph is not None and successor_of(graph, translation) is not None
+
+
+def realign_translation(graph: Any, translation: Any, text: str, *, by: str,
+                        method: Optional[str] = None,
+                        review: bool = False, ai: Optional[str] = None,
+                        model: Optional[str] = None,
+                        edition: Optional[str] = None,
+                        at: Optional[str] = None) -> Any:
+    """Realign a translation «da riallineare»: its original changed.
+
+    E.D. 2026-10-01: the new translation is a NEW node — a
+    :func:`add_translation` of the original's CURRENT text (so its
+    ``source_digest`` is today's), same node, field and language — tied to the
+    old one with ``was_revision_of`` (newer → older, the edge resources use).
+    The old one stays as it was, with its author and its verification; it no
+    longer leaves as a literal of the original (it is stale) and, having a
+    successor, it waits for nobody in :func:`~s3dgraphy.ai_validation.to_review`.
+
+    ``method`` defaults to the old one's (``edition`` then needs ``edition``);
+    ``review`` asks a person to check the new text («da rivedere»). Refused
+    (``TranslationError``, nothing written): a node that is not a translation, a
+    translation that is not stale (there is nothing to realign), one already
+    realigned (realign its successor), and whatever :func:`add_translation`
+    refuses."""
+    if isinstance(translation, str):
+        found = graph.find_node_by_id(translation)
+        if found is None:
+            raise TranslationError(f"no node {translation!r}")
+        translation = found
+    if not _is_translation(translation):
+        raise TranslationError(
+            f"'{getattr(translation, 'node_id', translation)}' is not a "
+            f"TranslationNode")
+    later = successor_of(graph, translation)
+    if later is not None:
+        raise TranslationError(
+            f"'{translation.node_id}' was already realigned by "
+            f"'{later.node_id}': realign that one")
+    if not is_stale(graph, translation):
+        raise TranslationError(
+            f"'{translation.node_id}' still translates the text of its original: "
+            f"there is nothing to realign")
+    original = original_of(graph, translation)
+    data = translation.data or {}
+    method = method or data.get("method") or "manual"
+    if method == "edition" and not edition:
+        edition = next((e.edge_target for e in graph.edges
+                        if e.edge_source == translation.node_id
+                        and e.edge_type == EDGE_FROM_EDITION), None)
+    fresh = add_translation(
+        graph, original, data.get("field") or "", data.get("lang") or "",
+        text, by=by, method=method, edition=edition, review=review, ai=ai,
+        model=model, from_lang=data.get("from_lang"), at=at)
+    if fresh.node_id == translation.node_id:     # cannot happen: the digest differs
+        raise TranslationError("the realigned translation is the old one")
+    eid = f"{fresh.node_id}__was_revision_of__{translation.node_id}"
+    if not any(e.edge_id == eid for e in graph.edges):
+        graph.add_edge(eid, fresh.node_id, translation.node_id, EDGE_REVISION)
+    return fresh

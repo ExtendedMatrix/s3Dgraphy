@@ -1430,13 +1430,19 @@ class RDFExporter:
         ``em:validatedAt``. Only for a node that carries the marker — an
         unverified one reaches here in every round trip, and in a publication
         only when it was forced.
+
+        The VERIFICATION leaves for every node that carries one, AI or not
+        (dev27): a manual translation «da rivedere» signed by a person
+        (``review_requested`` + ``validated_by``) lost its signature in the
+        round trip, because only the AI marker opened this door.
         """
         from ..ai_validation import (VALIDATED_AT, VALIDATED_BY, ai_marker,
                                      touched_fields)
         marker = ai_marker(node)
-        if marker is None:
-            return
         data = getattr(node, "data", {}) or {}
+        if marker is None:
+            self._serialize_validation(g, data, node_iri, ctx)
+            return
         if marker.get("by"):
             ctx.add((node_iri, EM.aiAssistedBy,
                      self._node_iri(g.graph_id, marker["by"])))
@@ -1451,6 +1457,12 @@ class RDFExporter:
                 or marker.get("prompt_ref") or touched_fields(node)):
             # the fact without its detail still has to be stated
             ctx.add((node_iri, EM.aiAssistedField, Literal("*")))
+        self._serialize_validation(g, data, node_iri, ctx)
+
+    def _serialize_validation(self, g: S3DGraph, data: Dict[str, Any],
+                              node_iri: URIRef, ctx) -> None:
+        """``em:validatedBy`` (+ ``prov:wasInfluencedBy``) and ``em:validatedAt``."""
+        from ..ai_validation import VALIDATED_AT, VALIDATED_BY
         if data.get(VALIDATED_BY):
             ctx.add((node_iri, EM.validatedBy,
                      self._node_iri(g.graph_id, data[VALIDATED_BY])))

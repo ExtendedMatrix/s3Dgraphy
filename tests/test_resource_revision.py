@@ -150,8 +150,9 @@ def test_l_arco_nel_datamodel():
     assert raw["s3Dgraphy_connections_model_version"] == "1.6.34"
     assert "v1.6.31 (LA REVISIONE DELLA RISORSA" in raw["description"]
     entry = raw["edge_types"]["was_revision_of"]
-    assert entry["allowed_connections"]["source"] == ["ResourceNode"]
-    assert entry["allowed_connections"]["target"] == ["ResourceNode"]
+    # dev27: a realigned translation is a revision too (realign_translation)
+    assert entry["allowed_connections"]["source"] == ["ResourceNode", "TranslationNode"]
+    assert entry["allowed_connections"]["target"] == ["ResourceNode", "TranslationNode"]
     assert entry["mapping"]["extension_mapping"] == "prov:wasRevisionOf"
     tr = json.loads((CONFIG / "datamodel_translations.json").read_text())
     assert tr["edge_types"]["was_revision_of"]["label"]["it"]

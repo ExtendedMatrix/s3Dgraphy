@@ -382,7 +382,14 @@ def needs_review(node: Any, graph: Any = None) -> List[str]:
       cannot be measured and is not claimed).
 
     The same function for every node: a translation is a node like the others,
-    and an AI-made unit has nothing to realign."""
+    and an AI-made unit has nothing to realign.
+
+    A translation that a newer one REALIGNED (``was_revision_of``, dev27) waits
+    for nobody: it is history, kept with its author and its verification."""
+    if graph is not None and getattr(node, "node_type", None) == "translation":
+        from .translation import is_superseded
+        if is_superseded(graph, node):
+            return []
     reasons: List[str] = []
     if is_unvalidated_ai(node):
         reasons.append(REASON_AI)

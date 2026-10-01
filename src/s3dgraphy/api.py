@@ -293,6 +293,21 @@ def add_translation(graph: Graph, node, field: str, lang: str, text: str, *,
                 from_lang=from_lang, at=at)
 
 
+def realign_translation(graph: Graph, translation, text: str, *, by: str,
+                        method: Optional[str] = None, review: bool = False,
+                        ai: Optional[str] = None, model: Optional[str] = None,
+                        edition: Optional[str] = None,
+                        at: Optional[str] = None):
+    """Realign a translation «da riallineare» (its original changed): a NEW
+    TranslationNode of the original's current text, tied to the old one with
+    ``was_revision_of``. The old one stays, with author and verification, and
+    waits for nobody. See :func:`s3dgraphy.translation.realign_translation`."""
+    from .translation import realign_translation as _realign
+    return _realign(graph, _node_of(graph, translation), text, by=by,
+                    method=method, review=review, ai=ai, model=model,
+                    edition=edition, at=at)
+
+
 def translations(graph: Graph, node, field: Optional[str] = None) -> List[Any]:
     """The TranslationNodes of a node (optionally of one field)."""
     from .translation import translations as _translations

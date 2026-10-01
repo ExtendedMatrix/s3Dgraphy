@@ -1705,12 +1705,14 @@
       },
       "allowed_connections": {
         "source": [
-          "ResourceNode"
+          "ResourceNode",
+          "TranslationNode"
         ],
         "target": [
-          "ResourceNode"
+          "ResourceNode",
+          "TranslationNode"
         ],
-        "_note": "2026-10-20 (connections 1.6.31): resources only. A file is not revised, it is replaced: the new file derives from the old with dtc_derived_from, and the RESOURCE (the set) is what has revisions."
+        "_note": "2026-10-20 (connections 1.6.31): resources only. A file is not revised, it is replaced: the new file derives from the old with dtc_derived_from, and the RESOURCE (the set) is what has revisions. 2026-10-31 (connections 1.6.35, dev27): also a TRANSLATION, realigned — when its original changes, the new translation of the current text is a new TranslationNode that was_revision_of the old one (s3dgraphy.translation.realign_translation; E.D. 2026-10-01, «il testo, la risorsa e la selezione»). The old one stays, with its author and verification, and is no longer a literal of the original. Same kind only: a resource is not a revision of a translation."
       }
     },
     "has_registration_transform": {
