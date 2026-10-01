@@ -102,7 +102,7 @@ REMOTE or OTHER REPOSITORIES ask for confirmation and take --dry-run.
   publish <version> [--dry-run] [--yes] [--testpypi]
                         Run publish.yml for tag v<version>, wait for PyPI, check provenance.
                           ./em.sh publish 1.6.0.dev26 --dry-run
-  propagate [--dry-run] [--yes]
+  propagate [--pins] [--dry-run] [--yes]
                         After a publication: templates after-bump → StratiField sync-schede
                         → EMStudio sync + check:datamodel → (EMtools: printed only).
                           ./em.sh propagate --dry-run
@@ -486,7 +486,7 @@ EOF
 
 help_propagate() {
   cat <<'EOF'
-./em.sh propagate [--dry-run] [--yes]
+./em.sh propagate [--pins] [--dry-run] [--yes]
 
 WHAT IT DOES
   The chain after a publication (docs/DATAMODEL_PROPAGATION.md, steps 9–14),
@@ -506,8 +506,15 @@ WHAT IT DOES
   (EMStudio ./em.sh s3d pin <v>; StratiGraph Server ./bump-s3dgraphy.sh <v>).
   A step that fails stops the steps that depend on it (templates → StratiField).
 
+--pins
+  Also MOVES those two pins: runs ./em.sh s3d pin <v> in EMStudio (it refuses a
+  version PyPI cannot install) and ./bump-s3dgraphy.sh <v> in stratigraph-server
+  (pyproject, Dockerfile, compose), each only when it is not already <v>, and
+  lists what each changed. Nothing is committed. EMtools' wheels stay printed.
+
 WHAT IT DOES NOT DO
-  It commits nothing, pushes nothing, rebuilds no wheel, moves no pin.
+  It commits nothing, pushes nothing, rebuilds no wheel; without --pins it moves
+  no pin.
 
 --dry-run
   Shows, step by step, the commands that would be run in each repository and
@@ -819,6 +826,13 @@ do_publish() {
 
 do_propagate() {
   parse_flags "$@"
+  local PINS=0 a
+  for a in "${ARGS[@]+"${ARGS[@]}"}"; do
+    case "$a" in
+      --pins) PINS=1 ;;
+      *) die "propagate: unknown argument '$a' (known: --pins, --dry-run, --yes)" ;;
+    esac
+  done
   local v; v="$(source_version)"
   local to_commit=() failed=() rc=0
   echo "propagate s3dgraphy $v (source: $ROOT) to the repositories in $PARENT"
@@ -871,14 +885,31 @@ do_propagate() {
     echo "    not here"
   fi
   echo
-  echo "pins to move by hand (not done here):"
-  pin_line() {  # <label> <pin> <command>
-    if [[ "$2" == *"==$v" ]]; then echo "  $1 $2 (already $v)"; else echo "  $1 $2 → $3"; fi
-  }
+  local studio_pin="" server_pin=""
   [[ -f "$PARENT/EMStudio/tools/requirements.txt" ]] && \
-    pin_line "EMStudio           " "$(grep -h '^s3dgraphy' "$PARENT/EMStudio/tools/requirements.txt")" "cd ../EMStudio && ./em.sh s3d pin $v"
+    studio_pin="$(grep -h '^s3dgraphy' "$PARENT/EMStudio/tools/requirements.txt")"
   [[ -f "$PARENT/stratigraph-server/pyproject.toml" ]] && \
-    pin_line "StratiGraph Server " "$(grep -m1 -o 's3dgraphy\[[^]]*\]==[^"]*' "$PARENT/stratigraph-server/pyproject.toml")" "cd ../stratigraph-server && ./bump-s3dgraphy.sh $v"
+    server_pin="$(grep -m1 -o 's3dgraphy\[[^]]*\]==[^"]*' "$PARENT/stratigraph-server/pyproject.toml")"
+  if [[ "$PINS" == 1 ]]; then
+    #: --pins (dev27): the two pins that are a command each are MOVED here, and
+    #: committed nowhere — EMStudio's `s3d pin` refuses a version PyPI cannot
+    #: install, the server's script checks its three lines are one. EMtools'
+    #: wheels stay printed (step 4/4): rebuilding a wheel is not a pin.
+    echo "pins (--pins: moved, not committed):"
+    if [[ -n "$studio_pin" && "$studio_pin" != *"==$v" ]]; then
+      prop_step "pin" EMStudio "s3d pin $v (tools/requirements.txt)" "./em.sh s3d pin $v" || true
+    elif [[ -n "$studio_pin" ]]; then echo "  EMStudio            $studio_pin (already $v)"; fi
+    if [[ -n "$server_pin" && "$server_pin" != *"==$v" ]]; then
+      prop_step "pin" stratigraph-server "bump-s3dgraphy.sh $v (pyproject + Dockerfile + compose)" "./bump-s3dgraphy.sh $v" || true
+    elif [[ -n "$server_pin" ]]; then echo "  StratiGraph Server  $server_pin (already $v)"; fi
+  else
+    echo "pins to move by hand (not done here; ./em.sh propagate --pins moves them):"
+    pin_line() {  # <label> <pin> <command>
+      if [[ "$2" == *"==$v" ]]; then echo "  $1 $2 (already $v)"; else echo "  $1 $2 → $3"; fi
+    }
+    [[ -n "$studio_pin" ]] && pin_line "EMStudio           " "$studio_pin" "cd ../EMStudio && ./em.sh s3d pin $v"
+    [[ -n "$server_pin" ]] && pin_line "StratiGraph Server " "$server_pin" "cd ../stratigraph-server && ./bump-s3dgraphy.sh $v"
+  fi
   echo
   if [[ "$DRY" == 1 ]]; then echo "--dry-run: nothing done"; return 0; fi
   if [[ ${#to_commit[@]} -gt 0 ]]; then

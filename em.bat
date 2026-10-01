@@ -301,6 +301,7 @@ echo     then em.bat manifest 3.11 / 3.13 if the wheel's file name changed
 echo.
 echo Nothing was committed. Pins to move by hand: EMStudio tools\requirements.txt
 echo ^(./em.sh s3d pin !V!^), StratiGraph Server ^(./bump-s3dgraphy.sh !V!^).
+echo Both are bash scripts: in Git Bash, ./em.sh propagate --pins moves them ^(no commit^).
 if "!DRY!"=="1" echo --dry-run: nothing done
 exit /b 0
 
