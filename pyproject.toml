@@ -56,7 +56,7 @@ dependencies = [
     # the four above. It has zero dependencies of its own and is one module, so
     # it can also simply be copied; s3dgraphy depends on it rather than
     # vendoring it, because two copies of a format rule drift.
-    "dtcstamp>=0.1.0",
+    "dtcstamp>=0.1.2",  # 0.1.1 lacks stamp_description: import s3dgraphy.stamp fails (MICRO-DTCSTAMP-012)
 ]
 
 [project.urls]
