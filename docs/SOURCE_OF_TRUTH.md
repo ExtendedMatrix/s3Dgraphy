@@ -132,6 +132,34 @@ report of 2026-10-19, not done.
 What happens after level 4, when the change leaves this repository for the
 tools, is in [Datamodel propagation](DATAMODEL_PROPAGATION.md).
 
+## Language of literals
+
+Decided by E.D. on 2026-09-28. A text in a natural language leaves in RDF with
+its language tag (`"strato di crollo"@it`); everything else leaves as before.
+
+- **The marker.** Which properties are text is said by the datamodel, not by
+  the exporter: `"natural_language": true` on `Node.properties.description`
+  (inherited by every node type) and on the quale `narrative_content`. A
+  `data_type: string` is not enough: `inventory_number` is a string and a code.
+  One function reads the marker, `_Datamodel.is_natural_language`.
+- **The cascade.** The node's `data.lang` (the field the narrative node already
+  had, DP-63) → the study's working language (`GraphNode.data.language`,
+  emitted as `dcterms:language` on the graph) → none.
+- **`und` is not silence.** A language never declared leaves untagged and is
+  counted (`literals_untagged`); `data.lang: "und"` is a language declared
+  unknown and leaves as `@und`. The language is never guessed from the text.
+  Tags are checked (simple BCP 47) where they are written; an invalid one is
+  refused and nothing is stored.
+- **Names are invariant.** `name` is never tagged: `US 3014`, `W5023`,
+  `USM5023` are identities, even when their initials come from a language.
+- **Translations stay out of the graph.** A field holds one value, in the
+  language it was written in: the original is testimony, and `update_field` /
+  last-writer-wins per field stay as they are. Translations live at the
+  presentation level. When they enter the graph they will enter as entities
+  with their provenance — who translated, by hand or by machine, from which
+  text — i.e. as EM paradata, never as a second value of the same field.
+- SKOS concepts do not change: their label resolves at reading.
+
 ## The rule, in one line
 
 > If the datamodel can answer, ask it. If it cannot, the fix is a field in the

@@ -2,7 +2,50 @@
 
 All notable changes to **s3dgraphy** are documented here.
 
-## [Unreleased] — to be published as 1.6.0.dev25
+## [Unreleased] — to be published as 1.6.0.dev26
+
+Everything in this section came after `42ea27c` («Bump version: 1.6.0.dev24 →
+1.6.0.dev25», on PyPI 2026-10-01). Decisions of E.D.: the language of the data
+(28 Sep 2026). Datamodel at this point: node datamodel **1.6.19**, connections
+1.6.32, qualia
+**1.6.4**, visual rules 1.6.27, translations 1.6, `em.ttl` 1.6.9 (not touched:
+language tags are standard RDF); fingerprint moves from `sha256:aab44dda…` to
+`sha256:b7506d75…` — on purpose: the `natural_language` marker is
+datamodel.
+
+### Added (2026-10-27 — the language of the data)
+- **Language tags on texts, invariant names.** The datamodel marks what is text
+  in a natural language: `"natural_language": true` on
+  `Node.properties.description` (node datamodel 1.6.19; the base class, so every
+  node type inherits it) and on the quale `narrative_content` (qualia 1.6.4).
+  `name` is never marked (`US 3014`, `W5023`, `USM5023` are identities), nor is
+  `inventory_number` (a code, though a string). One function answers:
+  `_Datamodel.is_natural_language(node, prop)` in the RDF exporter's loader.
+- **The cascade.** `RDFExporter._text_literal` builds every such literal: the
+  node's `data.lang`, else the study's working language, else none. A language
+  never declared leaves untagged and is counted; `data.lang: "und"` leaves as
+  `@und`. Used for `dcterms:description` and the marked qualia's
+  `crm:P90_has_value`; `rdfs:label` stays untagged. The narrative node still
+  emits `crm:P72_has_language`.
+- **The study's working language**: `GraphNode.data.language` (beside `em_id`
+  and `site_position`), legacy fallback `graph.data["language"]`;
+  `api.working_language` / `api.set_working_language`, and `language` in the
+  study card (`study_metadata`). The exporter declares it as `dcterms:language`
+  on the graph and tags the graph's description (not its name) with it.
+- **BCP 47 check** (`s3dgraphy.language`): `it`, `ro`, `he`, `en-GB`, `und`. An
+  invalid tag is refused where it would be written — `api.set_field("data.lang")`
+  and `api.set_working_language` raise `ValueError`, `apply_op` refuses an
+  `add_node` / `update_field` carrying one — and nothing is written.
+- **Statistics**: `literals_tagged_node`, `literals_tagged_study`,
+  `literals_untagged`, beside `definitions_label_only`; `RDFExporter.summary()`
+  prints them in one line for a caller's report.
+- **The importer**: a tag on a marked text gives `data.lang` back only when it
+  differs from the study's `dcterms:language`, so em.json → TTL → em.json returns
+  `data.lang` exactly where it was. Declared limit: a `data.lang` EQUAL to the
+  study's language comes back as the study's (same language, no redundant
+  declaration). Untagged literals read as before.
+
+## [1.6.0.dev25] — 2026-10-01 (PyPI; commit 42ea27c)
 
 Everything in this section came after `312f124` («Bump version: 1.6.0.dev23 →
 1.6.0.dev24»). Decisions of E.D. of 1 Oct 2026: the datamodel JSON is the

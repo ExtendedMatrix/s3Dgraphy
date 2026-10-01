@@ -1,0 +1,284 @@
+"""La lingua dei dati — tag di lingua sui testi, nomi invarianti (E.D., 2026-09-28).
+
+Every guard is shown on a case that makes it fire:
+
+* the datamodel MARKS what is natural language (Node.properties.description,
+  the quale narrative_content) and nothing else — not name, not
+  inventory_number, though both are strings;
+* the cascade: the node's data.lang → the study's working language → none;
+* never declared = untagged and counted; declared unknown = @und, not counted;
+* an invalid tag is refused where it would be written, and nothing is written;
+* em.json → TTL → em.json gives back data.lang exactly where it was.
+"""
+
+from __future__ import annotations
+
+import pytest
+
+rdflib = pytest.importorskip("rdflib")
+from rdflib import Literal, Namespace  # noqa: E402
+from rdflib.namespace import DCTERMS, RDFS  # noqa: E402
+
+from s3dgraphy import api  # noqa: E402
+from s3dgraphy.exporter.emjson_exporter import build_emjson  # noqa: E402
+from s3dgraphy.exporter.rdf_exporter import RDFExporter, _Datamodel  # noqa: E402
+from s3dgraphy.graph import Graph  # noqa: E402
+from s3dgraphy.importer.emjson_importer import parse_emjson  # noqa: E402
+from s3dgraphy.importer.rdf_importer import RDFImporter  # noqa: E402
+from s3dgraphy.language import (check_language_tag, is_language_tag,  # noqa: E402
+                                working_language)
+from s3dgraphy.nodes.document_node import DocumentNode  # noqa: E402
+from s3dgraphy.nodes.property_node import PropertyNode  # noqa: E402
+from s3dgraphy.nodes.stratigraphic_node import (  # noqa: E402
+    SpecialFindUnit, StratigraphicUnit)
+
+CRM = Namespace("http://www.cidoc-crm.org/cidoc-crm/")
+
+
+def _export(graph, tmp_path, name="g.ttl"):
+    exporter = RDFExporter(str(tmp_path / name), format="turtle")
+    path = exporter.export_single_graph(graph)
+    store = rdflib.ConjunctiveGraph()
+    store.parse(path, format="turtle")
+    return exporter, store, path
+
+
+def _iri(exporter, graph, node_id):
+    return exporter._node_iri(graph.graph_id, node_id)
+
+
+def _one(store, s, p):
+    values = list(store.objects(s, p))
+    assert len(values) == 1, values
+    return values[0]
+
+
+def _unit_graph(study_lang=None, **node_data):
+    g = Graph("lingua")
+    us = StratigraphicUnit("us1", "USM5023", "muro in opera laterizia")
+    if node_data:
+        us.data = dict(node_data)
+    g.add_node(us)
+    if study_lang:
+        api.set_working_language(g, study_lang)
+    return g
+
+
+# ── the datamodel says what is text ──────────────────────────────────────────
+
+def test_the_marker_is_on_description_and_inherited_never_on_name():
+    dm = _Datamodel()
+    for cls in (StratigraphicUnit, DocumentNode, PropertyNode, SpecialFindUnit):
+        assert dm.is_natural_language(cls, "description"), cls.__name__
+        assert not dm.is_natural_language(cls, "name"), cls.__name__
+
+
+def test_the_quale_marker_tells_prose_from_a_code():
+    dm = _Datamodel()
+    prose = PropertyNode("p1", "narrative_content", value="la guerra di Troia",
+                         property_type="narrative_content")
+    code = PropertyNode("p2", "inventory_number", value="MNR 12345",
+                        property_type="inventory_number")
+    assert dm.is_natural_language(prose, "value")
+    assert not dm.is_natural_language(code, "value")
+
+
+# ── the cascade ──────────────────────────────────────────────────────────────
+
+def test_study_it_tags_the_description_and_leaves_the_name_alone(tmp_path):
+    g = _unit_graph(study_lang="it")
+    exporter, store, _ = _export(g, tmp_path)
+    us = _iri(exporter, g, "us1")
+    desc = _one(store, us, DCTERMS.description)
+    assert desc == Literal("muro in opera laterizia", lang="it")
+    label = _one(store, us, RDFS.label)
+    assert label.language is None and str(label) == "USM5023"
+    assert exporter.stats["literals_tagged_study"] == 1
+    assert exporter.stats["literals_untagged"] == 0
+    # the study's language is declared on the graph
+    assert _one(store, exporter._graph_iri(g), DCTERMS.language) == Literal("it")
+
+
+def test_the_node_language_wins_over_the_study(tmp_path):
+    g = _unit_graph(study_lang="it", lang="ro")
+    exporter, store, _ = _export(g, tmp_path)
+    desc = _one(store, _iri(exporter, g, "us1"), DCTERMS.description)
+    assert desc.language == "ro"
+    assert exporter.stats["literals_tagged_node"] == 1
+    assert exporter.stats["literals_tagged_study"] == 0
+
+
+def test_no_language_anywhere_is_untagged_and_counted(tmp_path):
+    g = _unit_graph()
+    exporter, store, _ = _export(g, tmp_path)
+    desc = _one(store, _iri(exporter, g, "us1"), DCTERMS.description)
+    assert desc.language is None
+    assert exporter.stats["literals_untagged"] == 1
+    assert (exporter._graph_iri(g), DCTERMS.language, None) not in store
+    assert "1 untagged" in exporter.summary()
+
+
+def test_und_is_a_declaration_not_a_silence(tmp_path):
+    g = _unit_graph(lang="und")
+    exporter, store, _ = _export(g, tmp_path)
+    desc = _one(store, _iri(exporter, g, "us1"), DCTERMS.description)
+    assert desc.language == "und"
+    assert exporter.stats["literals_untagged"] == 0
+    assert exporter.stats["literals_tagged_node"] == 1
+
+
+def test_qualia_prose_is_tagged_a_code_never(tmp_path):
+    g = Graph("qualia")
+    g.add_node(PropertyNode("p1", "narrative_content", value="la guerra di Troia",
+                            property_type="narrative_content"))
+    g.add_node(PropertyNode("p2", "inventory_number", value="MNR 12345",
+                            property_type="inventory_number"))
+    api.set_working_language(g, "it")
+    exporter, store, _ = _export(g, tmp_path)
+    prose = _one(store, _iri(exporter, g, "p1"), CRM.P90_has_value)
+    code = _one(store, _iri(exporter, g, "p2"), CRM.P90_has_value)
+    assert prose == Literal("la guerra di Troia", lang="it")
+    assert code.language is None and str(code) == "MNR 12345"
+
+
+def test_the_graph_description_takes_the_study_language_its_name_does_not(tmp_path):
+    g = _unit_graph(study_lang="he")
+    g.name = "Tel Dor"
+    g.description = "חפירה"
+    exporter, store, _ = _export(g, tmp_path)
+    graph_iri = exporter._graph_iri(g)
+    assert _one(store, graph_iri, DCTERMS.description).language == "he"
+    assert _one(store, graph_iri, RDFS.label).language is None
+
+
+def test_the_narrative_keeps_p72_and_its_text_takes_the_tag(tmp_path):
+    from s3dgraphy.nodes.narrative_node import NarrativeNode
+    g = Graph("narr")
+    n = NarrativeNode("n1", "Racconto", lang="it")
+    n.description = "il racconto dello scavo"
+    g.add_node(n)
+    exporter, store, _ = _export(g, tmp_path)
+    iri = _iri(exporter, g, "n1")
+    assert _one(store, iri, CRM.P72_has_language) == Literal("it")
+    assert _one(store, iri, DCTERMS.description).language == "it"
+
+
+# ── an invalid tag is not written ────────────────────────────────────────────
+
+@pytest.mark.parametrize("tag", ["it", "ro", "he", "en-GB", "sr-Latn", "es-419", "und"])
+def test_bcp47_tags_are_accepted(tag):
+    assert is_language_tag(tag)
+    assert check_language_tag(f" {tag} ") == tag
+
+
+@pytest.mark.parametrize("tag", ["italiano", "it_IT", "", "e", "en-", 7, None])
+def test_what_is_not_a_tag_is_refused(tag):
+    assert not is_language_tag(tag)
+    with pytest.raises(ValueError, match="not a language tag"):
+        check_language_tag(tag)
+
+
+def test_an_invalid_study_language_is_refused_and_nothing_written():
+    g = _unit_graph()
+    with pytest.raises(ValueError, match="'italiano' is not a language tag"):
+        api.set_working_language(g, "italiano")
+    assert working_language(g) is None
+    assert not g.get_nodes_by_type("graph"), "no graph-self node made for nothing"
+
+
+def test_an_invalid_node_language_is_refused_by_set_field():
+    g = _unit_graph()
+    us = g.find_node_by_id("us1")
+    with pytest.raises(ValueError, match="not a language tag"):
+        api.set_field(us, "data.lang", "italiano", author="0000-0002-1825-0097")
+    assert "lang" not in (getattr(us, "data", None) or {})
+    api.set_field(us, "data.lang", "it", author="0000-0002-1825-0097")
+    assert us.data["lang"] == "it"
+
+
+def test_an_invalid_node_language_is_refused_by_the_operations():
+    section = {"nodes": [], "edges": []}
+    bad = api.make_op("add_node", id="us9", node={
+        "id": "us9", "node_type": "US", "name": "US 9",
+        "data": {"lang": "italiano"}}, ts="2026-10-01T10:00:00Z", author="a")
+    result = api.apply_op(section, bad)
+    assert not result["applied"] and "not a language tag" in result["reason"]
+    assert section["nodes"] == []
+
+    good = api.make_op("add_node", id="us9", node={
+        "id": "us9", "node_type": "US", "name": "US 9",
+        "data": {"lang": "he"}}, ts="2026-10-01T10:00:00Z", author="a")
+    assert api.apply_op(section, good)["applied"]
+    upd = api.make_op("update_field", node_id="us9", field="data.lang",
+                      value="ebraico", ts="2026-10-01T10:01:00Z", author="a")
+    result = api.apply_op(section, upd)
+    assert not result["applied"] and "not a language tag" in result["reason"]
+    assert section["nodes"][0]["data"]["lang"] == "he"
+
+
+# ── the study card ───────────────────────────────────────────────────────────
+
+def test_the_study_card_carries_the_working_language():
+    g = _unit_graph(study_lang="ro")
+    card = api.study_metadata(api.container_of(g))
+    assert card["language"] == "ro"
+    assert api.study_metadata(api.container_of(_unit_graph()))["language"] is None
+
+
+def test_the_legacy_graph_data_spelling_is_read_as_a_fallback():
+    g = _unit_graph()
+    g.data["language"] = "it"
+    assert working_language(g) == "it"
+
+
+# ── the round trip ───────────────────────────────────────────────────────────
+
+def _langs(graph):
+    return {n.node_id: (n.data or {}).get("lang") for n in graph.nodes
+            if isinstance(getattr(n, "data", None), dict) and "lang" in n.data}
+
+
+def test_emjson_ttl_emjson_keeps_data_lang_only_where_it_was(tmp_path):
+    g = Graph("giro")
+    g.add_node(StratigraphicUnit("us1", "US 3014", "strato di crollo"))
+    ro = StratigraphicUnit("us2", "US 3015", "strat de dărâmături")
+    ro.data = {"lang": "ro"}
+    g.add_node(ro)
+    und = StratigraphicUnit("us3", "US 3016", "?")
+    und.data = {"lang": "und"}
+    g.add_node(und)
+    api.set_working_language(g, "it")
+
+    graph, _warnings = parse_emjson(build_emjson(g))
+    before = _langs(graph)
+    assert before == {"us2": "ro", "us3": "und"}
+
+    _exporter, _store, path = _export(graph, tmp_path)
+    back = RDFImporter().parse(path)[0]
+    assert _langs(back) == before
+    assert working_language(back) == "it"
+
+    # and once more through em.json: the same
+    again, _ = parse_emjson(build_emjson(back))
+    assert _langs(again) == before and working_language(again) == "it"
+
+
+def test_a_node_language_equal_to_the_study_comes_back_as_the_study(tmp_path):
+    """Declared limit (D.1): a tag equal to the study's is the cascade's second
+    step, so data.lang equal to the study language does not survive RDF — the
+    LANGUAGE does (the text is still @it), the redundant declaration does not."""
+    g = _unit_graph(study_lang="it", lang="it")
+    _exporter, store, path = _export(g, tmp_path)
+    back = RDFImporter().parse(path)[0]
+    us = back.find_node_by_id("us1")
+    assert "lang" not in (getattr(us, "data", None) or {})
+    assert working_language(back) == "it"
+
+
+def test_untagged_literals_still_read(tmp_path):
+    g = _unit_graph()
+    _exporter, _store, path = _export(g, tmp_path)
+    back = RDFImporter().parse(path)[0]
+    us = back.find_node_by_id("us1")
+    assert us.description == "muro in opera laterizia"
+    assert "lang" not in (getattr(us, "data", None) or {})

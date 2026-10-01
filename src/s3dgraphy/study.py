@@ -43,7 +43,12 @@ value came from:
   the header describes the FORMAT, the version describes the WORK);
 * **hc1 / hc2** — the HDT-O nodes, if the study carries them;
 * **spatial** — `GraphNode.data.site_position` (GEO1), which is the SITE, not
-  the georeferencing shift.
+  the georeferencing shift;
+* **language** — the working language of the study (la lingua dei dati,
+  2026-09-28): `GraphNode.data.language` of every member graph, in member
+  order, with the legacy `graph.data["language"]` behind it — the licence's
+  precedence. `None` when never declared: no language is defaulted into
+  existence, for the reason no licence is (see :mod:`s3dgraphy.language`).
 """
 
 from __future__ import annotations
@@ -364,7 +369,10 @@ def study_metadata(container: Any, *, study_id: Optional[str] = None
     hc1s: List[Dict[str, Optional[str]]] = []
     spatial = None
     em_id = None
+    language = None
+    from .language import working_language
     for graph in ordered:
+        language = language or working_language(graph)
         license_value = license_value or _member_value(
             graph, "license", "license", "licence")
         embargo_value = embargo_value or _member_value(
@@ -427,6 +435,7 @@ def study_metadata(container: Any, *, study_id: Optional[str] = None
         "hc1s": hc1s,
         "hc2": hdt["hc2"],
         "spatial": spatial,
+        "language": language,
         "graph_ids": list(container.graph_ids()),
         "has_shelf": container.shelf is not None,
         "checksum": content_digest(doc),

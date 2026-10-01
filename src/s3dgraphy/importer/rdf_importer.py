@@ -770,6 +770,9 @@ class RDFImporter:
         embargo = self._one_literal(store, gref, EM.embargoUntil)
         if embargo:
             g.data["embargo"] = embargo
+        # the study's working language (language.py): read now, because a node's
+        # tag equal to it is not the node's own declaration — see _language_data
+        self._study_lang = self._one_literal(store, gref, DCTERMS.language)
 
         # HDT anchor: the HC2 twin this proposition set belongs to
         for o in store.objects(gref, HDTO.HP33i_is_proposition_set_of):
@@ -804,6 +807,19 @@ class RDFImporter:
                 for n in g.nodes)
             if has_imported_geo and auto_id not in imported:
                 g.nodes = [n for n in g.nodes if n.node_id != auto_id]
+
+        # …and written where language.py reads it: the graph-self node, or the
+        # legacy graph.data spelling when the graph has none
+        if self._study_lang:
+            from ..language import STUDY_LANG_KEY
+            root = next((n for n in g.nodes
+                         if getattr(n, "node_type", "") == "graph"), None)
+            if root is not None:
+                if not isinstance(getattr(root, "data", None), dict):
+                    root.data = {}
+                root.data[STUDY_LANG_KEY] = self._study_lang
+            else:
+                g.data[STUDY_LANG_KEY] = self._study_lang
 
         self._rebuild_edges(store, node_prefix, id_of, class_of, g)
         self._rebuild_has_property_from_i17(store, node_prefix, id_of, g)
@@ -901,6 +917,7 @@ class RDFImporter:
         data.update(self._editorial_data(store, ref))
         data.update(self._ai_data(store, ref))
         data.update(self._definition_data(store, ref, class_name, node_id))
+        data.update(self._language_data(store, ref, class_name, qualia_type))
         if data:
             payload["data"] = data
 
@@ -914,6 +931,38 @@ class RDFImporter:
         g.add_node(node, overwrite=True)
         self.stats["nodes"] += 1
         return node_id, class_name
+
+    def _language_data(self, store: ConjunctiveGraph, ref: URIRef,
+                       class_name: Optional[str],
+                       qualia_type: Optional[str]) -> Dict[str, Any]:
+        """The inverse of ``RDFExporter._text_literal``: ``data.lang`` back from
+        the tag of a text the datamodel marks as natural language
+        (``_Datamodel.is_natural_language``, the same answer the exporter asked).
+
+        Only when the tag DIFFERS from the study's working language: a tag equal
+        to it is the cascade's second step, not something the node declared, and
+        writing it back would return an em.json with data.lang everywhere. An
+        untagged literal says nothing and is read as it always was."""
+        klass = self.inverse.class_by_name.get(class_name or "")
+        if klass is None:
+            return {}
+        study = getattr(self, "_study_lang", None)
+        from ..language import NODE_LANG_KEY, same_language
+        probes = [("description", DCTERMS.description, klass)]
+        if qualia_type is not None:
+            # is_natural_language reads a PropertyNode's quale off the instance
+            probe = type("_Probe", (), {"node_type": "property",
+                                        "property_type": qualia_type,
+                                        "name": None})()
+            probes.append(("value", CRM.P90_has_value, probe))
+        for prop, predicate, subject in probes:
+            if not self.inverse.dm.is_natural_language(subject, prop):
+                continue
+            for o in store.objects(ref, predicate):
+                lang = getattr(o, "language", None) if isinstance(o, Literal) else None
+                if lang and not same_language(lang, study):
+                    return {NODE_LANG_KEY: lang}
+        return {}
 
     def _definition_data(self, store: ConjunctiveGraph, ref: URIRef,
                          class_name: Optional[str],

@@ -353,6 +353,10 @@ def set_field(node, field: str, value, *, author=None,
     from .crdt import Clock, write_field
     from .editorial import normalize_orcid, now_iso
 
+    if field == "data.lang" and value not in (None, ""):
+        # a node's language is a BCP 47 tag; an invalid one is refused, not stored
+        from .language import check_language_tag
+        check_language_tag(value)
     payload = _node_payload_view(node)
     write_field(payload, field, value,
                 Clock(ts=at or now_iso(), by=normalize_orcid(author)))
@@ -758,6 +762,22 @@ def study_metadata(container: Any, *, study_id: Optional[str] = None
     """
     from .study import study_metadata as _card
     return _card(container, study_id=study_id)
+
+
+def working_language(graph: Graph) -> Optional[str]:
+    """The study's working language (a BCP 47 tag), or `None` when never
+    declared — the second step of the cascade that tags texts in RDF. See
+    :mod:`s3dgraphy.language`."""
+    from .language import working_language as _read
+    return _read(graph)
+
+
+def set_working_language(graph: Graph, tag: Optional[str]) -> Optional[str]:
+    """Declare the study's working language on the graph-self node (`""` /
+    `None` retracts it). An invalid tag raises `ValueError` and nothing is
+    written."""
+    from .language import set_working_language as _write
+    return _write(graph, tag)
 
 
 # ── one asset's rights, read off the graph ────────────────────────────────────

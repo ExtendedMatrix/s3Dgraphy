@@ -260,6 +260,9 @@ class _Datamodel:
         self._build_node_class_index(self.node_datamodel)
 
         self._qualia_class_index: Dict[str, str] = {}
+        #: the qualia whose value is text in a natural language (em_qualia_types
+        #: `natural_language: true`), read by is_natural_language
+        self._qualia_natural_language: set = set()
         self._build_qualia_index(self.qualia_types)
 
         #: reverse edge name → canonical edge name. The connections datamodel
@@ -300,6 +303,8 @@ class _Datamodel:
                     crm_class = mappings.get("cidoc_crm")
                     if qid and crm_class:
                         self._qualia_class_index[qid] = crm_class
+                    if qid and q.get("natural_language") is True:
+                        self._qualia_natural_language.add(qid)
 
     # ─── public lookups ─────────────────────────────────────────────────────
 
@@ -454,6 +459,50 @@ class _Datamodel:
             rule = (entry.get("properties") or {}).get(element)
             if isinstance(rule, dict):
                 return rule
+        return None
+
+    def is_natural_language(self, node: Any, prop: str) -> bool:
+        """Is this property of this node TEXT IN A NATURAL LANGUAGE? THE one
+        answer (la lingua dei dati, 2026-09-28): the exporter tags a literal only
+        when this says yes, and the importer reads a tag back only from one.
+
+        * a node property (``description``…): the first class in the MRO of
+          ``node`` (a node or a node class) whose datamodel entry declares
+          ``properties.<prop>`` as an object carrying ``natural_language``
+          answers. A plain string there is a mapping note and does not withdraw
+          what an ancestor declared — node datamodel 1.6.19 marks
+          ``Node.properties.description``, and every class inherits it.
+        * the ``value`` of a PropertyNode: the quale its property_type names
+          (resolved as :meth:`get_qualia_crm_iri` resolves it) carries
+          ``natural_language: true`` in em_qualia_types — ``narrative_content``
+          does, ``inventory_number`` (a code, though a string) does not.
+
+        ``name`` is marked nowhere, and so is never tagged."""
+        if prop == "value" and getattr(node, "node_type", None) == "property":
+            ptype = getattr(node, "property_type", None)
+            if not ptype or str(ptype).lower() == "string":
+                ptype = getattr(node, "name", None)
+            return self._qualia_key(ptype, self._qualia_natural_language) is not None
+        klass = node if isinstance(node, type) else type(node)
+        for klass in klass.__mro__:
+            entry = self._node_class_index.get(klass.__name__) or {}
+            rule = (entry.get("properties") or {}).get(prop)
+            if isinstance(rule, dict) and "natural_language" in rule:
+                return rule.get("natural_language") is True
+        return False
+
+    @staticmethod
+    def _qualia_key(property_type: Optional[str], index) -> Optional[str]:
+        """The quale id ``property_type`` names in ``index``, with the same four
+        steps as :meth:`get_qualia_crm_iri` (exact, last dotted segment,
+        lowercase, lowercase last segment)."""
+        if not property_type:
+            return None
+        text = str(property_type)
+        tail = text.rsplit(".", 1)[-1]
+        for key in (text, tail, text.lower(), tail.lower()):
+            if key in index:
+                return key
         return None
 
     def get_qualia_crm_iri(self, property_type: Optional[str]) -> Optional[URIRef]:
@@ -675,7 +724,17 @@ class RDFExporter:
             # out (default) or kept with the mark (include_unvalidated); 0 in
             # round_trip, where they travel as they are
             "ai_unvalidated": 0,
+            # la lingua dei dati: literals of the properties the datamodel marks
+            # as natural language, by where their tag came from — the node's own
+            # data.lang, or the study's working language — and the ones that
+            # left WITHOUT a tag because no language was ever declared (never
+            # guessed). A declared `und` is tagged, and counted under its origin.
+            "literals_tagged_node": 0,
+            "literals_tagged_study": 0,
+            "literals_untagged": 0,
         }
+        #: the working language of the graph being serialised (language.py)
+        self._study_lang: Optional[str] = None
 
     @staticmethod
     def _normalize_iri(value: Optional[str]) -> Optional[str]:
@@ -873,12 +932,21 @@ class RDFExporter:
             ctx.add((parent_iri, RDF.type, HDTO.HC2_Heritage_Digital_Twin))
             self.stats["parent_hdt_bindings"] += 1
 
+        # The study's working language (language.py): declared on the graph as
+        # dcterms:language, and the second step of every text literal's cascade.
+        from ..language import working_language
+        self._study_lang = working_language(g)
+        if self._study_lang:
+            ctx.add((graph_iri, DCTERMS.language, Literal(self._study_lang)))
+
+        # The graph's name is a name (untagged); its description is text, in the
+        # study's language when one is declared — a graph has no data.lang.
         gname = self._to_text(getattr(g, "name", None))
         if gname:
             ctx.add((graph_iri, RDFS.label, Literal(gname)))
         gdesc = self._to_text(getattr(g, "description", None))
         if gdesc:
-            ctx.add((graph_iri, DCTERMS.description, Literal(gdesc)))
+            ctx.add((graph_iri, DCTERMS.description, self._tagged(gdesc, None)))
 
         data = getattr(g, "data", {}) or {}
         for aid in data.get("authors", []) or []:
@@ -1077,7 +1145,8 @@ class RDFExporter:
             ctx.add((node_iri, RDFS.label, Literal(name)))
         desc = self._to_text(getattr(node, "description", None))
         if desc:
-            ctx.add((node_iri, DCTERMS.description, Literal(desc)))
+            ctx.add((node_iri, DCTERMS.description,
+                     self._text_literal(node, "description", desc)))
         ctx.add((node_iri, DCTERMS.identifier, Literal(node.node_id)))
 
         # Authority cross-references (P1-D) — GENERALISED to any node carrying
@@ -1101,6 +1170,48 @@ class RDFExporter:
                                       graph_id=g.graph_id)
 
         self.stats["nodes"] += 1
+
+    def _text_literal(self, node: Any, prop: str, value: Any) -> Literal:
+        """THE literal of a node's text (la lingua dei dati, 2026-09-28).
+
+        Asks the datamodel whether ``prop`` of ``node`` is natural language
+        (:meth:`_Datamodel.is_natural_language`); if not — a name, a code, a
+        number — the literal is plain, as it always was. If it is, the language
+        comes in a cascade: the node's ``data.lang``, else the study's working
+        language, else none, and the literal says so (``@it``, ``@und``, or no
+        tag, counted in ``literals_untagged``). Never guessed from the text."""
+        if not self.datamodel.is_natural_language(node, prop):
+            return Literal(value)
+        from ..language import node_language
+        return self._tagged(value, node_language(node))
+
+    def _tagged(self, value: Any, node_lang: Optional[str]) -> Literal:
+        """The cascade's tail, shared with the graph's own description (which has
+        only the study step)."""
+        if node_lang:
+            self.stats["literals_tagged_node"] += 1
+            return Literal(value, lang=node_lang)
+        if self._study_lang:
+            self.stats["literals_tagged_study"] += 1
+            return Literal(value, lang=self._study_lang)
+        self.stats["literals_untagged"] += 1
+        return Literal(value)
+
+    def summary(self) -> str:
+        """One line of what the export did, for the caller's report: what went
+        out, and what the language of the texts was. ``definitions_label_only``
+        and the literal counts are the ones a reader should look at before
+        trusting a projection as complete."""
+        s = self.stats
+        return (f"{s['graphs']} graphs, {s['nodes']} nodes, "
+                f"{s['edges_emitted']} edges emitted, "
+                f"{s['edges_skipped_deprecated']} deprecated skipped, "
+                f"{s['nodes_unmapped']} nodes unmapped, "
+                f"{s['edges_unmapped']} edges unmapped, "
+                f"{s['definitions_label_only']} definitions label-only; "
+                f"texts tagged {s['literals_tagged_node']} by the node, "
+                f"{s['literals_tagged_study']} by the study, "
+                f"{s['literals_untagged']} untagged (language never declared)")
 
     def _serialize_definition(self, node: Any, node_iri: URIRef, ctx) -> None:
         """Project the DEFINITION of a unit (datamodel 1.6.9). THE one place.
@@ -1413,7 +1524,11 @@ class RDFExporter:
             if raw_value is None or (isinstance(raw_value, str) and not raw_value.strip()):
                 raw_value = getattr(node, "description", None)
             if raw_value is not None and (not isinstance(raw_value, str) or raw_value.strip()):
-                ctx.add((node_iri, CRM.P90_has_value, Literal(raw_value)))
+                # prose qualia (narrative_content) carry their language; a code
+                # (inventory_number) or a number never does
+                ctx.add((node_iri, CRM.P90_has_value,
+                         self._text_literal(node, "value", raw_value)
+                         if isinstance(raw_value, str) else Literal(raw_value)))
 
             # Qualia type identifier — same key resolution as _compute_primary_iri:
             # property_type if non-default, otherwise the NodeLabel (name).

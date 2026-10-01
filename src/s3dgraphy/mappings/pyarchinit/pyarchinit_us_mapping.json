@@ -250,9 +250,9 @@
     "pyarchinit_quote table": "Per-point elevations (700 rows) live in the separate pyarchinit_quote table, not us_table. A future handler could join it (like periodizzazione_table) for richer elevation qualia / GeoPositionNode points."
   },
   "_validated_against": {
-    "s3dgraphy": "1.6.0.dev24",
+    "s3dgraphy": "1.6.0.dev25",
     "schema_version": "1",
-    "node_datamodel": "1.6.18",
+    "node_datamodel": "1.6.19",
     "connections_datamodel": "1.6.32",
     "on": "2026-10-01"
   }
