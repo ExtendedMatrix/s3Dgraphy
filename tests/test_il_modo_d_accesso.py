@@ -73,7 +73,7 @@ def test_a_verification_and_a_translation_carry_the_mode():
 def test_the_crdt_writes_the_mode_of_the_op_and_refuses_a_bad_one():
     sec = {"nodes": [], "edges": []}
     op = make_op("add_node", ts="2026-10-31T09:00:00Z", author=ORCID, auth=FIELD,
-                 node={"id": "us1", "type": "US", "name": "US 1"})
+                 node={"id": "us1", "node_type": "US", "name": "US 1"})
     assert apply_op_to_section(sec, op).applied
     us = sec["nodes"][0]
     assert us["data"]["created_auth"] == FIELD and us["data"]["modified_auth"] == FIELD

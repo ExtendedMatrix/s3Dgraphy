@@ -923,7 +923,8 @@ def _section_language(section: Dict[str, Any]) -> Optional[str]:
     working_language` falls back to). None when undeclared or not a tag."""
     from .language import STUDY_LANG_KEY, is_language_tag
     for node in section.get("nodes") or []:
-        if isinstance(node, dict) and node.get("type") == "graph":
+        # em.json spells it node_type; a hand-built section may say type
+        if isinstance(node, dict) and (node.get("node_type") or node.get("type")) == "graph":
             value = (node.get("data") or {}).get(STUDY_LANG_KEY)
             if is_language_tag(value):
                 return value.strip()

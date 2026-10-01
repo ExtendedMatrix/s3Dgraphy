@@ -79,7 +79,7 @@ def test_the_types_whose_lang_is_not_their_text_are_untouched():
     assert "lang" not in g.find_node_by_id("r1").data
     root = next(n for n in g.nodes if n.node_type == "graph")
     assert "lang" not in root.data
-    assert stamp_birth_language({"type": "translation", "data": {}}, "it") is False
+    assert stamp_birth_language({"node_type": "translation", "data": {}}, "it") is False
 
 
 # ── through api ──────────────────────────────────────────────────────────────
@@ -99,16 +99,26 @@ def test_a_node_born_through_api_carries_the_language():
 
 # ── through the CRDT ─────────────────────────────────────────────────────────
 
-def _section(lang="it"):
-    nodes = [{"id": "g", "type": "graph", "name": "scavo",
+def _section(lang="it", key="node_type"):
+    """An em.json graph section — em.json spells the type ``node_type``."""
+    nodes = [{"id": "g", key: "graph", "name": "scavo",
               "data": {"language": lang} if lang else {}}]
     return {"nodes": nodes, "edges": []}
+
+
+def test_the_crdt_reads_the_study_language_as_em_json_spells_it():
+    for key in ("node_type", "type"):
+        sec = _section("la", key=key)
+        apply_op_to_section(sec, make_op(
+            "add_node", ts="2026-10-31T09:00:00Z",
+            node={"id": "u", "node_type": "US", "name": "US 1"}))
+        assert next(n for n in sec["nodes"] if n["id"] == "u")["data"]["lang"] == "la", key
 
 
 def test_the_crdt_writes_the_language_of_a_new_node():
     sec = _section("it")
     op = make_op("add_node", ts="2026-10-31T09:00:00Z", author="0000-0002-1825-0097",
-                 node={"id": "us1", "type": "US", "name": "US 1",
+                 node={"id": "us1", "node_type": "US", "name": "US 1",
                        "description": "strato"})
     assert apply_op_to_section(sec, op).applied
     us = next(n for n in sec["nodes"] if n["id"] == "us1")
@@ -118,7 +128,7 @@ def test_the_crdt_writes_the_language_of_a_new_node():
 def test_the_crdt_keeps_the_language_the_op_carries():
     sec = _section("it")
     op = make_op("add_node", ts="2026-10-31T09:00:00Z",
-                 node={"id": "us1", "type": "US", "name": "US 1",
+                 node={"id": "us1", "node_type": "US", "name": "US 1",
                        "description": "layer", "data": {"lang": "en"}})
     apply_op_to_section(sec, op)
     assert next(n for n in sec["nodes"] if n["id"] == "us1")["data"]["lang"] == "en"
@@ -127,7 +137,7 @@ def test_the_crdt_keeps_the_language_the_op_carries():
 def test_the_crdt_without_a_study_language_writes_none():
     sec = _section(None)
     op = make_op("add_node", ts="2026-10-31T09:00:00Z",
-                 node={"id": "us1", "type": "US", "name": "US 1"})
+                 node={"id": "us1", "node_type": "US", "name": "US 1"})
     apply_op_to_section(sec, op)
     assert "lang" not in (next(n for n in sec["nodes"] if n["id"] == "us1")
                           .get("data") or {})
@@ -135,10 +145,10 @@ def test_the_crdt_without_a_study_language_writes_none():
 
 def test_a_merge_never_rewrites_the_language():
     sec = _section("it")
-    sec["nodes"].append({"id": "us1", "type": "US", "name": "US 1",
+    sec["nodes"].append({"id": "us1", "node_type": "US", "name": "US 1",
                          "data": {"created_at": "2026-10-30T09:00:00Z"}})
     op = make_op("add_node", ts="2026-10-31T09:00:00Z",
-                 node={"id": "us1", "type": "US", "name": "US 1"})
+                 node={"id": "us1", "node_type": "US", "name": "US 1"})
     apply_op_to_section(sec, op)
     assert "lang" not in next(n for n in sec["nodes"] if n["id"] == "us1")["data"]
 
