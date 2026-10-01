@@ -27,6 +27,14 @@ The files are canonicalised one after the other **in order of file name** and
 the bytes concatenated (JSON values are self-delimiting, so no separator is
 needed). The digest is ``sha256:<64 hex>``.
 
+**One digest, and one per file.** The whole digest says «the same datamodel,
+all of it», and it is what a consumer that copies every file compares
+(EMStudio). A consumer that reads only some of them compares only those
+(:func:`fingerprint_subset`, ``names=`` in :func:`fingerprint_differences`):
+stratigraph-templates reads four, and a change to the visual rules or to the
+translations is none of its business. The per-file entries are in ``files``,
+each with its own digest and version, in the same canonical form.
+
 **Which files.** Exactly the ones a consumer copies, measured in
 ``docs/DATAMODEL_PROPAGATION.md``: EMStudio's ``sync-datamodels.sh`` copies all
 six; stratigraph-templates reads four of them (and ``em.ttl``, which is not
@@ -148,7 +156,10 @@ def datamodel_fingerprint(config_dir: Optional[str] = None) -> Dict[str, Any]:
     * ``versions`` — ``{name: version}``, the version each file declares;
     * ``digests`` — ``{name: sha256:<hex>}`` of each file alone, so that a copy
       whose version stayed and whose content moved is still NAMED;
-    * ``files`` — ``{name: file name}``.
+    * ``files`` — ``{name: {file, digest, version}}``, the same per-file facts
+      gathered per file (since 1.6.0.dev25; before it was ``{name: file
+      name}``). ``versions`` and ``digests`` stay, because every reader written
+      before dev25 compares on them.
 
     ``config_dir`` defaults to this package's ``JSON_config``; pass a directory
     holding copies (a consumer's vendored assets) to fingerprint those instead.
@@ -173,12 +184,40 @@ def datamodel_fingerprint(config_dir: Optional[str] = None) -> Dict[str, Any]:
         "digest": "sha256:" + whole.hexdigest(),
         "versions": versions,
         "digests": digests,
-        "files": {name: spec[0] for name, spec in DATAMODEL_FILES.items()},
+        "files": {name: {"file": spec[0], "digest": digests[name],
+                         "version": versions[name]}
+                  for name, spec in DATAMODEL_FILES.items()},
     }
 
 
+def fingerprint_subset(fingerprint: Mapping[str, Any],
+                       names: Optional[Any] = None) -> Dict[str, Any]:
+    """The part of ``fingerprint`` a consumer that reads only ``names`` holds.
+
+    ``{versions, digests, files}`` restricted to ``names`` (in the order of
+    :data:`DATAMODEL_FILES`), plus ``digest`` only when ``names`` is the whole
+    set: the one digest covers every file, and a consumer that does not read
+    them all cannot be held to it. ``names=None`` is the whole set. A name the
+    fingerprint does not know is left out, and the comparison then names it as
+    absent. Accepts a fingerprint written before dev25 (no per-file ``files``).
+    """
+    wanted = list(DATAMODEL_FILES) if names is None else [n for n in DATAMODEL_FILES if n in set(names)]
+    versions = dict(fingerprint.get("versions") or {})
+    digests = dict(fingerprint.get("digests") or {})
+    files = fingerprint.get("files") or {}
+    out: Dict[str, Any] = {
+        "versions": {n: versions[n] for n in wanted if n in versions},
+        "digests": {n: digests[n] for n in wanted if n in digests},
+        "files": {n: files[n] for n in wanted if isinstance(files.get(n), dict)},
+    }
+    if set(wanted) == set(DATAMODEL_FILES) and fingerprint.get("digest"):
+        out["digest"] = fingerprint["digest"]
+    return out
+
+
 def fingerprint_differences(expected: Mapping[str, Any],
-                            found: Mapping[str, Any]) -> List[str]:
+                            found: Mapping[str, Any],
+                            names: Optional[Any] = None) -> List[str]:
     """What ``found`` holds differently from ``expected``, one named line each.
 
     Both are fingerprints (or anything with ``versions`` and, optionally,
@@ -188,7 +227,13 @@ def fingerprint_differences(expected: Mapping[str, Any],
     agree and per-file digests are known on both sides, a moved content is
     named too. When nothing can be named but the overall digests differ, that
     is said on its own line. An empty list means the copy is the source.
+
+    ``names`` restricts the comparison to the files a consumer reads (see
+    :func:`fingerprint_subset`): the other files are not compared, and neither
+    is the whole digest, unless ``names`` is every file.
     """
+    if names is not None:
+        expected, found = fingerprint_subset(expected, names), fingerprint_subset(found, names)
     lines: List[str] = []
     want_v = dict(expected.get("versions") or {})
     have_v = dict(found.get("versions") or {})

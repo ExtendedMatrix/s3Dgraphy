@@ -120,3 +120,56 @@ def test_a_partial_set_has_no_fingerprint(copies):
     (copies / DATAMODEL_FILES["translations"][0]).unlink()
     with pytest.raises(FileNotFoundError):
         datamodel_fingerprint(str(copies))
+
+
+# ── one digest per file, and the files a consumer reads (dev25) ──────────────
+
+READS = ("nodes", "node_registry", "connections", "qualia")   # stratigraph-templates
+
+
+def test_files_carries_a_digest_and_a_version_per_file():
+    fp = datamodel_fingerprint()
+    assert list(fp["files"]) == list(DATAMODEL_FILES)
+    for name, (filename, _) in DATAMODEL_FILES.items():
+        entry = fp["files"][name]
+        assert entry == {"file": filename, "digest": fp["digests"][name],
+                         "version": fp["versions"][name]}
+        canon = canonical_json(json.loads((JSON_CONFIG / filename).read_text(encoding="utf-8")))
+        import hashlib
+        assert entry["digest"] == "sha256:" + hashlib.sha256(canon).hexdigest()
+
+
+def test_a_subset_has_no_one_digest_and_the_whole_set_keeps_it():
+    from s3dgraphy.datamodel import fingerprint_subset
+    fp = datamodel_fingerprint()
+    sub = fingerprint_subset(fp, READS)
+    assert "digest" not in sub
+    assert list(sub["versions"]) == list(sub["digests"]) == list(sub["files"]) == list(READS)
+    assert fingerprint_subset(fp)["digest"] == fp["digest"]
+    assert api.datamodel_fingerprint_subset(fp, READS) == sub
+
+
+@pytest.mark.parametrize("name", ["visual_rules", "translations"])
+def test_a_file_a_consumer_does_not_read_is_not_its_difference(copies, name):
+    before = datamodel_fingerprint(str(copies))
+    rewrite(copies / DATAMODEL_FILES[name][0], lambda d: dict(d, _touched=1))
+    after = datamodel_fingerprint(str(copies))
+    assert after["digest"] != before["digest"]
+    assert fingerprint_differences(before, after, READS) == []
+    assert api.datamodel_differences(before, after, READS) == []
+    # the whole set still sees it
+    assert fingerprint_differences(before, after) != []
+
+
+def test_a_file_it_reads_is_named():
+    fp = datamodel_fingerprint()
+    old = dict(fp, versions=dict(fp["versions"], nodes="1.6.17"))
+    assert fingerprint_differences(fp, old, READS) == [
+        f"nodes 1.6.17 vs {fp['versions']['nodes']}"]
+
+
+def test_a_fingerprint_from_before_dev25_still_compares():
+    fp = datamodel_fingerprint()
+    old = dict(fp, files={n: spec[0] for n, spec in DATAMODEL_FILES.items()})
+    assert fingerprint_differences(fp, old) == []
+    assert fingerprint_differences(fp, old, READS) == []

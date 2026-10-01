@@ -506,10 +506,20 @@ def datamodel_fingerprint(config_dir: Optional[str] = None) -> Dict[str, Any]:
     return _fingerprint(config_dir)
 
 
-def datamodel_differences(expected: Dict[str, Any], found: Dict[str, Any]) -> List[str]:
-    """Named differences between two fingerprints (`nodes 1.6.12 vs 1.6.17`)."""
+def datamodel_differences(expected: Dict[str, Any], found: Dict[str, Any],
+                          names: Optional[Any] = None) -> List[str]:
+    """Named differences between two fingerprints (`nodes 1.6.12 vs 1.6.17`).
+
+    `names` restricts them to the datamodel files a consumer reads
+    (stratigraph-templates: nodes, node_registry, connections, qualia)."""
     from .datamodel import fingerprint_differences
-    return fingerprint_differences(expected, found)
+    return fingerprint_differences(expected, found, names)
+
+
+def datamodel_fingerprint_subset(fingerprint: Dict[str, Any], names: Any) -> Dict[str, Any]:
+    """The part of a fingerprint a consumer reading only `names` holds."""
+    from .datamodel import fingerprint_subset
+    return fingerprint_subset(fingerprint, names)
 
 
 def crdt_stats(doc_or_section: Dict[str, Any]) -> Dict[str, int]:

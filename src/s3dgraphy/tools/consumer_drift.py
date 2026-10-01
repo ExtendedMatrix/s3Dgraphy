@@ -17,7 +17,9 @@ through the fingerprint of :mod:`s3dgraphy.datamodel`: each difference is named
 content``), and a consumer that holds the whole set is also compared on the one
 digest. A consumer holds the files it holds — Heriverse vendors three of the
 six — and is compared on those; a file it is expected to hold and does not is a
-difference too.
+difference too. A consumer that copies nothing but READS some files
+(stratigraph-templates reads four) is compared on those it reads, and never on
+the one digest, which covers files it does not read.
 
 The distinction it keeps, and the reason it is not simply a CI failure:
 
@@ -79,7 +81,10 @@ CONSUMERS: List[Dict[str, object]] = [
     {
         "name": "stratigraph-templates",
         "snapshot": "stratigraph-templates/registry/s3dgraphy-snapshot.json",
-        "files": ALL,
+        # what its registry READS (registry.from_s3dgraphy; em.ttl is compared
+        # term by term there): since dev25 a change to the visual rules or the
+        # translations no longer makes it behind (D4 of the MICRO-DERIVA)
+        "files": ("nodes", "node_registry", "connections", "qualia"),
         "ours": True,
         "tracked": True,
         "how": ".venv/bin/stratigraph-templates registry-snapshot, then build",

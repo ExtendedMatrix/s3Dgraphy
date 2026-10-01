@@ -111,9 +111,20 @@ fingerprint. `em.ttl` is not JSON: stratigraph-templates compares it term by
 term.
 
 It returns `{digest, versions, digests, files}`: `digest` is `sha256:<hex>` over
-all six, `versions` one version per name, `digests` one digest per file. The
-per-file digests are what lets a copy whose version stayed and whose content
+all six, `versions` one version per name, `digests` one digest per file, and
+(since dev25) `files` the same facts per file, `{name: {file, digest, version}}`.
+The per-file digests are what lets a copy whose version stayed and whose content
 moved still be **named**.
+
+**Each consumer is compared on what it reads.** The one digest says «the same
+datamodel, all of it»: it is what a consumer that copies all six compares
+(EMStudio). A consumer that reads only some files is compared on those and never
+on the one digest: `api.datamodel_differences(expected, found, names)` and
+`api.datamodel_fingerprint_subset(fp, names)`. stratigraph-templates reads
+`nodes`, `node_registry`, `connections` and `qualia` (and `em.ttl`, term by
+term), so a change to the visual rules or to the translations does not stop its
+`validate`; a change to the nodes does, and names the file. `consumer_drift`
+compares it on the same four.
 
 **The canonical form is RFC 8785** (JSON Canonicalization Scheme): keys sorted by
 UTF-16 code unit, no whitespace, strings escaped as `JSON.stringify` escapes them,

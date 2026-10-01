@@ -189,3 +189,31 @@ def test_an_old_snapshot_without_a_fingerprint_is_read_on_its_versions(tmp_path)
                if r["name"] == "stratigraph-templates")
     assert row["state"] == "behind"
     assert any(line.startswith("nodes 1.6.12 vs ") for line in row["differences"])
+
+
+def test_templates_is_compared_only_on_the_files_it_reads(tmp_path):
+    """D4 of the MICRO-DERIVA: templates reads nodes, node_registry,
+    connections and qualia. A snapshot taken before a change to the visual rules
+    is still aligned; one taken before a change to the nodes is behind, and the
+    nodes are named."""
+    from s3dgraphy.datamodel import datamodel_fingerprint
+    fp = datamodel_fingerprint()
+    entry = next(e for e in drift.CONSUMERS if e["name"] == "stratigraph-templates")
+    assert tuple(entry["files"]) == ("nodes", "node_registry", "connections", "qualia")
+    snap = tmp_path / "stratigraph-templates/registry/s3dgraphy-snapshot.json"
+    snap.parent.mkdir(parents=True)
+
+    def row_for(recorded):
+        snap.write_text(json.dumps({"datamodel": recorded}), encoding="utf-8")
+        return next(r for r in drift.survey(str(tmp_path))["consumers"]
+                    if r["name"] == "stratigraph-templates")
+
+    visual = dict(fp, digest="sha256:" + "1" * 64,
+                  versions=dict(fp["versions"], visual_rules="1.6.1"),
+                  digests=dict(fp["digests"], visual_rules="sha256:" + "1" * 64))
+    assert row_for(visual)["state"] == "aligned"
+    nodes = dict(fp, digest="sha256:" + "2" * 64,
+                 digests=dict(fp["digests"], nodes="sha256:" + "2" * 64))
+    row = row_for(nodes)
+    assert row["state"] == "differs"
+    assert row["differences"] == [f"nodes {fp['versions']['nodes']}: same version, different content"]
