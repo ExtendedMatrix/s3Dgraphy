@@ -911,7 +911,8 @@ class RDFImporter:
         label = self._one_literal(store, ref, RDFS.label)
         if label:
             payload["name"] = label
-        desc = self._one_literal(store, ref, DCTERMS.description)
+        desc = self._original_literal(store, ref, DCTERMS.description,
+                                      "description")
         if desc:
             payload["description"] = desc
 
@@ -949,11 +950,17 @@ class RDFImporter:
         to it is the cascade's second step, not something the node declared, and
         writing it back would return an em.json with data.lang everywhere. An
         untagged literal says nothing and is read as it always was."""
+        from ..language import NODE_LANG_KEY, same_language
+        # le traduzioni (2b): the exporter writes WHICH language is the
+        # original whenever the node declares one — equal to the study's too —
+        # so the declaration comes back exactly where it was.
+        declared = self._one_literal(store, ref, EM.originalLanguage)
+        if declared:
+            return {NODE_LANG_KEY: declared}
         klass = self.inverse.class_by_name.get(class_name or "")
         if klass is None:
             return {}
         study = getattr(self, "_study_lang", None)
-        from ..language import NODE_LANG_KEY, same_language
         probes = [("description", DCTERMS.description, klass)]
         if qualia_type is not None:
             # is_natural_language reads a PropertyNode's quale off the instance
@@ -964,11 +971,54 @@ class RDFImporter:
         for prop, predicate, subject in probes:
             if not self.inverse.dm.is_natural_language(subject, prop):
                 continue
-            for o in store.objects(ref, predicate):
-                lang = getattr(o, "language", None) if isinstance(o, Literal) else None
-                if lang and not same_language(lang, study):
-                    return {NODE_LANG_KEY: lang}
+            # an RDF written before em:originalLanguage: the original's tag, and
+            # never a translation's (they share the predicate)
+            field = "description" if prop == "description" else "data.value"
+            o = self._original_literal(store, ref, predicate, field, raw=True)
+            lang = getattr(o, "language", None) if isinstance(o, Literal) else None
+            if lang and not same_language(lang, study):
+                return {NODE_LANG_KEY: lang}
         return {}
+
+    @staticmethod
+    def _translation_literals(store: ConjunctiveGraph, ref: URIRef,
+                              field: str) -> Set[Tuple[str, Optional[str]]]:
+        """``(text, lang)`` of every translation of ``field`` of ``ref`` — the
+        literals the exporter added on the original's predicate. A translation
+        is recognised by what it says of itself (prov:wasDerivedFrom → the
+        node, em:translatedField), not by its class."""
+        out: Set[Tuple[str, Optional[str]]] = set()
+        for t in store.subjects(PROV.wasDerivedFrom, ref):
+            if not any(str(f) == field
+                       for f in store.objects(t, EM.translatedField)):
+                continue
+            for lit in store.objects(t, CRM.P190_has_symbolic_content):
+                if isinstance(lit, Literal):
+                    out.add((str(lit), lit.language))
+        return out
+
+    def _original_literal(self, store: ConjunctiveGraph, ref: URIRef,
+                          pred: URIRef, field: str, *, raw: bool = False):
+        """THE original among the literals of ``pred`` (le traduzioni): the one
+        that is not a translation's. With several left (a third-party RDF),
+        the one tagged with em:originalLanguage wins, then a stable order —
+        never whichever the store yields first. ``raw`` returns the Literal,
+        otherwise its text (None when there is none)."""
+        lits = sorted((o for o in store.objects(ref, pred)
+                       if isinstance(o, Literal)),
+                      key=lambda o: (o.language or "", str(o)))
+        if not lits:
+            return None
+        if len(lits) > 1:
+            taken = self._translation_literals(store, ref, field)
+            rest = [o for o in lits if (str(o), o.language) not in taken]
+            lits = rest or lits
+            original = self._one_literal(store, ref, EM.originalLanguage)
+            if original:
+                from ..language import same_language
+                lits = ([o for o in lits if same_language(o.language, original)]
+                        or lits)
+        return lits[0] if raw else str(lits[0])
 
     def _definition_data(self, store: ConjunctiveGraph, ref: URIRef,
                          class_name: Optional[str],
@@ -1129,9 +1179,30 @@ class RDFImporter:
                     self.warnings.append(f"node '{node_id}': {note}")
             if ptype:
                 data["property_type"] = ptype
-            value = self._one_literal(store, ref, CRM.P90_has_value)
+            value = self._original_literal(store, ref, CRM.P90_has_value,
+                                           "data.value")
             if value is not None:
                 data["value"] = value
+            return data
+
+        if node_type == "translation":
+            # the inverse of RDFExporter._serialize_translation
+            text = self._one_literal(store, ref, CRM.P190_has_symbolic_content)
+            if text is not None:
+                data["text"] = text
+            lang = self._one_literal(store, ref, CRM.P72_has_language)
+            if lang:
+                data["lang"] = lang
+            for key, pred in (("from_lang", EM.sourceLanguage),
+                              ("field", EM.translatedField),
+                              ("method", EM.translationMethod),
+                              ("source_digest", EM.sourceDigest)):
+                value = self._one_literal(store, ref, pred)
+                if value:
+                    data[key] = value
+            flag = self._one_literal(store, ref, EM.reviewRequested)
+            if flag is not None and flag.strip().lower() in ("true", "1"):
+                data["review_requested"] = True
             return data
 
         # The real value is "EpochNode" (the class name); "epoch" is accepted too
@@ -1416,6 +1487,14 @@ class RDFImporter:
             src_class = class_of.get(s_text)
             tgt_class = class_of.get(o_text)
             src_id, tgt_id = id_of[s_text], id_of[o_text]
+
+            # prov:wasDerivedFrom from a translation restates has_translation
+            # (crm:P73, from the other side): the edge comes back from P73
+            if src_class == "TranslationNode" and str(PROV.wasDerivedFrom) in preds:
+                preds = preds - {str(PROV.wasDerivedFrom)}
+                self.stats["artefacts_skipped"] += 1
+                if not preds:
+                    continue
 
             # P67 from a narrative is a projection of its chapters, not an edge
             src_type = self.inverse.node_type_by_class.get(src_class or "")

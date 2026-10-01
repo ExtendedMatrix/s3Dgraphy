@@ -287,3 +287,149 @@ def test_em_json_round_trip_keeps_the_translation():
     assert t2.data == t.data
     assert _reasons(back, t.node_id) == ["ai"]
     assert not [w for w in warnings if "unknown node_type" in w]
+
+
+# ── in RDF: the original marked, every translation a literal and a resource ──
+
+rdflib = pytest.importorskip("rdflib")
+from rdflib import Literal, Namespace, URIRef  # noqa: E402
+from rdflib.namespace import DCTERMS, PROV, RDF  # noqa: E402
+
+from s3dgraphy.exporter.emjson_exporter import build_emjson  # noqa: E402
+from s3dgraphy.exporter.rdf_exporter import RDFExporter  # noqa: E402
+from s3dgraphy.importer.emjson_importer import parse_emjson  # noqa: E402
+from s3dgraphy.importer.rdf_importer import RDFImporter  # noqa: E402
+
+CRM = Namespace("http://www.cidoc-crm.org/cidoc-crm/")
+EM = Namespace("https://w3id.org/em/ontology#")
+IT = "solidità, utilità, bellezza"
+EN = "strength, utility, beauty"
+
+
+def _vitruvio():
+    """The test of the prompt: a document with a Latin quotation, an Italian
+    translation from an edition, an English AI one nobody verified."""
+    g = _graph()
+    it = api.add_translation(g, "d1", "description", "it", IT, by="sb",
+                             method="edition", edition="ed_fg",
+                             at="2026-10-29T09:00:00Z")
+    en = api.add_translation(g, "d1", "description", "en", EN, by="ed",
+                             method="ai", ai="claude", model="claude-opus-5-5",
+                             at="2026-10-29T09:05:00Z")
+    return g, it, en
+
+
+def _export(graph, tmp_path, name="g.ttl", **kw):
+    exporter = RDFExporter(str(tmp_path / name), format="turtle", **kw)
+    path = exporter.export_single_graph(graph)
+    store = rdflib.ConjunctiveGraph()
+    store.parse(path, format="turtle")
+    return exporter, store, path
+
+
+def _iri(exporter, graph, node_id):
+    return exporter._node_iri(graph.graph_id, node_id)
+
+
+def test_the_publication_has_two_literals_and_the_italian_resource(tmp_path):
+    g, it, en = _vitruvio()
+    exporter, store, _ = _export(g, tmp_path, mode="publish")
+    d1 = _iri(exporter, g, "d1")
+    literals = set(store.objects(d1, DCTERMS.description))
+    assert literals == {Literal(QUOTE, lang="la"), Literal(IT, lang="it")}
+    assert (d1, EM.originalLanguage, Literal("la")) in store
+    t = _iri(exporter, g, it.node_id)
+    assert (t, RDF.type, CRM.E33_Linguistic_Object) in store
+    assert (d1, CRM.P73_has_translation, t) in store
+    assert (t, PROV.wasDerivedFrom, d1) in store
+    assert (t, PROV.wasAttributedTo, _iri(exporter, g, "sb")) in store
+    assert (t, CRM.P190_has_symbolic_content, Literal(IT, lang="it")) in store
+    assert (t, CRM.P72_has_language, Literal("it")) in store
+    assert (t, EM.translationMethod, Literal("edition")) in store
+    assert (t, EM.sourceLanguage, Literal("la")) in store
+    assert (t, CRM.P67_refers_to, _iri(exporter, g, "ed_fg")) in store
+    # the English one is an unverified AI translation: out, everywhere
+    en_iri = _iri(exporter, g, en.node_id)
+    assert not list(store.predicate_objects(en_iri))
+    assert not any(o.language == "en" for o in store.objects(d1, DCTERMS.description))
+    assert en.node_id in {r["node"] for r in exporter.excluded}
+
+
+def test_a_verified_ai_translation_is_published(tmp_path):
+    g, _it, en = _vitruvio()
+    api.verify(g, en, "ed")
+    exporter, store, _ = _export(g, tmp_path, mode="publish")
+    d1 = _iri(exporter, g, "d1")
+    assert Literal(EN, lang="en") in set(store.objects(d1, DCTERMS.description))
+
+
+def test_a_stale_translation_leaves_no_literal_beside_the_original(tmp_path):
+    g, it, _en = _vitruvio()
+    api.set_field(g.find_node_by_id("d1"), "description", "firmitas",
+                  author=ORCID)
+    exporter, store, _ = _export(g, tmp_path)
+    d1 = _iri(exporter, g, "d1")
+    assert set(store.objects(d1, DCTERMS.description)) == {
+        Literal("firmitas", lang="la")}
+    # its own resource still leaves, with the digest that says why
+    t = _iri(exporter, g, it.node_id)
+    assert (t, EM.sourceDigest, Literal(text_digest(QUOTE))) in store
+    assert exporter.stats["translations_stale"] == 2
+    assert "to realign" in exporter.summary()
+
+
+def _snapshot(graph):
+    nodes = {n.node_id: (n.node_type, n.name, n.description or "",
+                         dict(sorted((getattr(n, "data", None) or {}).items())))
+             for n in graph.nodes}
+    edges = sorted((e.edge_source, e.edge_target, e.edge_type)
+                   for e in graph.edges)
+    return nodes, edges
+
+
+def test_the_round_trip_gives_back_the_same_graph(tmp_path):
+    g, it, en = _vitruvio()
+    first, _ = parse_emjson(build_emjson(g))
+    _exporter, _store, path = _export(first, tmp_path)
+    back = RDFImporter().parse(path)[0]
+    again, _ = parse_emjson(build_emjson(back))
+    before_nodes, before_edges = _snapshot(first)
+    after_nodes, after_edges = _snapshot(again)
+    assert after_edges == before_edges
+    for nid, value in before_nodes.items():
+        assert after_nodes.get(nid) == value, nid
+    assert set(after_nodes) == set(before_nodes)
+    # the original is the original, the language where it was
+    d1 = again.find_node_by_id("d1")
+    assert d1.description == QUOTE and d1.data["lang"] == "la"
+    # the unverified AI translation came back unverified
+    assert api.needs_review(again.find_node_by_id(en.node_id), again) == ["ai"]
+
+
+def test_the_round_trip_of_a_property_value(tmp_path):
+    g = _graph()
+    g.add_node(PropertyNode("p1", "narrative_content", value="la guerra di Troia",
+                            property_type="narrative_content"))
+    api.add_translation(g, "p1", "value", "en", "the Trojan war", by="ed")
+    exporter, store, path = _export(g, tmp_path)
+    p1 = _iri(exporter, g, "p1")
+    assert set(store.objects(p1, CRM.P90_has_value)) == {
+        Literal("la guerra di Troia", lang="it"),
+        Literal("the Trojan war", lang="en")}
+    back = RDFImporter().parse(path)[0]
+    assert back.find_node_by_id("p1").value == "la guerra di Troia"
+    assert "lang" not in (back.find_node_by_id("p1").data or {})
+
+
+def test_the_importer_never_mistakes_a_translation_for_the_original(tmp_path):
+    """Many translations, many orders: the original is chosen by what the
+    translations say of themselves, not by which literal the store yields."""
+    g = _graph()
+    for lang, text in (("it", "solidità"), ("en", "strength"),
+                       ("de", "Festigkeit"), ("fr", "solidité")):
+        api.add_translation(g, "d1", "description", lang, text, by="ed")
+    _exporter, _store, path = _export(g, tmp_path)
+    back = RDFImporter().parse(path)[0]
+    assert back.find_node_by_id("d1").description == QUOTE
+    assert len(api.translations(back, "d1")) == 4
+    assert not [e for e in back.edges if e.edge_type == "dtc_derived_from"]

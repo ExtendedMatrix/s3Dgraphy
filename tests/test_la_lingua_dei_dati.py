@@ -268,16 +268,25 @@ def test_emjson_ttl_emjson_keeps_data_lang_only_where_it_was(tmp_path):
     assert _langs(again) == before and working_language(again) == "it"
 
 
-def test_a_node_language_equal_to_the_study_comes_back_as_the_study(tmp_path):
-    """Declared limit (D.1): a tag equal to the study's is the cascade's second
-    step, so data.lang equal to the study language does not survive RDF — the
-    LANGUAGE does (the text is still @it), the redundant declaration does not."""
+def test_a_node_language_equal_to_the_study_comes_back_identical(tmp_path):
+    """D.1, closed by le traduzioni (2b): a data.lang equal to the study's is the
+    node's own declaration and comes back as it was — em:originalLanguage says
+    it, whatever the study says. Until then it was a declared limit."""
     g = _unit_graph(study_lang="it", lang="it")
-    _exporter, store, path = _export(g, tmp_path)
+    exporter, store, path = _export(g, tmp_path)
+    assert _one(store, _iri(exporter, g, "us1"), EM.originalLanguage) == Literal("it")
     back = RDFImporter().parse(path)[0]
     us = back.find_node_by_id("us1")
-    assert "lang" not in (getattr(us, "data", None) or {})
+    assert us.data.get("lang") == "it"
     assert working_language(back) == "it"
+
+
+def test_original_language_is_written_only_where_declared(tmp_path):
+    g = _unit_graph(study_lang="it")
+    exporter, store, path = _export(g, tmp_path)
+    assert (_iri(exporter, g, "us1"), EM.originalLanguage, None) not in store
+    back = RDFImporter().parse(path)[0]
+    assert "lang" not in (getattr(back.find_node_by_id("us1"), "data", None) or {})
 
 
 def test_untagged_literals_still_read(tmp_path):

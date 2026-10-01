@@ -776,6 +776,8 @@ class RDFExporter:
         }
         #: the working language of the graph being serialised (language.py)
         self._study_lang: Optional[str] = None
+        #: node id → its TranslationNodes, in the graph being serialised
+        self._translations_of: Dict[str, List[Any]] = {}
 
     @staticmethod
     def _normalize_iri(value: Optional[str]) -> Optional[str]:
@@ -979,6 +981,11 @@ class RDFExporter:
         self._study_lang = working_language(g)
         if self._study_lang:
             ctx.add((graph_iri, DCTERMS.language, Literal(self._study_lang)))
+        # The translations (translation.py), by the node they translate: each
+        # adds a literal on the predicate of its field. Read off THIS `g` — in
+        # `publish` the view without the unverified AI ones, so what is left out
+        # is left out everywhere at once.
+        self._translations_of = self._index_translations(g)
 
         # The graph's name is a name (untagged); its description is text, in the
         # study's language when one is declared — a graph has no data.lang.
@@ -1190,6 +1197,21 @@ class RDFExporter:
                      self._text_literal(node, "description", desc)))
         ctx.add((node_iri, DCTERMS.identifier, Literal(node.node_id)))
 
+        # Which language is the ORIGINAL (le traduzioni, 2b): written whenever
+        # the node itself declares one, equal to the study's or not — so the
+        # round trip gives data.lang back where it was and nowhere else, and a
+        # reader can tell the original literal from its translations. A
+        # translation's own data.lang is its language of arrival, not an
+        # original's: it leaves as P72 on the translation (_serialize_translation).
+        if node_type != "translation":
+            from ..language import node_language
+            declared = node_language(node)
+            if declared:
+                ctx.add((node_iri, EM.originalLanguage, Literal(declared)))
+            self._emit_translation_literals(g, node, node_iri, ctx)
+        else:
+            self._serialize_translation(g, node, node_iri, ctx)
+
         # Authority cross-references (P1-D) — GENERALISED to any node carrying
         # `data.authority_refs` (nodes AND qualia). Redundant by design: every
         # ranked ref is emitted, with the strength-aware predicate.
@@ -1238,6 +1260,79 @@ class RDFExporter:
         self.stats["literals_untagged"] += 1
         return Literal(value)
 
+    #: the field of a translation → the predicate its literal joins on the
+    #: translated node (the same predicate the original leaves with). A field
+    #: with no literal of its own on the node (another data.<key>) has none:
+    #: the translation still leaves as its own resource.
+    _TRANSLATED_FIELD_PREDICATE = {"description": DCTERMS.description,
+                                   "data.value": CRM.P90_has_value}
+
+    @staticmethod
+    def _index_translations(g: S3DGraph) -> Dict[str, List[Any]]:
+        by_id = {n.node_id: n for n in g.nodes}
+        out: Dict[str, List[Any]] = {}
+        for e in g.edges:
+            if e.edge_type != "has_translation":
+                continue
+            t = by_id.get(e.edge_target)
+            if t is not None and getattr(t, "node_type", None) == "translation":
+                out.setdefault(e.edge_source, []).append(t)
+        return out
+
+    def _emit_translation_literals(self, g: S3DGraph, node: Any,
+                                   node_iri: URIRef, ctx) -> None:
+        """One more literal per translation, on the predicate of its field and
+        with its own tag (``dcterms:description "…"@it`` beside the original
+        ``"…"@la``). A translation «da riallineare» (its original changed)
+        does not join: it no longer translates what the node says, and only
+        its own resource leaves."""
+        from ..translation import is_stale
+        for t in self._translations_of.get(node.node_id, ()):
+            data = getattr(t, "data", None) or {}
+            field, text, lang = data.get("field"), data.get("text"), data.get("lang")
+            pred = self._TRANSLATED_FIELD_PREDICATE.get(field or "")
+            if pred is None or not text or not lang:
+                continue
+            if pred == CRM.P90_has_value and getattr(node, "node_type", None) != "property":
+                continue
+            if is_stale(g, t):
+                self.stats["translations_stale"] = self.stats.get(
+                    "translations_stale", 0) + 1
+                continue
+            ctx.add((node_iri, pred, Literal(text, lang=lang)))
+            self.stats["literals_translation"] = self.stats.get(
+                "literals_translation", 0) + 1
+
+    def _serialize_translation(self, g: S3DGraph, node: Any,
+                               node_iri: URIRef, ctx) -> None:
+        """A TranslationNode as its own resource (crm:E33): the text with its
+        tag (crm:P190_has_symbolic_content) and its language (crm:P72), what it
+        translates (prov:wasDerivedFrom → the node; has_translation leaves as
+        crm:P73 from the other side), and the four facts CIDOC has no term for
+        — which field, from which language, how, of which text (em:)."""
+        data = getattr(node, "data", None) or {}
+        lang = data.get("lang")
+        text = data.get("text")
+        if text:
+            ctx.add((node_iri, CRM.P190_has_symbolic_content,
+                     Literal(text, lang=lang) if lang else Literal(text)))
+        if lang:
+            ctx.add((node_iri, CRM.P72_has_language, Literal(lang)))
+        for key, pred in (("from_lang", EM.sourceLanguage),
+                          ("field", EM.translatedField),
+                          ("method", EM.translationMethod),
+                          ("source_digest", EM.sourceDigest)):
+            if data.get(key):
+                ctx.add((node_iri, pred, Literal(str(data[key]))))
+        if data.get("review_requested"):
+            ctx.add((node_iri, EM.reviewRequested,
+                     Literal(True, datatype=XSD.boolean)))
+        for e in g.edges:
+            if e.edge_type == "has_translation" and e.edge_target == node.node_id:
+                ctx.add((node_iri, PROV.wasDerivedFrom,
+                         self._node_iri(g.graph_id, e.edge_source)))
+        self.stats["translations"] = self.stats.get("translations", 0) + 1
+
     def summary(self) -> str:
         """One line of what the export did, for the caller's report: what went
         out, and what the language of the texts was. ``definitions_label_only``
@@ -1252,7 +1347,11 @@ class RDFExporter:
                 f"{s['definitions_label_only']} definitions label-only; "
                 f"texts tagged {s['literals_tagged_node']} by the node, "
                 f"{s['literals_tagged_study']} by the study, "
-                f"{s['literals_untagged']} untagged (language never declared)")
+                f"{s['literals_untagged']} untagged (language never declared)"
+                + (f"; {s['translations']} translations "
+                   f"({s.get('literals_translation', 0)} literals beside their "
+                   f"original, {s.get('translations_stale', 0)} to realign)"
+                   if s.get("translations") else ""))
 
     def _serialize_definition(self, node: Any, node_iri: URIRef, ctx) -> None:
         """Project the DEFINITION of a unit (datamodel 1.6.9). THE one place.

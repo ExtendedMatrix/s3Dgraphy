@@ -152,12 +152,20 @@ its language tag (`"strato di crollo"@it`); everything else leaves as before.
   refused and nothing is stored.
 - **Names are invariant.** `name` is never tagged: `US 3014`, `W5023`,
   `USM5023` are identities, even when their initials come from a language.
-- **Translations stay out of the graph.** A field holds one value, in the
-  language it was written in: the original is testimony, and `update_field` /
-  last-writer-wins per field stay as they are. Translations live at the
-  presentation level. When they enter the graph they will enter as entities
-  with their provenance — who translated, by hand or by machine, from which
-  text — i.e. as EM paradata, never as a second value of the same field.
+- **Translations are nodes** (E.D., 2026-10-01, «Le traduzioni»). The original
+  stays a string in its field, in the language it was written in: it is
+  testimony, and `update_field` / last-writer-wins per field stay as they are.
+  Each translation is a `TranslationNode` (`crm:E33_Linguistic_Object`) reached
+  by `has_translation` (`crm:P73_has_translation`), with its languages of
+  arrival and departure, the field, the method (`manual` | `ai` | `edition`) and
+  the sha256 of the original it translated — never a second value of the same
+  field. `api.to_review` lists what waits for a person: `ai`,
+  `review_requested`, `stale`.
+- **The original is marked in RDF.** A node's own `data.lang` leaves as
+  `em:originalLanguage`, equal to the study's or not; each aligned translation
+  adds a literal on the same predicate with its own tag, and leaves as its own
+  resource (`prov:wasDerivedFrom`, `prov:wasAttributedTo`). em.json → TTL →
+  em.json gives `data.lang` back exactly where it was.
 - SKOS concepts do not change: their label resolves at reading.
 
 ## The rule, in one line
