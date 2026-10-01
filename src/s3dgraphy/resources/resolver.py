@@ -229,3 +229,14 @@ def default_registry() -> ResolverRegistry:
     reg = ResolverRegistry()
     reg.register(PassthroughBackend(), priority=0)
     return reg
+
+
+def fetch_bytes(url: str, *, timeout: float = 30.0) -> bytes:
+    """The bytes an http(s) locator answers with — the one place a resource's
+    address is OPENED over the network (dev27, ``addresses.snapshot_uri``).
+    Here, and not in the semantic module, because reaching a locator is this
+    module's declared job (tests/test_semantic_purity.py)."""
+    import urllib.request
+    request = urllib.request.Request(url, headers={"User-Agent": "s3dgraphy"})
+    with urllib.request.urlopen(request, timeout=timeout) as response:
+        return response.read()

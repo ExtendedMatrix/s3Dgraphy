@@ -865,5 +865,40 @@ em:reviewRequested
     rdfs:comment "The author of a piece of content asks a person to review it («da rivedere»): true, or absent. Closed — not removed — by em:validatedBy / em:validatedAt, the same signature that clears AI-assisted content: the request stays written, and the signature says it was done and by whom. Introduced for translations made by hand; the field is generic. Maps to: node_datamodel TranslationNode.properties.review_requested (data.review_requested)."@en .
 
 # ============================================================================
-# End of em.ttl v1.6.10
+# 15. Several addresses of one resource (v1.6.11, dev27, decided by E.D.
+#     2026-10-01, «il testo, la risorsa e la selezione»)
+# ============================================================================
+
+em:hasAddress
+    a owl:ObjectProperty ;
+    rdfs:label "has address"@en ;
+    rdfs:domain crm:E73_Information_Object ;
+    rdfs:comment "One of the places where the SAME bytes of a resource can be fetched — the same digest on the disk, on MinIO, on Zenodo: identical copies are one resource with several addresses, and losing one address does not lose the resource. The object is a derived IRI <resource>/address/<i>, number 0 being the resource's url; every locator is also an rdfs:seeAlso of the resource, so a reader that knows nothing of EM finds every copy. Different manifestations are not addresses but sister resources. Maps to: node_datamodel ResourceNode.properties.addresses (data.addresses)."@en .
+
+em:locator
+    a owl:DatatypeProperty ;
+    rdfs:label "locator"@en ;
+    rdfs:range xsd:string ;
+    rdfs:comment "Where an address points: a path relative to the project, an s3:// or http(s):// URL. A literal, because a relative path is not an IRI. Maps to: node_datamodel ResourceNode.properties.addresses.locator."@en .
+
+em:checkedAt
+    a owl:DatatypeProperty ;
+    rdfs:label "checked at"@en ;
+    rdfs:range xsd:dateTime ;
+    rdfs:comment "When an address was last checked; em:reachable says what was found. Absent: never checked, which is not the same as reachable. Maps to: node_datamodel ResourceNode.properties.addresses.checked_at."@en .
+
+em:reachable
+    a owl:DatatypeProperty ;
+    rdfs:label "reachable"@en ;
+    rdfs:range xsd:boolean ;
+    rdfs:comment "Whether an address answered at em:checkedAt. false is a dated fact, not a removal: the address stays, and the resource stays while another address is alive. Maps to: node_datamodel ResourceNode.properties.addresses.ok."@en .
+
+em:checksumAt
+    a owl:DatatypeProperty ;
+    rdfs:label "checksum at"@en ;
+    rdfs:range xsd:dateTime ;
+    rdfs:comment "The instant a DATED digest was taken: a page online without saved bytes has no em:checksum until somebody downloads it, and then the digest is of that day's bytes, because a page changes. Maps to: node_datamodel ResourceNode.properties.checksum_at."@en .
+
+# ============================================================================
+# End of em.ttl v1.6.11
 # ============================================================================

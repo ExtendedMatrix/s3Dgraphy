@@ -1793,6 +1793,10 @@ class RDFExporter:
             from ..language import content_languages
             for tag in content_languages(node):
                 ctx.add((node_iri, DCTERMS.language, Literal(tag)))
+            if data.get("checksum_at"):
+                ctx.add((node_iri, EM.checksumAt,
+                         Literal(str(data["checksum_at"]), datatype=XSD.dateTime)))
+            self._emit_addresses(node, node_iri, data, ctx)
 
         elif node_type == "resource_file":
             # ONE FILE of a resource (E.D. 2026-09-30): where its bytes are and
@@ -1949,6 +1953,38 @@ class RDFExporter:
             kind = data.get("dtc_kind")
             if kind:
                 ctx.add((node_iri, CRM.P2_has_type, Literal(kind)))
+
+    def _emit_addresses(self, node: Any, node_iri: URIRef,
+                        data: Dict[str, Any], ctx) -> None:
+        """Several addresses of ONE resource (dev27, A4): every locator is an
+        ``rdfs:seeAlso`` of the resource — the term its url already leaves with,
+        so a reader that knows nothing of EM finds every copy — and, when the
+        resource keeps a list (``data.addresses``), each address is
+        ``<resource>/address/<i>`` (``em:hasAddress``) with ``em:locator``,
+        ``em:residency``, ``em:checkedAt`` and ``em:reachable``. Number 0 is
+        ``data.url``. A derived IRI and not a blank node, as the quote of a
+        passage, so the importer's node pass never mistakes it for a node."""
+        listed = data.get("addresses")
+        if not isinstance(listed, list) or not listed:
+            return
+        from ..resources.addresses import addresses
+        for i, a in enumerate(addresses(node)):
+            loc = a["locator"]
+            if not a.get("primary"):
+                ctx.add((node_iri, RDFS.seeAlso,
+                         URIRef(loc) if loc.startswith(("http://", "https://"))
+                         else Literal(loc)))
+            addr = URIRef(f"{node_iri}/address/{i}")
+            ctx.add((node_iri, EM.hasAddress, addr))
+            ctx.add((addr, EM.locator, Literal(loc)))
+            if a.get("residency"):
+                ctx.add((addr, EM.residency, Literal(str(a["residency"]))))
+            if a.get("checked_at"):
+                ctx.add((addr, EM.checkedAt,
+                         Literal(str(a["checked_at"]), datatype=XSD.dateTime)))
+            if "ok" in a:
+                ctx.add((addr, EM.reachable,
+                         Literal(bool(a["ok"]), datatype=XSD.boolean)))
 
     def _emit_passage_quote(self, node_iri: URIRef, node: Any, ctx) -> None:
         """The quoted words of a passage, as a W3C TextQuoteSelector.

@@ -2405,6 +2405,43 @@ def add_resource(graph: Optional[Graph], *, name: str, kind: Optional[str] = Non
                 derived_from=derived_from, **kwargs)
 
 
+def addresses(resource) -> List[Dict[str, Any]]:
+    """Every address of a resource, ``data.url`` first: ``[{locator,
+    residency?, checked_at?, ok?, primary}]``. Identical copies (same digest)
+    are ONE resource with several addresses. See
+    :mod:`s3dgraphy.resources.addresses`."""
+    from .resources.addresses import addresses as _a
+    return _a(resource)
+
+
+def add_address(resource, locator: str, *, checksum: Optional[str] = None,
+                residency: Optional[str] = None) -> List[Dict[str, Any]]:
+    """Add a copy of the SAME bytes (``checksum`` must be the resource's) at
+    another address. A different digest is a sister resource and is refused, as
+    is a resource with no digest. See :func:`s3dgraphy.resources.addresses.add_address`."""
+    from .resources.addresses import add_address as _add
+    return _add(resource, locator, checksum=checksum, residency=residency)
+
+
+def check_address(resource, locator: str, *, ok: bool,
+                  at: Optional[str] = None) -> Dict[str, Any]:
+    """Record whether an address answered, and when. A dead address stays (a
+    warning, not an error, while a live one remains). See
+    :func:`s3dgraphy.resources.addresses.check_address`."""
+    from .resources.addresses import check_address as _check
+    return _check(resource, locator, ok=ok, at=at)
+
+
+def snapshot_uri(resource, *, at: Optional[str] = None,
+                 save_to: Optional[str] = None, fetch=None,
+                 timeout: float = 30.0) -> Dict[str, Any]:
+    """Download the page a reference without bytes points at, and give it a
+    DATED digest (``checksum`` + ``checksum_at``); ``save_to`` keeps the bytes
+    as a resident address. See :func:`s3dgraphy.resources.addresses.snapshot_uri`."""
+    from .resources.addresses import snapshot_uri as _snap
+    return _snap(resource, at=at, save_to=save_to, fetch=fetch, timeout=timeout)
+
+
 def resource_files(graph: Graph, res_id: str) -> List[Dict[str, Any]]:
     """``[{role, path, node, implicit}]`` — a resource's files, the implicit one
     of a single-file resource included (never written by reading)."""

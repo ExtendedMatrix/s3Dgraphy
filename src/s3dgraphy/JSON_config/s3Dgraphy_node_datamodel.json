@@ -1071,6 +1071,17 @@
         "checksum": "em:checksum",
         "scope": "em:resourceScope",
         "residency": "em:residency",
+        "addresses": {
+          "rdf": "em:hasAddress",
+          "note": "1.6.21 (dev27, decided by E.D. 2026-10-01, «più risorse per un documento»): the SAME bytes — the same digest — are ONE resource with several addresses (the same PDF on the disk, on MinIO, on Zenodo); different manifestations are sister resources. data.addresses = [{locator, residency?, checked_at?, ok?}], written only when there is a second address or a check; address 0 is data.url, which a consumer that knows only url keeps reading. ok true = reachable at checked_at, false = dead (a warning while a live one remains, never removed by a check), absent = never checked. Written by s3dgraphy.resources.addresses (add_address refuses a different digest, and a resource with no digest). In RDF every locator is an rdfs:seeAlso of the resource, and each address <resource>/address/<i> em:hasAddress, with em:locator, em:residency, em:checkedAt, em:reachable."
+        },
+        "addresses.locator": "em:locator",
+        "addresses.checked_at": "em:checkedAt",
+        "addresses.ok": "em:reachable",
+        "checksum_at": {
+          "rdf": "em:checksumAt",
+          "note": "1.6.21 (dev27): the instant a DATED digest was taken — s3dgraphy.resources.addresses.snapshot_uri downloads the page a reference points at and gives it checksum + checksum_at, because a page changes and the digest says of which day it is."
+        },
         "lang": {
           "rdf": "dcterms:language",
           "note": "1.6.21 (dev27, decided by E.D. 2026-10-01, «il testo, la risorsa e la selezione»): on a RESOURCE, data.lang is the language of the CONTENT of the file — what it is made of — not the language of the resource's own description: a Latin PDF does not make its Italian description Latin. One BCP 47 tag, or a sorted list for more («latino e italiano a fronte» = [\"it\", \"la\"]), written by s3dgraphy.language.set_content_languages. It does NOT enter the cascade of the language of the texts (language.node_language skips resources and their files), it is not written at birth, and it leaves as one dcterms:language per tag instead of em:originalLanguage. The DocumentNode is the WORK, with no text in its fields; the resources are its manifestations, the text is in the file; the ExtractorNode is the selection, with the original words of the passage in its description and its own data.lang."

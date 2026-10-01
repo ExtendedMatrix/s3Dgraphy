@@ -1126,6 +1126,28 @@ class RDFImporter:
                 out[key] = normalize_instant(value)
         return out
 
+    def _addresses(self, store: ConjunctiveGraph, ref: URIRef) -> List[Dict[str, Any]]:
+        """The inverse of ``RDFExporter._emit_addresses``: ``data.addresses`` in
+        the order of their number, ``[]`` when the resource keeps no list."""
+        from ..editorial import normalize_instant
+        found = []
+        for addr in store.objects(ref, EM.hasAddress):
+            tail = str(addr).rsplit("/address/", 1)[-1]
+            loc = self._one_literal(store, addr, EM.locator)
+            if not loc:
+                continue
+            entry: Dict[str, Any] = {"locator": str(loc)}
+            res = self._one_literal(store, addr, EM.residency)
+            if res:
+                entry["residency"] = str(res)
+            at = self._one_literal(store, addr, EM.checkedAt)
+            if at:
+                entry["checked_at"] = normalize_instant(at)
+            for o in store.objects(addr, EM.reachable):
+                entry["ok"] = str(o).lower() in ("true", "1")
+            found.append((int(tail) if tail.isdigit() else 10 ** 6, str(loc), entry))
+        return [e for _i, _l, e in sorted(found, key=lambda t: (t[0], t[1]))]
+
     def _ai_data(self, store: ConjunctiveGraph, ref: URIRef) -> Dict[str, Any]:
         """The inverse of ``RDFExporter._serialize_ai``: ``ai_assisted``,
         ``validated_by``, ``validated_at``. A node reference is given back as
@@ -1281,9 +1303,20 @@ class RDFImporter:
             return data
 
         if node_type == "resource":
-            url = self._one_object_text(store, ref, RDFS.seeAlso)
+            # dev27 (A4): several addresses — address 0 is data.url, and with
+            # them every locator is also an rdfs:seeAlso, so the url is read
+            # from the list and not from whichever seeAlso the store yields first
+            listed = self._addresses(store, ref)
+            url = listed[0]["locator"] if listed else \
+                self._one_object_text(store, ref, RDFS.seeAlso)
             if url:
                 data["url"] = url
+            if listed:
+                data["addresses"] = listed
+            at = self._one_literal(store, ref, EM.checksumAt)
+            if at:
+                from ..editorial import normalize_instant
+                data["checksum_at"] = normalize_instant(at)
             # SHELF1 · integrity and the three fences, read only when PRESENT:
             # a resource that says nothing must come back saying nothing.
             for key, pred in (("checksum", EM.checksum),

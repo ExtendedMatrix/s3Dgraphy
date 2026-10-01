@@ -206,6 +206,7 @@ def promote_resource(graph: Graph, resource_id: str, *, url: str, sha256: str,
 
     # ── the resource becomes a REFERENCE ─────────────────────────────────────
     resource = graph.find_node_by_id(resource_id)
+    before = dict(getattr(resource, "data", None) or {}) if resource is not None else {}
     if resource is None:
         from .resources.files import add_resource
         resource = add_resource(graph, resource_id=resource_id,
@@ -243,6 +244,18 @@ def promote_resource(graph: Graph, resource_id: str, *, url: str, sha256: str,
         resource.set_residency(wanted_residency)
     else:                                      # pragma: no cover — older model
         data["residency"] = wanted_residency
+    # dev27 (A4): the address the bytes had before — the disk path — is not
+    # lost when they are the SAME bytes (same digest): it stays as a second
+    # address of this one resource. Without a digest before, nothing says they
+    # are the same, and the old locator is not kept (as before dev27).
+    old_url = before.get("url")
+    old_digest = str(before.get("checksum") or "").strip()
+    if old_digest and not old_digest.startswith("sha256:"):
+        old_digest = f"sha256:{old_digest}"
+    if old_url and old_url != url and old_digest == digest:
+        from .resources.addresses import add_address
+        add_address(resource, old_url, checksum=digest,
+                    residency=before.get("residency"))
 
     # WHAT IT IS, declared rather than left to be deduced (R1).
     #
