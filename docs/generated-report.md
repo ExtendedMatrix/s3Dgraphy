@@ -11,9 +11,9 @@ Every figure on this page is read off the datamodels and the installed package a
 | Component | Version |
 | --- | --- |
 | s3dgraphy (library) | 1.6.0.dev25 |
-| nodes datamodel | 1.6.19 |
-| connections datamodel | 1.6.33 |
-| qualia datamodel | 1.6.4 |
+| nodes datamodel | 1.6.20 |
+| connections datamodel | 1.6.34 |
+| qualia datamodel | 1.6.5 |
 | CIDOC-CRM | 7.1.3 |
 | CRMarchaeo | 2.1.1 |
 | CRMsci | 3.2 |
@@ -22,7 +22,7 @@ Every figure on this page is read off the datamodels and the installed package a
 | CRMinf | 1.2.1 |
 | HDT-O | 1.0 |
 | PROV-O | W3C Recommendation 2013-04-30 |
-| CRMem | 1.6.9 |
+| CRMem | 1.6.10 |
 
 ## Node types
 
@@ -30,8 +30,8 @@ The three populations, named apart — see this module's docstring for why there
 
 | What | Count |
 | --- | --- |
-| declared in the node datamodel | 56 |
-| — of which authorable types | 52 |
+| declared in the node datamodel | 57 |
+| — of which authorable types | 53 |
 | — of which abstract family bases | 4 |
 | field-level mapping blocks (not node types) | 3 |
 | entries with no mapping block | 0 |
@@ -42,15 +42,15 @@ Abstract family bases: `GroupNode`, `Node`, `ParadataNode`, `StratigraphicNode`.
 
 | What | Count |
 | --- | --- |
-| declared in the connections datamodel | 58 |
-| — of which live (not deprecated) | 57 |
-| — declaring a named reverse direction | 51 |
+| declared in the connections datamodel | 59 |
+| — of which live (not deprecated) | 58 |
+| — declaring a named reverse direction | 52 |
 
 ## Python classes
 
 | What | Count |
 | --- | --- |
-| Python node classes in the generated registry | 59 |
+| Python node classes in the generated registry | 60 |
 | — of which abstract (no own node_type) | 3 |
 | present in the registry, absent from the datamodel | 3 |
 
@@ -62,19 +62,19 @@ Classes present in the registry with no entry in the node datamodel, and therefo
 
 | What | Count |
 | --- | --- |
-| public API callables | 200 |
-| test modules in tests/ | 134 |
+| public API callables | 207 |
+| test modules in tests/ | 136 |
 | test modules in tests/*/ | 66 |
 
 ## Alignment by ontology
 
-Of the 56 node types declared, **13 reuse a class from an existing ontology unchanged** and **43 declare a class in the Extended Matrix namespace**. Every one of the latter keeps a CIDOC anchor, so the table below covers all of them.
+Of the 57 node types declared, **14 reuse a class from an existing ontology unchanged** and **43 declare a class in the Extended Matrix namespace**. Every one of the latter keeps a CIDOC anchor, so the table below covers all of them.
 
 Node types, by the ontology of the CIDOC class they are anchored to:
 
 | Ontology | Node types |
 | --- | --- |
-| crm | 29 |
+| crm | 30 |
 | crmarchaeo | 13 |
 | crmdig | 7 |
 | hdto | 4 |
@@ -84,7 +84,7 @@ Edge types, by the ontology of the CIDOC predicate they emit. An edge with no CI
 
 | Ontology | Edge types |
 | --- | --- |
-| crm | 32 |
+| crm | 33 |
 | (none declared) | 10 |
 | crmdig | 6 |
 | hdto | 6 |

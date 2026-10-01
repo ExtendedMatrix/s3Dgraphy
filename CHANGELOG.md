@@ -6,12 +6,89 @@ All notable changes to **s3dgraphy** are documented here.
 
 Everything in this section came after `42ea27c` («Bump version: 1.6.0.dev24 →
 1.6.0.dev25», on PyPI 2026-10-01). Decisions of E.D.: the language of the data
-(28 Sep 2026) and the two em.ttl terms from the exporter (1 Oct 2026). Datamodel
-at this point: node datamodel **1.6.19**, connections **1.6.33**, qualia
-**1.6.4**, visual rules 1.6.27, translations 1.6, `em.ttl` 1.6.9 (not touched:
-language tags are standard RDF); fingerprint moves from `sha256:aab44dda…` to
-`sha256:133a6d19…` (`b7506d75…` after the language alone, `544d21e`) — on
-purpose: the `natural_language` marker and the two em.ttl terms are datamodel.
+(28 Sep 2026), the two em.ttl terms from the exporter (1 Oct 2026) and the
+translations (1 Oct 2026, «Le traduzioni»). Commits: `544d21e`, `d02afc4` (the
+language of the data), `68c272c`, `1991990`, `52c1978`, `f46bbba` (the
+translations, the qualia, the header row). Datamodel at this point: node
+datamodel **1.6.20**, connections **1.6.34**, qualia **1.6.5**, visual rules
+**1.6.28**, translations 1.6 (entries added, version unchanged), `em.ttl`
+**1.6.10**; fingerprint from `sha256:aab44dda…` (dev25) to
+`sha256:0be1dcffb38a020e7023edb19d3764a0ff301525554755f7694c4af57945a605`
+(`133a6d19…` after the language of the data, `d02afc4`; `a0b71f47…` after the
+TranslationNode, `0a78197a…` after its RDF) — on purpose: every step is
+datamodel.
+
+### Added (2026-10-29 — the translations)
+- **`TranslationNode`** (`TRANSL`, `crm:E33_Linguistic_Object`, node datamodel
+  1.6.20): ONE translation of one text field of one node. The original stays a
+  string in its field and is never overwritten; the translation carries
+  `data.lang` (arrival), `data.from_lang` (departure, written because the
+  original can change), `data.field` (`description` | `data.<key>`; a
+  PropertyNode's value is `data.value`; never `name`), `data.text`,
+  `data.method` (`manual` | `ai` | `edition`), `data.source_digest` (sha256 of
+  the original, NFC + UTF-8) and `data.review_requested` («da rivedere»).
+- **Edges** (connections 1.6.34): new `has_translation` / `is_translation_of`,
+  any node → TranslationNode, `crm:P73_has_translation`; `has_author.source`
+  += TranslationNode; `extracted_from.source` += TranslationNode, for a
+  translation taken from a published edition (the DocumentNode).
+- **`api.add_translation(graph, node, field, lang, text, *, by, method,
+  edition=None, review=False, ai=None, model=None, from_lang=None)`**,
+  `api.translations(graph, node, field=None)`, `api.text(graph, node, field,
+  lang)` (`{text, lang, original, translation, reasons}`). The id is a uuid5 of
+  what the translation is, so adding it twice is one node. An AI translation is
+  marked `ai_assisted` like any AI-made node.
+- **What waits for a person, one vocabulary**: `ai_validation.needs_review(node,
+  graph)` → `ai` (unverified AI), `review_requested` (unsigned review),
+  `stale` (a translation whose original changed — «da riallineare», which no
+  signature clears); `api.to_review(graph)` lists them with the reasons;
+  `api.verify(graph, node, author_id)` signs AI content and requested reviews
+  alike (`validated_by` / `validated_at`). Named `verify`, not `validate`:
+  `api.validate(graph)` is the structural check. `api.unvalidated_ai` stays.
+- **The CRDT** treats a translation as a node (`add_node`, `update_field`) and
+  refuses an invalid `data.from_lang` as it refuses an invalid `data.lang`;
+  so does `api.set_field`.
+- **RDF** (em.ttl 1.6.10, six DatatypeProperties): each aligned translation adds
+  a literal on the predicate of its field with its own tag
+  (`dcterms:description "…"@la` beside `"…"@it`; `crm:P90_has_value` for a
+  property's value) and leaves as its own resource — `crm:P190_has_symbolic_content`,
+  `crm:P72_has_language`, `prov:wasDerivedFrom` the node, `prov:wasAttributedTo`
+  its author (from `has_author`), `em:sourceLanguage`, `em:translatedField`,
+  `em:translationMethod`, `em:sourceDigest`, `em:reviewRequested`. An
+  unverified AI translation is left out of a `publish` export (ai_validation);
+  a stale one leaves no literal beside the original. `summary()` counts them.
+- **`em:originalLanguage`**: a node's own `data.lang` leaves as this literal
+  whenever it is declared, equal to the study's too (`Node.properties.lang`).
+  The importer reads the original as the literal that is not a translation's,
+  and gives `data.lang` back from it — **the D.1 limit below is closed**:
+  em.json → TTL → em.json keeps `data.lang` even when it equals the study's.
+- **Visual rules 1.6.28**: `node_styles.TRANSL`, the narrative's grey and
+  glyph (shared, `src/2D/narrative.svg`), dashed. A mark of its own is E.D.'s.
+
+### Changed (2026-10-29 — the doubtful qualia, measured)
+- Qualia 1.6.5: `intervention_history` is marked `natural_language`; so are
+  `provenance_history`, `exhibition_history`, `publication_history` and
+  `ownership_chain` — `object_chain` with no schema, so their value is one
+  string, marked whole. `attribution` is an `object` with separate fields (an
+  actor reference, a closed list, a float) and no note: not marked.
+
+### Added (2026-10-29 — the header row, and the language of the source)
+- **`header_row`** (1-based) for `MappedXLSXImporter` and `QualiaImporter`, as
+  an argument or `source_settings.header_row`; until now the header was always
+  row 1 (`header=0`). Missing, it is PROPOSED (`importer/sheet_header.py`, the
+  rule of EMStudio's bridge): the first row with every column of the block
+  filled, kept at 1 when the mapping's own column names say row 1 is at least
+  as good. `api.sheet_header(source, sheet, expected)` gives the proposal and a
+  preview; `apply_mapping` / `api.mapping_apply` take `header_row` and report
+  `header`. San Pietro's source list proposes row 2.
+- **`source_lang`** (BCP 47), an argument or `source_settings.source_lang`:
+  written as `data.lang` on the nodes an import creates, when it differs from
+  the study's working language (`language.declare_source_language`);
+  `apply_mapping` does it for every format and reports `source_lang_written`.
+
+### Fixed (2026-10-29)
+- `MappedXLSXImporter` read only `table_settings`, so an authored mapping (which
+  says `source_settings`) had its `sheet_name` and `start_row` ignored. It reads
+  `source_settings`, else `table_settings`.
 
 ### Added (2026-10-27 — the language of the data)
 - **Language tags on texts, invariant names.** The datamodel marks what is text
@@ -41,9 +118,10 @@ purpose: the `natural_language` marker and the two em.ttl terms are datamodel.
   prints them in one line for a caller's report.
 - **The importer**: a tag on a marked text gives `data.lang` back only when it
   differs from the study's `dcterms:language`, so em.json → TTL → em.json returns
-  `data.lang` exactly where it was. Declared limit: a `data.lang` EQUAL to the
-  study's language comes back as the study's (same language, no redundant
-  declaration). Untagged literals read as before.
+  `data.lang` exactly where it was. Declared limit at that commit (D.1): a
+  `data.lang` EQUAL to the study's language came back as the study's — closed
+  by `em:originalLanguage` (the translations, above). Untagged literals read as
+  before.
 
 ### Added (2026-10-27 — two em.ttl terms from the exporter, part H)
 - **`em:derivedFromDocument`** leaves beside `P70i` when the source of
