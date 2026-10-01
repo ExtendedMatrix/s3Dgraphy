@@ -49,7 +49,10 @@ _ORCID_SHAPE = re.compile(r"^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$")
 #: (``attested_by``: the node's name). One small object beside each signature:
 #: ``created_auth`` beside ``created_by``, ``modified_auth`` beside
 #: ``modified_by``, ``validated_auth`` beside ``validated_by``.
-AUTH_MODES = ("orcid", "node_password")
+#: dev28 (E.D., 1 Oct 2026, decision 17): ``declared`` — an iD the person
+#: typed into a tool's preferences and nobody checked (EMStudio's third mode,
+#: EM Tools' local identity). Signs nothing more than it says.
+AUTH_MODES = ("orcid", "node_password", "declared")
 AUTH_FIELDS = ("created_auth", "modified_auth", "validated_auth")
 
 
@@ -80,7 +83,8 @@ def normalize_auth(value: Any) -> Optional[Dict[str, str]]:
         out["attested_by"] = node
     elif node:
         raise ValueError("attested_by is for node_password: ORCID verifies by "
-                         "itself. Nothing was written.")
+                         "itself, and a declared iD is attested by nobody. "
+                         "Nothing was written.")
     return out
 
 

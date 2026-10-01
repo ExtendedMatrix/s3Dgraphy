@@ -569,6 +569,15 @@ def make_op(kind: str, **fields):
     return _make(kind, **fields)
 
 
+def stamp_auth(op: Dict[str, Any], auth: Any):
+    """``(op, outcome)``: the op with the access mode a relay read from the
+    sender's token, written over whatever the client declared (dev28,
+    decision 13). ``outcome``: ``stamped`` · ``kept`` · ``corrected``. See
+    :func:`s3dgraphy.crdt.stamp_auth`."""
+    from .crdt import stamp_auth as _stamp
+    return _stamp(op, auth)
+
+
 def compact(doc_or_section: Dict[str, Any], *, before_ts: str,
             before_by: Optional[str] = None) -> Dict[str, Any]:
     """GC the CRDT bookkeeping everybody has already passed (P4.2).

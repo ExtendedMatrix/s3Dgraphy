@@ -1057,6 +1057,70 @@ def _op_auth(op: Dict[str, Any]):
         return None, str(exc)
 
 
+# ── dev28 · the access mode of a signature, stamped by the relay ─────────────
+
+#: what :func:`stamp_auth` did to an op's access mode
+AUTH_STAMPED = "stamped"      # the client said nothing: the token's mode written
+AUTH_KEPT = "kept"            # the client said what the token says
+AUTH_CORRECTED = "corrected"  # the client said something else: the token's wins
+
+
+def stamp_auth(op: Dict[str, Any], auth: Any) -> Tuple[Dict[str, Any], str]:
+    """The op as a relay forwards it: its access mode is ``auth``, the one the
+    relay reads from the sender's token — never the one the client declared.
+
+    E.D. (1 Oct 2026, decision 13): the access mode is stamped by the server's
+    relay from the token, like the author. Every place an op can carry a mode
+    is overwritten: ``op["auth"]`` (which the CRDT turns into
+    ``created_auth`` / ``modified_auth``), the ``*_auth`` a node payload brings
+    in its ``data``, and an ``update_field`` that writes one of them
+    (``data.validated_auth`` beside a signature). ``auth=None`` (a token that
+    says nothing) removes what the client declared.
+
+    Returns ``(new_op, outcome)``, the op untouched, ``outcome`` one of
+    :data:`AUTH_STAMPED`, :data:`AUTH_KEPT`, :data:`AUTH_CORRECTED` — the
+    relay counts the corrections. An ``auth`` that is not a mode raises
+    ``ValueError`` (a token the relay cannot read is the relay's defect).
+    """
+    from copy import deepcopy
+    from .editorial import AUTH_FIELDS, normalize_auth
+    mode = normalize_auth(auth)
+    out = deepcopy(op)
+    declared: List[Any] = []
+
+    def _norm(value: Any) -> Any:
+        try:
+            return normalize_auth(value)
+        except ValueError:
+            return {"invalid": value}
+
+    if "auth" in out:
+        declared.append(_norm(out.get("auth")))
+    if mode is None:
+        out.pop("auth", None)
+    else:
+        out["auth"] = dict(mode)
+    payload = out.get("node") if isinstance(out.get("node"), dict) else (
+        out.get("data") if out.get("op") == "add_node" and isinstance(out.get("data"), dict)
+        else None)
+    if isinstance(payload, dict) and isinstance(payload.get("data"), dict):
+        for key in AUTH_FIELDS:
+            if key in payload["data"]:
+                declared.append(_norm(payload["data"][key]))
+                if mode is None:
+                    payload["data"].pop(key)
+                else:
+                    payload["data"][key] = dict(mode)
+    if out.get("op") == "update_field" and str(out.get("field") or "") in {
+            f"data.{k}" for k in AUTH_FIELDS}:
+        declared.append(_norm(out.get("value")))
+        out["value"] = dict(mode) if mode is not None else None
+    declared = [d for d in declared if d is not None]
+    if not declared:
+        return out, AUTH_STAMPED
+    return out, (AUTH_KEPT if all(d == mode for d in declared) else AUTH_CORRECTED)
+
+
 def apply_ops_to_section(section: Dict[str, Any],
                          ops: Sequence[Dict[str, Any]]) -> List[OpResult]:
     """Apply an op-log in the order given. Convergence does NOT depend on it."""

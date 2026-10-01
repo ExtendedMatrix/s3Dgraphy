@@ -923,7 +923,7 @@ em:authMode
     a owl:DatatypeProperty ;
     rdfs:label "access mode"@en ;
     rdfs:range xsd:string ;
-    rdfs:comment "'orcid' — the identity was verified by ORCID at that moment; 'node_password' — the iD and a password of a StratiGraph node, which attests the identity while offline (the iD was verified by ORCID once, at the accreditation). A closed list of two. Maps to: node_datamodel Node.properties.created_auth.mode (and modified_auth / validated_auth)."@en .
+    rdfs:comment "'orcid' — the identity was verified by ORCID at that moment; 'node_password' — the iD and a password of a StratiGraph node, which attests the identity while offline (the iD was verified by ORCID once, at the accreditation); 'declared' (dev28) — an iD typed in a tool's preferences and checked by nobody (EMStudio's declared identity, EM Tools' local identity). A closed list of three. Maps to: node_datamodel Node.properties.created_auth.mode (and modified_auth / validated_auth)."@en .
 
 em:attestedBy
     a owl:DatatypeProperty ;

@@ -1493,7 +1493,7 @@ class RDFExporter:
                    predicate: URIRef, ctx) -> None:
         """How the hand of a signature had entered (dev27, *l'accesso sul
         campo*): ``<node>/auth/<created|modified|validated>`` with
-        ``em:authMode`` (``orcid`` | ``node_password``) and, for the node's
+        ``em:authMode`` (``orcid`` | ``node_password`` | ``declared``) and, for the node's
         password, ``em:attestedBy`` (the node that attests it). A derived IRI,
         never a node of the graph (it carries no dcterms:identifier)."""
         how = data.get(key)
