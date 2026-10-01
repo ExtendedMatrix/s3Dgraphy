@@ -2,7 +2,60 @@
 
 All notable changes to **s3dgraphy** are documented here.
 
-## [Unreleased] — to be published as 1.6.0.dev27
+## [Unreleased] — to be published as 1.6.0.dev28
+
+Everything in this section came after `83d99dc` («Bump version: 1.6.0.dev26 →
+1.6.0.dev27», on PyPI 2026-10-01). Decisions of E.D. (1 Oct 2026) on the dev27
+report: the four gestures of whoever exports, the language at birth in the op
+(decision 12), the access mode stamped by the relay (decision 13), the local
+identity of EM Tools (decision 17). Datamodel at this point: node datamodel
+**1.6.22**, connections 1.6.35 (unchanged), qualia 1.6.6 (unchanged), visual
+rules **1.6.29**, translations 1.6 (four labels added), `em.ttl` **1.6.12**;
+fingerprint from `sha256:adf75ab9…a332` (dev27) to
+`sha256:51db4eccac2e83518fa7743c0585d1022ec3b776fe0b956c29e7111e86d493a4`.
+
+### Added
+- **Four process kinds** in `dtc_kinds.process` (visual rules 1.6.29):
+  `export`, `lod_generation`, `tiling`, `packing`, with labels in the nine
+  languages. They reuse existing glyphs (17, 15, 00, 17) and, like every
+  process kind, declare no `mapping`: a step is the crmdig:D7 of
+  DTCProcessNode. EM Tools and 3DSC wrote these gestures `format_conversion` /
+  `decimation` / `transformation` until now; those stamps stay true.
+- **`crdt.stamp_auth(op, auth)`** (and `api.stamp_auth`): the op as a relay
+  forwards it, with the access mode read from the sender's token written over
+  every place an op can carry one — `op.auth`, a payload's `*_auth`, an
+  `update_field` of `data.*_auth`. Returns `(op, outcome)`, outcome `stamped` ·
+  `kept` · `corrected`, for the relay to count. `auth=None` removes the
+  client's declaration.
+- **The access mode `declared`** (`editorial.AUTH_MODES`, node datamodel
+  1.6.22, `em:authMode`): an iD typed in a tool's preferences and checked by
+  nobody, attested by nobody — EMStudio's declared identity, EM Tools' local
+  identity.
+- `crdt.is_text_node`, `crdt.op_language`, `crdt.language_fallbacks`,
+  `OpResult.language` (`op` · `study_fallback` · `none`; in `as_dict` only
+  when set).
+
+### Changed
+- **The language a node is born in travels in the op** (decision 12).
+  `make_op("add_node", …)` of a node with a text (every type but resources,
+  files, translations, the graph-self, regions, shapes, positions) without
+  `data.lang` raises: the producer decides it once — `und` when nobody knows —
+  and every copy of a room writes the same. Measured before: the CRDT read
+  the study language of the section that RECEIVED the op, so two copies with
+  two study languages wrote two languages for one node. An op without
+  `data.lang` is now an OLD op: the CRDT still applies it with the study
+  language (the reading of `ad0bd61`), says so (`OpResult.language =
+  "study_fallback"`, or `"none"`) and counts it (`language_fallbacks`). An
+  invalid tag is still refused by the CRDT with its reason. The connector seam
+  (`contract.connector.apply_delta`) is a producer and puts the study language
+  or `und` in its ops.
+
+### Not changed
+- The pin `dtcstamp>=0.1.2` stays until dtcstamp 0.1.3 is on PyPI (the
+  parent's state, the revision and the parents' hints are additive: 0.1.2
+  reads them).
+
+## [1.6.0.dev27] — 2026-10-01 (PyPI; commit 83d99dc)
 
 Everything in this section came after `f9726af` («Bump version: 1.6.0.dev25 →
 1.6.0.dev26», on PyPI 2026-10-01). Decisions of E.D. (1 Oct 2026): «il testo, la
