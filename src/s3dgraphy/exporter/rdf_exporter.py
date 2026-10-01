@@ -263,6 +263,9 @@ class _Datamodel:
         #: the qualia whose value is text in a natural language (em_qualia_types
         #: `natural_language: true`), read by is_natural_language
         self._qualia_natural_language: set = set()
+        #: quale id → the fields of an OBJECT value that are natural language
+        #: (dev27: attribution.note) — the object is not text, its note is
+        self._qualia_natural_language_fields: Dict[str, Tuple[str, ...]] = {}
         self._build_qualia_index(self.qualia_types)
 
         #: reverse edge name → canonical edge name. The connections datamodel
@@ -305,6 +308,10 @@ class _Datamodel:
                         self._qualia_class_index[qid] = crm_class
                     if qid and q.get("natural_language") is True:
                         self._qualia_natural_language.add(qid)
+                    fields = q.get("natural_language_fields")
+                    if qid and isinstance(fields, list):
+                        self._qualia_natural_language_fields[qid] = tuple(
+                            str(f) for f in fields)
 
     # ─── public lookups ─────────────────────────────────────────────────────
 
@@ -531,6 +538,13 @@ class _Datamodel:
             if isinstance(rule, dict) and "natural_language" in rule:
                 return rule.get("natural_language") is True
         return False
+
+    def natural_language_fields(self, property_type: Optional[str]) -> Tuple[str, ...]:
+        """The fields of an object-valued quale that are text in a natural
+        language (``natural_language_fields`` in em_qualia_types, dev27):
+        ``("note",)`` for ``attribution``, ``()`` for the rest."""
+        key = self._qualia_key(property_type, self._qualia_natural_language_fields)
+        return self._qualia_natural_language_fields.get(key, ()) if key else ()
 
     @staticmethod
     def _qualia_key(property_type: Optional[str], index) -> Optional[str]:

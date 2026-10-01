@@ -1046,7 +1046,9 @@
                   "cidoc_crm": "E13_Attribute_Assignment"
                 },
                 "data_type": "object",
-                "schema": {"attributed_to": "E39_Actor reference", "attribution_type": "maker | patron | commission | school", "confidence": "float 0-1"},
+                "schema": {"attributed_to": "E39_Actor reference", "attribution_type": "maker | patron | commission | school", "confidence": "float 0-1", "note": "optional free text in a natural language: the attribution as the source words it, or its grounds (P3_has_note)"},
+                "natural_language_fields": ["note"],
+                "_natural_language_note": "1.6.6 (dev27, E.D. 2026-10-01): the object has separate fields, so only its NOTE is text in a natural language and carries a language tag; attributed_to, attribution_type and confidence are a reference, a closed term and a number. Read by rdf_exporter._Datamodel.natural_language_fields. Measured: no writer stores attribution as an object today (it travels as one string, untagged), so the marker waits for the first that does.",
                 "expected_extractors": ["expert_assessment", "archival_research", "stylistic_analysis"]
               }
             ]

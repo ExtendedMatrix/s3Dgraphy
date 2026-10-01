@@ -399,12 +399,15 @@ def test_each_marked_quale_leaves_with_its_tag(tmp_path, quale):
     assert code.language is None
 
 
-def test_attribution_has_fields_and_no_note_so_it_is_not_marked():
-    """Measured: its schema is an actor reference, a closed list and a float.
-    The rule marks only the note, and there is none."""
+def test_attribution_has_fields_and_only_its_note_is_marked():
+    """Measured: its schema is an actor reference, a closed list and a float;
+    dev27 adds an optional note, and the rule marks only the note — the value
+    as a whole stays unmarked."""
     dm = _Datamodel()
     node = PropertyNode("p", "attribution", value="attributed to Phidias",
                         property_type="attribution")
     assert not dm.is_natural_language(node, "value")
+    assert dm.natural_language_fields("attribution") == ("note",)
+    assert dm.natural_language_fields("inventory_number") == ()
     assert sorted(dm._qualia_natural_language) == sorted(
         ["narrative_content", *_PROSE_QUALIA])
