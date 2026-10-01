@@ -2,8 +2,88 @@
 
 All notable changes to **s3dgraphy** are documented here.
 
-## [Unreleased] — to be published as 1.6.0.dev24
+## [Unreleased] — to be published as 1.6.0.dev25
 
+Everything in this section came after `312f124` («Bump version: 1.6.0.dev23 →
+1.6.0.dev24»). Decisions of E.D. of 1 Oct 2026: the datamodel JSON is the
+truth, so every `em:` term of `em.ttl` is cited by a datamodel or is a written
+exception; dev25 goes out at once, with the fingerprint (the language of the
+data waits for dev26). Datamodel at this point: node datamodel **1.6.18**,
+connections **1.6.32**, qualia **1.6.3**, visual rules 1.6.27, translations 1.6,
+`em.ttl` 1.6.9 (not touched); fingerprint
+`sha256:aab44dda08bffbecac38e77e3049919362d4b3504b4190240a368871c3823260`.
+
+### Added (2026-10-01 — the datamodel's fingerprint)
+- **`s3dgraphy.datamodel`**, exposed as `api.datamodel_fingerprint()` /
+  `api.datamodel_differences()`: one sha256 over the six datamodel JSONs a
+  consumer copies (nodes, node registry, connections, visual rules, qualia,
+  translations), each in **RFC 8785** canonical form, concatenated in order of
+  file name — so that JavaScript computes the same digest (`em_visual_rules.json`
+  holds 139 integral floats that `json.dumps` writes `1.0` and `JSON.stringify`
+  `1`). Returns `{digest, versions, digests, files}`; a difference is named copy
+  first (`nodes 1.6.12 vs 1.6.17`, `visual_rules 1.6.27: same version,
+  different content`). `python -m s3dgraphy.datamodel [dir]` prints it.
+  (`4149db5`)
+- **The fingerprint per file** (MICRO em.ttl/dev25): `files` is now
+  `{name: {file, digest, version}}` (was `{name: file name}`); `versions` and
+  `digests` stay. `api.datamodel_fingerprint_subset(fp, names)` and
+  `api.datamodel_differences(expected, found, names)` compare a consumer only
+  on the files it reads, without the one digest, which covers files it does not
+  read. (`066ba2f`)
+
+### Changed (2026-10-01 — every copy compared on the fingerprint)
+- **`tools/consumer_drift`** compares every datamodel a consumer holds, by
+  version and by content, and names each difference; a new state, `differs`
+  (same versions, different content: a copy somebody edited), fails `--check`
+  like `behind` for a consumer we own and track. stratigraph-templates is a
+  consumer (it reads its snapshot), compared since `066ba2f` on the four files
+  its registry reads (nodes, node registry, connections, qualia): a change to
+  the visual rules or the translations no longer makes it behind. (`4149db5`,
+  `066ba2f`)
+
+### Changed (2026-10-01 — the em.ttl terms in the datamodel)
+- **`tests/test_em_ttl_matches_the_datamodels.py`** compares `em.ttl` with the
+  datamodels whole: every `em:` term a datamodel cites is declared (`4149db5`),
+  and — since `f660432` — every declared term is cited or is in
+  `EM_TTL_EXCEPTIONS` with its reason (the `xfail` and `KNOWN_UNCITED` are
+  gone; an exception without a reason fails).
+- **30 of the 35 terms** the code wrote without any datamodel naming them are
+  cited (node datamodel **1.6.18**, connections **1.6.32**, qualia **1.6.3**):
+  the stamps, the tombstone, the AI marker and the verification as `properties`
+  of the base `Node`; checksum / scope / residency on `ResourceNode`, checksum
+  on `ResourceFileNode`; convex shapes and spheres on `SemanticShapeNode`; crs
+  and `em:LocalSceneFrame` on `AnnotationRegionNode`; `em:orcidVerified` on both
+  authors, `em:modelIdentifier` / `em:promptReference` on the AI author;
+  `em:hasQualiaType` on `PropertyNode`; `em:propagation` on `LocationNodeGroup`;
+  `em:confidenceLevel` as the declared, not emitted, alternative of the
+  `confidence_level` quale; the six AP11 subproperties as `mapping.subproperty`
+  of the eight physical edges; `em:inheritsQualia` as `has_property`'s
+  `when_inherited`. Plain-string mapping notes: no field, no node element, no
+  graph change. (`f660432`)
+- **`rdf_exporter.AP11_SUBPROPS`** is built from the connections datamodel
+  (`ap11_subprops()`), no longer a list of its own; the importer reads the same
+  table. Nothing is emitted differently. (`f660432`)
+- **Four entries corrected to what the exporter writes**: `PropertyNode.property_type`
+  (`em:hasQualiaType`, was `P2_has_type`), `AuthorAINode.model` /
+  `prompt_reference` (`em:modelIdentifier` / `em:promptReference`, were
+  `P3_has_note`), `ResourceFileNode.checksum` (`em:checksum`, was
+  `P1_is_identified_by`), and `LocationNodeGroup.propagation`, which said «not
+  serialized to triplestore» although the exporter writes the non-default value
+  as `em:propagation` since `c1a702c`. (`f660432`)
+- Five terms of the EM theory have no edge in the graph and are exceptions:
+  `hypothesizedBy`, `reconstructsAbsent`, `derivedFromDocument`,
+  `reconstructsFrom`, `wasReusedFrom`. The eight shipped mappings re-stamped.
+
+### Documentation
+- `docs/DATAMODEL_PROPAGATION.md`: how a datamodel change leaves this repository
+  and reaches every tool, the fingerprint, each copy checking itself, and the
+  checklist; linked from `docs/SOURCE_OF_TRUTH.md`. (`1d234e9`, `2f235f0`,
+  updated in `f660432` and `066ba2f`)
+
+## [1.6.0.dev24] — 2026-09-30 (PyPI; commit 312f124)
+
+Published on PyPI on 30 Sep 2026, 21:06 UTC (wheel sha256 `926cce4e85ea…`, as
+PyPI lists it); `312f124` is the version bump, 21:06 UTC the same evening.
 Everything in this section came after `fa638ef` («Bump version: 1.6.0.dev22 →
 1.6.0.dev23»). Decision of E.D. of 30 Sep 2026, *la risorsa e i suoi file*.
 
@@ -175,7 +255,10 @@ em.ttl **1.6.9**.
 - RDF: the file projects `rdfs:seeAlso` + `em:checksum` and reads back as a
   `ResourceFileNode`. The eight shipped mappings are re-stamped.
 
-## [Unreleased] — to be published as 1.6.0.dev23
+## [1.6.0.dev23] — 2026-09-30 (PyPI; commit fa638ef)
+
+Published on PyPI on 30 Sep 2026, 14:13 UTC (wheel sha256 `b0fac4f15e80…`, as
+PyPI lists it); `fa638ef` is the version bump, 14:12 UTC.
 
 Everything in this section came AFTER **1.6.0.dev22 as published on PyPI**
 (28 Sep 2026, 09:39 UTC). Measured, not assumed: the PyPI wheel
