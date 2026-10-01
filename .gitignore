@@ -188,3 +188,5 @@ docs/dev-projects/
 .vscode/
 # bump_and_push.sh usa `sed -i.bak`: se muore a meta, i .bak restano
 *.bak
+
+_inbox_prompt/

@@ -1,0 +1,35 @@
+# The tests that fail today and are known to — read by ./em.sh test, which names any
+# failure NOT in this list (new) and any entry here that now passes (remove it).
+# Measured 2026-10-01 at 42ea27c (1.6.0.dev25): 29 failed, 2382 passed, 39 skipped,
+# PYTHONPATH=src .venv/bin/python -m pytest tests — the same 29 as the report
+# .claude/wip/reports/2026-10-26-em-ttl-dev25/failed-after.txt.
+# One pytest node id per line; '#' starts a comment.
+tests/sync/test_ai03_export_byte_identical.py::test_export_graphml_matches_baseline
+tests/sync/test_graph_ingestor.py::test_populate_list_dry_run_counts_skipped_when_unchanged
+tests/sync/test_graph_ingestor.py::test_update_preserves_unmapped_columns
+tests/sync/test_graph_projector.py::test_projector_handles_paradata_name_collisions
+tests/sync/test_graph_projector_groups.py::test_export_with_groups_emits_yed_folder_node
+tests/sync/test_graph_projector_groups.py::test_groups_arg_materializes_locationnodegroup_for_struttura
+tests/sync/test_graph_projector_multilingual.py::test_projector_recognizes_localized_su_wsu
+tests/sync/test_graphml_writer_pipeline.py::test_pipeline_applies_transitive_reduction
+tests/sync/test_groups_export_em_template.py::test_group_children_are_us_member_nodes
+tests/sync/test_groups_export_em_template.py::test_group_geometry_spans_member_us_bbox
+tests/sync/test_groups_export_em_template.py::test_group_node_uses_yfiles_foldertype_group
+tests/sync/test_groups_export_em_template.py::test_group_visual_matches_em_template
+tests/sync/test_groups_export_em_template.py::test_inject_group_folders_skips_non_primary_memberships
+tests/sync/test_groups_export_em_template.py::test_inject_group_folders_writes_actual_node_class_in_s3d_node_type
+tests/sync/test_groups_export_em_template.py::test_other_locations_data_emitted_for_non_primary_memberships
+tests/sync/test_groups_export_em_template.py::test_other_locations_inline_badges_rendered_in_yed_shape
+tests/sync/test_groups_export_em_template.py::test_per_dimension_fill_color
+tests/sync/test_groups_export_em_template.py::test_unknown_group_kind_falls_back_to_default
+tests/sync/test_locationnodegroup_projection.py::test_struttura_emits_locationnodegroup_kind_functional[ambient-functional]
+tests/sync/test_locationnodegroup_projection.py::test_struttura_emits_locationnodegroup_kind_functional[struttura-functional]
+tests/sync/test_pg_bv2_pg_importer.py::test_pg_importer_builds_strat_node_from_mock_row
+tests/sync/test_round_trip.py::test_round_trip_preserves_mapped_fields
+tests/sync/test_round_trip_with_groups.py::test_sql_update_when_flag_enabled
+tests/test_il_proprietario_si_legge.py::test_i_file_committati_non_nominano_il_vecchio_proprietario
+tests/test_lossless_roundtrip.py::test_graph_json_graph_graphml_graph_chain
+tests/test_lossless_roundtrip.py::test_xlsx_to_graph_to_graphml_to_graph
+tests/test_narrative_authorship.py::test_the_fixture_re_exports_identically
+tests/test_narrative_node.py::test_the_fixture_re_exports_identically
+tests/test_wheel_drift.py::test_check_fails_for_a_stale_bundle_and_passes_for_an_aligned_one
