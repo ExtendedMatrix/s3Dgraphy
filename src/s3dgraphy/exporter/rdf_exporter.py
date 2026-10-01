@@ -1786,6 +1786,13 @@ class RDFExporter:
             residency = data.get("residency")
             if residency:
                 ctx.add((node_iri, EM.residency, Literal(str(residency))))
+            # dev27 (il testo, la risorsa e la selezione): the language(s) of
+            # the CONTENT of the file — one dcterms:language each. Not
+            # em:originalLanguage: the file's language is not the language of
+            # the resource's own description, which stays in the cascade.
+            from ..language import content_languages
+            for tag in content_languages(node):
+                ctx.add((node_iri, DCTERMS.language, Literal(tag)))
 
         elif node_type == "resource_file":
             # ONE FILE of a resource (E.D. 2026-09-30): where its bytes are and

@@ -128,6 +128,51 @@ Documentation and data provenance nodes forming the paradata chain:
 **AuthorNode (AUTH)**
    Persons responsible for documentation or interpretation.
 
+Where the text lives: document, resource, extractor
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Decided by E.D. on 1 October 2026 (dev27). Three nodes, three jobs:
+
+* the **DocumentNode is the work** -- *Vitruvio, De architectura III,2*. Its
+  fields describe it (title, description) and hold none of its text;
+* the **ResourceNodes are its manifestations** -- a PDF, an online page, the
+  photograph of a page. The full text is in the file, not in the graph. A
+  resource's ``data.lang`` says the language of its CONTENT: one tag, or a
+  sorted list for a page with Latin and Italian facing (``["it", "la"]``). It
+  does not enter the cascade of the language of the texts, and leaves in RDF as
+  ``dcterms:language``. Identical copies (same bytes) are one resource with
+  several addresses; different manifestations are sister resources;
+* the **ExtractorNode is the selection** -- the passage chosen and read. The
+  original words of the passage are its ``description``, with its own
+  ``data.lang``; where it reads is an ``AnnotationRegionNode`` on the resource
+  (``region2d`` with a ``page`` for a box on a page, ``passage`` with character
+  offsets and the quoted words for a text).
+
+Translations attach to the extractor's field (``TranslationNode``,
+``has_translation``); a translation printed in an edition points to the
+DocumentNode of that edition (``extracted_from``), which is another work. The
+language is not a node: it is an attribute of the text, on the node that carries
+it, and ``data.lang`` is written at birth.
+
+.. code-block:: text
+
+   DocumentNode "Vitruvio, De architectura III,2"      data.lang: it (its description)
+     ├─has_linked_resource→ ResourceNode "testo latino online"   data.lang: la
+     │                        url https://penelope.uchicago.edu/…/3*.html, residency: reference
+     └─has_linked_resource→ ResourceNode "scansione"             data.lang: [it, la]
+                              ▲ is_on_resource
+                    AnnotationRegionNode region2d, page 3, rect [0.12, 0.30, 0.38, 0.08]
+                              ▲ extracted_from
+   ExtractorNode "D.vitr.01"  description: "Aedium autem principia sunt, e quibus
+                              constat figurarum aspectus."   data.lang: la
+     ├─has_translation→ TranslationNode @it  method: edition ─extracted_from→ DocumentNode (the edition)
+     └─has_translation→ TranslationNode @en  method: ai, not verified (out of a publication)
+
+In RDF the extractor leaves ``dcterms:description "Aedium autem…"@la`` with
+``em:originalLanguage "la"``, plus one literal per aligned translation. The
+whole example is the fixture ``tests/fixtures/vitruvio/`` (``build.py`` writes
+the em.json and its two TTL projections).
+
 Group Nodes
 ~~~~~~~~~~~
 

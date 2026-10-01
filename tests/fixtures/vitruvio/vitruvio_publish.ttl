@@ -1,0 +1,127 @@
+@prefix crm: <http://www.cidoc-crm.org/cidoc-crm/> .
+@prefix crminf: <http://www.cidoc-crm.org/extensions/crminf/> .
+@prefix dcterms: <http://purl.org/dc/terms/> .
+@prefix em: <https://w3id.org/em/ontology#> .
+@prefix hdto: <https://w3id.org/hdto/ontology#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+<https://w3id.org/em/id/graph/vitruvio> a crm:E73_Information_Object,
+        prov:Bundle,
+        em:EMGraph,
+        hdto:HC16_Heritage_Proposition_Set ;
+    dcterms:language "it" .
+
+<https://w3id.org/em/id/graph/vitruvio/node/claude> a crm:E39_Actor,
+        prov:SoftwareAgent,
+        em:AIAuthor,
+        em:Author ;
+    rdfs:label "Claude" ;
+    dcterms:identifier "claude" .
+
+<https://w3id.org/em/id/graph/vitruvio/node/ed> a crm:E21_Person,
+        prov:Person,
+        em:Author,
+        em:HumanAuthor ;
+    rdfs:label "Emanuel" ;
+    dcterms:identifier "ed" ;
+    crm:P1_is_identified_by "D" ;
+    crm:P48_has_preferred_identifier "0000-0002-1825-0097" .
+
+<https://w3id.org/em/id/graph/vitruvio/node/geo_vitruvio> a crm:E53_Place,
+        em:GeoPositionNode ;
+    rdfs:label "geo_position" ;
+    dcterms:identifier "geo_vitruvio" ;
+    crm:P2_has_type "EPSG:4326" ;
+    em:rotation 0e+00 ;
+    em:shift_x 0e+00 ;
+    em:shift_y 0e+00 ;
+    em:shift_z 0e+00 .
+
+<https://w3id.org/em/id/graph/vitruvio/node/vitr> a crm:E31_Document ;
+    rdfs:label "Vitruvio, De architectura III,2" ;
+    dcterms:description "Libro III, capitolo 2: i tipi di tempio"@it ;
+    dcterms:identifier "vitr" ;
+    crm:P67_refers_to <https://w3id.org/em/id/graph/vitruvio/node/lacus>,
+        <https://w3id.org/em/id/graph/vitruvio/node/scan> ;
+    em:originalLanguage "it" .
+
+<https://w3id.org/em/id/graph/vitruvio/node/vitruvio_graphroot> a crm:E73_Information_Object,
+        prov:Bundle,
+        em:EMGraph,
+        hdto:HC16_Heritage_Proposition_Set ;
+    rdfs:label "Graph" ;
+    dcterms:identifier "vitruvio_graphroot" .
+
+<https://w3id.org/em/id/graph/vitruvio/node/48bc9865-7b82-5ecf-b1d6-59e3b1ebc1ea> a crm:E33_Linguistic_Object ;
+    rdfs:label "D.vitr.01@it" ;
+    dcterms:identifier "48bc9865-7b82-5ecf-b1d6-59e3b1ebc1ea" ;
+    crm:P190_has_symbolic_content "I principi dei templi sono quelli da cui dipende l'aspetto delle loro figure."@it ;
+    crm:P67_refers_to <https://w3id.org/em/id/graph/vitruvio/node/ed_it> ;
+    crm:P72_has_language "it" ;
+    prov:generatedAtTime "2026-10-31T09:00:00+00:00"^^xsd:dateTime ;
+    prov:wasAttributedTo <https://orcid.org/0000-0001-5109-3700>,
+        <https://w3id.org/em/id/graph/vitruvio/node/sb> ;
+    prov:wasDerivedFrom <https://w3id.org/em/id/graph/vitruvio/node/vitr.01> ;
+    em:createdBy <https://orcid.org/0000-0001-5109-3700> ;
+    em:hasAuthor <https://w3id.org/em/id/graph/vitruvio/node/sb> ;
+    em:sourceDigest "sha256:e285d6c523e0a6e637ecb3548010c7d1dffbd34b9e4c236eeac9f0571c36a6ca" ;
+    em:sourceLanguage "la" ;
+    em:translatedField "description" ;
+    em:translationMethod "edition" .
+
+<https://w3id.org/em/id/graph/vitruvio/node/84f487d6-d9f2-5d59-b41c-a26d0b60e6fc> a crm:E36_Visual_Item,
+        em:AnnotationRegion ;
+    rdfs:label "D.vitr.01 · region2d" ;
+    dcterms:identifier "84f487d6-d9f2-5d59-b41c-a26d0b60e6fc" ;
+    crm:P106i_forms_part_of <https://w3id.org/em/id/graph/vitruvio/node/scan> ;
+    crm:P2_has_type "rect" ;
+    em:hasSelector "xywh=percent:12.000000,30.000000,38.000000,8.000000" ;
+    em:isOnResource <https://w3id.org/em/id/graph/vitruvio/node/scan> ;
+    em:onPage "3"^^xsd:nonNegativeInteger .
+
+<https://w3id.org/em/id/graph/vitruvio/node/ed_it> a crm:E31_Document ;
+    rdfs:label "Traduzione italiana di prova" ;
+    dcterms:description "Un'edizione fittizia, per i test"@it ;
+    dcterms:identifier "ed_it" ;
+    em:originalLanguage "it" .
+
+<https://w3id.org/em/id/graph/vitruvio/node/lacus> a crm:E73_Information_Object ;
+    rdfs:label "De architectura III (testo latino online)" ;
+    dcterms:identifier "lacus" ;
+    dcterms:language "la" ;
+    crm:P2_has_type "External link" ;
+    rdfs:seeAlso <https://penelope.uchicago.edu/Thayer/L/Roman/Texts/Vitruvius/3*.html> ;
+    em:residency "reference" .
+
+<https://w3id.org/em/id/graph/vitruvio/node/vitr.01> a crminf:I7_Belief_Adoption,
+        em:Extractor ;
+    rdfs:label "D.vitr.01" ;
+    dcterms:description "I principi dei templi sono quelli da cui dipende l'aspetto delle loro figure."@it,
+        "Aedium autem principia sunt, e quibus constat figurarum aspectus."@la ;
+    dcterms:identifier "vitr.01" ;
+    crm:P67_refers_to <https://w3id.org/em/id/graph/vitruvio/node/84f487d6-d9f2-5d59-b41c-a26d0b60e6fc> ;
+    crm:P73_has_translation <https://w3id.org/em/id/graph/vitruvio/node/48bc9865-7b82-5ecf-b1d6-59e3b1ebc1ea> ;
+    crminf:J2_concluded_that <https://w3id.org/em/id/graph/vitruvio/node/vitr.01/belief> ;
+    em:originalLanguage "la" .
+
+<https://w3id.org/em/id/graph/vitruvio/node/vitr.01/belief> a crminf:I2_Belief .
+
+<https://w3id.org/em/id/graph/vitruvio/node/sb> a crm:E21_Person,
+        prov:Person,
+        em:Author,
+        em:HumanAuthor ;
+    rdfs:label "Simone" ;
+    dcterms:identifier "sb" ;
+    crm:P1_is_identified_by "B" ;
+    crm:P48_has_preferred_identifier "0000-0001-5109-3700" .
+
+<https://w3id.org/em/id/graph/vitruvio/node/scan> a crm:E73_Information_Object ;
+    rdfs:label "De architectura III, scansione (latino e italiano)" ;
+    dcterms:identifier "scan" ;
+    dcterms:language "it",
+        "la" ;
+    crm:P2_has_type "External link" ;
+    rdfs:seeAlso "vitruvio_III.pdf" .
+

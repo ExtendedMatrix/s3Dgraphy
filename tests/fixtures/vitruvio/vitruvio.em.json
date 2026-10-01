@@ -1,0 +1,247 @@
+{
+  "graph": {
+    "edges": [
+      {
+        "edge_type": "has_linked_resource",
+        "id": "vitr__has_linked_resource__lacus",
+        "source": "vitr",
+        "target": "lacus"
+      },
+      {
+        "edge_type": "has_linked_resource",
+        "id": "vitr__has_linked_resource__scan",
+        "source": "vitr",
+        "target": "scan"
+      },
+      {
+        "edge_type": "extracted_from",
+        "id": "e83a5169-02f9-5cc5-bc6e-6ac65ef1ceca",
+        "source": "vitr.01",
+        "target": "84f487d6-d9f2-5d59-b41c-a26d0b60e6fc"
+      },
+      {
+        "edge_type": "is_on_resource",
+        "id": "400d4ed0-b004-5163-a76e-de1fa17489b4",
+        "source": "84f487d6-d9f2-5d59-b41c-a26d0b60e6fc",
+        "target": "scan"
+      },
+      {
+        "edge_type": "has_translation",
+        "id": "vitr.01__has_translation__48bc9865-7b82-5ecf-b1d6-59e3b1ebc1ea",
+        "source": "vitr.01",
+        "target": "48bc9865-7b82-5ecf-b1d6-59e3b1ebc1ea"
+      },
+      {
+        "edge_type": "has_author",
+        "id": "48bc9865-7b82-5ecf-b1d6-59e3b1ebc1ea__has_author__sb",
+        "source": "48bc9865-7b82-5ecf-b1d6-59e3b1ebc1ea",
+        "target": "sb"
+      },
+      {
+        "edge_type": "extracted_from",
+        "id": "48bc9865-7b82-5ecf-b1d6-59e3b1ebc1ea__extracted_from__ed_it",
+        "source": "48bc9865-7b82-5ecf-b1d6-59e3b1ebc1ea",
+        "target": "ed_it"
+      },
+      {
+        "edge_type": "has_translation",
+        "id": "vitr.01__has_translation__649cfef4-0c94-52c4-afda-6a613f51d2cd",
+        "source": "vitr.01",
+        "target": "649cfef4-0c94-52c4-afda-6a613f51d2cd"
+      },
+      {
+        "edge_type": "has_author",
+        "id": "649cfef4-0c94-52c4-afda-6a613f51d2cd__has_author__ed",
+        "source": "649cfef4-0c94-52c4-afda-6a613f51d2cd",
+        "target": "ed"
+      }
+    ],
+    "graph_id": "vitruvio",
+    "nodes": [
+      {
+        "data": {
+          "epsg": 4326,
+          "rotation": 0.0,
+          "shift_x": 0.0,
+          "shift_y": 0.0,
+          "shift_z": 0.0
+        },
+        "id": "geo_vitruvio",
+        "name": "geo_position",
+        "node_type": "geo_position"
+      },
+      {
+        "data": {
+          "language": "it"
+        },
+        "id": "vitruvio_graphroot",
+        "name": "Graph",
+        "node_type": "graph"
+      },
+      {
+        "data": {
+          "name": "Emanuel",
+          "orcid": "0000-0002-1825-0097",
+          "surname": "D",
+          "verified": false
+        },
+        "id": "ed",
+        "name": "Emanuel",
+        "node_type": "author"
+      },
+      {
+        "data": {
+          "name": "Simone",
+          "orcid": "0000-0001-5109-3700",
+          "surname": "B",
+          "verified": false
+        },
+        "id": "sb",
+        "name": "Simone",
+        "node_type": "author"
+      },
+      {
+        "data": {
+          "model": "",
+          "name": "Claude",
+          "orcid": "noorcid",
+          "prompt_reference": "",
+          "surname": "nosurname",
+          "verified": false
+        },
+        "id": "claude",
+        "name": "Claude",
+        "node_type": "author_ai"
+      },
+      {
+        "data": {
+          "lang": "it"
+        },
+        "description": "Libro III, capitolo 2: i tipi di tempio",
+        "id": "vitr",
+        "name": "Vitruvio, De architectura III,2",
+        "node_type": "document"
+      },
+      {
+        "data": {
+          "lang": "it"
+        },
+        "description": "Un'edizione fittizia, per i test",
+        "id": "ed_it",
+        "name": "Traduzione italiana di prova",
+        "node_type": "document"
+      },
+      {
+        "data": {
+          "description": "",
+          "lang": "la",
+          "residency": "reference",
+          "url": "https://penelope.uchicago.edu/Thayer/L/Roman/Texts/Vitruvius/3*.html",
+          "url_type": "External link"
+        },
+        "id": "lacus",
+        "name": "De architectura III (testo latino online)",
+        "node_type": "resource"
+      },
+      {
+        "data": {
+          "lang": "la"
+        },
+        "description": "Aedium autem principia sunt, e quibus constat figurarum aspectus.",
+        "id": "vitr.01",
+        "name": "D.vitr.01",
+        "node_type": "extractor"
+      },
+      {
+        "data": {
+          "description": "",
+          "lang": [
+            "it",
+            "la"
+          ],
+          "url": "vitruvio_III.pdf",
+          "url_type": "External link"
+        },
+        "id": "scan",
+        "name": "De architectura III, scansione (latino e italiano)",
+        "node_type": "resource"
+      },
+      {
+        "data": {
+          "geometry_kind": "region2d",
+          "page": 3,
+          "rect": [
+            0.12,
+            0.3,
+            0.38,
+            0.08
+          ],
+          "resource_id": "scan",
+          "shape_kind": "rect"
+        },
+        "id": "84f487d6-d9f2-5d59-b41c-a26d0b60e6fc",
+        "name": "D.vitr.01 · region2d",
+        "node_type": "annotation_region"
+      },
+      {
+        "data": {
+          "created_at": "2026-10-31T09:00:00Z",
+          "created_by": "0000-0001-5109-3700",
+          "field": "description",
+          "from_lang": "la",
+          "lang": "it",
+          "method": "edition",
+          "source_digest": "sha256:e285d6c523e0a6e637ecb3548010c7d1dffbd34b9e4c236eeac9f0571c36a6ca",
+          "text": "I principi dei templi sono quelli da cui dipende l'aspetto delle loro figure."
+        },
+        "id": "48bc9865-7b82-5ecf-b1d6-59e3b1ebc1ea",
+        "name": "D.vitr.01@it",
+        "node_type": "translation"
+      },
+      {
+        "data": {
+          "ai_assisted": {
+            "by": "claude",
+            "model": "claude-opus-5-5"
+          },
+          "created_at": "2026-10-31T09:05:00Z",
+          "created_by": "0000-0002-1825-0097",
+          "field": "description",
+          "from_lang": "la",
+          "lang": "en",
+          "method": "ai",
+          "source_digest": "sha256:e285d6c523e0a6e637ecb3548010c7d1dffbd34b9e4c236eeac9f0571c36a6ca",
+          "text": "The principles of temples are those on which the look of their forms depends."
+        },
+        "id": "649cfef4-0c94-52c4-afda-6a613f51d2cd",
+        "name": "D.vitr.01@en",
+        "node_type": "translation"
+      }
+    ]
+  },
+  "header": {
+    "datamodel_versions": {
+      "connections": "1.6.34",
+      "nodes": "1.6.20",
+      "qualia": "1.6.5"
+    },
+    "format": "em.json",
+    "generator": {
+      "tool": "s3dgraphy",
+      "version": "1.6.0.dev26"
+    },
+    "ontology_versions": {
+      "CIDOC-CRM": "7.1.3",
+      "CRMarchaeo": "2.1.1",
+      "CRMdig": "5.0",
+      "CRMem": "1.6.10",
+      "CRMgeo": "1.2",
+      "CRMinf": "1.2.1",
+      "CRMsci": "3.2",
+      "HDT-O": "1.0",
+      "PROV-O": "W3C Recommendation 2013-04-30"
+    },
+    "schema_version": 2,
+    "version": "1.0"
+  }
+}

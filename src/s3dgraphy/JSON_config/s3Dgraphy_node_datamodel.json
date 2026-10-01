@@ -1070,7 +1070,11 @@
         "url_type": "P2_has_type",
         "checksum": "em:checksum",
         "scope": "em:resourceScope",
-        "residency": "em:residency"
+        "residency": "em:residency",
+        "lang": {
+          "rdf": "dcterms:language",
+          "note": "1.6.21 (dev27, decided by E.D. 2026-10-01, «il testo, la risorsa e la selezione»): on a RESOURCE, data.lang is the language of the CONTENT of the file — what it is made of — not the language of the resource's own description: a Latin PDF does not make its Italian description Latin. One BCP 47 tag, or a sorted list for more («latino e italiano a fronte» = [\"it\", \"la\"]), written by s3dgraphy.language.set_content_languages. It does NOT enter the cascade of the language of the texts (language.node_language skips resources and their files), it is not written at birth, and it leaves as one dcterms:language per tag instead of em:originalLanguage. The DocumentNode is the WORK, with no text in its fields; the resources are its manifestations, the text is in the file; the ExtractorNode is the selection, with the original words of the passage in its description and its own data.lang."
+        }
       },
       "resource_types": {
         "3d_model": [

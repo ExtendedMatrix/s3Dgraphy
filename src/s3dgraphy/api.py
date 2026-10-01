@@ -863,6 +863,22 @@ def study_metadata(container: Any, *, study_id: Optional[str] = None
     return _card(container, study_id=study_id)
 
 
+def content_languages(resource) -> List[str]:
+    """The languages of the CONTENT of a resource (its ``data.lang``), ``[]``
+    when none was declared. Not the language of its description: see
+    :func:`s3dgraphy.language.content_languages`."""
+    from .language import content_languages as _c
+    return _c(resource)
+
+
+def set_content_languages(resource, tags) -> List[str]:
+    """Declare the languages of a resource's content: one tag or a list (sorted,
+    without repeats); None / [] retracts. An invalid tag raises ValueError and
+    nothing is written. See :func:`s3dgraphy.language.set_content_languages`."""
+    from .language import set_content_languages as _s
+    return _s(resource, tags)
+
+
 def working_language(graph: Graph) -> Optional[str]:
     """The study's working language (a BCP 47 tag), or `None` when never
     declared — the second step of the cascade that tags texts in RDF. See

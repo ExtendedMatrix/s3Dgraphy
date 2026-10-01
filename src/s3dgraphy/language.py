@@ -142,9 +142,14 @@ def set_working_language(graph: Any, tag: Optional[str]) -> Optional[str]:
 #: * ``translation`` — its ``data.lang`` is the language of ARRIVAL, written by
 #:   :func:`s3dgraphy.translation.add_translation`;
 #: * ``graph`` — the graph-self node holds the study's working language in
-#:   ``data.language``; it is not a text.
+#:   ``data.language``; it is not a text;
+#: * ``annotation_region``, ``semantic_shape``, ``geo_position`` — places and
+#:   shapes, not texts. A passage's quoted words are in the language of the
+#:   RESOURCE they are on, not in the study's: writing the study's there would
+#:   be the wrong language, written as a fact.
 NOT_TEXT_LANGUAGE_TYPES = frozenset({"resource", "resource_file", "translation",
-                                     "graph"})
+                                     "graph", "annotation_region",
+                                     "semantic_shape", "geo_position"})
 
 
 def _node_type_of(node: Any) -> Optional[str]:
@@ -242,13 +247,15 @@ def content_languages(resource: Any) -> list:
 def set_content_languages(resource: Any, tags: Any) -> list:
     """Declare the languages of a resource's content (``data.lang``): one tag or
     a list; ``None`` / ``[]`` retracts. One tag is stored as a string, more as a
-    list. Every tag is checked first; an invalid one raises ``ValueError`` and
-    nothing is written."""
+    SORTED list without repeats — the canonical form, because RDF has no order
+    for the ``dcterms:language`` values and the round trip must give back what
+    was written. Every tag is checked first; an invalid one raises
+    ``ValueError`` and nothing is written."""
     if _node_type_of(resource) != "resource":
         raise ValueError("the language of a content is declared on a resource")
     values = [] if tags in (None, "") else (
         list(tags) if isinstance(tags, (list, tuple)) else [tags])
-    checked = [check_language_tag(t) for t in values]
+    checked = sorted({check_language_tag(t) for t in values})
     data = resource.setdefault("data", {}) if isinstance(resource, dict) else resource.data
     if not checked:
         data.pop(NODE_LANG_KEY, None)

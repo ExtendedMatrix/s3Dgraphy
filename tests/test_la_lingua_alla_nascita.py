@@ -85,17 +85,16 @@ def test_the_types_whose_lang_is_not_their_text_are_untouched():
 # ── through api ──────────────────────────────────────────────────────────────
 
 def test_a_node_born_through_api_carries_the_language():
-    from s3dgraphy.nodes.document_node import DocumentNode
-    from s3dgraphy.nodes.extractor_node import ExtractorNode
     g = _study("it")
-    g.add_node(DocumentNode("d1", "D.1", "pianta"))
-    g.add_node(ExtractorNode("e1", "D.1.01", "il muro"))
-    region = api.place_reading(g, "e1", None,
-                               {"geometry_kind": "point", "vertices": [[0, 0, 0]]})
-    rid = region.region_id
-    assert g.find_node_by_id(rid).data["lang"] == "it"
-    # the nodes that were there before the call are not «born» by it
-    assert "lang" not in (getattr(g.find_node_by_id("e1"), "data", None) or {})
+    g.add_node(ResourceNode("img", "foto.jpg", url="foto.jpg"))
+    out = api.create_annotation_paradata(
+        g, "img", {"shape_kind": "rect", "rect": [0.1, 0.1, 0.2, 0.2]},
+        "malta di calce", "material", author=None)
+    assert g.find_node_by_id(out.extractor_id).data["lang"] == "it"
+    assert g.find_node_by_id(out.property_id).data["lang"] == "it"
+    # a place is not a text, and the resource was there before the call
+    assert "lang" not in (g.find_node_by_id(out.region_id).data or {})
+    assert "lang" not in g.find_node_by_id("img").data
 
 
 # ── through the CRDT ─────────────────────────────────────────────────────────

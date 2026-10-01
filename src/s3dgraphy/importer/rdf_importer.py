@@ -1292,6 +1292,13 @@ class RDFImporter:
                 value = self._one_literal(store, ref, pred)
                 if value:
                     data[key] = str(value)
+            # dev27: the languages of the content (dcterms:language, one per
+            # tag) → data.lang, a string for one and a sorted list for more —
+            # the canonical form language.set_content_languages writes
+            langs = sorted({str(o) for o in store.objects(ref, DCTERMS.language)
+                            if isinstance(o, Literal)})
+            if langs:
+                data["lang"] = langs[0] if len(langs) == 1 else langs
             # A resource can carry TWO `crm:P2_has_type` literals: its
             # `url_type` and, when it is a DTC product, its `dtc_kind`. They are
             # told apart by what each one IS rather than by order: `url_type` is
