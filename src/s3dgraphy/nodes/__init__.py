@@ -45,6 +45,9 @@ from .resource_node import ResourceNode
 # …and each FILE of a resource (E.D. 2026-09-30): the resource is the set, the
 # file is the member, reached by has_file. Implicit when there is only one.
 from .resource_file_node import ResourceFileNode
+# …and the TRANSLATION of a text field (E.D. 2026-10-01): the original stays a
+# string in its field, each translation is a node of its own (crm:E33, P73).
+from .translation_node import TranslationNode
 from .embargo_node import EmbargoNode
 from .license_node import LicenseNode
 from .graph_node import GraphNode
@@ -134,6 +137,7 @@ __all__ = [
     "AuthorAINode",
     "ResourceNode",
     "ResourceFileNode",
+    "TranslationNode",
     "EmbargoNode",
     "LicenseNode",
     "GraphNode",

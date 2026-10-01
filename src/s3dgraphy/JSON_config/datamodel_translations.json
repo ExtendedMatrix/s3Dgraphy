@@ -2057,6 +2057,46 @@
     "de": "TSU"
    }
   },
+  "TranslationNode": {
+   "description": {
+    "en": "ONE TRANSLATION of one text field of one node (E.D. 2026-10-01, «Le traduzioni»). The ORIGINAL stays a string in its own field, in the language it was written in — data.lang on the node says which, else the study's working language — and a translation never overwrites it: the original is testimony. Each translation is a node of its own, reached from the translated node by has_translation (reverse is_translation_of). Fields in data: lang (the language of ARRIVAL, BCP 47 — the same key as every node's data.lang, so its own text takes its tag by the ordinary cascade); from_lang (the language of DEPARTURE, the original's WHEN it was translated: written, because the original can change); field (the translated field in the CRDT's vocabulary: description, or data.<key> — a PropertyNode's value is data.value; name is never translated, names are invariant identities); text; method (manual | ai | edition); source_digest ('sha256:<hex>' of the original text translated, NFC + UTF-8: when the original changes the digests differ and the translation is «da riallineare», which no signature clears); review_requested (true when the translator asks for a review, «da rivedere»). WHO translated is has_author (an AuthorNode); WHEN is the editorial stamp created_at. An AI translation carries data.ai_assisted and stays among the warnings until a person verifies it (data.validated_by / validated_at, the same two fields that close a requested review: ai_validation.verify). A translation from a published EDITION reaches the DocumentNode of that edition with extracted_from: a published translation is a source, Vitruvius read through a translator is an interpretation.",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "UNA TRADUZIONE di un campo di testo di un nodo (E.D. 1 ott 2026, «Le traduzioni»). L'ORIGINALE resta una stringa nel suo campo, nella lingua in cui è nato (data.lang del nodo, altrimenti la lingua dello studio), e una traduzione non lo sovrascrive mai: l'originale è testimonianza. Ogni traduzione è un nodo, raggiunto da has_translation, con lang (arrivo), from_lang (partenza, scritta perché l'originale può cambiare), field (description o data.<chiave>; il nome non si traduce), text, method (manual | ai | edition), source_digest (sha256 dell'originale tradotto: se cambia, la traduzione è «da riallineare») e review_requested («da rivedere»). Chi ha tradotto: has_author; una traduzione AI resta tra gli avvisi finché una persona non la verifica (validated_by); da un'edizione: extracted_from verso il DocumentNode.",
+    "el": "ΜΙΑ ΜΕΤΑΦΡΑΣΗ ενός πεδίου κειμένου ενός κόμβου (E.D. 1/10/2026). Το ΠΡΩΤΟΤΥΠΟ μένει συμβολοσειρά στο πεδίο του, στη γλώσσα όπου γράφτηκε (data.lang του κόμβου, αλλιώς η γλώσσα της μελέτης), και η μετάφραση δεν το αντικαθιστά ποτέ. Κάθε μετάφραση είναι κόμβος, που συνδέεται με has_translation, με lang (άφιξη), from_lang (αφετηρία), field, text, method (manual | ai | edition), source_digest (sha256 του πρωτοτύπου: αν αλλάξει, η μετάφραση χρειάζεται ευθυγράμμιση) και review_requested. Ποιος μετέφρασε: has_author· μια μετάφραση AI μένει στις προειδοποιήσεις ώσπου να την επαληθεύσει ένα πρόσωπο (validated_by)· από έκδοση: extracted_from προς τον DocumentNode.",
+    "he": "תרגום אחד של שדה טקסט אחד של צומת (E.D. 1.10.2026). המקור נשאר מחרוזת בשדה שלו, בשפה שבה נכתב (data.lang של הצומת, אחרת שפת המחקר), ותרגום לעולם אינו דורס אותו. כל תרגום הוא צומת, המחובר ב-has_translation, עם lang (שפת היעד), from_lang (שפת המקור), field, text, method (manual | ai | edition), source_digest (sha256 של המקור: אם השתנה, התרגום דורש יישור) ו-review_requested. מי תרגם: has_author; תרגום AI נשאר באזהרות עד שאדם מאמת אותו (validated_by); ממהדורה: extracted_from אל ה-DocumentNode.",
+    "es": "UNA TRADUCCIÓN de un campo de texto de un nodo (E.D. 1 oct 2026). El ORIGINAL sigue siendo una cadena en su campo, en la lengua en que se escribió (data.lang del nodo, si no la del estudio), y una traducción nunca lo sobrescribe. Cada traducción es un nodo, alcanzado por has_translation, con lang (llegada), from_lang (partida), field, text, method (manual | ai | edition), source_digest (sha256 del original: si cambia, la traducción está «por realinear») y review_requested («por revisar»). Quién tradujo: has_author; una traducción IA queda entre los avisos hasta que una persona la verifica (validated_by); de una edición: extracted_from hacia el DocumentNode.",
+    "pl": "JEDNO TŁUMACZENIE jednego pola tekstowego węzła (E.D. 1.10.2026). ORYGINAŁ pozostaje ciągiem w swoim polu, w języku, w którym powstał (data.lang węzła, w przeciwnym razie język badania), a tłumaczenie nigdy go nie nadpisuje. Każde tłumaczenie jest węzłem, osiąganym przez has_translation, z lang (docelowy), from_lang (źródłowy), field, text, method (manual | ai | edition), source_digest (sha256 oryginału: gdy się zmieni, tłumaczenie wymaga uzgodnienia) i review_requested. Kto przetłumaczył: has_author; tłumaczenie AI pozostaje wśród ostrzeżeń, dopóki osoba go nie zweryfikuje (validated_by); z wydania: extracted_from do DocumentNode.",
+    "ro": "O TRADUCERE a unui câmp de text al unui nod (E.D. 1 oct 2026). ORIGINALUL rămâne un șir în câmpul său, în limba în care a fost scris (data.lang al nodului, altfel limba studiului), iar o traducere nu îl suprascrie niciodată. Fiecare traducere este un nod, atins prin has_translation, cu lang (sosire), from_lang (plecare), field, text, method (manual | ai | edition), source_digest (sha256 al originalului: dacă se schimbă, traducerea trebuie realiniată) și review_requested. Cine a tradus: has_author; o traducere AI rămâne printre avertismente până o verifică o persoană (validated_by); dintr-o ediție: extracted_from către DocumentNode.",
+    "fr": "UNE TRADUCTION d'un champ de texte d'un nœud (E.D. 1er oct. 2026). L'ORIGINAL reste une chaîne dans son champ, dans la langue où il a été écrit (data.lang du nœud, sinon celle de l'étude), et une traduction ne l'écrase jamais. Chaque traduction est un nœud, atteint par has_translation, avec lang (arrivée), from_lang (départ), field, text, method (manual | ai | edition), source_digest (sha256 de l'original : s'il change, la traduction est « à réaligner ») et review_requested (« à revoir »). Qui a traduit : has_author ; une traduction IA reste parmi les avertissements jusqu'à ce qu'une personne la vérifie (validated_by) ; d'une édition : extracted_from vers le DocumentNode.",
+    "de": "EINE ÜBERSETZUNG eines Textfelds eines Knotens (E.D. 1.10.2026). Das ORIGINAL bleibt eine Zeichenkette in seinem Feld, in der Sprache, in der es geschrieben wurde (data.lang des Knotens, sonst die Sprache der Studie), und eine Übersetzung überschreibt es nie. Jede Übersetzung ist ein Knoten, erreicht über has_translation, mit lang (Ziel), from_lang (Ausgang), field, text, method (manual | ai | edition), source_digest (sha256 des Originals: ändert es sich, ist die Übersetzung neu abzugleichen) und review_requested. Wer übersetzt hat: has_author; eine KI-Übersetzung bleibt unter den Warnungen, bis eine Person sie prüft (validated_by); aus einer Edition: extracted_from zum DocumentNode."
+   },
+   "label": {
+    "en": "Translation",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Traduzione",
+    "el": "Μετάφραση",
+    "he": "תרגום",
+    "es": "Traducción",
+    "pl": "Tłumaczenie",
+    "ro": "Traducere",
+    "fr": "Traduction",
+    "de": "Übersetzung"
+   }
+  },
   "UnknownNode": {
    "description": {
     "en": "Fallback node for unrecognized types. This type of node should not normally appear in the system but serves exclusively to handle anomalies in the data.",
@@ -6287,6 +6327,65 @@
     "ro": "Are ramura temporală",
     "fr": "A une branche temporelle",
     "de": "Hat Zeitzweig"
+   }
+  },
+  "has_translation": {
+   "label": {
+    "en": "Has translation",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Ha la traduzione",
+    "el": "Έχει μετάφραση",
+    "he": "יש תרגום",
+    "es": "Tiene la traducción",
+    "pl": "Ma tłumaczenie",
+    "ro": "Are traducerea",
+    "fr": "A pour traduction",
+    "de": "Hat die Übersetzung"
+   },
+   "ui_phrase_as_source": {
+    "en": "{node} translated as {x}",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "{node} tradotto come {x}",
+    "el": "{node} μεταφρασμένο ως {x}",
+    "he": "{node} מתורגם כ־{x}",
+    "es": "{node} traducido como {x}",
+    "pl": "{node} przetłumaczone jako {x}",
+    "ro": "{node} tradus ca {x}",
+    "fr": "{node} traduit par {x}",
+    "de": "{node} übersetzt als {x}"
+   },
+   "ui_phrase_as_target": {
+    "en": "{node} translation of {x}",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "{node} traduzione di {x}",
+    "el": "{node} μετάφραση του {x}",
+    "he": "{node} תרגום של {x}",
+    "es": "{node} traducción de {x}",
+    "pl": "{node} tłumaczenie {x}",
+    "ro": "{node} traducere a {x}",
+    "fr": "{node} traduction de {x}",
+    "de": "{node} Übersetzung von {x}"
    }
   },
   "has_visual_reference": {

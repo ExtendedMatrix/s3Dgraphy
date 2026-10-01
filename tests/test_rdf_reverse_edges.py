@@ -86,7 +86,8 @@ def test_direction_resolution_is_reported_and_bounded():
     canonicals = set(dm.connections_datamodel["edge_types"])
     # 50 since connections 1.6.30: has_file declares is_file_of
     # 51 since connections 1.6.31: was_revision_of declares had_revision
-    assert len(dm._reverse_of) == 51
+    # 52 since connections 1.6.34: has_translation declares is_translation_of
+    assert len(dm._reverse_of) == 52
     assert not (set(dm._reverse_of) & canonicals)
 
 

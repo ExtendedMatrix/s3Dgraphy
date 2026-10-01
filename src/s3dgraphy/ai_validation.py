@@ -346,3 +346,107 @@ def unflag_node(node: Any) -> bool:
             _set(node, f, clean)
             changed = True
     return changed
+
+
+# ── what waits for a person: AI, a review asked for, a translation to realign ─
+#
+# E.D. 2026-10-01 («Le traduzioni»): ONE vocabulary for what a person still has
+# to look at. AI content is unverified until ``validated_by``; a person who
+# translates by hand may ask for a review (``data.review_requested``, «da
+# rivedere») and the same ``validated_by`` closes it; a translation whose
+# original changed is «da riallineare», and no signature closes that — only a
+# new translation of the new text does.
+
+REVIEW_REQUESTED = "review_requested"
+
+#: the reasons, in the order an interface lists them
+REASON_AI = "ai"
+REASON_REVIEW = "review_requested"
+REASON_STALE = "stale"
+REASONS = (REASON_AI, REASON_REVIEW, REASON_STALE)
+
+
+def review_requested(node: Any) -> bool:
+    data = getattr(node, "data", None) or {}
+    return bool(isinstance(data, dict) and data.get(REVIEW_REQUESTED))
+
+
+def needs_review(node: Any, graph: Any = None) -> List[str]:
+    """Why ``node`` waits for a person — ``[]`` when it does not.
+
+    * ``ai`` — made with AI and nobody verified it (:func:`is_unvalidated_ai`);
+    * ``review_requested`` — its author asked for a review and nobody has
+      signed it yet;
+    * ``stale`` — a translation whose original is no longer the text that was
+      translated (needs ``graph``, where the original is; without it the reason
+      cannot be measured and is not claimed).
+
+    The same function for every node: a translation is a node like the others,
+    and an AI-made unit has nothing to realign."""
+    reasons: List[str] = []
+    if is_unvalidated_ai(node):
+        reasons.append(REASON_AI)
+    if review_requested(node) and not is_validated(node):
+        reasons.append(REASON_REVIEW)
+    if graph is not None and getattr(node, "node_type", None) == "translation":
+        from .translation import is_stale
+        if is_stale(graph, node):
+            reasons.append(REASON_STALE)
+    return reasons
+
+
+def to_review(graph: Any) -> List[Dict[str, Any]]:
+    """Everything that waits for a person, and why.
+
+    One row per node: ``{node, name, node_type, reasons}``, plus — for a
+    translation — ``of`` (the translated node), ``field``, ``lang``, ``method``,
+    and for AI ``by`` / ``model`` as :func:`unvalidated_ai` gives them. The
+    verified content is not here; who verified it is on the node
+    (``validated_by``, ``validated_at``)."""
+    out: List[Dict[str, Any]] = []
+    for node in getattr(graph, "nodes", []) or []:
+        reasons = needs_review(node, graph)
+        if not reasons:
+            continue
+        row: Dict[str, Any] = {
+            "node": node.node_id,
+            "name": getattr(node, "name", "") or "",
+            "node_type": getattr(node, "node_type", "") or "",
+            "reasons": reasons,
+        }
+        if REASON_AI in reasons:
+            marker = ai_marker(node) or {}
+            row["by"] = marker.get("by")
+            row["model"] = marker.get("model")
+        if getattr(node, "node_type", None) == "translation":
+            from .translation import original_of
+            data = getattr(node, "data", None) or {}
+            original = original_of(graph, node)
+            row["of"] = getattr(original, "node_id", None)
+            row["field"] = data.get("field")
+            row["lang"] = data.get("lang")
+            row["method"] = data.get("method")
+        out.append(row)
+    return out
+
+
+def verify(graph: Any, node: Any, author_id: str, *,
+           at: Optional[str] = None) -> Dict[str, Any]:
+    """A person signs what waited for them: AI content OR a requested review.
+
+    The same signature as :func:`validate_node` (``validated_by`` = a human
+    AuthorNode with an ORCID iD, ``validated_at``) and the same refusal of a
+    node that waits for nothing. ``review_requested`` stays written: it says
+    the review was asked for, and ``validated_by`` says it was done and by whom.
+    A stale translation is not cleared by a signature (see :func:`needs_review`).
+    """
+    from .editorial import now_iso, normalize_instant
+    resolve_validator(graph, author_id)
+    if not (is_ai_assisted(node) or review_requested(node)):
+        raise AIValidationError(
+            f"'{getattr(node, 'node_id', '?')}' waits for no verification: it is "
+            f"neither AI-assisted nor marked «da rivedere»")
+    data = _data(node)
+    data[VALIDATED_BY] = author_id
+    data[VALIDATED_AT] = normalize_instant(at) if at else now_iso()
+    return {VALIDATED_BY: data[VALIDATED_BY], VALIDATED_AT: data[VALIDATED_AT]}

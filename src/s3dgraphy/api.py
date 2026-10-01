@@ -223,6 +223,77 @@ def validate_ai(graph: Graph, node_id: str, author_id: str, *,
     return validate_node(graph, node, author_id, at=at)
 
 
+def _node_of(graph: Graph, node):
+    if isinstance(node, str):
+        found = graph.find_node_by_id(node)
+        if found is None:
+            raise KeyError(f"no node {node!r}")
+        return found
+    return node
+
+
+def needs_review(node, graph: Optional[Graph] = None) -> List[str]:
+    """Why a node waits for a person: ``ai`` (made with AI, unverified),
+    ``review_requested`` («da rivedere», unsigned), ``stale`` (a translation
+    whose original changed; needs ``graph``). ``[]`` when it waits for nothing.
+    See :func:`s3dgraphy.ai_validation.needs_review`."""
+    from .ai_validation import needs_review as _needs
+    return _needs(node, graph)
+
+
+def to_review(graph: Graph) -> List[Dict[str, Any]]:
+    """Everything that waits for a person, and why: ``[{node, name, node_type,
+    reasons, …}]`` — AI content, reviews asked for, translations to realign.
+    ``unvalidated_ai`` stays: it is the AI subset, what an export leaves out."""
+    from .ai_validation import to_review as _to_review
+    return _to_review(graph)
+
+
+def verify(graph: Graph, node, author_id: str, *,
+           at: Optional[str] = None) -> Dict[str, Any]:
+    """A person (AuthorNode with an ORCID iD) signs what waited for them: AI
+    content or a requested review — ``validated_by`` + ``validated_at``. A node
+    that waits for nothing is refused.
+
+    Named ``verify`` and not ``validate``: :func:`validate` is the structural
+    check of a whole graph, and one name with two meanings would make
+    ``validate(graph)`` and ``validate(graph, node, author)`` different acts."""
+    from .ai_validation import verify as _verify
+    return _verify(graph, _node_of(graph, node), author_id, at=at)
+
+
+# ── translations: a node per translation, the original untouched ─────────────
+def add_translation(graph: Graph, node, field: str, lang: str, text: str, *,
+                    by: str, method: str = "manual",
+                    edition: Optional[str] = None, review: bool = False,
+                    ai: Optional[str] = None, model: Optional[str] = None,
+                    from_lang: Optional[str] = None,
+                    at: Optional[str] = None):
+    """Translate ``field`` of ``node`` into ``lang``: a TranslationNode
+    (crm:E33) reached by ``has_translation`` (crm:P73), signed by ``by``
+    (``has_author``), with ``method`` manual | ai | edition (``edition`` = the
+    DocumentNode, reached by ``extracted_from``), ``review`` = «da rivedere».
+    See :func:`s3dgraphy.translation.add_translation`."""
+    from .translation import add_translation as _add
+    return _add(graph, node, field, lang, text, by=by, method=method,
+                edition=edition, review=review, ai=ai, model=model,
+                from_lang=from_lang, at=at)
+
+
+def translations(graph: Graph, node, field: Optional[str] = None) -> List[Any]:
+    """The TranslationNodes of a node (optionally of one field)."""
+    from .translation import translations as _translations
+    return _translations(graph, _node_of(graph, node), field)
+
+
+def text(graph: Graph, node, field: str, lang: str) -> Dict[str, Any]:
+    """The text of ``field`` in ``lang``: the translation when there is one,
+    else the original — ``{text, lang, original, translation, reasons}`` says
+    which, and what the translation still waits for."""
+    from .translation import text as _text
+    return _text(graph, _node_of(graph, node), field, lang)
+
+
 # ── the em.json CONTAINER: a project is one file ───────────────────────────────
 #
 # An em.json is ALWAYS a container: `{"graphs": {...}}`, 1..N study graphs plus
@@ -353,7 +424,7 @@ def set_field(node, field: str, value, *, author=None,
     from .crdt import Clock, write_field
     from .editorial import normalize_orcid, now_iso
 
-    if field == "data.lang" and value not in (None, ""):
+    if field in ("data.lang", "data.from_lang") and value not in (None, ""):
         # a node's language is a BCP 47 tag; an invalid one is refused, not stored
         from .language import check_language_tag
         check_language_tag(value)

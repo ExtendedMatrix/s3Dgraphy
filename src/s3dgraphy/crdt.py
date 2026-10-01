@@ -783,8 +783,9 @@ def apply_op_to_section(section: Dict[str, Any], op: Dict[str, Any]) -> OpResult
         if not name or (name != "name" and name != "description"
                         and not name.startswith("data.")):
             return OpResult(False, f"'{name}' is not an addressable field", node_id)
-        if name == "data.lang" and op.get("remove") is not True:
-            refused = _refused_language({"lang": op.get("value")})
+        if (name[5:] in _LANGUAGE_KEYS and name.startswith("data.")
+                and op.get("remove") is not True):
+            refused = _refused_language({name[5:]: op.get("value")})
             if refused:
                 return OpResult(False, refused, node_id)
         current = field_clock(existing, name)
@@ -886,16 +887,25 @@ def apply_op_to_section(section: Dict[str, Any], op: Dict[str, Any]) -> OpResult
 
 
 def _refused_language(data: Any) -> Optional[str]:
-    """Why ``data.lang`` cannot be written, or None. A node's language is a BCP 47
-    tag (language.py): an invalid one is not stored, and the operation says so —
-    an empty or absent one is simply no declaration."""
-    if not isinstance(data, dict) or data.get("lang") in (None, ""):
+    """Why a language in ``data`` cannot be written, or None. A node's language
+    (``data.lang``) — and a translation's language of departure
+    (``data.from_lang``) — is a BCP 47 tag (language.py): an invalid one is not
+    stored, and the operation says so; an empty or absent one is simply no
+    declaration."""
+    if not isinstance(data, dict):
         return None
     from .language import is_language_tag
-    if is_language_tag(data["lang"]):
-        return None
-    return (f"data.lang {data['lang']!r} is not a language tag (BCP 47: 'it', "
-            f"'en-GB', 'und'): nothing was written")
+    for key in _LANGUAGE_KEYS:
+        value = data.get(key)
+        if value in (None, "") or is_language_tag(value):
+            continue
+        return (f"data.{key} {value!r} is not a language tag (BCP 47: 'it', "
+                f"'en-GB', 'und'): nothing was written")
+    return None
+
+
+#: the data keys that hold a language tag
+_LANGUAGE_KEYS = ("lang", "from_lang")
 
 
 def _replace(nodes: List[Dict[str, Any]], node_id: str,
