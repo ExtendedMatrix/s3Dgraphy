@@ -45,13 +45,23 @@ def _iri(g, nid):
     return RDFExporter("x.ttl")._node_iri(g.graph_id, nid)
 
 
+def _body(doc):
+    """The document without its ``header``: the header records which build and
+    which datamodel versions wrote the file, and moves at every bump; what the
+    fixture shows is the body."""
+    return {k: v for k, v in json.loads(json.dumps(doc, sort_keys=True)).items()
+            if k != "header"}
+
+
 def test_the_fixture_rebuilds_byte_for_byte(tmp_path):
     vitruvio.write(str(tmp_path))
-    for name in ("vitruvio.em.json", "vitruvio_round_trip.ttl",
-                 "vitruvio_publish.ttl"):
+    for name in ("vitruvio_round_trip.ttl", "vitruvio_publish.ttl"):
         with open(os.path.join(HERE, name), encoding="utf-8") as a, \
                 open(tmp_path / name, encoding="utf-8") as b:
             assert a.read() == b.read(), name
+    with open(os.path.join(HERE, "vitruvio.em.json"), encoding="utf-8") as a, \
+            open(tmp_path / "vitruvio.em.json", encoding="utf-8") as b:
+        assert _body(json.load(a)) == _body(json.load(b))
 
 
 def test_the_em_json_imports_and_reexports_identically():
@@ -59,8 +69,7 @@ def test_the_em_json_imports_and_reexports_identically():
         doc = json.load(fh)
     g, warnings = parse_emjson(doc)
     assert not [w for w in warnings if "unknown" in w]
-    again = json.loads(json.dumps(build_emjson(g), sort_keys=True))
-    assert again == json.loads(json.dumps(doc, sort_keys=True))
+    assert _body(build_emjson(g)) == _body(doc)
 
 
 @pytest.mark.parametrize("mode", ["round_trip", "publish"])

@@ -106,11 +106,11 @@ def test_in_graphml_i_file_non_passano_ed_e_scritto():
 def test_le_versioni_del_datamodel_sono_salite():
     node = json.loads((CONFIG / "s3Dgraphy_node_datamodel.json").read_text())
     conn = json.loads((CONFIG / "s3Dgraphy_connections_datamodel.json").read_text())
-    # 1.6.20 / 1.6.34 dal 29 ott 2026 (le traduzioni); le voci
+    # 1.6.21 / 1.6.35 dal 31 ott 2026 (dev27); le voci
     # 1.6.17 e 1.6.30 restano nella storia
-    assert node["s3Dgraphy_data_model_version"] == "1.6.20"
+    assert node["s3Dgraphy_data_model_version"] == "1.6.21"
     assert "v1.6.17 (MICRO la risorsa e i suoi file" in node["description"]
-    assert conn["s3Dgraphy_connections_model_version"] == "1.6.34"
+    assert conn["s3Dgraphy_connections_model_version"] == "1.6.35"
     assert "v1.6.30 (LA RISORSA E I SUOI FILE" in conn["description"]
     entry = node["reference_nodes"]["ResourceFileNode"]
     assert entry["mapping"]["cidoc"] == "crmdig:D1_Digital_Object"

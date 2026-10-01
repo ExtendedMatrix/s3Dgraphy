@@ -2,7 +2,95 @@
 
 All notable changes to **s3dgraphy** are documented here.
 
-## [Unreleased] — to be published as 1.6.0.dev26
+## [Unreleased] — to be published as 1.6.0.dev27
+
+Everything in this section came after `f9726af` («Bump version: 1.6.0.dev25 →
+1.6.0.dev26», on PyPI 2026-10-01). Decisions of E.D. (1 Oct 2026): «il testo, la
+risorsa e la selezione» (where the original text lives, `data.lang` at birth,
+identical copies as addresses, the realignment with `was_revision_of`) and
+«l'accesso sul campo» (one user = one ORCID; offline, the iD and a password of
+the node). Datamodel at this point: node datamodel **1.6.21**, connections
+**1.6.35**, qualia **1.6.6**, visual rules 1.6.28 (unchanged), translations 1.6
+(unchanged), `em.ttl` **1.6.11**; fingerprint from `sha256:0be1dcff…` (dev26)
+to `sha256:adf75ab96734a07e6014420c36e6a000c7e835b6c94783e66edbdfb3f940a332`.
+
+### Added
+- **`data.lang` at birth, for every writer** (rule A1): a node with free text
+  born from an importer, from `api` or from the CRDT carries `data.lang`
+  whenever the language is known — the source's, the declared one, or the
+  study's at that moment — ALSO when it is the study's; when the study's
+  language later changes, the nodes already written stay in theirs. An unknown
+  language is never invented. One place: `language.birth_language`,
+  `stamp_birth_language`, `stamp_born_nodes`. Writers: `declare_source_language`
+  (mapping and xlsx imports), the `api` writers that create nodes
+  (`place_reading`, `create_annotation_paradata`, `create_geometry_proxy`,
+  `import_aton_scene`, `write_ai_draft`, `declare_derivation`), and the CRDT's
+  `add_node` of a NEW node (from the section's study language; a merge never
+  rewrites it). Not texts, so not stamped: graph-self, resources and their
+  files, translations, annotation regions, semantic shapes, geo positions.
+- **`api.realign_translation(graph, translation, text, *, by, method=None,
+  review=False, ai=None, model=None, edition=None, at=None, auth=None)`**: the
+  translation of the original's current text, a NEW TranslationNode
+  `was_revision_of` the stale one (connections 1.6.35: the edge admits
+  TranslationNode). The old one stays with author and verification, leaves no
+  literal beside the original, and — having a successor — waits for nobody in
+  `to_review`. In RDF the old one is an E33 with `prov:wasRevisionOf` from the
+  new. `translation.successor_of`, `predecessor_of`, `is_superseded`.
+- **The language of a resource's content**: on a ResourceNode `data.lang` is
+  the language(s) of the FILE (one tag, or a sorted list: «latino e italiano a
+  fronte» = `["it", "la"]`), not of its description; it leaves the cascade of
+  the texts and goes out as `dcterms:language`, one per tag.
+  `api.content_languages`, `api.set_content_languages`.
+- **Where the text lives**, written in `docs/s3dgraphy_core_concepts.rst`: the
+  document is the work, the resources its manifestations, the extractor the
+  selection with the passage's original words in its description. Fixture
+  `tests/fixtures/vitruvio/` (`build.py` writes the em.json and its round-trip and
+  publish TTL): De architectura III,2,1 in Latin on an extractor, an Italian
+  translation from a (fictitious) edition, an English AI one not verified.
+- **Several addresses of ONE resource** (same bytes, same digest):
+  `data.addresses = [{locator, residency, checked_at, ok}]`, address 0 being
+  `data.url`. `api.add_address` (refuses another digest — a sister resource —
+  and a resource with no digest), `api.check_address` (a dead address stays, a
+  warning while a live one remains), `api.addresses`, and `api.snapshot_uri`
+  (downloads the page a reference points at and gives it a dated digest,
+  `checksum` + `checksum_at`; the network is opened in
+  `resources/resolver.fetch_bytes`). In RDF every locator is an `rdfs:seeAlso`
+  (the term the url already used) and each address `<resource>/address/<i>`
+  `em:hasAddress`, with `em:locator`, `em:residency`, `em:checkedAt`,
+  `em:reachable`; `em:checksumAt`.
+- **How the hand of a signature had entered**: `created_auth`, `modified_auth`,
+  `validated_auth` = `{mode: orcid | node_password, attested_by}` beside
+  `created_by`, `modified_by`, `validated_by` (`editorial.normalize_auth`).
+  `auth=` on `stamp_created`, `stamp_modified`, `verify`, `validate_ai`,
+  `add_translation`, `realign_translation`; the CRDT reads an op's `auth` and
+  refuses an invalid one. In RDF `<node>/auth/<stamp>` reached by
+  `em:createdVia` / `em:modifiedVia` / `em:validatedVia`, with `em:authMode`
+  and `em:attestedBy`.
+- **`attribution`** (qualia 1.6.6): an optional `note` in its schema, the only
+  field marked as natural language (`natural_language_fields: ["note"]`,
+  read by `_Datamodel.natural_language_fields`).
+- **`./em.sh propagate --pins`** also moves EMStudio's pin (`./em.sh s3d pin`)
+  and the server's (`./bump-s3dgraphy.sh`), committing nothing; EMtools' wheels
+  stay printed.
+
+### Changed
+- `declare_source_language` writes the language always (dev26: only when it
+  differed from the study's) and falls back to the study's.
+- `language.node_language` does not read a resource's `data.lang` (it is its
+  content's language).
+- `publication.promote_resource` keeps the previous locator as a second
+  address when the bytes are the same (same digest before); it used to
+  overwrite `data.url` and lose the disk path.
+- `docs/DATAMODEL_PROPAGATION.md` step 11: `test_golden_iccd` no longer moves
+  after a snapshot (templates `bdb09e4`).
+
+### Fixed
+- The verification of a node that is not AI (a translation «da rivedere»,
+  then signed) did not leave in RDF: only the AI marker opened
+  `_serialize_ai`. `em:validatedBy` / `em:validatedAt` now leave for every node
+  that carries them, and come back.
+
+## [1.6.0.dev26] — 2026-10-01 (PyPI; commit f9726af)
 
 Everything in this section came after `42ea27c` («Bump version: 1.6.0.dev24 →
 1.6.0.dev25», on PyPI 2026-10-01). Decisions of E.D.: the language of the data

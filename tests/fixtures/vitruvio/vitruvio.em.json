@@ -221,9 +221,9 @@
   },
   "header": {
     "datamodel_versions": {
-      "connections": "1.6.34",
-      "nodes": "1.6.20",
-      "qualia": "1.6.5"
+      "connections": "1.6.35",
+      "nodes": "1.6.21",
+      "qualia": "1.6.6"
     },
     "format": "em.json",
     "generator": {
@@ -234,7 +234,7 @@
       "CIDOC-CRM": "7.1.3",
       "CRMarchaeo": "2.1.1",
       "CRMdig": "5.0",
-      "CRMem": "1.6.10",
+      "CRMem": "1.6.11",
       "CRMgeo": "1.2",
       "CRMinf": "1.2.1",
       "CRMsci": "3.2",
