@@ -17,9 +17,21 @@ _COLUMN_NORMALIZE_PATTERN = re.compile(r'[\s\-/\\()\[\].,;:–—]+')
 
 class MappedXLSXImporter(BaseImporter):
     def __init__(self, filepath: str, mapping_name: str, overwrite: bool = False,
-                existing_graph=None, filters=None):
+                existing_graph=None, filters=None, header_row=None,
+                source_lang=None):
         """
         Args:
+            header_row: the row (1-based, as a person counts) holding the
+                column names. Else the mapping's ``source_settings.header_row``;
+                else PROPOSED (importer/sheet_header.py): the first row whose
+                every column is filled, taken only if it names more of the
+                mapped columns than row 1 does. ``self.header_choice`` says
+                which row was used and why.
+            source_lang: the language of the SOURCE (BCP 47), written as
+                ``data.lang`` on the nodes this import creates when it differs
+                from the study's working language. Else the mapping's
+                ``source_settings.source_lang``. Validated here: an invalid
+                tag raises ValueError before anything is read.
             existing_graph: Existing graph instance to use.
                         If None, creates new unregistered graph with temporary ID.
                         The caller (EM-tools) is responsible for setting proper graph_id
@@ -38,6 +50,17 @@ class MappedXLSXImporter(BaseImporter):
             filters=filters,
         )
         
+        from .sheet_header import check_header_row
+        from ..language import check_language_tag
+        self._header_row_arg = (check_header_row(header_row)
+                                if header_row is not None else None)
+        self._source_lang_arg = (check_language_tag(source_lang)
+                                 if source_lang else None)
+        #: {header_row, proposal, reason} of the last parse()
+        self.header_choice = None
+        #: how many created nodes were given the source's language
+        self.source_lang_written = 0
+
         if existing_graph:
             # Use provided graph (EM_ADVANCED mode)
             self.graph = existing_graph
@@ -51,6 +74,33 @@ class MappedXLSXImporter(BaseImporter):
             self._use_existing_graph = False
             # print(f"MappedXLSXImporter: Created new unregistered graph (caller must register)")
                 
+    def _resolve_header_row(self, working_path, sheet_name) -> int:
+        """The header row this import reads (1-based): the argument, the
+        mapping's, or the proposal — recorded in ``self.header_choice``."""
+        from .sheet_header import (check_header_row, choose_header_row,
+                                   read_top_rows)
+        if self._header_row_arg is not None:
+            self.header_choice = {"header_row": self._header_row_arg,
+                                  "proposal": None, "reason": "given"}
+            return self._header_row_arg
+        declared = self._source_settings().get("header_row")
+        if declared is not None:
+            row = check_header_row(declared)
+            self.header_choice = {"header_row": row, "proposal": None,
+                                  "reason": "declared by the mapping"}
+            return row
+        rows = read_top_rows(working_path, sheet_name)
+        expected = list((self.mapping or {}).get("column_mappings", {}) or {})
+        self.header_choice = choose_header_row(rows, expected)
+        return self.header_choice["header_row"]
+
+    def _source_lang(self):
+        from ..language import check_language_tag
+        if self._source_lang_arg:
+            return self._source_lang_arg
+        declared = self._source_settings().get("source_lang")
+        return check_language_tag(declared) if declared else None
+
     def parse(self) -> Graph:
         """
         Parse Excel file with column name normalization.
@@ -63,9 +113,14 @@ class MappedXLSXImporter(BaseImporter):
         excel_file = None
 
         try:
+            nodes_before = {n.node_id for n in self.graph.nodes}
+            source_lang = self._source_lang()
 
             # Get settings from mapping
-            table_settings = self.mapping.get('table_settings', {})
+            # source_settings, or the older table_settings (base_importer): an
+            # authored mapping says source_settings, and its sheet and start
+            # row were ignored here until 2026-10-29
+            table_settings = self._source_settings()
             start_row = table_settings.get('start_row', 0)
             sheet_name = table_settings.get('sheet_name', 0)
             
@@ -172,13 +227,18 @@ class MappedXLSXImporter(BaseImporter):
                 except Exception as e:
                     raise ImportError(f"Error reading file: {str(e)}")
             
-            # Read Excel file
-            # IMPORTANTE: header=0 dice a pandas che le intestazioni sono alla riga 0
-            # Poi usiamo iloc per prendere solo i dati dalla riga start_row in poi
+            # Read Excel file. The header is on `header_row` (1-based): given,
+            # declared by the mapping, or proposed (sheet_header.py). Until
+            # 2026-10-29 it was always row 1 (header=0).
+            header_row = self._resolve_header_row(working_path, sheet_name)
+            if header_row != 1:
+                self.warnings.append(
+                    f"Header read from row {header_row} "
+                    f"({self.header_choice['reason']})")
             df_full = pd.read_excel(
                 working_path,  # ✅ Usa working_path invece di self.filepath
                 sheet_name=sheet_name,
-                header=0,  # Le intestazioni sono SEMPRE alla prima riga (indice 0)
+                header=header_row - 1,
                 na_values=['', 'NA', 'N/A'],
                 keep_default_na=True,
                 engine='openpyxl'
@@ -189,10 +249,10 @@ class MappedXLSXImporter(BaseImporter):
             
             # Se start_row è specificato, prendi solo i dati da quella riga in poi
             # (escludendo righe tutorial o esempi)
-            if start_row > 1:
-                # Sottrai 1 perché l'indice di pandas parte da 0, ma start_row conta da 1
-                # E sottrai ancora 1 perché la riga 0 è già stata usata per le intestazioni
-                actual_start_idx = start_row - 2
+            # start_row is the Excel row (1-based) of the first DATA row; the
+            # data begin right under the header, so skip what lies between.
+            if start_row > header_row + 1:
+                actual_start_idx = start_row - header_row - 1
                 df = df_full.iloc[actual_start_idx:].reset_index(drop=True)
                 # print(f"Skipping first {actual_start_idx} data rows (tutorial/examples)")
                 # print(f"Data DataFrame shape after skipping: {df.shape}")
@@ -379,6 +439,14 @@ class MappedXLSXImporter(BaseImporter):
             self._process_epochs()
             self._process_stratigraphic_relations()
 
+            # The language of the source, on the nodes this import made
+            if source_lang:
+                from ..language import declare_source_language
+                created = [n.node_id for n in self.graph.nodes
+                           if n.node_id not in nodes_before]
+                self.source_lang_written = declare_source_language(
+                    self.graph, created, source_lang)
+
             # Summary
             # print(f"\n=== Import Summary ===")
             # print(f"Total rows processed: {total_rows}")
@@ -452,7 +520,7 @@ class MappedXLSXImporter(BaseImporter):
         if missing:
             raise ValueError(f"Missing required sections in mapping: {', '.join(missing)}")
             
-        table_settings = self.mapping.get('table_settings', {})
+        table_settings = self._source_settings()
         if not table_settings.get('sheet_name'):
             raise ValueError("Sheet name not specified in mapping")
             
@@ -470,13 +538,14 @@ class MappedXLSXImporter(BaseImporter):
         """
         self._validate_filter_column(column)
 
-        table_settings = self.mapping.get('table_settings', {})
+        table_settings = self._source_settings()
         sheet_name = table_settings.get('sheet_name', 0)
 
+        header_row = self._resolve_header_row(self.filepath, sheet_name)
         df = pd.read_excel(
             self.filepath,
             sheet_name=sheet_name,
-            header=0,
+            header=header_row - 1,
             na_values=['', 'NA', 'N/A'],
             keep_default_na=True,
             engine='openpyxl',

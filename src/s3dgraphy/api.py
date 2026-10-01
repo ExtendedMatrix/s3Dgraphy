@@ -3054,10 +3054,27 @@ def mapping_normalize(mapping: Dict[str, Any]) -> Dict[str, Any]:
     return normalize_mapping(mapping)
 
 
+def sheet_header(source: str, sheet: Any = None,
+                 expected: Optional[List[str]] = None) -> Dict[str, Any]:
+    """The header row of a spreadsheet, PROPOSED: ``{header_row, proposal,
+    reason, preview}`` — the first row whose every column is filled (1-based),
+    kept at 1 when ``expected`` column names say row 1 names at least as many.
+    What an editor shows before the person confirms; the importers apply the
+    same rule when no ``header_row`` is given. See
+    :mod:`s3dgraphy.importer.sheet_header`."""
+    from .importer.sheet_header import (choose_header_row, header_preview,
+                                        read_top_rows)
+    rows = read_top_rows(source, sheet)
+    out = choose_header_row(rows, expected)
+    out["preview"] = header_preview(rows)
+    return out
+
+
 def mapping_apply(mapping: Dict[str, Any], source: str, *, graph: Any = None,
                   mode: str = "volatile", mapping_name: Optional[str] = None,
-                  injector: Optional[str] = None, enrich_only: bool = False
-                  ) -> Dict[str, Any]:
+                  injector: Optional[str] = None, enrich_only: bool = False,
+                  header_row: Optional[int] = None,
+                  source_lang: Optional[str] = None) -> Dict[str, Any]:
     """Run a mapping over a source: `mode="volatile"` (an auxiliary in the graph,
     out of the saved document until a bake) or `mode="bake"` (written in).
 
@@ -3078,7 +3095,8 @@ def mapping_apply(mapping: Dict[str, Any], source: str, *, graph: Any = None,
     from .mappings.authoring import apply_mapping, check_stamp
     result = apply_mapping(mapping, source, graph=graph, mode=mode,
                            mapping_name=mapping_name, injector=injector,
-                           enrich_only=enrich_only)
+                           enrich_only=enrich_only, header_row=header_row,
+                           source_lang=source_lang)
     # The stamp is read at LOAD, not at validation: this is the moment someone
     # runs a descriptor written months ago against a library that has moved.
     # A warning, never a refusal — see mapping_stamp_check.

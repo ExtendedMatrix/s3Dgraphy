@@ -40,6 +40,7 @@ import re
 import uuid
 import warnings
 import pandas as pd
+from typing import Optional
 
 from ..graph import Graph
 from ..nodes.property_node import PropertyNode
@@ -68,7 +69,8 @@ class QualiaImporter:
     def __init__(self, filepath: str, existing_graph: Graph,
                  overwrite: bool = False,
                  sheet_name: str = 'Paradata',
-                 start_row: int = 2):
+                 start_row: int = 2,
+                 header_row: Optional[int] = None):
         """
         Initialize QualiaImporter.
 
@@ -79,6 +81,9 @@ class QualiaImporter:
                        If False, skip duplicates with warning. Default: False.
             sheet_name: Excel sheet name to read. Default: 'Paradata'.
             start_row: First data row (1-based, after header). Default: 2.
+            header_row: Row of the column names (1-based). Default: PROPOSED
+                (importer/sheet_header.py), kept at 1 unless the proposed row
+                names more of US_ID / PROPERTY_TYPE / VALUE than row 1 does.
 
         Raises:
             ValueError: If existing_graph is None
@@ -103,6 +108,11 @@ class QualiaImporter:
         self.graph = existing_graph
         self.sheet_name = sheet_name
         self.start_row = start_row
+        from .sheet_header import check_header_row
+        self.header_row = (check_header_row(header_row)
+                           if header_row is not None else None)
+        #: {header_row, proposal, reason} of the last parse()
+        self.header_choice = None
         self.overwrite = overwrite
         self.warnings = []
 
@@ -529,19 +539,29 @@ class QualiaImporter:
             with open(self.filepath, 'rb') as f:
                 file_content = io.BytesIO(f.read())
 
+            header_row = self.header_row
+            if header_row is None:
+                from .sheet_header import choose_header_row, read_top_rows
+                self.header_choice = choose_header_row(
+                    read_top_rows(file_content, self.sheet_name),
+                    ("US_ID", "PROPERTY_TYPE", "VALUE"))
+                header_row = self.header_choice["header_row"]
+            else:
+                self.header_choice = {"header_row": header_row,
+                                      "proposal": None, "reason": "given"}
             with pd.ExcelFile(file_content, engine='openpyxl') as excel_file:
                 df = pd.read_excel(
                     excel_file,
                     sheet_name=self.sheet_name,
-                    header=0,
+                    header=header_row - 1,
                     na_values=['', 'NA', 'N/A'],
                     keep_default_na=True,
                     dtype=str
                 )
 
             # Skip tutorial/example rows if start_row > 1
-            if self.start_row > 1:
-                actual_start_idx = self.start_row - 2
+            if self.start_row > header_row + 1:
+                actual_start_idx = self.start_row - header_row - 1
                 df = df.iloc[actual_start_idx:].reset_index(drop=True)
 
             if df.empty:

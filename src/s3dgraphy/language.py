@@ -143,3 +143,39 @@ def node_language(node: Any) -> Optional[str]:
     if is_language_tag(value):
         return value.strip()
     return None
+
+
+def declare_source_language(graph: Any, node_ids: Any,
+                            source_lang: Optional[str]) -> int:
+    """The language of an INGESTED source, written on the nodes made from it.
+
+    Le traduzioni (E.D. 2026-10-01): an importer that knows the language of
+    its source (``source_lang``, an argument or the mapping's
+    ``source_settings.source_lang``) writes it as ``data.lang`` on the nodes it
+    CREATED — and only when it differs from the study's working language,
+    because the same language would be the cascade's second step written
+    twice. A node that already declares a language keeps it; the graph-self
+    node is not a text. An invalid tag raises ``ValueError`` before anything is
+    written. Returns how many nodes were given the language."""
+    if source_lang is None or (isinstance(source_lang, str) and not source_lang.strip()):
+        return 0
+    tag = check_language_tag(source_lang)
+    if same_language(tag, working_language(graph)):
+        return 0
+    wanted = set(node_ids)
+    count = 0
+    for node in getattr(graph, "nodes", []) or []:
+        if node.node_id not in wanted or getattr(node, "node_type", "") == "graph":
+            continue
+        data = getattr(node, "data", None)
+        if not isinstance(data, dict):
+            data = {}
+            try:
+                node.data = data
+            except AttributeError:
+                continue
+        if node_language(node):
+            continue
+        data[NODE_LANG_KEY] = tag
+        count += 1
+    return count

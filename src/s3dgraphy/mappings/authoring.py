@@ -56,6 +56,13 @@ csv, xml}`; a column entry may carry `source_path` (for XML) and `cidoc` (the
 class the author picked) beside `node_type`. **A mapping written before this
 still reads**: `source_settings()` falls back to `table_settings`, and a mapping
 with no `cidoc` anywhere behaves exactly as it did.
+
+Two more additions (2026-10-29, le traduzioni), both optional:
+`source_settings.header_row` — the row of a sheet holding the column names,
+1-based (absent: proposed, see `importer/sheet_header.py`) — and
+`source_settings.source_lang` — the BCP 47 language of the source, written as
+`data.lang` on the nodes an import creates when it differs from the study's.
+Additions, so `SCHEMA_VERSION` stays "1".
 """
 
 from __future__ import annotations
@@ -1029,8 +1036,18 @@ def apply_mapping(mapping: Dict[str, Any], source: str, *,
                   graph: Any = None, mode: str = "volatile",
                   mapping_name: Optional[str] = None,
                   injector: Optional[str] = None,
-                  enrich_only: bool = False) -> Dict[str, Any]:
+                  enrich_only: bool = False,
+                  header_row: Optional[int] = None,
+                  source_lang: Optional[str] = None) -> Dict[str, Any]:
     """Run a mapping over a source. `mode` is ``"volatile"`` or ``"bake"``.
+
+    `header_row` (1-based) and `source_lang` (BCP 47) override the mapping's
+    ``source_settings.header_row`` / ``source_settings.source_lang``. The header
+    row is read by the sheet importer (proposed when nobody says, see
+    importer/sheet_header.py) and reported as ``header``; the source's language
+    is written as ``data.lang`` on the nodes THIS call created, whatever the
+    format, when it differs from the study's (language.declare_source_language),
+    and ``source_lang_written`` counts them.
 
     Returns ``{ok, mode, format, rows, nodes_added, edges_added, volatile,
     injector, warnings, errors}`` — counts of what THIS call added, not of what
@@ -1064,6 +1081,10 @@ def apply_mapping(mapping: Dict[str, Any], source: str, *,
                 "nodes_added": 0, "edges_added": 0,
                 "unmatched": [], "unmatched_count": 0}
     normalized = normalize_mapping(mapping)
+    if header_row is not None:
+        normalized["source_settings"]["header_row"] = header_row
+    if source_lang:
+        normalized["source_settings"]["source_lang"] = source_lang
     fmt = format_of(normalized)
     if fmt not in _IMPORTERS:
         return {"ok": False, "mode": mode, "rows": 0, "nodes_added": 0,
@@ -1120,6 +1141,18 @@ def apply_mapping(mapping: Dict[str, Any], source: str, *,
     unmatched = [str(k) for k in (getattr(importer, "unmatched", []) or [])]
 
     added_nodes = [n for n in target.nodes if n.node_id not in before_nodes]
+    lang_of_source = normalized["source_settings"].get("source_lang")
+    lang_written = 0
+    if lang_of_source:
+        from ..language import declare_source_language
+        try:
+            lang_written = declare_source_language(
+                target, [n.node_id for n in added_nodes], lang_of_source)
+        except ValueError as exc:
+            return {"ok": False, "mode": mode, "rows": 0, "nodes_added": 0,
+                    "edges_added": 0, "unmatched": [], "unmatched_count": 0,
+                    "warnings": warnings, "errors": [str(exc)]}
+        lang_written += int(getattr(importer, "source_lang_written", 0) or 0)
     added_edges = [e for e in target.edges if e.edge_id not in before_edges]
     stamp = injector or f"mapping:{mapping_name or 'inline'}"
     if mode == "volatile":
@@ -1150,6 +1183,10 @@ def apply_mapping(mapping: Dict[str, Any], source: str, *,
         "unmatched_count": len(unmatched),
         "volatile": mode == "volatile",
         "injector": stamp if mode == "volatile" else None,
+        # the header row a sheet was read from, and why ({header_row, proposal,
+        # reason}); None for a source that has no header row
+        "header": getattr(importer, "header_choice", None),
+        "source_lang_written": lang_written,
         "graph": target,
         "warnings": warnings,
         "errors": [],
