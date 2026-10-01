@@ -1471,6 +1471,25 @@ class RDFExporter:
         if data.get(VALIDATED_AT):
             ctx.add((node_iri, EM.validatedAt,
                      Literal(str(data[VALIDATED_AT]), datatype=XSD.dateTime)))
+        if data.get(VALIDATED_BY):
+            self._emit_auth(node_iri, data, "validated_auth", EM.validatedVia, ctx)
+
+    @staticmethod
+    def _emit_auth(node_iri: URIRef, data: Dict[str, Any], key: str,
+                   predicate: URIRef, ctx) -> None:
+        """How the hand of a signature had entered (dev27, *l'accesso sul
+        campo*): ``<node>/auth/<created|modified|validated>`` with
+        ``em:authMode`` (``orcid`` | ``node_password``) and, for the node's
+        password, ``em:attestedBy`` (the node that attests it). A derived IRI,
+        never a node of the graph (it carries no dcterms:identifier)."""
+        how = data.get(key)
+        if not isinstance(how, dict) or not how.get("mode"):
+            return
+        ref = URIRef(f"{node_iri}/auth/{key.split('_', 1)[0]}")
+        ctx.add((node_iri, predicate, ref))
+        ctx.add((ref, EM.authMode, Literal(str(how["mode"]))))
+        if how.get("attested_by"):
+            ctx.add((ref, EM.attestedBy, Literal(str(how["attested_by"]))))
 
     def _serialize_editorial(self, node: Any, node_iri: URIRef, ctx) -> None:
         """Emit the last-hand stamps (AUDIT1) as PROV-O.
@@ -1518,6 +1537,8 @@ class RDFExporter:
             stamp = Literal(str(modified_at), datatype=XSD.dateTime)
             ctx.add((node_iri, EM.modifiedAt, stamp))
             ctx.add((node_iri, DCTERMS.modified, stamp))
+        self._emit_auth(node_iri, data, "created_auth", EM.createdVia, ctx)
+        self._emit_auth(node_iri, data, "modified_auth", EM.modifiedVia, ctx)
         # P4.1 · the TOMBSTONE. A deletion is a fact somebody stated, with a hand
         # and an instant, and a projection that dropped it would publish a graph
         # in which the deletion never happened — which is how a deleted node

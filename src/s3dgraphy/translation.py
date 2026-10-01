@@ -186,7 +186,7 @@ def add_translation(graph: Any, node: Any, field: str, lang: str, text: str, *,
                     edition: Optional[str] = None, review: bool = False,
                     ai: Optional[str] = None, model: Optional[str] = None,
                     from_lang: Optional[str] = None,
-                    at: Optional[str] = None) -> Any:
+                    at: Optional[str] = None, auth: Any = None) -> Any:
     """Make the translation of ``field`` of ``node`` into ``lang``. Returns the
     :class:`TranslationNode` (or the one already there: the id is derived from
     what the translation is, so a second identical call changes nothing).
@@ -198,6 +198,8 @@ def add_translation(graph: Any, node: Any, field: str, lang: str, text: str, *,
       ``edition``, the DocumentNode of the published translation, reached with
       ``extracted_from``;
     * ``review`` — «da rivedere»: the translator asks a person to check it;
+    * ``auth`` — how the translator had entered (``created_auth``, dev27:
+      ``"orcid"`` or ``{"mode": "node_password", "attested_by": <node>}``);
     * ``from_lang`` — the original's language, when neither the node nor the
       study declares one (it is never guessed). Otherwise read from the cascade,
       and WRITTEN, because the original can change.
@@ -289,7 +291,7 @@ def add_translation(graph: Any, node: Any, field: str, lang: str, text: str, *,
         field=f, text=text, method=method, source_digest=digest,
         review_requested=review)
     stamp_created(t, by=(getattr(author, "data", None) or {}).get("orcid"),
-                  at=at)
+                  at=at, auth=auth)
     graph.add_node(t)
     graph.add_edge(f"{node.node_id}__has_translation__{tid}", node.node_id,
                    tid, EDGE_HAS_TRANSLATION)
@@ -339,7 +341,7 @@ def realign_translation(graph: Any, translation: Any, text: str, *, by: str,
                         review: bool = False, ai: Optional[str] = None,
                         model: Optional[str] = None,
                         edition: Optional[str] = None,
-                        at: Optional[str] = None) -> Any:
+                        at: Optional[str] = None, auth: Any = None) -> Any:
     """Realign a translation «da riallineare»: its original changed.
 
     E.D. 2026-10-01: the new translation is a NEW node — a
@@ -384,7 +386,7 @@ def realign_translation(graph: Any, translation: Any, text: str, *, by: str,
     fresh = add_translation(
         graph, original, data.get("field") or "", data.get("lang") or "",
         text, by=by, method=method, edition=edition, review=review, ai=ai,
-        model=model, from_lang=data.get("from_lang"), at=at)
+        model=model, from_lang=data.get("from_lang"), at=at, auth=auth)
     if fresh.node_id == translation.node_id:     # cannot happen: the digest differs
         raise TranslationError("the realigned translation is the old one")
     eid = f"{fresh.node_id}__was_revision_of__{translation.node_id}"

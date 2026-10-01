@@ -763,7 +763,10 @@ def apply_op_to_section(section: Dict[str, Any], op: Dict[str, Any]) -> OpResult
         refused = _refused_language(payload.get("data"))
         if refused:
             return OpResult(False, refused, node_id)
-        _stamp_payload(payload, clock, creation=True)
+        auth, refused = _op_auth(op)
+        if refused:
+            return OpResult(False, refused, node_id)
+        _stamp_payload(payload, clock, creation=True, auth=auth)
         existing = by_id.get(node_id)
         if existing is None:
             # dev27, rule A1: a node born here carries the language it is born
@@ -789,6 +792,9 @@ def apply_op_to_section(section: Dict[str, Any], op: Dict[str, Any]) -> OpResult
         if not name or (name != "name" and name != "description"
                         and not name.startswith("data.")):
             return OpResult(False, f"'{name}' is not an addressable field", node_id)
+        _auth, refused = _op_auth(op)
+        if refused:
+            return OpResult(False, refused, node_id)
         if (name[5:] in _LANGUAGE_KEYS and name.startswith("data.")
                 and op.get("remove") is not True):
             refused = _refused_language({name[5:]: op.get("value")})
@@ -814,7 +820,7 @@ def apply_op_to_section(section: Dict[str, Any], op: Dict[str, Any]) -> OpResult
             clear_field(existing, name, clock)
         else:
             write_field(existing, name, op.get("value"), clock)
-        _stamp_payload(existing, clock, creation=False)
+        _stamp_payload(existing, clock, creation=False, auth=_op_auth(op)[0])
         return OpResult(True, "set", node_id, [FieldOutcome(
             node_id=node_id, field=name, reason=reason,
             winner={"by": clock.by, "at": clock.ts, "side": "op"},
@@ -939,12 +945,14 @@ def _replace(nodes: List[Dict[str, Any]], node_id: str,
     nodes.append(payload)
 
 
-def _stamp_payload(payload: Dict[str, Any], clock: Clock, *, creation: bool) -> None:
+def _stamp_payload(payload: Dict[str, Any], clock: Clock, *, creation: bool,
+                   auth: Optional[Dict[str, str]] = None) -> None:
     """Give a payload the op's clock — never the merging session's.
 
     The rule AUDIT1 set for work that arrives from elsewhere: the hand that made
     it stays the hand that made it. An op carries its own author, and that is
-    what gets recorded.
+    what gets recorded — and, since dev27, how that author had entered (the
+    op's ``auth``: ``created_auth`` / ``modified_auth``, beside the hand).
     """
     if not clock.stamped:
         return
@@ -953,11 +961,26 @@ def _stamp_payload(payload: Dict[str, Any], clock: Clock, *, creation: bool) -> 
         data["created_at"] = clock.ts
         if clock.by:
             data["created_by"] = clock.by
+            if auth:
+                data["created_auth"] = dict(auth)
     current = node_stamp(payload)
     if clock_order(clock, current) >= 0:
         data["modified_at"] = clock.ts
         if clock.by:
             data["modified_by"] = clock.by
+            if auth:
+                data["modified_auth"] = dict(auth)
+            else:
+                data.pop("modified_auth", None)
+
+
+def _op_auth(op: Dict[str, Any]):
+    """``(auth, refusal)``: the op's access mode normalised, or why not."""
+    from .editorial import normalize_auth
+    try:
+        return normalize_auth(op.get("auth")), None
+    except ValueError as exc:
+        return None, str(exc)
 
 
 def apply_ops_to_section(section: Dict[str, Any],

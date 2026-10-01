@@ -43,6 +43,46 @@ FIELDS = ("created_by", "created_at", "modified_by", "modified_at")
 
 _ORCID_SHAPE = re.compile(r"^\d{4}-\d{4}-\d{4}-\d{3}[\dX]$")
 
+#: HOW the hand of a stamp had entered (dev27, E.D. 2026-10-01, *l'accesso sul
+#: campo*): ``orcid`` — verified by ORCID; ``node_password`` — the iD and a
+#: password of a StratiGraph node, which ATTESTS the identity while offline
+#: (``attested_by``: the node's name). One small object beside each signature:
+#: ``created_auth`` beside ``created_by``, ``modified_auth`` beside
+#: ``modified_by``, ``validated_auth`` beside ``validated_by``.
+AUTH_MODES = ("orcid", "node_password")
+AUTH_FIELDS = ("created_auth", "modified_auth", "validated_auth")
+
+
+def normalize_auth(value: Any) -> Optional[Dict[str, str]]:
+    """``{"mode": …, "attested_by"?: …}`` — or None for no declaration.
+
+    Accepts the object, or the bare mode string. A mode outside
+    :data:`AUTH_MODES`, or ``node_password`` without the node that attests it,
+    raises ``ValueError`` (nothing is written): an attestation nobody can trace
+    back to a node is not one."""
+    if value in (None, "", {}):
+        return None
+    if isinstance(value, str):
+        value = {"mode": value}
+    if not isinstance(value, dict):
+        raise ValueError(f"an access mode is an object {{mode, attested_by}}, "
+                         f"got {value!r}")
+    mode = str(value.get("mode") or "").strip()
+    if mode not in AUTH_MODES:
+        raise ValueError(f"access mode must be one of {list(AUTH_MODES)}, "
+                         f"got {mode!r}. Nothing was written.")
+    out = {"mode": mode}
+    node = str(value.get("attested_by") or "").strip()
+    if mode == "node_password":
+        if not node:
+            raise ValueError("node_password names the node that attests it "
+                             "(attested_by). Nothing was written.")
+        out["attested_by"] = node
+    elif node:
+        raise ValueError("attested_by is for node_password: ORCID verifies by "
+                         "itself. Nothing was written.")
+    return out
+
 
 def now_iso() -> str:
     """The current instant, UTC, second precision, ISO-8601 with a ``Z``.
@@ -113,30 +153,43 @@ def _data(node: Any) -> Dict[str, Any]:
     return d
 
 
-def stamp_created(node: Any, *, by: Any = None, at: Optional[str] = None) -> Dict[str, Any]:
+def stamp_created(node: Any, *, by: Any = None, at: Optional[str] = None,
+                  auth: Any = None) -> Dict[str, Any]:
     """Record the creation of a node. Returns the stamps now on it.
 
     Idempotent by design: a node that already declares ``created_by`` /
     ``created_at`` keeps them. Creation happens once, and re-stamping on every
     load or import would quietly rewrite the record to say the last reader made
-    the node.
+    the node. ``auth`` (:func:`normalize_auth`) is how that hand had entered,
+    written as ``created_auth`` with ``created_by`` and only then.
     """
     d = _data(node)
     orcid = normalize_orcid(by)
+    how = normalize_auth(auth)
     if orcid and not d.get("created_by"):
         d["created_by"] = orcid
+        if how:
+            d["created_auth"] = how
     if not d.get("created_at"):
         d["created_at"] = at or now_iso()
     return read_stamps(node)
 
 
-def stamp_modified(node: Any, *, by: Any = None, at: Optional[str] = None) -> Dict[str, Any]:
+def stamp_modified(node: Any, *, by: Any = None, at: Optional[str] = None,
+                   auth: Any = None) -> Dict[str, Any]:
     """Record an edit. Overwrites the previous modification stamp — that IS the
-    last hand — and never touches the creation stamp."""
+    last hand — and never touches the creation stamp. ``modified_auth`` follows
+    the hand: written with ``auth``, removed when a new hand comes without one
+    (the previous hand's access mode would be the wrong one)."""
     d = _data(node)
     orcid = normalize_orcid(by)
+    how = normalize_auth(auth)
     if orcid:
         d["modified_by"] = orcid
+        if how:
+            d["modified_auth"] = how
+        else:
+            d.pop("modified_auth", None)
     d["modified_at"] = at or now_iso()
     return read_stamps(node)
 
@@ -158,5 +211,5 @@ def clear_stamps(node: Any) -> None:
     d = getattr(node, "data", None)
     if not isinstance(d, dict):
         return
-    for key in FIELDS:
+    for key in FIELDS + ("created_auth", "modified_auth"):
         d.pop(key, None)

@@ -88,7 +88,15 @@
         "ai_assisted.fields": "em:aiAssistedField",
         "validated_by": "em:validatedBy",
         "validated_at": "em:validatedAt",
-        "lang": "em:originalLanguage"
+        "lang": "em:originalLanguage",
+        "created_auth": {
+          "rdf": "em:createdVia",
+          "note": "1.6.21 (dev27, decided by E.D. 2026-10-01, «l'accesso sul campo»): HOW the hand of a signature had entered, beside each signature — created_auth beside created_by, modified_auth beside modified_by, validated_auth beside validated_by: {mode, attested_by?}, mode 'orcid' (verified by ORCID) or 'node_password' (the iD and a password of a StratiGraph node, which attests the identity offline; attested_by = the node's name, required). Written by editorial.stamp_created / stamp_modified (auth=), ai_validation.verify (auth=) and the CRDT op's 'auth'; modified_auth follows the last hand and is removed when a new hand comes without one. In RDF: <node>/auth/<created|modified|validated>, reached by em:createdVia / em:modifiedVia / em:validatedVia, with em:authMode and em:attestedBy."
+        },
+        "modified_auth": "em:modifiedVia",
+        "validated_auth": "em:validatedVia",
+        "created_auth.mode": "em:authMode",
+        "created_auth.attested_by": "em:attestedBy"
       },
       "properties_note": "1.6.18: the fields every node may carry in data, beside name and description, and the em: predicate each one leaves with (rdf_exporter: _serialize_editorial, _serialize_ai — called for every node, so declared here on the base class and inherited). created_by / created_at / modified_by / modified_at are the last-hand stamps (editorial.py; an ORCID iD becomes an https://orcid.org/ IRI, anything else a literal); em:createdBy is also written as prov:wasAttributedTo and em:modifiedAt as dcterms:modified. removed.ts / removed.by are the TOMBSTONE (crdt.py, data.removed = {ts, by}). ai_assisted.* is the AI marker (ai_validation.py, data.ai_assisted = {by, model, prompt_ref, fields}): by and prompt_ref are node ids and leave as IRIs, one em:aiAssistedField per touched field, '*' when the marker names none; validated_by / validated_at are the person's verification (em:validatedBy is also prov:wasInfluencedBy). Every one is emitted ONLY when the node carries it. The dotted keys name a member of an object in data (removed.ts is data.removed.ts). Plain strings, so mapping notes and not node elements: no reader turns them into fields to edit. 1.6.20: lang (the node's own data.lang, the first step of the language cascade) leaves as em:originalLanguage, whenever declared — it says which literal is the original once translations (TranslationNode) share its predicate. Not crm:P72_has_language: P72's domain is E33, and the node is not the text.",
       "node_type": "Node"

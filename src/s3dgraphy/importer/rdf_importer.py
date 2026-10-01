@@ -1124,6 +1124,11 @@ class RDFImporter:
                 # instant, spelled differently. Canonicalised here so a graph
                 # does not come home with every stamp reworded.
                 out[key] = normalize_instant(value)
+        for key, pred in (("created_auth", EM.createdVia),
+                          ("modified_auth", EM.modifiedVia)):
+            how = self._auth(store, ref, pred)
+            if how:
+                out[key] = how
         return out
 
     def _addresses(self, store: ConjunctiveGraph, ref: URIRef) -> List[Dict[str, Any]]:
@@ -1184,7 +1189,23 @@ class RDFImporter:
         at = self._one_literal(store, ref, EM.validatedAt)
         if at:
             out["validated_at"] = normalize_instant(at)
+        how = self._auth(store, ref, EM.validatedVia)
+        if how:
+            out["validated_auth"] = how
         return out
+
+    def _auth(self, store: ConjunctiveGraph, ref: URIRef, predicate) -> Optional[Dict[str, str]]:
+        """The inverse of ``RDFExporter._emit_auth``: ``{mode, attested_by?}``."""
+        for o in store.objects(ref, predicate):
+            mode = self._one_literal(store, o, EM.authMode)
+            if not mode:
+                continue
+            out = {"mode": str(mode)}
+            node = self._one_literal(store, o, EM.attestedBy)
+            if node:
+                out["attested_by"] = str(node)
+            return out
+        return None
 
     def _type_specific_data(self, store: ConjunctiveGraph, ref: URIRef,
                             node_type: Optional[str], type_iris: Sequence[str],

@@ -213,14 +213,15 @@ def mark_ai_assisted(graph: Graph, node_id: str, *, by: str,
 
 
 def validate_ai(graph: Graph, node_id: str, author_id: str, *,
-                at: Optional[str] = None) -> Dict[str, Any]:
+                at: Optional[str] = None, auth=None) -> Dict[str, Any]:
     """A person (an AuthorNode with an ORCID iD, never an AI) verifies an
-    AI-assisted node: writes ``validated_by`` and ``validated_at``."""
+    AI-assisted node: writes ``validated_by`` and ``validated_at`` (and
+    ``validated_auth`` with ``auth``, how the person had entered)."""
     from .ai_validation import validate_node
     node = graph.find_node_by_id(node_id)
     if node is None:
         raise KeyError(f"no node {node_id!r}")
-    return validate_node(graph, node, author_id, at=at)
+    return validate_node(graph, node, author_id, at=at, auth=auth)
 
 
 def _ids(graph: Optional[Graph]) -> set:
@@ -263,16 +264,19 @@ def to_review(graph: Graph) -> List[Dict[str, Any]]:
 
 
 def verify(graph: Graph, node, author_id: str, *,
-           at: Optional[str] = None) -> Dict[str, Any]:
+           at: Optional[str] = None, auth=None) -> Dict[str, Any]:
     """A person (AuthorNode with an ORCID iD) signs what waited for them: AI
     content or a requested review — ``validated_by`` + ``validated_at``. A node
     that waits for nothing is refused.
 
     Named ``verify`` and not ``validate``: :func:`validate` is the structural
     check of a whole graph, and one name with two meanings would make
-    ``validate(graph)`` and ``validate(graph, node, author)`` different acts."""
+    ``validate(graph)`` and ``validate(graph, node, author)`` different acts.
+
+    ``auth`` — how the signer had entered (``"orcid"`` or ``{"mode":
+    "node_password", "attested_by": <node>}``), written as ``validated_auth``."""
     from .ai_validation import verify as _verify
-    return _verify(graph, _node_of(graph, node), author_id, at=at)
+    return _verify(graph, _node_of(graph, node), author_id, at=at, auth=auth)
 
 
 # ── translations: a node per translation, the original untouched ─────────────
@@ -281,7 +285,7 @@ def add_translation(graph: Graph, node, field: str, lang: str, text: str, *,
                     edition: Optional[str] = None, review: bool = False,
                     ai: Optional[str] = None, model: Optional[str] = None,
                     from_lang: Optional[str] = None,
-                    at: Optional[str] = None):
+                    at: Optional[str] = None, auth=None):
     """Translate ``field`` of ``node`` into ``lang``: a TranslationNode
     (crm:E33) reached by ``has_translation`` (crm:P73), signed by ``by``
     (``has_author``), with ``method`` manual | ai | edition (``edition`` = the
@@ -290,14 +294,14 @@ def add_translation(graph: Graph, node, field: str, lang: str, text: str, *,
     from .translation import add_translation as _add
     return _add(graph, node, field, lang, text, by=by, method=method,
                 edition=edition, review=review, ai=ai, model=model,
-                from_lang=from_lang, at=at)
+                from_lang=from_lang, at=at, auth=auth)
 
 
 def realign_translation(graph: Graph, translation, text: str, *, by: str,
                         method: Optional[str] = None, review: bool = False,
                         ai: Optional[str] = None, model: Optional[str] = None,
                         edition: Optional[str] = None,
-                        at: Optional[str] = None):
+                        at: Optional[str] = None, auth=None):
     """Realign a translation «da riallineare» (its original changed): a NEW
     TranslationNode of the original's current text, tied to the old one with
     ``was_revision_of``. The old one stays, with author and verification, and
@@ -305,7 +309,7 @@ def realign_translation(graph: Graph, translation, text: str, *, by: str,
     from .translation import realign_translation as _realign
     return _realign(graph, _node_of(graph, translation), text, by=by,
                     method=method, review=review, ai=ai, model=model,
-                    edition=edition, at=at)
+                    edition=edition, at=at, auth=auth)
 
 
 def translations(graph: Graph, node, field: Optional[str] = None) -> List[Any]:
@@ -404,21 +408,25 @@ def merge_containers(container, other):
 
 
 # ── editorial stamps (last hand) ──────────────────────────────────────────────
-def stamp_created(node, *, by=None, at: Optional[str] = None) -> Dict[str, Any]:
+def stamp_created(node, *, by=None, at: Optional[str] = None,
+                  auth=None) -> Dict[str, Any]:
     """Record who made a node and when — the automatic, git-like stamp.
 
     Idempotent: a node that already declares its creation keeps it. DISTINCT
     from `has_author` (interpretive responsibility) and from epochs (historical
-    time). See :mod:`s3dgraphy.editorial`.
+    time). ``auth`` is how that hand had entered (``created_auth``). See
+    :mod:`s3dgraphy.editorial`.
     """
     from .editorial import stamp_created as _stamp
-    return _stamp(node, by=by, at=at)
+    return _stamp(node, by=by, at=at, auth=auth)
 
 
-def stamp_modified(node, *, by=None, at: Optional[str] = None) -> Dict[str, Any]:
-    """Record the LAST hand on a node. Overwrites; this is a stamp, not a log."""
+def stamp_modified(node, *, by=None, at: Optional[str] = None,
+                   auth=None) -> Dict[str, Any]:
+    """Record the LAST hand on a node. Overwrites; this is a stamp, not a log.
+    ``auth`` is how that hand had entered (``modified_auth``)."""
     from .editorial import stamp_modified as _stamp
-    return _stamp(node, by=by, at=at)
+    return _stamp(node, by=by, at=at, auth=auth)
 
 
 def read_stamps(node) -> Dict[str, Any]:

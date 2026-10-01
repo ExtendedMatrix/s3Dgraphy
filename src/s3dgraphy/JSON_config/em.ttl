@@ -900,5 +900,37 @@ em:checksumAt
     rdfs:comment "The instant a DATED digest was taken: a page online without saved bytes has no em:checksum until somebody downloads it, and then the digest is of that day's bytes, because a page changes. Maps to: node_datamodel ResourceNode.properties.checksum_at."@en .
 
 # ============================================================================
+# 16. How the hand of a signature had entered (v1.6.11, dev27, decided by E.D.
+#     2026-10-01, «l'accesso sul campo»)
+# ============================================================================
+
+em:createdVia
+    a owl:ObjectProperty ;
+    rdfs:label "created via"@en ;
+    rdfs:comment "How the hand that created the node (em:createdBy) had entered: the object <node>/auth/created carries em:authMode and, for a node's password, em:attestedBy. A signature made offline on the field, attested by a StratiGraph node, stays valid when the network comes back, and says how it was born. Maps to: node_datamodel Node.properties.created_auth (data.created_auth)."@en .
+
+em:modifiedVia
+    a owl:ObjectProperty ;
+    rdfs:label "modified via"@en ;
+    rdfs:comment "How the last hand (em:lastEditedBy) had entered; see em:createdVia. Maps to: node_datamodel Node.properties.modified_auth."@en .
+
+em:validatedVia
+    a owl:ObjectProperty ;
+    rdfs:label "validated via"@en ;
+    rdfs:comment "How the person who verified the node (em:validatedBy) had entered; see em:createdVia. Maps to: node_datamodel Node.properties.validated_auth."@en .
+
+em:authMode
+    a owl:DatatypeProperty ;
+    rdfs:label "access mode"@en ;
+    rdfs:range xsd:string ;
+    rdfs:comment "'orcid' — the identity was verified by ORCID at that moment; 'node_password' — the iD and a password of a StratiGraph node, which attests the identity while offline (the iD was verified by ORCID once, at the accreditation). A closed list of two. Maps to: node_datamodel Node.properties.created_auth.mode (and modified_auth / validated_auth)."@en .
+
+em:attestedBy
+    a owl:DatatypeProperty ;
+    rdfs:label "attested by"@en ;
+    rdfs:range xsd:string ;
+    rdfs:comment "The name of the StratiGraph node that attested an identity entered with the node's password (em:authMode 'node_password'). Maps to: node_datamodel Node.properties.created_auth.attested_by."@en .
+
+# ============================================================================
 # End of em.ttl v1.6.11
 # ============================================================================

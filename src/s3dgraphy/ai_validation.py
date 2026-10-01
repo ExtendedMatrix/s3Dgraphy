@@ -204,15 +204,17 @@ def resolve_validator(graph: Any, author_id: str):
 
 
 def validate_node(graph: Any, node: Any, author_id: str, *,
-                  at: Optional[str] = None) -> Dict[str, Any]:
-    """A person verifies an AI-assisted node: ``validated_by`` + ``validated_at``.
+                  at: Optional[str] = None, auth: Any = None) -> Dict[str, Any]:
+    """A person verifies an AI-assisted node: ``validated_by`` + ``validated_at``
+    (+ ``validated_auth``, how the person had entered — dev27).
 
     Only AI-assisted content needs it; a node without the marker is refused
     rather than silently stamped (a verification of nothing is noise that
     reads as a statement).
     """
-    from .editorial import now_iso, normalize_instant
+    from .editorial import normalize_auth, now_iso, normalize_instant
     resolve_validator(graph, author_id)
+    how = normalize_auth(auth)
     if not is_ai_assisted(node):
         raise AIValidationError(
             f"'{getattr(node, 'node_id', '?')}' is not AI-assisted: human "
@@ -220,7 +222,14 @@ def validate_node(graph: Any, node: Any, author_id: str, *,
     data = _data(node)
     data[VALIDATED_BY] = author_id
     data[VALIDATED_AT] = normalize_instant(at) if at else now_iso()
-    return {VALIDATED_BY: data[VALIDATED_BY], VALIDATED_AT: data[VALIDATED_AT]}
+    if how:
+        data["validated_auth"] = how
+    else:
+        data.pop("validated_auth", None)
+    out = {VALIDATED_BY: data[VALIDATED_BY], VALIDATED_AT: data[VALIDATED_AT]}
+    if how:
+        out["validated_auth"] = how
+    return out
 
 
 def unvalidated_ai(graph: Any) -> List[Dict[str, Any]]:
@@ -438,7 +447,7 @@ def to_review(graph: Any) -> List[Dict[str, Any]]:
 
 
 def verify(graph: Any, node: Any, author_id: str, *,
-           at: Optional[str] = None) -> Dict[str, Any]:
+           at: Optional[str] = None, auth: Any = None) -> Dict[str, Any]:
     """A person signs what waited for them: AI content OR a requested review.
 
     The same signature as :func:`validate_node` (``validated_by`` = a human
@@ -446,9 +455,15 @@ def verify(graph: Any, node: Any, author_id: str, *,
     node that waits for nothing. ``review_requested`` stays written: it says
     the review was asked for, and ``validated_by`` says it was done and by whom.
     A stale translation is not cleared by a signature (see :func:`needs_review`).
+
+    ``auth`` — how the signer had entered (dev27, *l'accesso sul campo*):
+    ``"orcid"`` or ``{"mode": "node_password", "attested_by": <node>}``,
+    written as ``validated_auth`` beside ``validated_by``
+    (:func:`s3dgraphy.editorial.normalize_auth`).
     """
-    from .editorial import now_iso, normalize_instant
+    from .editorial import normalize_auth, now_iso, normalize_instant
     resolve_validator(graph, author_id)
+    how = normalize_auth(auth)
     if not (is_ai_assisted(node) or review_requested(node)):
         raise AIValidationError(
             f"'{getattr(node, 'node_id', '?')}' waits for no verification: it is "
@@ -456,4 +471,11 @@ def verify(graph: Any, node: Any, author_id: str, *,
     data = _data(node)
     data[VALIDATED_BY] = author_id
     data[VALIDATED_AT] = normalize_instant(at) if at else now_iso()
-    return {VALIDATED_BY: data[VALIDATED_BY], VALIDATED_AT: data[VALIDATED_AT]}
+    if how:
+        data["validated_auth"] = how
+    else:
+        data.pop("validated_auth", None)
+    out = {VALIDATED_BY: data[VALIDATED_BY], VALIDATED_AT: data[VALIDATED_AT]}
+    if how:
+        out["validated_auth"] = how
+    return out
