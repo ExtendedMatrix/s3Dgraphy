@@ -53,7 +53,7 @@ WAIT = {
     "tag": float(os.environ.get("EM_RELEASE_WAIT_TAG") or 300),     # a pushed tag, seen by ls-remote
     "run": float(os.environ.get("EM_RELEASE_WAIT_RUN") or 120),     # a dispatched run, seen by gh
     "pypi": float(os.environ.get("EM_RELEASE_WAIT_PYPI") or 900),   # PyPI's CDN is late: a wait, not an error
-    "build": float(os.environ.get("EM_RELEASE_WAIT_BUILD") or 5400),  # gh run watch: publish.yml, the four installers
+    "build": float(os.environ.get("EM_RELEASE_WAIT_BUILD") or 5400),  # gh run watch: publish.yml, the installers
 }
 EXIT_WAIT = 75   # the same code verifica-provenance.sh gives «not visible yet»
 
@@ -68,7 +68,9 @@ WRITES = {
     "stratigraph-chatbot": ["schede/", "vocabolari/", "pyproject.toml"],
     "EMStudio": ["tools/requirements.txt", "frontend/src/assets/", "crates/em-core/assets/"],
     "stratigraph-server": ["pyproject.toml", "Dockerfile", "dev-stack/docker-compose.dev.yml"],
-    "EM-blender-tools": ["scripts/requirements_wheels.txt"],
+    # the fingerprint is rewritten by `./em.sh rebundle` at step 7 (dev29, C3):
+    # left out, the rerun stopped at step 1 on it and step 9 did not commit it
+    "EM-blender-tools": ["scripts/requirements_wheels.txt", "em_setup/datamodel.fingerprint.json"],
 }
 
 #: step 9: the pin commits, with the messages of table H of the dev28 report
@@ -115,6 +117,10 @@ class Stop(Exception):
 # ══ outside commands ══════════════════════════════════════════════════════════
 
 ENV = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}   # em.sh exports src/: not for the others
+# NO PAGER in any subprocess (dev29, C1): on 2 Oct 2026 step 6 stopped on «:»
+# because the `git diff` of stratigraph-server's bump-s3dgraphy.sh opened
+# `less`, and the release waited for a `q` nobody knew to press.
+ENV.update({"GIT_PAGER": "cat", "PAGER": "cat"})
 
 
 def sh(cmd, cwd: Path, check: bool = True, capture: bool = False, quiet: bool = False,
@@ -622,6 +628,34 @@ def tree_fingerprint() -> str:
         return ""
 
 
+#: what pip says when the index does not show the version YET (dev29, C2): on
+#: 2 Oct 2026 `pip install s3dgraphy==1.6.0.dev28` gave «No matching
+#: distribution» right after step 4 had seen it — PyPI's CDN answers per node
+NOT_VISIBLE_YET = re.compile(r"No matching distribution found|Could not find a version that satisfies")
+
+
+def install_from_pypi(pip: Path, spec: str, c: Ctx) -> None:
+    """`pip install spec`, retried with step 4's cap while PyPI does not show it
+    yet: right after a publication that is a wait, not a failure. Any other
+    error stops the release."""
+    cmd = [pip, "install", "--quiet", "--no-cache-dir", spec]
+    print(f"    $ ({_rel(TMP)}) {' '.join(shlex.quote(str(x)) for x in cmd)}", flush=True)
+
+    def attempt():
+        r = subprocess.run([str(x) for x in cmd], cwd=str(TMP), env=ENV, text=True,
+                           stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        if r.returncode == 0:
+            return True
+        said = (r.stdout or "") + (r.stderr or "")
+        if NOT_VISIBLE_YET.search(said):
+            return False
+        tail = "\n      ".join(said.strip().splitlines()[-5:])
+        raise Stop(f"failed (exit {r.returncode}) in {_rel(TMP)}: pip install {spec}"
+                   + (f"\n      {tail}" if tail else ""))
+
+    wait_for(f"{spec} installable from PyPI (pip install)", attempt, WAIT["pypi"], c.resume())
+
+
 class Proof(Step):
     n, title = 5, "the proof: clean venv from PyPI, fingerprint = working tree's"
 
@@ -661,7 +695,7 @@ class Proof(Step):
         if vd.exists():
             shutil.rmtree(vd)
         sh([PYTHON, "-m", "venv", vd], TMP)
-        sh([vd / "bin" / "pip", "install", "--quiet", "--no-cache-dir", f"s3dgraphy[geo,rdf]=={c.v}"], TMP)
+        install_from_pypi(vd / "bin" / "pip", f"s3dgraphy[geo,rdf]=={c.v}", c)
         m = self.measured(c)
         tree = tree_fingerprint()
         if not m:
@@ -997,6 +1031,22 @@ class Desktop(Step):
         url = out([*GH, "release", "view", tag, "--json", "url", "-q", ".url"], r)
         ok(f"the desktop {tag}: {url or run.get('url')}")
 
+    def draft_note(self, c) -> str:
+        """Whether the release of the tag is a DRAFT, and the command that
+        publishes it — said, never run (dev29, C4)."""
+        if not c.desktop or not exists("EMStudio"):
+            return ""
+        tag = self.tag_with_pin(c)
+        if not tag:
+            return ""
+        draft = out([*GH, "release", "view", tag, "--json", "isDraft", "-q", ".isDraft"], repo("EMStudio"))
+        if draft == "true":
+            return (f"the EMStudio release {tag} is a DRAFT. To publish it — this script never does:\n"
+                    f"      (EMStudio) gh release edit {tag} --draft=false")
+        if draft == "false":
+            return f"the EMStudio release {tag} is published (not a draft)"
+        return f"the EMStudio release {tag}: draft or not could not be read (gh release view {tag})"
+
 
 STEPS = [Preconditions(), Dtcstamp(), DtcPin(), S3dPublish(), Proof(), Propagate(), EMtools(),
          StratiFieldPin(), Commits(), Push(), Desktop()]
@@ -1029,6 +1079,10 @@ def table(c: Ctx, with_plan: bool) -> int:
         print("--dry-run: nothing written")
     nxt = next((s for s, st, _ in rows if st in (TODO, BLOCKED)), None)
     print(f"next: step {nxt.n} — {c.resume()}" if nxt else "every step is done")
+    if rows[-1][1] == DONE:
+        note = STEPS[-1].draft_note(c)
+        if note:
+            print(note)
     return 0
 
 
@@ -1040,7 +1094,7 @@ def release(c: Ctx) -> int:
     if not c.published():
         remote.append(f"bumps, pushes and publishes s3dgraphy {c.v} on PyPI")
     if c.desktop:
-        remote.append("tags EMStudio and starts its four installers")
+        remote.append("tags EMStudio and starts its installers")
     if remote and not c.ask("This " + "; ".join(remote) + ". A published version cannot be withdrawn. Go on?"):
         print("stopped: nothing was done")
         return 1
@@ -1055,6 +1109,10 @@ def release(c: Ctx) -> int:
             print(f"    already done: {proof}", flush=True)
             continue
         s.run(c)
+    note = STEPS[-1].draft_note(c)
+    if note:
+        print()
+        log(note)
     print()
     ok(f"release {c.v} done")
     return 0

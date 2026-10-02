@@ -79,6 +79,8 @@ if a[:2] == ["run", "list"]:
 if a[:2] == ["run", "watch"]:
     import time; time.sleep(float(os.environ.get("FAKE_WATCH_SLEEP", "0"))); sys.exit(0)
 if a[:2] == ["release", "view"]:
+    if "isDraft" in a:
+        print(os.environ.get("FAKE_DRAFT", "true")); sys.exit(0)
     print(f"https://example.invalid/releases/{a[2]}"); sys.exit(0)
 sys.exit(0)
 '''
@@ -105,6 +107,12 @@ FAKE_PYTHON = r'''#!/usr/bin/env bash
 d="$3"; mkdir -p "$d/bin"
 cat > "$d/bin/pip" <<EOF
 #!/usr/bin/env bash
+late="\$FAKE_STATE/venv-pip-late"
+if [[ -n "\$FAKE_VENV_PIP_LATE" && ! -f "\$late" ]]; then echo "\$FAKE_VENV_PIP_LATE" > "\$late"; fi
+if [[ -f "\$late" && "\$(cat "\$late")" -gt 0 ]]; then
+  echo \$(( \$(cat "\$late") - 1 )) > "\$late"
+  echo "ERROR: No matching distribution found for s3dgraphy (fake: the CDN is late)" >&2; exit 1
+fi
 for a in "\$@"; do case "\$a" in s3dgraphy*==*) echo "\${a#*==}" > "$d/installed";; esac; done
 EOF
 cat > "$d/bin/python" <<EOF
@@ -129,6 +137,7 @@ case "$1" in
     [[ "$FAKE_FAIL" == publish ]] && { echo "publish failed (fake)" >&2; exit 1; }
     gh workflow run publish.yml -f target=pypi -f "version_tag=v$2" ;;
   propagate)
+    echo "${GIT_PAGER:-unset} ${PAGER:-unset}" > "$FAKE_STATE/pager"
     [[ "$FAKE_FAIL" == propagate ]] && { echo "after-bump failed (fake)" >&2; exit 1; }
     v="$(v_of)"; P=..
     sed -i.bak "s/\"s3dgraphy_version\": \".*\"/\"s3dgraphy_version\": \"$v\"/" $P/stratigraph-templates/registry/s3dgraphy-snapshot.json
@@ -173,7 +182,8 @@ set -e
 case "$1" in
   rebundle)
     v="$(sed -n 's/^version = "\(.*\)"/\1/p' ../s3Dgraphy/pyproject.toml)"
-    for cp in wheels/cp311 wheels/cp313; do rm -f $cp/s3dgraphy-*.whl; : > "$cp/s3dgraphy-$v-py3-none-any.whl"; done ;;
+    for cp in wheels/cp311 wheels/cp313; do rm -f $cp/s3dgraphy-*.whl; : > "$cp/s3dgraphy-$v-py3-none-any.whl"; done
+    echo "{\"s3dgraphy\": \"$v\"}" > em_setup/datamodel.fingerprint.json ;;
   manifest)
     cp="cp${2//./}"; { echo "wheels = ["; for w in wheels/$cp/*.whl; do echo "  \"./$w\","; done; echo "]"; } > blender_manifest.toml ;;
   *) exit 2 ;;
@@ -247,7 +257,8 @@ class World:
                                "version.txt": "0\n", "em.sh": STUDIO_EM})
         self.repo("EM-blender-tools", {
             "scripts/requirements_wheels.txt": "s3dgraphy>=1.6.0.dev23,<1.7.0\ndtcstamp>=0.1.2\n",
-            ".gitignore": "wheels/\n/blender_manifest.toml\n.venv/\n", "em.sh": EMTOOLS_EM})
+            ".gitignore": "wheels/\n/blender_manifest.toml\n.venv/\n", "em.sh": EMTOOLS_EM,
+            "em_setup/datamodel.fingerprint.json": '{"s3dgraphy": "1.6.0.dev27"}\n'})
         et = self.ws / "EM-blender-tools"
         for cp in ("cp311", "cp313"):
             (et / "wheels" / cp).mkdir(parents=True)
@@ -497,3 +508,48 @@ def test_a_run_longer_than_the_cap_is_still_running_not_failed(world):
     r = world.release(*FULL, "--yes", FAKE_RUN_STATUS="in_progress")      # the run is watched, not redone
     assert r.returncode == 0, _all(r)
     assert "not dispatched again" in r.stdout
+
+
+# ── dev29 (C1–C4), measured on the release of dev28 (2 Oct 2026) ──────────────
+
+def test_no_subprocess_opens_a_pager(world):
+    r = world.release(*FULL, "--yes")
+    assert r.returncode == 0, _all(r)
+    assert (world.state / "pager").read_text().split() == ["cat", "cat"]
+
+
+def test_a_pip_install_right_after_the_publication_is_waited_for(world):
+    r = world.release(*FULL, "--yes", FAKE_VENV_PIP_LATE=2)
+    assert r.returncode == 0, _all(r)
+    assert f"s3dgraphy[geo,rdf]=={V} installable from PyPI (pip install): look 1, not yet" in r.stdout
+    assert "look 3, not yet" not in r.stdout
+
+
+def test_a_pip_install_later_than_the_cap_stops_with_the_command_that_resumes(world):
+    r = world.release(*FULL, "--yes", FAKE_VENV_PIP_LATE=10 ** 6, EM_RELEASE_WAIT_PYPI=0.3)
+    assert r.returncode == 75, _all(r)
+    assert "installable from PyPI (pip install) and it is not there yet" in r.stderr
+
+
+def test_the_fingerprint_rewritten_at_step_7_is_the_release_s_own(world):
+    r = world.release(*FULL, "--yes", FAKE_PYTEST_RC=1)          # stops at step 7
+    assert r.returncode == 1, _all(r)
+    et = world.ws / "EM-blender-tools"
+    assert "em_setup/datamodel.fingerprint.json" in world.git(et, "status", "--porcelain")
+    r = world.release(*FULL, "--yes")                            # the rerun is not blocked
+    assert r.returncode == 0, _all(r)
+    assert "uncommitted changes the release did not make" not in _all(r)
+    files = world.git(et, "show", "--name-only", "--format=", "HEAD").splitlines()
+    assert sorted(files) == ["em_setup/datamodel.fingerprint.json",
+                             "scripts/requirements_wheels.txt"]
+    assert world.git(et, "status", "--porcelain") == ""
+
+
+def test_a_draft_release_is_said_with_the_command_and_not_published(world):
+    r = world.release(*FULL, "--yes", FAKE_DRAFT="true")
+    assert r.returncode == 0, _all(r)
+    assert "is a DRAFT" in r.stdout
+    assert "gh release edit v1.6.0-dev.1 --draft=false" in r.stdout
+    assert "release edit" not in (world.state / "gh.log").read_text()
+    st = world.release("status", *FULL, FAKE_DRAFT="false")
+    assert "v1.6.0-dev.1 is published (not a draft)" in st.stdout
