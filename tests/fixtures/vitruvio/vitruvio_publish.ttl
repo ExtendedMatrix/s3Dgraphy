@@ -33,7 +33,6 @@
         em:GeoPositionNode ;
     rdfs:label "geo_position" ;
     dcterms:identifier "geo_vitruvio" ;
-    crm:P2_has_type "EPSG:4326" ;
     em:rotation 0e+00 ;
     em:shift_x 0e+00 ;
     em:shift_y 0e+00 ;

@@ -69,7 +69,7 @@ def test_no_hint_when_the_unit_has_the_property():
     g = _graph(wall_has_material=True)
     assert extraction_source_hints(g) == []
     res = api.validate(g)
-    assert res["ok"] and res["info"] == []
+    assert res["ok"] and [i for i in res["info"] if "georeferenced" not in i] == []
 
 
 def test_hint_not_issue_when_the_unit_lacks_the_property():
@@ -79,7 +79,8 @@ def test_hint_not_issue_when_the_unit_lacks_the_property():
             for h in hints] == [("US5.1", "US5", "material")]
     res = api.validate(g)
     assert res["ok"] and res["issues"] == []
-    assert len(res["info"]) == 1 and "US5.1" in res["info"][0]
+    hints = [i for i in res["info"] if "georeferenced" not in i]
+    assert len(hints) == 1 and "US5.1" in hints[0]
 
 
 def test_hint_through_a_combiner():

@@ -21,6 +21,7 @@ library (ADR-001 invariant 2).
 from __future__ import annotations
 
 import math
+import re
 import tempfile
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -155,6 +156,15 @@ def validate(graph: Graph) -> Dict[str, Any]:
             f"from '{r['unit_name']}', which has no '{r['property_name']}' "
             f"property of its own")
     warnings = list(getattr(graph, "warnings", []) or [])
+    geo = georeference_state(graph)
+    if geo == "undeclared":
+        info.append("the graph is not georeferenced: no CRS is declared "
+                    "(declare_georeference, or read_shift for a SHIFT.txt)")
+    elif geo == "legacy_default":
+        warnings.append(
+            "the graph says EPSG:4326 with a zero shift — «WGS84 at 0,0», the "
+            "default every graph got until dev28: if nobody meant it, declare "
+            "the real CRS (a SHIFT.txt reads with read_shift)")
     return {
         "ok": not issues,
         "stats": {"nodes": len(nodes), "edges": len(edges)},
@@ -2266,6 +2276,85 @@ def reproject_many(points: List[Tuple[float, float]], epsg_source: int,
 # hundred metres away puts the building in the next field. The azimuth is
 # `rotation` on the graph-level GeoPositionNode (G1), clockwise from north, and 0
 # — north up — must be the identity.
+def _geo_node(graph: Graph):
+    nodes = [n for n in (getattr(graph, "nodes", []) or [])
+             if getattr(n, "node_type", None) == "geo_position"]
+    if not nodes:
+        return None
+    canonical = f"geo_{getattr(graph, 'graph_id', '')}"
+    return next((n for n in nodes if getattr(n, "node_id", None) == canonical),
+                nodes[0])
+
+
+#: What a SHIFT.txt says, as EM tools write it: ``EPSG::3004 2355500 4617500 0``
+#: (also ``EPSG:3004``, commas or tabs between the numbers, z optional).
+_SHIFT_LINE = re.compile(
+    r"^\s*EPSG\s*:{1,2}\s*(\d+)[\s,;]+([-+]?\d+(?:\.\d*)?(?:[eE][-+]?\d+)?)"
+    r"[\s,;]+([-+]?\d+(?:\.\d*)?(?:[eE][-+]?\d+)?)"
+    r"(?:[\s,;]+([-+]?\d+(?:\.\d*)?(?:[eE][-+]?\d+)?))?", re.IGNORECASE)
+
+
+def read_shift(text: str) -> Dict[str, Any]:
+    """Read a ``SHIFT.txt``: ``EPSG::3004 2355500 4617500 0`` →
+    ``{epsg: 3004, shift_x: 2355500.0, shift_y: 4617500.0, shift_z: 0.0}``.
+
+    The first line that reads as a shift is the shift; blank lines and lines
+    starting with ``#`` are skipped. ``ValueError`` when no line does — a file
+    that does not say a CRS does not georeference anything.
+    """
+    for line in str(text or "").splitlines():
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        m = _SHIFT_LINE.match(line)
+        if m:
+            return {"epsg": int(m.group(1)), "shift_x": float(m.group(2)),
+                    "shift_y": float(m.group(3)),
+                    "shift_z": float(m.group(4)) if m.group(4) else 0.0}
+    raise ValueError(
+        "no line of this file reads as a shift: expected "
+        "'EPSG::<code> <x> <y> [<z>]', as in 'EPSG::3004 2355500 4617500 0'")
+
+
+def georeference_state(graph: Graph) -> str:
+    """Whether the graph says where it is.
+
+    * ``"undeclared"`` — no CRS on its GeoPositionNode (the state of a new
+      graph and of every imported GraphML since dev29);
+    * ``"legacy_default"`` — EPSG:4326 with a zero shift: what every graph got
+      until dev28 without anybody saying it, «WGS84 at 0,0». Reported, never
+      rewritten: somebody may have meant it;
+    * ``"declared"`` — anything else.
+    """
+    anchor = _geo_anchor(graph)
+    if anchor["epsg"] is None:
+        return "undeclared"
+    if anchor["epsg"] == 4326 and not any(
+            anchor[k] for k in ("shift_x", "shift_y", "shift_z")):
+        return "legacy_default"
+    return "declared"
+
+
+def declare_georeference(graph: Graph, epsg: int, shift_x: float = 0.0,
+                         shift_y: float = 0.0, shift_z: float = 0.0,
+                         rotation: Optional[float] = None) -> Dict[str, Any]:
+    """Say where the graph is: the CRS and the anchor of the scene-local frame,
+    on its GeoPositionNode (created when missing). ``read_shift`` gives the four
+    values of a SHIFT.txt. Returns the anchor as written."""
+    from .nodes.geo_position_node import GeoPositionNode
+    node = _geo_node(graph)
+    if node is None:
+        node = GeoPositionNode(node_id=f"geo_{getattr(graph, 'graph_id', '')}")
+        graph.add_node(node)
+    node.data["epsg"] = int(epsg)
+    node.data["shift_x"] = float(shift_x)
+    node.data["shift_y"] = float(shift_y)
+    node.data["shift_z"] = float(shift_z)
+    if rotation is not None:
+        node.data["rotation"] = float(rotation)
+    node.data.setdefault("rotation", 0.0)
+    return _geo_anchor(graph)
+
+
 def _geo_anchor(graph: Graph) -> Dict[str, Any]:
     """The graph's georeferencing anchor as a plain dict, defaults included.
 
@@ -2274,17 +2363,16 @@ def _geo_anchor(graph: Graph) -> Dict[str, Any]:
     the first found — a graph with two anchors is a data problem, not something to
     average.
     """
-    nodes = [n for n in (getattr(graph, "nodes", []) or [])
-             if getattr(n, "node_type", None) == "geo_position"]
-    if not nodes:
-        return {"epsg": 4326, "shift_x": 0.0, "shift_y": 0.0, "shift_z": 0.0,
+    node = _geo_node(graph)
+    if node is None:
+        return {"epsg": None, "shift_x": 0.0, "shift_y": 0.0, "shift_z": 0.0,
                 "rotation": 0.0}
-    canonical = f"geo_{getattr(graph, 'graph_id', '')}"
-    node = next((n for n in nodes if getattr(n, "node_id", None) == canonical),
-                nodes[0])
     data = dict(getattr(node, "data", {}) or {})
+    epsg = data.get("epsg")
     return {
-        "epsg": int(data.get("epsg") or 4326),
+        # None = NOT DECLARED (dev29): never filled with 4326 here, because
+        # «WGS84 at 0,0» is a position, and nobody gave it
+        "epsg": int(epsg) if epsg not in (None, "") else None,
         "shift_x": float(data.get("shift_x") or 0.0),
         "shift_y": float(data.get("shift_y") or 0.0),
         "shift_z": float(data.get("shift_z") or 0.0),
@@ -2328,6 +2416,13 @@ def georeference_scene(graph: Graph, points_local: List[Tuple[float, float]], *,
     first. Nothing here invents geometry: if you have no points, you get none.
     """
     anchor = _geo_anchor(graph)
+    if anchor["epsg"] is None:
+        raise ValueError(
+            "this graph is not georeferenced: its GeoPositionNode declares no "
+            "CRS. Declare it first — api.declare_georeference(graph, "
+            "**api.read_shift(open('SHIFT.txt').read())) for a SHIFT.txt such "
+            "as 'EPSG::3004 2355500 4617500 0', or declare_georeference(graph, "
+            "epsg, shift_x, shift_y, shift_z) by hand.")
     # A scene-local extent is METRES. Adding metres to an anchor expressed in
     # DEGREES is not a small inaccuracy, it is a category error: 30 m would become
     # 30 degrees and the footprint would span a continent. Refuse, and say what

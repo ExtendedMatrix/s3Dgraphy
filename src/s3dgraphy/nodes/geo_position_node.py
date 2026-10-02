@@ -26,14 +26,19 @@ class GeoPositionNode(Node):
         data (dict): ``epsg``, ``shift_x``, ``shift_y``, ``shift_z``, ``rotation``.
     """
     node_type = "geo_position"
-    def __init__(self, node_id, epsg=4326, shift_x=0.0, shift_y=0.0, shift_z=0.0,
+    def __init__(self, node_id, epsg=None, shift_x=0.0, shift_y=0.0, shift_z=0.0,
                  rotation=0.0):
         """
         Inizializza una nuova istanza di GeoPositionNode.
 
         Args:
             node_id (str): Identificativo univoco del nodo.
-            epsg (int, opzionale): Codice EPSG del sistema di riferimento delle coordinate. Defaults to 4326.
+            epsg (int, opzionale): Codice EPSG del sistema di riferimento delle
+                coordinate. **None = non dichiarato** (dev29): un grafo nuovo o
+                importato non è georiferito, e lo dice con l'assenza di ``epsg``
+                in ``data``. Fino alla dev28 il default era 4326 con shift 0,
+                cioè «WGS84 a 0,0»: una posizione che nessuno aveva dichiarato
+                (misurato su ogni GraphML importato, San Pietro compreso).
             shift_x (float, opzionale): Spostamento lungo l'asse X. Defaults to 0.0.
             shift_y (float, opzionale): Spostamento lungo l'asse Y. Defaults to 0.0.
             shift_z (float, opzionale): Spostamento lungo l'asse Z. Defaults to 0.0.
@@ -46,7 +51,7 @@ class GeoPositionNode(Node):
         """
         super().__init__(node_id=node_id, name="geo_position")
         self.data = {
-            "epsg": epsg,
+            **({"epsg": epsg} if epsg is not None else {}),
             "shift_x": shift_x,
             "shift_y": shift_y,
             "shift_z": shift_z,
