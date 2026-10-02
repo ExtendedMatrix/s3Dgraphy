@@ -111,7 +111,9 @@ The axes currently declared, measured on the shipped file:
   `georeferencing`, `format_conversion`, `export`, `lod_generation`, `tiling`,
   `packing`, `classification`, `vectorization` (the four gestures of whoever
   exports since visual rules 1.6.29, dev28; `texturing` since 1.6.30, dev29,
-  confirmed by E.D. 2 Oct 2026)
+  confirmed by E.D. 2 Oct 2026: projection and baking of the photographs onto
+  the mesh are one act of this kind, while the baking of levels of detail in
+  Blender stays `lod_generation`, an act of its own)
 - **output** — `pointcloud`, `mesh`, `dem`, `orthophoto`, `image_set`, `points`,
   `lines`, `polygons` (`image_set` since 1.6.30, dev29, confirmed by E.D.
   2 Oct 2026)
