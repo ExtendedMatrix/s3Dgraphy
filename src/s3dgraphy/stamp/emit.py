@@ -76,7 +76,10 @@ SIZE_KEY = "size_bytes"
 #: Cosa il digest copre. `artifact` = i byte come usciti dal processo;
 #: `payload` = il contenuto al netto del timbro, per quando il timbro vive dentro
 #: il vascello e scriverlo cambierebbe i byte.
-DIGEST_COVERS = ("artifact", "payload")
+#: `members` (dev29) = il digest della LISTA canonica dei membri di un
+#: `file_set` (`dtcstamp.members_canonical`), non dei byte di un file: il timbro
+#: porta allora anche `self.members`, perché chi lo verifica possa rifare la lista.
+DIGEST_COVERS = ("artifact", "payload", "members")
 
 
 class NotAnArtifact(LookupError):
@@ -269,10 +272,48 @@ def _inputs_of(graph: Any, process_id: str) -> List[Any]:
 
 # ── i cinque blocchi ─────────────────────────────────────────────────────────
 
-def _self_block(resource: Any, warnings: List[str]) -> Dict[str, Any]:
+def _file_set_members(graph: Any, resource: Any) -> Optional[List[Dict[str, Any]]]:
+    """I membri di una risorsa di più file, nella forma di `dtcstamp`, o None.
+
+    Solo per chi lo DICHIARA: `packaging: file_set` o `digest_covers: members`.
+    Una risorsa di più file che non dice di essere un insieme resta com'è — il
+    timbro non decide al suo posto (regola 2).
+    """
+    data = _data(resource)
+    if data.get("packaging") != "file_set" and data.get("digest_covers") != "members":
+        return None
+    if graph is None:
+        return None
+    from ..resources.files import file_set_members
+    try:
+        return file_set_members(graph, resource.node_id)
+    except ValueError:
+        return None
+
+
+def _self_block(resource: Any, warnings: List[str],
+                graph: Any = None) -> Dict[str, Any]:
     data = _data(resource)
     block: Dict[str, Any] = {"resource_id": resource.node_id}
+    members = _file_set_members(graph, resource)
     digest = _text(data.get("checksum"))
+    if members is not None:
+        # UN INSIEME DI FILE (dev29, misurato su San Pietro): l'identità è il
+        # digest della lista dei membri, e il timbro porta la lista. Senza
+        # `self.members` `dtcstamp.verify_members` non può rifare il conto, e
+        # con `digest_covers: artifact` il lettore crederebbe che il digest sia
+        # quello dei byte di un file — falso. La stessa forma di
+        # `dtcstamp.new_file_set_stamp`, e nessun'altra.
+        from dtcstamp import members_digest
+        listed = members_digest(members)
+        if digest is None:
+            digest = listed
+        elif digest != listed:
+            warnings.append(
+                f"the declared checksum {digest} is not the digest of the "
+                f"members listed ({listed}): the list is what a reader can "
+                f"check, and the stamp carries the list's digest")
+            digest = listed
     _put(block, "digest", digest)
     # Titolo e descrizione (dtcstamp 46b3b78): le parole che una persona legge,
     # dal `name` e dalla `description` della risorsa. Cortesia e non identità —
@@ -295,7 +336,8 @@ def _self_block(resource: Any, warnings: List[str]) -> Dict[str, Any]:
             f"the identity '{digest}' states no algorithm: it reads as neither "
             f"verifiable nor comparable (see stamp.identity)")
 
-    covers = _text(data.get("digest_covers")) or "artifact"
+    covers = "members" if members is not None \
+        else (_text(data.get("digest_covers")) or "artifact")
     if covers not in DIGEST_COVERS:
         warnings.append(
             f"digest_covers '{covers}' is not one of {list(DIGEST_COVERS)}; "
@@ -322,6 +364,20 @@ def _self_block(resource: Any, warnings: List[str]) -> Dict[str, Any]:
                     "measures key and was not emitted")
                 continue
             measures[str(what)] = how_many
+    if members is not None:
+        block["members"] = members
+        # come `new_file_set_stamp`: il peso è la somma dei membri, e `files`
+        # quanti sono — fatti della lista, non un ripiego.
+        sizes = [m.get("size_bytes") for m in members]
+        if all(isinstance(x, int) for x in sizes):
+            total = sum(sizes)
+            declared = measures.get(SIZE_KEY)
+            if declared is not None and declared != total:
+                warnings.append(
+                    f"size_bytes {declared} is not the sum of the members "
+                    f"({total}): the stamp carries the sum")
+            measures[SIZE_KEY] = total
+        measures["files"] = len(members)
     _put(block, "measures", measures)
     return block
 
@@ -844,7 +900,7 @@ def emit_stamp(graph: Any, resource_ref: str, *,
     inputs = _inputs_of(graph, process.node_id) if process is not None else []
 
     stamp: Dict[str, Any] = {"stamp": STAMP_VERSION}
-    stamp["self"] = _self_block(resource, warnings)
+    stamp["self"] = _self_block(resource, warnings, graph)
     #: SEMPRE presente, anche vuoto — ed è il caso che deve funzionare al primo
     #: colpo. `"from": []` è una dichiarazione COMPLETA: nato qui. Metà degli
     #: asset di un progetto archeologico sono origini, e `_put` (che tace sulle

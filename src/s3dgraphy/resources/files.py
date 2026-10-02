@@ -148,6 +148,67 @@ def resource_files(graph, res_id: str) -> List[Dict[str, Any]]:
              "implicit": True, "edge_id": None}]
 
 
+def file_set_members(graph, res_id: str) -> Optional[List[Dict[str, Any]]]:
+    """The members of a resource of several files, in the form the stamp
+    writes them (``dtcstamp.canonical_members``): ``[{role, path, digest,
+    size_bytes?}]``, sorted.
+
+    None when the list has no canonical form: a resource of one implicit file
+    (that is a ``file``, not a ``file_set``), or a member without a
+    ``sha256:`` checksum — a list in which one file has no identity has no
+    identity either, and a digest made by skipping it would be a lie about the
+    set.
+    """
+    from dtcstamp import BadMembers, canonical_members
+
+    rows = []
+    for f in resource_files(graph, res_id):
+        if f["implicit"]:
+            return None
+        d = _data(f["node"])
+        rows.append({"role": f["role"], "path": f["path"],
+                     "digest": d.get("checksum"),
+                     "size_bytes": d.get("size_bytes")})
+    if not rows:
+        return None
+    try:
+        return canonical_members(rows)
+    except BadMembers:
+        return None
+
+
+def refresh_members_digest(graph, res_id: str) -> Optional[str]:
+    """Write the identity of a ``file_set``: ``checksum`` = the members digest
+    (``dtcstamp.members_digest``), ``digest_covers`` = ``members``.
+
+    The identity of a set of files is the digest of the canonical LIST of its
+    members, not of any file's bytes: that is what ``digest_covers: members``
+    says, and what ``dtcstamp.verify_members`` checks. When the list has no
+    canonical form (a member without a sha256) the old checksum goes, because
+    it no longer names this set; ``digest_covers`` goes with it. Returns the
+    digest written, or None.
+    """
+    from dtcstamp import members_digest
+
+    res = _node(graph, res_id)
+    d = _data(res)
+    members = file_set_members(graph, res_id)
+    if members is None:
+        if d.get("digest_covers") == "members":
+            d.pop("checksum", None)
+            d.pop("digest_covers", None)
+        return None
+    digest = members_digest(members)
+    d["checksum"] = digest
+    d["digest_covers"] = "members"
+    return digest
+
+
+def _is_members_identity(res) -> bool:
+    d = _data(res)
+    return d.get("digest_covers") == "members" or d.get("packaging") == "file_set"
+
+
 def entry_point(graph, res_id: str) -> Optional[Dict[str, Any]]:
     """The file a reader opens first, or None."""
     return next((f for f in resource_files(graph, res_id)
@@ -410,6 +471,8 @@ def add_resource(graph, *, name: str, kind: Optional[str] = None,
     graph.add_node(node)
     if specs and not single:
         _write_files(graph, rid, specs)
+        if packaging == "file_set":
+            refresh_members_digest(graph, rid)
     for parent in derived_from or ():
         declare_representation(graph, rid, parent)
     return node
@@ -493,6 +556,8 @@ def add_file(graph, res_id: str, *, path: str, checksum: Optional[str] = None,
     has_entry = any(f["role"] == "entry_point" for f in resource_files(graph, res_id))
     final_role = role or ("member" if has_entry else "entry_point")
     node = _write_file(graph, res_id, spec, final_role)
+    if _is_members_identity(res):
+        refresh_members_digest(graph, res_id)
     return {"file_id": node.node_id, "role": final_role, "path": spec["path"],
             "materialized": materialized}
 
@@ -514,6 +579,9 @@ def remove_file(graph, res_id: str, file_id: str) -> Dict[str, Any]:
     if not still_held:
         graph.remove_node(file_id)
     left = any(f["role"] == "entry_point" for f in resource_files(graph, res_id))
+    res = _node(graph, res_id)
+    if _is_members_identity(res) and _file_edges(graph, res_id):
+        refresh_members_digest(graph, res_id)
     return {"removed_edge": edges[0].edge_id, "removed_node": not still_held,
             "entry_point_left": left}
 

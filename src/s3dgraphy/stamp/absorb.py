@@ -176,6 +176,7 @@ def stamp_to_graph(stamp: Dict[str, Any], *, graph_id: Optional[str] = None):
     _apply_self(output, itself)
     _apply_courtesy(output, stamp)
     fragment.add_node(output)
+    _absorb_members(fragment, resource_id, itself)
 
     how = dict(stamp.get("how") or {})
     parents = [p for p in (stamp.get("from") or []) if isinstance(p, dict)]
@@ -319,6 +320,33 @@ def _apply_self(node: Any, itself: Dict[str, Any]) -> None:
             data[SIZE_KEY] = measures[SIZE_KEY]
         if primitives:
             data["primitives"] = primitives
+
+
+def _absorb_members(fragment: Any, resource_id: str,
+                    itself: Dict[str, Any]) -> None:
+    """`self.members` di un `file_set` torna a essere i suoi file: un
+    `ResourceFileNode` per membro, con `has_file`, ruolo e percorso — l'inverso
+    di ciò che l'emissione legge. Gli id dei file sono quelli di
+    `file_id_for`, quindi lo stesso membro rientra sullo stesso nodo."""
+    from ..resources.files import _write_file
+
+    members = itself.get("members")
+    if not isinstance(members, list):
+        return
+    for m in members:
+        if not isinstance(m, dict) or not m.get("path"):
+            continue
+        spec = {"path": str(m["path"]), "checksum": m.get("digest")}
+        if isinstance(m.get("size_bytes"), int):
+            spec["size_bytes"] = m["size_bytes"]
+        _write_file(fragment, resource_id, spec, m.get("role") or "member")
+    # `files` è la lunghezza della lista, non una primitiva della risorsa
+    data = fragment.find_node_by_id(resource_id).data
+    prims = data.get("primitives")
+    if isinstance(prims, dict):
+        prims.pop("files", None)
+        if not prims:
+            data.pop("primitives", None)
 
 
 def _get_text(node: Any, field_name: str) -> str:
