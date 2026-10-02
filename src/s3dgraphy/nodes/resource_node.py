@@ -356,7 +356,7 @@ class ResourceNode(Node):
         recorded = self.data.get("tier")
         if recorded:
             return recorded
-        return "master" if str(self.data.get("url") or "").startswith("blend://") \
+        return "master" if str(self.data.get("url") or "").startswith(("blend://", "psx://")) \
             else "distribution"
 
     def effective_packaging(self):
@@ -377,7 +377,9 @@ class ResourceNode(Node):
         # `blend://<file>#<Type>/<name>` (resources/resolver.py) — so reading it
         # as a datablock is not a guess from an extension: it is the locator's
         # own grammar. The same reading `effective_tier` makes («master»).
-        if url.startswith("blend://"):
+        # The same for `psx://<project>#<chunk>/<type>/<key>`: an asset inside a
+        # Metashape project (MICRO-IL-LETTORE-DI-METASHAPE), the master.
+        if url.startswith(("blend://", "psx://")):
             return "datablock"
         if url.lower().endswith((".zip", ".3tz")):
             return "archive"

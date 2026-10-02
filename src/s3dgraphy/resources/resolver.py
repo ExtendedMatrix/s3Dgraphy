@@ -18,11 +18,15 @@ from typing import Any, Dict, List, Optional
 #: NIGHT-RIM2/B1 · il quinto kind: i byte stanno **dentro un file .blend**,
 #: come datablock. Non è un percorso locale (il file c'è, ma il dato non è il
 #: file: è una cosa dentro il file) e non è un URI remoto.
+#: MICRO-IL-LETTORE-DI-METASHAPE · il sesto: un asset **dentro un progetto
+#: Metashape** (`.psx`), il gemello del quinto.
 LOCATION_KINDS = ("local_path", "file_uri", "s3_uri", "http_url",
-                  "blend_datablock")
+                  "blend_datablock", "psx_asset")
 
 #: Lo schema del quinto kind.
 BLEND_SCHEME = "blend://"
+#: Lo schema del sesto.
+PSX_SCHEME = "psx://"
 
 
 @dataclass(frozen=True)
@@ -55,7 +59,8 @@ def classify_locator(locator: str) -> str:
     """Classify a locator string into one of :data:`LOCATION_KINDS`.
 
     ``http://``/``https://`` → ``http_url``; ``s3://`` → ``s3_uri``;
-    ``file://`` → ``file_uri``; ``blend://`` → ``blend_datablock``; anything
+    ``file://`` → ``file_uri``; ``blend://`` → ``blend_datablock``; ``psx://``
+    → ``psx_asset``; anything
     else (a bare or relative path) → ``local_path``. An empty locator falls
     back to ``local_path`` (an empty path), so callers can still detect
     non-existence via :attr:`Location.exists`.
@@ -70,6 +75,8 @@ def classify_locator(locator: str) -> str:
         return "file_uri"
     if low.startswith(BLEND_SCHEME):
         return "blend_datablock"
+    if low.startswith(PSX_SCHEME):
+        return "psx_asset"
     return "local_path"
 
 
@@ -137,6 +144,60 @@ def parse_blend_locator(locator: str):
     if not percorso or not nome:
         return None
     return unquote(percorso), unquote(tipo), unquote(nome)
+
+
+# ══════════════════════════════════════════════════════════════════════
+# MICRO-IL-LETTORE-DI-METASHAPE · IL LOCATOR «DENTRO UN .PSX»
+# ══════════════════════════════════════════════════════════════════════
+#
+#     psx://<percorso del .psx>#<label del chunk>/<tipo di asset>/<chiave>
+#
+# Il gemello di `blend://`, codificato allo stesso modo e per la stessa
+# ragione: il label di un chunk accetta qualunque carattere. Il TIPO c'è perché
+# il progetto numera le chiavi per tipo — `model 1` e `point_cloud 1` sono due
+# asset. È la forma che 3DSC per Metashape scrive (`dtc_stamp_ms.py`) e che
+# `dtcstamp.psx_locator` (0.1.4) ripete; il caso 28 della conformità di
+# dtcstamp la inchioda, e `tests/test_psx_locator.py` la tiene allineata qui.
+# Il label del chunk può essere vuoto (il progetto lo permette); percorso, tipo
+# e chiave no.
+
+def make_psx_locator(psx_path: str, chunk: str, asset_type: str, key) -> str:
+    """Compone `psx://<percorso>#<chunk>/<tipo>/<chiave>`, codificato.
+
+    `asset_type` è la parola del tipo come la scrive il locator: ``model``,
+    ``point_cloud``, ``depth_maps``, ``tie_points``… `key` è la chiave
+    dell'asset nel suo tipo (un intero, scritto come stringa).
+    """
+    from urllib.parse import quote
+    if not psx_path or not asset_type or key is None or str(key) == "":
+        return ""
+    return (PSX_SCHEME + quote(str(psx_path), safe="/")
+            + "#" + quote(str(chunk or ""), safe="")
+            + "/" + quote(str(asset_type), safe="")
+            + "/" + quote(str(key), safe=""))
+
+
+def parse_psx_locator(locator: str):
+    """`(percorso, chunk, tipo, chiave)` da un locator `psx://`, o `None`.
+
+    Come `parse_blend_locator`: non solleva mai, perché chi chiama sta
+    classificando. La chiave torna come stringa.
+    """
+    from urllib.parse import unquote
+    s = (locator or "").strip()
+    if not s.lower().startswith(PSX_SCHEME):
+        return None
+    resto = s[len(PSX_SCHEME):]
+    if "#" not in resto:
+        return None
+    percorso, frammento = resto.split("#", 1)
+    parti = frammento.split("/")
+    if len(parti) != 3:
+        return None
+    chunk, tipo, chiave = parti
+    if not percorso or not tipo or not chiave:
+        return None
+    return unquote(percorso), unquote(chunk), unquote(tipo), unquote(chiave)
 
 
 def _local_exists(kind: str, value: str) -> Optional[bool]:

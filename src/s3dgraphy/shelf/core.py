@@ -881,13 +881,14 @@ def _residence(locator: str, entry: Dict[str, Any]) -> str:
     from ..resources import classify_locator
 
     kind = classify_locator(locator or "")
-    if kind == "blend_datablock":
+    if kind in ("blend_datablock", "psx_asset"):
         # NIGHT-RIM2/B1 · i byte stanno dentro un file .blend, che è un file
         # su disco: `disk`. Una quarta parola («blend») sarebbe una scelta di
         # modello, e la voce C delle questioni aperte la lascia a E.D. — qui
         # c'è il minimo che non la pregiudica. Il ramo è esplicito e non
         # affidato al ripiego finale, perché il ripiego dice `disk` per
-        # ESCLUSIONE e questo lo dice per conoscenza.
+        # ESCLUSIONE e questo lo dice per conoscenza. Lo stesso per un asset
+        # dentro un progetto Metashape (`psx://`): il .psx è un file su disco.
         return "disk"
     if kind == "s3_uri":
         return "minio"
