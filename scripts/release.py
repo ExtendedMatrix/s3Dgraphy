@@ -16,6 +16,12 @@ saying so. Run the command again after an interruption and it resumes at the
 first step not done, because the state is read from the repositories and from
 PyPI, never from a file this script would have to keep true.
 
+THE CONFIRMATIONS COUNT DOWN (3 Oct 2026). On a terminal each y/N says «yes in
+10 s (n to stop)» and goes on with yes at zero; «n» stops, Enter or «y» go at
+once; `--yes` skips the wait; EM_RELEASE_CONFIRM_SECONDS sets the seconds (0 =
+ask y/N with no timer). Without a terminal the answer is read from stdin, and
+with none the row stops, saying why.
+
 Standard library only, Python 3.9 (the .venv's interpreter). Every outside
 command can be replaced for the tests (tests/test_release.py):
     EM_RELEASE_PARENT   the folder holding the repositories (default: ../ of s3Dgraphy)
@@ -26,6 +32,7 @@ command can be replaced for the tests (tests/test_release.py):
     EM_RELEASE_POLL     seconds between two looks (default: 15)
     EM_RELEASE_WAIT_TAG / _WAIT_RUN / _WAIT_PYPI / _WAIT_BUILD   the caps, seconds
     EM_RELEASE_PROGRESS seconds between two lines of a long wait (default: 30)
+    EM_RELEASE_CONFIRM_SECONDS  the countdown of a confirmation (default: 10; 0 = no timer)
     EM_RELEASE_WHEEL    the command that builds a wheel of a working tree into a
                         folder: `<cmd> <outdir> <tree>` (default: pip wheel)
     EM_RELEASE_DOWNSTREAM  a JSON list of {repo, cmd, known?} that replaces the
@@ -497,6 +504,83 @@ def next_minor(v: str) -> str:
 
 DONE, TODO, SKIP, BLOCKED = "done", "to do", "not asked", "blocked"
 
+# ── the confirmations: a countdown that goes on by itself (E.D., 3 Oct 2026) ──
+#
+# Every y/N of the row (the pin commits, the push, the remote ones) used to wait
+# for a key — and a release left running while one looks elsewhere waited for
+# nothing. On a terminal the question now counts down on its own line, «yes in
+# 10 s (n to stop)», and at zero it goes on with YES: «n» stops, Enter or «y» go
+# at once. `--yes` still skips the wait. EM_RELEASE_CONFIRM_SECONDS changes the
+# length; 0 asks as before, y/N and no timer. Without a terminal there is no
+# key to read: the answer is read from stdin as before, and with none the row
+# STOPS and says why — a countdown nobody can see must not say yes for anybody.
+
+CONFIRM_ENV = "EM_RELEASE_CONFIRM_SECONDS"
+CONFIRM_DEFAULT = 10
+
+
+def confirm_seconds() -> int:
+    raw = os.environ.get(CONFIRM_ENV, "").strip()
+    if not raw:
+        return CONFIRM_DEFAULT
+    try:
+        return max(0, int(raw))
+    except ValueError:
+        return CONFIRM_DEFAULT
+
+
+def countdown_confirm(q: str, seconds: int, stdin=None, stdout=None,
+                      clock=time.monotonic) -> bool:
+    """[Y/n] on a terminal, the seconds going down on the same line: «n» stops,
+    Enter or «y» go now, and at zero the answer is yes. The terminal is put in
+    cbreak mode for the length of the question (one key, no Enter needed) and
+    always given back."""
+    import math
+    import select
+    import termios
+    import tty
+    stdin = stdin or sys.stdin
+    stdout = stdout or sys.stdout
+    fd = stdin.fileno()
+    saved = termios.tcgetattr(fd)
+
+    def line(text: str, end: str = "") -> None:
+        stdout.write(f"\r{q} [Y/n] — {text}\033[K{end}")
+        stdout.flush()
+
+    try:
+        # TCSANOW, not the default TCSAFLUSH (which waits for the output to be
+        # drained, and on a pty whose echo nobody reads waits for ever); the
+        # keys typed BEFORE the question are thrown away explicitly — an Enter
+        # pressed a minute ago is not an answer to this
+        tty.setcbreak(fd, termios.TCSANOW)
+        termios.tcflush(fd, termios.TCIFLUSH)
+        deadline = clock() + seconds
+        shown = None
+        while True:
+            left = deadline - clock()
+            if left <= 0:
+                line(f"yes (no answer in {seconds} s)", "\n")
+                return True
+            whole = math.ceil(left)
+            if whole != shown:
+                line(f"yes in {whole} s (n to stop)")
+                shown = whole
+            ready, _, _ = select.select([fd], [], [], min(0.1, left))
+            if not ready:
+                continue
+            key = os.read(fd, 1).decode(errors="ignore")
+            if key in ("n", "N"):
+                line("no", "\n")
+                return False
+            if key in ("y", "Y", "s", "S", "\r", "\n"):
+                line("yes", "\n")
+                return True
+    finally:
+        # TCSANOW: given back at once — DRAIN would wait for the echo to be read
+        # by the other end, which on a pty nobody may ever do
+        termios.tcsetattr(fd, termios.TCSANOW, saved)
+
 
 class Ctx:
     def __init__(self, v, d, desktop, dry, yes):
@@ -514,9 +598,20 @@ class Ctx:
     def ask(self, q: str) -> bool:
         if self.yes:
             return True
+        seconds = confirm_seconds()
+        if seconds and sys.stdin.isatty():
+            try:
+                return countdown_confirm(q, seconds)
+            except (ImportError, OSError) as e:      # no termios (Windows): ask as before
+                print(f"    (no countdown here: {e})", flush=True)
+            except Exception as e:                   # termios.error is not an OSError
+                print(f"    (no countdown here: {e})", flush=True)
         try:
             r = input(f"{q} [y/N] ")
         except EOFError:
+            # no terminal, and nothing on stdin: nobody answered, so nobody said yes
+            print(f"\n    no answer: stdin is not a terminal and gave none — run it in a "
+                  f"terminal, or pass --yes to go on without asking", flush=True)
             r = ""
         return r.strip().lower() in ("y", "yes", "s", "si", "sì")
 
@@ -1287,7 +1382,7 @@ def proof_file(name: str) -> str:
 
 
 class Commits(Step):
-    n, title = 9, "the pin commits (y/N per repository)"
+    n, title = 9, "the pin commits (a confirmation per repository, with its countdown)"
 
     def states(self, c):
         res = []
@@ -1312,7 +1407,7 @@ class Commits(Step):
         return TODO, proof
 
     def plan(self, c):
-        return [(n, f'git diff --stat · [y/N] · git commit -m "{m}"') for n, m in commit_messages(c.v, c.d).items()]
+        return [(n, f'git diff --stat · [Y/n, yes in {confirm_seconds()} s] · git commit -m "{m}"') for n, m in commit_messages(c.v, c.d).items()]
 
     def run(self, c):
         declined = []

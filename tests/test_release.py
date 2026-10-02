@@ -627,3 +627,113 @@ def test_a_long_wait_says_the_jobs_and_their_step(world):
     assert "linux        done ✓" in out
     # not a terminal: a new line per change of state, not one per look
     assert out.count(f"▸ 2 · publish.yml for v{D}") <= 3
+
+
+# ── the confirmations count down (E.D., 3 Oct 2026) ──────────────────────────
+#
+# On a FAKE TERMINAL (a pty: `isatty()` is true and keys arrive one at a time,
+# as from a person): no key → yes at zero; «n» → stop; Enter → yes at once.
+
+def _release_module():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("em_release", RELEASE)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+@pytest.fixture
+def terminal():
+    pty = pytest.importorskip("pty")  # noqa: F841 — POSIX only, like the countdown
+    import io
+    master, slave = os.openpty()
+    stdin = os.fdopen(slave, "rb", buffering=0)
+    out = io.StringIO()
+    yield master, stdin, out
+    stdin.close()
+    os.close(master)
+
+
+def test_the_countdown_says_yes_at_zero(terminal):
+    import time
+    master, stdin, out = terminal
+    R = _release_module()
+    t0 = time.monotonic()
+    assert R.countdown_confirm("Push these 3 repositories?", 1, stdin=stdin, stdout=out) is True
+    assert time.monotonic() - t0 >= 0.9
+    said = out.getvalue()
+    assert "Push these 3 repositories? [Y/n] — yes in 1 s (n to stop)" in said
+    assert "yes (no answer in 1 s)" in said
+    assert "\r" in said                         # the same line, rewritten
+
+
+def _press(master, key, after=0.3):
+    """a key, pressed while the question is counting (not before: those are thrown away)"""
+    import threading
+    threading.Timer(after, lambda: os.write(master, key)).start()
+
+
+def test_the_countdown_stops_on_n(terminal):
+    master, stdin, out = terminal
+    R = _release_module()
+    _press(master, b"n")
+    assert R.countdown_confirm("Commit EMStudio?", 10, stdin=stdin, stdout=out) is False
+    assert out.getvalue().rstrip().endswith("— no\033[K")
+
+
+def test_the_countdown_goes_at_once_on_enter(terminal):
+    import time
+    master, stdin, out = terminal
+    R = _release_module()
+    _press(master, b"\n")
+    t0 = time.monotonic()
+    assert R.countdown_confirm("Commit EMStudio?", 10, stdin=stdin, stdout=out) is True
+    assert time.monotonic() - t0 < 1.5
+    assert "— yes\033[K" in out.getvalue()
+
+
+def test_the_countdown_gives_the_terminal_back(terminal):
+    import termios
+    master, stdin, out = terminal
+    R = _release_module()
+    before = termios.tcgetattr(stdin.fileno())
+    _press(master, b"y")
+    R.countdown_confirm("Go on?", 10, stdin=stdin, stdout=out)
+    after = termios.tcgetattr(stdin.fileno())
+    # PENDIN is the KERNEL's («input to reprint»), set by itself after a mode change
+    pendin = getattr(termios, "PENDIN", 0)
+    before[3] &= ~pendin
+    after[3] &= ~pendin
+    assert after == before
+
+
+def test_a_key_pressed_before_the_question_is_not_an_answer(terminal):
+    master, stdin, out = terminal
+    R = _release_module()
+    os.write(master, b"n")          # typed ahead, before anything was asked
+    assert R.countdown_confirm("Go on?", 1, stdin=stdin, stdout=out) is True
+    assert "yes (no answer in 1 s)" in out.getvalue()
+
+
+def test_the_seconds_come_from_the_environment(monkeypatch):
+    R = _release_module()
+    monkeypatch.delenv("EM_RELEASE_CONFIRM_SECONDS", raising=False)
+    assert R.confirm_seconds() == 10
+    monkeypatch.setenv("EM_RELEASE_CONFIRM_SECONDS", "3")
+    assert R.confirm_seconds() == 3
+    monkeypatch.setenv("EM_RELEASE_CONFIRM_SECONDS", "0")
+    assert R.confirm_seconds() == 0
+    monkeypatch.setenv("EM_RELEASE_CONFIRM_SECONDS", "dieci")
+    assert R.confirm_seconds() == 10
+
+
+def test_without_a_terminal_and_without_yes_nobody_says_yes(monkeypatch, capsys):
+    import io
+    R = _release_module()
+    c = R.Ctx(V, None, False, False, False)
+    monkeypatch.setattr(sys, "stdin", io.StringIO(""))      # not a tty, nothing on it
+    assert c.ask("Push these 3 repositories?") is False
+    assert "stdin is not a terminal" in capsys.readouterr().out
+    monkeypatch.setattr(sys, "stdin", io.StringIO("y\n"))   # a pipe that answers: as before
+    assert c.ask("Push these 3 repositories?") is True
+    assert R.Ctx(V, None, False, False, True).ask("anything?") is True   # --yes
