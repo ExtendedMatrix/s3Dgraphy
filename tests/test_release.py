@@ -61,6 +61,8 @@ open(os.path.join(os.environ["FAKE_STATE"], "gh.log"), "a").write(" ".join(a) + 
 if a[:2] == ["auth", "status"]:
     sys.exit(0 if os.environ.get("FAKE_GH_AUTH", "ok") == "ok" else 1)
 if a[:2] == ["workflow", "run"]:
+    if os.environ.get("FAKE_FAIL") == "dispatch-s3d" and here() == "s3Dgraphy":
+        print("HTTP 500 (fake)", file=sys.stderr); sys.exit(1)
     if os.environ.get("FAKE_FAIL") == "dispatch":
         print("HTTP 500 (fake)", file=sys.stderr); sys.exit(1)
     tag = [x.split("=", 1)[1] for x in a if x.startswith("version_tag=")][0]
@@ -76,6 +78,26 @@ if a[:1] == ["_add-run"]:
 if a[:2] == ["run", "list"]:
     wf = a[a.index("--workflow") + 1]
     print(json.dumps([r for r in db["runs"] if r["repo"] == here() and r["workflow"] == wf])); sys.exit(0)
+if a[:2] == ["run", "view"]:
+    # in progress for FAKE_VIEW_POLLS looks (or while FAKE_WATCH_SLEEP says the
+    # run is long), then completed: the polls the release makes are counted
+    rid = a[2]
+    n = int(db.get("views", {}).get(rid, 0)) + 1
+    db.setdefault("views", {})[rid] = n; save()
+    polls = int(os.environ.get("FAKE_VIEW_POLLS", "0"))
+    running = float(os.environ.get("FAKE_WATCH_SLEEP", "0")) > 0 or n <= polls
+    now = datetime.datetime.now(datetime.timezone.utc).isoformat().replace("+00:00", "Z")
+    jobs = [{"name": "macos-arm64", "databaseId": 900 + n,
+             "status": "in_progress" if running else "completed",
+             "conclusion": None if running else "success", "startedAt": now, "completedAt": now,
+             "steps": [{"name": "tauri build", "status": "in_progress" if running else "completed",
+                        "startedAt": now}]},
+            {"name": "linux", "databaseId": 800, "status": "completed", "conclusion": "success",
+             "startedAt": now, "completedAt": now, "steps": []}]
+    print(json.dumps({"status": "in_progress" if running else "completed",
+                      "conclusion": None if running else "success", "jobs": jobs,
+                      "url": f"https://example.invalid/runs/{rid}"}))
+    sys.exit(0)
 if a[:2] == ["run", "watch"]:
     import time; time.sleep(float(os.environ.get("FAKE_WATCH_SLEEP", "0"))); sys.exit(0)
 if a[:2] == ["release", "view"]:
@@ -233,7 +255,9 @@ class World:
             "EM_RELEASE_PARENT": str(self.ws), "EM_RELEASE_PIP": str(self.bin / "pip"),
             "EM_RELEASE_PYTHON": str(self.bin / "fakepython"), "EM_RELEASE_TMP": str(tmp / "t"),
             "EM_RELEASE_POLL": "0.02", "EM_RELEASE_WAIT_TAG": "3", "EM_RELEASE_WAIT_RUN": "3",
-            "EM_RELEASE_WAIT_PYPI": "5", "EM_RELEASE_WAIT_BUILD": "5",
+            "EM_RELEASE_WAIT_PYPI": "5", "EM_RELEASE_WAIT_BUILD": "5", "EM_RELEASE_PROGRESS": "0.02",
+            "EM_RELEASE_DOWNSTREAM": json.dumps([{"repo": "EM-blender-tools", "cmd": [
+                "bash", "-c", 'echo "$FAKE_DOWNSTREAM_SAYS"; exit "${FAKE_DOWNSTREAM_RC:-0}"']}]),
         })
         self.env.pop("PYTHONPATH", None)
         _x(self.bin / "gh", FAKE_GH)
@@ -369,7 +393,7 @@ def test_the_round_goes_through_and_status_says_done(world):
     # and status agrees, with its proofs
     st = world.release("status", *FULL)
     assert st.returncode == 0, _all(st)
-    assert st.stdout.count(" done ") == 11, st.stdout
+    assert st.stdout.count(" done ") == 12, st.stdout       # 0 … 11
     assert f"s3dgraphy {V} is on PyPI" in st.stdout and f"dtcstamp {D} is on PyPI" in st.stdout
     assert "every step is done" in st.stdout
     # a second run does nothing and says so
@@ -399,7 +423,7 @@ def test_resume_after_step_2(world):
 
 
 def test_resume_after_step_4(world):
-    r = world.release(*FULL, "--yes", FAKE_FAIL="publish")
+    r = world.release(*FULL, "--yes", FAKE_FAIL="dispatch-s3d")
     assert r.returncode == 1, _all(r)
     assert f"refs/tags/v{V}" in world.origin_tags("s3Dgraphy")
     r = world.release(*FULL, "--yes")
@@ -553,3 +577,53 @@ def test_a_draft_release_is_said_with_the_command_and_not_published(world):
     assert "release edit" not in (world.state / "gh.log").read_text()
     st = world.release("status", *FULL, FAKE_DRAFT="false")
     assert "v1.6.0-dev.1 is published (not a draft)" in st.stdout
+
+
+# ── dev30 (R1, R2), measured on the release of dev29 (2 Oct 2026) ─────────────
+
+RED = "FAILED tests/test_georef_roundtrip.py::test_push_without_epsg - AssertionError: 4326 written"
+
+
+def test_step_0_runs_in_the_dry_run_and_is_green(world):
+    before = world.snapshot()
+    r = world.release(*FULL, "--dry-run")
+    assert r.returncode == 0, _all(r)
+    assert "0 · the downstream proof" in r.stdout
+    assert "EM-blender-tools: green" in r.stdout
+    assert "  ✓  0 done" in r.stdout
+    assert world.snapshot() == before
+
+
+def test_a_red_consumer_stops_the_release_before_any_tag(world):
+    r = world.release(*FULL, "--yes", FAKE_DOWNSTREAM_RC=1, FAKE_DOWNSTREAM_SAYS=RED)
+    assert r.returncode == 1, _all(r)
+    err = _all(r)
+    assert "step 0: a consumer is red" in err
+    assert "EM-blender-tools: tests/test_georef_roundtrip.py::test_push_without_epsg" in err
+    assert "AssertionError: 4326 written" in err
+    assert world.origin_tags("dtcstamp") == "" and world.origin_tags("s3Dgraphy") == ""
+    assert not (world.state / "pypi").exists()
+    # and the dry-run says the same, red
+    d = world.release(*FULL, "--dry-run", FAKE_DOWNSTREAM_RC=1, FAKE_DOWNSTREAM_SAYS=RED)
+    assert d.returncode == 1 and "step 0: a consumer is red" in _all(d)
+
+
+def test_a_known_failure_of_the_consumer_does_not_stop_it(world):
+    (world.ws / "EM-blender-tools" / "known-test-failures.txt").write_text(
+        "# known\ntests/test_georef_roundtrip.py::test_push_without_epsg\n")
+    r = world.release(*FULL, "--dry-run", FAKE_DOWNSTREAM_RC=1, FAKE_DOWNSTREAM_SAYS=RED)
+    assert r.returncode == 0, _all(r)
+    assert "1 known failure(s) only" in r.stdout
+
+
+def test_a_long_wait_says_the_jobs_and_their_step(world):
+    r = world.release(*FULL, "--yes", FAKE_RUN_STATUS="in_progress", FAKE_VIEW_POLLS=2)
+    assert r.returncode == 0, _all(r)
+    out = r.stdout
+    assert f"▸ 2 · publish.yml for v{D} · " in out
+    assert f"▸ 4 · publish.yml for v{V} · " in out
+    assert "▸ 11 · build desktop v1.6.0-dev.1 · " in out
+    assert "macos-arm64  in progress · step «tauri build»" in out
+    assert "linux        done ✓" in out
+    # not a terminal: a new line per change of state, not one per look
+    assert out.count(f"▸ 2 · publish.yml for v{D}") <= 3

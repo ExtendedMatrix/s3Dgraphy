@@ -620,15 +620,25 @@ WHAT IT DOES
   whether it is already done and then skips it saying so: rerun the same
   command after an interruption and it resumes at the first step not done. No
   state file: the state is read from the repositories and from PyPI.
+     0  the downstream proof, BEFORE any bump (writes nothing in a repository):
+        the wheels of this tree (and of dtcstamp with --dtcstamp) built in
+        /tmp/em-release-V-prova/, each consumer's tests run on them in a
+        temporary venv — EM-blender-tools (pytest), stratigraph-server
+        (pytest), EMStudio (sync + check:datamodel on a scratch copy, then
+        graphml2em.py), stratigraph-templates (registry-snapshot + validate on
+        a scratch copy). A failure not in that repository's
+        known-test-failures.txt stops it with the repository, the test and the
+        first line of the error. --dry-run runs it for real.
      1  preconditions: the 8 repositories clean (or dirty only where the release
         itself writes, once V is on PyPI), nothing foreign to push, gh logged in
      2  (--dtcstamp X) dtcstamp: ./bump_and_push.sh --set X (it dates the
         CHANGELOG) → the tag on origin (waits) → gh workflow run publish.yml →
-        gh run watch → pip download dtcstamp==X works (waits: PyPI's CDN is late)
+        the run watched → pip download dtcstamp==X works (waits: PyPI's CDN is late)
      3  (--dtcstamp X) dtcstamp>=X in pyproject.toml and in EMtools'
         requirements_wheels.txt, each committed: "Require dtcstamp X"
-     4  ./em.sh bump V → ./em.sh publish V (a run already dispatched is watched,
-        never dispatched twice)
+     4  ./em.sh bump V → gh workflow run publish.yml, watched →
+        verifica-provenance.sh (a run already dispatched is watched, never
+        dispatched twice)
      5  the proof: venv in /tmp/em-release-V, pip install s3dgraphy[geo,rdf]==V,
         its fingerprint = ./em.sh fingerprint of this tree, or it stops
      6  ./em.sh propagate --pins
@@ -638,8 +648,13 @@ WHAT IT DOES
      9  the pin commits: per repository git diff --stat, the message, [y/N]
     10  the push of what is ahead of origin: the list, one [y/N]
     11  (--desktop) EMStudio: ./em.sh s3d status --check → ./em.sh devrel --yes →
-        gh run watch on release.yml → the release's URL
-  Every wait has a cap; past it, it says what it waited for and the command
+        release.yml watched → the release's URL, its assets and sizes, draft
+        or published
+  Every long wait SAYS what is happening: every 30 s (EM_RELEASE_PROGRESS) the
+  jobs, their state, the step in progress and the times, with the expected end
+  from the mean of the last three successful runs — one line rewritten in a
+  terminal, a new line per change of state otherwise; GitHub's annotations
+  after, as «GitHub's warnings». Every wait has a cap; past it, it says what it waited for and the command
   that resumes (exit 75). Caps and poll: EM_RELEASE_WAIT_TAG/_RUN/_PYPI/_BUILD,
   EM_RELEASE_POLL (scripts/release.py's docstring).
 
@@ -653,7 +668,9 @@ WHAT IT DOES NOT DO
   commits (per repository) and at the push.
 
 --dry-run
-  The steps with their verdict, the folder and the exact commands; writes nothing.
+  Step 0 for real (it writes nothing), then the steps with their verdict, the
+  folder and the exact commands; writes nothing. Before the END of a round:
+  ./em.sh release <V> --dry-run must reach step 0 green.
 
 EXAMPLE
   ./em.sh release 1.6.0.dev28 --dtcstamp 0.1.3 --desktop --dry-run

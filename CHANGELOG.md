@@ -66,6 +66,27 @@ decisioni della dev29). Datamodel: node datamodel **1.6.24**, visual rules
   levels of detail in Blender stays `lod_generation`. The «until E.D. says
   otherwise» is gone.
 
+### Changed (the release)
+- **R1 · step 0, the downstream proof** — `./em.sh release` builds the wheels
+  of the working tree (and of dtcstamp with `--dtcstamp`) in
+  `/tmp/em-release-<V>-prova/` and runs each consumer's tests on them in a
+  temporary venv BEFORE the bump: EM-blender-tools and stratigraph-server
+  (pytest), EMStudio (sync + `check:datamodel` on a scratch copy, then
+  `graphml2em.py`), stratigraph-templates (`registry-snapshot` + `validate` on
+  a scratch copy). A failure not in that repository's `known-test-failures.txt`
+  stops it with the repository, the test and the first line of the error; a
+  test red by construction until a later step (EMtools' fingerprint, rewritten
+  at step 7) is said as such. It writes nothing, so `--dry-run` runs it. On
+  2 Oct 2026 step 7 found EMtools red after dev29 was on PyPI.
+- **R2 · a wait that reads** — the waits on publish.yml (steps 2 and 4) and on
+  release.yml (step 11) print every 30 s the jobs, their state, the step in
+  progress and the times, with the expected end from the last three
+  successful runs; GitHub's annotations come after, as «GitHub's warnings».
+  Step 4 dispatches publish.yml itself (as `./em.sh publish` did) to watch it.
+  Step 11 ends with the release's URL, its assets and their sizes.
+- **R3** — the workflows on Node 24 actions (checkout v5, setup-python v6,
+  upload-artifact v6 — v5 is still node20, measured) and `ubuntu-24.04`.
+
 ### Fixed
 - **A licence read with its name only got the type CC-BY-NC-ND** —
   `LicenseNode`'s default. Measured on San Pietro (D6): the GraphML declares

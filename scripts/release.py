@@ -25,6 +25,12 @@ command can be replaced for the tests (tests/test_release.py):
     EM_RELEASE_GH       gh (default: gh)
     EM_RELEASE_POLL     seconds between two looks (default: 15)
     EM_RELEASE_WAIT_TAG / _WAIT_RUN / _WAIT_PYPI / _WAIT_BUILD   the caps, seconds
+    EM_RELEASE_PROGRESS seconds between two lines of a long wait (default: 30)
+    EM_RELEASE_WHEEL    the command that builds a wheel of a working tree into a
+                        folder: `<cmd> <outdir> <tree>` (default: pip wheel)
+    EM_RELEASE_DOWNSTREAM  a JSON list of {repo, cmd, known?} that replaces the
+                        consumers of step 0 (each cmd run in its repository,
+                        `{python}` = the python that sees the new wheels)
 """
 from __future__ import annotations
 
@@ -55,6 +61,7 @@ WAIT = {
     "pypi": float(os.environ.get("EM_RELEASE_WAIT_PYPI") or 900),   # PyPI's CDN is late: a wait, not an error
     "build": float(os.environ.get("EM_RELEASE_WAIT_BUILD") or 5400),  # gh run watch: publish.yml, the installers
 }
+PROGRESS = float(os.environ.get("EM_RELEASE_PROGRESS") or 30)
 EXIT_WAIT = 75   # the same code verifica-provenance.sh gives «not visible yet»
 
 #: the repositories a release touches, in the order the precondition reads them
@@ -285,22 +292,148 @@ def wait_for(what: str, probe, cap: float, resume: str):
         time.sleep(POLL)
 
 
-def watch(r: Path, run: dict, what: str, c) -> None:
-    """`gh run watch --exit-status`, with a cap: a run past it is still running, not failed."""
-    if run.get("status") == "completed":
-        if run.get("conclusion") != "success":
-            raise Stop(f"{what} ended '{run.get('conclusion')}': gh run view {run.get('databaseId')} --log-failed "
-                       f"(in {_rel(r)})")
-        return
-    cmd = [*GH, "run", "watch", str(run["databaseId"]), "--exit-status"]
-    print(f"    $ ({_rel(r)}) {' '.join(cmd)}   (≤{WAIT['build']:g} s)", flush=True)
+def _seconds(a: str, b: str | None = None) -> float:
+    """Seconds from the ISO instant `a` to `b` (or now)."""
     try:
-        rc = subprocess.run(cmd, cwd=str(r), env=ENV, timeout=WAIT["build"]).returncode
-    except subprocess.TimeoutExpired:
-        raise Stop(f"waited {WAIT['build']:g} s for {what} ({run.get('url')}) and it is still running.\n"
-                   f"    When it ends, resume with:  {c.resume()}", EXIT_WAIT)
-    if rc != 0:
-        raise Stop(f"{what} failed: gh run view {run['databaseId']} --log-failed (in {_rel(r)})")
+        t0 = _parse_time(a)
+        t1 = _parse_time(b) if b else _dt.datetime.now(_dt.timezone.utc)
+        return max(0.0, (t1 - t0).total_seconds())
+    except (TypeError, ValueError):
+        return 0.0
+
+
+def _mmss(sec: float) -> str:
+    sec = int(sec)
+    return f"{sec // 60}:{sec % 60:02d}"
+
+
+def expected_duration(r: Path, workflow: str) -> float | None:
+    """The mean of the last three SUCCESSFUL runs of `workflow`, seconds."""
+    s = out([*GH, "run", "list", "--workflow", workflow, "--status", "success", "-L", "3",
+             "--json", "createdAt,updatedAt"], r)
+    try:
+        runs = json.loads(s) if s else []
+    except ValueError:
+        return None
+    took = [_seconds(x.get("createdAt"), x.get("updatedAt")) for x in runs
+            if x.get("createdAt") and x.get("updatedAt")]
+    took = [t for t in took if t > 0]
+    return sum(took) / len(took) if took else None
+
+
+def run_view(r: Path, run_id) -> dict:
+    s = out([*GH, "run", "view", str(run_id), "--json", "status,conclusion,jobs,url"], r)
+    try:
+        v = json.loads(s) if s else {}
+    except ValueError:
+        v = {}
+    return v if isinstance(v, dict) else {}
+
+
+def progress_lines(view: dict, run: dict, header: str, expected: float | None) -> list:
+    """What a long wait says, every PROGRESS seconds (dev30, R2):
+
+        ▸ 11 · build desktop v1.6.0-dev.15 · 4:12 of ~11 min (mean of the last 3 runs) · end expected 16:05
+            macos-arm64  in progress · step «tauri build» (2:40)
+            linux        done ✓      · 3:58
+    """
+    started = run.get("createdAt")
+    elapsed = _seconds(started) if started else 0.0
+    line = f"▸ {header} · {_mmss(elapsed)}"
+    if expected:
+        end = _dt.datetime.now() + _dt.timedelta(seconds=max(0.0, expected - elapsed))
+        line += (f" of ~{max(1, round(expected / 60))} min (mean of the last 3 runs)"
+                 f" · end expected {end:%H:%M}")
+    lines = [line]
+    jobs = view.get("jobs") or []
+    width = max([len(str(j.get("name") or "")) for j in jobs] + [4])
+    for j in jobs:
+        name = str(j.get("name") or "?").ljust(width)
+        st, concl = j.get("status"), j.get("conclusion")
+        if st == "completed":
+            took = _mmss(_seconds(j.get("startedAt"), j.get("completedAt")))
+            word = "done ✓     " if concl == "success" else f"{concl or 'ended'} ✗".ljust(11)
+            lines.append(f"    {name}  {word} · {took}")
+        elif st == "in_progress":
+            step = next((x for x in j.get("steps") or [] if x.get("status") == "in_progress"), None)
+            where = f"step «{step.get('name')}» ({_mmss(_seconds(step.get('startedAt')))})" if step \
+                else f"({_mmss(_seconds(j.get('startedAt')))})"
+            lines.append(f"    {name}  in progress · {where}")
+        else:
+            lines.append(f"    {name}  {st or 'waiting'}")
+    return lines
+
+
+def _state_of(lines: list) -> list:
+    """The lines without their clocks: what changed, for an output that is not a terminal."""
+    return [re.sub(r"\d+:\d\d|~\d+ min|end expected \d\d:\d\d", "", x) for x in lines]
+
+
+def github_warnings(r: Path, view: dict) -> list:
+    """The annotations GitHub attaches to the jobs (Node 20 deprecated,
+    ubuntu-latest moving…): kept, but said AFTER, as «GitHub's warnings»."""
+    nwo = out([*GH, "repo", "view", "--json", "nameWithOwner", "-q", ".nameWithOwner"], r)
+    if not nwo:
+        return []
+    said = []
+    for j in view.get("jobs") or []:
+        jid = j.get("databaseId")
+        if not jid:
+            continue
+        s = out([*GH, "api", f"repos/{nwo}/check-runs/{jid}/annotations"], r)
+        try:
+            for a in json.loads(s) if s else []:
+                msg = str(a.get("message") or "").strip().splitlines()
+                if msg:
+                    said.append(f"{j.get('name')}: {a.get('annotation_level', 'notice')} — {msg[0]}")
+        except (ValueError, AttributeError):
+            continue
+    return sorted(set(said))
+
+
+def watch(r: Path, run: dict, what: str, c, workflow: str = "", step: int | None = None) -> None:
+    """Wait for a run, SAYING what is happening (dev30, R2): every PROGRESS
+    seconds the jobs, their state, the step in progress and the times, on a line
+    that rewrites itself in a terminal (a new line per change of state when the
+    output is not one), with the expected duration from the last three
+    successful runs. A run past the cap is still running, not failed."""
+    header = f"{step} · {what}" if step is not None else what
+    if run.get("status") != "completed":
+        expected = expected_duration(r, workflow) if workflow else None
+        tty = sys.stdout.isatty()
+        shown, last_state = 0, None
+        t0 = time.monotonic()
+        print(f"    {run.get('url') or ''}", flush=True)
+        while True:
+            view = run_view(r, run["databaseId"])
+            status = view.get("status") or run.get("status")
+            lines = progress_lines(view, run, header, expected)
+            if tty:
+                if shown:
+                    sys.stdout.write(f"\033[{shown}F\033[J")
+                sys.stdout.write("\n".join(lines) + "\n")
+                sys.stdout.flush()
+                shown = len(lines)
+            elif _state_of(lines) != last_state:
+                print("\n".join(lines), flush=True)
+            last_state = _state_of(lines)
+            if status == "completed":
+                run = dict(run, status="completed", conclusion=view.get("conclusion"))
+                break
+            if time.monotonic() - t0 >= WAIT["build"]:
+                raise Stop(f"waited {WAIT['build']:g} s for {what} ({run.get('url')}) and it is still running.\n"
+                           f"    When it ends, resume with:  {c.resume()}", EXIT_WAIT)
+            time.sleep(min(PROGRESS, max(0.01, WAIT["build"] - (time.monotonic() - t0))))
+    else:
+        view = {}
+    if run.get("conclusion") != "success":
+        raise Stop(f"{what} ended '{run.get('conclusion')}': gh run view {run.get('databaseId')} --log-failed "
+                   f"(in {_rel(r)})")
+    notes = github_warnings(r, view) if view else []
+    if notes:
+        print("    GitHub's warnings:", flush=True)
+        for n in notes:
+            print(f"      {n}", flush=True)
 
 
 # ══ the pins, read and written ════════════════════════════════════════════════
@@ -407,6 +540,260 @@ class Step:
         raise NotImplementedError
 
 
+# ── 0 · the downstream proof ─────────────────────────────────────────────────
+#
+# dev30, R1: on 2 Oct 2026 step 7 found EM-blender-tools red
+# (tests/test_georef_roundtrip.py: dev29 had taken `epsg` off the new
+# GeoPositionNode, and graph_sync.py still wrote 4326) AFTER 1.6.0.dev29 was on
+# PyPI. A published version cannot be withdrawn: the red has to be found BEFORE
+# the tag. This step builds the wheel of the working tree and runs each
+# consumer's tests on it, in temporary venvs; it writes nothing in any
+# repository, so --dry-run runs it for real.
+
+WHEEL_CMD = shlex.split(os.environ.get("EM_RELEASE_WHEEL") or
+                        f"{shlex.quote(sys.executable)} -m pip wheel --no-deps --no-build-isolation "
+                        f"--quiet -w")
+
+#: how each consumer is tested, as its own step says (step 7 for EM-blender-tools)
+DOWNSTREAM = [
+    {"repo": "EM-blender-tools", "base": ".venv/bin/python", "kind": "pytest", "args": [],
+     # red BY CONSTRUCTION before step 7, which rewrites the fingerprint it
+     # compares (em_setup/datamodel.fingerprint.json, `./em.sh rebundle`): said
+     # as such, never counted as a break and never hidden
+     "realigned": {"tests/test_datamodel_fingerprint.py::test_l_atteso_e_quello_della_ruota_importata":
+                   "step 7 rewrites em_setup/datamodel.fingerprint.json"}},
+    {"repo": "stratigraph-server", "base": ".venv/bin/python", "kind": "pytest", "args": ["tests"]},
+    {"repo": "EMStudio", "base": "../s3Dgraphy/.venv/bin/python", "kind": "emstudio"},
+    {"repo": "stratigraph-templates", "base": ".venv/bin/python", "kind": "templates"},
+]
+
+#: where a repository keeps the tests it knows fail (one pytest node id a line)
+KNOWN_FILES = ("known-test-failures.txt", "scripts/known-test-failures.txt",
+               "tests/known-test-failures.txt")
+
+
+def known_failures(r: Path) -> set:
+    for rel in KNOWN_FILES:
+        p = r / rel
+        if p.is_file():
+            return {ln.split("#", 1)[0].strip() for ln in _read(p).splitlines()} - {""}
+    return set()
+
+
+def pytest_failures(said: str) -> list:
+    """[(node id, first line of the error)] from the short summary of `pytest -rfE`."""
+    got = []
+    for ln in said.splitlines():
+        m = re.match(r"^(FAILED|ERROR) (\S+)(?: - (.*))?$", ln.strip())
+        if m:
+            got.append((m.group(2), (m.group(3) or m.group(1)).strip()))
+    return got
+
+
+def _first_error(said: str) -> str:
+    for ln in said.splitlines():
+        t = ln.strip()
+        if re.search(r"(✗|Error|error:|FAILED|AssertionError|Traceback|not ok)", t):
+            return t
+    lines = [ln.strip() for ln in said.splitlines() if ln.strip()]
+    return lines[-1] if lines else "(no output)"
+
+
+class DownstreamProof(Step):
+    n, title = 0, "the downstream proof: the working tree's wheel under each consumer's tests (writes nothing)"
+
+    def where(self, c) -> Path:
+        return TMP / f"em-release-{c.v}-prova"
+
+    def consumers(self) -> list:
+        raw = os.environ.get("EM_RELEASE_DOWNSTREAM")
+        if raw:
+            return [dict(x, kind="cmd") for x in json.loads(raw)]
+        return DOWNSTREAM
+
+    def check(self, c):
+        if c.published():
+            return DONE, f"s3dgraphy {c.v} is on PyPI: the proof before the tag is behind us"
+        if getattr(c, "_downstream", None):
+            return DONE, c._downstream
+        return TODO, "runs at the start of every release and of --dry-run (quick, writes nothing)"
+
+    def plan(self, c):
+        w = self.where(c)
+        p = [("s3Dgraphy", f"{' '.join(WHEEL_CMD)} {w}/dist .")]
+        if c.d:
+            p.append(("dtcstamp", f"{' '.join(WHEEL_CMD)} {w}/dist ."))
+        for x in self.consumers():
+            if exists(x["repo"]):
+                p.append((x["repo"], {"pytest": "pytest -q -p no:cacheprovider -rfE "
+                                                 + " ".join(x.get("args") or []),
+                                      "emstudio": "sync-datamodels.sh + npm run check:datamodel on a "
+                                                  "scratch copy, graphml2em.py on the wheel",
+                                      "templates": "registry-snapshot + validate on a scratch copy",
+                                      "cmd": " ".join(x.get("cmd") or [])}[x["kind"]]
+                          + "   (in a temporary venv that sees the new wheels)"))
+        return p
+
+    # ── the pieces ──────────────────────────────────────────────────────────
+    def wheels(self, c) -> list:
+        dist = self.where(c) / "dist"
+        if dist.exists():
+            shutil.rmtree(dist)
+        dist.mkdir(parents=True)
+        trees = [ROOT] + ([repo("dtcstamp")] if c.d and exists("dtcstamp") else [])
+        for t in trees:
+            sh([*WHEEL_CMD, dist, t], t)
+        got = sorted(dist.glob("*.whl"))
+        if len(got) < len(trees):
+            raise Stop(f"step 0: the wheel(s) were not built in {dist}")
+        return got
+
+    def venv(self, c, x, wheels) -> Path:
+        """A venv that sees the consumer's own packages, with the new wheels in front."""
+        # normalised, NOT resolved: the venv's python is a symlink to the base
+        # interpreter, and resolving it would see the base's packages, not the venv's
+        base = Path(os.path.normpath(repo(x["repo"]) / x["base"]))
+        if not base.exists():
+            raise Stop(f"step 0: {x['repo']} has no python at {base} — make its venv first")
+        vd = self.where(c) / x["repo"] / "venv"
+        if vd.exists():
+            shutil.rmtree(vd)
+        sh([base, "-m", "venv", "--without-pip", vd], TMP, quiet=True)
+        py = vd / "bin" / "python"
+        purelib = out([py, "-c", "import sysconfig; print(sysconfig.get_paths()['purelib'])"], TMP)
+        theirs = out([base, "-c", "import sysconfig; print(sysconfig.get_paths()['purelib'])"], TMP)
+        if not purelib or not theirs:
+            raise Stop(f"step 0: cannot read the site-packages of {base}")
+        Path(purelib, "zz-consumer.pth").write_text(theirs + "\n", encoding="utf-8")
+        sh([base, "-m", "pip", "install", "--quiet", "--no-deps", "--no-index", "--upgrade",
+            "--target", purelib, *wheels], TMP, quiet=True)
+        return py
+
+    def run_one(self, c, x, wheels):
+        """(failures [(test, first line)], how many were known) for one consumer."""
+        r = repo(x["repo"])
+        # wide lines: pytest cuts the short summary to the terminal's width
+        env = dict({k: v for k, v in ENV.items() if k != "PYTHONPATH"}, COLUMNS="250")
+        if x["kind"] == "cmd":
+            cmd = [str(a).replace("{python}", sys.executable) for a in x["cmd"]]
+            res = subprocess.run(cmd, cwd=str(r), env=env, text=True, stdin=subprocess.DEVNULL,
+                                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            return self.judge(r, x, res.returncode, res.stdout)
+        py = self.venv(c, x, wheels)
+        if x["kind"] == "pytest":
+            res = subprocess.run([str(py), "-m", "pytest", "-q", "-p", "no:cacheprovider", "-rfE",
+                                  *x.get("args", [])], cwd=str(r), env=env, text=True,
+                                 stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                                 stderr=subprocess.STDOUT)
+            return self.judge(r, x, res.returncode, res.stdout)
+        if x["kind"] == "templates":
+            return self.templates(c, x, py, env)
+        return self.emstudio(c, x, py, env)
+
+    def judge(self, r, x, rc, said):
+        if rc == 0:
+            return [], 0
+        fails = pytest_failures(said)
+        if not fails:
+            return [("(the run)", _first_error(said))], 0
+        known = known_failures(r)
+        realigned = x.get("realigned") or {}
+        for test, _ in fails:
+            if test in realigned and test not in known:
+                print(f"    {x['repo']}: {test} — red until {realigned[test]}", flush=True)
+        new = [f for f in fails if f[0] not in known and f[0] not in realigned]
+        return new, len(fails) - len(new)
+
+    def templates(self, c, x, py, env):
+        """What step 6 will do (registry-snapshot) and then validate — on a
+        scratch copy, so the repository is not touched."""
+        src = repo(x["repo"])
+        scratch = self.where(c) / x["repo"] / "tree"
+        if scratch.exists():
+            shutil.rmtree(scratch)
+        shutil.copytree(src, scratch, ignore=shutil.ignore_patterns(
+            ".git", ".venv", "dist", "out", "__pycache__", "*.egg-info", "node_modules"))
+        e = dict(env, PYTHONPATH=str(scratch / "src"), STRATIGRAPH_S3DGRAPHY_SRC="")
+        for verb in ("registry-snapshot", "validate"):
+            res = subprocess.run([str(py), "-m", "stratigraph_templates.cli", verb], cwd=str(scratch),
+                                 env=e, text=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                                 stderr=subprocess.STDOUT)
+            if res.returncode != 0:
+                return [(verb, _first_error(res.stdout))], 0
+        return [], 0
+
+    def emstudio(self, c, x, py, env):
+        """What step 6 will do (sync-datamodels.sh from the wheel) and then
+        `npm run check:datamodel` — on a scratch copy of the frontend's scripts
+        and assets, beside a stand-in «s3Dgraphy» that IS the installed wheel —
+        and the Python sidecar's conversion (graphml2em.py) on the wheel."""
+        studio = repo(x["repo"])
+        base = self.where(c) / x["repo"] / "tree"
+        if base.exists():
+            shutil.rmtree(base)
+        fe = base / "EMStudio" / "frontend"
+        shutil.copytree(studio / "frontend" / "scripts", fe / "scripts")
+        shutil.copytree(studio / "frontend" / "src" / "assets", fe / "src" / "assets")
+        (base / "EMStudio" / "crates" / "em-core" / "assets").mkdir(parents=True)
+        pkg = out([py, "-c", "import os, s3dgraphy; print(os.path.dirname(s3dgraphy.__file__))"], TMP)
+        if not pkg:
+            return [("import s3dgraphy", "the wheel does not import in the temporary venv")], 0
+        stand = base / "s3Dgraphy"
+        (stand / "src").mkdir(parents=True)
+        (stand / ".venv" / "bin").mkdir(parents=True)
+        os.symlink(pkg, stand / "src" / "s3dgraphy")
+        os.symlink(py, stand / ".venv" / "bin" / "python")
+        e = dict(env, PATH=f"{py.parent}{os.pathsep}{env.get('PATH', '')}")
+        for label, cmd in (("sync-datamodels.sh", ["bash", "scripts/sync-datamodels.sh", str(stand)]),
+                           ("npm run check:datamodel", ["node", "scripts/check-datamodel.mjs"])):
+            res = subprocess.run(cmd, cwd=str(fe), env=e, text=True, stdin=subprocess.DEVNULL,
+                                 stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            if res.returncode != 0:
+                return [(label, _first_error(res.stdout))], 0
+        graphml = ROOT / "tests" / "fixtures" / "dev29" / "tiny.graphml"
+        sample = next((p for p in (graphml, *sorted((ROOT / "tests").rglob("*.graphml")))
+                       if p.is_file()), None)
+        if sample is not None and (studio / "tools" / "graphml2em.py").is_file():
+            res = subprocess.run([str(py), str(studio / "tools" / "graphml2em.py"), str(sample),
+                                  str(base / "out.em.json")], cwd=str(studio / "tools"), env=e,
+                                 text=True, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE,
+                                 stderr=subprocess.STDOUT)
+            if res.returncode != 0:
+                return [(f"tools/graphml2em.py {sample.name}", _first_error(res.stdout))], 0
+        return [], 0
+
+    def run(self, c):
+        if c.published():
+            print(f"    s3dgraphy {c.v} is on PyPI: the proof before the tag is behind us — skipped",
+                  flush=True)
+            return
+        wheels = [] if os.environ.get("EM_RELEASE_DOWNSTREAM") and not os.environ.get("EM_RELEASE_WHEEL") \
+            else self.wheels(c)
+        for w in wheels:
+            print(f"    built {_rel(w)}", flush=True)
+        said, red = [], []
+        for x in self.consumers():
+            if not exists(x["repo"]):
+                print(f"    {x['repo']}: not here — skipped", flush=True)
+                continue
+            print(f"    {x['repo']} …", flush=True)
+            new, known = self.run_one(c, x, wheels)
+            if new:
+                red.append((x["repo"], new))
+                for test, first in new[:5]:
+                    print(_c("1;31", f"    ✗ {x['repo']}: {test}"), flush=True)
+                    print(f"        {first}", flush=True)
+            else:
+                said.append(f"{x['repo']} green" + (f" ({known} known)" if known else ""))
+                ok(f"{x['repo']}: green" + (f", {known} known failure(s) only" if known else ""))
+        if red:
+            first = red[0]
+            raise Stop(f"step 0: a consumer is red on the working tree's wheel — nothing is tagged.\n"
+                       f"    {first[0]}: {first[1][0][0]}\n      {first[1][0][1]}\n"
+                       f"    fix it (or add it to that repository's known-test-failures.txt), then {c.resume()}")
+        c._downstream = " · ".join(said) or "no consumer here"
+
+
 # ── 1 · preconditions ────────────────────────────────────────────────────────
 
 class Preconditions(Step):
@@ -480,7 +867,7 @@ class Dtcstamp(Step):
         return [("dtcstamp", f"./bump_and_push.sh --set {c.d}   (dates the CHANGELOG, commit, tag, push)"),
                 ("dtcstamp", f"git ls-remote --tags origin refs/tags/v{c.d}   (until it is there, ≤{WAIT['tag']:g} s)"),
                 ("dtcstamp", f"gh workflow run publish.yml -f target=pypi -f version_tag=v{c.d}"),
-                ("dtcstamp", "gh run watch <that run> --exit-status"),
+                ("dtcstamp", "gh run view <that run> --json jobs   (every 30 s: the jobs, their step, the times)"),
                 ("", f"pip download dtcstamp=={c.d} --no-deps --no-cache-dir   (until it works, ≤{WAIT['pypi']:g} s)")]
 
     def run(self, c):
@@ -529,7 +916,8 @@ def tag_and_publish(c: Ctx, r: Path, v: str, tag: str, label: str, publish_cmd):
         run = wait_for(f"the publish.yml run just dispatched ({label})",
                        lambda: newest_run_since(r, "publish.yml", t0), WAIT["run"], c.resume())
         print(f"    {run.get('url')}", flush=True)
-    watch(r, run, f"publish.yml for {tag}", c)
+    watch(r, run, f"publish.yml for {tag}", c, workflow="publish.yml",
+          step=2 if label == "dtcstamp" else 4)
 
 
 # ── 3 · the dtcstamp pin ─────────────────────────────────────────────────────
@@ -594,7 +982,8 @@ class S3dPublish(Step):
     def plan(self, c):
         return [("s3Dgraphy", f"./em.sh bump {c.v} --yes   (commit, tag, push)"),
                 ("s3Dgraphy", f"git ls-remote --tags origin refs/tags/v{c.v}   (≤{WAIT['tag']:g} s)"),
-                ("s3Dgraphy", f"./em.sh publish {c.v} --yes   (publish.yml + verifica-provenance.sh)"),
+                ("s3Dgraphy", f"gh workflow run publish.yml -f target=pypi -f version_tag=v{c.v}   (watched, job by job)"),
+                ("s3Dgraphy", f"./scripts/verifica-provenance.sh {c.v}"),
                 ("", f"pip download s3dgraphy=={c.v} --no-deps   (≤{WAIT['pypi']:g} s)")]
 
     def run(self, c):
@@ -602,9 +991,15 @@ class S3dPublish(Step):
 
         def publish(run):
             if run is None:
-                sh(["./em.sh", "publish", v, "--yes"], r)
-                return
-            watch(r, run, f"publish.yml for {tag}", c)
+                # what `./em.sh publish` does, with the wait said (dev30, R2):
+                # dispatch, watch the run job by job, then the provenance
+                branch = git(r, "branch", "--show-current") or "HEAD"
+                t0 = _dt.datetime.now(_dt.timezone.utc)
+                sh([*GH, "workflow", "run", "publish.yml", "--ref", branch, "-f", "target=pypi",
+                    "-f", f"version_tag={tag}"], r)
+                run = wait_for(f"the publish.yml run just dispatched (s3Dgraphy)",
+                               lambda: newest_run_since(r, "publish.yml", t0), WAIT["run"], c.resume())
+            watch(r, run, f"publish.yml for {tag}", c, workflow="publish.yml", step=4)
             sh(["./scripts/verifica-provenance.sh", v], r)
 
         tag_and_publish(c, r, v, tag, "s3Dgraphy", publish_cmd=publish)
@@ -1011,7 +1406,7 @@ class Desktop(Step):
 
     def plan(self, c):
         return [("EMStudio", "./em.sh s3d status --check"), ("EMStudio", "./em.sh devrel --yes"),
-                ("EMStudio", "gh run watch <release.yml run of the tag> --exit-status"),
+                ("EMStudio", "gh run view <release.yml run of the tag> --json jobs   (every 30 s)"),
                 ("EMStudio", "gh release view <tag> --json url")]
 
     def run(self, c):
@@ -1026,10 +1421,21 @@ class Desktop(Step):
             if not tag:
                 raise Stop("devrel ran but no tag carries the pin")
         run = wait_for(f"the release.yml run of {tag}", lambda: self.run_for(tag), WAIT["run"], c.resume())
-        print(f"    {run.get('url')}", flush=True)
-        watch(r, run, f"release.yml for {tag}", c)
+        watch(r, run, f"build desktop {tag}", c, workflow="release.yml", step=11)
         url = out([*GH, "release", "view", tag, "--json", "url", "-q", ".url"], r)
         ok(f"the desktop {tag}: {url or run.get('url')}")
+        for line in self.assets(tag):
+            print(f"      {line}", flush=True)
+
+    def assets(self, tag) -> list:
+        """The release's assets with their size, as GitHub lists them."""
+        s = out([*GH, "release", "view", tag, "--json", "assets"], repo("EMStudio"))
+        try:
+            got = json.loads(s).get("assets") or [] if s else []
+        except (ValueError, AttributeError):
+            return []
+        return [f"{a.get('name')}  {int(a.get('size') or 0) / 1e6:.1f} MB" for a in got
+                if isinstance(a, dict) and a.get("name")]
 
     def draft_note(self, c) -> str:
         """Whether the release of the tag is a DRAFT, and the command that
@@ -1048,7 +1454,7 @@ class Desktop(Step):
         return f"the EMStudio release {tag}: draft or not could not be read (gh release view {tag})"
 
 
-STEPS = [Preconditions(), Dtcstamp(), DtcPin(), S3dPublish(), Proof(), Propagate(), EMtools(),
+STEPS = [DownstreamProof(), Preconditions(), Dtcstamp(), DtcPin(), S3dPublish(), Proof(), Propagate(), EMtools(),
          StratiFieldPin(), Commits(), Push(), Desktop()]
 
 
@@ -1059,6 +1465,11 @@ def table(c: Ctx, with_plan: bool) -> int:
     rows = []
     for s in STEPS:
         state, proof = s.check(c)
+        if s.n == 0:
+            # step 0 is not a state of the repositories: it runs at the start of
+            # every release, so it never stands before the others
+            rows.append((s, state, proof))
+            continue
         if state in (TODO, BLOCKED) and first_todo is None:
             first_todo = s.n
         elif state == TODO and first_todo is not None:
@@ -1077,7 +1488,7 @@ def table(c: Ctx, with_plan: bool) -> int:
                 print(f"               would run{(' in ' + where) if where else ''}: {cmd}")
     if with_plan:
         print("--dry-run: nothing written")
-    nxt = next((s for s, st, _ in rows if st in (TODO, BLOCKED)), None)
+    nxt = next((s for s, st, _ in rows if st in (TODO, BLOCKED) and s.n != 0), None)
     print(f"next: step {nxt.n} — {c.resume()}" if nxt else "every step is done")
     if rows[-1][1] == DONE:
         note = STEPS[-1].draft_note(c)
@@ -1088,6 +1499,10 @@ def table(c: Ctx, with_plan: bool) -> int:
 
 def release(c: Ctx) -> int:
     print(f"release s3dgraphy {c.v}" + (f" · dtcstamp {c.d}" if c.d else "") + (" · desktop" if c.desktop else ""))
+    # step 0 first, before any question: a red consumer stops it here
+    print()
+    log(f"0 · {STEPS[0].title}")
+    STEPS[0].run(c)
     remote = []
     if c.d and not pypi_has("dtcstamp", c.d):
         remote.append(f"publishes dtcstamp {c.d} on PyPI")
@@ -1098,7 +1513,7 @@ def release(c: Ctx) -> int:
     if remote and not c.ask("This " + "; ".join(remote) + ". A published version cannot be withdrawn. Go on?"):
         print("stopped: nothing was done")
         return 1
-    for s in STEPS:
+    for s in STEPS[1:]:
         state, proof = s.check(c)
         print()
         log(f"{s.n} · {s.title}")
@@ -1162,6 +1577,11 @@ def main(argv) -> int:
         return 2
     c = Ctx(v, d, desktop, dry, yes)
     try:
+        if dry and not status:
+            # step 0 writes nothing: the dry-run is where it is needed (R1)
+            log("0 · " + STEPS[0].title)
+            STEPS[0].run(c)
+            print()
         if status or dry:
             if status and not args:
                 print(f"(version from s3Dgraphy's pyproject.toml; ./em.sh release status <V> asks about another)")
