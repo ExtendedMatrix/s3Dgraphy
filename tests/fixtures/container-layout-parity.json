@@ -1,0 +1,783 @@
+{
+ "_about": "Shared by s3Dgraphy (tests/test_container_layouts.py) and EMStudio (frontend/scripts/check-container.mjs, testdata/container-layout-parity.json is a byte copy). The rule: graphs.<id>.layout when a member has one; else the file-level layout for the ACTIVE graph (or the only one) and nobody else; the rest are laid out afresh and listed in `fresh` only for an OLD file (a file-level layout and no member carrying its own). On write, each member carries its own and the file-level layout is a copy of the active graph's.",
+ "cases": [
+  {
+   "name": "legacy single-graph: its layout is the graph's",
+   "doc": {
+    "header": {
+     "format": "em.json",
+     "version": "1.0"
+    },
+    "graph": {
+     "graph_id": "solo",
+     "name": "solo",
+     "nodes": [
+      {
+       "id": "US1",
+       "node_type": "US",
+       "name": "US1"
+      }
+     ],
+     "edges": []
+    },
+    "layout": {
+     "positions": {
+      "US1": {
+       "x": 10,
+       "y": 0,
+       "w": 90,
+       "h": 30
+      }
+     }
+    }
+   },
+   "expect": {
+    "layouts": {
+     "solo": {
+      "positions": {
+       "US1": {
+        "x": 10,
+        "y": 0,
+        "w": 90,
+        "h": 30
+       }
+      }
+     }
+    },
+    "fresh": []
+   },
+   "built": {
+    "members": {
+     "solo": {
+      "positions": {
+       "US1": {
+        "x": 10,
+        "y": 0,
+        "w": 90,
+        "h": 30
+       }
+      }
+     }
+    },
+    "layout": {
+     "positions": {
+      "US1": {
+       "x": 10,
+       "y": 0,
+       "w": 90,
+       "h": 30
+      }
+     }
+    }
+   }
+  },
+  {
+   "name": "old container, two graphs: the file layout goes to the ACTIVE one only",
+   "doc": {
+    "header": {
+     "format": "em.json",
+     "version": "1.0"
+    },
+    "graphs": {
+     "seme": {
+      "graph_id": "seme",
+      "name": "seme",
+      "nodes": [
+       {
+        "id": "US9",
+        "node_type": "US",
+        "name": "US9"
+       }
+      ],
+      "edges": []
+     },
+     "vero": {
+      "graph_id": "vero",
+      "name": "vero",
+      "nodes": [
+       {
+        "id": "US1",
+        "node_type": "US",
+        "name": "US1"
+       }
+      ],
+      "edges": []
+     }
+    },
+    "active_graph_id": "vero",
+    "layout": {
+     "positions": {
+      "US1": {
+       "x": 20,
+       "y": 0,
+       "w": 90,
+       "h": 30
+      }
+     }
+    }
+   },
+   "expect": {
+    "layouts": {
+     "vero": {
+      "positions": {
+       "US1": {
+        "x": 20,
+        "y": 0,
+        "w": 90,
+        "h": 30
+       }
+      }
+     }
+    },
+    "fresh": [
+     "seme"
+    ]
+   },
+   "built": {
+    "members": {
+     "seme": null,
+     "vero": {
+      "positions": {
+       "US1": {
+        "x": 20,
+        "y": 0,
+        "w": 90,
+        "h": 30
+       }
+      }
+     }
+    },
+    "layout": {
+     "positions": {
+      "US1": {
+       "x": 20,
+       "y": 0,
+       "w": 90,
+       "h": 30
+      }
+     }
+    }
+   }
+  },
+  {
+   "name": "old container, one graph and no active id: the only graph inherits",
+   "doc": {
+    "header": {
+     "format": "em.json",
+     "version": "1.0"
+    },
+    "graphs": {
+     "g": {
+      "graph_id": "g",
+      "name": "g",
+      "nodes": [
+       {
+        "id": "US1",
+        "node_type": "US",
+        "name": "US1"
+       }
+      ],
+      "edges": []
+     }
+    },
+    "layout": {
+     "positions": {
+      "US1": {
+       "x": 30,
+       "y": 0,
+       "w": 90,
+       "h": 30
+      }
+     }
+    }
+   },
+   "expect": {
+    "layouts": {
+     "g": {
+      "positions": {
+       "US1": {
+        "x": 30,
+        "y": 0,
+        "w": 90,
+        "h": 30
+       }
+      }
+     }
+    },
+    "fresh": []
+   },
+   "built": {
+    "members": {
+     "g": {
+      "positions": {
+       "US1": {
+        "x": 30,
+        "y": 0,
+        "w": 90,
+        "h": 30
+       }
+      }
+     }
+    },
+    "layout": {
+     "positions": {
+      "US1": {
+       "x": 30,
+       "y": 0,
+       "w": 90,
+       "h": 30
+      }
+     }
+    }
+   }
+  },
+  {
+   "name": "old container, active id missing: the FIRST graph inherits, the rest are fresh",
+   "doc": {
+    "header": {
+     "format": "em.json",
+     "version": "1.0"
+    },
+    "graphs": {
+     "a": {
+      "graph_id": "a",
+      "name": "a",
+      "nodes": [
+       {
+        "id": "US1",
+        "node_type": "US",
+        "name": "US1"
+       }
+      ],
+      "edges": []
+     },
+     "b": {
+      "graph_id": "b",
+      "name": "b",
+      "nodes": [
+       {
+        "id": "US2",
+        "node_type": "US",
+        "name": "US2"
+       }
+      ],
+      "edges": []
+     }
+    },
+    "active_graph_id": "nessuno",
+    "layout": {
+     "positions": {
+      "US1": {
+       "x": 40,
+       "y": 0,
+       "w": 90,
+       "h": 30
+      }
+     }
+    }
+   },
+   "expect": {
+    "layouts": {
+     "a": {
+      "positions": {
+       "US1": {
+        "x": 40,
+        "y": 0,
+        "w": 90,
+        "h": 30
+       }
+      }
+     }
+    },
+    "fresh": [
+     "b"
+    ]
+   },
+   "built": {
+    "members": {
+     "a": {
+      "positions": {
+       "US1": {
+        "x": 40,
+        "y": 0,
+        "w": 90,
+        "h": 30
+       }
+      }
+     },
+     "b": null
+    },
+    "layout": {
+     "positions": {
+      "US1": {
+       "x": 40,
+       "y": 0,
+       "w": 90,
+       "h": 30
+      }
+     }
+    }
+   }
+  },
+  {
+   "name": "new container: every graph keeps its own, the file layout is the active's copy",
+   "doc": {
+    "header": {
+     "format": "em.json",
+     "version": "1.0"
+    },
+    "graphs": {
+     "a": {
+      "graph_id": "a",
+      "name": "a",
+      "nodes": [
+       {
+        "id": "US1",
+        "node_type": "US",
+        "name": "US1"
+       }
+      ],
+      "edges": [],
+      "layout": {
+       "positions": {
+        "US1": {
+         "x": 1,
+         "y": 0,
+         "w": 90,
+         "h": 30
+        }
+       }
+      }
+     },
+     "b": {
+      "graph_id": "b",
+      "name": "b",
+      "nodes": [
+       {
+        "id": "US2",
+        "node_type": "US",
+        "name": "US2"
+       }
+      ],
+      "edges": [],
+      "layout": {
+       "positions": {
+        "US2": {
+         "x": 2,
+         "y": 0,
+         "w": 90,
+         "h": 30
+        }
+       }
+      }
+     }
+    },
+    "active_graph_id": "b",
+    "layout": {
+     "positions": {
+      "US2": {
+       "x": 2,
+       "y": 0,
+       "w": 90,
+       "h": 30
+      }
+     }
+    }
+   },
+   "expect": {
+    "layouts": {
+     "a": {
+      "positions": {
+       "US1": {
+        "x": 1,
+        "y": 0,
+        "w": 90,
+        "h": 30
+       }
+      }
+     },
+     "b": {
+      "positions": {
+       "US2": {
+        "x": 2,
+        "y": 0,
+        "w": 90,
+        "h": 30
+       }
+      }
+     }
+    },
+    "fresh": []
+   },
+   "built": {
+    "members": {
+     "a": {
+      "positions": {
+       "US1": {
+        "x": 1,
+        "y": 0,
+        "w": 90,
+        "h": 30
+       }
+      }
+     },
+     "b": {
+      "positions": {
+       "US2": {
+        "x": 2,
+        "y": 0,
+        "w": 90,
+        "h": 30
+       }
+      }
+     }
+    },
+    "layout": {
+     "positions": {
+      "US2": {
+       "x": 2,
+       "y": 0,
+       "w": 90,
+       "h": 30
+      }
+     }
+    }
+   }
+  },
+  {
+   "name": "a member's own layout wins over the file layout",
+   "doc": {
+    "header": {
+     "format": "em.json",
+     "version": "1.0"
+    },
+    "graphs": {
+     "a": {
+      "graph_id": "a",
+      "name": "a",
+      "nodes": [
+       {
+        "id": "US1",
+        "node_type": "US",
+        "name": "US1"
+       }
+      ],
+      "edges": [],
+      "layout": {
+       "positions": {
+        "US1": {
+         "x": 5,
+         "y": 0,
+         "w": 90,
+         "h": 30
+        }
+       }
+      }
+     }
+    },
+    "active_graph_id": "a",
+    "layout": {
+     "positions": {
+      "US1": {
+       "x": 99,
+       "y": 0,
+       "w": 90,
+       "h": 30
+      }
+     }
+    }
+   },
+   "expect": {
+    "layouts": {
+     "a": {
+      "positions": {
+       "US1": {
+        "x": 5,
+        "y": 0,
+        "w": 90,
+        "h": 30
+       }
+      }
+     }
+    },
+    "fresh": []
+   },
+   "built": {
+    "members": {
+     "a": {
+      "positions": {
+       "US1": {
+        "x": 5,
+        "y": 0,
+        "w": 90,
+        "h": 30
+       }
+      }
+     }
+    },
+    "layout": {
+     "positions": {
+      "US1": {
+       "x": 5,
+       "y": 0,
+       "w": 90,
+       "h": 30
+      }
+     }
+    }
+   }
+  },
+  {
+   "name": "mixed: one own, the active inherits, a third has none — and the file is NEW, so nothing is said",
+   "doc": {
+    "header": {
+     "format": "em.json",
+     "version": "1.0"
+    },
+    "graphs": {
+     "a": {
+      "graph_id": "a",
+      "name": "a",
+      "nodes": [
+       {
+        "id": "US1",
+        "node_type": "US",
+        "name": "US1"
+       }
+      ],
+      "edges": [],
+      "layout": {
+       "positions": {
+        "US1": {
+         "x": 1,
+         "y": 0,
+         "w": 90,
+         "h": 30
+        }
+       }
+      }
+     },
+     "b": {
+      "graph_id": "b",
+      "name": "b",
+      "nodes": [
+       {
+        "id": "US2",
+        "node_type": "US",
+        "name": "US2"
+       }
+      ],
+      "edges": []
+     },
+     "c": {
+      "graph_id": "c",
+      "name": "c",
+      "nodes": [
+       {
+        "id": "US3",
+        "node_type": "US",
+        "name": "US3"
+       }
+      ],
+      "edges": []
+     }
+    },
+    "active_graph_id": "b",
+    "layout": {
+     "positions": {
+      "US2": {
+       "x": 7,
+       "y": 0,
+       "w": 90,
+       "h": 30
+      }
+     }
+    }
+   },
+   "expect": {
+    "layouts": {
+     "a": {
+      "positions": {
+       "US1": {
+        "x": 1,
+        "y": 0,
+        "w": 90,
+        "h": 30
+       }
+      }
+     },
+     "b": {
+      "positions": {
+       "US2": {
+        "x": 7,
+        "y": 0,
+        "w": 90,
+        "h": 30
+       }
+      }
+     }
+    },
+    "fresh": []
+   },
+   "built": {
+    "members": {
+     "a": {
+      "positions": {
+       "US1": {
+        "x": 1,
+        "y": 0,
+        "w": 90,
+        "h": 30
+       }
+      }
+     },
+     "b": {
+      "positions": {
+       "US2": {
+        "x": 7,
+        "y": 0,
+        "w": 90,
+        "h": 30
+       }
+      }
+     },
+     "c": null
+    },
+    "layout": {
+     "positions": {
+      "US2": {
+       "x": 7,
+       "y": 0,
+       "w": 90,
+       "h": 30
+      }
+     }
+    }
+   }
+  },
+  {
+   "name": "no layout anywhere: nothing to give, nothing to say",
+   "doc": {
+    "header": {
+     "format": "em.json",
+     "version": "1.0"
+    },
+    "graphs": {
+     "a": {
+      "graph_id": "a",
+      "name": "a",
+      "nodes": [
+       {
+        "id": "US1",
+        "node_type": "US",
+        "name": "US1"
+       }
+      ],
+      "edges": []
+     },
+     "b": {
+      "graph_id": "b",
+      "name": "b",
+      "nodes": [
+       {
+        "id": "US2",
+        "node_type": "US",
+        "name": "US2"
+       }
+      ],
+      "edges": []
+     }
+    },
+    "active_graph_id": "a"
+   },
+   "expect": {
+    "layouts": {},
+    "fresh": []
+   },
+   "built": {
+    "members": {
+     "a": null,
+     "b": null
+    },
+    "layout": null
+   }
+  },
+  {
+   "name": "the active graph has none of its own and the file has none: no copy is invented",
+   "doc": {
+    "header": {
+     "format": "em.json",
+     "version": "1.0"
+    },
+    "graphs": {
+     "a": {
+      "graph_id": "a",
+      "name": "a",
+      "nodes": [
+       {
+        "id": "US1",
+        "node_type": "US",
+        "name": "US1"
+       }
+      ],
+      "edges": [],
+      "layout": {
+       "positions": {
+        "US1": {
+         "x": 3,
+         "y": 0,
+         "w": 90,
+         "h": 30
+        }
+       }
+      }
+     },
+     "b": {
+      "graph_id": "b",
+      "name": "b",
+      "nodes": [
+       {
+        "id": "US2",
+        "node_type": "US",
+        "name": "US2"
+       }
+      ],
+      "edges": []
+     }
+    },
+    "active_graph_id": "b"
+   },
+   "expect": {
+    "layouts": {
+     "a": {
+      "positions": {
+       "US1": {
+        "x": 3,
+        "y": 0,
+        "w": 90,
+        "h": 30
+       }
+      }
+     }
+    },
+    "fresh": []
+   },
+   "built": {
+    "members": {
+     "a": {
+      "positions": {
+       "US1": {
+        "x": 3,
+        "y": 0,
+        "w": 90,
+        "h": 30
+       }
+      }
+     },
+     "b": null
+    },
+    "layout": null
+   }
+  }
+ ]
+}

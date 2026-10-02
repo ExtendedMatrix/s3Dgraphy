@@ -9,8 +9,23 @@ The decision (E.D., 2026-08-13): **an em.json/emj is always a container**::
         "shelf":      { ... em_collection: "ShelfGraph" },
         "dtc":        { ... em_collection: "DTCCorpus" }
       },
-      "active_graph_id": "<graph id>"
+      "active_graph_id": "<graph id>",
+      "layout": { ...the active graph's layout, a copy... }
     }
+
+**One layout per graph (2026-10-02).** Each member carries its own arrangement
+INSIDE its section, ``graphs.<id>.layout`` (positions, lanes, canvas, folded
+groups — the single-graph ``layout`` object, unchanged). The file-level
+``layout`` stays, written as a COPY of the active graph's, for whoever reads only
+that (Heriverse, the files written before today). Reading:
+``graphs.<id>.layout`` when the member has one; otherwise the file-level
+``layout`` goes to the ACTIVE graph only (or to the only one); the other graphs
+of an old file have no arrangement and are laid out afresh, which the reader
+says once. Until today the file had ONE layout for every graph, and whichever
+graph was saved first gave it away: measured on San Pietro, the layout in the
+file was an empty seed's and the real graph had lost every position.
+``EMStudio/frontend/src/container.ts`` applies the same rule, and the shared
+fixture ``tests/fixtures/container-layout-parity.json`` keeps the two equal.
 
 A study is one or more graphs plus its shelf and its **documentation** (the DTC
 corpus, 2026-08-17: acquisitions, transformations and the resources they are
@@ -69,6 +84,9 @@ from .graph import Graph
 
 #: The key that makes a document a container.
 GRAPHS_KEY = "graphs"
+
+#: Where a member keeps its own arrangement: ``graphs.<id>.layout``.
+LAYOUT_KEY = "layout"
 
 #: The conventional member id of the project shelf. Any id works — the marker
 #: (`graph.data["em_collection"] == "ShelfGraph"`) is what identifies it — but
@@ -154,8 +172,15 @@ def content_digest(doc: Dict[str, Any]) -> str:
     """
     import hashlib
 
+    # a member's own layout is arrangement, not content: moving a box inside
+    # one graph of a project is no more a revision than it was at file level
+    graphs = {
+        gid: ({k: v for k, v in section.items() if k != LAYOUT_KEY}
+              if isinstance(section, dict) else section)
+        for gid, section in (doc.get(GRAPHS_KEY) or {}).items()
+    }
     payload = {
-        GRAPHS_KEY: doc.get(GRAPHS_KEY) or {},
+        GRAPHS_KEY: graphs,
         "active_graph_id": doc.get("active_graph_id"),
     }
     blob = json.dumps(payload, sort_keys=True, ensure_ascii=False,
@@ -185,7 +210,13 @@ class Container:
     corpus: Optional[Graph] = None
     active_graph_id: Optional[str] = None
     header: Dict[str, Any] = field(default_factory=dict)
+    #: The ACTIVE graph's layout, for a caller that has one graph and one
+    #: arrangement (``export_emjson``). Used only for the active graph, and only
+    #: when ``layouts`` has no entry for it — it is never given to another graph.
     layout: Dict[str, Any] = field(default_factory=dict)
+    #: One layout per graph id (``graphs.<id>.layout`` in the file). A graph with
+    #: no entry has no arrangement and is laid out afresh by whoever draws it.
+    layouts: Dict[str, Dict[str, Any]] = field(default_factory=dict)
     #: P3 · which revision of the work this is (None = never versioned; the
     #: first write gives it a v1 rather than pretending it always had one)
     version: Optional[ProjectVersion] = None
@@ -201,6 +232,21 @@ class Container:
     def is_single(self) -> bool:
         """A container-of-one — the shape a legacy file opens as."""
         return len(self.graphs) == 1
+
+    def layout_of(self, graph_id: Optional[str]) -> Optional[Dict[str, Any]]:
+        """The layout of ONE graph, or None when it has none.
+
+        `layouts` first; the convenience `layout` only for the active graph. A
+        graph is never handed another graph's arrangement — that was the bug.
+        """
+        if graph_id is None:
+            return None
+        if graph_id in self.layouts:
+            return self.layouts[graph_id]
+        active = self.active_graph_id or next(iter(self.graphs), None)
+        if graph_id == active and self.layout:
+            return self.layout
+        return None
 
 
 def is_container(doc: Any) -> bool:
@@ -231,6 +277,49 @@ def is_dtc_corpus_member(graph_section: Any) -> bool:
     return is_dtc_corpus(graph_section)
 
 
+def resolve_layouts(graph_ids: List[str],
+                    own: Dict[str, Dict[str, Any]],
+                    file_layout: Dict[str, Any],
+                    active_graph_id: Optional[str],
+                    ) -> Tuple[Dict[str, Dict[str, Any]], List[str]]:
+    """Which layout each graph of a file gets, and which ones get none.
+
+    THE reading rule, the same as ``container.ts::resolveLayouts``:
+
+    1. a member that carries ``graphs.<id>.layout`` keeps its own;
+    2. otherwise the file-level ``layout`` goes to the ACTIVE graph — or to the
+       only one — and to no other: in a file written before per-graph layouts it
+       was the arrangement of one graph, and giving it to the rest was the bug;
+    3. the remaining graphs get nothing and are laid out afresh. They are
+       returned as ``fresh`` only for an OLD file — one with a layout to give and
+       no member carrying its own: there, a graph's positions may have been lost
+       to another's, and that is worth saying once. In a file written with
+       per-graph layouts a graph without one simply has none (never laid out),
+       and saying so at every open would be noise.
+    """
+    layouts: Dict[str, Dict[str, Any]] = {}
+    fresh: List[str] = []
+    heir = active_graph_id if active_graph_id in graph_ids else (
+        graph_ids[0] if graph_ids else None)
+    if len(graph_ids) == 1:
+        heir = graph_ids[0]
+    for gid in graph_ids:
+        if gid in own:
+            layouts[gid] = own[gid]
+        elif gid == heir and file_layout:
+            layouts[gid] = file_layout
+        elif file_layout and not own:
+            fresh.append(gid)
+    return layouts, fresh
+
+
+def layout_fresh_warning(fresh: List[str]) -> str:
+    """The one sentence about the graphs of an old file that had no layout."""
+    return (f"{len(fresh)} graph(s) of this file carry no layout of their own "
+            f"(written before per-graph layouts): laid out afresh — "
+            f"{', '.join(fresh)}")
+
+
 def parse_container(doc: Dict[str, Any], *,
                     project_root: Optional[str] = None) -> Tuple[Container, List[str]]:
     """Read a container OR a legacy single-graph document.
@@ -249,7 +338,8 @@ def parse_container(doc: Dict[str, Any], *,
         raise EmJsonImportError("not an em.json document")
 
     header = dict(doc.get("header") or {})
-    layout = dict(doc.get("layout") or {})
+    file_layout = doc.get(LAYOUT_KEY)
+    file_layout = dict(file_layout) if isinstance(file_layout, dict) else {}
 
     if not is_container(doc):
         # LEGACY single-graph: read it with the reader that has always read it,
@@ -259,18 +349,21 @@ def parse_container(doc: Dict[str, Any], *,
             graphs={graph.graph_id: graph},
             active_graph_id=graph.graph_id,
             header=header,
-            layout=layout,
+            layouts={graph.graph_id: file_layout} if file_layout else {},
             version=ProjectVersion.from_dict(doc.get(VERSION_KEY)),
         )
         return container, list(graph_warnings)
 
-    container = Container(header=header, layout=layout,
+    container = Container(header=header,
                           version=ProjectVersion.from_dict(doc.get(VERSION_KEY)))
+    own_layouts: Dict[str, Dict[str, Any]] = {}
     members = doc[GRAPHS_KEY]
     for member_id, section in members.items():
         if not isinstance(section, dict):
             warnings.append(f"container member '{member_id}' is not a graph; skipped")
             continue
+        own = section.get(LAYOUT_KEY)
+        section = {k: v for k, v in section.items() if k != LAYOUT_KEY}
         # Each member is parsed by the SAME single-graph reader, by handing it a
         # one-graph document. The alternative — a second parser for members —
         # would be a second place for the em.json semantics to live.
@@ -295,6 +388,8 @@ def parse_container(doc: Dict[str, Any], *,
             container.corpus = graph
         else:
             container.graphs[graph.graph_id] = graph
+            if isinstance(own, dict):
+                own_layouts[graph.graph_id] = dict(own)
 
     active = doc.get("active_graph_id")
     if isinstance(active, str) and active in container.graphs:
@@ -305,6 +400,11 @@ def parse_container(doc: Dict[str, Any], *,
                 f"active_graph_id '{active}' is not a member of this container; "
                 f"falling back to the first graph")
         container.active_graph_id = next(iter(container.graphs), None)
+
+    container.layouts, fresh = resolve_layouts(
+        list(container.graphs), own_layouts, file_layout, container.active_graph_id)
+    if fresh:
+        warnings.append(layout_fresh_warning(fresh))
 
     if not container.graphs and (container.shelf is not None
                                  or container.corpus is not None):
@@ -337,6 +437,9 @@ def build_container(container: Container) -> Dict[str, Any]:
     graphs: Dict[str, Any] = {}
     for graph_id, graph in container.graphs.items():
         graphs[graph_id] = _member_section(graph)
+        own = container.layout_of(graph_id)
+        if own:
+            graphs[graph_id][LAYOUT_KEY] = own
     if container.shelf is not None:
         shelf_id = container.shelf.graph_id or SHELF_MEMBER_ID
         graphs[shelf_id] = _member_section(container.shelf)
@@ -369,8 +472,10 @@ def build_container(container: Container) -> Dict[str, Any]:
     active = container.active_graph_id or next(iter(container.graphs), None)
     if active:
         doc["active_graph_id"] = active
-    if container.layout:
-        doc["layout"] = container.layout
+    # the file-level copy, for whoever reads only that: the ACTIVE graph's
+    active_layout = container.layout_of(active)
+    if active_layout:
+        doc[LAYOUT_KEY] = active_layout
     if container.version is not None:
         doc[VERSION_KEY] = container.version.as_dict()
     return doc
@@ -855,6 +960,10 @@ def merge_into_container(container: Container, other: Container) -> MergeReport:
             report.merged_graphs.append(graph_id)
         else:
             container.graphs[graph_id] = incoming
+            # …with its own arrangement: a graph that arrives whole arrives laid out
+            theirs = other.layout_of(graph_id)
+            if theirs:
+                container.layouts[graph_id] = theirs
             report.added_graphs.append(graph_id)
             report.added_nodes += len(list(incoming.nodes))
             report.added_edges += len(list(incoming.edges))
