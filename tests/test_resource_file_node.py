@@ -106,9 +106,9 @@ def test_in_graphml_i_file_non_passano_ed_e_scritto():
 def test_le_versioni_del_datamodel_sono_salite():
     node = json.loads((CONFIG / "s3Dgraphy_node_datamodel.json").read_text())
     conn = json.loads((CONFIG / "s3Dgraphy_connections_datamodel.json").read_text())
-    # 1.6.23 / 1.6.35 dal 2 ott 2026 (dev29); le voci
+    # 1.6.24 / 1.6.35 dal 2 ott 2026 (dev30); le voci
     # 1.6.17 e 1.6.30 restano nella storia
-    assert node["s3Dgraphy_data_model_version"] == "1.6.23"
+    assert node["s3Dgraphy_data_model_version"] == "1.6.24"
     assert "v1.6.17 (MICRO la risorsa e i suoi file" in node["description"]
     assert conn["s3Dgraphy_connections_model_version"] == "1.6.35"
     assert "v1.6.30 (LA RISORSA E I SUOI FILE" in conn["description"]

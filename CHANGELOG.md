@@ -5,9 +5,77 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev29
 
 Everything in this section came after `069fb1a` (tag `v1.6.0.dev29`).
-Datamodel unchanged (no datamodel JSON, no `em.ttl` touched). Needs dtcstamp
-**0.1.4** for the `psx://` cross-checks (`tests/test_psx_locator.py` skips
-them on an older dtcstamp).
+Needs dtcstamp **0.1.4** (the `psx://` cross-checks of
+`tests/test_psx_locator.py`, which skip on an older dtcstamp, and
+`stamp_identity` reading `digest_covers`).
+
+**The decisions of E.D. on the dev29 report** (2 October 2026, MICRO le
+decisioni della dev29). Datamodel: node datamodel **1.6.24**, visual rules
+**1.6.31** (text only), translations 1.6 (section `packagings` added),
+`em.ttl` **1.6.14** (section 18); connections and qualia unchanged.
+
+### Added (the decisions)
+- **D1 · Where a download came from** — `how.acquisition.retrieved_from`
+  (a DOI as `https://doi.org/…`, or a URL) is
+  `DTCAcquisitionNode.retrieved_from` in the datamodel and `em:retrievedFrom`
+  in RDF (an `xsd:anyURI` for a URL), out and back.
+  `dtc.acquisition_origin(node)` reads it from `data.acquisition` (an absorbed
+  stamp) or `data` (bucket_acquisition's facts), and `emit_stamp` carries it
+  from either. **Optional in the format**: `validate` warns «download without
+  origin» for a `download` that does not say it, never an error.
+- **D2 · One act = one process_id** — the 32-output test of dev29 stays the
+  proof (`tests/test_dev29_one_act_n_outputs.py`); the composer's side is
+  EMStudio's.
+- **D4 · The digest of a set has its own term** — `em:membersDigest`
+  (em.ttl, `ResourceNode.properties.members_digest`, exporter and importer)
+  beside `em:checksum` + `em:digestCovers "members"`, which stay. A TTL with
+  only the new term reads back as a file set. Round trip measured: San Pietro
+  177/177 nodes and 328/328 edges, the RB of Segni 16/16 and 14/14.
+- **D6 · A licence's name and type that disagree** — `validate` warns
+  «license name and type disagree» (compared only when the name is itself a
+  licence code), without rewriting the graph.
+- **D7 · The Metashape reader's questions** — a chunk referenced only by the
+  GPS of its cameras is placed **absolute**, with a `GCPSetNode` of
+  `control: camera_positions` (each point a photograph, `accuracy_m` the
+  accuracy the project records for the cameras: 10 m on San Pietro), and
+  `validate` warns «georeferenced only by camera GPS»; with fewer than three
+  camera positions it stays local. The digest of a master inside the project
+  (`mesh.ply` in `model.zip`) is the node's `content_digest`, compared and
+  never verified by downloading. Photographs whose folder is a directory
+  resource of the graph — recognised by the folder's content digest
+  (`resources.files.directory_for_folder`) — become its members (`has_file`,
+  role `member`, relative path on the edge) instead of one resource each: on
+  San Pietro the 204 Canon photographs are the night's `res:sp-canon24`, and
+  the members digest of the 204 files recomputes its content digest exactly.
+  The exception of `tests/test_semantic_purity.py` for the reader, and the
+  name «Agisoft Metashape» without an edition, are confirmed.
+- **A1** — `api.resolve_resource` answers for a DocumentNode too (its url).
+- **A2** — `resources.em_id_of(name)`, the public reading of the DosCo id.
+- **A3** — the packaging vocabulary in the datamodel
+  (`ResourceNode.properties.packaging.values/labels`) and in the translations
+  (`packagings`, nine languages, not validated); `datamodel_i18n.packaging_label`.
+- **U5** — `language.confirm_recognised_language`: a recognised language,
+  confirmed by a person, is written as `data.lang` only — no `ai_assisted`, no
+  record. The one explicit exception to the AI marker, in the code and in the
+  datamodel (`Node.properties.lang`).
+
+### Changed (the decisions)
+- **D5 · confirmed** — the block of an acquisition from 4 members, lanes named
+  by their step (EMStudio), and `texturing` = projection AND baking of the
+  photographs onto the mesh, one act (visual rules 1.6.31); the baking of
+  levels of detail in Blender stays `lod_generation`. The «until E.D. says
+  otherwise» is gone.
+
+### Fixed
+- **A licence read with its name only got the type CC-BY-NC-ND** —
+  `LicenseNode`'s default. Measured on San Pietro (D6): the GraphML declares
+  `LICENCE:CC-BY-ND`, the em.json writes the node with its name only, and
+  reading it gave it the stricter type. A licence with no type stated now
+  takes its name as its type; an unnamed one none. (San Pietro's saved
+  em.json keeps the type it was given: the graph is E.D.'s.)
+- `resources.files.add_file` no longer gives a directory or a file set the
+  implicit one-file form: the first member overwrote the digest of the whole
+  (measured on the Canon folder of San Pietro).
 
 ### Added
 - **The Metashape reader** — `s3dgraphy.importer.metashape_project`:
