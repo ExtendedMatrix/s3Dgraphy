@@ -1143,7 +1143,7 @@ class GraphMLImporter:
         :meth:`_restore_physical_relations_from_side_channel` reports
         no graph-level JSON channel was present.
         """
-        from ..sync.rapporti import parse_rapporti
+        from ..rapporti import parse_rapporti
 
         root = tree.getroot()
         ns = 'http://graphml.graphdrawing.org/xmlns'
@@ -1200,7 +1200,7 @@ class GraphMLImporter:
         # parse_rapporti yields ``target_us`` as the bare unit number
         # (no "US " prefix); match against the imported nodes' .name
         # after applying the same strip the writer used.
-        from ..sync.rapporti import strip_us_prefix
+        from ..rapporti import strip_us_prefix
         nodes_by_name: dict = {}
         for n in self.graph.nodes:
             key = strip_us_prefix(getattr(n, "name", "") or "")

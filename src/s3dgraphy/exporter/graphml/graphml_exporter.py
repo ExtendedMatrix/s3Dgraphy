@@ -168,7 +168,7 @@ class GraphMLExporter:
         # the format and ``canvas_generator._add_node_keys`` (d13) for
         # the key declaration.
         try:
-            from ...sync.rapporti import serialize_rapporti_from_edges
+            from ...rapporti import serialize_rapporti_from_edges
             # Pick the site name to stamp into the 4th column of each
             # rapporto entry. Graph.__init__ stores the caller-supplied
             # identifier on ``graph_id`` and leaves ``name`` empty by
