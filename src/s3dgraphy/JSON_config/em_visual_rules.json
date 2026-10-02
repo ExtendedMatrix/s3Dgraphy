@@ -1,6 +1,6 @@
 {
   "formal_language": "EM",
-  "version": "1.6.29",
+  "version": "1.6.30",
   "_note_material_vs_qualia_color": [
     "DUE COSE DIVERSE CHE SI CHIAMANO ENTRAMBE color. Non confonderle: e gia successo.",
     "1) QUI, in node_styles.<tipo>.style.material.rgba_color — il COLORE DEL MATERIALE BLENDER del proxy 3D, in float LINEARI. UNA sola chiave: `rgba_color`. Fino a S8 il file ne usava due (`color` sui 13 tipi stratigrafici, `rgba_color` sugli altri) e get_material_color() ne leggeva una sola, restituendo None per 21 tipi su 38; ora sono unificate e la vecchia `color` e letta solo come tolleranza verso file scritti prima. Un tipo che non diventa mai una mesh NON ha material affatto (i contenitori di gruppo, e da S7 i dieci nodi che rendono per icona): per loro get_material_color() torna None, ed e corretto.",
@@ -9,6 +9,7 @@
     "In breve: qui si decide di che colore DISEGNARE una US; li si registra di che colore ERA."
   ],
   "_changelog": {
+    "1.6.30": "AN IMAGE SET AND TEXTURING (dev29, 2 Oct 2026, PROPOSED from the measurements on San Pietro — the names are to be confirmed by E.D.). dtc_kinds.output += image_set (a set of photographs kept and handed on as ONE product, its images the members of one resource), glyph 09_photos reused; dtc_kinds.process += texturing (a model given its colour from images: projection onto a mesh or baking into an atlas, one kind until decided otherwise), glyph 03_mesh reused. Labels in the nine languages (not validated); 2d_glyphs regenerated. Like every process kind texturing declares no mapping.",
     "1.6.29": "THE FOUR GESTURES OF WHOEVER EXPORTS (dev28, decision of E.D. 1 Oct 2026 on the dev27 report, part D). dtc_kinds.process += export (an object of a working project written as a file of its own), lod_generation (a level of detail baked from the master), tiling (a mesh divided into a 3D Tiles tree), packing (a tree packed into one archive, the .3tz). Until dev28 EM Tools and 3DSC wrote them format_conversion / decimation / transformation with the gesture in `technique`; those stamps stay true. NO NEW GLYPH: they reuse 17_format_conversion (export, packing), 15_decimation (lod_generation), 00_transformation (tiling) — a mark of their own is an act of EM iconography, left to E.D.; 2d_glyphs regenerated (dtc:<kind> entries). NO MAPPING, measured: no process kind declares one; a step is the crmdig:D7 of DTCProcessNode whatever its kind. Labels in the nine languages in datamodel_translations.json (dtc_kinds).",
     "1.6.28": "THE TRANSLATION NODE (MICRO le traduzioni, 29 Oct 2026, decision of E.D. 1 Oct 2026). node_styles.TRANSL for TranslationNode: the narrative's neutral grey and its glyph (src/2D/narrative.svg, SHARED, declared by 2d_file_vect — the way UL / USN / USNt share US.png), with a DASHED border so a translation does not read as a narrative. Choosing a mark of its own is an act of EM iconography and is left to E.D.; no file_3d, no material: a translation never becomes a mesh.",
     "1.6.27": "THE GLYPH OF THE FILE (MICRO-REVISIONE, 20 Oct 2026, decision of E.D. 30 Sep 2026: Claude draws it). node_styles.FILE.2d_file_vect: src/2D/link.svg -> src/2D/resource_file.svg, a sheet with a folded corner and the digest sign inside the 2017 DTC circle. WHERE, MEASURED: a resource takes its sign from node_styles.<KEY>.2d_file_vect (LINK -> src/2D/link.svg), a FILE, which EMStudio's icons.ts resolves (declaration, then src/2D/<node_type>.svg) and sync-datamodels.sh vendors from the top level of src/2D/. It is NOT a DTC glyph (dtc_kinds name the glyphs of DTC kinds, and a file is a node type, not a kind) and NOT a 2d_glyphs entry: LINK is not in 2d_render_glyph_types either, and joining that list would change how the label is laid out, which nobody asked. Still no .glb (as before). The dashed border and the LINK colour stay.",
@@ -454,6 +455,169 @@
       "source": "src/2D/document.svg"
     },
     "dtc:photogrammetry": {
+      "viewBox": [
+        0,
+        0,
+        87.12,
+        87.12
+      ],
+      "aspect": 1.0,
+      "layers": [
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.43 66.28 2.43 43.56C2.43 20.84 20.84 2.43 43.56 2.43C66.28 2.43 84.7 20.84 84.7 43.56Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.43 66.28 2.43 43.56C2.43 20.84 20.84 2.43 43.56 2.43C66.28 2.43 84.7 20.84 84.7 43.56Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.5,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M22.28 28.63L22.27 28.03Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M22.28 28.63L22.27 28.03Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 2.77,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M41.22 18.27L41.21 17.68Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M41.22 18.27L41.21 17.68Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 2.77,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M21.32 55.39L21.31 54.79Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M21.32 55.39L21.31 54.79Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 2.77,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M48.53 35.31L48.52 34.71Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M48.53 35.31L48.52 34.71Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 2.77,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M37.16 44.66L37.16 44.06Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M37.16 44.66L37.16 44.06Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 2.77,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M66.32 33.08L66.31 32.49Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M66.32 33.08L66.31 32.49Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 2.77,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M42.03 67L42.02 66.41Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M42.03 67L42.02 66.41Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 2.77,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M58.06 63.85L58.06 63.25Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M58.06 63.85L58.06 63.25Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 2.77,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M54.23 51.95L54.22 51.35Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "fill_rule": "evenodd"
+        },
+        {
+          "d": "M54.23 51.95L54.22 51.35Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 2.77,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M21.9 28.66C22.97 27.59 40.83 17.95 40.83 17.95L66.72 33.13L54.4 51.7L58.07 63.59L66.72 33.49L48.87 34.91C48.87 34.91 55.12 51.7 54.4 51.34C53.69 50.99 37.26 43.66 37.26 43.66C37.26 43.66 60.69 63.87 58.02 63.69C55.34 63.51 41.72 67.77 41.72 66.52C41.72 65.27 37.26 44.56 37.26 44.56C37.26 44.56 21.55 55.99 21.55 54.91C21.55 53.84 22.44 27.06 22.62 27.95C22.8 28.84 36.72 44.56 36.72 44.56L48.87 34.56L40.83 18.31",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.6
+        },
+        {
+          "d": "M21.02 55.35L41.79 66.96",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.6
+        }
+      ],
+      "source": "src/2D/dtc/03_mesh.svg"
+    },
+    "dtc:texturing": {
       "viewBox": [
         0,
         0,
@@ -2568,6 +2732,70 @@
       ],
       "source": "src/2D/dtc/08_ortophoto.svg"
     },
+    "dtc:image_set": {
+      "viewBox": [
+        0,
+        0,
+        87.12,
+        87.12
+      ],
+      "aspect": 1.0,
+      "layers": [
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.43 66.28 2.43 43.56C2.43 20.84 20.84 2.43 43.56 2.43C66.28 2.43 84.7 20.84 84.7 43.56Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.43 66.28 2.43 43.56C2.43 20.84 20.84 2.43 43.56 2.43C66.28 2.43 84.7 20.84 84.7 43.56Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.5,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M33.96 25.38L69.83 25.38L69.83 48.11L33.96 48.11Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M33.96 25.38L69.83 25.38L69.83 48.11L33.96 48.11Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.0,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M25.13 31.69L60.99 31.69L60.99 54.42L25.13 54.42Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M25.13 31.69L60.99 31.69L60.99 54.42L25.13 54.42Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.0,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M17.04 38.26L52.91 38.26L52.91 60.99L17.04 60.99Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M17.04 38.26L52.91 38.26L52.91 60.99L17.04 60.99Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.0,
+          "line_cap": "round",
+          "line_join": "round"
+        }
+      ],
+      "source": "src/2D/dtc/09_photos.svg"
+    },
     "dtc:points": {
       "viewBox": [
         0,
@@ -4100,6 +4328,11 @@
         "glyph": "03_mesh",
         "description": "Structure-from-motion reconstruction: a cluster of photographs becomes a 3D model. A specific kind of transformation, named because what a reader needs to know about a mesh is which family of process made it — and because the placement (RegistrationTransform) only means something for this one."
       },
+      "texturing": {
+        "label": "Texturing",
+        "glyph": "03_mesh",
+        "description": "Giving a model its colour from images: projecting photographs onto a mesh, or baking its textures into an atlas (measured on San Pietro: the published LOD0 and the case-study LOD1 have the same geometry and differ only in the textures). Projection and baking stay one kind until E.D. says otherwise; which one it was goes in `technique`. Proposed in dev29; the name is to be confirmed by E.D. A crmdig:D7 Digital Machine Event like every process."
+      },
       "transformation": {
         "label": "Transformation",
         "glyph": "00_transformation",
@@ -4289,6 +4522,11 @@
         "label": "Orthophoto",
         "glyph": "08_ortophoto",
         "description": "Produced orthophoto / orthomosaic."
+      },
+      "image_set": {
+        "label": "Image set",
+        "glyph": "09_photos",
+        "description": "A SET of photographs (or other images) kept and handed on together as one product — the 71 drone frames of a flight, the 204 Canon frames of a survey — rather than each image as its own product. Its files are the members of ONE resource (packaging directory or file_set). Proposed in dev29 from the measurements on San Pietro; the name is to be confirmed by E.D."
       },
       "points": {
         "label": "Points",

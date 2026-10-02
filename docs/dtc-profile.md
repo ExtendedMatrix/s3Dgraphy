@@ -107,11 +107,14 @@ The axes currently declared, measured on the shipped file:
     `field_drawing`, `recording_sheet`: the object is MADE by the act;
   - *retrieval* — `download`, `local_import`, `uri_reference`, `ingest`: it
     arrives already made.
-- **process** — `photogrammetry`, `transformation`, `decimation`,
+- **process** — `photogrammetry`, `texturing`, `transformation`, `decimation`,
   `georeferencing`, `format_conversion`, `export`, `lod_generation`, `tiling`,
   `packing`, `classification`, `vectorization` (the four gestures of whoever
-  exports since visual rules 1.6.29, dev28)
-- **output** — `pointcloud`, `mesh`, `dem`, `orthophoto`, `points`, `lines`, `polygons`
+  exports since visual rules 1.6.29, dev28; `texturing` since 1.6.30, dev29,
+  proposed and to be confirmed by E.D.)
+- **output** — `pointcloud`, `mesh`, `dem`, `orthophoto`, `image_set`, `points`,
+  `lines`, `polygons` (`image_set` since 1.6.30, dev29, proposed and to be
+  confirmed by E.D.)
 - **device** — `camera`, `sensor`, `drone`, `computer`, `scanner`, `total_station`, `gnss`
 - **input** — no entries: a read alias of the capture family
   (`get_dtc_kinds()["input"]`), for readers that still ask it.

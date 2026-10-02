@@ -7543,6 +7543,27 @@
     "he": "מדידת GNSS"
    }
   },
+  "image_set": {
+   "label": {
+    "en": "Image set",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Insieme di immagini",
+    "de": "Bildsatz",
+    "fr": "Ensemble d'images",
+    "es": "Conjunto de imágenes",
+    "pl": "Zbiór obrazów",
+    "ro": "Set de imagini",
+    "el": "Σύνολο εικόνων",
+    "he": "אוסף תמונות"
+   }
+  },
   "ingest": {
    "label": {
     "en": "Ingest",
@@ -7877,6 +7898,27 @@
     "ro": "Senzor",
     "el": "Αισθητήρας",
     "he": "חיישן"
+   }
+  },
+  "texturing": {
+   "label": {
+    "en": "Texturing",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Texturizzazione",
+    "de": "Texturierung",
+    "fr": "Texturage",
+    "es": "Texturizado",
+    "pl": "Teksturowanie",
+    "ro": "Texturare",
+    "el": "Εφαρμογή υφής",
+    "he": "החלת טקסטורה"
    }
   },
   "tiling": {
