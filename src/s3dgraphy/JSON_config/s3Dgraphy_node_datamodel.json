@@ -1715,7 +1715,8 @@
         "dtc_kind": "P2_has_type",
         "technique": {"rdf": "em:technique", "note": "1.6.23 (dev29): the free word of whoever did the gesture, beside the controlled dtc_kind. Leaves for RDF and comes back (it was lost by the round trip, measured on San Pietro)."},
         "parameters": {"rdf": "em:parameters", "note": "1.6.23 (dev29): how the technique was applied, a dict; ONE rdf:JSON literal, because the stamp format owns its shape."},
-        "software": {"rdf": "em:software", "note": "1.6.23 (dev29): the list of software of the step, each {name, version, commit?}; ONE rdf:JSON literal. data.tool is read back from its first entry, as declare_derivation writes it."}
+        "software": {"rdf": "em:software", "note": "1.6.23 (dev29): the list of software of the step, each {name, version, commit?}; ONE rdf:JSON literal. data.tool is read back from its first entry, as declare_derivation writes it."},
+        "retrieved_from": {"rdf": "em:retrievedFrom", "note": "1.6.24 (dev30, decided by E.D. 2 Oct 2026, D1): WHERE A RETRIEVED OBJECT CAME FROM — the DOI (as https://doi.org/…) or the URL a Download was made from; the stamp's how.acquisition.retrieved_from. Not from[]: from[] names parents with an identity (a digest), and an origin has none. On the node it is one of the event's facts, data.retrieved_from (bucket_acquisition's metadata) or data.acquisition.retrieved_from (an absorbed stamp): dtc.ingest.acquisition_origin reads both. OPTIONAL in the format — validate warns «download without origin» for a dtc_kind download that does not say it, never an error, so an old stamp stays readable; EMStudio's composer requires it for a Download and fills it when it can be read. Leaves as em:retrievedFrom (xsd:anyURI for a URL) and comes back as data.retrieved_from."}
       }
     },
     "DTCDeviceNode": {

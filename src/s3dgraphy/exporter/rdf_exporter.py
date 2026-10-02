@@ -2008,6 +2008,15 @@ class RDFExporter:
                     ctx.add((node_iri, pred, Literal(
                         json.dumps(value, ensure_ascii=False, sort_keys=True),
                         datatype=RDF.JSON)))
+            # dev30 (D1): where a retrieved object came from — a DOI or a URL,
+            # an xsd:anyURI when it is one, a plain literal otherwise
+            if node_type == "dtc_acquisition":
+                from ..dtc.ingest import acquisition_origin
+                origin = acquisition_origin(node)
+                if origin:
+                    is_uri = origin.startswith(("http://", "https://"))
+                    ctx.add((node_iri, EM.retrievedFrom, Literal(
+                        origin, datatype=XSD.anyURI if is_uri else None)))
 
     @staticmethod
     def _emit_resource_packing(node_iri: URIRef, data: Dict[str, Any],

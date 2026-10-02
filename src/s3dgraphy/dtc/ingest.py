@@ -83,6 +83,28 @@ _USAGE_ROLES = {
 
 # ── the small shared readers (dict-or-object, tombstone-aware) ───────────────
 
+#: the kind of an acquisition whose origin is asked for (E.D., 2 Oct 2026, D1)
+DOWNLOAD_KIND = "download"
+
+
+def acquisition_origin(node: Any) -> Optional[str]:
+    """Where a retrieved object came from — ``how.acquisition.retrieved_from``
+    of the stamp format: the DOI or URL a Download was made from.
+
+    Read in the two places an acquisition keeps its facts: ``data.acquisition``
+    (an event absorbed from a stamp) and ``data`` itself (an event made by
+    :func:`bucket_acquisition`, whose ``metadata`` are the event's facts). The
+    second is the shape a graph is saved in, and the one the RDF importer
+    gives back. ``None`` when the act does not say."""
+    data = _data(node)
+    block = data.get("acquisition")
+    for holder in ((block if isinstance(block, dict) else {}), data):
+        value = holder.get("retrieved_from")
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    return None
+
+
 def _data(node: Any) -> Dict[str, Any]:
     d = getattr(node, "data", None)
     return d if isinstance(d, dict) else {}

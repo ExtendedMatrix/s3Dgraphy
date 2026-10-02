@@ -535,6 +535,14 @@ def _acquisition_block(graph: Any, process: Any,
     else:
         block = {}
 
+    # dev30 (D1) · DA DOVE VIENE un download, in qualunque dei due posti l'evento
+    # lo tenga: un blocco esplicito che non lo dice non lo nasconde.
+    if "retrieved_from" not in block:
+        from ..dtc.ingest import acquisition_origin
+        origin = acquisition_origin(process)
+        if origin:
+            block["retrieved_from"] = origin
+
     # HW1 · IL CORPO E IL LUOGO, sopra a quello che c'era.
     #
     # `device` era una STRINGA, e una stringa non si interroga. Ora è

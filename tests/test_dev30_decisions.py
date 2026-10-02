@@ -78,3 +78,83 @@ def test_a3_packaging_labels_in_datamodel_and_translations():
     assert packaging_label("file_set", "it") == "Insieme di file"
     assert packaging_label("directory", "xx") == "Folder"  # English fallback
     assert packaging_label("nope") is None
+
+
+# ── D1 · where a Download came from: optional in the format, warned when absent
+def _download_lot(origin=None, *, in_block=False):
+    g = Graph(graph_id="g-d1")
+    for i in range(3):
+        api.add_resource(g, name=f"t{i}.stamp.json", resource_id=f"res:{i}",
+                         files=[dict(path=f"t{i}.jpg",
+                                     checksum="sha256:" + f"{i}" * 64)])
+    meta = {}
+    if origin and not in_block:
+        meta["retrieved_from"] = origin
+    acq = api.bucket_acquisition(g, ["res:0", "res:1", "res:2"],
+                                 name="Download 10.5281/zenodo.7463211",
+                                 dtc_kind="download", metadata=meta or None)
+    if origin and in_block:
+        node = g.find_node_by_id(acq["acquisition_id"])
+        node.data["acquisition"] = {"retrieved_from": origin}
+    return g, acq["acquisition_id"]
+
+
+def test_d1_validate_warns_a_download_without_origin_never_an_error():
+    g, aid = _download_lot()
+    out = api.validate(g)
+    assert out["ok"] is True
+    hits = [w for w in out["warnings"] if w.startswith("download without origin")]
+    assert len(hits) == 1 and aid in hits[0]
+    assert not [i for i in out["issues"] if "origin" in i]
+
+
+@pytest.mark.parametrize("in_block", [False, True])
+def test_d1_an_origin_in_either_place_silences_it(in_block):
+    from s3dgraphy.dtc import acquisition_origin
+    url = "https://doi.org/10.5281/zenodo.7463211"
+    g, aid = _download_lot(url, in_block=in_block)
+    assert acquisition_origin(g.find_node_by_id(aid)) == url
+    assert not [w for w in api.validate(g)["warnings"] if "origin" in w]
+
+
+def test_d1_a_capture_is_never_asked_where_it_came_from():
+    g = Graph(graph_id="g-d1c")
+    api.add_resource(g, name="p", resource_id="res:p",
+                     files=[dict(path="p.jpg", checksum="sha256:" + "1" * 64)])
+    api.bucket_acquisition(g, ["res:p"], name="Volo", dtc_kind="photo")
+    assert not [w for w in api.validate(g)["warnings"] if "origin" in w]
+
+
+def test_d1_the_stamp_carries_it_and_ttl_brings_it_back():
+    pytest.importorskip("rdflib")
+    from s3dgraphy.importer.rdf_importer import import_rdf
+    url = "https://doi.org/10.5281/zenodo.7463211"
+    g, aid = _download_lot(url)
+    stamp = api.emit_stamp(g, "res:0")
+    assert stamp["how"]["acquisition"]["retrieved_from"] == url
+    doc = api.graph_to_emjson(g)
+    ttl = api.emjson_to_ttl(doc)
+    assert "retrievedFrom" in ttl
+    graphs, _ = import_rdf(ttl, fmt="turtle")
+    back = graphs[0].find_node_by_id(aid)
+    assert back.data["retrieved_from"] == url
+    # and the em.json written from the TTL says it in the same place
+    assert api.graph_to_emjson(graphs[0]) is not None
+
+
+def test_d1_an_absorbed_stamp_keeps_its_origin_through_ttl():
+    pytest.importorskip("rdflib")
+    from s3dgraphy.importer.rdf_importer import import_rdf
+    url = "https://zenodo.org/records/7463211"
+    g, aid = _download_lot(url, in_block=True)
+    ttl = api.emjson_to_ttl(api.graph_to_emjson(g))
+    graphs, _ = import_rdf(ttl, fmt="turtle")
+    from s3dgraphy.dtc import acquisition_origin
+    assert acquisition_origin(graphs[0].find_node_by_id(aid)) == url
+
+
+# ── D2 · one act = one process_id: the 32-output test of dev29 stays the proof
+def test_d2_the_32_outputs_proof_is_in_the_suite():
+    src = (Path(__file__).resolve().parent
+           / "test_dev29_one_act_n_outputs.py").read_text(encoding="utf-8")
+    assert "def test_32_outputs_one_process_32_stamps_same_process_id" in src

@@ -1531,6 +1531,11 @@ class RDFImporter:
                         self.warnings.append(
                             f"{key} of '{ref}' is not JSON — kept as text")
                         data[key] = raw
+            # dev30 (D1): the origin of a retrieval comes back among the
+            # event's facts, where bucket_acquisition writes them
+            origin = self._one_literal(store, ref, EM.retrievedFrom)
+            if origin and node_type == "dtc_acquisition":
+                data["retrieved_from"] = str(origin)
             software = data.get("software")
             if isinstance(software, list) and software \
                     and isinstance(software[0], dict) and software[0].get("name"):

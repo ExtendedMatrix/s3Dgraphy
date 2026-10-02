@@ -51,6 +51,8 @@ from .neighbourhood import (
 from .ingest import (
     DEFAULT_ACQUISITION_KIND,
     DEFAULT_PROCESS_KIND,
+    DOWNLOAD_KIND,
+    acquisition_origin,
     acquisition_members,
     attribute_batch,
     batch_summary,

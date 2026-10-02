@@ -156,6 +156,7 @@ def validate(graph: Graph) -> Dict[str, Any]:
             f"from '{r['unit_name']}', which has no '{r['property_name']}' "
             f"property of its own")
     warnings = list(getattr(graph, "warnings", []) or [])
+    warnings.extend(_dtc_warnings(graph))
     geo = georeference_state(graph)
     if geo == "undeclared":
         info.append("the graph is not georeferenced: no CRS is declared "
@@ -172,6 +173,27 @@ def validate(graph: Graph) -> Dict[str, Any]:
         "issues": issues,
         "info": info,
     }
+
+
+def _dtc_warnings(graph: Graph) -> List[str]:
+    """What a DTC chain leaves unsaid that a reader would want said — warnings,
+    never issues: an old stamp stays readable and nobody is stopped.
+
+    * D1 (E.D., 2 Oct 2026) — a Download that does not say where it came from
+      (``how.acquisition.retrieved_from``: a DOI or a URL). The composer asks
+      for it; the format leaves it optional."""
+    from .dtc.ingest import DOWNLOAD_KIND, acquisition_origin
+    out: List[str] = []
+    for node in getattr(graph, "nodes", []) or []:
+        if getattr(node, "node_type", None) != "dtc_acquisition":
+            continue
+        data = getattr(node, "data", None) or {}
+        if data.get("dtc_kind") == DOWNLOAD_KIND and not acquisition_origin(node):
+            out.append(
+                f"download without origin: '{getattr(node, 'name', '')}' "
+                f"({node.node_id}) does not say where it came from "
+                f"(how.acquisition.retrieved_from — a DOI or a URL)")
+    return out
 
 
 # ── a property with more than one owner ─────────────────────────────────────
