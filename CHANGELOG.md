@@ -11,7 +11,7 @@ Everything in this section came after `404d73b` («Bump version: 1.6.0.dev27 →
 datamodel **1.6.23**, connections 1.6.35 (unchanged), qualia 1.6.6
 (unchanged), visual rules **1.6.30**, translations 1.6 (two labels added),
 `em.ttl` **1.6.13**; fingerprint from `sha256:51db4ecc…93a4` (dev28) to
-`sha256:45c185335677bb061b54636a60f00ad4f54388593262f6ab5f6b6672a315bf41`.
+`sha256:027b2eead5a2b9986f83b81ff75c81aa2c27272e5539b83cb733595c956795cb`.
 
 ### Added
 - **One act, N outputs**: `declare_derivation(graph, outputs=[…], inputs=[…],
@@ -35,7 +35,7 @@ datamodel **1.6.23**, connections 1.6.35 (unchanged), qualia 1.6.6
   (sheet «sources», header in row 2, Nome / Descrizione / Url / Tipo);
   `api.registered_mappings`, `api.recognise_mapping`; `sheet_header` tries the
   registered mappings when none is chosen.
-- **Proposed vocabulary** (visual rules 1.6.30, to be confirmed by E.D.):
+- **Vocabulary** (visual rules 1.6.30, proposed from San Pietro and confirmed by E.D. on 2 Oct 2026):
   `dtc_kinds.output.image_set` (glyph 09_photos) and
   `dtc_kinds.process.texturing` (glyph 03_mesh), in the nine languages.
 - **RDF**: seven `em:` terms (em.ttl 1.6.13, section 17) — `em:packaging`,

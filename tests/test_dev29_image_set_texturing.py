@@ -1,8 +1,7 @@
 """dev29 · A8 — an image set and texturing in the DTC vocabulary.
 
 Measured on San Pietro (1 Oct 2026): the composer and ``DTC_KINDS`` had no
-product «set of photos» and no texture/texturing kind. PROPOSED (to be
-confirmed by E.D.): ``output: image_set``, ``process: texturing``, written
+product «set of photos» and no texture/texturing kind. CONFIRMED by E.D. on 2 Oct 2026: ``output: image_set``, ``process: texturing``, written
 with their translations and reused glyphs as dev28 did for the four export
 gestures.
 """

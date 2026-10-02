@@ -111,10 +111,10 @@ The axes currently declared, measured on the shipped file:
   `georeferencing`, `format_conversion`, `export`, `lod_generation`, `tiling`,
   `packing`, `classification`, `vectorization` (the four gestures of whoever
   exports since visual rules 1.6.29, dev28; `texturing` since 1.6.30, dev29,
-  proposed and to be confirmed by E.D.)
+  confirmed by E.D. 2 Oct 2026)
 - **output** — `pointcloud`, `mesh`, `dem`, `orthophoto`, `image_set`, `points`,
-  `lines`, `polygons` (`image_set` since 1.6.30, dev29, proposed and to be
-  confirmed by E.D.)
+  `lines`, `polygons` (`image_set` since 1.6.30, dev29, confirmed by E.D.
+  2 Oct 2026)
 - **device** — `camera`, `sensor`, `drone`, `computer`, `scanner`, `total_station`, `gnss`
 - **input** — no entries: a read alias of the capture family
   (`get_dtc_kinds()["input"]`), for readers that still ask it.
