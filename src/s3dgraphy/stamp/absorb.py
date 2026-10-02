@@ -284,7 +284,7 @@ def _is_origin_acquisition(how: Dict[str, Any], parents: List[Any]) -> bool:
     return str(how.get("dtc_kind") or "").strip() in DTC_KINDS.get("acquisition", ())
 
 
-def _process_kind(how: Dict[str, Any]) -> str:
+def _process_kind(how: Dict[str, Any]) -> Optional[str]:
     """L'asse controllato, e il ripiego quando il timbro non lo porta.
 
     `dtc_kind` è **validato** contro il vocabolario dei dati, quindi un valore
@@ -297,6 +297,11 @@ def _process_kind(how: Dict[str, Any]) -> str:
     from ..nodes.dtc_node import DTC_KINDS
 
     stated = str(how.get("dtc_kind") or "").strip()
+    if not stated:
+        # Non detto resta non detto (dev29): un timbro senza genere rientra
+        # senza genere, altrimenti il secondo assorbimento dello stesso timbro
+        # sarebbe in disaccordo con il primo.
+        return None
     allowed = DTC_KINDS.get("process", ())
     return stated if stated in allowed else DEFAULT_PROCESS_KIND
 

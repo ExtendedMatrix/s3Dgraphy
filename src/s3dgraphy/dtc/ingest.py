@@ -222,10 +222,25 @@ def bucket_acquisition(graph: Any, resources: Sequence[str], *,
         if node.node_id not in members:
             members.append(node.node_id)
 
+    named = _stable_id(f"acquisition|{getattr(graph, 'graph_id', '')}|{name}") \
+        if name else None
+    already = None if (acquisition_id or (named and _find(graph, named))) \
+        else _common_acquisition(graph, members)
     if acquisition_id:
         acq_id = str(acquisition_id)
-    elif name:
-        acq_id = _stable_id(f"acquisition|{getattr(graph, 'graph_id', '')}|{name}")
+    elif already is not None:
+        # L'EVENTO C'È GIÀ (dev29, misurato su San Pietro): i 71 timbri del
+        # drone, riassorbiti, avevano già fatto nascere la LORO acquisizione —
+        # un solo process_id per 71 file. Un secondo bucket con un nome
+        # dichiarato ne faceva un altro accanto, e lo stesso lotto aveva due
+        # eventi. Quando TUTTI i membri vengono già da una sola acquisizione, il
+        # lotto è quello: lo si nomina, non lo si duplica.
+        acq_id = already
+        warnings.append(
+            f"every member already came from the acquisition '{already}': "
+            f"that event is the lot, and it is the one named here")
+    elif named:
+        acq_id = named
     else:
         acq_id = _stable_id("acquisition|" + "|".join(sorted(members)))
 
@@ -292,6 +307,23 @@ def bucket_acquisition(graph: Any, resources: Sequence[str], *,
             "warnings": warnings}
 
 
+def _common_acquisition(graph: Any, members: Sequence[str]) -> Optional[str]:
+    """The ONE live acquisition every member already came out of, or None."""
+    if not members:
+        return None
+    kinds = {n.node_id: getattr(n, "node_type", None) for n in _alive_nodes(graph)}
+    common: Optional[set] = None
+    for member in members:
+        sources = {getattr(e, "edge_source", None) for e in _alive_edges(graph)
+                   if getattr(e, "edge_type", None) == EDGE_HAD_OUTPUT
+                   and getattr(e, "edge_target", None) == member
+                   and kinds.get(getattr(e, "edge_source", None)) == "dtc_acquisition"}
+        common = sources if common is None else common & sources
+        if not common:
+            return None
+    return next(iter(common)) if common and len(common) == 1 else None
+
+
 def acquisition_members(graph: Any, acquisition_id: str) -> List[str]:
     """The resources this acquisition brought in — read off the edges, live.
 
@@ -311,10 +343,13 @@ def acquisition_members(graph: Any, acquisition_id: str) -> List[str]:
 
 # ── 2 · the derivation, DECLARED ─────────────────────────────────────────────
 
-def declare_derivation(graph: Any, output: str, inputs: Sequence[str], *,
+def declare_derivation(graph: Any, output: Optional[str] = None,
+                       inputs: Sequence[str] = (), *,
+                       outputs: Optional[Sequence[str]] = None,
+                       act_name: Optional[str] = None,
                        tool: Optional[str] = None,
                        process_id: Optional[str] = None,
-                       dtc_kind: Optional[str] = DEFAULT_PROCESS_KIND,
+                       dtc_kind: Optional[str] = None,
                        technique: Optional[str] = None,
                        parameters: Optional[Dict[str, Any]] = None,
                        software: Optional[Sequence[Dict[str, Any]]] = None,
@@ -343,8 +378,8 @@ def declare_derivation(graph: Any, output: str, inputs: Sequence[str], *,
     and the longer it stays the more people walk through it.
 
     They are the three fields the stamp format names beside ``dtc_kind``:
-    ``technique`` is the free word of whoever did the gesture («decimation»,
-    which is NOT in the controlled vocabulary and must not enter it),
+    ``technique`` is the free word of whoever did the gesture («quadric edge
+    collapse»; ``decimation`` is the controlled kind since 1.6.22),
     ``parameters`` is how that technique was applied, and ``software`` is a LIST
     because a real chain names two (the tool and the library) and carries the
     **commit**, since «EM Tools 1.6» does not say which build.
@@ -354,19 +389,45 @@ def declare_derivation(graph: Any, output: str, inputs: Sequence[str], *,
     ``software`` while leaving ``tool`` empty would make an interface that
     worked go quiet.
 
-    Idempotent: the process id is derived from (output, sorted inputs, tool), so
-    declaring the same derivation twice converges on one event.
+    **One act, N outputs** (dev29). A tiling in 32 blocks is ONE gesture, and
+    it was 32 processes because the event had one output and its id was made
+    from it. ``outputs=[…]`` (instead of ``output``) writes ONE
+    ``DTCProcessNode`` with a ``dtc_had_output`` per output, so the stamp of
+    each block carries the same ``how.process_id``. The one-output signature is
+    unchanged.
 
-    Returns ``{process_id, created, output, inputs, missing, warnings}``.
+    ``dtc_kind`` not given stays NOT GIVEN (dev29): until dev28 it fell on
+    ``transformation``, and an export left without a kind was stamped as a
+    transformation — a default written as if somebody had said it.
+
+    Idempotent: the process id is derived from ``act_name`` when the act is
+    named (the name IS the act: «Tiling LOD0 2026-07-23»), otherwise from
+    (output, sorted inputs, tool) — for N outputs from the sorted outputs, the
+    sorted inputs and the tool — so declaring the same derivation twice
+    converges on one event.
+
+    Returns ``{process_id, created, output, outputs, inputs, missing,
+    warnings}`` (``output`` is the first output).
     """
     from ..nodes import DTCProcessNode
 
     warnings: List[str] = []
-    out_node = _find(graph, str(output))
-    if out_node is None or getattr(out_node, "node_type", None) != "resource":
-        raise LookupError(
-            f"no live resource '{output}' in this graph: declare a derivation "
-            f"after its output exists, not instead of it")
+    refs = [str(o) for o in (outputs or ())]
+    if output is not None:
+        refs = [str(output)] + [r for r in refs if r != str(output)]
+    if not refs:
+        raise ValueError("a derivation needs an output: give output or outputs")
+    out_nodes: List[Any] = []
+    for ref in refs:
+        node = _find(graph, ref)
+        if node is None or getattr(node, "node_type", None) != "resource":
+            raise LookupError(
+                f"no live resource '{ref}' in this graph: declare a derivation "
+                f"after its output exists, not instead of it")
+        if all(node.node_id != n.node_id for n in out_nodes):
+            out_nodes.append(node)
+    out_node = out_nodes[0]
+    out_ids = {n.node_id for n in out_nodes}
 
     resolved: List[Any] = []
     missing: List[str] = []
@@ -382,7 +443,7 @@ def declare_derivation(graph: Any, output: str, inputs: Sequence[str], *,
                 f"'{ref}' is a {getattr(node, 'node_type', '?')}: an input is a "
                 f"resource or an acquisition")
             continue
-        if node.node_id == out_node.node_id:
+        if node.node_id in out_ids:
             missing.append(str(ref))
             warnings.append(
                 f"'{ref}' is the output itself: a file is not derived from itself")
@@ -390,17 +451,29 @@ def declare_derivation(graph: Any, output: str, inputs: Sequence[str], *,
         if all(node.node_id != n.node_id for n in resolved):
             resolved.append(node)
 
-    key = "|".join([out_node.node_id, *sorted(n.node_id for n in resolved),
-                    (tool or "")])
-    pid = str(process_id) if process_id else _stable_id(f"derivation|{key}")
+    act = str(act_name or "").strip()
+    if process_id:
+        pid = str(process_id)
+    elif act:
+        pid = _stable_id(f"act|{getattr(graph, 'graph_id', '')}|{act}")
+    elif len(out_nodes) == 1:
+        key = "|".join([out_node.node_id, *sorted(n.node_id for n in resolved),
+                        (tool or "")])
+        pid = _stable_id(f"derivation|{key}")
+    else:
+        key = "|".join([*sorted(out_ids), "", *sorted(n.node_id for n in resolved),
+                        (tool or "")])
+        pid = _stable_id(f"derivations|{key}")
 
     proc = _find(graph, pid)
     created = proc is None
     if proc is None:
+        default = (f"derivation of {out_node.name}" if len(out_nodes) == 1
+                   else f"derivation of {len(out_nodes)} outputs")
         proc = DTCProcessNode(
             pid,
-            name=name or (tool.strip() if tool and tool.strip()
-                          else f"derivation of {out_node.name}"),
+            name=name or act or (tool.strip() if tool and tool.strip()
+                                 else default),
             description="",
             dtc_kind=dtc_kind)
         graph.add_node(proc)
@@ -433,15 +506,20 @@ def declare_derivation(graph: Any, output: str, inputs: Sequence[str], *,
                 # passato a mano è una scelta di chi chiama e non va soppiantata.
                 data["tool"] = dict(first)
 
-    _ensure_edge(graph, pid, out_node.node_id, EDGE_HAD_OUTPUT, warnings)
+    if act:
+        data["act_name"] = act
+    for out in out_nodes:
+        _ensure_edge(graph, pid, out.node_id, EDGE_HAD_OUTPUT, warnings)
     for node in resolved:
         _ensure_edge(graph, pid, node.node_id, EDGE_HAD_INPUT, warnings)
         if getattr(node, "node_type", None) == "resource":
-            _ensure_edge(graph, out_node.node_id, node.node_id,
-                         EDGE_DERIVED_FROM, warnings)
+            for out in out_nodes:
+                _ensure_edge(graph, out.node_id, node.node_id,
+                             EDGE_DERIVED_FROM, warnings)
     _stamp(proc, author=author, at=at)
 
     return {"process_id": pid, "created": created, "output": out_node.node_id,
+            "outputs": [n.node_id for n in out_nodes],
             "inputs": [n.node_id for n in resolved], "missing": missing,
             "warnings": warnings}
 

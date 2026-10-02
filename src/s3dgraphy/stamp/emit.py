@@ -449,6 +449,10 @@ def _how_block(graph: Any, process: Optional[Any],
         warnings.append(
             "no technique stated: the stamp carries the controlled dtc_kind "
             "only, which says the axis but not the operation")
+    elif not block.get("technique") and not block.get("dtc_kind"):
+        warnings.append(
+            "no technique stated and no dtc_kind: the stamp says a step "
+            "happened, not which")
 
     parameters = data.get("parameters")
     if isinstance(parameters, dict):

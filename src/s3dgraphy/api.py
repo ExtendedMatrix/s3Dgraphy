@@ -984,7 +984,10 @@ def acquisition_members(graph: Graph, acquisition_id: str) -> List[str]:
     return _members(graph, acquisition_id)
 
 
-def declare_derivation(graph: Graph, output: str, inputs: Any, *,
+def declare_derivation(graph: Graph, output: Optional[str] = None,
+                       inputs: Any = (), *,
+                       outputs: Optional[Any] = None,
+                       act_name: Optional[str] = None,
                        tool: Optional[str] = None,
                        process_id: Optional[str] = None,
                        dtc_kind: Optional[str] = None,
@@ -1007,21 +1010,24 @@ def declare_derivation(graph: Graph, output: str, inputs: Any, *,
     call. That is a seam that teaches every client the internal shape of a node,
     and this surface exists precisely so that nobody has to know it.
 
-    `dtc_kind` defaults to None **here and not to the vocabulary's default**: a
-    door that re-stated the default would be a second place to keep it, and the
-    function underneath already has one. Passing None means "you decide".
+    `dtc_kind` None means NOT STATED (dev29), and it stays absent on the node
+    and in the stamp: until dev28 it fell on `transformation`, a default written
+    as if somebody had said it.
+
+    **One act, N outputs** (dev29): `outputs=[…]` instead of `output` writes ONE
+    process with N `dtc_had_output`; `act_name` names the act and the process id
+    is derived from it — the same act declared again lands on the same event.
     """
     from .dtc.ingest import declare_derivation as _declare
 
-    extra: Dict[str, Any] = {}
-    if dtc_kind is not None:
-        extra["dtc_kind"] = dtc_kind
     before = _ids(graph)
-    out = _declare(graph, output, list(inputs or ()), tool=tool,
+    out = _declare(graph, output, list(inputs or ()),
+                   outputs=list(outputs) if outputs else None,
+                   act_name=act_name, tool=tool,
                    process_id=process_id, technique=technique,
                    parameters=parameters,
                    software=list(software) if software else None,
-                   name=name, author=author, at=at, **extra)
+                   name=name, author=author, at=at, dtc_kind=dtc_kind)
     _born(graph, before)
     return out
 
