@@ -15,6 +15,35 @@ import platform
 # ✅ PERFORMANCE: Pre-compile regex pattern for column normalization (compiled once, reused forever)
 _COLUMN_NORMALIZE_PATTERN = re.compile(r'[\s\-/\\()\[\].,;:–—]+')
 
+def resolve_sheet_name(source, sheet_name):
+    """The sheet a mapping names, compared WITHOUT case (dev29).
+
+    The EM template calls its sheet «sources» and the shipped mapping said
+    «Sources»: «Worksheet named 'Sources' not found» for a sheet that was
+    there. An exact match wins; else the one sheet whose name equals it
+    ignoring case and surrounding spaces; else the name as given, and the
+    reader says it is not there. An index (int) is left alone."""
+    if not isinstance(sheet_name, str):
+        return sheet_name
+    try:
+        from openpyxl import load_workbook
+        if hasattr(source, "seek"):
+            source.seek(0)
+        wb = load_workbook(source, read_only=True)
+        names = list(wb.sheetnames)
+        wb.close()
+    except Exception:
+        return sheet_name
+    finally:
+        if hasattr(source, "seek"):
+            source.seek(0)
+    if sheet_name in names:
+        return sheet_name
+    wanted = sheet_name.strip().casefold()
+    same = [n for n in names if n.strip().casefold() == wanted]
+    return same[0] if len(same) == 1 else sheet_name
+
+
 class MappedXLSXImporter(BaseImporter):
     def __init__(self, filepath: str, mapping_name: str, overwrite: bool = False,
                 existing_graph=None, filters=None, header_row=None,
@@ -230,6 +259,7 @@ class MappedXLSXImporter(BaseImporter):
             # Read Excel file. The header is on `header_row` (1-based): given,
             # declared by the mapping, or proposed (sheet_header.py). Until
             # 2026-10-29 it was always row 1 (header=0).
+            sheet_name = resolve_sheet_name(working_path, sheet_name)
             header_row = self._resolve_header_row(working_path, sheet_name)
             if header_row != 1:
                 self.warnings.append(
@@ -483,9 +513,9 @@ class MappedXLSXImporter(BaseImporter):
         except Exception as e:
             error_msg = f"Unexpected error: {str(e)}"
             self.warnings.append(error_msg)
-            # print(f"\n❌ {error_msg}")
-            import traceback
-            traceback.print_exc()
+            # dev29: no traceback printed BEFORE the error is raised — the
+            # caller gets the exception (and says it where its person reads),
+            # and a stack on stdout first was a second, noisier copy of it
             raise
         
         finally:
@@ -539,7 +569,8 @@ class MappedXLSXImporter(BaseImporter):
         self._validate_filter_column(column)
 
         table_settings = self._source_settings()
-        sheet_name = table_settings.get('sheet_name', 0)
+        sheet_name = resolve_sheet_name(self.filepath,
+                                        table_settings.get('sheet_name', 0))
 
         header_row = self._resolve_header_row(self.filepath, sheet_name)
         df = pd.read_excel(

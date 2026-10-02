@@ -3282,9 +3282,91 @@ def sheet_header(source: str, sheet: Any = None,
     from .importer.sheet_header import (choose_header_row, header_preview,
                                         read_top_rows)
     rows = read_top_rows(source, sheet)
+    if not expected:
+        # dev29: with no mapping chosen yet, the registered mappings are
+        # tried — the EM sourcelist template is recognised by itself
+        try:
+            known = recognise_mapping(source, sheet)
+        except Exception:
+            known = []
+        if known:
+            from .mappings import mapping_registry
+            best = known[0]
+            data = mapping_registry.load_mapping(best["name"], best["type"]) or {}
+            expected = list(data.get("column_mappings") or {})
+            out = choose_header_row(rows, expected)
+            if out["header_row"] != best["header_row"]:
+                out = {"header_row": best["header_row"],
+                       "proposal": out.get("proposal"),
+                       "reason": f"declared by the registered mapping "
+                                 f"{best['name']!r}"}
+            out["recognised"] = known
+            out["preview"] = header_preview(rows)
+            return out
     out = choose_header_row(rows, expected)
     out["preview"] = header_preview(rows)
     return out
+
+
+def registered_mappings() -> List[Dict[str, Any]]:
+    """Every mapping the s3Dgraphy registry knows, for an editor's list:
+    ``[{name, type, display_name, description, format, sheet}]`` — ``name`` and
+    ``type`` are what ``xlsx_to_graph(mapping_name=…)`` and the importers take."""
+    from .mappings import mapping_registry
+    out: List[Dict[str, Any]] = []
+    for mtype in sorted(mapping_registry._mapping_directories):
+        for name, display, description in mapping_registry.list_available_mappings(mtype):
+            data = mapping_registry.load_mapping(name, mtype) or {}
+            settings = data.get("source_settings") or data.get("table_settings") or {}
+            out.append({"name": name, "type": mtype, "display_name": display,
+                        "description": description,
+                        "format": settings.get("format_type"),
+                        "sheet": settings.get("sheet_name")})
+    return out
+
+
+def recognise_mapping(source: str, sheet: Any = None) -> List[Dict[str, Any]]:
+    """Which registered mappings this spreadsheet looks like, best first.
+
+    For every registered xlsx mapping: its sheet (compared without case, or
+    ``sheet`` when given), the header row the importers would read
+    (:func:`sheet_header` with the mapping's columns as the expected names, or
+    the row the mapping declares), and how many of its columns that row names.
+    ``[{name, type, display_name, header_row, matched, of}]``, only mappings
+    that name at least one column, most matched first. This is how the EM
+    sourcelist template is recognised by itself (dev29): measured on San
+    Pietro, the editor read 7 fields and proposed no mapping."""
+    from .importer.mapped_xlsx_importer import resolve_sheet_name
+    from .importer.sheet_header import (_named, check_header_row,
+                                        choose_header_row, read_top_rows)
+    from .mappings import mapping_registry
+    found: List[Dict[str, Any]] = []
+    for entry in registered_mappings():
+        if (entry.get("format") or "xlsx") != "xlsx":
+            continue
+        data = mapping_registry.load_mapping(entry["name"], entry["type"]) or {}
+        columns = [c for c in (data.get("column_mappings") or {}) if c]
+        if not columns:
+            continue
+        name = sheet if sheet is not None else resolve_sheet_name(
+            source, entry.get("sheet") if entry.get("sheet") is not None else 0)
+        try:
+            rows = read_top_rows(source, name)
+        except Exception:
+            continue
+        settings = data.get("source_settings") or data.get("table_settings") or {}
+        if settings.get("header_row") is not None:
+            row = check_header_row(settings["header_row"])
+        else:
+            row = choose_header_row(rows, columns)["header_row"]
+        matched = _named(rows[row - 1], columns) if len(rows) >= row else 0
+        if matched:
+            found.append({"name": entry["name"], "type": entry["type"],
+                          "display_name": entry["display_name"],
+                          "header_row": row, "matched": matched,
+                          "of": len(columns)})
+    found.sort(key=lambda f: (-f["matched"] / f["of"], -f["matched"], f["name"]))
+    return found
 
 
 def mapping_apply(mapping: Dict[str, Any], source: str, *, graph: Any = None,

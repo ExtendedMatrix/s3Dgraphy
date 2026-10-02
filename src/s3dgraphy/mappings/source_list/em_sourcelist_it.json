@@ -1,0 +1,47 @@
+{
+  "name": "EM sourcelist (template italiano)",
+  "description": "The sourcelist of the Extended Matrix template, in Italian: sheet «sources», a title in row 1 (the name of the site) and the header in row 2 — Nome / Descrizione / Url / Proprietà che può validare / id. originario / Tipo / Anteprima. Each Nome (D.01, D.02…) is a DocumentNode; Descrizione, Url (in the template it holds the bibliographic reference, measured on San Pietro) and Tipo become its properties. Registered in dev29 from the mapping measured on San Pietro (1 Oct 2026: 24 DocumentNodes, the language on 95 nodes). The two columns «Proprietà che può validare» and «id. originario» are not mapped: what they become is a decision for E.D., not a guess.",
+  "version": "1.6.0",
+  "id_column": "Nome",
+  "name_column": "Descrizione",
+  "source_settings": {
+    "format_type": "xlsx",
+    "sheet_name": "sources",
+    "header_row": 2,
+    "source_lang": "it"
+  },
+  "column_mappings": {
+    "Nome": {
+      "node_type": "DocumentNode",
+      "is_id": true,
+      "display_name": "Document ID",
+      "description": "The identifier of the source, as the EM template writes it (D.01, D.02…)."
+    },
+    "Descrizione": {
+      "node_type": "PropertyNode",
+      "property_name": "description",
+      "display_name": "Descrizione",
+      "description": "What the source is."
+    },
+    "Url": {
+      "node_type": "PropertyNode",
+      "property_name": "bibliography",
+      "display_name": "Url",
+      "description": "In the EM template this column holds the bibliographic reference (or a link)."
+    },
+    "Tipo": {
+      "node_type": "PropertyNode",
+      "property_name": "document_type",
+      "display_name": "Tipo",
+      "description": "The kind of the source (3D, incisione, rilievo fotografico…)."
+    }
+  },
+  "relations": [],
+  "_validated_against": {
+    "s3dgraphy": "1.6.0.dev28",
+    "schema_version": "1",
+    "node_datamodel": "1.6.23",
+    "connections_datamodel": "1.6.35",
+    "on": "2026-10-02"
+  }
+}

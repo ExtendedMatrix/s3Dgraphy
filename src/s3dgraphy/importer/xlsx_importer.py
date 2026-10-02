@@ -68,7 +68,9 @@ class XLSXImporter(BaseImporter):
             # ✅ Leggi configurazione tabella
             table_settings = self.mapping.get('table_settings', {})
             start_row = table_settings.get('start_row', 0)
-            sheet_name = table_settings.get('sheet_name', 0)
+            from .mapped_xlsx_importer import resolve_sheet_name
+            sheet_name = resolve_sheet_name(self.filepath,
+                                            table_settings.get('sheet_name', 0))
             
             # ✅ Leggi Excel con pandas
             df = pd.read_excel(
@@ -180,7 +182,9 @@ class XLSXImporter(BaseImporter):
         self._validate_filter_column(column)
         table_settings = self.mapping.get('table_settings', {})
         start_row = table_settings.get('start_row', 0)
-        sheet_name = table_settings.get('sheet_name', 0)
+        from .mapped_xlsx_importer import resolve_sheet_name
+        sheet_name = resolve_sheet_name(self.filepath,
+                                        table_settings.get('sheet_name', 0))
 
         df = pd.read_excel(
             self.filepath,
