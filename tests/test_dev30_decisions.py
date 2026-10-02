@@ -60,3 +60,21 @@ def test_a2_fs_backend_has_no_second_rule():
            / "fs_backend.py").read_text(encoding="utf-8")
     # the prefix is matched in one place only: em_id_of
     assert src.count("_EM_ID_PREFIX.match") == 1
+
+
+# ── A3 · the packaging vocabulary lives in the datamodel, with translations ──
+def test_a3_packaging_labels_in_datamodel_and_translations():
+    from s3dgraphy.nodes.resource_node import ResourceNode as RN
+    from s3dgraphy.tools.datamodel_i18n import packaging_label
+    dm = json.loads((CONFIG / "s3Dgraphy_node_datamodel.json").read_text(encoding="utf-8"))
+    el = dm["reference_nodes"]["ResourceNode"]["properties"]["packaging"]
+    # the vocabulary is the class's, word for word: one source, no second list
+    assert set(el["values"]) == set(el["labels"]) == set(RN.PACKAGINGS)
+    tr = json.loads((CONFIG / "datamodel_translations.json").read_text(encoding="utf-8"))
+    assert set(tr["packagings"]) == set(RN.PACKAGINGS)
+    for value in RN.PACKAGINGS:
+        for lang in tr["languages"]:
+            assert tr["packagings"][value]["label"].get(lang), (value, lang)
+    assert packaging_label("file_set", "it") == "Insieme di file"
+    assert packaging_label("directory", "xx") == "Folder"  # English fallback
+    assert packaging_label("nope") is None

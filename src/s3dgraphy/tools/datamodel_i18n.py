@@ -29,8 +29,14 @@ Shape — one section per kind of key, each keyed by a STABLE identity::
                                                      "ui_phrase_as_source": {...},
                                                      "ui_phrase_as_target": {...}}},
       "dtc_kinds":            {"<dtc kind>":        {"label": {...}}},
-      "stratigraphic_kinds":  {"<kind>":            {"label": {...}}}
+      "stratigraphic_kinds":  {"<kind>":            {"label": {...}}},
+      "packagings":           {"<packaging>":       {"label": {...}}}
     }
+
+`packagings.<packaging>.label` (1.6, dev30) is the name of how a resource's bytes
+are packed — the `packaging` field of ResourceNode, seeded from its `labels`:
+«File set» → «Insieme di file», «Folder» → «Cartella» — what an inspector shows
+on the chip of a resource (before dev30 these were words of EMStudio's own i18n).
 
 `stratigraphic_kinds.<kind>.label` (1.6) is the label of a genre of US — the
 `stratigraphic_kind` node element of the datamodel, seeded from its `labels`:
@@ -110,6 +116,7 @@ SECTIONS: Dict[str, str] = {
     "edge_types": "edge",
     "dtc_kinds": "dtc",
     "stratigraphic_kinds": "strat_kind",
+    "packagings": "packaging",
 }
 #: the two directions of an edge's `ui_phrase`, as fields of the `edge_types`
 #: section — `ui_phrase.as_source` in the datamodel is `ui_phrase_as_source` here
@@ -245,12 +252,26 @@ def _collect_stratigraphic_kinds_en(dm: Dict[str, Any]) -> Dict[str, Dict[str, s
     return out
 
 
+def _collect_packagings_en(dm: Dict[str, Any]) -> Dict[str, Dict[str, str]]:
+    """{packaging: {"label": ...}} from the ``labels`` of ResourceNode's
+    ``packaging`` field in the datamodel."""
+    el = (((dm.get("reference_nodes") or {}).get("ResourceNode") or {})
+          .get("properties") or {}).get("packaging")
+    out: Dict[str, Dict[str, str]] = {}
+    if isinstance(el, dict) and isinstance(el.get("labels"), dict):
+        for value, label in el["labels"].items():
+            if isinstance(label, str) and label.strip():
+                out[value] = {"label": label}
+    return out
+
+
 def _collect_all_en() -> Dict[str, Dict[str, Dict[str, str]]]:
     out = {"entries": _collect_en(_load(DATAMODEL))}
     out.update(_collect_qualia_en(_load(QUALIA)))
     out["edge_types"] = _collect_edge_phrases_en(_load(CONNECTIONS))
     out["dtc_kinds"] = _collect_dtc_kinds_en(_load(VISUAL_RULES))
     out["stratigraphic_kinds"] = _collect_stratigraphic_kinds_en(_load(DATAMODEL))
+    out["packagings"] = _collect_packagings_en(_load(DATAMODEL))
     return out
 
 
@@ -311,7 +332,7 @@ def _rows(doc: Dict[str, Any]) -> List[Tuple[str, str, str]]:
     categories/subcategories/qualia, then the edge phrases."""
     keys: List[Tuple[str, str, str]] = []
     for section in ("entries", "qualia_categories", "qualia_subcategories", "qualia",
-                    "edge_types", "dtc_kinds", "stratigraphic_kinds"):
+                    "edge_types", "dtc_kinds", "stratigraphic_kinds", "packagings"):
         entries = doc.get(section, {})
         for key in sorted(entries):
             for field in ("label", "description") + PHRASE_FIELDS:
@@ -402,6 +423,12 @@ def stratigraphic_kind_label(kind: str, lang: str = "en") -> Optional[str]:
     """The label of a genre of US in ``lang`` («masonry» → «muraria»), English
     fallback; ``None`` for a kind the datamodel does not have."""
     return translate("stratigraphic_kinds", kind, "label", lang)
+
+
+def packaging_label(packaging: str, lang: str = "en") -> Optional[str]:
+    """The name of a resource's packaging in ``lang`` («file_set» → «Insieme di
+    file»), English fallback; ``None`` for a packaging the datamodel does not have."""
+    return translate("packagings", packaging, "label", lang)
 
 
 def edge_ui_phrase(edge_type: str, direction: str, lang: str = "en") -> Optional[str]:
@@ -536,6 +563,10 @@ def export_xlsx(path: str, force: bool = False) -> None:
             note = (f"Label of the genre '{key}' of a stratigraphic unit, written after "
                     "the type in an inspector («US · masonry»); an adjective where the "
                     "language allows it")
+        elif section == "packagings":
+            area = "resource packaging"
+            note = (f"Name of the packaging '{key}' of a resource (how its bytes are "
+                    "packed), shown on the resource's chip in an inspector")
         elif section == "dtc_kinds":
             area = "DTC vocabulary"
             note = (f"Name of the acquisition family '{key[7:]}'" if key.startswith("family_")

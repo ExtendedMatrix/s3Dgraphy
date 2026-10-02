@@ -8091,5 +8091,112 @@
     "fr": "maçonnée"
    }
   }
+ },
+ "packagings": {
+  "archive": {
+   "label": {
+    "en": "Archive",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Archivio",
+    "el": "Αρχειοθήκη",
+    "he": "ארכיון",
+    "es": "Archivo comprimido",
+    "pl": "Archiwum",
+    "ro": "Arhivă",
+    "fr": "Archive",
+    "de": "Archiv"
+   }
+  },
+  "datablock": {
+   "label": {
+    "en": "Blender object",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Oggetto Blender",
+    "el": "Αντικείμενο Blender",
+    "he": "אובייקט Blender",
+    "es": "Objeto de Blender",
+    "pl": "Obiekt Blendera",
+    "ro": "Obiect Blender",
+    "fr": "Objet Blender",
+    "de": "Blender-Objekt"
+   }
+  },
+  "directory": {
+   "label": {
+    "en": "Folder",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Cartella",
+    "el": "Φάκελος",
+    "he": "תיקייה",
+    "es": "Carpeta",
+    "pl": "Folder",
+    "ro": "Dosar",
+    "fr": "Dossier",
+    "de": "Ordner"
+   }
+  },
+  "file": {
+   "label": {
+    "en": "File",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "File",
+    "el": "Αρχείο",
+    "he": "קובץ",
+    "es": "Archivo",
+    "pl": "Plik",
+    "ro": "Fișier",
+    "fr": "Fichier",
+    "de": "Datei"
+   }
+  },
+  "file_set": {
+   "label": {
+    "en": "File set",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Insieme di file",
+    "el": "Σύνολο αρχείων",
+    "he": "ערכת קבצים",
+    "es": "Conjunto de archivos",
+    "pl": "Zestaw plików",
+    "ro": "Set de fișiere",
+    "fr": "Ensemble de fichiers",
+    "de": "Dateigruppe"
+   }
+  }
  }
 }
