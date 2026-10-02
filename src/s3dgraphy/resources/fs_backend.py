@@ -36,6 +36,16 @@ from .resolver import Location, ResourceBackend
 # extractor ``D.<num>.<num>``, a combiner ``C.<num>``.
 _EM_ID_PREFIX = re.compile(r"^(D\.\d+(?:\.\d+)?|C\.\d+)")
 
+
+def em_id_of(name: str) -> Optional[str]:
+    """The EM id a DosCo file name carries at its start (``D.02``, ``D.02.01``,
+    ``C.3``), or ``None`` when it carries none (``photo_2022-02-07.jpg``).
+
+    The one public reading of the DosCo convention: the orphan scan reads it and
+    so do the tools beside the library (EMStudio's bridge), never a second rule."""
+    m = _EM_ID_PREFIX.match(name or "")
+    return m.group(1) if m else None
+
 # The graph node types the DosCo convention associates with files by name.
 DOSCO_NODE_TYPES = ("document", "extractor", "combiner")
 
@@ -267,10 +277,9 @@ class FSIndexBackend(ResourceBackend):
 
         orphans: List[Orphan] = []
         for entry in self.entries(present_only=True):
-            m = _EM_ID_PREFIX.match(entry.name)
-            if not m:
+            short_id = em_id_of(entry.name)
+            if short_id is None:
                 continue  # off-convention: ignored, never an orphan
-            short_id = m.group(1)
             if short_id in existing_ids:
                 continue  # node exists — matching failure, not an orphan
             if graph_code and f"{graph_code}.{short_id}" in existing_ids:

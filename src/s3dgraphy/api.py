@@ -2756,12 +2756,20 @@ def resolve_resource(graph: Graph, resource_id: str, *, registry: Any = None
     Looks up the ResourceNode by its ``node_id`` (the stable ID), reads its current
     locator, and asks the resolver registry (default: passthrough) to map it to
     a :class:`~s3dgraphy.resources.Location`. Returns the Location as a dict
-    ``{kind, value, exists}``, or ``None`` if no such resource exists."""
+    ``{kind, value, exists}``, or ``None`` if no such resource exists.
+
+    A DocumentNode answers too (dev30, A1): it carries its file in ``url`` (the
+    GraphML's «/DosCo/D.02.jpg»), read as a locator like a resource's — so a
+    caller asks one seam for both and never reads the url by itself. A document
+    with no url answers ``None``, as a missing resource does."""
     from .resources import default_registry
     node = graph.find_node_by_id(resource_id)
-    if node is None or getattr(node, "node_type", None) != "resource":
+    kind = getattr(node, "node_type", None) if node is not None else None
+    if kind not in ("resource", "document"):
         return None
     locator = _resource_locator(node)
+    if kind == "document" and not locator:
+        return None
     reg = registry if registry is not None else default_registry()
     loc = reg.resolve(resource_id, locator, graph=graph)
     return loc.to_dict() if loc is not None else None

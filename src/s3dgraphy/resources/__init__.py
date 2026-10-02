@@ -39,6 +39,7 @@ from .fs_backend import (
     Orphan,
     ScanResult,
     classify_resource_type,
+    em_id_of,
 )
 from .minio_backend import (
     MinioBackend,
@@ -62,6 +63,7 @@ __all__ = [
     "Orphan",
     "classify_resource_type",
     "DOSCO_NODE_TYPES",
+    "em_id_of",
     # R2 — MinIO / S3 backend (optional 'minio' extra)
     "MinioBackend",
     "MinioConfig",
