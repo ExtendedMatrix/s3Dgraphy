@@ -115,6 +115,10 @@ REMOTE or OTHER REPOSITORIES ask for confirmation and take --dry-run.
                         The whole round in one command, resumable: each step looks first
                         whether it is done. `release status [<V>]` = where it stands.
                           ./em.sh release 1.6.0.dev28 --dtcstamp 0.1.3 --desktop --dry-run
+  metashape <progetto.psx> [--chunk N] [--out file.em.json]
+                        Read a Metashape project without Metashape: its sheet (sensors,
+                        photos, operations, CRS, warnings); --out writes its DTC chain.
+                          ./em.sh metashape ../_datasets/x/progetto.psx --out x.em.json
   help [command]        This list, or the long help of one command.
                           ./em.sh help bump      (the five version paths are there)
 
@@ -544,6 +548,46 @@ IF IT FAILS
 EOF
 }
 
+help_metashape() {
+  cat <<'EOF'
+./em.sh metashape <progetto.psx> [--chunk N] [--out file.em.json] [--author ORCID]
+                  [--no-digests] [--json]
+
+WHAT IT DOES
+  python -m s3dgraphy.importer.metashape_project: reads the .psx and the zips in
+  <progetto>.files/ (doc.xml of project, chunks, frame and assets; the header of
+  each mesh.ply) with the stdlib only — Metashape is not needed and not called.
+  Prints a sheet: per chunk the sensors (resolution, EXIF make/model, photos,
+  enabled, aligned, dates), the CRS (EPSG and kind), the markers, the assets
+  with their counts, and the OPERATIONS in order with their parameters
+  (MatchPhotos, AlignCameras, OptimizeCameras, BuildDepthMaps, BuildModel…,
+  and 3DSC's LOD0), then every warning.
+  --chunk N   a chunk by id or label (the sheet shows every chunk without it).
+  --out F     writes the DTC chain of that chunk (default: the active one) as an
+              em.json: one acquisition per sensor, one act per operation, the
+              outputs as psx:// resources, the placement of each mesh. It hashes
+              the photographs and each mesh.ply (about 3 s on San Pietro,
+              2.7 GB); --no-digests skips it, and then writes no placement.
+  --json      the reading as JSON instead of the sheet.
+
+WHAT IT DOES NOT DO
+  It writes nothing inside the project and launches nothing. No operator is
+  invented: the project does not record one (--author is who ran the reading).
+
+EXAMPLE
+  $ ./em.sh metashape ../_datasets/SegniSanPietro/metashape-2026/sanpietro_LOD0.psx --chunk 1
+  sanpietro_LOD0.psx — Agisoft Metashape 2.3.0.21954 (document 1.2.0)
+  chunk 1 «Chunk 1_LOD0»  [active]
+    photographs 273 · aligned 217
+    …
+    6. 3DSC LOD0 → model 2  (from model 1)  kind lod_generation
+
+IF IT FAILS
+  "no project at …" → the path. Anything the reader cannot read is a warning at
+  the bottom of the sheet, never a stop.
+EOF
+}
+
 help_status() {
   cat <<'EOF'
 ./em.sh status
@@ -621,7 +665,7 @@ EOF
 do_help() {
   case "${1:-}" in
     "") help_overview ;;
-    setup|test|check|fingerprint|drift|docs|wheel|bump|publish|propagate|status|release) "help_$1" ;;
+    setup|test|check|fingerprint|drift|docs|wheel|bump|publish|propagate|status|release|metashape) "help_$1" ;;
     *) die "no command '$1'. ./em.sh help lists them." ;;
   esac
 }
@@ -1022,6 +1066,9 @@ case "$cmd" in
   publish)     do_publish "$@" ;;
   propagate)   do_propagate "$@" ;;
   status)      do_status ;;
+  metashape)   [[ $# -ge 1 ]] || die "usage: ./em.sh metashape <progetto.psx> [--chunk N] [--out file.em.json]"
+               if [[ -x "$PY" ]]; then "$PY" -m s3dgraphy.importer.metashape_project "$@"
+               else python3 -m s3dgraphy.importer.metashape_project "$@"; fi ;;
   release)     if [[ -x "$PY" ]]; then "$PY" "$ROOT/scripts/release.py" "$@"; else python3 "$ROOT/scripts/release.py" "$@"; fi ;;
   *)           echo "unknown command '$cmd'" >&2; echo >&2; help_overview >&2; exit 2 ;;
 esac

@@ -2,7 +2,46 @@
 
 All notable changes to **s3dgraphy** are documented here.
 
-## [Unreleased] — to be published as 1.6.0.dev29
+## [Unreleased] — after 1.6.0.dev29
+
+Everything in this section came after `069fb1a` (tag `v1.6.0.dev29`).
+Datamodel unchanged (no datamodel JSON, no `em.ttl` touched). Needs dtcstamp
+**0.1.4** for the `psx://` cross-checks (`tests/test_psx_locator.py` skips
+them on an older dtcstamp).
+
+### Added
+- **The Metashape reader** — `s3dgraphy.importer.metashape_project`:
+  `read_metashape_project(psx)` reads a `.psx` and its `<name>.files/` with the
+  stdlib only (Metashape absent): sensors with EXIF make/model, photographs
+  (enabled, aligned, dates, found on the disk or not), CRS (WKT, EPSG, kind),
+  markers with their projections, the assets with their counts (faces and
+  vertices from `doc.xml` and from the header of `mesh.ply`, tie points, depth
+  maps) and the **operations** in order with Metashape's parameters, typed. A
+  model that carries another model's BuildModel is a derived copy; with
+  3DSC's `3dsc_workflow_lod0_mode=decimated` it is the LOD0
+  (`lod_generation`, technique `decimation`). Nothing the project does not
+  record is filled in; whatever cannot be read is a warning.
+  `metashape_to_dtc(project, graph, chunk=…)` writes one acquisition per
+  sensor, one act per operation (`declare_derivation`), the outputs as
+  `psx:<uuid5>` masters and the placement of each mesh
+  (`build_photogrammetry_delta`, `absolute` only with a CRS and ≥3 enabled
+  markers). The address and the id are 3DSC for Metashape's. Measured on San
+  Pietro (`sanpietro_LOD0.psx`): 273 photographs (69 + 204), 217 aligned, six
+  acts, LOD0 11 656 593 faces, EPSG:7791.
+- `./em.sh metashape <psx> [--chunk N] [--out file.em.json]` (and `em.bat`).
+- `resources.resolver.make_psx_locator` / `parse_psx_locator`, the sixth
+  `LOCATION_KIND` `psx_asset` — the twin of `blend://`, the form of
+  `dtcstamp.psx_locator` (case 28). A shelf reads it as `disk`;
+  `effective_tier`/`effective_packaging` read it as `master`/`datablock`.
+
+### Changed
+- `tests/test_semantic_purity.py` declares one FORMAT READER
+  (`importer/metashape_project.py`) that may name the engine, with the reason
+  and a test that keeps it a reader (stdlib imports only, not reached from
+  `photogrammetry/`). The rule for every other module is unchanged.
+- `pytest` registers the `slow` marker.
+
+## [1.6.0.dev29] — tagged `v1.6.0.dev29` (commit 069fb1a)
 
 Everything in this section came after `404d73b` («Bump version: 1.6.0.dev27 →
 1.6.0.dev28», on PyPI 2026-10-02). Measured on the two Zenodo records of Segni

@@ -37,6 +37,7 @@ if "%CMD%"=="drift" goto :drift
 if "%CMD%"=="docs" goto :docs
 if "%CMD%"=="status" goto :status
 if "%CMD%"=="propagate" goto :propagate
+if "%CMD%"=="metashape" goto :metashape
 if "%CMD%"=="bump" goto :via_bash
 if "%CMD%"=="publish" goto :via_bash
 if "%CMD%"=="wheel" goto :via_bash
@@ -94,6 +95,9 @@ echo                           em.bat status
 echo   release ^<V^> [--dtcstamp X] [--desktop] [--dry-run] [--yes]
 echo                         (bash) the whole round, resumable; release status = where it stands.
 echo                           em.bat release 1.6.0.dev28 --dtcstamp 0.1.3 --dry-run
+echo   metashape ^<progetto.psx^> [--chunk N] [--out file.em.json]
+echo                         Read a Metashape project without Metashape; --out writes its DTC chain.
+echo                           em.bat metashape progetto.psx --out progetto.em.json
 echo   help [command]        This list, or the long help of one command (read from em.sh).
 echo                           em.bat help bump      (the five version paths are there)
 echo.
@@ -182,6 +186,11 @@ echo check: !RED! of 6 red
 exit /b 1
 
 :: ----------------------------------------------------------------------------
+:metashape
+shift
+"%PY%" -m s3dgraphy.importer.metashape_project %1 %2 %3 %4 %5 %6 %7 %8 %9
+exit /b %errorlevel%
+
 :fingerprint
 call :need_venv || exit /b 1
 "%PY%" scripts\em_report.py fingerprint %2
