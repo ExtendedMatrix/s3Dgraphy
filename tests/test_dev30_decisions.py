@@ -267,3 +267,56 @@ def test_d6_a_licence_read_with_its_name_only_gets_no_invented_type():
     assert not [w for w in api.validate(g)["warnings"] if "license name" in w]
     from s3dgraphy.nodes.license_node import LicenseNode
     assert LicenseNode("u").data["license_type"] is None
+
+
+# ── D7 · the photographs are the members of the directory that is their folder
+def test_d7_a_directory_is_recognised_by_the_digest_of_its_folder(tmp_path):
+    dtcstamp = pytest.importorskip("dtcstamp")
+    from s3dgraphy.resources.files import add_file, directory_for_folder, resource_files
+    folder = tmp_path / "Canon"
+    folder.mkdir()
+    for i in range(3):
+        (folder / f"IMG_{i}.JPG").write_bytes(bytes([i]) * 100)
+    digest = dtcstamp.content_digest(str(folder), entry_point=None)
+    g = Graph(graph_id="g-d7")
+    api.add_resource(g, name="Canon (3 foto)", resource_id="res:dir",
+                     packaging="directory",
+                     data={"content_digest": digest, "checksum": digest})
+    assert directory_for_folder(g, str(folder)) == "res:dir"
+    assert directory_for_folder(g, str(tmp_path)) is None
+    for row in dtcstamp.tree_members(str(folder), entry_point=None):
+        add_file(g, "res:dir", path=row["path"], checksum=row["digest"],
+                 size_bytes=row["size_bytes"], role="member")
+    files = resource_files(g, "res:dir")
+    assert [f["role"] for f in files] == ["member"] * 3
+    # the digest of the whole is never overwritten by the first member's
+    d = g.find_node_by_id("res:dir").data
+    assert d["checksum"] == d["content_digest"] == digest and not d.get("url")
+    rows = [{"role": "member", "path": f["path"], "digest": f["node"].data["checksum"],
+             "size_bytes": f["node"].data["size_bytes"]} for f in files]
+    assert dtcstamp.members_digest(rows) == digest
+
+
+SP_PSX = Path.home() / ("Documents/GitHub/_datasets/SegniSanPietro/metashape-2026/"
+                        "sanpietro_LOD0.psx")
+
+
+def test_d7_san_pietro_canon_photographs_are_the_night_directory(tmp_path):
+    if not (SP_PSX.is_file() and SAN_PIETRO_DTC.is_file()):
+        pytest.skip("the Segni dataset is not on this machine")
+    import shutil
+    from s3dgraphy.importer.metashape_project import (metashape_to_dtc,
+                                                      read_metashape_project)
+    from s3dgraphy.resources.files import resource_files
+    copy = tmp_path / "SanPietro_DTC.em.json"
+    shutil.copy(SAN_PIETRO_DTC, copy)
+    g, _ = api.load_emjson(json.loads(copy.read_text(encoding="utf-8")))
+    out = metashape_to_dtc(read_metashape_project(str(SP_PSX)), g)
+    files = resource_files(g, "res:sp-canon24")
+    assert len(files) == 204 and {f["role"] for f in files} == {"member"}
+    assert not [n for n in g.nodes if n.node_type == "resource"
+                and str(n.name).startswith("IMG_")]
+    assert {p["mode"] for p in out["placements"]} == {"absolute"}
+    gcp = [n for n in g.nodes if n.node_type == "gcp_set"]
+    assert len(gcp) == 1 and gcp[0].data["control"] == "camera_positions"
+    assert len(gcp[0].data["points"]) == 69 and gcp[0].data["accuracy_m"] == 10.0

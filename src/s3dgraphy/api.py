@@ -158,6 +158,7 @@ def validate(graph: Graph) -> Dict[str, Any]:
     warnings = list(getattr(graph, "warnings", []) or [])
     warnings.extend(_dtc_warnings(graph))
     warnings.extend(_license_warnings(graph))
+    warnings.extend(_camera_gps_warnings(graph))
     geo = georeference_state(graph)
     if geo == "undeclared":
         info.append("the graph is not georeferenced: no CRS is declared "
@@ -194,6 +195,34 @@ def _dtc_warnings(graph: Graph) -> List[str]:
                 f"download without origin: '{getattr(node, 'name', '')}' "
                 f"({node.node_id}) does not say where it came from "
                 f"(how.acquisition.retrieved_from — a DOI or a URL)")
+    return out
+
+
+def _camera_gps_warnings(graph: Graph) -> List[str]:
+    """D7 (E.D., 2 Oct 2026): a registration controlled ONLY by the GPS
+    positions of the cameras (a GCPSetNode of control camera_positions, no set
+    of ground control beside it). It counts as absolute, and is said for what it
+    is: a drone's GPS can be tens of metres off the survey."""
+    from .nodes.georeferencing_node import GCPSetNode
+    nodes = {n.node_id: n for n in getattr(graph, "nodes", []) or []}
+    sets_of: Dict[str, List[Any]] = {}
+    for e in getattr(graph, "edges", []) or []:
+        if getattr(e, "edge_type", None) == "has_gcp_set" and e.edge_target in nodes:
+            sets_of.setdefault(e.edge_source, []).append(nodes[e.edge_target])
+    out: List[str] = []
+    for transform_id, sets in sets_of.items():
+        controls = {(getattr(s, "data", None) or {}).get("control")
+                    or GCPSetNode.GROUND_CONTROL for s in sets}
+        if controls == {GCPSetNode.CAMERA_POSITIONS}:
+            for gcp in sets:
+                d = getattr(gcp, "data", None) or {}
+                acc = d.get("accuracy_m")
+                out.append(
+                    f"georeferenced only by camera GPS: '{getattr(gcp, 'name', '')}' "
+                    f"({gcp.node_id}) controls the registration {transform_id} with "
+                    f"{len(d.get('points') or [])} camera positions"
+                    + (f" (accuracy {acc:g} m)" if isinstance(acc, (int, float)) else "")
+                    + " and no ground control point")
     return out
 
 

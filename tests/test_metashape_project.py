@@ -20,6 +20,7 @@ from urllib.parse import quote
 
 import pytest
 
+from s3dgraphy import api
 from s3dgraphy.graph import Graph
 from s3dgraphy.importer.metashape_project import (
     asset_id,
@@ -283,11 +284,39 @@ def test_the_chain_one_acquisition_per_sensor_one_act_per_operation(tmp_path):
     first = [x for x in out["processes"] if x["operation"] == "MatchPhotos"][0]
     assert sorted(first["inputs"]) == sorted(a["id"] for a in out["acquisitions"])
 
-    # local: a CRS but no enabled marker
-    assert {p["mode"] for p in out["placements"]} == {"local"}
+    # D7 (E.D., 2 Oct 2026): a CRS, no enabled marker, the cameras' GPS
+    # enabled as reference → ABSOLUTE, with the control said for what it is
+    assert {p["mode"] for p in out["placements"]} == {"absolute"}
     transforms = [n for n in graph.nodes if n.node_type == "registration_transform"]
-    assert len(transforms) == 2 and all(t.data["crs"] is None for t in transforms)
+    assert len(transforms) == 2 and all(t.data["crs"] == "EPSG:7791" for t in transforms)
     assert transforms[0].data["scale"] == pytest.approx(1.9175159480232311)
+    gcps = [n for n in graph.nodes if n.node_type == "gcp_set"]
+    assert len(gcps) == 1
+    assert gcps[0].data["control"] == "camera_positions"
+    assert gcps[0].data["accuracy_m"] == 10.0
+    assert all(pt.get("image") and not pt["observations"] for pt in gcps[0].data["points"])
+    assert any(w.startswith("georeferenced only by camera GPS")
+               for w in api.validate(graph)["warnings"])
+    # the master's digest is ON the node, as content_digest, never checksum
+    assert node.data["content_digest"].startswith("sha256:")
+    assert not node.data.get("checksum")
+    assert "compared, not verified by downloading" in node.description
+
+
+def test_without_three_camera_positions_the_placement_stays_local(tmp_path):
+    def few_gps(root):
+        holder = root.find("cameras")
+        cams = list(holder.iter("camera"))
+        for cam in cams[2:]:
+            ref = cam.find("reference")
+            if ref is not None:
+                ref.set("enabled", "false")
+    project = read_metashape_project(str(build(tmp_path, chunk=few_gps)))
+    graph = Graph("g")
+    out = metashape_to_dtc(project, graph)
+    assert {p["mode"] for p in out["placements"]} == {"local"}
+    assert not [n for n in graph.nodes if n.node_type == "gcp_set"]
+    assert any("placement is written local" in w for w in out["warnings"])
 
 
 def test_with_three_enabled_markers_the_placement_is_absolute(tmp_path):

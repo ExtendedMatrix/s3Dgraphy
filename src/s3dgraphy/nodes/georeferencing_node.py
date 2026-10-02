@@ -60,6 +60,17 @@ class GCPSetNode(Node):
     ``crs`` may be ``None`` — that is the honest value for a site-local grid
     whose EPSG code does not exist. It is not the same as absent: a caller that
     means WGS84 says so.
+
+    ``control`` says WHAT the points are (dev30, E.D. 2 Oct 2026, D7):
+    ``ground_control_points`` (the default — surveyed places seen in the
+    photographs) or ``camera_positions`` — the GPS positions of the cameras
+    themselves, each point a photograph (``image``) with no pixel observation,
+    because the camera is where the photograph was taken from, not something
+    seen in it. A set of camera positions is a weaker control than ground
+    control (a drone's GPS can be tens of metres off), and it is said, never
+    hidden: ``accuracy_m`` is the accuracy the project records for the cameras,
+    and ``validate`` warns «georeferenced only by camera GPS». It is solvable
+    with three positions.
     """
 
     node_type = "gcp_set"
@@ -67,13 +78,32 @@ class GCPSetNode(Node):
     #: below this a similarity is not determined — three non-collinear points
     MINIMUM_POINTS = 3
 
+    #: what the points of a set are (D7, dev30)
+    GROUND_CONTROL = "ground_control_points"
+    CAMERA_POSITIONS = "camera_positions"
+    CONTROLS = (GROUND_CONTROL, CAMERA_POSITIONS)
+
     def __init__(self, node_id: str, name: str = "Ground control points",
                  points: Optional[List[Dict[str, Any]]] = None,
                  crs: Optional[str] = None,
                  description: str = "",
-                 data: Optional[Dict[str, Any]] = None):
+                 data: Optional[Dict[str, Any]] = None,
+                 control: Optional[str] = None,
+                 accuracy_m: Optional[float] = None):
         super().__init__(node_id=node_id, name=name, description=description)
         self.data = dict(data or {})
+        control = control or self.data.get("control") or self.GROUND_CONTROL
+        if control not in self.CONTROLS:
+            raise GeoreferencingError(
+                f"control {control!r}: a set is {self.GROUND_CONTROL} or "
+                f"{self.CAMERA_POSITIONS}")
+        self.control = control
+        if control != self.GROUND_CONTROL:
+            self.data["control"] = control
+        if accuracy_m is None:
+            accuracy_m = self.data.get("accuracy_m")
+        if accuracy_m is not None:
+            self.data["accuracy_m"] = float(accuracy_m)
         self.points = self._validate(points or [])
         self.crs = crs.strip() if isinstance(crs, str) and crs.strip() else None
         self.data["points"] = self.points
@@ -110,13 +140,16 @@ class GCPSetNode(Node):
                     raise GeoreferencingError(
                         f"an observation of {pid!r} on {obs.get('image')!r} has "
                         f"no [x, y] pixel")
-            entry = {"id": pid, "world": [float(c) for c in world],
+            entry: Dict[str, Any] = {"id": pid, "world": [float(c) for c in world],
                      "observations": [
                          {"image": str(o["image"]).strip(),
                           "pixel": [float(o["pixel"][0]), float(o["pixel"][1])]}
                          for o in observations]}
             if raw.get("uncertainty") is not None:
                 entry["uncertainty"] = float(raw["uncertainty"])
+            if str(raw.get("image") or "").strip():
+                # a camera position: the photograph it is the position OF
+                entry["image"] = str(raw["image"]).strip()
             clean.append(entry)
         return clean
 
@@ -128,6 +161,10 @@ class GCPSetNode(Node):
         field is incomplete for a while, and refusing to store it would be
         refusing the working state. The RUNNER is where it becomes a refusal.
         """
+        if self.control == self.CAMERA_POSITIONS:
+            # each camera is its own observation: where the photograph was
+            # taken from
+            return len(self.points) >= self.MINIMUM_POINTS
         seen = [p for p in self.points if p.get("observations")]
         return len(seen) >= self.MINIMUM_POINTS
 

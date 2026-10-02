@@ -146,6 +146,8 @@ class Photo:
     size_bytes: Optional[int] = None
     #: the camera's own position (GPS), and whether it is used
     reference_enabled: Optional[bool] = None
+    #: that position, ``(x, y, z)`` in the chunk's camera reference CRS
+    reference: Optional[Tuple[float, float, float]] = None
 
 
 @dataclass
@@ -234,6 +236,9 @@ class Chunk:
     crs_kind: Optional[str] = None
     crs_name: Optional[str] = None
     camera_crs_epsg: Optional[int] = None
+    #: the accuracy the project records for the camera positions, metres
+    #: (``settings/accuracy_cameras``)
+    camera_accuracy: Optional[float] = None
     #: chunk internal frame → the reference's (rotation 3×3 row-major,
     #: translation, scale), as recorded
     transform: Optional[Dict[str, Any]] = None
@@ -460,7 +465,13 @@ def _read_chunk(reader: _Reader, chunk_zip: str, cid: str, *, active: bool) -> C
     holder = root.find("cameras")
     for cam in (holder.iter("camera") if holder is not None else []):
         ref = cam.find("reference")
+        where = None
+        if ref is not None:
+            xyz = tuple(_float(ref.get(a)) for a in ("x", "y", "z"))
+            if None not in xyz:
+                where = xyz
         cams[str(cam.get("id"))] = {
+            "reference": where,
             "label": cam.get("label"), "sensor_id": cam.get("sensor_id"),
             # absent means enabled: Metashape writes the attribute only to say false
             "enabled": cam.get("enabled") != "false",
@@ -473,6 +484,9 @@ def _read_chunk(reader: _Reader, chunk_zip: str, cid: str, *, active: bool) -> C
     if wkt:
         chunk.crs_wkt = wkt
         chunk.crs_epsg, chunk.crs_kind, chunk.crs_name = crs_of(wkt)
+    for prop in root.findall("settings/property"):
+        if prop.get("name") == "accuracy_cameras":
+            chunk.camera_accuracy = _float(prop.get("value"))
     cref = root.find("camera_reference")
     if cref is not None and (cref.text or "").strip():
         chunk.camera_crs_epsg = crs_of(cref.text.strip())[0]
@@ -524,7 +538,8 @@ def _read_chunk(reader: _Reader, chunk_zip: str, cid: str, *, active: bool) -> C
                                       resolved=None, exists=None,
                                       enabled=info["enabled"], aligned=info["aligned"],
                                       date=None, make=None, model=None,
-                                      reference_enabled=info["reference_enabled"]))
+                                      reference_enabled=info["reference_enabled"],
+                                      reference=info["reference"]))
     chunk.photos.sort(key=lambda p: (_int(p.camera_id) or 0, p.camera_id))
     _sensor_summaries(sensors, chunk.photos, os.path.dirname(reader.psx))
     chunk.sensors = list(sensors.values())
@@ -597,7 +612,8 @@ def _read_photos(reader: _Reader, frame: ET.Element, frame_dir: str,
             aligned=info.get("aligned", False),
             date=_iso(props.get("Exif/DateTimeOriginal")),
             make=props.get("Exif/Make"), model=props.get("Exif/Model"),
-            size_bytes=size, reference_enabled=info.get("reference_enabled")))
+            size_bytes=size, reference_enabled=info.get("reference_enabled"),
+            reference=info.get("reference")))
     if missing:
         reader.warn(f"chunk {chunk.id} «{chunk.label}»: {missing} photograph(s) "
                     f"not found on the disk (the project's paths, resolved against "
@@ -1046,9 +1062,24 @@ def metashape_to_dtc(project: MetashapeProject, graph: Any, *, chunk: Any = None
         if not photos:
             continue
         ids = []
-        for photo in photos:
-            ids.append(_photo_resource(graph, photo, digests, add_resource, _find,
-                                       warnings, os.path.dirname(project.path)))
+        directory = _photo_directory(graph, photos) if digests else None
+        if directory is not None:
+            # D7 (E.D., 2 Oct 2026): the photographs ARE the members of a
+            # directory resource the graph already holds (the folder, recognised
+            # by the digest of its content): one has_file each, role member, the
+            # relative path on the edge — not one resource per photograph beside
+            # a directory that says the same thing.
+            dir_id, folder = directory
+            for photo in photos:
+                _photo_member(graph, dir_id, folder, photo)
+            ids = [dir_id]
+            warnings.append(f"the {len(photos)} photographs of {sensor.label} are the "
+                            f"members of the directory «{_find(graph, dir_id).name}» "
+                            f"({dir_id}): recognised by the digest of the folder")
+        else:
+            for photo in photos:
+                ids.append(_photo_resource(graph, photo, digests, add_resource, _find,
+                                           warnings, os.path.dirname(project.path)))
         name = f"Photographs {sensor.label or sensor.id}"
         meta = {"device": device_name(sensor.make, sensor.model),
                 "sensor": sensor.label, "resolution": list(sensor.resolution)
@@ -1069,7 +1100,7 @@ def metashape_to_dtc(project: MetashapeProject, graph: Any, *, chunk: Any = None
             # keys it did not have.
             existing = _find(graph, lot)
             meta = {k: v for k, v in meta.items() if k not in (existing.data or {})}
-            warnings.append(f"the {len(ids)} photographs of {sensor.label} are all in "
+            warnings.append(f"the {len(photos)} photographs of {sensor.label} are all in "
                             f"the acquisition «{existing.name}» ({lot}): that is the lot")
         res = bucket_acquisition(graph, ids, acquisition_id=lot,
                                  name=None if lot else name, dtc_kind="photo",
@@ -1184,21 +1215,62 @@ def _day(iso: Optional[str]) -> Optional[str]:
     return iso[:10] if iso else None
 
 
+def _sha256(path: str) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as handle:
+        for block in iter(lambda: handle.read(1 << 20), b""):
+            h.update(block)
+    return "sha256:" + h.hexdigest()
+
+
+def _photo_directory(graph: Any, photos: Sequence[Photo]) -> Optional[Tuple[str, str]]:
+    """``(resource id, folder)`` when every photograph of a sensor sits in ONE
+    folder on the disk and that folder is a directory resource of the graph
+    (:func:`~s3dgraphy.resources.files.directory_for_folder`); else None."""
+    from ..resources.files import directory_for_folder
+    folders = {os.path.dirname(p.resolved) for p in photos if p.resolved}
+    if len(folders) != 1 or not all(p.exists for p in photos):
+        return None
+    folder = folders.pop()
+    rid = directory_for_folder(graph, folder)
+    return (rid, folder) if rid else None
+
+
+def _photo_member(graph: Any, dir_id: str, folder: str, photo: Photo) -> str:
+    """One photograph as a member of its directory: has_file, role member, the
+    path relative to the folder; recognised by that path and its sha256 (the
+    same file is one node). What the project says of it stays on the file."""
+    from ..resources.files import add_file
+    from ..dtc.ingest import _find
+    rel = os.path.relpath(photo.resolved, folder).replace(os.sep, "/")
+    name = os.path.basename(rel)
+    spec = {"path": rel, "checksum": _sha256(photo.resolved), "role": "member"}
+    if photo.size_bytes is not None:
+        spec["size_bytes"] = photo.size_bytes
+    if name.lower().endswith((".jpg", ".jpeg")):
+        spec["media_type"] = "image/jpeg"
+    out = add_file(graph, dir_id, **spec)
+    node = _find(graph, out["file_id"]) if out.get("file_id") else None
+    if node is not None:
+        facts = {"camera_label": photo.label, "taken_at": photo.date,
+                 "enabled": photo.enabled, "aligned": photo.aligned}
+        for k, v in facts.items():
+            if v is not None:
+                node.data.setdefault(k, v)
+    return out.get("file_id") or dir_id
+
+
 def _photo_resource(graph, photo: Photo, digests: bool, add_resource, find,
                     warnings: List[str], base: str) -> str:
     name = os.path.basename((photo.path or "").replace("\\", "/")) or photo.label \
         or f"camera {photo.camera_id}"
     checksum = None
     if digests and photo.exists and photo.resolved:
-        h = hashlib.sha256()
-        with open(photo.resolved, "rb") as handle:
-            for block in iter(lambda: handle.read(1 << 20), b""):
-                h.update(block)
-        checksum = "sha256:" + h.hexdigest()
+        checksum = _sha256(photo.resolved)
         existing = find(graph, checksum)
         if existing is not None:
             return existing.node_id
-        rid = "res:" + h.hexdigest()[:12]
+        rid = "res:" + checksum[len("sha256:"):][:12]
     else:
         rid = "photo:" + str(uuid.uuid5(uuid.NAMESPACE_URL,
                                         "file://" + (photo.resolved or name)))
@@ -1260,11 +1332,44 @@ def _placements(project: MetashapeProject, chunk: Chunk, graph: Any,
                             f"{GCPSetNode.MINIMUM_POINTS} observed, the placement is local")
             gcp = None
     elif chunk.crs_kind != "local":
-        gps = sum(1 for p in chunk.photos if p.reference_enabled)
-        warnings.append(
-            f"the chunk has a CRS ({crs or chunk.crs_name}) but no enabled marker"
-            + (f"; {gps} camera position(s) are enabled as reference" if gps else "")
-            + ": the placement is written local, as the rule says")
+        # D7 (E.D., 2 Oct 2026): a chunk referenced by the GPS of its cameras
+        # IS absolute — with the control said for what it is: the positions of
+        # the cameras, not surveyed points, at the accuracy the project records
+        # for them. Absolute without that said would claim more than the data.
+        gps = [p for p in chunk.photos if p.reference_enabled and p.reference]
+        cam_crs = (f"EPSG:{chunk.camera_crs_epsg}" if chunk.camera_crs_epsg
+                   else crs or chunk.crs_name)
+        if len(gps) >= GCPSetNode.MINIMUM_POINTS and cam_crs:
+            points = [{"id": p.label or f"camera {p.camera_id}",
+                       "world": list(p.reference),
+                       "image": p.label or f"camera {p.camera_id}",
+                       **({"uncertainty": chunk.camera_accuracy}
+                          if chunk.camera_accuracy is not None else {})}
+                      for p in gps]
+            gcp = GCPSetNode("gcp:" + str(uuid.uuid5(uuid.NAMESPACE_URL,
+                                                     asset_locator(project, chunk, "cameras",
+                                                                   chunk.id))),
+                             name=f"Camera GPS positions · {chunk.label}",
+                             points=points, crs=cam_crs,
+                             control=GCPSetNode.CAMERA_POSITIONS,
+                             accuracy_m=chunk.camera_accuracy,
+                             description=(
+                                 f"{len(gps)} GPS positions of the cameras, enabled as "
+                                 f"reference in the project, accuracy "
+                                 f"{chunk.camera_accuracy if chunk.camera_accuracy is not None else '?'} m "
+                                 f"as recorded for the cameras: not ground control points"))
+            mode = "absolute"
+            warnings.append(
+                f"the chunk is referenced in {crs or chunk.crs_name} by {len(gps)} camera "
+                f"GPS position(s) and no enabled marker: the placement is absolute, its "
+                f"control declared as camera positions (accuracy "
+                f"{chunk.camera_accuracy} m)")
+        else:
+            warnings.append(
+                f"the chunk has a CRS ({crs or chunk.crs_name}) but no enabled marker"
+                + (f"; only {len(gps)} camera position(s) are enabled as reference"
+                   if gps else "")
+                + ": the placement is written local, as the rule says")
     for asset in models:
         mid = nodes_by_asset[(asset.type, asset.key)]
         checksum = member_digest(project, chunk, asset) if digests else None
@@ -1272,13 +1377,25 @@ def _placements(project: MetashapeProject, chunk: Chunk, graph: Any,
             warnings.append(f"model {asset.key}: no digest of its {asset.data_member or 'data'}"
                             f" — the placement needs one, not written")
             continue
+        # D7 (E.D., 2 Oct 2026): the digest goes ON the node, as its
+        # content_digest — the sha256 of the mesh INSIDE the project's zip, not
+        # of the bytes of a file one downloads: it is compared (has the master
+        # changed?), never verified by downloading. Never `checksum`.
+        node = _find_node(graph, mid)
+        if node is not None:
+            node.data["content_digest"] = checksum
+            if not (getattr(node, "description", "") or "").strip():
+                node.description = (
+                    f"content_digest is the sha256 of {asset.data_member} inside "
+                    f"{asset.path} of the Metashape project: compared, not verified "
+                    f"by downloading")
         transform = RegistrationTransformNode(
             "registration", name=(f"Registration · {chunk.label} (absolute)" if mode ==
                                   "absolute" else f"Registration · {chunk.label} (local)"),
             rotation=(chunk.transform or {}).get("rotation"),
             translation=(chunk.transform or {}).get("translation"),
             scale=(chunk.transform or {}).get("scale") or 1.0,
-            crs=gcp.crs if mode == "absolute" else None,
+            crs=(crs or gcp.crs) if mode == "absolute" else None,
             description="the chunk's transform as the project records it: internal "
                         "frame → the reference's geocentric frame")
         delta = build_photogrammetry_delta(
@@ -1290,15 +1407,17 @@ def _placements(project: MetashapeProject, chunk: Chunk, graph: Any,
             warnings.append(f"model {asset.key}: placement refused — {delta.message}")
             continue
         _apply_placement(graph, delta, mid)
-        # the digest the placement was built on stays in the RESULT, not on the
-        # node: the master is a datablock (3DSC for Metashape), and whether the
-        # sha256 of its mesh.ply is its identity is a decision, not a reading
         out["placements"].append({"model": mid, "mode": mode,
                                   "transform": delta.transform_id,
                                   "gcp_set": delta.gcp_set_id,
                                   "member": asset.data_member,
                                   "member_digest": checksum,
                                   "member_size": asset.data_member_size})
+
+
+def _find_node(graph: Any, node_id: str) -> Any:
+    from ..dtc.ingest import _find
+    return _find(graph, node_id)
 
 
 def _apply_placement(graph: Any, delta: Any, model_id: str) -> None:
@@ -1319,7 +1438,9 @@ def _apply_placement(graph: Any, delta: Any, model_id: str) -> None:
                 description=payload.get("description") or "")
         else:
             node = GCPSetNode(payload["id"], name=payload.get("name") or "",
-                              points=d.get("points"), crs=d.get("crs"))
+                              points=d.get("points"), crs=d.get("crs"),
+                              control=d.get("control"), accuracy_m=d.get("accuracy_m"),
+                              description=payload.get("description") or "")
         for k in ("created_by", "created_at"):
             if d.get(k):
                 node.data[k] = d[k]

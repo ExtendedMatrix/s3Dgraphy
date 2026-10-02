@@ -538,7 +538,12 @@ def add_file(graph, res_id: str, *, path: str, checksum: Optional[str] = None,
                                               url=url, **identity).items()
                         if v is not None})
     current = resource_files(graph, res_id)
-    if not current and not _has_identity(spec):
+    # A DIRECTORY (or a file set) has no implicit form: its url and checksum are
+    # the set's, and the first file written onto them would overwrite the
+    # digest of the whole with the digest of one member (measured, dev30 D7:
+    # San Pietro's Canon folder lost its content digest to IMG_3848.JPG).
+    is_set = _data(res).get("packaging") in ("directory", "file_set")
+    if not current and not _has_identity(spec) and not is_set:
         d = _data(res)
         d["url"] = _locator(spec)
         if checksum:
@@ -549,7 +554,7 @@ def add_file(graph, res_id: str, *, path: str, checksum: Optional[str] = None,
             d["media_type"] = media_type
         return {"file_id": None, "role": "entry_point", "path": path,
                 "materialized": False}
-    materialized = _materialize_implicit(graph, res_id) is not None
+    materialized = (not is_set) and _materialize_implicit(graph, res_id) is not None
     if role == "entry_point" and any(f["role"] == "entry_point"
                                      for f in resource_files(graph, res_id)):
         raise ValueError(f"{res_id!r} already has an entry point")
@@ -560,6 +565,36 @@ def add_file(graph, res_id: str, *, path: str, checksum: Optional[str] = None,
         refresh_members_digest(graph, res_id)
     return {"file_id": node.node_id, "role": final_role, "path": spec["path"],
             "materialized": materialized}
+
+
+def directory_for_folder(graph, folder: str) -> Optional[str]:
+    """The DIRECTORY resource of the graph that IS ``folder`` on this disk —
+    recognised by the digest of its content (``dtcstamp.content_digest`` of the
+    folder: the canonical list of every file's relative path and sha256), equal
+    to the resource's ``content_digest``. ``None`` when no directory resource
+    of the graph has it, or the folder is not there.
+
+    The digest and not the name: a folder renamed, copied or unpacked from its
+    archive is still the same content (MICRO le decisioni della dev29, D7, San
+    Pietro: the night's «Canon 6D 24mm (204 foto)» is the folder beside the
+    Metashape project of 2026, measured)."""
+    import os
+    if not os.path.isdir(folder):
+        return None
+    from dtcstamp import content_digest
+    want = content_digest(folder, entry_point=None)
+    for node in getattr(graph, "nodes", []) or []:
+        if not _is_resource(node):
+            continue
+        d = _data(node)
+        if d.get("packaging") != "directory":
+            continue
+        got = d.get("content_digest")
+        if isinstance(got, dict):
+            got = got.get("digest")
+        if got == want:
+            return node.node_id
+    return None
 
 
 def remove_file(graph, res_id: str, file_id: str) -> Dict[str, Any]:
