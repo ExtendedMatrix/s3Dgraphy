@@ -55,6 +55,7 @@ Version: 1.6.0 — initial RDF import pipeline
 
 from __future__ import annotations
 
+import json
 import re
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Set, Tuple
@@ -667,7 +668,15 @@ class RDFImporter:
         else:
             store.parse(data=str(source), format=parse_format)
 
-        graph_iris = sorted({str(s) for s in store.subjects(RDF.type, EM.EMGraph)})
+        typed = {str(s) for s in store.subjects(RDF.type, EM.EMGraph)}
+        # The graph-SELF node (`<graph>/node/<id>_graphroot`, a GraphNode) is
+        # typed em:EMGraph too, because it IS the graph as a node. It is a node
+        # of the graph that contains it, not a second graph (dev29 A4, measured
+        # on San Pietro: import_rdf returned 2 graphs, the second holding only
+        # an auto geo position).
+        graph_iris = sorted(i for i in typed
+                            if not any(i.startswith(o.rstrip("/") + "/node/")
+                                       for o in typed if o != i))
         if not graph_iris:
             self.warnings.append(
                 "no em:EMGraph subject found — nothing identifies a graph in "
@@ -1342,7 +1351,13 @@ class RDFImporter:
             # a resource that says nothing must come back saying nothing.
             for key, pred in (("checksum", EM.checksum),
                               ("scope", EM.resourceScope),
-                              ("residency", EM.residency)):
+                              ("residency", EM.residency),
+                              # dev29 (A4): how the bytes are packed and what
+                              # the digest covers
+                              ("packaging", EM.packaging),
+                              ("tier", EM.tier),
+                              ("digest_covers", EM.digestCovers),
+                              ("content_digest", EM.contentDigest)):
                 value = self._one_literal(store, ref, pred)
                 if value:
                     data[key] = str(value)
@@ -1502,6 +1517,25 @@ class RDFImporter:
             kind = self._one_literal(store, ref, CRM.P2_has_type)
             if kind:
                 data["dtc_kind"] = kind
+            # dev29 (A4): what the step declares comes back as it left
+            technique = self._one_literal(store, ref, EM.technique)
+            if technique:
+                data["technique"] = technique
+            for key, pred in (("parameters", EM.parameters),
+                              ("software", EM.software)):
+                raw = self._one_literal(store, ref, pred)
+                if raw:
+                    try:
+                        data[key] = json.loads(raw)
+                    except ValueError:
+                        self.warnings.append(
+                            f"{key} of '{ref}' is not JSON — kept as text")
+                        data[key] = raw
+            software = data.get("software")
+            if isinstance(software, list) and software \
+                    and isinstance(software[0], dict) and software[0].get("name"):
+                # the card the interfaces read, filled as declare_derivation does
+                data.setdefault("tool", dict(software[0]))
             return data
 
         if node_type == "narrative":
@@ -1584,6 +1618,17 @@ class RDFImporter:
                 # the AP11 family also emits the generic AP11 triple; a
                 # specific em: subproperty therefore accounts for it too
                 covered_cores.add(str(CRMARCHAEO.AP11_has_physical_relation_to))
+
+            # 1b) the exporter writes dtc_had_input to an EVENT (a whole
+            #     acquisition consumed as one input) as prov:wasInformedBy,
+            #     because L10/prov:used range over digital objects; it comes
+            #     back as the one edge it always was (dev29 A4: 4 edges of San
+            #     Pietro were «matches no edge type»)
+            informed = str(PROV.wasInformedBy)
+            if informed in preds and _is_dtc_class(src_class) \
+                    and _is_dtc_class(tgt_class):
+                resolved.append("dtc_had_input")
+                covered_cores.add(informed)
 
             # 2) leftover core predicates — a triple the specific pass did not
             #    already account for
@@ -1795,6 +1840,12 @@ class RDFImporter:
         for o in store.objects(ref, pred):
             return str(o)
         return None
+
+
+def _is_dtc_class(class_name: Optional[str]) -> bool:
+    """A DTC event class (process, acquisition, or the DTCNode parent)."""
+    return bool(class_name) and class_name in ("DTCProcessNode",
+                                               "DTCAcquisitionNode", "DTCNode")
 
 
 def _as_number(text: Any) -> Any:

@@ -1821,6 +1821,11 @@ class RDFExporter:
             residency = data.get("residency")
             if residency:
                 ctx.add((node_iri, EM.residency, Literal(str(residency))))
+            # dev29 (A4, measured on San Pietro): how the bytes are packed, which
+            # tier they are, what the digest covers and the digest of a tree's
+            # content — four declarations the round trip lost. Emitted only when
+            # recorded, as the fences above (never the effective_* fallbacks).
+            self._emit_resource_packing(node_iri, data, ctx)
             # dev27 (il testo, la risorsa e la selezione): the language(s) of
             # the CONTENT of the file — one dcterms:language each. Not
             # em:originalLanguage: the file's language is not the language of
@@ -1988,6 +1993,43 @@ class RDFExporter:
             kind = data.get("dtc_kind")
             if kind:
                 ctx.add((node_iri, CRM.P2_has_type, Literal(kind)))
+            # dev29 (A4): what the step DECLARES — the word of whoever did the
+            # gesture, how it was applied, with which software. `parameters` and
+            # `software` are structured (a dict, a list of dicts carrying the
+            # commit) and leave as ONE rdf:JSON literal each: the stamp format
+            # owns their shape, and RDF only has to carry it back unchanged.
+            technique = data.get("technique")
+            if technique:
+                ctx.add((node_iri, EM.technique, Literal(str(technique))))
+            for key, pred in (("parameters", EM.parameters),
+                              ("software", EM.software)):
+                value = data.get(key)
+                if value:
+                    ctx.add((node_iri, pred, Literal(
+                        json.dumps(value, ensure_ascii=False, sort_keys=True),
+                        datatype=RDF.JSON)))
+
+    @staticmethod
+    def _emit_resource_packing(node_iri: URIRef, data: Dict[str, Any],
+                               ctx) -> None:
+        for key, pred in (("packaging", EM.packaging), ("tier", EM.tier)):
+            value = data.get(key)
+            if value:
+                ctx.add((node_iri, pred, Literal(str(value))))
+        covers = data.get("digest_covers")
+        # `members_digest` beside an equal `checksum` was the hand-written form
+        # of a file set before A1 (t3, 1 Oct 2026): it says the checksum covers
+        # the members, and it leaves as exactly that — one digest, not two.
+        if not covers and data.get("members_digest") \
+                and data.get("members_digest") == data.get("checksum"):
+            covers = "members"
+        if covers:
+            ctx.add((node_iri, EM.digestCovers, Literal(str(covers))))
+        content = data.get("content_digest")
+        if isinstance(content, dict):
+            content = content.get("digest")
+        if content:
+            ctx.add((node_iri, EM.contentDigest, Literal(str(content))))
 
     def _emit_addresses(self, node: Any, node_iri: URIRef,
                         data: Dict[str, Any], ctx) -> None:
