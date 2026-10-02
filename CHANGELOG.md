@@ -34,6 +34,12 @@ fingerprint from `sha256:adf75ab9…a332` (dev27) to
 - `crdt.is_text_node`, `crdt.op_language`, `crdt.language_fallbacks`,
   `OpResult.language` (`op` · `study_fallback` · `none`; in `as_dict` only
   when set).
+- `./em.sh release <V> [--dtcstamp X] [--desktop]` (`scripts/release.py`,
+  repository tooling, not in the wheel): the round dtcstamp → bump → publish →
+  proof from PyPI → propagate → EMtools → StratiField's pin → the pin commits
+  → push → EMStudio's desktop, each step skipped when it is already done (read
+  from the repositories and PyPI, no state file), `--dry-run`, and
+  `./em.sh release status`.
 
 ### Changed
 - **The language a node is born in travels in the op** (decision 12).

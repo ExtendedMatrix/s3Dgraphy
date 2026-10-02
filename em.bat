@@ -7,7 +7,7 @@ setlocal enabledelayedexpansion
 ::
 :: The same commands as em.sh. Native here: setup, test, check, fingerprint,
 :: drift, docs, status, propagate. Through bash (Git for Windows): bump,
-:: publish, wheel — because what they call is bash already:
+:: publish, wheel, release — because what they call is bash already:
 ::   bump     -> bump_and_push.sh --set  (bump_and_push.bat has no --set:
 ::               measured 2026-10-01, it takes patch|minor|major only, and
 ::               those drop .devN)
@@ -40,6 +40,7 @@ if "%CMD%"=="propagate" goto :propagate
 if "%CMD%"=="bump" goto :via_bash
 if "%CMD%"=="publish" goto :via_bash
 if "%CMD%"=="wheel" goto :via_bash
+if "%CMD%"=="release" goto :via_bash
 echo unknown command '%CMD%'
 echo.
 goto :overview
@@ -90,6 +91,9 @@ echo                         -^> (EMtools: printed only), with the em.bat of eac
 echo                           em.bat propagate --dry-run
 echo   status                Branch, distance from origin, version here and on PyPI, fingerprint.
 echo                           em.bat status
+echo   release ^<V^> [--dtcstamp X] [--desktop] [--dry-run] [--yes]
+echo                         (bash) the whole round, resumable; release status = where it stands.
+echo                           em.bat release 1.6.0.dev28 --dtcstamp 0.1.3 --dry-run
 echo   help [command]        This list, or the long help of one command (read from em.sh).
 echo                           em.bat help bump      (the five version paths are there)
 echo.

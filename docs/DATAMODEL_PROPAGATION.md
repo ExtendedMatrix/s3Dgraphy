@@ -392,3 +392,9 @@ editable install:
 
 A consumer somebody else owns (Heriverse) being behind is **news to send**, not a
 task. `consumer_drift` reports it and exits 0.
+
+After step 8, the publication and steps 9–14 run in one command from s3Dgraphy,
+which stops where a person is needed and resumes where it stopped:
+`./em.sh release <version> [--dtcstamp X] [--desktop]` (`--dry-run` shows each
+step with its verdict; `./em.sh release status` says where a round stands;
+`./em.sh help release` lists the eleven steps).

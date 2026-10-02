@@ -8,6 +8,9 @@
 #   publish            gh workflow run publish.yml + scripts/verifica-provenance.sh
 #   drift/propagate    s3dgraphy.tools.consumer_drift / wheel_drift, and the
 #                      em.sh of the repositories next door
+#   release            scripts/release.py: the whole round (dtcstamp → bump →
+#                      publish → proof → propagate → EMtools → pin commits →
+#                      push → desktop), each step skipped when already done
 #
 # The reports both shells print (fingerprint, PyPI, known failures, StratiField's
 # schede) are scripts/em_report.py, shared with em.bat.
@@ -108,10 +111,15 @@ REMOTE or OTHER REPOSITORIES ask for confirmation and take --dry-run.
                           ./em.sh propagate --dry-run
   status                Branch, distance from origin, version here and on PyPI, fingerprint.
                           ./em.sh status
+  release <V> [--dtcstamp X] [--desktop] [--dry-run] [--yes]
+                        The whole round in one command, resumable: each step looks first
+                        whether it is done. `release status [<V>]` = where it stands.
+                          ./em.sh release 1.6.0.dev28 --dtcstamp 0.1.3 --desktop --dry-run
   help [command]        This list, or the long help of one command.
                           ./em.sh help bump      (the five version paths are there)
 
-A datamodel change, end to end (docs/DATAMODEL_PROPAGATION.md has the 14 steps):
+A datamodel change, end to end (docs/DATAMODEL_PROPAGATION.md has the 14 steps;
+`./em.sh release` runs the last ones in a row):
     ./em.sh check && ./em.sh test          # green, or only the known failures
     # update CHANGELOG.md, commit
     ./em.sh bump 1.6.0.dev26               # commit + tag + push
@@ -558,10 +566,62 @@ EXAMPLE
 EOF
 }
 
+help_release() {
+  cat <<'EOF'
+./em.sh release <V> [--dtcstamp X] [--desktop] [--dry-run] [--yes]
+./em.sh release status [<V>] [--dtcstamp X] [--desktop]
+
+WHAT IT DOES
+  The steps of a dev round, in a row (scripts/release.py). Each one FIRST LOOKS
+  whether it is already done and then skips it saying so: rerun the same
+  command after an interruption and it resumes at the first step not done. No
+  state file: the state is read from the repositories and from PyPI.
+     1  preconditions: the 8 repositories clean (or dirty only where the release
+        itself writes, once V is on PyPI), nothing foreign to push, gh logged in
+     2  (--dtcstamp X) dtcstamp: ./bump_and_push.sh --set X (it dates the
+        CHANGELOG) → the tag on origin (waits) → gh workflow run publish.yml →
+        gh run watch → pip download dtcstamp==X works (waits: PyPI's CDN is late)
+     3  (--dtcstamp X) dtcstamp>=X in pyproject.toml and in EMtools'
+        requirements_wheels.txt, each committed: "Require dtcstamp X"
+     4  ./em.sh bump V → ./em.sh publish V (a run already dispatched is watched,
+        never dispatched twice)
+     5  the proof: venv in /tmp/em-release-V, pip install s3dgraphy[geo,rdf]==V,
+        its fingerprint = ./em.sh fingerprint of this tree, or it stops
+     6  ./em.sh propagate --pins
+     7  EM-blender-tools: s3dgraphy>=V,<next minor · ./em.sh rebundle · the
+        dtcstamp wheel · ./em.sh manifest 3.11 and 3.13 · .venv · pytest -q
+     8  StratiField: "s3dgraphy>=V" in stratigraph-chatbot/pyproject.toml
+     9  the pin commits: per repository git diff --stat, the message, [y/N]
+    10  the push of what is ahead of origin: the list, one [y/N]
+    11  (--desktop) EMStudio: ./em.sh s3d status --check → ./em.sh devrel --yes →
+        gh run watch on release.yml → the release's URL
+  Every wait has a cap; past it, it says what it waited for and the command
+  that resumes (exit 75). Caps and poll: EM_RELEASE_WAIT_TAG/_RUN/_PYPI/_BUILD,
+  EM_RELEASE_POLL (scripts/release.py's docstring).
+
+  status    The table of the steps — done / to do / blocked — with the proof
+            (the tag, the version on PyPI, the hash of the pin's commit). Writes
+            nothing. Without <V>: the version in pyproject.toml.
+
+WHAT IT DOES NOT DO
+  No credentials, no sudo, no deploy: only the gh login already there. It asks
+  ONCE before anything goes to PyPI or GitHub (unless --yes), and again at the
+  commits (per repository) and at the push.
+
+--dry-run
+  The steps with their verdict, the folder and the exact commands; writes nothing.
+
+EXAMPLE
+  ./em.sh release 1.6.0.dev28 --dtcstamp 0.1.3 --desktop --dry-run
+  ./em.sh release 1.6.0.dev28 --dtcstamp 0.1.3 --desktop
+  ./em.sh release status 1.6.0.dev28 --dtcstamp 0.1.3 --desktop
+EOF
+}
+
 do_help() {
   case "${1:-}" in
     "") help_overview ;;
-    setup|test|check|fingerprint|drift|docs|wheel|bump|publish|propagate|status) "help_$1" ;;
+    setup|test|check|fingerprint|drift|docs|wheel|bump|publish|propagate|status|release) "help_$1" ;;
     *) die "no command '$1'. ./em.sh help lists them." ;;
   esac
 }
@@ -962,5 +1022,6 @@ case "$cmd" in
   publish)     do_publish "$@" ;;
   propagate)   do_propagate "$@" ;;
   status)      do_status ;;
+  release)     if [[ -x "$PY" ]]; then "$PY" "$ROOT/scripts/release.py" "$@"; else python3 "$ROOT/scripts/release.py" "$@"; fi ;;
   *)           echo "unknown command '$cmd'" >&2; echo >&2; help_overview >&2; exit 2 ;;
 esac
