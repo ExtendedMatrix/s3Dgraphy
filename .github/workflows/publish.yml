@@ -57,7 +57,7 @@ on:
 jobs:
   manual-publish:
     if: github.event_name == 'workflow_dispatch'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     # `id-token: write` è ciò che permette all'action di chiedere a GitHub il
     # token OIDC con cui PyPI riconosce questo workflow. `contents: read`
