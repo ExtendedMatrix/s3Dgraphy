@@ -1361,6 +1361,13 @@ class RDFImporter:
                 value = self._one_literal(store, ref, pred)
                 if value:
                     data[key] = str(value)
+            # dev30 (D4): em:membersDigest is the digest of a set by itself —
+            # the same value em:checksum carries with em:digestCovers "members";
+            # a producer that writes only the new term is read the same way
+            members = self._one_literal(store, ref, EM.membersDigest)
+            if members:
+                data.setdefault("checksum", str(members))
+                data.setdefault("digest_covers", "members")
             # dev27: the languages of the content (dcterms:language, one per
             # tag) → data.lang, a string for one and a sorted list for more —
             # the canonical form language.set_content_languages writes

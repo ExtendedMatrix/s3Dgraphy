@@ -2034,6 +2034,12 @@ class RDFExporter:
             covers = "members"
         if covers:
             ctx.add((node_iri, EM.digestCovers, Literal(str(covers))))
+        # dev30 (D4): the digest of a SET has a predicate of its own, so a
+        # reader tells it from the digest of a file without reading two triples
+        # together; em:checksum + em:digestCovers stay beside it for the readers
+        # that already know them.
+        if covers == "members" and data.get("checksum"):
+            ctx.add((node_iri, EM.membersDigest, Literal(str(data["checksum"]))))
         content = data.get("content_digest")
         if isinstance(content, dict):
             content = content.get("digest")

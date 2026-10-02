@@ -158,3 +158,62 @@ def test_d2_the_32_outputs_proof_is_in_the_suite():
     src = (Path(__file__).resolve().parent
            / "test_dev29_one_act_n_outputs.py").read_text(encoding="utf-8")
     assert "def test_32_outputs_one_process_32_stamps_same_process_id" in src
+
+
+# ── D4 · the digest of a set has a term of its own ───────────────────────────
+def _file_set_graph():
+    g = Graph(graph_id="g-d4")
+    api.add_resource(g, name="LOD0", resource_id="res:lod0", packaging="file_set",
+                     files=[dict(path="m.obj", checksum="sha256:" + "3" * 64),
+                            dict(path="m.mtl", checksum="sha256:" + "4" * 64)])
+    return g
+
+
+def test_d4_members_digest_leaves_with_its_own_term_and_comes_back():
+    rdflib = pytest.importorskip("rdflib")
+    from s3dgraphy.importer.rdf_importer import import_rdf
+    g = _file_set_graph()
+    node = g.find_node_by_id("res:lod0")
+    digest = node.data["checksum"]
+    assert node.data["digest_covers"] == "members"
+    ttl = api.emjson_to_ttl(api.graph_to_emjson(g))
+    store = rdflib.Dataset()
+    store.parse(data=ttl, format="turtle")
+    em = rdflib.Namespace("https://w3id.org/em/")
+    pred = [p for p in set(store.predicates()) if str(p).endswith("membersDigest")]
+    assert len(pred) == 1
+    values = {str(o) for o in store.objects(None, pred[0])}
+    assert values == {digest}
+    # em:digestCovers stays beside it, for the readers that know it
+    assert "digestCovers" in ttl
+    graphs, _ = import_rdf(ttl, fmt="turtle")
+    back = graphs[0].find_node_by_id("res:lod0")
+    assert back.data["checksum"] == digest
+    assert back.data["digest_covers"] == "members"
+    assert "members_digest" not in back.data          # one digest, not two
+
+
+def test_d4_a_ttl_with_only_the_new_term_reads_as_a_set():
+    pytest.importorskip("rdflib")
+    from s3dgraphy.importer.rdf_importer import import_rdf
+    g = _file_set_graph()
+    ttl = api.emjson_to_ttl(api.graph_to_emjson(g))
+    digest = g.find_node_by_id("res:lod0").data["checksum"]
+    lines = [ln for ln in ttl.splitlines()
+             if "digestCovers" not in ln and not (
+                 "em:checksum" in ln and digest in ln)]
+    stripped = "\n".join(lines)
+    if stripped.count("membersDigest") != 1:
+        pytest.skip("the turtle layout does not allow a line-wise strip")
+    graphs, _ = import_rdf(stripped, fmt="turtle")
+    back = graphs[0].find_node_by_id("res:lod0")
+    assert back.data.get("checksum") == digest
+    assert back.data.get("digest_covers") == "members"
+
+
+def test_d4_the_term_is_declared_and_cited():
+    ttl = (CONFIG / "em.ttl").read_text(encoding="utf-8")
+    assert "em:membersDigest\n    a owl:DatatypeProperty" in ttl
+    dm = json.loads((CONFIG / "s3Dgraphy_node_datamodel.json").read_text(encoding="utf-8"))
+    props = dm["reference_nodes"]["ResourceNode"]["properties"]
+    assert props["members_digest"]["rdf"] == "em:membersDigest"
