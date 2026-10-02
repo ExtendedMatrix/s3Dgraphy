@@ -1,0 +1,50 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<point_cloud version="1.7.0">
+  <params>
+    <dataType>uint8</dataType>
+    <bands>
+      <band label="Red" />
+      <band label="Green" />
+      <band label="Blue" />
+    </bands>
+  </params>
+  <tracks path="tracks.ply" count="326430" />
+  <points component_id="1" path="points1.ply" count="176757" />
+  <projections camera_id="2" path="p2.ply" count="4164" />
+  <projections camera_id="3" path="p3.ply" count="4177" />
+  <projections camera_id="4" path="p4.ply" count="4041" />
+  <projections camera_id="71" path="p71.ply" count="2610" />
+  <projections camera_id="171" path="p171.ply" count="4418" />
+  <meta>
+    <property name="Info/LastSavedDateTime" value="2026:07:23 06:46:58" />
+    <property name="Info/LastSavedSoftwareVersion" value="2.3.0.21954" />
+    <property name="Info/OriginalDateTime" value="2026:07:22 14:10:02" />
+    <property name="Info/OriginalSoftwareVersion" value="2.3.0.21954" />
+    <property name="MatchPhotos/descriptor_type" value="binary" />
+    <property name="MatchPhotos/descriptor_version" value="1.1.0" />
+    <property name="MatchPhotos/downscale" value="1" />
+    <property name="MatchPhotos/downscale_3d" value="1" />
+    <property name="MatchPhotos/duration" value="88.076561" />
+    <property name="MatchPhotos/filter_stationary_points" value="true" />
+    <property name="MatchPhotos/generic_preselection" value="true" />
+    <property name="MatchPhotos/guided_matching" value="false" />
+    <property name="MatchPhotos/keep_keypoints" value="false" />
+    <property name="MatchPhotos/keypoint_limit" value="40000" />
+    <property name="MatchPhotos/keypoint_limit_3d" value="100000" />
+    <property name="MatchPhotos/keypoint_limit_depth_maps" value="10000" />
+    <property name="MatchPhotos/keypoint_limit_per_mpx" value="1000" />
+    <property name="MatchPhotos/laser_scans_use_initial_orientation" value="false" />
+    <property name="MatchPhotos/laser_scans_vertical_axis" value="0" />
+    <property name="MatchPhotos/match_depth_maps" value="false" />
+    <property name="MatchPhotos/match_laser_scans" value="false" />
+    <property name="MatchPhotos/max_workgroup_size" value="100" />
+    <property name="MatchPhotos/ram_used" value="746815488" />
+    <property name="MatchPhotos/reference_preselection" value="true" />
+    <property name="MatchPhotos/reference_preselection_mode" value="0" />
+    <property name="MatchPhotos/reset_matches" value="true" />
+    <property name="MatchPhotos/subdivide_task" value="true" />
+    <property name="MatchPhotos/tiepoint_limit" value="4000" />
+    <property name="MatchPhotos/workitem_size_cameras" value="20" />
+    <property name="MatchPhotos/workitem_size_pairs" value="80" />
+  </meta>
+</point_cloud>

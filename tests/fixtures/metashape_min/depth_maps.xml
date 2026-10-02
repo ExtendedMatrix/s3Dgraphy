@@ -1,0 +1,21 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<depth_maps version="1.2.0">
+  <blocks>
+    <block path="data0.zip" />
+  </blocks>
+  <meta>
+    <property name="BuildDepthMaps/downscale" value="2" />
+    <property name="BuildDepthMaps/duration" value="455.691594" />
+    <property name="BuildDepthMaps/filter_mode" value="0" />
+    <property name="BuildDepthMaps/max_neighbors" value="16" />
+    <property name="BuildDepthMaps/max_workgroup_size" value="100" />
+    <property name="BuildDepthMaps/ram_used" value="2737569792" />
+    <property name="BuildDepthMaps/reuse_depth" value="false" />
+    <property name="BuildDepthMaps/subdivide_task" value="true" />
+    <property name="BuildDepthMaps/workitem_size_cameras" value="20" />
+    <property name="Info/LastSavedDateTime" value="2026:07:23 06:47:04" />
+    <property name="Info/LastSavedSoftwareVersion" value="2.3.0.21954" />
+    <property name="Info/OriginalDateTime" value="2026:07:22 14:21:40" />
+    <property name="Info/OriginalSoftwareVersion" value="2.3.0.21954" />
+  </meta>
+</depth_maps>

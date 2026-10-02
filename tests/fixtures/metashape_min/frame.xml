@@ -1,0 +1,164 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<frame version="1.2.0">
+  <cameras>
+    <camera camera_id="2">
+      <photo path="../../../Segni_Acropoli_drone/DJI_0170.JPG">
+        <meta>
+          <property name="DJI/AbsoluteAltitude" value="+612.93" />
+          <property name="DJI/FlightPitchDegree" value="+0.00" />
+          <property name="DJI/FlightRollDegree" value="+0.70" />
+          <property name="DJI/FlightYawDegree" value="-151.50" />
+          <property name="DJI/GimbalPitchDegree" value="-24.40" />
+          <property name="DJI/GimbalRollDegree" value="+0.00" />
+          <property name="DJI/GimbalYawDegree" value="-148.00" />
+          <property name="DJI/RelativeAltitude" value="+16.00" />
+          <property name="Exif/ApertureValue" value="2" />
+          <property name="Exif/DateTime" value="2018:02:17 10:23:03" />
+          <property name="Exif/DateTimeOriginal" value="2018:02:17 10:23:03" />
+          <property name="Exif/ExposureTime" value="0.001733" />
+          <property name="Exif/FNumber" value="2.8" />
+          <property name="Exif/FocalLength" value="3.61" />
+          <property name="Exif/FocalLengthIn35mmFilm" value="20" />
+          <property name="Exif/GPSAltitude" value="612.933" />
+          <property name="Exif/GPSLatitude" value="41.6970780555556" />
+          <property name="Exif/GPSLongitude" value="13.0248174722222" />
+          <property name="Exif/ISOSpeedRatings" value="100" />
+          <property name="Exif/Make" value="DJI" />
+          <property name="Exif/Model" value="FC300X" />
+          <property name="Exif/Orientation" value="1" />
+          <property name="Exif/ShutterSpeedValue" value="9.171" />
+          <property name="Exif/Software" value="v01.30.5036" />
+          <property name="File/ImageHeight" value="3000" />
+          <property name="File/ImageWidth" value="4000" />
+          <property name="System/FileModifyDate" value="2021:03:23 17:54:36" />
+          <property name="System/FileSize" value="4922059" />
+        </meta>
+      </photo>
+    </camera>
+    <camera camera_id="3">
+      <photo path="../../../Segni_Acropoli_drone/DJI_0171.JPG">
+        <meta>
+          <property name="DJI/AbsoluteAltitude" value="+612.93" />
+          <property name="DJI/FlightPitchDegree" value="-0.50" />
+          <property name="DJI/FlightRollDegree" value="-0.30" />
+          <property name="DJI/FlightYawDegree" value="-153.90" />
+          <property name="DJI/GimbalPitchDegree" value="-24.40" />
+          <property name="DJI/GimbalRollDegree" value="+0.00" />
+          <property name="DJI/GimbalYawDegree" value="-152.80" />
+          <property name="DJI/RelativeAltitude" value="+16.00" />
+          <property name="Exif/ApertureValue" value="2" />
+          <property name="Exif/DateTime" value="2018:02:17 10:23:04" />
+          <property name="Exif/DateTimeOriginal" value="2018:02:17 10:23:04" />
+          <property name="Exif/ExposureTime" value="0.001752" />
+          <property name="Exif/FNumber" value="2.8" />
+          <property name="Exif/FocalLength" value="3.61" />
+          <property name="Exif/FocalLengthIn35mmFilm" value="20" />
+          <property name="Exif/GPSAltitude" value="612.933" />
+          <property name="Exif/GPSLatitude" value="41.6970838333333" />
+          <property name="Exif/GPSLongitude" value="13.0248073888889" />
+          <property name="Exif/ISOSpeedRatings" value="100" />
+          <property name="Exif/Make" value="DJI" />
+          <property name="Exif/Model" value="FC300X" />
+          <property name="Exif/Orientation" value="1" />
+          <property name="Exif/ShutterSpeedValue" value="9.156" />
+          <property name="Exif/Software" value="v01.30.5036" />
+          <property name="File/ImageHeight" value="3000" />
+          <property name="File/ImageWidth" value="4000" />
+          <property name="System/FileModifyDate" value="2021:03:23 17:54:36" />
+          <property name="System/FileSize" value="5284058" />
+        </meta>
+      </photo>
+    </camera>
+    <camera camera_id="4">
+      <photo path="../../../Segni_Acropoli_drone/DJI_0172.JPG">
+        <meta>
+          <property name="DJI/AbsoluteAltitude" value="+612.93" />
+          <property name="DJI/FlightPitchDegree" value="+0.80" />
+          <property name="DJI/FlightRollDegree" value="+1.40" />
+          <property name="DJI/FlightYawDegree" value="-160.10" />
+          <property name="DJI/GimbalPitchDegree" value="-24.40" />
+          <property name="DJI/GimbalRollDegree" value="+0.00" />
+          <property name="DJI/GimbalYawDegree" value="-157.70" />
+          <property name="DJI/RelativeAltitude" value="+16.00" />
+          <property name="Exif/ApertureValue" value="2" />
+          <property name="Exif/DateTime" value="2018:02:17 10:23:06" />
+          <property name="Exif/DateTimeOriginal" value="2018:02:17 10:23:06" />
+          <property name="Exif/ExposureTime" value="0.001743" />
+          <property name="Exif/FNumber" value="2.8" />
+          <property name="Exif/FocalLength" value="3.61" />
+          <property name="Exif/FocalLengthIn35mmFilm" value="20" />
+          <property name="Exif/GPSAltitude" value="612.933" />
+          <property name="Exif/GPSLatitude" value="41.6970921944444" />
+          <property name="Exif/GPSLongitude" value="13.0247892222222" />
+          <property name="Exif/ISOSpeedRatings" value="100" />
+          <property name="Exif/Make" value="DJI" />
+          <property name="Exif/Model" value="FC300X" />
+          <property name="Exif/Orientation" value="1" />
+          <property name="Exif/ShutterSpeedValue" value="9.164" />
+          <property name="Exif/Software" value="v01.30.5036" />
+          <property name="File/ImageHeight" value="3000" />
+          <property name="File/ImageWidth" value="4000" />
+          <property name="System/FileModifyDate" value="2021:03:23 17:54:36" />
+          <property name="System/FileSize" value="5271664" />
+        </meta>
+      </photo>
+    </camera>
+    <camera camera_id="71">
+      <photo path="../../../Canon 6D 24mm/IMG_3848.JPG">
+        <meta>
+          <property name="Exif/ApertureValue" value="5.625" />
+          <property name="Exif/DateTime" value="2021:05:17 15:15:32" />
+          <property name="Exif/DateTimeOriginal" value="2021:05:17 15:15:32" />
+          <property name="Exif/ExposureTime" value="0.00125" />
+          <property name="Exif/FNumber" value="7.1" />
+          <property name="Exif/FocalLength" value="24" />
+          <property name="Exif/FocalPlaneXResolution" value="150.02302985107363" />
+          <property name="Exif/FocalPlaneYResolution" value="150.23226699173063" />
+          <property name="Exif/ISOSpeedRatings" value="100" />
+          <property name="Exif/LensModel" value="EF24mm f/2.8 IS USM" />
+          <property name="Exif/Make" value="Canon" />
+          <property name="Exif/Model" value="Canon EOS 6D" />
+          <property name="Exif/Orientation" value="1" />
+          <property name="Exif/ShutterSpeedValue" value="9.625" />
+          <property name="File/ImageHeight" value="3648" />
+          <property name="File/ImageWidth" value="5472" />
+          <property name="System/FileModifyDate" value="2021:05:17 15:15:32" />
+          <property name="System/FileSize" value="8299690" />
+        </meta>
+      </photo>
+    </camera>
+    <camera camera_id="171">
+      <photo path="../../../Canon 6D 24mm/IMG_3948.JPG">
+        <meta>
+          <property name="Exif/ApertureValue" value="5.625" />
+          <property name="Exif/DateTime" value="2021:05:17 15:21:25" />
+          <property name="Exif/DateTimeOriginal" value="2021:05:17 15:21:25" />
+          <property name="Exif/ExposureTime" value="0.002" />
+          <property name="Exif/FNumber" value="7.1" />
+          <property name="Exif/FocalLength" value="24" />
+          <property name="Exif/FocalPlaneXResolution" value="150.02302985107363" />
+          <property name="Exif/FocalPlaneYResolution" value="150.23226699173063" />
+          <property name="Exif/ISOSpeedRatings" value="100" />
+          <property name="Exif/LensModel" value="EF24mm f/2.8 IS USM" />
+          <property name="Exif/Make" value="Canon" />
+          <property name="Exif/Model" value="Canon EOS 6D" />
+          <property name="Exif/Orientation" value="1" />
+          <property name="Exif/ShutterSpeedValue" value="9" />
+          <property name="File/ImageHeight" value="3648" />
+          <property name="File/ImageWidth" value="5472" />
+          <property name="System/FileModifyDate" value="2021:05:17 15:21:26" />
+          <property name="System/FileSize" value="13232771" />
+        </meta>
+      </photo>
+    </camera>
+  </cameras>
+  <markers>
+    <marker marker_id="0">
+      </marker>
+  </markers>
+  <thumbnails path="thumbnails/thumbnails.zip" />
+  <point_cloud path="point_cloud/point_cloud.zip" />
+  <depth_maps id="0" path="depth_maps/depth_maps.zip" />
+  <model id="1" path="model/model.zip" />
+  <model id="2" path="model.1/model.zip" />
+</frame>

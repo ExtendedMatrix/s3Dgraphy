@@ -1,0 +1,174 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<chunk label="Chunk 1_LOD0" enabled="true" version="1.7.0">
+  <sensors next_id="2">
+    <sensor id="0" label="FC300X (3.61mm)" type="frame">
+      <resolution width="4000" height="3000" />
+      <property name="pixel_width" value="0.0015619248125310003" />
+      <property name="pixel_height" value="0.0015619248125310003" />
+      <property name="focal_length" value="3.6099999999999999" />
+      <property name="layer_index" value="0" />
+      <bands>
+        <band label="Red" />
+        <band label="Green" />
+        <band label="Blue" />
+      </bands>
+      <data_type>uint8</data_type>
+      <calibration type="frame" class="adjusted">
+        <resolution width="4000" height="3000" />
+        <f>2320.642343534465</f>
+        <cx>6.4129262100554598</cx>
+        <cy>-25.496013741998031</cy>
+        <k1>-0.0099210037298066728</k1>
+        <k2>0.0099819292985623732</k2>
+        <k3>0.0038245819677986434</k3>
+        <p1>-0.00056580941629619588</p1>
+        <p2>-0.00027531357285477003</p2>
+      </calibration>
+      <meta>
+        <property name="Exif/Make" value="DJI" />
+        <property name="Exif/Model" value="FC300X" />
+        <property name="Exif/Software" value="v01.30.5036" />
+      </meta>
+    </sensor>
+    <sensor id="1" label="Canon EOS 6D, EF24mm f/2.8 IS USM (24mm)" type="frame">
+      <resolution width="5472" height="3648" />
+      <property name="pixel_width" value="0.0066610014619883041" />
+      <property name="pixel_height" value="0.0066610014619883041" />
+      <property name="focal_length" value="24" />
+      <property name="layer_index" value="0" />
+      <bands>
+        <band label="Red" />
+        <band label="Green" />
+        <band label="Blue" />
+      </bands>
+      <data_type>uint8</data_type>
+      <calibration type="frame" class="adjusted">
+        <resolution width="5472" height="3648" />
+        <f>3771.8614631917803</f>
+        <cx>-33.955651638278212</cx>
+        <cy>-10.875057583554861</cy>
+        <k1>-0.09425663686175377</k1>
+        <k2>0.091255437299878284</k2>
+        <k3>-0.023314377600930785</k3>
+        <p1>-0.00036243927752608625</p1>
+        <p2>0.00030016619085268504</p2>
+      </calibration>
+      <meta>
+        <property name="Exif/BodySerialNumber" value="335051000074" />
+        <property name="Exif/LensModel" value="EF24mm f/2.8 IS USM" />
+        <property name="Exif/LensSerialNumber" value="00000019cc" />
+        <property name="Exif/Make" value="Canon" />
+        <property name="Exif/Model" value="Canon EOS 6D" />
+      </meta>
+    </sensor>
+  </sensors>
+  <components next_id="2" active_id="1">
+    <component id="1" label="Component 1">
+      <transform>
+        <rotation locked="true">0.50066263810586176 0.86135968908249338 -0.086002376877558545 -0.79297141636827206 0.41651649882020386 -0.44464630779244652 -0.34717899652452394 0.29081522008703253 0.89156786176821978</rotation>
+        <translation locked="true">4647188.802911764 1074987.4575238118 4220951.5555603225</translation>
+        <scale locked="true">1.9175159480232311</scale>
+      </transform>
+      <region>
+        <center>2.4996982989307313 -0.21889983548343483 -15.271900219150048</center>
+        <size>69.696485169728589 27.275200684865315 17.694626172383622</size>
+        <R>-0.14932964681956171 -0.45058769457489456 0.8801541831284031 0.98878745398347034 -0.067900019059299141 0.13299984306995699 -0.0001656068581742457 0.89014623344112864 0.45567494518015822</R>
+      </region>
+      <partition>
+        <partition>
+          <camera_ids>2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46 47 48 49 50 51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 69 70</camera_ids>
+        </partition>
+        <partition>
+          <camera_ids>71 72 73 74 75 76 77 78 79 80 81 82 83 84 85 86 87 88 89 90 91 92 93 94 95 96 97 98 99 100 101 102 103 104 105 106 107 108 109 110 111 112 113 114 115 116 117 118 119 120 121 122 123 124 125 126 127 128 129 130 131 132 133 134 135 136 137 138 139 140 141 142 143 144 145 146 147 148 149 150 151 152 153 154 155 156 157 158 159 160 161 162 163 164 165 166 167 168 169 170</camera_ids>
+        </partition>
+        <partition>
+          <camera_ids>171 172 173 174 175 176 177 178 179 180 181 182 183 184 185 186 187 188 189 190 191 192 193 194 195 196 197 198 199 200 201 202 203 204 205 206 207 208 209 210 211 212 213 214 215 216 217 218 219 220 221 222 223 224 225 226 227 228 229 230 231 232 233 234 235 236 237 238 239 240 241 242 243 244 245 246 247 248 249 250 251 252 253 254 255 256 257 258 259 260 261 262 263 264 265 266 267 268 269 270 271 272 273 274</camera_ids>
+        </partition>
+      </partition>
+    </component>
+  </components>
+  <cameras next_id="275" next_group_id="2">
+    <group id="0" label="Drone" type="folder">
+      <camera id="2" sensor_id="0" component_id="1" label="DJI_0170">
+        <transform>0.48169204251163178 -0.39048517404744226 0.78453432367877407 -8.5994488289726387 -0.40444368960839544 -0.89325318581826263 -0.1962754390173973 2.7951452239772903 0.77743043297578718 -0.22275563937791309 -0.58820221608594525 -6.2528668664754115 0 0 0 1</transform>
+        <orientation>1</orientation>
+        <reference x="13.0248174722222" y="41.6970780555556" z="612.93299999999999" yaw="212" pitch="65.600000000000009" roll="-0" enabled="true" rotation_enabled="false" />
+      </camera>
+      <camera id="3" sensor_id="0" component_id="1" label="DJI_0171">
+        <transform>0.55823593787889236 -0.36873501065068393 0.74324096333619416 -8.2090849759140205 -0.3810718937069647 -0.90968568462726562 -0.16509441847261613 2.4823217378337286 0.73699175672938255 -0.19106660384448082 -0.6483337901176176 -5.5631340676881562 0 0 0 1</transform>
+        <orientation>1</orientation>
+        <reference x="13.024807388888901" y="41.697083833333302" z="612.93299999999999" yaw="207.19999999999999" pitch="65.600000000000009" roll="-0" enabled="true" rotation_enabled="false" />
+      </camera>
+      <camera id="4" sensor_id="0" component_id="1" label="DJI_0172">
+        <transform>0.63551143510795238 -0.34257924516587784 0.69192823083655686 -7.7946151173420821 -0.35281406227532225 -0.92598827122932359 -0.13441710831034223 2.2090484183098118 0.68676593778944461 -0.15869840051905587 -0.70934291028026641 -4.9474929726103172 0 0 0 1</transform>
+        <orientation>1</orientation>
+        <reference x="13.0247892222222" y="41.697092194444402" z="612.93299999999999" yaw="202.30000000000001" pitch="65.600000000000009" roll="-0" enabled="true" rotation_enabled="false" />
+      </camera>
+    </group>
+    <group id="1" label="Canon" type="folder">
+      <camera id="71" sensor_id="1" component_id="1" label="IMG_3848">
+        <transform>0.67214992428407871 -0.053784175402783171 -0.73845903187729445 10.020311274600891 0.30572200009462486 -0.88820714975690374 0.342960810849956 6.5174781920593556 -0.67435045632300894 -0.45628425525867067 -0.58056536278010062 -32.971070090854255 0 0 0 1</transform>
+        <orientation>1</orientation>
+      </camera>
+      <camera id="171" sensor_id="1" label="IMG_3948">
+        <orientation>1</orientation>
+      </camera>
+    </group>
+  </cameras>
+  <markers next_id="1" next_group_id="0">
+    <marker id="0" label="point 1">
+      <reference x="834918.17353938438" y="4623949.1171144508" z="605.78792133176364" enabled="false" />
+    </marker>
+  </markers>
+  <depth_map_sets next_id="1" active_id="0">
+    <depth_maps id="0" />
+  </depth_map_sets>
+  <models next_id="3" active_id="2">
+    <model id="1" />
+    <model id="2" />
+  </models>
+  <frames next_id="1">
+    <frame id="0" path="0/frame.zip" />
+  </frames>
+  <transform>
+    <rotation locked="true">0.50066263810586176 0.86135968908249338 -0.086002376877558545 -0.79297141636827206 0.41651649882020386 -0.44464630779244652 -0.34717899652452394 0.29081522008703253 0.89156786176821978</rotation>
+    <translation locked="true">4647188.802911764 1074987.4575238118 4220951.5555603225</translation>
+    <scale locked="true">1.9175159480232311</scale>
+  </transform>
+  <reference>PROJCS["ETRS89-ITA [RDN2008] / UTM zone 32N",GEOGCS["ETRS89-ITA [RDN2008]",DATUM["Rete Dinamica Nazionale 2008",SPHEROID["GRS 1980",6378137,298.257222101,AUTHORITY["EPSG","7019"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY["EPSG","1132"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.01745329251994328,AUTHORITY["EPSG","9102"]],AUTHORITY["EPSG","6706"]],PROJECTION["Transverse_Mercator",AUTHORITY["EPSG","9807"]],PARAMETER["latitude_of_origin",0],PARAMETER["central_meridian",9],PARAMETER["scale_factor",0.9996],PARAMETER["false_easting",500000],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AUTHORITY["EPSG","7791"]]</reference>
+  <camera_reference>GEOGCS["WGS 84",DATUM["World Geodetic System 1984 ensemble",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.01745329251994328,AUTHORITY["EPSG","9102"]],AUTHORITY["EPSG","4326"]]</camera_reference>
+  <region>
+    <center>2.4996982989307313 -0.21889983548343483 -15.271900219150048</center>
+    <size>69.696485169728589 27.275200684865315 17.694626172383622</size>
+    <R>-0.14932964681956171 -0.45058769457489456 0.8801541831284031 0.98878745398347034 -0.067900019059299141 0.13299984306995699 -0.0001656068581742457 0.89014623344112864 0.45567494518015822</R>
+  </region>
+  <settings>
+    <property name="accuracy_tiepoints" value="1" />
+    <property name="accuracy_cameras" value="10" />
+    <property name="accuracy_cameras_ypr" value="10" />
+    <property name="accuracy_markers" value="0.0050000000000000001" />
+    <property name="accuracy_scalebars" value="0.001" />
+    <property name="accuracy_projections" value="0.5" />
+  </settings>
+  <meta>
+    <property name="3dsc_workflow_highres" value="1" />
+    <property name="3dsc_workflow_lod0" value="1" />
+    <property name="3dsc_workflow_lod0_mode" value="decimated" />
+    <property name="3dsc_workflow_textured" value="0" />
+    <property name="AlignCameras/adaptive_fitting" value="false" />
+    <property name="AlignCameras/align_laser_scans" value="false" />
+    <property name="AlignCameras/duration" value="38.251152" />
+    <property name="AlignCameras/level" value="1" />
+    <property name="AlignCameras/min_image" value="2" />
+    <property name="AlignCameras/ram_used" value="3178496" />
+    <property name="AlignCameras/reset_alignment" value="true" />
+    <property name="AlignCameras/subdivide_task" value="true" />
+    <property name="Info/LastSavedDateTime" value="2026:07:23 06:47:04" />
+    <property name="Info/LastSavedSoftwareVersion" value="2.3.0.21954" />
+    <property name="OptimizeCameras/adaptive_fitting" value="false" />
+    <property name="OptimizeCameras/duration" value="1.142264" />
+    <property name="OptimizeCameras/exclude_corners" value="false" />
+    <property name="OptimizeCameras/fit_flags" value="f cx cy k1 k2 k3 p1 p2" />
+    <property name="OptimizeCameras/sigma0" value="0.180362027792935" />
+  </meta>
+</chunk>

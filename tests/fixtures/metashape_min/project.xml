@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<document version="1.2.0">
+  <chunks next_id="2" active_id="1">
+    <chunk id="0" path="0/chunk.zip" />
+    <chunk id="1" path="1/chunk.zip" />
+  </chunks>
+  <meta>
+    <property name="Info/LastSavedDateTime" value="2026:07:23 06:47:04" />
+    <property name="Info/LastSavedSoftwareVersion" value="2.3.0.21954" />
+    <property name="Info/OriginalDateTime" value="2026:07:22 13:30:51" />
+    <property name="Info/OriginalSoftwareName" value="Agisoft Metashape" />
+    <property name="Info/OriginalSoftwareVendor" value="Agisoft" />
+    <property name="Info/OriginalSoftwareVersion" value="2.3.0.21954" />
+    <property name="Project/AbsolutePaths" value="false" />
+  </meta>
+</document>

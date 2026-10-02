@@ -49,6 +49,18 @@ NETWORK_MODULES = {"requests", "httpx", "urllib.request", "urllib.error",
 ENGINE_NAMES = ("nodeodm", "opendronemap", "colmap", "micmac", "meshroom",
                 "metashape", "agisoft")
 
+#: Modules that read an engine's FILE FORMAT. Reading a format is import — the
+#: library's own job, as the GraphML importer reads yEd's — and a reader of the
+#: `.psx` cannot avoid the engine's name: it is the name the project gives
+#: itself (`Info/OriginalSoftwareName`) and the prefix of every technique 3DSC
+#: for Metashape writes. What stays forbidden to it is the rest: no network (the
+#: test above does not excuse it), no driver, and no place in the
+#: `photogrammetry` package, which must keep not knowing any engine.
+FORMAT_READERS = {
+    "importer/metashape_project.py":    # MICRO-IL-LETTORE-DI-METASHAPE, 02-10-2026
+        "reads a .psx and the zips beside it; stdlib only, drives nothing",
+}
+
 
 def _modules():
     for path in sorted(SRC.rglob("*.py")):
@@ -94,6 +106,8 @@ def test_no_photogrammetric_ENGINE_is_named_in_the_library():
     """
     offenders = []
     for rel, path in _modules():
+        if rel in FORMAT_READERS:
+            continue
         text = path.read_text(encoding="utf-8")
         low = text.lower()
         if not any(engine in low for engine in ENGINE_NAMES):
@@ -122,6 +136,36 @@ def test_no_photogrammetric_ENGINE_is_named_in_the_library():
     assert not offenders, (
         "an engine is named in the library's CODE (prose is fine):\n  "
         + "\n  ".join(offenders))
+
+
+def test_a_format_reader_stays_a_reader():
+    """The exception is narrow: the reader is not in `photogrammetry/`, the
+    meaning does not import it, and it imports nothing but the stdlib and the
+    library."""
+    for rel in FORMAT_READERS:
+        assert not rel.startswith("photogrammetry/"), rel
+        tree = ast.parse((SRC / rel).read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if isinstance(node, ast.Import):
+                names = [a.name.split(".")[0] for a in node.names]
+            elif isinstance(node, ast.ImportFrom) and node.level == 0:
+                names = [(node.module or "").split(".")[0]]
+            else:
+                continue
+            for name in names:
+                assert name in STDLIB_FOR_READERS, f"{rel} imports {name}"
+    for path in (SRC / "photogrammetry").glob("*.py"):
+        text = path.read_text(encoding="utf-8")
+        for rel in FORMAT_READERS:
+            module = rel[:-3].replace("/", ".")
+            assert module not in text, f"{path.name} reaches {module}"
+
+
+#: what a format reader may import at the top level (the library's own modules
+#: come in relative, `from ..`)
+STDLIB_FOR_READERS = {"__future__", "argparse", "collections", "dataclasses",
+                      "hashlib", "json", "os", "re", "typing", "uuid", "xml",
+                      "zipfile"}
 
 
 def _is_docstring(tree: ast.AST, const: ast.Constant) -> bool:

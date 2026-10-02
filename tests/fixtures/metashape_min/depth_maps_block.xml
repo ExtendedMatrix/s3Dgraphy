@@ -1,0 +1,75 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<depth_maps version="1.5.0">
+  <depth_map camera_id="2" level="0" path="0/d2.exr">
+    <calibration type="frame">
+      <resolution width="2000" height="1500" />
+      <f>1160.3211717672325</f>
+      <cx>3.2064631050277512</cx>
+      <cy>-12.748006870999006</cy>
+    </calibration>
+  </depth_map>
+  <depth_map camera_id="2" level="1" path="1/d2.exr">
+    <calibration type="frame">
+      <resolution width="1000" height="750" />
+      <f>580.16058588361625</f>
+      <cx>1.6032315525138756</cx>
+      <cy>-6.3740034354995032</cy>
+    </calibration>
+  </depth_map>
+  <depth_map camera_id="2" level="2" path="2/d2.exr">
+    <calibration type="frame">
+      <resolution width="500" height="375" />
+      <f>290.08029294180812</f>
+      <cx>0.80161577625693781</cx>
+      <cy>-3.1870017177497516</cy>
+    </calibration>
+  </depth_map>
+  <depth_map camera_id="3" level="0" path="0/d3.exr">
+    <calibration type="frame">
+      <resolution width="2000" height="1500" />
+      <f>1160.3211717672325</f>
+      <cx>3.2064631050277512</cx>
+      <cy>-12.748006870999006</cy>
+    </calibration>
+  </depth_map>
+  <depth_map camera_id="3" level="1" path="1/d3.exr">
+    <calibration type="frame">
+      <resolution width="1000" height="750" />
+      <f>580.16058588361625</f>
+      <cx>1.6032315525138756</cx>
+      <cy>-6.3740034354995032</cy>
+    </calibration>
+  </depth_map>
+  <depth_map camera_id="3" level="2" path="2/d3.exr">
+    <calibration type="frame">
+      <resolution width="500" height="375" />
+      <f>290.08029294180812</f>
+      <cx>0.80161577625693781</cx>
+      <cy>-3.1870017177497516</cy>
+    </calibration>
+  </depth_map>
+  <depth_map camera_id="4" level="0" path="0/d4.exr">
+    <calibration type="frame">
+      <resolution width="2000" height="1500" />
+      <f>1160.3211717672325</f>
+      <cx>3.2064631050277512</cx>
+      <cy>-12.748006870999006</cy>
+    </calibration>
+  </depth_map>
+  <depth_map camera_id="4" level="1" path="1/d4.exr">
+    <calibration type="frame">
+      <resolution width="1000" height="750" />
+      <f>580.16058588361625</f>
+      <cx>1.6032315525138756</cx>
+      <cy>-6.3740034354995032</cy>
+    </calibration>
+  </depth_map>
+  <depth_map camera_id="4" level="2" path="2/d4.exr">
+    <calibration type="frame">
+      <resolution width="500" height="375" />
+      <f>290.08029294180812</f>
+      <cx>0.80161577625693781</cx>
+      <cy>-3.1870017177497516</cy>
+    </calibration>
+  </depth_map>
+</depth_maps>

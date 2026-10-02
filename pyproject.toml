@@ -216,6 +216,9 @@ testpaths = ["tests"]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
+markers = [
+    "slow: reads real data when it is on this machine (skipped otherwise)",
+]
 
 [tool.mypy]
 python_version = "3.8"

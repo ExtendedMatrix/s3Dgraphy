@@ -1,0 +1,56 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<model version="1.2.0">
+  <mesh path="mesh.ply">
+    <faceCount>18766128</faceCount>
+    <vertexCount>9393484</vertexCount>
+    <hasVertexColors>true</hasVertexColors>
+    <hasVertexConfidence>true</hasVertexConfidence>
+    <hasFaceCameras>false</hasFaceCameras>
+    <hasUV>false</hasUV>
+  </mesh>
+  <params>
+    <dataType>uint8</dataType>
+    <bands>
+      <band label="Red" />
+      <band label="Green" />
+      <band label="Blue" />
+    </bands>
+  </params>
+  <meta>
+    <property name="BuildDepthMaps/downscale" value="2" />
+    <property name="BuildDepthMaps/duration" value="455.691594" />
+    <property name="BuildDepthMaps/filter_mode" value="0" />
+    <property name="BuildDepthMaps/max_neighbors" value="16" />
+    <property name="BuildDepthMaps/max_workgroup_size" value="100" />
+    <property name="BuildDepthMaps/ram_used" value="2737569792" />
+    <property name="BuildDepthMaps/reuse_depth" value="false" />
+    <property name="BuildDepthMaps/subdivide_task" value="true" />
+    <property name="BuildDepthMaps/workitem_size_cameras" value="20" />
+    <property name="BuildModel/blocks_size" value="250" />
+    <property name="BuildModel/build_texture" value="true" />
+    <property name="BuildModel/clip_to_boundary" value="false" />
+    <property name="BuildModel/duration" value="377.603001" />
+    <property name="BuildModel/export_blocks" value="false" />
+    <property name="BuildModel/face_count" value="3" />
+    <property name="BuildModel/face_count_custom" value="200000" />
+    <property name="BuildModel/interpolation" value="1" />
+    <property name="BuildModel/iters_max_level" value="17" />
+    <property name="BuildModel/keep_depth" value="true" />
+    <property name="BuildModel/max_workgroup_size" value="100" />
+    <property name="BuildModel/ram_used" value="10047782912" />
+    <property name="BuildModel/replace_asset" value="false" />
+    <property name="BuildModel/source_data" value="6" />
+    <property name="BuildModel/split_in_blocks" value="false" />
+    <property name="BuildModel/subdivide_task" value="true" />
+    <property name="BuildModel/surface_type" value="0" />
+    <property name="BuildModel/trimming_radius" value="10" />
+    <property name="BuildModel/vertex_colors" value="true" />
+    <property name="BuildModel/vertex_confidence" value="true" />
+    <property name="BuildModel/volumetric_masks" value="false" />
+    <property name="BuildModel/workitem_size_cameras" value="20" />
+    <property name="Info/LastSavedDateTime" value="2026:07:23 06:47:00" />
+    <property name="Info/LastSavedSoftwareVersion" value="2.3.0.21954" />
+    <property name="Info/OriginalDateTime" value="2026:07:22 14:27:46" />
+    <property name="Info/OriginalSoftwareVersion" value="2.3.0.21954" />
+  </meta>
+</model>
