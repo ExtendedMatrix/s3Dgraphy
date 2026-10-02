@@ -157,6 +157,7 @@ def validate(graph: Graph) -> Dict[str, Any]:
             f"property of its own")
     warnings = list(getattr(graph, "warnings", []) or [])
     warnings.extend(_dtc_warnings(graph))
+    warnings.extend(_license_warnings(graph))
     geo = georeference_state(graph)
     if geo == "undeclared":
         info.append("the graph is not georeferenced: no CRS is declared "
@@ -193,6 +194,40 @@ def _dtc_warnings(graph: Graph) -> List[str]:
                 f"download without origin: '{getattr(node, 'name', '')}' "
                 f"({node.node_id}) does not say where it came from "
                 f"(how.acquisition.retrieved_from — a DOI or a URL)")
+    return out
+
+
+_LICENSE_CODE = re.compile(r"^(?:CC|CC0)(?:[-_ ][A-Z]{2})*(?:[-_ ]\d+(?:\.\d+)?)?$")
+
+
+def _license_code(text: Any) -> Optional[str]:
+    """A Creative Commons code read for comparison — upper case, '-' between
+    the parts, no version («cc by-nd 4.0» → «CC-BY-ND») — or ``None`` when the
+    text is not a code («Creative Commons Attribution» is a name, not a code)."""
+    t = str(text or "").strip().upper().replace("_", "-")
+    if not t or not _LICENSE_CODE.match(t):
+        return None
+    t = re.sub(r"[- ]+\d+(?:\.\d+)?$", "", t)
+    return re.sub(r"[- ]+", "-", t)
+
+
+def _license_warnings(graph: Graph) -> List[str]:
+    """D6 (E.D., 2 Oct 2026): a licence whose NAME and TYPE are two different
+    licences («CC-BY-ND» of type CC-BY-NC-ND, San Pietro). The graph is not
+    corrected — which one is right is the author's to say, against the record
+    it was published with — it is said. Compared only when the name is itself
+    a licence code: a long name beside a code is not a disagreement."""
+    out: List[str] = []
+    for node in getattr(graph, "nodes", []) or []:
+        if getattr(node, "node_type", None) != "license":
+            continue
+        name = getattr(node, "name", "")
+        ltype = (getattr(node, "data", None) or {}).get("license_type")
+        a, b = _license_code(name), _license_code(ltype)
+        if a and b and a != b:
+            out.append(
+                f"license name and type disagree: '{name}' ({node.node_id}) is "
+                f"of type '{ltype}' — say which licence the work carries")
     return out
 
 

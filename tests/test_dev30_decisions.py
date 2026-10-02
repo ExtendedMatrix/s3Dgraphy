@@ -217,3 +217,53 @@ def test_d4_the_term_is_declared_and_cited():
     dm = json.loads((CONFIG / "s3Dgraphy_node_datamodel.json").read_text(encoding="utf-8"))
     props = dm["reference_nodes"]["ResourceNode"]["properties"]
     assert props["members_digest"]["rdf"] == "em:membersDigest"
+
+
+# ── D6 · a licence's name and type that disagree are said, never corrected ───
+SAN_PIETRO_DTC = Path.home() / ("Documents/GitHub/_datasets/SegniSanPietro/"
+                                "_lavoro-claude/risultati/SanPietro_DTC.em.json")
+
+
+def test_d6_san_pietro_licence_is_warned_about_and_left_as_it_is(tmp_path):
+    if not SAN_PIETRO_DTC.is_file():
+        pytest.skip("the Segni dataset is not on this machine")
+    import shutil
+    copy = tmp_path / "SanPietro_DTC.em.json"
+    shutil.copy(SAN_PIETRO_DTC, copy)
+    g, _ = api.load_emjson(json.loads(copy.read_text(encoding="utf-8")))
+    lic = [n for n in g.nodes if n.node_type == "license"]
+    assert [(n.name, n.data["license_type"]) for n in lic] == [("CC-BY-ND", "CC-BY-NC-ND")]
+    hits = [w for w in api.validate(g)["warnings"]
+            if w.startswith("license name and type disagree")]
+    assert len(hits) == 1 and "CC-BY-ND" in hits[0] and "CC-BY-NC-ND" in hits[0]
+    # nothing rewritten
+    assert lic[0].data["license_type"] == "CC-BY-NC-ND"
+
+
+@pytest.mark.parametrize("name,ltype,warned", [
+    ("CC-BY-ND", "CC-BY-NC-ND", True),
+    ("CC-BY-ND", "CC-BY-ND-4.0", False),          # a version is not a licence
+    ("cc by-sa", "CC-BY-SA", False),
+    ("Creative Commons Attribution", "CC-BY-4.0", False),   # a name, not a code
+    ("CC0", "CC-BY", True),
+])
+def test_d6_what_counts_as_a_disagreement(name, ltype, warned):
+    from s3dgraphy.nodes.license_node import LicenseNode
+    g = Graph(graph_id="g-d6")
+    g.add_node(LicenseNode("lic", name=name, license_type=ltype))
+    hits = [w for w in api.validate(g)["warnings"] if "license name and type" in w]
+    assert bool(hits) is warned
+
+
+def test_d6_a_licence_read_with_its_name_only_gets_no_invented_type():
+    """The cause of San Pietro's disagreement, measured: the GraphML declares
+    «LICENCE:CC-BY-ND», the node is written with its name only, and until dev29
+    LicenseNode's default gave it the type CC-BY-NC-ND on reading."""
+    doc = {"header": {"format": "em.json", "version": "1.0", "schema_version": 2},
+           "graph": {"graph_id": "g", "name": "t", "edges": [],
+                     "nodes": [{"id": "L", "node_type": "license", "name": "CC-BY-ND"}]}}
+    g, _ = api.load_emjson(doc)
+    assert g.find_node_by_id("L").data["license_type"] == "CC-BY-ND"
+    assert not [w for w in api.validate(g)["warnings"] if "license name" in w]
+    from s3dgraphy.nodes.license_node import LicenseNode
+    assert LicenseNode("u").data["license_type"] is None

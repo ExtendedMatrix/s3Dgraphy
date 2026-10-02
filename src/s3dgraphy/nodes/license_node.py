@@ -10,19 +10,29 @@ class LicenseNode(Node):
     """
     node_type = "license"
     
-    def __init__(self, node_id, name="Unnamed License", license_type="CC-BY-NC-ND", description="", url=""):
+    #: the placeholder name of a licence nobody named — never read as a licence
+    UNNAMED = "Unnamed License"
+
+    def __init__(self, node_id, name="Unnamed License", license_type=None, description="", url=""):
         """
         Inizializza una nuova istanza di LicenseNode.
         
         Args:
             node_id (str): Identificatore univoco del nodo.
             name (str, opzionale): Nome della licenza. Default a "Unnamed License".
-            license_type (str, opzionale): Tipo di licenza. Default a "CC-BY-NC-ND".
+            license_type (str, opzionale): Tipo di licenza. Se non è detto è il
+                nome stesso (la licenza dichiarata, «LICENCE:CC-BY-ND»), oppure
+                None per una licenza senza nome. Fino alla dev29 il default era
+                "CC-BY-NC-ND": ogni licenza letta senza tipo — il nodo che un
+                GraphML o un em.json scrive con il solo nome — riceveva una
+                licenza più stretta di quella dichiarata (misurato su San
+                Pietro: «CC-BY-ND» diventava di tipo CC-BY-NC-ND).
             description (str, opzionale): Descrizione della licenza. Default a stringa vuota.
             url (str, opzionale): URL della licenza. Default a stringa vuota.
         """
         super().__init__(node_id=node_id, name=name, description=description)
-        
+        if license_type is None and name and name != self.UNNAMED:
+            license_type = name
         self.data = {
             "license_type": license_type,
             "url": url
