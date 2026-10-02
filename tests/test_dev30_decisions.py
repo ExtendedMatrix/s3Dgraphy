@@ -320,3 +320,29 @@ def test_d7_san_pietro_canon_photographs_are_the_night_directory(tmp_path):
     gcp = [n for n in g.nodes if n.node_type == "gcp_set"]
     assert len(gcp) == 1 and gcp[0].data["control"] == "camera_positions"
     assert len(gcp[0].data["points"]) == 69 and gcp[0].data["accuracy_m"] == 10.0
+
+
+# ── U5 · a recognised language is cleaning, not provenance ───────────────────
+def test_u5_a_recognised_language_leaves_only_data_lang():
+    from s3dgraphy.language import confirm_recognised_language
+    from s3dgraphy.nodes.stratigraphic_node import StratigraphicUnit
+    g = Graph(graph_id="g-u5")
+    us = StratigraphicUnit(node_id="us1", name="USM01")
+    us.description = "Muro in opera quadrata"
+    g.add_node(us)
+    before = (len(g.nodes), len(g.edges))
+    assert confirm_recognised_language(us, "it") == "it"
+    assert us.data["lang"] == "it"
+    assert "ai_assisted" not in us.data and "validated_by" not in us.data
+    assert (len(g.nodes), len(g.edges)) == before   # no register, no record
+    assert not api.unvalidated_ai(g)
+    with pytest.raises(ValueError):
+        confirm_recognised_language(us, "not a tag!")
+    assert us.data["lang"] == "it"
+
+
+def test_u5_the_exception_is_written_in_the_datamodel():
+    dm = json.loads((CONFIG / "s3Dgraphy_node_datamodel.json").read_text(encoding="utf-8"))
+    lang = dm["node_types"]["Node"]["properties"]["lang"]
+    assert lang["rdf"] == "em:originalLanguage"
+    assert "exception to the AI marker" in lang["note"]

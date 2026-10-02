@@ -264,6 +264,30 @@ def set_content_languages(resource: Any, tags: Any) -> list:
     return checked
 
 
+def confirm_recognised_language(node: Any, tag: Optional[str]) -> Optional[str]:
+    """A language RECOGNISED by a tool (EMStudio's assisted cleaning, U5) and
+    confirmed by a person with one gesture, written as ``data.lang`` ONLY.
+
+    THE EXPLICIT EXCEPTION TO THE AI MARKER (E.D., 2 Oct 2026, U5 of the
+    decisions on the dev29 report): recognising the language of a text is
+    cleaning of the data, not provenance — it leaves no ``ai_assisted``, no
+    record in the graph's register, nothing but the value. It is NOT a reading
+    of the text a reader would need to know was assisted; the language is
+    checkable by anyone who reads the text. Every other field a tool proposes
+    and a person accepts keeps the marker (:mod:`s3dgraphy.ai_validation`).
+
+    An invalid tag raises ``ValueError`` before anything is written. Returns the
+    tag written (canonical), or ``None`` when ``tag`` is empty (nothing done)."""
+    if not tag:
+        return None
+    checked = check_language_tag(tag)
+    data = getattr(node, "data", None)
+    if not isinstance(data, dict):
+        node.data = data = {}
+    data[NODE_LANG_KEY] = checked
+    return checked
+
+
 def declare_source_language(graph: Any, node_ids: Any,
                             source_lang: Optional[str]) -> int:
     """The language of an INGESTED source, written on the nodes made from it.
