@@ -2,7 +2,69 @@
 
 All notable changes to **s3dgraphy** are documented here.
 
-## [Unreleased] — to be published as 1.6.0.dev28
+## [Unreleased] — to be published as 1.6.0.dev29
+
+Everything in this section came after `404d73b` («Bump version: 1.6.0.dev27 →
+1.6.0.dev28», on PyPI 2026-10-02). Measured on the two Zenodo records of Segni
+(San Pietro 7463167, Ninfeo 7463211) by the night of 1 October
+(`_datasets/SegniSanPietro/_lavoro-claude/`). Datamodel at this point: node
+datamodel **1.6.23**, connections 1.6.35 (unchanged), qualia 1.6.6
+(unchanged), visual rules **1.6.30**, translations 1.6 (two labels added),
+`em.ttl` **1.6.13**; fingerprint from `sha256:51db4ecc…93a4` (dev28) to
+`sha256:45c185335677bb061b54636a60f00ad4f54388593262f6ab5f6b6672a315bf41`.
+
+### Added
+- **One act, N outputs**: `declare_derivation(graph, outputs=[…], inputs=[…],
+  act_name=…)` writes ONE `DTCProcessNode` with a `dtc_had_output` per output;
+  its id comes from `act_name` (graph-scoped) or from the sorted outputs, so
+  the 32 blocks of a tiling stamp one `how.process_id` and a rerun adds
+  nothing. The one-output signature and its id are unchanged.
+- **The stamp of a file set**: `add_resource(packaging="file_set", files=[…])`
+  writes the members digest (`dtcstamp.members_digest`) as `checksum`, with
+  `digest_covers: members`; `add_file` / `remove_file` keep it current;
+  `emit_stamp` emits `digest_covers: members` and `self.members` in the form
+  of `dtcstamp.new_file_set_stamp` (measured: the stamp of the Segni RB passes
+  `dtcstamp.verify_members` on the real files); absorbing it writes the files
+  back. `resources.files.file_set_members`, `refresh_members_digest`.
+- **«Not georeferenced»**: `api.georeference_state` (`undeclared` ·
+  `legacy_default` · `declared`), `api.read_shift` (a SHIFT.txt such as
+  `EPSG::3004 2355500 4617500 0`), `api.declare_georeference`; `validate`
+  says an undeclared graph in `info` and a 4326-with-zero-shift graph in
+  `warnings`, without rewriting it.
+- **The EM sourcelist template**: the registered mapping `em_sourcelist_it`
+  (sheet «sources», header in row 2, Nome / Descrizione / Url / Tipo);
+  `api.registered_mappings`, `api.recognise_mapping`; `sheet_header` tries the
+  registered mappings when none is chosen.
+- **Proposed vocabulary** (visual rules 1.6.30, to be confirmed by E.D.):
+  `dtc_kinds.output.image_set` (glyph 09_photos) and
+  `dtc_kinds.process.texturing` (glyph 03_mesh), in the nine languages.
+- **RDF**: seven `em:` terms (em.ttl 1.6.13, section 17) — `em:packaging`,
+  `em:tier`, `em:digestCovers`, `em:contentDigest` on a resource,
+  `em:technique`, `em:parameters`, `em:software` (rdf:JSON) on a DTC step.
+- `./em.sh release`: no pager in any subprocess; step 5 waits for PyPI with
+  step 4's cap; the EM-blender-tools fingerprint rewritten at step 7 is the
+  release's own; at the end it says whether EMStudio's release is a draft and
+  prints `gh release edit <tag> --draft=false` without running it.
+
+### Changed
+- **`dtc_kind` not given stays absent** (node, stamp, re-absorption): it fell
+  on `transformation` until dev28.
+- **A new graph has no `epsg`** on its GeoPositionNode (it was 4326 with a zero
+  shift, «WGS84 at 0,0»); `georeference_scene` refuses an undeclared graph and
+  says how to declare it.
+- `bucket_acquisition` recognises the acquisition every member already came
+  out of (the lot of a set of stamps) instead of budding a second one.
+- The TTL round trip of a DTC chain is whole: `prov:wasInformedBy` between two
+  DTC events reads back as `dtc_had_input` (4 edges of San Pietro were lost),
+  the seven fields above come back, a legacy `members_digest` equal to the
+  checksum leaves as `digest_covers: members`; `import_rdf` no longer takes
+  the graph-self node for a second graph. The `blend://` locator stays out.
+- The rapporti parser is `s3dgraphy.rapporti` (re-exported by
+  `s3dgraphy.sync.rapporti`): a .graphml imports without SQLAlchemy.
+- A mapping's sheet is found without case; the mapped importer no longer
+  prints a traceback before raising.
+
+## [1.6.0.dev28] — 2026-10-02 (PyPI; commit 404d73b)
 
 Everything in this section came after `83d99dc` («Bump version: 1.6.0.dev26 →
 1.6.0.dev27», on PyPI 2026-10-01). Decisions of E.D. (1 Oct 2026) on the dev27
