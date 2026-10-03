@@ -19,8 +19,8 @@ groups — the single-graph ``layout`` object, unchanged). The file-level
 ``layout`` stays, written as a COPY of the active graph's, for whoever reads only
 that (Heriverse, the files written before today). Reading:
 ``graphs.<id>.layout`` when the member has one; otherwise the file-level
-``layout`` goes to the ACTIVE graph only (or to the only one); the other graphs
-of an old file have no arrangement and are laid out afresh, which the reader
+``layout`` goes to ONE graph — the one whose nodes it positions, else the
+active one (or the only one); the other graphs of an old file have no arrangement and are laid out afresh, which the reader
 says once. Until today the file had ONE layout for every graph, and whichever
 graph was saved first gave it away: measured on San Pietro, the layout in the
 file was an empty seed's and the real graph had lost every position.
@@ -77,7 +77,7 @@ import json
 import os
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from . import crdt
 from .graph import Graph
@@ -281,15 +281,22 @@ def resolve_layouts(graph_ids: List[str],
                     own: Dict[str, Dict[str, Any]],
                     file_layout: Dict[str, Any],
                     active_graph_id: Optional[str],
+                    node_ids: Optional[Dict[str, Iterable[str]]] = None,
                     ) -> Tuple[Dict[str, Dict[str, Any]], List[str]]:
     """Which layout each graph of a file gets, and which ones get none.
 
     THE reading rule, the same as ``container.ts::resolveLayouts``:
 
     1. a member that carries ``graphs.<id>.layout`` keeps its own;
-    2. otherwise the file-level ``layout`` goes to the ACTIVE graph — or to the
-       only one — and to no other: in a file written before per-graph layouts it
-       was the arrangement of one graph, and giving it to the rest was the bug;
+    2. otherwise the file-level ``layout`` goes to ONE graph and to no other: in a
+       file written before per-graph layouts it was the arrangement of one graph,
+       and giving it to the rest was the bug. That graph is the one whose nodes
+       the layout positions (``node_ids``, most positions wins) — NOT simply the
+       active one: an old file kept the layout of the graph laid out LAST, which
+       may be a seed that is not the active graph (San Pietro, dev.17: the seed's
+       three positions went to the real graph, which then saved them as its own
+       and was never laid out). Ties, a layout with no positions, or no
+       ``node_ids`` → the ACTIVE graph, or the only one;
     3. the remaining graphs get nothing and are laid out afresh. They are
        returned as ``fresh`` only for an OLD file — one with a layout to give and
        no member carrying its own: there, a graph's positions may have been lost
@@ -303,6 +310,13 @@ def resolve_layouts(graph_ids: List[str],
         graph_ids[0] if graph_ids else None)
     if len(graph_ids) == 1:
         heir = graph_ids[0]
+    elif file_layout and node_ids:
+        placed = set((file_layout.get("positions") or {}).keys())
+        counts = {gid: len(placed & set(node_ids.get(gid) or ()))
+                  for gid in graph_ids if gid not in own}
+        best = max(counts.values(), default=0)
+        if best > 0 and counts.get(heir, 0) < best:
+            heir = next(gid for gid in graph_ids if counts.get(gid, 0) == best)
     for gid in graph_ids:
         if gid in own:
             layouts[gid] = own[gid]
@@ -357,6 +371,7 @@ def parse_container(doc: Dict[str, Any], *,
     container = Container(header=header,
                           version=ProjectVersion.from_dict(doc.get(VERSION_KEY)))
     own_layouts: Dict[str, Dict[str, Any]] = {}
+    node_ids: Dict[str, List[str]] = {}
     members = doc[GRAPHS_KEY]
     for member_id, section in members.items():
         if not isinstance(section, dict):
@@ -388,6 +403,9 @@ def parse_container(doc: Dict[str, Any], *,
             container.corpus = graph
         else:
             container.graphs[graph.graph_id] = graph
+            node_ids[graph.graph_id] = [
+                str(n.get("id")) for n in (section.get("nodes") or [])
+                if isinstance(n, dict) and n.get("id") is not None]
             if isinstance(own, dict):
                 own_layouts[graph.graph_id] = dict(own)
 
@@ -402,7 +420,8 @@ def parse_container(doc: Dict[str, Any], *,
         container.active_graph_id = next(iter(container.graphs), None)
 
     container.layouts, fresh = resolve_layouts(
-        list(container.graphs), own_layouts, file_layout, container.active_graph_id)
+        list(container.graphs), own_layouts, file_layout, container.active_graph_id,
+        node_ids)
     if fresh:
         warnings.append(layout_fresh_warning(fresh))
 
