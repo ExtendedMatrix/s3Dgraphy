@@ -206,6 +206,17 @@ def _binds(graph: Any, node_id: str, by_id: Dict[str, Any]) -> List[Dict[str, st
     return out
 
 
+def _version_of(graph: Any, res_id: str) -> Optional[Dict[str, Any]]:
+    """The version entry of this resource, or None (also for a graph whose
+    shape the versions reader cannot walk: listing geometry must not fail on
+    that)."""
+    try:
+        from ..resources.versions import version_info
+        return version_info(graph, res_id)
+    except Exception:      # noqa: BLE001 — a fork in the revisions is not ours here
+        return None
+
+
 def store_backed_geometry(graph: Any) -> List[Dict[str, Any]]:
     """The geometry this graph describes that lives in the store, as records.
 
@@ -226,6 +237,9 @@ def store_backed_geometry(graph: Any) -> List[Dict[str, Any]]:
     ``bind``       ``[{id, node_type, name, via}]`` — epochs, units, documents
     ``residency``  always ``resident`` in this list (see the module docstring)
     ``name`` / ``media_type`` / ``url`` — for the message a consumer shows
+    ``asset_id`` / ``level`` / ``purpose`` — only for an asset with versions
+                   and its versions (a version is listed under its asset's
+                   facets: it inherits them)
 
     Sorted by (kind, name, node_id): two runs read the same, which is what makes
     "materialise" idempotent from the caller's side as well.
@@ -246,10 +260,24 @@ def store_backed_geometry(graph: Any) -> List[Dict[str, Any]]:
             and str(getattr(by_id[str(getattr(e, "edge_source", ""))],
                             "node_type", "")) in _FACET_TYPES
         ]
+        #: a VERSION of an asset (LOD1, LOD2…) is hatted by nothing itself: it
+        #: inherits the facets of its asset (s3dgraphy.resources.versions), so
+        #: it is listed where the asset goes, with its level beside it
+        version = _version_of(graph, resource.node_id)
+        if not facets and version and version.get("asset_id") != resource.node_id:
+            facets = [by_id[str(e.edge_source)] for e in _alive_edges(graph)
+                      if str(getattr(e, "edge_type", "")) == EDGE_HAS_LINKED
+                      and str(getattr(e, "edge_target", "")) == version["asset_id"]
+                      and str(getattr(e, "edge_source", "")) in by_id
+                      and str(getattr(by_id[str(e.edge_source)], "node_type", ""))
+                      in _FACET_TYPES]
         carriers: List[Any] = facets or [resource]
         for carrier in carriers:
             node_type = str(getattr(carrier, "node_type", "") or "")
+            extra = ({"asset_id": version["asset_id"], "level": version["level"],
+                      "purpose": version["purpose"]} if version else {})
             records.append({
+                **extra,
                 "node_id": carrier.node_id,
                 "resource_id": resource.node_id,
                 "checksum": str(data.get("checksum") or ""),

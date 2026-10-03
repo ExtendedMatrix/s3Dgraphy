@@ -2704,6 +2704,45 @@ def pick_representation(graph: Graph, res_id: str, can_open) -> Dict[str, Any]:
     return _pick(graph, res_id, can_open)
 
 
+# ── an asset and its versions (E.D. 30 Sep / 3 Oct 2026) ──────────────────────
+# The asset is the master resource; each version (LOD1, LOD2…) is a child made
+# by a `lod_generation` step, with its level and purpose in the step's
+# parameters. The semantic link stays on the asset and the versions inherit it.
+# See :mod:`s3dgraphy.resources.versions`.
+def add_version(graph: Graph, master_id: str, *, level: str, purpose: str = "",
+                **kwargs) -> Dict[str, Any]:
+    """A version of the asset ``master_id`` at ``level`` for ``purpose``: a child
+    resource ``dtc_derived_from`` the master through a ``lod_generation`` step.
+    Idempotent per (asset, level); other bytes at a level are refused (revise
+    the version instead). Returns ``{version_id, process_id, created, asset_id,
+    level, purpose, warnings}``."""
+    from .resources.versions import add_version as _add
+    before = _ids(graph)
+    out = _add(graph, master_id, level=level, purpose=purpose, **kwargs)
+    _born(graph, before)
+    return out
+
+
+def versions_of(graph: Graph, res_id: str) -> List[Dict[str, Any]]:
+    """The asset of ``res_id`` and its versions, master first then by level,
+    each the CURRENT revision: ``[{id, level, purpose, master, checksum, …}]``."""
+    from .resources.versions import versions_of as _versions
+    return _versions(graph, res_id)
+
+
+def asset_of(graph: Graph, res_id: str) -> str:
+    """The asset (master) ``res_id`` is a version of; itself if it is none."""
+    from .resources.versions import asset_of as _asset
+    return _asset(graph, res_id)
+
+
+def inherited_links(graph: Graph, res_id: str) -> Dict[str, Any]:
+    """What hats the asset of ``res_id`` (RM/proxy facets and their epochs and
+    units): the semantic link a version inherits, never copied onto it."""
+    from .resources.versions import inherited_links as _links
+    return _links(graph, res_id)
+
+
 # ── the 3D Tiles Archive (.3tz), recognised and read, never written here ──────
 # The writers are 3DSC and EMStudio (E.D. 2026-09-30); the canonical form and
 # the content digest belong to dtcstamp. See :mod:`s3dgraphy.resources.tiles3tz`.
