@@ -45,6 +45,9 @@ state = os.path.join(os.environ["FAKE_STATE"], "gh.json")
 db = json.load(open(state)) if os.path.exists(state) else {"runs": [], "n": 0}
 def save(): json.dump(db, open(state, "w"))
 def here():
+    aimed = sys.argv[sys.argv.index("-R") + 1] if "-R" in sys.argv else os.environ.get("GH_REPO")
+    if aimed:
+        return os.path.basename(aimed)
     top = subprocess.run(["git", "rev-parse", "--show-toplevel"], capture_output=True, text=True).stdout.strip()
     return os.path.basename(top)
 def add_run(repo, wf, head):
@@ -65,6 +68,15 @@ if a[:2] == ["workflow", "run"]:
         print("HTTP 500 (fake)", file=sys.stderr); sys.exit(1)
     if os.environ.get("FAKE_FAIL") == "dispatch":
         print("HTTP 500 (fake)", file=sys.stderr); sys.exit(1)
+    if here() == "ExtendedMatrix-site":
+        # build.yml of the site: the page, built, offers the newest EMStudio tag
+        add_run(here(), a[2], "main")
+        if not os.environ.get("FAKE_SITE_STALE"):
+            st = subprocess.run(["git", "-C", os.path.join(os.environ["EM_RELEASE_PARENT"], "EMStudio"), "tag",
+                                 "-l", "v*", "--sort=-creatordate"], capture_output=True, text=True).stdout.split()
+            open(os.path.join(os.environ["FAKE_STATE"], "site.html"), "w").write(
+                f'<a href="https://github.com/zalmoxes-laran/EMStudio/releases/download/{st[0]}/EMStudio.dmg">')
+        sys.exit(0)
     tag = [x.split("=", 1)[1] for x in a if x.startswith("version_tag=")][0]
     repo = here()
     add_run(repo, a[2], "main")
@@ -102,7 +114,7 @@ if a[:2] == ["run", "watch"]:
     import time; time.sleep(float(os.environ.get("FAKE_WATCH_SLEEP", "0"))); sys.exit(0)
 if a[:2] == ["release", "view"]:
     if "isDraft" in a:
-        print(os.environ.get("FAKE_DRAFT", "true")); sys.exit(0)
+        print(os.environ.get("FAKE_DRAFT", "false")); sys.exit(0)
     print(f"https://example.invalid/releases/{a[2]}"); sys.exit(0)
 sys.exit(0)
 '''
@@ -291,6 +303,7 @@ class World:
             "EM_RELEASE_WAIT_PYPI": "5", "EM_RELEASE_WAIT_BUILD": "5", "EM_RELEASE_PROGRESS": "0.02",
             "EM_RELEASE_DOCKER": str(self.bin / "docker"),
             "EM_RELEASE_NODE_HEALTH": (self.state / "health.json").as_uri(),
+            "EM_RELEASE_SITE_PAGE": (self.state / "site.html").as_uri(), "EM_RELEASE_WAIT_SITE": "3",
             "EM_RELEASE_DOWNSTREAM": json.dumps([{"repo": "EM-blender-tools", "cmd": [
                 "bash", "-c", 'echo "$FAKE_DOWNSTREAM_SAYS"; exit "${FAKE_DOWNSTREAM_RC:-0}"']}]),
         })
@@ -300,6 +313,8 @@ class World:
         _x(self.bin / "fakepython", FAKE_PYTHON)
         _x(self.bin / "docker", FAKE_DOCKER)
         (self.state / "health.json").write_text('{"version": "1.6.0.dev1", "s3dgraphy": "1.6.0.dev27"}')
+        (self.state / "site.html").write_text(
+            '<a href="https://github.com/zalmoxes-laran/EMStudio/releases/download/v1.6.0-dev.0/EMStudio.dmg">')
 
         self.repo("s3Dgraphy", {
             "pyproject.toml": f'[project]\nname = "s3dgraphy"\nversion = "1.6.0.dev27"\ndependencies = [\n'
@@ -385,7 +400,7 @@ def test_the_whole_row_in_dry_run_writes_nothing(world):
     before = world.snapshot()
     r = world.release(*FULL, "--dry-run")
     assert r.returncode == 0, _all(r)
-    for n in range(1, 13):
+    for n in range(1, 14):
         assert f" {n:>2} " in r.stdout, f"step {n} missing:\n{r.stdout}"
     assert "  ✓  1 done" in r.stdout
     assert "  →  2 to do" in r.stdout
@@ -431,13 +446,13 @@ def test_the_round_goes_through_and_status_says_done(world):
     # and status agrees, with its proofs
     st = world.release("status", *FULL)
     assert st.returncode == 0, _all(st)
-    assert st.stdout.count(" done ") == 12, st.stdout       # 0 … 12, but 10: the em-dev stack is down here
+    assert st.stdout.count(" done ") == 13, st.stdout       # 0 … 13, but 10: the em-dev stack is down here
     assert f"s3dgraphy {V} is on PyPI" in st.stdout and f"dtcstamp {D} is on PyPI" in st.stdout
     assert "every step is done" in st.stdout
     # a second run does nothing and says so
     again = world.release(*FULL, "--yes")
     assert again.returncode == 0, _all(again)
-    assert again.stdout.count("already done") == 10, again.stdout
+    assert again.stdout.count("already done") == 11, again.stdout
 
 
 @pytest.mark.skipif(not REAL_DTC_BUMP.exists(), reason="../dtcstamp/bump_and_push.sh is not next door")
@@ -557,7 +572,7 @@ def test_a_different_fingerprint_stops_it(world):
 def test_without_dtcstamp_and_desktop_those_steps_are_not_asked(world):
     r = world.release(V, "--dry-run")
     assert r.returncode == 0, _all(r)
-    assert r.stdout.count("not asked") == 3
+    assert r.stdout.count("not asked") == 4      # dtcstamp ×2, the desktop, the site
     assert "Bundle s3dgraphy 1.6.0.dev28\"" in r.stdout
 
 
@@ -908,3 +923,43 @@ def test_declining_the_node_does_not_stop_the_row(world):
     assert f"not rebuilt. When ready:  (stratigraph-server) ./bump-s3dgraphy.sh {V} --build" in r.stdout
     assert not (world.state / "bump.log").exists()
     assert world.git(world.ws / "stratigraph-server", "rev-list", "--count", "@{u}..HEAD") == "0"
+
+
+# ── W4: the site in the release (measured on 4 Oct 2026) ─────────────────────
+#
+# The EM site offers EMStudio's installers read at BUILD time from the newest
+# release that is not a draft (src/lib/upstream.ts): a new desktop reached it
+# only when someone remembered to build it again.
+
+def test_the_site_is_a_step_of_the_dry_run(world):
+    r = world.release(*FULL, "--dry-run")
+    assert r.returncode == 0, _all(r)
+    assert " 13 blocked   the site: build.yml of the EM site" in r.stdout
+    assert ("would run: [Y/n, yes in 10 s] gh workflow run build.yml -R zalmoxes-laran/ExtendedMatrix-site "
+            "--ref main") in r.stdout
+    assert "until it links EMStudio/releases/download/<the tag>/ (cap 3 s)" in r.stdout
+    assert "workflow run" not in (world.state / "gh.log").read_text()
+
+
+def test_after_the_desktop_the_site_is_built_and_offers_the_new_tag(world):
+    r = world.release(*FULL, "--yes", FAKE_DRAFT="false")
+    assert r.returncode == 0, _all(r)
+    log = (world.state / "gh.log").read_text()
+    assert "workflow run build.yml -R zalmoxes-laran/ExtendedMatrix-site --ref main" in log
+    assert r.stdout.index("▸ 12 · the desktop") < r.stdout.index("▸ 13 · the site")
+    assert "offers EMStudio v1.6.0-dev.1" in r.stdout
+    st = world.release("status", *FULL, FAKE_DRAFT="false")
+    assert "  ✓ 13 done" in st.stdout and "offers v1.6.0-dev.1" in st.stdout
+
+
+def test_a_draft_desktop_does_not_build_the_site_and_says_why(world):
+    r = world.release(*FULL, "--yes", FAKE_DRAFT="true")
+    assert r.returncode == 0, _all(r)
+    assert "the site offers only published releases" in r.stdout
+    assert "build.yml" not in (world.state / "gh.log").read_text()
+
+
+def test_a_site_that_keeps_the_old_tag_stops_with_what_it_offers(world):
+    r = world.release(*FULL, "--yes", FAKE_DRAFT="false", FAKE_SITE_STALE=1)
+    assert r.returncode == 75, _all(r)
+    assert "still offers 'v1.6.0-dev.0', not 'v1.6.0-dev.1'" in r.stderr

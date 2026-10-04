@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""`./em.sh release` — one dev, from the publication to the desktop, in one command.
+"""`./em.sh release` — one dev, from the publication to the desktop and the site, in one command.
 
 The dev27 → dev28 round asked for six blocks of commands in four folders, two
 waits by hand (the tag on origin, PyPI's index), a date typed into dtcstamp's
@@ -38,6 +38,9 @@ command can be replaced for the tests (tests/test_release.py):
     EM_RELEASE_DOCKER   docker, asked whether em-dev-server runs (default: docker)
     EM_RELEASE_NODE_HEALTH  the development node's health (default: http://localhost:8000/v1/health)
     EM_RELEASE_WAIT_NODE    the cap for it to say V after the rebuild (default: 180)
+    EM_RELEASE_SITE_REPO    the EM site's repository (default: zalmoxes-laran/ExtendedMatrix-site)
+    EM_RELEASE_SITE_PAGE    the page that must offer the new desktop (default: https://extendedmatrix.org/tools/emstudio/)
+    EM_RELEASE_WAIT_SITE    the cap for GitHub Pages to serve the new build (default: 300)
     EM_RELEASE_DOWNSTREAM  a JSON list of {repo, cmd, known?} that replaces the
                         consumers of step 0 (each cmd run in its repository,
                         `{python}` = the python that sees the new wheels)
@@ -1649,6 +1652,10 @@ class Desktop(Step):
         return [f"{a.get('name')}  {int(a.get('size') or 0) / 1e6:.1f} MB" for a in got
                 if isinstance(a, dict) and a.get("name")]
 
+    def is_draft(self, tag) -> str:
+        """"true", "false" or "" (not read), as GitHub says it."""
+        return out([*GH, "release", "view", tag, "--json", "isDraft", "-q", ".isDraft"], repo("EMStudio"))
+
     def draft_note(self, c) -> str:
         """Whether the release of the tag is a DRAFT, and the command that
         publishes it — said, never run (dev29, C4)."""
@@ -1657,7 +1664,7 @@ class Desktop(Step):
         tag = self.tag_with_pin(c)
         if not tag:
             return ""
-        draft = out([*GH, "release", "view", tag, "--json", "isDraft", "-q", ".isDraft"], repo("EMStudio"))
+        draft = self.is_draft(tag)
         if draft == "true":
             return (f"the EMStudio release {tag} is a DRAFT. To publish it — this script never does:\n"
                     f"      (EMStudio) gh release edit {tag} --draft=false")
@@ -1666,8 +1673,115 @@ class Desktop(Step):
         return f"the EMStudio release {tag}: draft or not could not be read (gh release view {tag})"
 
 
+# ── 13 · the site ────────────────────────────────────────────────────────────
+#
+# W4, measured on 4 Oct 2026: the EM site (zalmoxes-laran/ExtendedMatrix-site)
+# offers EMStudio's installers from `src/components/EMStudioInstall.astro` on
+# /tools/emstudio/ and from /download/, both through `latestGithubRelease()` in
+# `src/lib/upstream.ts`: AT BUILD TIME, the newest release of EMStudio that is
+# NOT a draft. Nothing is written by hand, so a new desktop reaches the site
+# only when the site is built again — `build.yml` has `workflow_dispatch`, and
+# its `deploy` job puts it on GitHub Pages. A draft release is skipped by the
+# site on purpose: building it then would still offer the previous version, so
+# the step says so and waits for the publication instead of building.
+
+SITE_REPO = os.environ.get("EM_RELEASE_SITE_REPO") or "zalmoxes-laran/ExtendedMatrix-site"
+SITE_PAGE = os.environ.get("EM_RELEASE_SITE_PAGE") or "https://extendedmatrix.org/tools/emstudio/"
+WAIT["site"] = float(os.environ.get("EM_RELEASE_WAIT_SITE") or 300)   # GitHub Pages serving the new build
+
+
+def site_page() -> str:
+    """The page as the site serves it now, or '' — a READ, never raising."""
+    import urllib.request
+    try:
+        req = urllib.request.Request(SITE_PAGE, headers={"Cache-Control": "no-cache"})
+        with urllib.request.urlopen(req, timeout=10) as r:
+            return r.read().decode("utf-8", "replace")
+    except Exception:
+        return ""
+
+
+def site_offers(page: str) -> str:
+    """The EMStudio tag whose installers the page links, or ''."""
+    m = re.search(r"EMStudio/releases/download/([^/\"']+)/", page)
+    return m.group(1) if m else ""
+
+
+class Site(Step):
+    n, title = 13, "the site: build.yml of the EM site → the EMStudio page offers the new desktop"
+
+    def gh_env(self):
+        """Every gh call of this step aimed at the site's repository (gh reads GH_REPO)."""
+        class _Aim:
+            def __enter__(s):
+                s.was = ENV.get("GH_REPO")
+                ENV["GH_REPO"] = SITE_REPO
+            def __exit__(s, *a):
+                if s.was is None:
+                    ENV.pop("GH_REPO", None)
+                else:
+                    ENV["GH_REPO"] = s.was
+        return _Aim()
+
+    def check(self, c):
+        if not c.desktop:
+            return SKIP, "no --desktop"
+        if not exists("EMStudio"):
+            return SKIP, "EMStudio not here"
+        tag = Desktop().tag_with_pin(c)
+        if not tag:
+            return TODO, f"after the desktop · {SITE_PAGE}"
+        offered = site_offers(site_page())
+        if offered == tag:
+            return DONE, f"{SITE_PAGE} offers {tag}"
+        if Desktop().is_draft(tag) == "true":
+            return TODO, f"{tag} is a draft, and the site offers only published releases (now {offered or 'nothing read'})"
+        return TODO, f"{SITE_PAGE} offers {offered or 'nothing read'}, not {tag}"
+
+    def plan(self, c):
+        return [("", f"[Y/n, yes in {confirm_seconds()} s] gh workflow run build.yml -R {SITE_REPO} --ref main"),
+                ("", f"gh run view <that run> -R {SITE_REPO} --json jobs   (every 30 s: build, deploy)"),
+                ("", f"GET {SITE_PAGE} until it links EMStudio/releases/download/<the tag>/ (cap {WAIT['site']:g} s)")]
+
+    def run(self, c):
+        tag = Desktop().tag_with_pin(c)
+        if not tag:
+            raise Stop("no EMStudio tag carries the pin — the desktop step did not run")
+        if Desktop().is_draft(tag) == "true":
+            # not a failure: the site would be built and still offer the previous version
+            print(f"    {tag} is a DRAFT: the site offers only published releases, so building it now would\n"
+                  f"    still offer the previous one. Publish it, then build the site:\n"
+                  f"      (EMStudio) gh release edit {tag} --draft=false\n"
+                  f"      {c.resume()}", flush=True)
+            return
+        if not c.ask(f"Build the EM site again so that its EMStudio page offers {tag}?"):
+            print(f"    not built. When ready:  gh workflow run build.yml -R {SITE_REPO} --ref main", flush=True)
+            return
+        where = repo("ExtendedMatrix-site") if exists("ExtendedMatrix-site") else PARENT
+        since = _dt.datetime.now(_dt.timezone.utc)
+        with self.gh_env():
+            sh([*GH, "workflow", "run", "build.yml", "-R", SITE_REPO, "--ref", "main"], where)
+            run = wait_for(f"the build.yml run of {SITE_REPO}",
+                           lambda: newest_run_since(where, "build.yml", since), WAIT["run"], c.resume())
+            watch(where, run, f"build the site ({SITE_REPO})", c, workflow="build.yml", step=13)
+        seen = {}
+
+        def offers():
+            seen["last"] = site_offers(site_page()) or "nothing read"
+            return seen["last"] == tag
+
+        try:
+            wait_for(f"{SITE_PAGE} offering {tag}", offers, WAIT["site"], c.resume(),
+                     not_yet="GitHub Pages still serves the previous build")
+        except Stop as e:
+            raise Stop(f"the site was built and {SITE_PAGE} still offers {seen.get('last')!r}, not {tag!r}.\n"
+                       f"    Look:  gh run list -R {SITE_REPO} --workflow build.yml -L 1", e.code)
+        ok(f"the site: {SITE_PAGE} offers EMStudio {tag}")
+
+
 STEPS = [DownstreamProof(), Preconditions(), Dtcstamp(), DtcPin(), S3dPublish(), Proof(), Propagate(), EMtools(),
-         StratiFieldPin(), Commits(), DevNode(), Push(), Desktop()]
+         StratiFieldPin(), Commits(), DevNode(), Push(), Desktop(), Site()]
+DESKTOP = next(s for s in STEPS if isinstance(s, Desktop))
 
 
 # ══ the three ways in ═════════════════════════════════════════════════════════
@@ -1702,8 +1816,8 @@ def table(c: Ctx, with_plan: bool) -> int:
         print("--dry-run: nothing written")
     nxt = next((s for s, st, _ in rows if st in (TODO, BLOCKED) and s.n != 0), None)
     print(f"next: step {nxt.n} — {c.resume()}" if nxt else "every step is done")
-    if rows[-1][1] == DONE:
-        note = STEPS[-1].draft_note(c)
+    if next(st for x, st, _ in rows if isinstance(x, Desktop)) == DONE:
+        note = DESKTOP.draft_note(c)
         if note:
             print(note)
     return 0
@@ -1736,7 +1850,7 @@ def release(c: Ctx) -> int:
             print(f"    already done: {proof}", flush=True)
             continue
         s.run(c)
-    note = STEPS[-1].draft_note(c)
+    note = DESKTOP.draft_note(c)
     if note:
         print()
         log(note)

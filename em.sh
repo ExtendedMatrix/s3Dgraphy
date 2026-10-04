@@ -655,6 +655,12 @@ WHAT IT DOES
     12  (--desktop) EMStudio: ./em.sh s3d status --check → ./em.sh devrel --yes →
         release.yml watched → the release's URL, its assets and sizes, draft
         or published
+    13  (--desktop) the EM site: [Y/n] → gh workflow run build.yml -R
+        zalmoxes-laran/ExtendedMatrix-site --ref main, its jobs watched → GET
+        https://extendedmatrix.org/tools/emstudio/ until it links the new tag's
+        installers (EM_RELEASE_WAIT_SITE). The site reads the newest release
+        that is NOT a draft when it is built: with a draft, it says so and
+        builds nothing
   Every long wait SAYS what is happening: every 30 s (EM_RELEASE_PROGRESS) the
   jobs, their state, the step in progress and the times, with the expected end
   from the mean of the last three successful runs — one line rewritten in a
