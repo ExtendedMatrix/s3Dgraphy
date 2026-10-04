@@ -75,6 +75,20 @@ def test_property_to_document_is_documentation(importer):
     ) == "extracted_from"
 
 
+def test_document_to_its_property_is_has_property(importer):
+    """G2 · a dashed connector from a (master) document to its own property —
+    its dating, `absolute_time_start` — is the document's property: the reading
+    `_enrich_canonical_documents` already gives it. Measured on Templu Mare
+    (4 Oct 2026): five came out generic_connection and reached the room so."""
+    dating = PropertyNode(node_id="P9", name="absolute_time_start",
+                          property_type="absolute_time_start", value="170")
+    got = importer.enhance_edge_type(
+        "has_data_provenance", DocumentNode("D10", "D.10"), dating)
+    assert got == "has_property"
+    from s3dgraphy.edges.connection_resolver import connection_allowed
+    assert connection_allowed(DocumentNode("D10", "D.10"), dating, got)
+
+
 def test_combiner_to_document_is_left_generic_with_a_warning(importer):
     """BUGFIX-CONN3: a CombinerNode/bare ParadataNode → Document has no honest
     single relation (a combiner aggregates extractors; it cites no document, and

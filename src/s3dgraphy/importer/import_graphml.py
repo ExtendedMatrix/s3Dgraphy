@@ -3442,6 +3442,15 @@ class GraphMLImporter:
                 edge_type = "combines"
                 # print(f"Enhanced to combines: CombinerNode -> ExtractorNode")
 
+            # DocumentNode -> PropertyNode: the document's own property (its
+            # dating, `absolute_time_start` drawn beside a master document),
+            # the reading `_enrich_canonical_documents` already gives it.
+            # Measured on Templu Mare (4 Oct 2026): five of these came out
+            # generic_connection and reached the room that way.
+            elif (isinstance(source_node, DocumentNode)
+                  and isinstance(target_node, PropertyNode)):
+                edge_type = "has_property"
+
             # PropertyNode -> DocumentNode. BUGFIX-CONN3: this is read as
             # has_documentation (P70i_is_documented_in) — the honest shortcut
             # when a legacy yEd dashed connector links a property to a source
