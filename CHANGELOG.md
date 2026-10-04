@@ -59,6 +59,12 @@ All notable changes to **s3dgraphy** are documented here.
   state of the resolver, the node, the room, the sync, the role and «only here»
   an id, its meaning (it/en) and the reference glyph. The symbol and its
   meaning are standard; each tool draws its own version.
+- **N1 · Find a node** (`tools.node_finder`): this computer (the personal node
+  :8777, the dev stack), the local network through `dns-sd` (macOS) or
+  `avahi-browse` (Linux) — no new dependency, and «cannot browse» said when
+  neither is there —, the saved and the typed ones; each probed (`/health`,
+  `/v1/auth-config`: version, profile, ways in) and one sentence of what to do.
+  EMStudio's bridge and EM Tools call the same function.
 - **D2 · The scene's rotation is measured from the GRID north** of the CRS:
   `GeoPositionNode` writes `data.rotation_reference = "grid"` (set on load
   when a document does not carry it); the docstrings said «geographic north».
