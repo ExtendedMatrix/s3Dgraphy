@@ -769,6 +769,223 @@ def make_op(kind: str, *, ts: Optional[str] = None, author: Optional[str] = None
     return op
 
 
+# ── V1 · one vocabulary on every wire ─────────────────────────────────────────
+#
+# Measured on 4 Oct 2026: EMtools sent the room `update_node` (the Sidecar's
+# verb) and the room refused it — «unknown operation 'update_node'» — so a
+# description written in Blender never arrived. The cause was not the server: a
+# client built its operations by hand, in the vocabulary of its own store.
+# Decision of E.D.: **the Sidecar and the room speak the same operations**,
+# :data:`OPS`. A store keeps its own verbs INSIDE (its undo, its listeners:
+# :data:`LOCAL_VERBS`); at the door every client translates with
+# :func:`ops_for_local_change` and checks with :func:`validate_op`. EMStudio's
+# ``hub.ts`` ``opsForLocalChange`` is the twin of this function, tested on the
+# same cases (``tests/test_op_vocabulary.py`` writes them; EMStudio's
+# ``tools/ops_golden.py`` + ``scripts/check-ops.mjs`` compare).
+
+#: The verbs of a local store — EMStudio's DocumentStore, EMtools' graph. They
+#: never travel: :func:`ops_for_local_change` turns each into :data:`OPS`.
+#: ``update_node`` stays only as the store's internal (undo) operation.
+LOCAL_VERBS = ("update_node", "add_node", "delete_node", "add_edge", "delete_edge")
+
+#: The fields an ``update_field`` may address (the rest of a node is structure).
+def is_addressable_field(name: str) -> bool:
+    return name in ("name", "description") or (name.startswith("data.") and len(name) > 5)
+
+
+def validate_op(op: Any) -> Optional[str]:
+    """Why ``op`` is not an operation a wire carries, or ``None`` when it is.
+
+    The SHAPE only — whether the node is there, or the clock newer, is the
+    section's to say (:func:`apply_op_to_section`). A refusal is a sentence a
+    person can read in the Log, never a silent drop."""
+    if not isinstance(op, dict):
+        return "an operation is an object"
+    kind = str(op.get("op") or "")
+    if kind not in OPS:
+        if kind in LOCAL_VERBS:
+            return (f"unknown operation '{kind}' (a store's own verb: translate it with "
+                    f"ops_for_local_change; known: {', '.join(OPS)})")
+        return f"unknown operation '{kind}' (known: {', '.join(OPS)})"
+    if kind == "add_node":
+        payload = op.get("node") or op.get("data")
+        if not isinstance(payload, dict):
+            return "add_node without a node"
+        if not (op.get("id") or payload.get("id")):
+            return "add_node without an id"
+        return None
+    if kind == "update_field":
+        if not (op.get("node_id") or op.get("id")):
+            return "update_field without a node_id"
+        name = str(op.get("field") or "")
+        if not is_addressable_field(name):
+            return f"'{name}' is not an addressable field"
+        if "value" not in op and op.get("remove") is not True:
+            return f"update_field of '{name}' without a value (an emptying says remove: true)"
+        return None
+    if kind == "remove_node":
+        return None if (op.get("id") or op.get("node_id")) else "remove_node without an id"
+    if kind == "add_edge":
+        missing = [k for k in ("source", "target", "edge_type") if not op.get(k)]
+        return f"add_edge without {', '.join(missing)}" if missing else None
+    # remove_edge
+    if op.get("id") or all(op.get(k) for k in ("source", "target", "edge_type")):
+        return None
+    return "remove_edge without an id or its source, edge_type and target"
+
+
+def _flatten_patch(patch: Dict[str, Any]) -> List[Tuple[str, Any]]:
+    """A store's ``patch`` as (field, value) pairs, in the patch's order:
+    ``name``/``description`` as they are, ``data`` one ``data.<key>`` per key.
+    Any other key is kept as it is, so :func:`validate_op` names it."""
+    out: List[Tuple[str, Any]] = []
+    for k, v in patch.items():
+        if k == "data" and isinstance(v, dict):
+            out.extend((f"data.{dk}", dv) for dk, dv in v.items())
+        else:
+            out.append((str(k), v))
+    return out
+
+
+def _node_stamp_of(node: Dict[str, Any]) -> Optional[str]:
+    data = node.get("data") if isinstance(node.get("data"), dict) else {}
+    return data.get("modified_at") or data.get("created_at") or None
+
+
+def ops_for_local_change(local: Dict[str, Any], *, study_language: Optional[str] = None
+                         ) -> List[Dict[str, Any]]:
+    """The wire operations (:data:`OPS`) for one change of a local store.
+
+    Accepts a store's verb (:data:`LOCAL_VERBS`) or an operation already in
+    :data:`OPS` (returned as is, copied): every client calls this at the door,
+    whatever its store speaks, and nothing else builds an operation by hand.
+
+    * ``update_node`` → ONE ``update_field`` per field. The fields come as
+      ``fields: [{field, value, ts, by?, removed?}]`` (EMStudio: the store
+      stamped them) or as ``patch: {description: …, data: {…}}`` (EMtools). A
+      field emptied (``removed``, or a ``None`` in the patch) travels as
+      ``remove: true`` — emptying is an act. The clock is the field's ``ts``,
+      else the change's ``ts``; never invented here.
+    * ``add_node`` → ``add_node`` with ``id`` and ``node``; a text node with no
+      ``data.lang`` is born with the study's language, else ``und`` (dev28,
+      decision 12: the producer decides it once).
+    * ``delete_node`` → ``remove_node``.
+    * ``add_edge`` / ``delete_edge`` → ``add_edge`` / ``remove_edge`` with the
+      endpoints FLAT (``source``, ``target``, ``edge_type``): the Sidecar's
+      nested ``edge: {…}`` reached the room without endpoints. Declared
+      attributes travel, the clock keys never (the relay stamps them).
+
+    Raises ``ValueError`` (the sentence of :func:`validate_op`) for a verb
+    nobody speaks, and for a result that is not a valid operation."""
+    if not isinstance(local, dict):
+        raise ValueError("an operation is an object")
+    kind = str(local.get("op") or "")
+    ts = local.get("ts") or None
+    out: List[Dict[str, Any]] = []
+    if kind in ("update_field", "remove_node", "remove_edge") or (
+            kind == "add_edge" and "edge" not in local):
+        # already a wire operation: copied, never re-shaped
+        out = [{k: v for k, v in local.items() if k != "type"}]
+    elif kind == "update_node":
+        node_id = str(local.get("node_id") or local.get("id") or "")
+        if isinstance(local.get("fields"), list):
+            pairs = [(str(f.get("field") or ""), f.get("value"), f.get("ts") or ts,
+                      f.get("removed") is True) for f in local["fields"] if isinstance(f, dict)]
+        else:
+            pairs = [(name, value, ts, value is None)
+                     for name, value in _flatten_patch(dict(local.get("patch") or {}))]
+        for name, value, clock_ts, removed in pairs:
+            op: Dict[str, Any] = {"op": "update_field", "node_id": node_id, "field": name}
+            if clock_ts:
+                op["ts"] = clock_ts
+            if removed:
+                op["remove"] = True
+            else:
+                op["value"] = value
+            out.append(op)
+    elif kind == "add_node":
+        # the store's verb and the wire's share the name: one shape out of both
+        node = dict(local.get("node") or local.get("data") or {})
+        data = dict(node.get("data") or {})
+        if is_text_node(node) and not (isinstance(data.get("lang"), str) and data["lang"].strip()):
+            data["lang"] = study_language or "und"
+            node["data"] = data
+        op = {"op": "add_node", "id": str(node.get("id") or local.get("id") or ""), "node": node}
+        stamp = ts or _node_stamp_of(node)
+        if stamp:
+            op["ts"] = stamp
+        out.append(op)
+    elif kind == "delete_node":
+        out.append({"op": "remove_node", "id": str(local.get("node_id") or local.get("id") or "")})
+        if ts:
+            out[-1]["ts"] = ts
+    elif kind in ("add_edge", "delete_edge"):
+        e = dict(local.get("edge") or {})
+        op = {"op": "add_edge" if kind == "add_edge" else "remove_edge",
+              "id": str(e.get("id") or local.get("id") or ""),
+              "source": e.get("source"), "target": e.get("target"),
+              "edge_type": e.get("edge_type")}
+        if kind == "add_edge":
+            attrs = _declared_edge_attributes(e.get("attributes"))
+            if attrs:
+                op["attributes"] = attrs
+        if ts:
+            op["ts"] = ts
+        out.append(op)
+    else:
+        raise ValueError(validate_op(local) or f"unknown operation '{kind}'")
+    for op in out:
+        why = validate_op(op)
+        if why:
+            raise ValueError(why)
+    return out
+
+
+def local_change_for_op(op: Dict[str, Any]) -> Dict[str, Any]:
+    """The reverse door, for a store that speaks ``update_node{patch}``: one
+    wire operation as the store's own change. ``update_field`` of
+    ``data.<key>`` becomes ``patch: {data: {key: value}}``; an emptying puts
+    ``None``. The clock (``ts``, ``author``) travels beside, untouched — the
+    arriving edit must keep the hand that made it."""
+    why = validate_op(op)
+    if why:
+        raise ValueError(why)
+    kind = op["op"]
+    clock = {"ts": op.get("ts"), "author": op.get("author")}
+    if kind == "update_field":
+        name = str(op["field"])
+        value = None if op.get("remove") is True else op.get("value")
+        patch: Dict[str, Any] = ({"data": {name[5:]: value}} if name.startswith("data.")
+                                 else {name: value})
+        return {"op": "update_node", "node_id": str(op.get("node_id") or op.get("id")),
+                "patch": patch, "field": name, "removed": op.get("remove") is True, **clock}
+    if kind == "add_node":
+        node = dict(op.get("node") or op.get("data") or {})
+        node.setdefault("id", op.get("id"))
+        return {"op": "add_node", "node": node, **clock}
+    if kind == "remove_node":
+        return {"op": "delete_node", "node_id": str(op.get("id") or op.get("node_id")), **clock}
+    edge = {k: op.get(k) for k in ("id", "source", "target", "edge_type")}
+    if not edge["id"]:
+        edge["id"] = f"{edge['source']}__{edge['edge_type']}__{edge['target']}"
+    if kind == "add_edge":
+        if op.get("attributes"):
+            edge["attributes"] = dict(op["attributes"])
+        return {"op": "add_edge", "edge": edge, **clock}
+    return {"op": "delete_edge", "edge": edge, **clock}
+
+
+#: What a refusal is called, for the sentence a person reads. ``stale`` and
+#: ``idempotent`` are not refusals: the state already knew (P4.1).
+NOT_NEWS = ("stale", "idempotent", "already removed, not older")
+
+
+def refusal_is_news(reason: str) -> bool:
+    """Whether an ``op_result`` with ``applied: false`` must reach the person
+    (Log and status bar): yes, unless the state simply already knew."""
+    return bool(reason) and reason not in NOT_NEWS
+
+
 #: CATENA (2026-10-05) · the attributes an ``add_edge`` op may DECLARE about the
 #: relation — today ``inherited: True`` on an heir's ``has_property``
 #: (connections 1.6.23, :mod:`s3dgraphy.ownership`). The clock's keys are never

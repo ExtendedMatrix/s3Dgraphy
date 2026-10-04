@@ -2,7 +2,32 @@
 
 All notable changes to **s3dgraphy** are documented here.
 
-## [Unreleased] — after 1.6.0.dev29
+## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
+
+### Added
+- **V1 · One vocabulary of operations on every wire.** The Sidecar and the room
+  speak the same operations, `crdt.OPS` (decision of E.D.). `crdt.ops_for_local_change`
+  turns a store's change (`update_node` with `fields` or `patch`, `add_node`,
+  `delete_node`, `add_edge`/`delete_edge` with a nested `edge`) into wire
+  operations, and `crdt.validate_op` says, in a sentence, why something is not
+  one; `crdt.local_change_for_op` is the reverse door for a store that speaks
+  `update_node{patch}`, keeping the op's clock; `crdt.refusal_is_news` tells a
+  refusal a person must read from «the state already knew». `LOCAL_VERBS` names
+  the store verbs that never travel. The cases are
+  `tests/data/op_vocabulary_cases.json`, which EMStudio's twin answers too.
+  Measured cause: EMtools sent the room `update_node`, refused as «unknown
+  operation 'update_node'», and the Sidecar's nested `edge` reached the room
+  without endpoints.
+
+### Changed (the release)
+- **W2 · Step 7 waits for PyPI too.** Every `pip install`/`pip download` of a
+  version just published (step 5's clean venv, step 7's `./em.sh rebundle`,
+  dtcstamp download and `.venv` install) goes through `from_pypi`, the retry of
+  steps 4 and 5, and each «not yet» says «PyPI does not show it to this pip
+  yet». Measured on 4 Oct with dev34: step 7 fell at its one attempt minutes
+  after step 4 had seen the version.
+
+## [Unreleased, older part] — after 1.6.0.dev29
 
 Everything in this section came after `069fb1a` (tag `v1.6.0.dev29`).
 Needs dtcstamp **0.1.4** (the `psx://` cross-checks of
