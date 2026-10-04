@@ -203,6 +203,12 @@ EMTOOLS_EM = r'''#!/usr/bin/env bash
 set -e
 case "$1" in
   rebundle)
+    late="$FAKE_STATE/rebundle-late"
+    if [[ -n "$FAKE_REBUNDLE_LATE" && ! -f "$late" ]]; then echo "$FAKE_REBUNDLE_LATE" > "$late"; fi
+    if [[ -f "$late" && "$(cat "$late")" -gt 0 ]]; then
+      echo $(( $(cat "$late") - 1 )) > "$late"
+      echo "RuntimeError: pip could not download s3dgraphy: ERROR: No matching distribution found (fake)" >&2; exit 1
+    fi
     v="$(sed -n 's/^version = "\(.*\)"/\1/p' ../s3Dgraphy/pyproject.toml)"
     for cp in wheels/cp311 wheels/cp313; do rm -f $cp/s3dgraphy-*.whl; : > "$cp/s3dgraphy-$v-py3-none-any.whl"; done
     echo "{\"s3dgraphy\": \"$v\"}" > em_setup/datamodel.fingerprint.json ;;
@@ -218,6 +224,12 @@ case "$1" in
   -c) cat "$d/versions" ;;
   -m)
     if [[ "$2" == pip ]]; then
+      late="$FAKE_STATE/emtools-pip-late"
+      if [[ -n "$FAKE_EMTOOLS_PIP_LATE" && ! -f "$late" ]]; then echo "$FAKE_EMTOOLS_PIP_LATE" > "$late"; fi
+      if [[ -f "$late" && "$(cat "$late")" -gt 0 ]]; then
+        echo $(( $(cat "$late") - 1 )) > "$late"
+        echo "ERROR: No matching distribution found for s3dgraphy (fake: the CDN is late)" >&2; exit 1
+      fi
       s="$(sed -n 1p "$d/versions")"; t="$(sed -n 2p "$d/versions")"
       for a in "$@"; do case "$a" in s3dgraphy==*) s="${a#*==}";; dtcstamp==*) t="${a#*==}";; esac; done
       printf '%s\n%s\n' "$s" "$t" > "$d/versions"
@@ -545,14 +557,83 @@ def test_no_subprocess_opens_a_pager(world):
 def test_a_pip_install_right_after_the_publication_is_waited_for(world):
     r = world.release(*FULL, "--yes", FAKE_VENV_PIP_LATE=2)
     assert r.returncode == 0, _all(r)
-    assert f"s3dgraphy[geo,rdf]=={V} installable from PyPI (pip install): look 1, not yet" in r.stdout
+    assert f"s3dgraphy[geo,rdf]=={V} from PyPI (pip install): look 1, not yet" in r.stdout
     assert "look 3, not yet" not in r.stdout
 
 
 def test_a_pip_install_later_than_the_cap_stops_with_the_command_that_resumes(world):
     r = world.release(*FULL, "--yes", FAKE_VENV_PIP_LATE=10 ** 6, EM_RELEASE_WAIT_PYPI=0.3)
     assert r.returncode == 75, _all(r)
-    assert "installable from PyPI (pip install) and it is not there yet" in r.stderr
+    assert "from PyPI (pip install) and it is not there yet" in r.stderr
+
+
+# ── W2 (4 Oct 2026): step 7's pip, minutes after step 4 had seen dev34 ────────
+
+def test_step_7_waits_for_pypi_like_steps_4_and_5(world):
+    """The measured case: step 4 and 5 saw the version, step 7's `.venv` pip
+    and the rebundle's `pip download` did not yet (another CDN node). Each
+    answers «No matching distribution» twice, then finds it: step 7 waits,
+    says why in one sentence, and the round ends green."""
+    r = world.release(*FULL, "--yes", FAKE_EMTOOLS_PIP_LATE=2, FAKE_REBUNDLE_LATE=2)
+    assert r.returncode == 0, _all(r)
+    assert (f"s3dgraphy=={V} from PyPI (./em.sh rebundle): look 1, not yet — "
+            "PyPI does not show it to this pip yet, trying again in") in r.stdout
+    assert f"s3dgraphy=={V} dtcstamp=={D} from PyPI (pip install): look 2, not yet" in r.stdout
+    assert "look 3, not yet" not in r.stdout
+    assert (world.ws / "EM-blender-tools" / ".venv" / "versions").read_text().split() == [V, D]
+
+
+def test_from_pypi_against_a_real_pip_and_an_index_that_answers_404_twice(tmp_path, monkeypatch):
+    """The real pip, a local index: /simple/<pkg>/ is a 404 twice, then lists
+    the wheel. Proves that what the real pip says on a 404 is read as «not
+    yet», not as a failure."""
+    import http.server, threading, importlib.util, zipfile
+    wheel = tmp_path / "w" / "emw2probe-1.0-py3-none-any.whl"
+    wheel.parent.mkdir()
+    with zipfile.ZipFile(wheel, "w") as z:
+        z.writestr("emw2probe/__init__.py", "")
+        z.writestr("emw2probe-1.0.dist-info/METADATA", "Metadata-Version: 2.1\nName: emw2probe\nVersion: 1.0\n")
+        z.writestr("emw2probe-1.0.dist-info/WHEEL", "Wheel-Version: 1.0\nRoot-Is-Purelib: true\nTag: py3-none-any\n")
+        z.writestr("emw2probe-1.0.dist-info/RECORD", "")
+    hits = {"n": 0}
+
+    class Index(http.server.BaseHTTPRequestHandler):
+        def log_message(self, *a): pass
+        def do_GET(self):
+            if self.path.rstrip("/") == "/simple/emw2probe":
+                hits["n"] += 1
+                if hits["n"] <= 2:
+                    self.send_response(404); self.end_headers(); return
+                body = f'<a href="/files/{wheel.name}">{wheel.name}</a>'.encode()
+                self.send_response(200); self.send_header("Content-Type", "text/html"); self.end_headers()
+                self.wfile.write(body); return
+            if self.path == f"/files/{wheel.name}":
+                data = wheel.read_bytes()
+                self.send_response(200); self.send_header("Content-Length", str(len(data))); self.end_headers()
+                self.wfile.write(data); return
+            self.send_response(404); self.end_headers()
+
+    srv = http.server.HTTPServer(("127.0.0.1", 0), Index)
+    threading.Thread(target=srv.serve_forever, daemon=True).start()
+    try:
+        monkeypatch.setenv("EM_RELEASE_POLL", "0.01")
+        monkeypatch.setenv("EM_RELEASE_TMP", str(tmp_path / "t"))
+        spec = importlib.util.spec_from_file_location("em_release_w2", RELEASE)
+        rel = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(rel)
+
+        class C:
+            def resume(self): return "./em.sh release X"
+        out = tmp_path / "dl"
+        out.mkdir()
+        rel.from_pypi([sys.executable, "-m", "pip", "download", "emw2probe==1.0", "--no-deps",
+                       "--no-cache-dir", "--disable-pip-version-check",
+                       "--index-url", f"http://127.0.0.1:{srv.server_port}/simple", "-d", out],
+                      out, "emw2probe==1.0", C(), "pip download")
+        assert hits["n"] == 3
+        assert (out / wheel.name).exists()
+    finally:
+        srv.shutdown()
 
 
 def test_the_fingerprint_rewritten_at_step_7_is_the_release_s_own(world):

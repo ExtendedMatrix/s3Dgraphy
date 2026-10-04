@@ -282,8 +282,9 @@ def newest_run_since(r: Path, workflow: str, since) -> dict | None:
     return runs[0] if runs else None
 
 
-def wait_for(what: str, probe, cap: float, resume: str):
-    """Look every POLL seconds until `probe()` is truthy; past `cap`, say what and how to resume."""
+def wait_for(what: str, probe, cap: float, resume: str, not_yet: str = ""):
+    """Look every POLL seconds until `probe()` is truthy; past `cap`, say what and how to resume.
+    `not_yet`, when given, is the sentence printed for each «not yet» instead of the plain one."""
     t0 = time.monotonic()
     n = 0
     while True:
@@ -295,7 +296,9 @@ def wait_for(what: str, probe, cap: float, resume: str):
         if waited >= cap:
             raise Stop(f"waited {int(waited)} s for {what} and it is not there yet — nothing is wrong yet.\n"
                        f"    When it is, resume with:  {resume}", EXIT_WAIT)
-        print(f"    … {what}: look {n}, not yet — next in {POLL:g} s (cap {cap:g} s)", flush=True)
+        print(f"    … {what}: look {n}, not yet — "
+              + (f"{not_yet}, trying again in {POLL:g} s" if not_yet else f"next in {POLL:g} s")
+              + f" (cap {cap:g} s)", flush=True)
         time.sleep(POLL)
 
 
@@ -1124,26 +1127,41 @@ def tree_fingerprint() -> str:
 NOT_VISIBLE_YET = re.compile(r"No matching distribution found|Could not find a version that satisfies")
 
 
-def install_from_pypi(pip: Path, spec: str, c: Ctx) -> None:
-    """`pip install spec`, retried with step 4's cap while PyPI does not show it
-    yet: right after a publication that is a wait, not a failure. Any other
-    error stops the release."""
-    cmd = [pip, "install", "--quiet", "--no-cache-dir", spec]
-    print(f"    $ ({_rel(TMP)}) {' '.join(shlex.quote(str(x)) for x in cmd)}", flush=True)
+#: the sentence of each «not yet» of a pip that asks PyPI for what was just published
+PIP_NOT_YET = "PyPI does not show it to this pip yet"
+
+
+def from_pypi(cmd: list, cwd: Path, spec: str, c: Ctx, verb: str = "pip install") -> str:
+    """Run `cmd` — a `pip install`/`pip download` of `spec`, or a command that
+    makes one (`./em.sh rebundle`) — retried with step 4's cap while PyPI does
+    not show `spec` to this pip yet: right after a publication that is a wait,
+    not a failure (W2: on 4 Oct 2026 step 4 saw dev34 and step 7's `pip
+    install`, minutes later and from another pip, did not). Every pip of the
+    release that asks for a version just published goes through here. Any
+    other error stops the release. Returns what the command said."""
+    print(f"    $ ({_rel(cwd)}) {' '.join(shlex.quote(str(x)) for x in cmd)}", flush=True)
+    said_ok = []
 
     def attempt():
-        r = subprocess.run([str(x) for x in cmd], cwd=str(TMP), env=ENV, text=True,
+        r = subprocess.run([str(x) for x in cmd], cwd=str(cwd), env=ENV, text=True,
                            stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        if r.returncode == 0:
-            return True
         said = (r.stdout or "") + (r.stderr or "")
+        if r.returncode == 0:
+            said_ok.append(said)
+            return True
         if NOT_VISIBLE_YET.search(said):
             return False
         tail = "\n      ".join(said.strip().splitlines()[-5:])
-        raise Stop(f"failed (exit {r.returncode}) in {_rel(TMP)}: pip install {spec}"
+        raise Stop(f"failed (exit {r.returncode}) in {_rel(cwd)}: {' '.join(str(x) for x in cmd)}"
                    + (f"\n      {tail}" if tail else ""))
 
-    wait_for(f"{spec} installable from PyPI (pip install)", attempt, WAIT["pypi"], c.resume())
+    wait_for(f"{spec} from PyPI ({verb})", attempt, WAIT["pypi"], c.resume(), not_yet=PIP_NOT_YET)
+    return said_ok[-1] if said_ok else ""
+
+
+def install_from_pypi(pip: Path, spec: str, c: Ctx) -> None:
+    """`pip install spec` in TMP, through `from_pypi`."""
+    from_pypi([pip, "install", "--quiet", "--no-cache-dir", spec], TMP, spec, c)
 
 
 class Proof(Step):
@@ -1305,7 +1323,9 @@ class EMtools(Step):
             print(f"    {self.REQ}: s3dgraphy>={c.v},<{next_minor(c.v)}", flush=True)
         changed = False
         if not all(f.get(f"{cp.name} s3dgraphy wheel", True) for cp in self.cps()):
-            sh(["./em.sh", "rebundle"], r)
+            said = from_pypi(["./em.sh", "rebundle"], r, f"s3dgraphy=={c.v}", c, "./em.sh rebundle")
+            for line in said.strip().splitlines()[-8:]:
+                print(f"      {line}", flush=True)
             changed = True
         if c.d:
             for cp in self.cps():
@@ -1314,8 +1334,9 @@ class EMtools(Step):
                 for old in cp.glob("dtcstamp-*.whl"):
                     print(f"    rm {_rel(old)}", flush=True)
                     old.unlink()
-                sh([*PIP, "download", f"dtcstamp=={c.d}", "--no-deps", "--no-cache-dir",
-                    "--only-binary=:all:", "--quiet", "-d", cp], r)
+                from_pypi([*PIP, "download", f"dtcstamp=={c.d}", "--no-deps", "--no-cache-dir",
+                           "--only-binary=:all:", "--quiet", "-d", cp], r, f"dtcstamp=={c.d}", c,
+                          "pip download")
                 changed = True
         if changed or not f["manifest"]:
             sh(["./em.sh", "manifest", "3.11"], r)
@@ -1323,7 +1344,8 @@ class EMtools(Step):
         sv, dv = self.venv_versions()
         if sv != c.v or (c.d and dv != c.d):
             pkgs = [f"s3dgraphy=={c.v}"] + ([f"dtcstamp=={c.d}"] if c.d else [])
-            sh([r / ".venv" / "bin" / "python", "-m", "pip", "install", "--quiet", "--no-cache-dir", *pkgs], r)
+            from_pypi([r / ".venv" / "bin" / "python", "-m", "pip", "install", "--quiet", "--no-cache-dir",
+                       *pkgs], r, " ".join(pkgs), c)
         rc = sh([r / ".venv" / "bin" / "python", "-m", "pytest", "-q", "-p", "no:cacheprovider"], r,
                 check=False).returncode
         if rc != 0:
