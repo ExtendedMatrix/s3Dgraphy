@@ -5,6 +5,13 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
+- **W4 · The release builds the EM site.** Step 13 of `./em.sh release … --desktop`:
+  after the desktop, with its countdown, `gh workflow run build.yml -R
+  zalmoxes-laran/ExtendedMatrix-site --ref main`, its jobs watched, then
+  https://extendedmatrix.org/tools/emstudio/ until it links the new tag's
+  installers. The site reads the newest release that is not a draft at build
+  time (`src/lib/upstream.ts`), so with a draft it says so and builds nothing.
+
 - **V1 · One vocabulary of operations on every wire.** The Sidecar and the room
   speak the same operations, `crdt.OPS` (decision of E.D.). `crdt.ops_for_local_change`
   turns a store's change (`update_node` with `fields` or `patch`, `add_node`,
