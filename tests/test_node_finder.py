@@ -22,7 +22,37 @@ def test_parse_dns_sd_and_avahi():
     assert N.parse_dns_sd(DNS_SD_B) == [{"domain": "local", "name": "StratiGraph lab (fcn)"}]
     avahi = "=;eth0;IPv4;StratiGraph lab;_stratigraph._tcp;local;fcn.local;192.168.1.9;8777;\n"
     assert N.parse_avahi(avahi) == [{"name": "StratiGraph lab", "host": "fcn.local",
-                                     "address": "192.168.1.9", "port": "8777"}]
+                                     "address": "192.168.1.9", "port": "8777", "txt": ""}]
+
+
+#: measured 4 Oct 2026 on this Mac: `dns-sd -R probe-fcn-test _stratigraph._tcp
+#: local. 8443 path=/em scheme=https`, then `dns-sd -L` — the TXT is the next line
+DNS_SD_L_FCN = """Lookup probe-fcn-test._stratigraph._tcp.local.
+DATE: ---Sun 04 Oct 2026---
+13:14:54.518  ...STARTING...
+13:14:54.519  probe-fcn-test._stratigraph._tcp.local. can be reached at MacBook-Pro-di-Emanuel.local.:8443 (interface 14) Flags: 1
+ path=/em scheme=https
+13:14:54.519  probe-fcn-test._stratigraph._tcp.local. can be reached at MacBook-Pro-di-Emanuel.local.:8443 (interface 14)
+ path=/em scheme=https
+"""
+
+
+def test_the_dev_stack_announced_by_fcn_up_resolves_to_its_https_door():
+    def runner(cmd, **kw):
+        raise subprocess.TimeoutExpired(cmd, 1, output=DNS_SD_L_FCN)
+    assert N.resolve_dns_sd("probe-fcn-test", runner=runner) == \
+        "https://MacBook-Pro-di-Emanuel.local:8443/em"
+    avahi = ('=;eth0;IPv4;StratiGraph fcn;_stratigraph._tcp;local;fcn.local;192.168.1.9;8443;'
+             '"scheme=https" "path=/em"\n')
+    got = N.browse_lan(1, tool="avahi-browse",
+                       runner=lambda cmd, **kw: subprocess.CompletedProcess(cmd, 0, avahi, ""))
+    assert got["found"] == [{"name": "StratiGraph fcn", "url": "https://fcn.local:8443/em"}]
+
+
+def test_the_personal_node_path_slash_stays_a_bare_address():
+    assert N.url_of("fcn.local.", "8777", "path=/") == "http://fcn.local:8777"
+    assert N.url_of("fcn.local", "8777", "") == "http://fcn.local:8777"
+    assert N.url_of("h.local", "1", "scheme=gopher path=em") == "http://h.local:1/em"
 
 
 def test_browse_lan_with_dns_sd_resolves_the_url():

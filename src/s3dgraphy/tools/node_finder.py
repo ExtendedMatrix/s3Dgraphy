@@ -102,8 +102,23 @@ def parse_avahi(text: str) -> List[Dict[str, str]]:
     for line in text.splitlines():
         parts = line.split(";")
         if len(parts) >= 9 and parts[0] == "=":
-            out.append({"name": parts[3], "host": parts[6], "address": parts[7], "port": parts[8]})
+            out.append({"name": parts[3], "host": parts[6], "address": parts[7], "port": parts[8],
+                        "txt": parts[9] if len(parts) > 9 else ""})
     return out
+
+
+def url_of(host: str, port: str, txt: str = "") -> str:
+    """The node's address from what DNS-SD gives: host, port and the TXT keys
+    ``scheme`` (default ``http``) and ``path`` (default none). The personal node
+    announces ``path=/``; the dev stack behind Caddy announces ``scheme=https
+    path=/em`` (``fcn-up.sh``), because that port answers https and the API
+    lives under ``/em`` — ``http://host:8443`` would be a node that never answers."""
+    keys = dict(m.groups() for m in re.finditer(r'"?([A-Za-z][\w-]*)=([^"\s]*)"?', txt or ""))
+    scheme = keys.get("scheme") if keys.get("scheme") in ("http", "https") else "http"
+    path = (keys.get("path") or "").rstrip("/")
+    if path and not path.startswith("/"):
+        path = "/" + path
+    return f"{scheme}://{host.rstrip('.')}:{port}{path}"
 
 
 def browse_lan(timeout: float = 3.0, *, tool: Optional[str] = None,
@@ -120,7 +135,7 @@ def browse_lan(timeout: float = 3.0, *, tool: Optional[str] = None,
         try:
             done = run(["avahi-browse", "-rpt", SERVICE], capture_output=True, text=True,
                        timeout=timeout)
-            found = [{"name": f["name"], "url": f"http://{f['host']}:{f['port']}"}
+            found = [{"name": f["name"], "url": url_of(f["host"], f["port"], f.get("txt", ""))}
                      for f in parse_avahi(done.stdout)]
             return {"how": "avahi-browse", "found": found, "note": ""}
         except Exception as exc:  # noqa: BLE001
@@ -146,7 +161,8 @@ def browse_lan(timeout: float = 3.0, *, tool: Optional[str] = None,
 
 def resolve_dns_sd(name: str, *, timeout: float = 3.0,
                    runner: Optional[Callable[..., Any]] = None) -> Optional[str]:
-    """``dns-sd -L <name>`` → ``http://<host>:<port>``, or None."""
+    """``dns-sd -L <name>`` → ``<scheme>://<host>:<port><path>`` (:func:`url_of`;
+    the TXT record is the line after «can be reached at»), or None."""
     run = runner or subprocess.run
     try:
         done = run(["dns-sd", "-L", name, SERVICE, "local."], capture_output=True, text=True,
@@ -156,8 +172,11 @@ def resolve_dns_sd(name: str, *, timeout: float = 3.0,
         text = exc.stdout.decode() if isinstance(exc.stdout, bytes) else (exc.stdout or "")
     except Exception:  # noqa: BLE001
         return None
-    m = re.search(r"can be reached at (\S+?)\.?:(\d+)", text)
-    return f"http://{m.group(1).rstrip('.')}:{m.group(2)}" if m else None
+    m = re.search(r"can be reached at (\S+?)\.?:(\d+)[^\n]*\n?([^\n]*)", text)
+    if not m:
+        return None
+    txt = m.group(3) if "=" in m.group(3) and "can be reached" not in m.group(3) else ""
+    return url_of(m.group(1), m.group(2), txt)
 
 
 def find_nodes(*, saved: Iterable[str] = (), typed: str = "", lan: bool = True,

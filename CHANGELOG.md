@@ -65,6 +65,11 @@ All notable changes to **s3dgraphy** are documented here.
   neither is there —, the saved and the typed ones; each probed (`/health`,
   `/v1/auth-config`: version, profile, ways in) and one sentence of what to do.
   EMStudio's bridge and EM Tools call the same function.
+  After 1.6.0.dev35: the address is read from the TXT record too
+  (`node_finder.url_of`: `scheme`, default `http`, and `path`), so the dev
+  stack that `fcn-up.sh <host>` announces (`scheme=https path=/em` on Caddy's
+  port) is found as `https://<host>:8443/em` and not as an `http://<host>:8443`
+  that never answers; the personal node's `path=/` stays a bare address.
 - **D2 · The scene's rotation is measured from the GRID north** of the CRS:
   `GeoPositionNode` writes `data.rotation_reference = "grid"` (set on load
   when a document does not carry it); the docstrings said «geographic north».
