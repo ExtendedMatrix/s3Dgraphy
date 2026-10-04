@@ -24,7 +24,7 @@ import math
 import re
 import tempfile
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 # Type-only alias; avoid importing submodules at module load (keeps this import
 # cheap and cycle-free). Real classes are imported lazily inside the ops.
@@ -2768,6 +2768,41 @@ def is_canonical_3tz(path: str) -> Dict[str, Any]:
     with the reasons. Source text of the profile: ``dtcstamp/profiles/3tz.md``."""
     from .resources.tiles3tz import is_canonical_3tz as _canon
     return _canon(path)
+
+
+# ── R1 · one resolver for the files, and their state (E.D., 4 Oct 2026) ──────
+def resolve_files(graph: Graph, *, project_root: Optional[str] = None,
+                  base_dirs: Sequence[str] = (), cache_dirs: Sequence[str] = (),
+                  on_node: Optional[Callable[[str], bool]] = None,
+                  hasher: Optional[Callable[[str], str]] = None) -> List[Dict[str, Any]]:
+    """The STATE of every resource of ``graph`` — ``on_disk``, ``on_node``,
+    ``both``, ``reference_only``, ``missing``, ``empty_copy`` — trying cache →
+    known paths (the EM standard tree of ``project_root`` first) → node
+    (``on_node(hex)``) → reference. The one resolver every tool calls. See
+    :mod:`s3dgraphy.resources.locate`."""
+    from .resources.locate import resolve_graph
+    return resolve_graph(graph, project_root=project_root, base_dirs=base_dirs,
+                         cache_dirs=cache_dirs, on_node=on_node, hasher=hasher)
+
+
+def resolve_file(entry: Dict[str, Any], **kwargs) -> Dict[str, Any]:
+    """:func:`resolve_files` for ONE ``{id, locator, checksum}``."""
+    from .resources.locate import resolve
+    return resolve(entry, **kwargs)
+
+
+# ── C1 · the standard tree of an EM project (E.D., 4 Oct 2026) ─────────────────
+def create_em_project(parent: str, name: str, **kwargs) -> Dict[str, Any]:
+    """«New EM project…»: EM/ (DosCo/, proxies/), RB/, SB/, RM/, README.md,
+    LICENCE.md under ``parent/name``. See :mod:`s3dgraphy.project_tree`."""
+    from .project_tree import create_project
+    return create_project(parent, name, **kwargs)
+
+
+def em_project_reorder_plan(root: str) -> List[Dict[str, str]]:
+    """«Reorder by the EM standard…»: the preview, never applied here."""
+    from .project_tree import reorder_plan
+    return reorder_plan(root)
 
 
 # ── resource layer (R0: stable-ID resolver seam) ──────────────────────────────

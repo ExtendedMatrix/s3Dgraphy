@@ -39,6 +39,26 @@ All notable changes to **s3dgraphy** are documented here.
   `measures`; `versions_of` lists the versions of versions too and gives
   `lod_level`, `use`, `measures`, `primitives`; a version is named after its
   asset. `ResourceNode`'s docstring says why the level is still not a field.
+- **R1 · One resolver for the files** (`resources.locate`, `api.resolve_files`,
+  `api.resolve_file`). A resource is its identity (sha256 + node id) and a list
+  of positions; the resolver tries cache → known paths (the project's standard
+  tree first) → node (`on_node(hex)`, the room's HEAD) → reference and answers
+  a STATE: `on_disk`, `on_node`, `both`, `reference_only`, `missing`,
+  `empty_copy` (a file whose bytes are zeros). A study-relative locator
+  (`/DosCo/D.32.jpg`, `//DosCo/D.33.jpg`, `DosCo\D.02.jpg`) is read against the
+  project: the false «absent» of D.32 is gone (measured on the copy of San
+  Pietro).
+- **C1 · The standard tree of an EM project** (`project_tree`,
+  `api.create_em_project`, `api.em_project_reorder_plan`): `EM/` (em.json,
+  `DosCo/`, `proxies/`), `RB/`, `SB/`, `RM/`, `README.md`, `LICENCE.md`, as
+  measured on E.D.'s case studies. A new project gets it; an existing one gets
+  a PREVIEW of the reorder, applied only with `confirmed=True` and never over
+  an existing file.
+- **I1 · One list of the states and their symbols**
+  (`JSON_config/em_state_symbols.json`, `datamodel.state_symbols()`): for each
+  state of the resolver, the node, the room, the sync, the role and «only here»
+  an id, its meaning (it/en) and the reference glyph. The symbol and its
+  meaning are standard; each tool draws its own version.
 - **D2 · The scene's rotation is measured from the GRID north** of the CRS:
   `GeoPositionNode` writes `data.rotation_reference = "grid"` (set on load
   when a document does not carry it); the docstrings said «geographic north».

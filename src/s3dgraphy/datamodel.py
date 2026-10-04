@@ -254,6 +254,15 @@ def fingerprint_differences(expected: Mapping[str, Any],
     return lines
 
 
+def state_symbols() -> Dict[str, Any]:
+    """I1 (E.D., 4 Oct 2026) · the ONE list of the states the EM tools show —
+    ``{families, states: {"<family>.<state>": {family, glyph, label{it,en},
+    meaning{it,en}}}}`` (``JSON_config/em_state_symbols.json``). The symbol and
+    its meaning are standard; the drawing is each tool's."""
+    import json as _json
+    return _json.loads((JSON_CONFIG / "em_state_symbols.json").read_text(encoding="utf-8"))
+
+
 def main() -> None:  # pragma: no cover - a convenience for shell scripts
     import argparse
 

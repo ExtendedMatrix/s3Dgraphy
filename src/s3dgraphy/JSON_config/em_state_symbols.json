@@ -1,0 +1,254 @@
+{
+  "_version": "1.0.0",
+  "_note": "I1 (decided by E.D., 4 Oct 2026) · ONE list of the STATES the EM tools show, with the SYMBOL of each and its MEANING. What is standardised is the symbol and what it means, not the final form: colour, stroke and style stay each tool's (EMStudio, EM Tools, StratiField draw their own version of the glyph). Each tool tests that every state here has its sign and that it shows no state that is not here. The file states are those of the one resolver (s3dgraphy.resources.locate.STATES). Vendored by EMStudio's ./em.sh sync next to em_visual_rules.json.",
+  "families": {
+    "file": "Where the bytes of a resource are (the resolver, R1)",
+    "node": "The StratiGraph node",
+    "room": "The room of a graph",
+    "sync": "How aligned this copy is with the room",
+    "role": "Your role in the room",
+    "scene": "An object of a Blender scene"
+  },
+  "states": {
+    "file.on_disk": {
+      "family": "file",
+      "glyph": "●",
+      "label": {
+        "it": "sul disco",
+        "en": "on the disk"
+      },
+      "meaning": {
+        "it": "I byte sono su questo computer (in un percorso o nella cache).",
+        "en": "The bytes are on this computer (at a path or in the cache)."
+      }
+    },
+    "file.on_node": {
+      "family": "file",
+      "glyph": "☁",
+      "label": {
+        "it": "nel nodo",
+        "en": "on the node"
+      },
+      "meaning": {
+        "it": "Il nodo custodisce i byte (lo sha256 risponde), questo computer no.",
+        "en": "The node keeps the bytes (its sha256 answers); this computer does not."
+      }
+    },
+    "file.both": {
+      "family": "file",
+      "glyph": "◉",
+      "label": {
+        "it": "in entrambi",
+        "en": "in both"
+      },
+      "meaning": {
+        "it": "I byte sono qui e nel nodo.",
+        "en": "The bytes are here and on the node."
+      }
+    },
+    "file.reference_only": {
+      "family": "file",
+      "glyph": "↗",
+      "label": {
+        "it": "solo riferimento",
+        "en": "reference only"
+      },
+      "meaning": {
+        "it": "C'è solo un indirizzo altrove (un URL, un bucket).",
+        "en": "There is only an address somewhere else (a URL, a bucket)."
+      }
+    },
+    "file.missing": {
+      "family": "file",
+      "glyph": "✕",
+      "label": {
+        "it": "mancante",
+        "en": "missing"
+      },
+      "meaning": {
+        "it": "Il file non si trova da nessuna parte raggiungibile da qui.",
+        "en": "The file is nowhere that can be reached from here."
+      }
+    },
+    "file.empty_copy": {
+      "family": "file",
+      "glyph": "◌",
+      "label": {
+        "it": "copia vuota",
+        "en": "empty copy"
+      },
+      "meaning": {
+        "it": "C'è un file ma i suoi byte sono zeri: una copia incompleta, da rifare.",
+        "en": "A file is here but its bytes are zeros: an incomplete copy, to be made again."
+      }
+    },
+    "node.reachable": {
+      "family": "node",
+      "glyph": "⬢",
+      "label": {
+        "it": "raggiungibile",
+        "en": "reachable"
+      },
+      "meaning": {
+        "it": "Il nodo risponde adesso.",
+        "en": "The node answers now."
+      }
+    },
+    "node.unreachable": {
+      "family": "node",
+      "glyph": "⬡",
+      "label": {
+        "it": "non raggiungibile",
+        "en": "unreachable"
+      },
+      "meaning": {
+        "it": "Il nodo non risponde: si lavora sul computer, si allinea dopo.",
+        "en": "The node does not answer: work on this computer, align later."
+      }
+    },
+    "node.global": {
+      "family": "node",
+      "glyph": "⊕",
+      "label": {
+        "it": "in rete globale",
+        "en": "on the global network"
+      },
+      "meaning": {
+        "it": "Il nodo è raggiungibile da fuori la rete locale (federato o pubblico).",
+        "en": "The node can be reached from outside the local network (federated or public)."
+      }
+    },
+    "node.local_only": {
+      "family": "node",
+      "glyph": "⌂",
+      "label": {
+        "it": "solo locale",
+        "en": "local only"
+      },
+      "meaning": {
+        "it": "Il nodo ascolta solo questo computer o la rete locale.",
+        "en": "The node listens to this computer or the local network only."
+      }
+    },
+    "room.inside": {
+      "family": "room",
+      "glyph": "▣",
+      "label": {
+        "it": "dentro",
+        "en": "inside"
+      },
+      "meaning": {
+        "it": "Questo grafo è in una stanza: le modifiche vanno lì.",
+        "en": "This graph is in a room: the edits go there."
+      }
+    },
+    "room.outside": {
+      "family": "room",
+      "glyph": "□",
+      "label": {
+        "it": "fuori",
+        "en": "outside"
+      },
+      "meaning": {
+        "it": "Nessuna stanza: il grafo è un file su questo computer.",
+        "en": "No room: the graph is a file on this computer."
+      }
+    },
+    "room.read_only": {
+      "family": "room",
+      "glyph": "⊘",
+      "label": {
+        "it": "sola lettura",
+        "en": "read only"
+      },
+      "meaning": {
+        "it": "Sei nella stanza ma il tuo ruolo non scrive.",
+        "en": "You are in the room but your role does not write."
+      }
+    },
+    "sync.aligned": {
+      "family": "sync",
+      "glyph": "✓",
+      "label": {
+        "it": "allineato",
+        "en": "aligned"
+      },
+      "meaning": {
+        "it": "Quello che hai è quello che ha la stanza.",
+        "en": "What you have is what the room has."
+      }
+    },
+    "sync.pending": {
+      "family": "sync",
+      "glyph": "⋯",
+      "label": {
+        "it": "in attesa",
+        "en": "pending"
+      },
+      "meaning": {
+        "it": "Ci sono modifiche partite e non ancora confermate (o da mandare).",
+        "en": "There are edits sent and not yet confirmed (or still to send)."
+      }
+    },
+    "sync.conflict": {
+      "family": "sync",
+      "glyph": "≠",
+      "label": {
+        "it": "in conflitto",
+        "en": "in conflict"
+      },
+      "meaning": {
+        "it": "Due mani hanno cambiato la stessa cosa: si decide chi vince.",
+        "en": "Two hands changed the same thing: who wins is to be decided."
+      }
+    },
+    "role.owner": {
+      "family": "role",
+      "glyph": "★",
+      "label": {
+        "it": "proprietario",
+        "en": "owner"
+      },
+      "meaning": {
+        "it": "Decide chi entra e che cosa la stanza tiene.",
+        "en": "Decides who comes in and what the room keeps."
+      }
+    },
+    "role.editor": {
+      "family": "role",
+      "glyph": "✎",
+      "label": {
+        "it": "editor",
+        "en": "editor"
+      },
+      "meaning": {
+        "it": "Scrive nel grafo e carica i file.",
+        "en": "Writes in the graph and uploads files."
+      }
+    },
+    "role.viewer": {
+      "family": "role",
+      "glyph": "◎",
+      "label": {
+        "it": "lettore",
+        "en": "viewer"
+      },
+      "meaning": {
+        "it": "Legge, non scrive.",
+        "en": "Reads, does not write."
+      }
+    },
+    "scene.only_here": {
+      "family": "scene",
+      "glyph": "◆",
+      "label": {
+        "it": "solo qui",
+        "en": "only here"
+      },
+      "meaning": {
+        "it": "Un oggetto della scena che non è del grafo (decorazione, prova): non sale mai.",
+        "en": "An object of the scene that is not the graph's (a decoration, a trial): never uploaded."
+      }
+    }
+  }
+}
