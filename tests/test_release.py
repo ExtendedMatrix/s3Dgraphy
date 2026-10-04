@@ -239,6 +239,27 @@ esac
 
 CHANGELOG = "# Changelog\n\n## [0.1.3] — YYYY-MM-DD <!-- the date is written when the tag is made -->\n\nNew.\n"
 
+# step 10, the development node: `docker ps` says em-dev-server runs when
+# FAKE_NODE_UP is set; /v1/health is a file:// URL whose JSON the fake
+# bump-s3dgraphy.sh rewrites FAKE_NODE_RESTART seconds after the rebuild (the
+# container restarting), or never with FAKE_NODE_STUCK
+FAKE_DOCKER = r"""#!/usr/bin/env bash
+echo "docker $*" >> "$FAKE_STATE/docker.log"
+[[ "$1" == ps ]] || exit 0
+[[ -n "$FAKE_NODE_UP" ]] && echo em-dev-server
+exit 0
+"""
+
+SERVER_BUMP = r"""#!/usr/bin/env bash
+set -e
+{ echo "$*"; git log -1 --format=%s; git rev-list --count @{u}..HEAD; } > "$FAKE_STATE/bump.log"
+[[ -n "$FAKE_NODE_STUCK" ]] && exit 0
+rm -f "$FAKE_STATE/health.json"
+( sleep "${FAKE_NODE_RESTART:-0}"
+  printf '{"version": "1.6.0.dev2", "s3dgraphy": "%s"}' "$1" > "$FAKE_STATE/health.tmp"
+  mv "$FAKE_STATE/health.tmp" "$FAKE_STATE/health.json" ) >/dev/null 2>&1 &
+"""
+
 
 # ── the world ─────────────────────────────────────────────────────────────────
 
@@ -268,6 +289,8 @@ class World:
             "EM_RELEASE_PYTHON": str(self.bin / "fakepython"), "EM_RELEASE_TMP": str(tmp / "t"),
             "EM_RELEASE_POLL": "0.02", "EM_RELEASE_WAIT_TAG": "3", "EM_RELEASE_WAIT_RUN": "3",
             "EM_RELEASE_WAIT_PYPI": "5", "EM_RELEASE_WAIT_BUILD": "5", "EM_RELEASE_PROGRESS": "0.02",
+            "EM_RELEASE_DOCKER": str(self.bin / "docker"),
+            "EM_RELEASE_NODE_HEALTH": (self.state / "health.json").as_uri(),
             "EM_RELEASE_DOWNSTREAM": json.dumps([{"repo": "EM-blender-tools", "cmd": [
                 "bash", "-c", 'echo "$FAKE_DOWNSTREAM_SAYS"; exit "${FAKE_DOWNSTREAM_RC:-0}"']}]),
         })
@@ -275,6 +298,8 @@ class World:
         _x(self.bin / "gh", FAKE_GH)
         _x(self.bin / "pip", FAKE_PIP)
         _x(self.bin / "fakepython", FAKE_PYTHON)
+        _x(self.bin / "docker", FAKE_DOCKER)
+        (self.state / "health.json").write_text('{"version": "1.6.0.dev1", "s3dgraphy": "1.6.0.dev27"}')
 
         self.repo("s3Dgraphy", {
             "pyproject.toml": f'[project]\nname = "s3dgraphy"\nversion = "1.6.0.dev27"\ndependencies = [\n'
@@ -302,7 +327,8 @@ class World:
                 (et / "wheels" / cp / w).write_text("")
         _x(et / ".venv" / "bin" / "python", EMTOOLS_VENV_PY)
         (et / ".venv" / "versions").write_text("1.6.0.dev26\n0.1.2\n")
-        self.repo("stratigraph-server", {"pyproject.toml": 'dependencies = [\n    "s3dgraphy[geo,rdf]==1.6.0.dev27",\n]\n'})
+        self.repo("stratigraph-server", {"pyproject.toml": 'dependencies = [\n    "s3dgraphy[geo,rdf]==1.6.0.dev27",\n]\n',
+                                         "bump-s3dgraphy.sh": SERVER_BUMP})
         self.repo("stratigraph-templates", {"registry/s3dgraphy-snapshot.json": '{\n  "s3dgraphy_version": "1.6.0.dev27"\n}\n'})
         self.repo("stratigraph-chatbot", {"pyproject.toml": 'dependencies = [\n    "s3dgraphy>=1.6.0.dev22",\n]\n',
                                           "schede/a.json": "{}\n"})
@@ -359,7 +385,7 @@ def test_the_whole_row_in_dry_run_writes_nothing(world):
     before = world.snapshot()
     r = world.release(*FULL, "--dry-run")
     assert r.returncode == 0, _all(r)
-    for n in range(1, 12):
+    for n in range(1, 13):
         assert f" {n:>2} " in r.stdout, f"step {n} missing:\n{r.stdout}"
     assert "  ✓  1 done" in r.stdout
     assert "  →  2 to do" in r.stdout
@@ -386,7 +412,7 @@ def test_the_round_goes_through_and_status_says_done(world):
     assert subjects == {
         "stratigraph-templates": f"Snapshot s3Dgraphy {V} from PyPI",
         "stratigraph-chatbot": f"Vendor the schede against s3Dgraphy {V} and require it",
-        "stratigraph-server": f"Pin s3dgraphy {V} in one place and its two copies",
+        "stratigraph-server": f"Pin s3dgraphy {V} in one place and its two copies, and count one more iteration of the server",
         "EM-blender-tools": f"Bundle s3dgraphy {V} and dtcstamp {D}"}
     assert f'"s3dgraphy>={V}"' in world.git(world.ws / "stratigraph-chatbot", "show", "HEAD:pyproject.toml")
     req = world.git(world.ws / "EM-blender-tools", "show", "HEAD:scripts/requirements_wheels.txt")
@@ -405,7 +431,7 @@ def test_the_round_goes_through_and_status_says_done(world):
     # and status agrees, with its proofs
     st = world.release("status", *FULL)
     assert st.returncode == 0, _all(st)
-    assert st.stdout.count(" done ") == 12, st.stdout       # 0 … 11
+    assert st.stdout.count(" done ") == 12, st.stdout       # 0 … 12, but 10: the em-dev stack is down here
     assert f"s3dgraphy {V} is on PyPI" in st.stdout and f"dtcstamp {D} is on PyPI" in st.stdout
     assert "every step is done" in st.stdout
     # a second run does nothing and says so
@@ -474,7 +500,7 @@ def test_resume_after_step_9(world):
     assert r.returncode == 1, _all(r)
     assert "not committed: EMStudio" in _all(r)
     assert world.git(world.ws / "EMStudio", "status", "--porcelain")      # its pin still waits
-    assert "git push" not in r.stdout                                     # step 10 was not reached
+    assert "git push" not in r.stdout                                     # step 11 was not reached
     r = world.release(*FULL, "--yes")
     assert r.returncode == 0, _all(r)
     for n in ("stratigraph-templates", "stratigraph-chatbot", "stratigraph-server", "EM-blender-tools"):
@@ -703,7 +729,7 @@ def test_a_long_wait_says_the_jobs_and_their_step(world):
     out = r.stdout
     assert f"▸ 2 · publish.yml for v{D} · " in out
     assert f"▸ 4 · publish.yml for v{V} · " in out
-    assert "▸ 11 · build desktop v1.6.0-dev.1 · " in out
+    assert "▸ 12 · build desktop v1.6.0-dev.1 · " in out
     assert "macos-arm64  in progress · step «tauri build»" in out
     assert "linux        done ✓" in out
     # not a terminal: a new line per change of state, not one per look
@@ -818,3 +844,67 @@ def test_without_a_terminal_and_without_yes_nobody_says_yes(monkeypatch, capsys)
     monkeypatch.setattr(sys, "stdin", io.StringIO("y\n"))   # a pipe that answers: as before
     assert c.ask("Push these 3 repositories?") is True
     assert R.Ctx(V, None, False, False, True).ask("anything?") is True   # --yes
+
+
+# ── W3: the release updates the development node (measured on 4 Oct 2026) ────
+#
+# After `./em.sh release 1.6.0.dev34 --desktop` the server's pin was dev34 in
+# its files and the node on this computer still answered dev33 on /v1/health:
+# step 6 only printed «Per applicarlo: ./bump-s3dgraphy.sh … --build».
+
+def test_the_development_node_is_a_step_of_the_dry_run(world):
+    up = world.release(*FULL, "--dry-run", FAKE_NODE_UP=1)
+    assert up.returncode == 0, _all(up)
+    assert "10 blocked   the development node: ./bump-s3dgraphy.sh V --build if em-dev is up" in up.stdout
+    assert f"would run in stratigraph-server: [Y/n, yes in 10 s] ./bump-s3dgraphy.sh {V} --build" in up.stdout
+    assert f'"s3dgraphy": "{V}" (cap 180 s)' in up.stdout
+    assert " 11 done      the push" in up.stdout and " 12 blocked   the desktop" in up.stdout   # nothing ahead yet
+    assert not (world.state / "bump.log").exists()                  # a dry-run rebuilds nothing
+    down = world.release(*FULL, "--dry-run")
+    assert down.returncode == 0, _all(down)
+    assert "  - 10 not up" in down.stdout
+    assert "em-dev-server is not running — the em-dev stack is down, nothing to rebuild" in down.stdout
+
+
+def test_with_the_stack_up_it_rebuilds_the_node_and_waits_for_its_health(world):
+    r = world.release(*FULL, "--yes", FAKE_NODE_UP=1, FAKE_NODE_RESTART=0.3)
+    assert r.returncode == 0, _all(r)
+    said, last, ahead = (world.state / "bump.log").read_text().splitlines()
+    assert said == f"{V} --build"
+    # after the pin commit, before the push
+    assert last == f"Pin s3dgraphy {V} in one place and its two copies, and count one more iteration of the server"
+    assert int(ahead) >= 1
+    assert "the container is restarting" in r.stdout                  # the retries while it restarts
+    assert f'the development node answers "s3dgraphy": "{V}" (server 1.6.0.dev2)' in r.stdout
+    assert r.stdout.index("▸ 10 · the development node") < r.stdout.index("▸ 11 · the push")
+    assert world.git(world.ws / "stratigraph-server", "rev-list", "--count", "@{u}..HEAD") == "0"
+    st = world.release("status", *FULL, FAKE_NODE_UP=1)
+    assert f'  ✓ 10 done' in st.stdout and f'says "s3dgraphy": "{V}" (server 1.6.0.dev2)' in st.stdout
+    assert "every step is done" in st.stdout
+
+
+def test_with_the_stack_down_it_says_so_and_goes_on(world):
+    r = world.release(*FULL, "--yes")
+    assert r.returncode == 0, _all(r)
+    assert ("em-dev-server is not running — the em-dev stack is down, nothing to rebuild — skipped"
+            in r.stdout)
+    assert not (world.state / "bump.log").exists()
+    assert "▸ 11 · the push" in r.stdout
+    assert world.git(world.ws / "stratigraph-server", "rev-list", "--count", "@{u}..HEAD") == "0"
+
+
+def test_a_node_that_never_says_v_stops_before_the_push(world):
+    r = world.release(*FULL, "--yes", FAKE_NODE_UP=1, FAKE_NODE_STUCK=1, EM_RELEASE_WAIT_NODE=0.3)
+    assert r.returncode == 75, _all(r)
+    assert "still says '1.6.0.dev27', not '1.6.0.dev28'" in r.stderr
+    assert "docker logs em-dev-server" in r.stderr
+    assert world.git(world.ws / "stratigraph-server", "rev-list", "--count", "@{u}..HEAD") != "0"   # not pushed
+
+
+def test_declining_the_node_does_not_stop_the_row(world):
+    # the first confirmation, the five pin commits, then the node: n, then the push: y
+    r = world.release(*FULL, input="y\n" * 6 + "n\ny\n", FAKE_NODE_UP=1, EM_RELEASE_CONFIRM_SECONDS=0)
+    assert r.returncode == 0, _all(r)
+    assert f"not rebuilt. When ready:  (stratigraph-server) ./bump-s3dgraphy.sh {V} --build" in r.stdout
+    assert not (world.state / "bump.log").exists()
+    assert world.git(world.ws / "stratigraph-server", "rev-list", "--count", "@{u}..HEAD") == "0"

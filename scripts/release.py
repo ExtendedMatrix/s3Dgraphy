@@ -35,6 +35,9 @@ command can be replaced for the tests (tests/test_release.py):
     EM_RELEASE_CONFIRM_SECONDS  the countdown of a confirmation (default: 10; 0 = no timer)
     EM_RELEASE_WHEEL    the command that builds a wheel of a working tree into a
                         folder: `<cmd> <outdir> <tree>` (default: pip wheel)
+    EM_RELEASE_DOCKER   docker, asked whether em-dev-server runs (default: docker)
+    EM_RELEASE_NODE_HEALTH  the development node's health (default: http://localhost:8000/v1/health)
+    EM_RELEASE_WAIT_NODE    the cap for it to say V after the rebuild (default: 180)
     EM_RELEASE_DOWNSTREAM  a JSON list of {repo, cmd, known?} that replaces the
                         consumers of step 0 (each cmd run in its repository,
                         `{python}` = the python that sees the new wheels)
@@ -81,7 +84,9 @@ WRITES = {
     "stratigraph-templates": ["registry/", "dist/"],
     "stratigraph-chatbot": ["schede/", "vocabolari/", "pyproject.toml"],
     "EMStudio": ["tools/requirements.txt", "frontend/src/assets/", "crates/em-core/assets/"],
-    "stratigraph-server": ["pyproject.toml", "Dockerfile", "dev-stack/docker-compose.dev.yml"],
+    # app/__init__.py and pyproject.toml's own `version`: bump-s3dgraphy.sh counts
+    # one more iteration of the server when it moves the pin (W3, 4 Oct 2026)
+    "stratigraph-server": ["pyproject.toml", "Dockerfile", "dev-stack/docker-compose.dev.yml", "app/__init__.py"],
     # the fingerprint is rewritten by `./em.sh rebundle` at step 7 (dev29, C3):
     # left out, the rerun stopped at step 1 on it and step 9 did not commit it
     "EM-blender-tools": ["scripts/requirements_wheels.txt", "em_setup/datamodel.fingerprint.json"],
@@ -93,7 +98,7 @@ def commit_messages(v: str, d: str | None) -> dict:
         "stratigraph-templates": f"Snapshot s3Dgraphy {v} from PyPI",
         "stratigraph-chatbot": f"Vendor the schede against s3Dgraphy {v} and require it",
         "EMStudio": f"Pin s3dgraphy {v}",
-        "stratigraph-server": f"Pin s3dgraphy {v} in one place and its two copies",
+        "stratigraph-server": f"Pin s3dgraphy {v} in one place and its two copies, and count one more iteration of the server",
         "EM-blender-tools": f"Bundle s3dgraphy {v}" + (f" and dtcstamp {d}" if d else ""),
     }
 
@@ -343,7 +348,7 @@ def run_view(r: Path, run_id) -> dict:
 def progress_lines(view: dict, run: dict, header: str, expected: float | None) -> list:
     """What a long wait says, every PROGRESS seconds (dev30, R2):
 
-        ▸ 11 · build desktop v1.6.0-dev.15 · 4:12 of ~11 min (mean of the last 3 runs) · end expected 16:05
+        ▸ 12 · build desktop v1.6.0-dev.15 · 4:12 of ~11 min (mean of the last 3 runs) · end expected 16:05
             macos-arm64  in progress · step «tauri build» (2:40)
             linux        done ✓      · 3:58
     """
@@ -918,7 +923,7 @@ class Preconditions(Step):
                 probs.append(f"{name}: {problem}")
             elif ahead:
                 # s3Dgraphy's and dtcstamp's bumps push their branch; the others'
-                # commits must be the release's own (step 3 or 9), pushed at step 10
+                # commits must be the release's own (step 3 or 9), pushed at step 11
                 if name == "s3Dgraphy" and not origin_has_tag(r, f"v{c.v}"):
                     continue
                 if name == "dtcstamp" and c.d and not origin_has_tag(r, f"v{c.d}"):
@@ -1454,10 +1459,100 @@ class Commits(Step):
             raise Stop(f"not committed: {', '.join(declined)}. When ready: {c.resume()}")
 
 
-# ── 10 · the push ────────────────────────────────────────────────────────────
+# ── 10 · the development node ────────────────────────────────────────────────
+#
+# W3, measured on 4 Oct 2026 after `./em.sh release 1.6.0.dev34 --desktop`: the
+# server's pin was dev34 in its three files and committed, and the node on this
+# computer still answered `"s3dgraphy": "1.6.0.dev33"` on /v1/health — step 6
+# only PRINTED «Per applicarlo: ./bump-s3dgraphy.sh 1.6.0.dev34 --build». So
+# when the em-dev stack is up (its container `em-dev-server` running), the
+# release now rebuilds it after the pin commits, behind a confirmation with its
+# countdown, and believes it only when /v1/health says the version. When the
+# stack is down it says so and goes on: a node that is off is not a fault.
+# BEFORE the push on purpose: an image that does not build with V is a pin
+# that should not be pushed yet.
+
+DOCKER = shlex.split(os.environ.get("EM_RELEASE_DOCKER") or "docker")
+NODE_CONTAINER = "em-dev-server"
+NODE_HEALTH = os.environ.get("EM_RELEASE_NODE_HEALTH") or "http://localhost:8000/v1/health"
+WAIT["node"] = float(os.environ.get("EM_RELEASE_WAIT_NODE") or 180)   # the container restarting
+NOT_UP = "not up"
+
+
+def node_running() -> tuple:
+    """(running?, why) — `docker ps` asked for the container by its exact name."""
+    try:
+        r = subprocess.run([*DOCKER, "ps", "--filter", f"name=^{NODE_CONTAINER}$", "--filter", "status=running",
+                            "--format", "{{.Names}}"], env=ENV, text=True, stdin=subprocess.DEVNULL,
+                           capture_output=True, timeout=20)
+    except (OSError, subprocess.TimeoutExpired) as e:
+        return False, f"docker does not answer ({e.__class__.__name__})"
+    if r.returncode != 0:
+        return False, "docker does not answer (" + ((r.stderr or "").strip().splitlines() or ["exit %d" % r.returncode])[-1] + ")"
+    if NODE_CONTAINER in r.stdout.split():
+        return True, f"{NODE_CONTAINER} running"
+    return False, f"{NODE_CONTAINER} is not running"
+
+
+def node_health() -> dict:
+    """What /v1/health answers, or {} — a READ, never raising."""
+    import urllib.request
+    try:
+        with urllib.request.urlopen(NODE_HEALTH, timeout=3) as r:
+            got = json.loads(r.read().decode("utf-8") or "{}")
+            return got if isinstance(got, dict) else {}
+    except Exception:
+        return {}
+
+
+class DevNode(Step):
+    n, title = 10, "the development node: ./bump-s3dgraphy.sh V --build if em-dev is up, then /v1/health"
+
+    def check(self, c):
+        if not exists("stratigraph-server"):
+            return SKIP, "stratigraph-server not here"
+        up, why = node_running()
+        if not up:
+            return NOT_UP, f"{why} — the em-dev stack is down, nothing to rebuild"
+        h = node_health()
+        if not h:
+            return TODO, f"{why}, {NODE_HEALTH} does not answer"
+        said = h.get("s3dgraphy")
+        if said == c.v:
+            return DONE, f'{NODE_HEALTH} says "s3dgraphy": "{said}" (server {h.get("version")})'
+        return TODO, f'{NODE_HEALTH} says "s3dgraphy": "{said}"'
+
+    def plan(self, c):
+        return [("stratigraph-server", f"[Y/n, yes in {confirm_seconds()} s] ./bump-s3dgraphy.sh {c.v} --build"),
+                ("", f'GET {NODE_HEALTH} until "s3dgraphy": "{c.v}" (cap {WAIT["node"]:g} s)')]
+
+    def run(self, c):
+        r = repo("stratigraph-server")
+        if not c.ask(f"Rebuild and restart the development node ({NODE_CONTAINER}) with s3dgraphy {c.v}?"):
+            # a local node, not a publication: declining it does not stop the row
+            print(f"    not rebuilt. When ready:  (stratigraph-server) ./bump-s3dgraphy.sh {c.v} --build", flush=True)
+            return
+        sh(["./bump-s3dgraphy.sh", c.v, "--build"], r)
+        seen = {}
+
+        def answers():
+            h = node_health()
+            seen["last"] = h.get("s3dgraphy") if h else "no answer"
+            return h if h.get("s3dgraphy") == c.v else None
+
+        try:
+            h = wait_for(f'{NODE_HEALTH} saying "s3dgraphy": "{c.v}"', answers, WAIT["node"], c.resume(),
+                         not_yet="the container is restarting")
+        except Stop as e:
+            raise Stop(f'the node was rebuilt and {NODE_HEALTH} still says {seen.get("last")!r}, not {c.v!r}.\n'
+                       f"    Look:  docker logs {NODE_CONTAINER} --tail 50", e.code)
+        ok(f'the development node answers "s3dgraphy": "{c.v}" (server {h.get("version")})')
+
+
+# ── 11 · the push ────────────────────────────────────────────────────────────
 
 class Push(Step):
-    n, title = 10, "the push of the committed repositories (one confirmation)"
+    n, title = 11, "the push of the committed repositories (one confirmation)"
 
     def ahead(self, c):
         res = []
@@ -1491,10 +1586,10 @@ class Push(Step):
         ok("pushed: " + ", ".join(n for n, _ in a))
 
 
-# ── 11 · the desktop ─────────────────────────────────────────────────────────
+# ── 12 · the desktop ─────────────────────────────────────────────────────────
 
 class Desktop(Step):
-    n, title = 11, "the desktop: EMStudio devrel → release.yml → the release's URL"
+    n, title = 12, "the desktop: EMStudio devrel → release.yml → the release's URL"
 
     def tag_with_pin(self, c):
         r = repo("EMStudio")
@@ -1538,7 +1633,7 @@ class Desktop(Step):
             if not tag:
                 raise Stop("devrel ran but no tag carries the pin")
         run = wait_for(f"the release.yml run of {tag}", lambda: self.run_for(tag), WAIT["run"], c.resume())
-        watch(r, run, f"build desktop {tag}", c, workflow="release.yml", step=11)
+        watch(r, run, f"build desktop {tag}", c, workflow="release.yml", step=12)
         url = out([*GH, "release", "view", tag, "--json", "url", "-q", ".url"], r)
         ok(f"the desktop {tag}: {url or run.get('url')}")
         for line in self.assets(tag):
@@ -1572,7 +1667,7 @@ class Desktop(Step):
 
 
 STEPS = [DownstreamProof(), Preconditions(), Dtcstamp(), DtcPin(), S3dPublish(), Proof(), Propagate(), EMtools(),
-         StratiFieldPin(), Commits(), Push(), Desktop()]
+         StratiFieldPin(), Commits(), DevNode(), Push(), Desktop()]
 
 
 # ══ the three ways in ═════════════════════════════════════════════════════════
@@ -1596,7 +1691,7 @@ def table(c: Ctx, with_plan: bool) -> int:
     print(f"release s3dgraphy {c.v}" + (f" · dtcstamp {c.d}" if c.d else "") + (" · desktop" if c.desktop else "")
           + f"   ({PARENT})")
     for s, state, proof in rows:
-        mark = {DONE: "✓", TODO: "→", BLOCKED: "·", SKIP: "-"}[state]
+        mark = {DONE: "✓", TODO: "→", BLOCKED: "·", SKIP: "-", NOT_UP: "-"}[state]
         print(f"  {mark} {s.n:>2} {state:9} {s.title}")
         if proof:
             print(f"               {proof}")
@@ -1634,7 +1729,7 @@ def release(c: Ctx) -> int:
         state, proof = s.check(c)
         print()
         log(f"{s.n} · {s.title}")
-        if state == SKIP:
+        if state in (SKIP, NOT_UP):
             print(f"    {proof} — skipped", flush=True)
             continue
         if state == DONE and s.n != 1:

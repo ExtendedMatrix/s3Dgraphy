@@ -10,7 +10,8 @@
 #                      em.sh of the repositories next door
 #   release            scripts/release.py: the whole round (dtcstamp → bump →
 #                      publish → proof → propagate → EMtools → pin commits →
-#                      push → desktop), each step skipped when already done
+#                      the development node → push → desktop), each step
+#                      skipped when already done
 #
 # The reports both shells print (fingerprint, PyPI, known failures, StratiField's
 # schede) are scripts/em_report.py, shared with em.bat.
@@ -646,8 +647,12 @@ WHAT IT DOES
         dtcstamp wheel · ./em.sh manifest 3.11 and 3.13 · .venv · pytest -q
      8  StratiField: "s3dgraphy>=V" in stratigraph-chatbot/pyproject.toml
      9  the pin commits: per repository git diff --stat, the message, [y/N]
-    10  the push of what is ahead of origin: the list, one [y/N]
-    11  (--desktop) EMStudio: ./em.sh s3d status --check → ./em.sh devrel --yes →
+    10  the development node: if the em-dev stack is up (em-dev-server running),
+        [Y/n] → ./bump-s3dgraphy.sh V --build in stratigraph-server → /v1/health
+        until it says "s3dgraphy": "V" (EM_RELEASE_WAIT_NODE); stack down: said,
+        and the row goes on
+    11  the push of what is ahead of origin: the list, one [y/N]
+    12  (--desktop) EMStudio: ./em.sh s3d status --check → ./em.sh devrel --yes →
         release.yml watched → the release's URL, its assets and sizes, draft
         or published
   Every long wait SAYS what is happening: every 30 s (EM_RELEASE_PROGRESS) the
