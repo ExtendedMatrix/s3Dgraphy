@@ -196,6 +196,20 @@ def build_emjson(graph: Graph, layout: Optional[Dict[str, Any]] = None) -> Dict[
 
     nodes: List[Dict[str, Any]] = [_node_payload(n) for n in graph.nodes]
     edges: List[Dict[str, Any]] = [_edge_payload(e) for e in graph.edges]
+    # D1 (E.D., 4 Oct 2026) · the LEVEL of a version is computed from its chain
+    # and written only here, when the graph leaves, for whoever reads one
+    # resource alone; the importer computes it again and compares
+    # (resources.versions.check_lod_levels), like a checksum.
+    try:
+        from ..resources.versions import lod_levels_to_write
+        levels = lod_levels_to_write(graph)
+    except Exception:  # noqa: BLE001 — a graph without resources writes none
+        levels = {}
+    if levels:
+        for payload in nodes:
+            lvl = levels.get(str(payload.get("id")))
+            if lvl:
+                payload["data"] = dict(payload.get("data") or {}, lod_level=lvl)
 
     graph_section: Dict[str, Any] = {
         "graph_id": graph.graph_id,

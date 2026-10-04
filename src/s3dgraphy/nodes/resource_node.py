@@ -174,6 +174,19 @@ class ResourceNode(Node):
         primitive count are measured facts, they never age, and they are what a
         consumer with a bandwidth budget actually needs to compare.
 
+        That reason still holds with D1 (E.D., 4 Oct 2026), and it is why the
+        level a version now has (``lod_level``: ``lod0`` the first workable
+        version made from the master, ``lod1…lodN`` the ``lod_generation``
+        steps from it) is NOT a field of this node: it is an ORDINAL INSIDE ONE
+        CHAIN, COMPUTED from the chain (``resources.versions.lod_level_of``),
+        written only when the graph leaves and checked when it comes back. The
+        etiquette orders one chain; the NUMBERS — ``size_bytes``,
+        ``primitives`` and the measures of a version (``tris_per_m2``,
+        ``texel_density_dd``…, ``resources.versions.LOD_MEASURES``) — are what
+        compares different chains. The master is ``tier = master`` and has no
+        level. What a version is for is ``data.use``, a list
+        (``resources.versions.USES``).
+
         The three new fields are **additive and optional**, and they are written
         ONLY when given. Absent means UNKNOWN, not false: every resource written
         before these existed must keep saying nothing rather than start claiming

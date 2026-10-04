@@ -58,6 +58,8 @@ def test_a_version_is_a_child_resource_made_by_lod_generation():
     assert proc.data["dtc_kind"] == "lod_generation"
     assert proc.data["parameters"] == {"level": "LOD1", "purpose": "web",
                                        "source_level": "LOD0"}
+    # D1 · a purpose that is a use is the version's list of uses too
+    assert v.data["use"] == ["web"]
     assert (one["process_id"], "podio", "dtc_had_input") in edges
     assert (one["process_id"], one["version_id"], "dtc_had_output") in edges
     assert one["asset_id"] == "podio" and one["created"]

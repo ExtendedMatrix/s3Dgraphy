@@ -335,6 +335,22 @@ def parse_emjson(doc: Dict[str, Any], *,
     from ..dtc.capture import migrate_provisional_captures
     migrate_provisional_captures(graph)
 
+    # D2 (E.D., 4 Oct 2026) · the rotation is measured from the GRID north: a
+    # document from before says nothing, and the definition fills it
+    from ..nodes.geo_position_node import ROTATION_REFERENCE
+    for n in graph.nodes:
+        if getattr(n, "node_type", "") == "geo_position" and isinstance(getattr(n, "data", None), dict):
+            n.data.setdefault("rotation_reference", ROTATION_REFERENCE)
+
+    # D1 (E.D., 4 Oct 2026) · the level a file writes on a version is checked
+    # against the chain, like a checksum, and then forgotten: the graph in
+    # memory computes it. A disagreement is a warning — a line in the Log.
+    try:
+        from ..resources.versions import check_lod_levels
+        warnings.extend(check_lod_levels(graph))
+    except Exception as exc:  # noqa: BLE001 — never block a load on it
+        warnings.append(f"lod_level check skipped: {exc}")
+
     return graph, warnings
 
 

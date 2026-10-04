@@ -19,6 +19,30 @@ All notable changes to **s3dgraphy** are documented here.
   operation 'update_node'», and the Sidecar's nested `edge` reached the room
   without endpoints.
 
+- **D1 · The level, the uses and the measures of a version** (decided by E.D.
+  4 Oct 2026, `TASSONOMIA-TIER-3D.md` §2). Node datamodel **1.6.25**, `em.ttl`
+  **1.6.15** (section 19). The master is `tier = master` and has no level;
+  `lod0` is the first workable version made from it, `lod1…lodN` count the
+  `lod_generation` steps from LOD0. The level is COMPUTED from the chain
+  (`resources.versions.lod_level_of`, `lod_steps`), never held in the graph:
+  written only when the graph leaves (`data.lod_level` in em.json,
+  `em:lodLevel` in RDF) and at load computed again and compared
+  (`check_lod_levels`): a different value, or two versions of one asset with
+  the same geometry («two levels for one mesh», San Pietro's Zenodo «LOD0» =
+  the case study's LOD1), is a warning. `data.use` is a LIST of `analysis |
+  realtime | web | mobile_ar | print | render | preview` (`em:use`, Voyager and
+  3D Tiles correspondences in the datamodel's `_note`); seven measures of a
+  version (`tris_per_m2`, `texel_density_dd` in the form of the
+  Demetrescu-D'Annibale formula, `texture_count`, `texture_side_px`,
+  `uv_ratio`, `reduction_from_lod0`, `geometric_error_m`) with their em: terms.
+  `api.add_version`: `level` optional (default: the computed one), `use`,
+  `measures`; `versions_of` lists the versions of versions too and gives
+  `lod_level`, `use`, `measures`, `primitives`; a version is named after its
+  asset. `ResourceNode`'s docstring says why the level is still not a field.
+- **D2 · The scene's rotation is measured from the GRID north** of the CRS:
+  `GeoPositionNode` writes `data.rotation_reference = "grid"` (set on load
+  when a document does not carry it); the docstrings said «geographic north».
+
 ### Changed (the release)
 - **W2 · Step 7 waits for PyPI too.** Every `pip install`/`pip download` of a
   version just published (step 5's clean venv, step 7's `./em.sh rebundle`,

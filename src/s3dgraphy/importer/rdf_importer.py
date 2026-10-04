@@ -1375,6 +1375,26 @@ class RDFImporter:
                             if isinstance(o, Literal)})
             if langs:
                 data["lang"] = langs[0] if len(langs) == 1 else langs
+            # D1 · a version's uses, measures and the level its producer
+            # computed (checked against the chain once the graph is built)
+            uses = sorted({str(o) for o in store.objects(ref, EM.use)
+                           if isinstance(o, Literal)})
+            if uses:
+                data["use"] = uses
+            lod = self._one_literal(store, ref, EM.lodLevel)
+            if lod:
+                data["lod_level"] = str(lod)
+            for key, local, _dtype in (
+                    ("tris_per_m2", "trisPerM2", 0), ("texel_density_dd", "texelDensityDD", 0),
+                    ("texture_count", "textureCount", 1), ("texture_side_px", "textureSidePx", 1),
+                    ("uv_ratio", "uvRatio", 0), ("reduction_from_lod0", "reductionFromLod0", 0),
+                    ("geometric_error_m", "geometricErrorM", 0)):
+                value = self._one_literal(store, ref, EM[local])
+                if value is not None:
+                    try:
+                        data[key] = int(value) if _dtype else float(value)
+                    except (TypeError, ValueError):
+                        self.warnings.append(f"node '{node_id}': {key} {value!r} is not a number")
             # A resource can carry TWO `crm:P2_has_type` literals: its
             # `url_type` and, when it is a DTC product, its `dtc_kind`. They are
             # told apart by what each one IS rather than by order: `url_type` is
@@ -1891,4 +1911,11 @@ def import_rdf(source: Any,
     """One-call helper: (graphs, warnings)."""
     importer = RDFImporter(base_uri=base_uri)
     graphs = importer.parse(source, fmt=fmt, into_graph=into_graph)
+    # D1 · the level a file carries is compared with the chain, then forgotten
+    from ..resources.versions import check_lod_levels
+    for g in graphs:
+        try:
+            importer.warnings.extend(check_lod_levels(g))
+        except Exception as exc:  # noqa: BLE001
+            importer.warnings.append(f"lod_level check skipped: {exc}")
     return graphs, importer.warnings

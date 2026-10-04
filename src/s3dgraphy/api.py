@@ -2709,13 +2709,16 @@ def pick_representation(graph: Graph, res_id: str, can_open) -> Dict[str, Any]:
 # by a `lod_generation` step, with its level and purpose in the step's
 # parameters. The semantic link stays on the asset and the versions inherit it.
 # See :mod:`s3dgraphy.resources.versions`.
-def add_version(graph: Graph, master_id: str, *, level: str, purpose: str = "",
-                **kwargs) -> Dict[str, Any]:
-    """A version of the asset ``master_id`` at ``level`` for ``purpose``: a child
-    resource ``dtc_derived_from`` the master through a ``lod_generation`` step.
+def add_version(graph: Graph, master_id: str, *, level: Optional[str] = None,
+                purpose: str = "", **kwargs) -> Dict[str, Any]:
+    """A version of the asset ``master_id``: a child resource
+    ``dtc_derived_from`` it through a ``lod_generation`` step. ``level`` is its
+    name (default: the computed level, ``lod0`` from the master, ``lodK+1``
+    from a ``lodK``); ``use`` a list of :data:`resources.versions.USES`;
+    ``measures`` the numbers of :data:`resources.versions.LOD_MEASURES` (D1).
     Idempotent per (asset, level); other bytes at a level are refused (revise
     the version instead). Returns ``{version_id, process_id, created, asset_id,
-    level, purpose, warnings}``."""
+    level, lod_level, use, measures, purpose, warnings}``."""
     from .resources.versions import add_version as _add
     before = _ids(graph)
     out = _add(graph, master_id, level=level, purpose=purpose, **kwargs)

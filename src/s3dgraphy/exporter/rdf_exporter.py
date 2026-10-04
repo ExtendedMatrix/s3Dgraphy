@@ -970,6 +970,13 @@ class RDFExporter:
             self.excluded.extend(ai_rows)
             self.stats["ai_unvalidated"] += len(ai_rows)
         graph_iri = self._graph_iri(g)
+        # D1 · the level of each version, computed from its chain: written
+        # here, where the graph leaves, never stored in it
+        try:
+            from ..resources.versions import lod_levels_to_write
+            self._lod_levels = lod_levels_to_write(g)
+        except Exception:  # noqa: BLE001
+            self._lod_levels = {}
 
         ctx.add((graph_iri, RDF.type, EM.EMGraph))
         ctx.add((graph_iri, RDF.type, CRM.E73_Information_Object))
@@ -1826,6 +1833,8 @@ class RDFExporter:
             # content — four declarations the round trip lost. Emitted only when
             # recorded, as the fences above (never the effective_* fallbacks).
             self._emit_resource_packing(node_iri, data, ctx)
+            self._emit_version(node_iri, data,
+                               getattr(self, "_lod_levels", {}).get(node.node_id), ctx)
             # dev27 (il testo, la risorsa e la selezione): the language(s) of
             # the CONTENT of the file — one dcterms:language each. Not
             # em:originalLanguage: the file's language is not the language of
@@ -2017,6 +2026,31 @@ class RDFExporter:
                     is_uri = origin.startswith(("http://", "https://"))
                     ctx.add((node_iri, EM.retrievedFrom, Literal(
                         origin, datatype=XSD.anyURI if is_uri else None)))
+
+    #: D1 · the measures of a version and their predicates (em.ttl section 19)
+    VERSION_MEASURES = (("tris_per_m2", "trisPerM2", "double"),
+                        ("texel_density_dd", "texelDensityDD", "double"),
+                        ("texture_count", "textureCount", "nonNegativeInteger"),
+                        ("texture_side_px", "textureSidePx", "nonNegativeInteger"),
+                        ("uv_ratio", "uvRatio", "double"),
+                        ("reduction_from_lod0", "reductionFromLod0", "double"),
+                        ("geometric_error_m", "geometricErrorM", "double"))
+
+    @classmethod
+    def _emit_version(cls, node_iri: URIRef, data: Dict[str, Any],
+                      lod_level: Optional[str], ctx) -> None:
+        """D1 (E.D., 4 Oct 2026): the computed level, the uses (one triple each)
+        and the measures of a version of an asset."""
+        if lod_level:
+            ctx.add((node_iri, EM.lodLevel, Literal(str(lod_level))))
+        use = data.get("use")
+        for u in ([use] if isinstance(use, str) else (use or [])):
+            ctx.add((node_iri, EM.use, Literal(str(u))))
+        for key, local, dtype in cls.VERSION_MEASURES:
+            value = data.get(key)
+            if value is None or isinstance(value, bool):
+                continue
+            ctx.add((node_iri, EM[local], Literal(value, datatype=XSD[dtype])))
 
     @staticmethod
     def _emit_resource_packing(node_iri: URIRef, data: Dict[str, Any],
