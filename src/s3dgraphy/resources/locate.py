@@ -40,7 +40,9 @@ STATES = ("on_disk", "on_node", "both", "reference_only", "missing", "empty_copy
 #: the order the positions are tried in
 ORDER = ("cache", "path", "node", "reference")
 
-_REMOTE = ("http://", "https://", "s3://", "ftp://")
+#: an address somewhere else: the web, a bucket, a network share of an archive
+#: (a NAS cited by a dataset that does not carry its bytes — Templu Mare v2)
+_REMOTE = ("http://", "https://", "s3://", "ftp://", "smb://", "afp://", "nfs://")
 _STORE = re.compile(r"/v1/rooms/[^/]+/asset/sha256:([0-9a-f]{64})", re.I)
 _HEX = re.compile(r"^(?:sha256:)?([0-9a-f]{64})$", re.I)
 
@@ -158,10 +160,19 @@ def resolve(entry: Dict[str, Any], *, project_root: Optional[str] = None,
     positions.append({"kind": "cache", "where": hit or "", "ok": bool(hit)})
     if hit:
         path = hit
-    # 2 · known paths
+    # 2 · known paths — a datablock IN a .blend (`blend://<file>#<Type>/<name>`)
+    # is where its .blend is: the file is looked for like any other, and the
+    # digest a master records is the .blend's (Templu Mare v2)
     remote = locator.lower().startswith(_REMOTE)
-    if not path and locator and not remote and not locator.startswith(("blend://", "psx://")):
-        for cand in local_candidates(locator, bases):
+    look = locator
+    if locator.startswith("blend://"):
+        from .resolver import parse_blend_locator
+        parsed = parse_blend_locator(locator)
+        look = parsed[0] if parsed else ""
+    elif locator.startswith("psx://"):
+        look = ""
+    if not path and look and not remote and not look.startswith(("blend://", "psx://")):
+        for cand in local_candidates(look, bases):
             if os.path.isfile(cand) or os.path.isdir(cand):
                 if os.path.isfile(cand) and is_empty_copy(cand):
                     empty = empty or cand
@@ -170,7 +181,7 @@ def resolve(entry: Dict[str, Any], *, project_root: Optional[str] = None,
                 break
         positions.append({"kind": "path", "where": path or empty or locator,
                           "ok": bool(path)})
-    elif locator.startswith(("blend://", "psx://")):
+    elif locator.startswith(("blend://", "psx://")) and not look:
         positions.append({"kind": "path", "where": locator, "ok": None})
     if path and not hexd and hasher is not None and os.path.isfile(path):
         try:
@@ -230,13 +241,42 @@ def entries_of(graph: Any) -> List[Dict[str, Any]]:
 
 
 def resolve_graph(graph: Any, **kwargs) -> List[Dict[str, Any]]:
-    """:func:`resolve` for every resource of ``graph``, with its name."""
+    """:func:`resolve` for every resource of ``graph``, with its name.
+
+    A resource of SEVERAL files (``has_file`` → ``ResourceFileNode``) has no
+    locator of its own: the files are where it is. Its state is theirs —
+    ``on_disk`` when every file is (``files`` lists them), else the state of
+    the first file that is not — instead of «the graph does not say where the
+    file is», which was true of the node and false of the resource."""
     out = []
+    by_id: Dict[str, Dict[str, Any]] = {}
     for e in entries_of(graph):
         r = resolve(e, **kwargs)
         r["name"] = e["name"]
         r["node_type"] = e["node_type"]
         out.append(r)
+        by_id[e["id"]] = r
+    files_of: Dict[str, List[str]] = {}
+    for edge in getattr(graph, "edges", []) or []:
+        if getattr(edge, "edge_type", "") == "has_file":
+            files_of.setdefault(edge.edge_source, []).append(edge.edge_target)
+    for rid, fids in files_of.items():
+        r = by_id.get(rid)
+        if r is None or r["path"] or r["state"] not in ("missing",) or \
+                any(p["kind"] == "path" and p["where"] for p in r["positions"]):
+            continue
+        states = [by_id[f]["state"] for f in fids if f in by_id]
+        if not states:
+            continue
+        rank = {s: i for i, s in enumerate(("missing", "empty_copy", "reference_only",
+                                             "on_node", "both", "on_disk"))}
+        worst = min(states, key=lambda s: rank.get(s, 0))
+        if all(s in ("on_disk", "both") for s in states):
+            worst = "both" if all(s == "both" for s in states) else "on_disk"
+        r["state"] = worst
+        r["files"] = len(states)
+        r["note"] = (f"{len(states)} files, all here" if worst in ("on_disk", "both")
+                     else f"{states.count(worst)} of its {len(states)} files: {worst}")
     return out
 
 

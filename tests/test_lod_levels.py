@@ -94,6 +94,28 @@ def test_san_pietro_two_levels_for_one_mesh():
     assert "(lod0)" in said[0] and "(lod1)" in said[0] and "252413 vertices, 495110 faces" in said[0]
 
 
+def test_a_texture_only_version_is_a_level_not_a_copy():
+    """D1: «a version that only reduces its textures is a lodN too». Templu Mare
+    v2: the web version of a tile is the LOD2 mesh with its 2048 texture at 1024
+    — same vertices and faces, another measured side: no warning. The same mesh
+    with the same side stays «two levels for one mesh»."""
+    g = Graph("templu-mare")
+    api.add_resource(g, name="OB_PODIO master", kind="3d_model", tier="master",
+                     resource_id="tm")
+    prim = {"vertices": 44948, "faces": 89623}
+    a = api.add_version(g, "tm", files=[{"path": "a.glb"}], primitives=prim,
+                        use=["heriverse"], measures={"texture_side_px": 2048})
+    b = api.add_version(g, a["version_id"], files=[{"path": "b.glb"}], primitives=prim,
+                        use=["web"], measures={"texture_side_px": 1024})
+    _back, warnings = parse_emjson(json.loads(json.dumps(build_emjson(g))))
+    assert not [w for w in warnings if "same geometry" in w], warnings
+    api.add_version(g, b["version_id"], files=[{"path": "c.glb"}], primitives=prim,
+                    use=["realtime"], measures={"texture_side_px": 1024})
+    _back, warnings = parse_emjson(json.loads(json.dumps(build_emjson(g))))
+    said = [w for w in warnings if "same geometry" in w]
+    assert len(said) == 1 and "(lod1)" in said[0] and "(lod2)" in said[0], warnings
+
+
 def test_uses_and_measures_are_refused_by_name():
     g, v0, _v1, _v2 = _chain()
     with pytest.raises(ValueError, match="'archive' is not a use"):

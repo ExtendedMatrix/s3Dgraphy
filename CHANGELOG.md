@@ -5,6 +5,21 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
+- **Templu Mare v2 · the resolver reads a dataset folder as it is** (MICRO
+  Templu Mare v2, 6 October 2026). `resources.locate.resolve_graph`: a resource
+  of SEVERAL files (`has_file`) has no locator of its own and was «missing»; its
+  state is now its files' (`on_disk` when every file is, `files` counts them, the
+  note names how many are not). `resolve`: a datablock master
+  `blend://<.blend>#<Type>/<name>` is where its `.blend` is (the file looked for
+  like any other; the master's digest is the .blend's); `smb://`, `afp://`,
+  `nfs://` are addresses elsewhere (an archive on a NAS cited without bytes):
+  `reference_only`, not `missing`.
+- **Templu Mare v2 · a version that only reduces its textures is a level, not a
+  copy** (D1). `check_lod_levels` said «two levels for one mesh» for every web
+  version made by «Prepare for a use…» at ratio 1: same vertices and faces,
+  textures at 1024 px instead of 2048. Two versions with a measured
+  `texture_side_px` of different sides are no longer that warning; the same
+  mesh at the same side still is, against every earlier version of the asset.
 - **H1/H4 · The version for a use: ONE rule, in Python and in JS** (MICRO
   Heriverse legge lo studio, decided by E.D. 5 October 2026: nothing is
   re-exported for a viewer, the viewer reads the study and picks the version).

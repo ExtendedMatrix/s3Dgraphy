@@ -376,7 +376,9 @@ def check_lod_levels(graph, *, written: Optional[Dict[str, str]] = None,
     * two versions of one asset with the SAME geometry (vertices and faces
       both counted and equal) at two levels — «two levels for one mesh», the
       case measured on San Pietro: the «LOD0» published on Zenodo has the lines
-      ``v`` and ``f`` of the case study's LOD1.
+      ``v`` and ``f`` of the case study's LOD1. Not when both carry a
+      measured ``texture_side_px`` and the sides differ: a version that only
+      reduces its textures is a level too (D1).
 
     ``written`` defaults to the ``data.lod_level`` the nodes carry; with
     ``forget`` (default) that value is removed after the check — the graph in
@@ -408,15 +410,21 @@ def check_lod_levels(graph, *, written: Optional[Dict[str, str]] = None,
                 _data(node).pop("lod_level", None)
     assets = {asset_of(graph, rid) for rid in lod_levels_to_write(graph)}
     for asset in sorted(assets):
-        seen: Dict[tuple, Dict[str, Any]] = {}
+        seen: Dict[tuple, List[Dict[str, Any]]] = {}
         for entry in versions_of(graph, asset):
             prim = entry.get("primitives") or {}
             if not (prim.get("vertices") and prim.get("faces")):
                 continue
             key = (prim["vertices"], prim["faces"])
-            first = seen.get(key)
+            # D1 · «a version that only reduces its textures is a lodN too»:
+            # the same mesh with textures of another measured side is a level
+            # of its own, not a mislabelled copy (Templu Mare v2, 6 Oct 2026)
+            side = entry.get("measures", {}).get("texture_side_px")
+            first = next((e for e in seen.get(key, [])
+                          if side is None
+                          or e.get("measures", {}).get("texture_side_px") in (None, side)), None)
+            seen.setdefault(key, []).append(entry)
             if first is None:
-                seen[key] = entry
                 continue
             a = first.get("lod_level") or "the master"
             b = entry.get("lod_level") or "the master"

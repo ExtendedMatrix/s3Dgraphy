@@ -86,6 +86,32 @@ def test_r1_each_state(tmp_path):
     assert r(id="h", locator="")["state"] == "missing"
 
 
+def test_r1_a_resource_of_several_files_is_where_its_files_are(tmp_path):
+    """Templu Mare v2: an OBJ with its mtl and texture is one resource of three
+    files; it has no locator of its own, and it was «missing»."""
+    root = _project(tmp_path)
+    lod = root / "RB" / "LOD2"
+    lod.mkdir(parents=True, exist_ok=True)
+    for name, data in (("t.obj", b"v 0 0 0"), ("t.mtl", b"map_Kd t.jpg"), ("t.jpg", b"\xff\xd8 tex")):
+        (lod / name).write_bytes(data)
+    from s3dgraphy import Graph
+    g = Graph("tm")
+    files = [{"path": n, "url": f"../RB/LOD2/{n}", "role": "entry_point" if n.endswith(".obj") else "member",
+              "checksum": "sha256:" + hashlib.sha256((lod / n).read_bytes()).hexdigest()}
+             for n in ("t.obj", "t.mtl", "t.jpg")]
+    api.add_resource(g, name="tile LOD2", kind="3d_model", files=files, resource_id="t2")
+    got = {r["id"]: r for r in L.resolve_graph(g, project_root=str(root), base_dirs=[str(root / "EM")])}
+    assert got["t2"]["state"] == "on_disk" and got["t2"]["files"] == 3, got["t2"]
+    (lod / "t.jpg").unlink()
+    got = {r["id"]: r for r in L.resolve_graph(g, project_root=str(root), base_dirs=[str(root / "EM")])}
+    assert got["t2"]["state"] == "missing" and "1 of its 3 files" in got["t2"]["note"], got["t2"]
+
+
+def test_r1_a_network_share_is_a_reference():
+    got = L.resolve({"id": "nas", "locator": "smb://zal9/TEUT/TempluMare/project.psx"})
+    assert got["state"] == "reference_only"
+
+
 def test_r1_the_cache_comes_first(tmp_path):
     root = _project(tmp_path)
     cache = tmp_path / "cache"
@@ -136,3 +162,17 @@ def test_i1_the_list_covers_the_resolver_and_every_glyph_is_one():
     # Q2 (E.D., 5 Oct 2026) · «⇄» is in the list: the graph shared with the
     # other app on this computer, beside □ outside and ▣ inside a room
     assert doc["states"]["room.paired"]["glyph"] == "⇄"
+
+
+def test_r1_a_datablock_is_where_its_blend_is(tmp_path):
+    """Templu Mare v2: a master is a datablock of a .blend beside the em.json,
+    `blend://../SB/x.blend#Mesh/ME_PODIO`, with the .blend's digest."""
+    root = _project(tmp_path)
+    (root / "SB" / "x.blend").write_bytes(b"BLENDER-v502 data")
+    from s3dgraphy.resources.resolver import make_blend_locator
+    loc = make_blend_locator("../SB/x.blend", "Mesh", "ME_PODIO #1")
+    got = L.resolve({"id": "m", "locator": loc}, project_root=str(root), base_dirs=[str(root / "EM")])
+    assert got["state"] == "on_disk" and got["path"].endswith("x.blend"), got
+    gone = make_blend_locator("../SB/none.blend", "Mesh", "ME")
+    assert L.resolve({"id": "n", "locator": gone}, project_root=str(root),
+                     base_dirs=[str(root / "EM")])["state"] == "missing"
