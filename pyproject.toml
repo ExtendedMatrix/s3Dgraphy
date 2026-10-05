@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "s3dgraphy"
-version = "1.6.0.dev37"
+version = "1.6.0.dev38"
 description = "3D Stratigraphic Graph Management Library for archaeological and heritage applications"
 readme = "README.md"
 requires-python = ">=3.9"
