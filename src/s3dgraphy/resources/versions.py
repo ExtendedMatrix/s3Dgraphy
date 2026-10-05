@@ -65,7 +65,15 @@ LOD_LEVEL_PATTERN = r"^lod(0|[1-9][0-9]*)$"
 
 #: What a version is FOR — a list on each version (taxonomy §2b; correspondences
 #: with Smithsonian Voyager and 3D Tiles in the datamodel's ``_note``).
-USES = ("analysis", "realtime", "web", "mobile_ar", "print", "render", "preview")
+#: ``heriverse`` and ``aton`` (datamodel 1.6.26, H4, E.D. 5 Oct 2026): a version
+#: made FOR a viewer — the package on disk Heriverse, or another ATON app, opens
+#: offline; such a viewer asks :data:`VIEWER_USES`.
+USES = ("analysis", "realtime", "web", "mobile_ar", "print", "render", "preview",
+        "heriverse", "aton")
+
+#: The uses Heriverse asks for, IN ORDER: the version made for it, then one made
+#: for any ATON app, then any web version, then a realtime one (H2, H4).
+VIEWER_USES = ("heriverse", "aton", "web", "realtime")
 
 #: The numbers measured on a version when it is born (EMtools): what compares
 #: chains. ``tris_per_m2`` is a measure without a target; ``texel_density_dd`` is
@@ -245,7 +253,7 @@ def _entry(graph, res_id: str, *, level, purpose, process_id, master: bool,
             "measures": measures, "primitives": dict(d.get("primitives") or {}),
             "process_id": process_id, "checksum": checksum or "",
             "url": url or "", "residency": d.get("residency") or "",
-            "media_type": media or "",
+            "media_type": media or "", "size_bytes": d.get("size_bytes"),
             "revisions": chain}
 
 
@@ -261,7 +269,7 @@ def versions_of(graph, asset_id: str) -> List[Dict[str, Any]]:
 
     Each entry: ``{id, name, level, lod_level, use, measures, primitives,
     purpose, master, process_id, checksum, url, residency, media_type,
-    revisions}``. ``id`` is the CURRENT revision of the version; ``revisions``
+    size_bytes, revisions}``. ``id`` is the CURRENT revision of the version; ``revisions``
     its chain, oldest first. ``level`` is the name given; ``lod_level`` the
     COMPUTED level (None for the master, D1). The versions of a version (a LOD1
     made from LOD0) are listed too. The master's ``level`` is the
@@ -429,6 +437,123 @@ def version_info(graph, res_id: str) -> Optional[Dict[str, Any]]:
         if res_id == entry["id"] or res_id in entry["revisions"]:
             return {**entry, "asset_id": asset}
     return None
+
+
+# ── the version for a use ────────────────────────────────────────────────────
+#
+# Decided by E.D. (5 Oct 2026, «Heriverse legge l'em.json e sceglie la
+# versione»): nothing is exported for a viewer any more. A client reads the
+# study and picks, among the resources hung on a representation model, the one
+# to load for what it does. ONE rule, written here and copied by whoever cannot
+# call Python (Heriverse, EMStudio): the cases of
+# ``JSON_config/version_for_cases.json`` are the contract both sides pass.
+
+#: Why :func:`choose_version` answered what it answered.
+CHOICE_REASONS = ("level", "use", "master", "none")
+
+
+def _lod_ordinal(entry: Dict[str, Any]) -> int:
+    m = re.match(LOD_LEVEL_PATTERN, str(entry.get("lod_level") or ""))
+    return int(m.group(1)) if m else -1
+
+
+def _same_level(entry: Dict[str, Any], level: str) -> bool:
+    want = str(level).strip().lower()
+    return want in (str(entry.get("lod_level") or "").lower(),
+                    str(entry.get("level") or "").strip().lower())
+
+
+def choose_version(entries: Sequence[Dict[str, Any]], use: Any,
+                   prefer_level: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    """The version to load for ``use``, among ``entries`` (as :func:`versions_of`
+    gives them: the master and its versions). The rule, in words:
+
+    1. ``use`` is one use or a list of them, tried IN ORDER («web, then
+       realtime»): the first use some version declares is the one served;
+    2. the candidates are the versions (never the master) whose ``use`` list
+       holds it;
+    3. if ``prefer_level`` is given and a candidate is at that level (its
+       computed ``lod_level``, or the name it was given) that one is taken;
+    4. otherwise the LIGHTEST candidate: the highest ``lod_level`` (each step
+       from LOD0 is lighter), then the fewest bytes (``size_bytes``, unknown
+       after known), then the id — so the answer never depends on order;
+    5. no version declares any of the uses → the MASTER, and the answer says
+       so (``reason: "master"``, a ``note``): loading it is allowed, keeping
+       quiet about it is not;
+    6. no entries at all → None.
+
+    Returns ``{entry, reason, use, note}``: ``reason`` one of
+    :data:`CHOICE_REASONS`, ``use`` the use that was served (None for the
+    master), ``note`` a sentence for a log or ``""``. Pure: no graph, so the
+    same table of cases runs in Python and in JS."""
+    entries = [e for e in (entries or []) if e]
+    if not entries:
+        return None
+    uses = [use] if isinstance(use, str) else list(use or [])
+    for u in uses:
+        cands = [e for e in entries if not e.get("master") and u in (e.get("use") or [])]
+        if not cands:
+            continue
+        if prefer_level:
+            at = sorted((e for e in cands if _same_level(e, prefer_level)),
+                        key=lambda e: str(e.get("id")))
+            if at:
+                return {"entry": at[0], "reason": "level", "use": u, "note": ""}
+
+        def weight(e):
+            size = e.get("size_bytes")
+            known = isinstance(size, (int, float)) and not isinstance(size, bool)
+            return (-_lod_ordinal(e), 0 if known else 1, size if known else 0,
+                    str(e.get("id")))
+
+        best = sorted(cands, key=weight)[0]
+        note = (f"no {u} version at {prefer_level}: the lightest {u} version instead"
+                if prefer_level else "")
+        return {"entry": best, "reason": "use", "use": u, "note": note}
+    master = next((e for e in entries if e.get("master")), None)
+    asked = ", ".join(uses) or "no use"
+    if master is None:
+        return {"entry": None, "reason": "none", "use": None,
+                "note": f"no version for {asked} and no master"}
+    return {"entry": master, "reason": "master", "use": None,
+            "note": f"no version for {asked}: the master is loaded"}
+
+
+def version_for(graph, asset_or_rm_id: str, use: Any,
+                prefer_level: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    """The resource to load for ``use`` from an asset, a version, or a
+    representation model (whose ``has_linked_resource`` resources are read).
+
+    The choice is :func:`choose_version` on :func:`versions_of`; this adds
+    ``asset_id`` to the answer. An RM hanging resources of several assets
+    offers the versions of all of them, and its master is the first asset's
+    (by id), said in the ``note``. None when there is nothing to load."""
+    node = _node(graph, asset_or_rm_id)
+    if node is None:
+        raise ValueError(f"{asset_or_rm_id!r} is not a node of this graph")
+    if _is_resource(node):
+        starts = [asset_or_rm_id]
+    else:
+        linked = [e.edge_target for e in graph.edges
+                  if e.edge_type == EDGE_HAS_LINKED and e.edge_source == asset_or_rm_id
+                  and _node(graph, e.edge_target) is not None
+                  and _is_resource(_node(graph, e.edge_target))]
+        models = [r for r in linked
+                  if _data(_node(graph, r)).get("url_type") == "3d_model"]
+        starts = models or linked
+    assets = sorted({asset_of(graph, r) for r in starts})
+    if not assets:
+        return None
+    entries: List[Dict[str, Any]] = []
+    for a in assets:
+        entries += [{**e, "asset_id": a} for e in versions_of(graph, a)]
+    choice = choose_version(entries, use, prefer_level)
+    if choice is None:
+        return None
+    if choice["reason"] == "master" and len(assets) > 1:
+        choice["note"] += f" (of {assets[0]}, the first of {len(assets)} assets)"
+    choice["asset_id"] = (choice["entry"] or {}).get("asset_id", assets[0])
+    return choice
 
 
 def inherited_links(graph, res_id: str) -> Dict[str, Any]:

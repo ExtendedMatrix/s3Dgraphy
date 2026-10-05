@@ -5,6 +5,27 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
+- **H1/H4 · The version for a use: ONE rule, in Python and in JS** (MICRO
+  Heriverse legge lo studio, decided by E.D. 5 October 2026: nothing is
+  re-exported for a viewer, the viewer reads the study and picks the version).
+  `resources.versions.choose_version(entries, use, prefer_level)` is the rule,
+  pure and written in prose in its docstring: the uses tried IN ORDER, the
+  candidates the versions (never the master) declaring the use, the level asked
+  for if one is there, else the lightest (the highest `lod_level`, then the
+  fewest `size_bytes`, then the id — never the order of the neighbours); no
+  version for any use → the master, SAID in a `note`.
+  `resources.versions.version_for(graph, asset_or_rm_id, use, prefer_level)` and
+  `api.version_for` apply it from an asset, a version or a representation model
+  (its `has_linked_resource` 3D resources). The cases are
+  `JSON_config/version_for_cases.json` (1.1.0, 19 cases): the same table passes
+  here and in Heriverse's copy (`tests/check-version-for.mjs`, run by
+  `tests/test_version_for.py` when that checkout is beside this one).
+  `versions_of` entries carry `size_bytes`.
+- **H4 · Two uses for a version made for a viewer, `heriverse` and `aton`**
+  (node datamodel **1.6.26**, em.ttl comment of `em:use`): the package on disk
+  Heriverse, or another ATON app, opens offline. `VIEWER_USES` = heriverse,
+  aton, web, realtime — the order a viewer asks. The shipped mappings are
+  re-stamped against 1.6.26.
 - **B3 · An edge towards a node of another graph of the study is refused, in
   the CRDT and in the reader, with one sentence** (MICRO lo studio in stanza
   nomina il grafo, 5 October 2026). `crdt.edge_outside_graph` is the rule and

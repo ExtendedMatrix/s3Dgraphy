@@ -1,0 +1,580 @@
+{
+  "_version": "1.1.0",
+  "_note": "The version for a use (E.D., 5 Oct 2026: «Heriverse legge l'em.json e sceglie la versione»). ONE rule, s3dgraphy.resources.versions.choose_version, copied by the clients that cannot call Python (Heriverse, EMStudio); every copy passes these cases. An entry is shaped as versions_of gives it (id, master, level, lod_level, use, size_bytes). use is one use or a list tried in order. expect: the id chosen (null: nothing), the reason (level | use | master | none), the use served (null for the master), and whether a note is written. 1.1.0 (H4, E.D. 5 Oct 2026): the uses heriverse and aton, a version made for a viewer; Heriverse asks heriverse, aton, web, realtime in that order.",
+  "cases": [
+    {
+      "name": "one web version: it is the one",
+      "entries": [
+        {
+          "id": "M",
+          "master": true,
+          "use": []
+        },
+        {
+          "id": "W0",
+          "master": false,
+          "lod_level": "lod0",
+          "use": [
+            "web"
+          ]
+        }
+      ],
+      "use": "web",
+      "expect": {
+        "id": "W0",
+        "reason": "use",
+        "use": "web",
+        "note": false
+      }
+    },
+    {
+      "name": "two web versions, no preference: the lightest, the highest level",
+      "entries": [
+        {
+          "id": "M",
+          "master": true,
+          "use": []
+        },
+        {
+          "id": "L1",
+          "master": false,
+          "lod_level": "lod1",
+          "use": [
+            "web"
+          ]
+        },
+        {
+          "id": "L2",
+          "master": false,
+          "lod_level": "lod2",
+          "use": [
+            "web",
+            "preview"
+          ]
+        }
+      ],
+      "use": "web",
+      "expect": {
+        "id": "L2",
+        "reason": "use",
+        "use": "web",
+        "note": false
+      }
+    },
+    {
+      "name": "the level asked for is there: it is taken",
+      "entries": [
+        {
+          "id": "M",
+          "master": true,
+          "use": []
+        },
+        {
+          "id": "L1",
+          "master": false,
+          "lod_level": "lod1",
+          "use": [
+            "web"
+          ]
+        },
+        {
+          "id": "L2",
+          "master": false,
+          "lod_level": "lod2",
+          "use": [
+            "web"
+          ]
+        }
+      ],
+      "use": "web",
+      "prefer_level": "lod1",
+      "expect": {
+        "id": "L1",
+        "reason": "level",
+        "use": "web",
+        "note": false
+      }
+    },
+    {
+      "name": "the level asked for, by the name the version was given",
+      "entries": [
+        {
+          "id": "M",
+          "master": true,
+          "use": []
+        },
+        {
+          "id": "A",
+          "master": false,
+          "level": "LOD2",
+          "lod_level": "lod0",
+          "use": [
+            "web"
+          ]
+        },
+        {
+          "id": "B",
+          "master": false,
+          "level": "LOD3",
+          "lod_level": "lod1",
+          "use": [
+            "web"
+          ]
+        }
+      ],
+      "use": "web",
+      "prefer_level": "lod2",
+      "expect": {
+        "id": "A",
+        "reason": "level",
+        "use": "web",
+        "note": false
+      }
+    },
+    {
+      "name": "the level asked for is not there: the lightest, and a note says it",
+      "entries": [
+        {
+          "id": "M",
+          "master": true,
+          "use": []
+        },
+        {
+          "id": "L1",
+          "master": false,
+          "lod_level": "lod1",
+          "use": [
+            "web"
+          ]
+        },
+        {
+          "id": "L2",
+          "master": false,
+          "lod_level": "lod2",
+          "use": [
+            "web"
+          ]
+        }
+      ],
+      "use": "web",
+      "prefer_level": "lod5",
+      "expect": {
+        "id": "L2",
+        "reason": "use",
+        "use": "web",
+        "note": true
+      }
+    },
+    {
+      "name": "the version for another use is not taken for this one",
+      "entries": [
+        {
+          "id": "M",
+          "master": true,
+          "use": []
+        },
+        {
+          "id": "L1",
+          "master": false,
+          "lod_level": "lod1",
+          "use": [
+            "web"
+          ]
+        },
+        {
+          "id": "L2",
+          "master": false,
+          "lod_level": "lod2",
+          "use": [
+            "preview"
+          ]
+        }
+      ],
+      "use": "web",
+      "expect": {
+        "id": "L1",
+        "reason": "use",
+        "use": "web",
+        "note": false
+      }
+    },
+    {
+      "name": "web, then realtime: no web version, the realtime one",
+      "entries": [
+        {
+          "id": "M",
+          "master": true,
+          "use": []
+        },
+        {
+          "id": "A",
+          "master": false,
+          "lod_level": "lod0",
+          "use": [
+            "analysis"
+          ]
+        },
+        {
+          "id": "R",
+          "master": false,
+          "lod_level": "lod1",
+          "use": [
+            "realtime"
+          ]
+        }
+      ],
+      "use": [
+        "web",
+        "realtime"
+      ],
+      "expect": {
+        "id": "R",
+        "reason": "use",
+        "use": "realtime",
+        "note": false
+      }
+    },
+    {
+      "name": "web, then realtime: the first use served wins even if heavier",
+      "entries": [
+        {
+          "id": "M",
+          "master": true,
+          "use": []
+        },
+        {
+          "id": "W",
+          "master": false,
+          "lod_level": "lod0",
+          "use": [
+            "web"
+          ]
+        },
+        {
+          "id": "R",
+          "master": false,
+          "lod_level": "lod2",
+          "use": [
+            "realtime"
+          ]
+        }
+      ],
+      "use": [
+        "web",
+        "realtime"
+      ],
+      "expect": {
+        "id": "W",
+        "reason": "use",
+        "use": "web",
+        "note": false
+      }
+    },
+    {
+      "name": "heriverse, aton, web, realtime: the version made for Heriverse comes first, even if heavier",
+      "entries": [
+        {
+          "id": "M",
+          "master": true,
+          "use": []
+        },
+        {
+          "id": "W2",
+          "master": false,
+          "lod_level": "lod2",
+          "use": [
+            "web"
+          ]
+        },
+        {
+          "id": "H",
+          "master": false,
+          "lod_level": "lod0",
+          "use": [
+            "aton",
+            "heriverse"
+          ]
+        }
+      ],
+      "use": [
+        "heriverse",
+        "aton",
+        "web",
+        "realtime"
+      ],
+      "expect": {
+        "id": "H",
+        "reason": "use",
+        "use": "heriverse",
+        "note": false
+      }
+    },
+    {
+      "name": "heriverse, aton, web, realtime: no version for Heriverse, the one for ATON",
+      "entries": [
+        {
+          "id": "M",
+          "master": true,
+          "use": []
+        },
+        {
+          "id": "W",
+          "master": false,
+          "lod_level": "lod1",
+          "use": [
+            "web"
+          ]
+        },
+        {
+          "id": "A",
+          "master": false,
+          "lod_level": "lod0",
+          "use": [
+            "aton"
+          ]
+        }
+      ],
+      "use": [
+        "heriverse",
+        "aton",
+        "web",
+        "realtime"
+      ],
+      "expect": {
+        "id": "A",
+        "reason": "use",
+        "use": "aton",
+        "note": false
+      }
+    },
+    {
+      "name": "heriverse, aton, web, realtime: none made for a viewer, the web one",
+      "entries": [
+        {
+          "id": "M",
+          "master": true,
+          "use": []
+        },
+        {
+          "id": "W",
+          "master": false,
+          "lod_level": "lod1",
+          "use": [
+            "web"
+          ]
+        }
+      ],
+      "use": [
+        "heriverse",
+        "aton",
+        "web",
+        "realtime"
+      ],
+      "expect": {
+        "id": "W",
+        "reason": "use",
+        "use": "web",
+        "note": false
+      }
+    },
+    {
+      "name": "only the master: the master, said",
+      "entries": [
+        {
+          "id": "M",
+          "master": true,
+          "use": []
+        }
+      ],
+      "use": "web",
+      "expect": {
+        "id": "M",
+        "reason": "master",
+        "use": null,
+        "note": true
+      }
+    },
+    {
+      "name": "versions, none for the use: the master, said",
+      "entries": [
+        {
+          "id": "M",
+          "master": true,
+          "use": []
+        },
+        {
+          "id": "A",
+          "master": false,
+          "lod_level": "lod0",
+          "use": [
+            "analysis",
+            "print"
+          ]
+        }
+      ],
+      "use": [
+        "web",
+        "realtime"
+      ],
+      "expect": {
+        "id": "M",
+        "reason": "master",
+        "use": null,
+        "note": true
+      }
+    },
+    {
+      "name": "the master is never a candidate, whatever use it carries",
+      "entries": [
+        {
+          "id": "M",
+          "master": true,
+          "use": [
+            "web"
+          ]
+        }
+      ],
+      "use": "web",
+      "expect": {
+        "id": "M",
+        "reason": "master",
+        "use": null,
+        "note": true
+      }
+    },
+    {
+      "name": "the same level twice: the fewer bytes, an unknown size after a known one",
+      "entries": [
+        {
+          "id": "M",
+          "master": true,
+          "use": []
+        },
+        {
+          "id": "Z",
+          "master": false,
+          "lod_level": "lod1",
+          "use": [
+            "web"
+          ]
+        },
+        {
+          "id": "BIG",
+          "master": false,
+          "lod_level": "lod1",
+          "use": [
+            "web"
+          ],
+          "size_bytes": 9000
+        },
+        {
+          "id": "SMALL",
+          "master": false,
+          "lod_level": "lod1",
+          "use": [
+            "web"
+          ],
+          "size_bytes": 300
+        }
+      ],
+      "use": "web",
+      "expect": {
+        "id": "SMALL",
+        "reason": "use",
+        "use": "web",
+        "note": false
+      }
+    },
+    {
+      "name": "everything equal: the id decides, never the order",
+      "entries": [
+        {
+          "id": "M",
+          "master": true,
+          "use": []
+        },
+        {
+          "id": "b",
+          "master": false,
+          "lod_level": "lod1",
+          "use": [
+            "web"
+          ]
+        },
+        {
+          "id": "a",
+          "master": false,
+          "lod_level": "lod1",
+          "use": [
+            "web"
+          ]
+        }
+      ],
+      "use": "web",
+      "expect": {
+        "id": "a",
+        "reason": "use",
+        "use": "web",
+        "note": false
+      }
+    },
+    {
+      "name": "a version with no level comes after any level",
+      "entries": [
+        {
+          "id": "M",
+          "master": true,
+          "use": []
+        },
+        {
+          "id": "N",
+          "master": false,
+          "use": [
+            "web"
+          ]
+        },
+        {
+          "id": "L0",
+          "master": false,
+          "lod_level": "lod0",
+          "use": [
+            "web"
+          ]
+        }
+      ],
+      "use": "web",
+      "expect": {
+        "id": "L0",
+        "reason": "use",
+        "use": "web",
+        "note": false
+      }
+    },
+    {
+      "name": "no master and no version for the use: nothing, said",
+      "entries": [
+        {
+          "id": "A",
+          "master": false,
+          "lod_level": "lod0",
+          "use": [
+            "analysis"
+          ]
+        }
+      ],
+      "use": "web",
+      "expect": {
+        "id": null,
+        "reason": "none",
+        "use": null,
+        "note": true
+      }
+    },
+    {
+      "name": "no entries: nothing to load",
+      "entries": [],
+      "use": "web",
+      "expect": null
+    }
+  ]
+}

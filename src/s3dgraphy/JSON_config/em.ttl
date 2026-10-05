@@ -1010,7 +1010,7 @@ em:use
     a owl:DatatypeProperty ;
     rdfs:label "use"@en ;
     rdfs:range xsd:string ;
-    rdfs:comment "What a version of an asset is FOR, one triple per use: analysis, realtime, web, mobile_ar, print, render, preview (correspondences with Smithsonian Voyager and 3D Tiles in the datamodel's note). Maps to: node_datamodel ResourceNode.properties.use."@en .
+    rdfs:comment "What a version of an asset is FOR, one triple per use: analysis, realtime, web, mobile_ar, print, render, preview, heriverse, aton (the last two since node datamodel 1.6.26: a version made for a viewer, the package on disk Heriverse or another ATON app opens; correspondences with Smithsonian Voyager and 3D Tiles in the datamodel's note). Maps to: node_datamodel ResourceNode.properties.use."@en .
 
 em:trisPerM2
     a owl:DatatypeProperty ;

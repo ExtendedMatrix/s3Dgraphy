@@ -2774,6 +2774,17 @@ def versions_of(graph: Graph, res_id: str) -> List[Dict[str, Any]]:
     return _versions(graph, res_id)
 
 
+def version_for(graph: Graph, asset_or_rm_id: str, use: Any,
+                prefer_level: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    """The resource to load for ``use`` (one use, or a list tried in order) from
+    an asset or a representation model: the version with that use, at
+    ``prefer_level`` if there is one, else the lightest; no such version → the
+    master, said in ``note``. ``{entry, reason, use, note, asset_id}`` — the
+    rule is :func:`s3dgraphy.resources.versions.choose_version`."""
+    from .resources.versions import version_for as _for
+    return _for(graph, asset_or_rm_id, use, prefer_level)
+
+
 def asset_of(graph: Graph, res_id: str) -> str:
     """The asset (master) ``res_id`` is a version of; itself if it is none."""
     from .resources.versions import asset_of as _asset
