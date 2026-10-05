@@ -38,6 +38,10 @@ from ..edges.edge import Edge
 # spellings ``is_bonded_to`` / ``is_physically_equal_to`` (the datamodel's
 # ``spelling_of``) are still recognised, and COMPARED under the canonical name
 # (``_canonical_spelling``), so two spellings of one bond are not a conflict.
+#: The qualia a unit may carry more than once, one PropertyNode each
+#: (``repeatable: true`` in em_qualia_types.json).
+REPEATABLE_QUALIA = frozenset({"alternative_label"})
+
 STRATIGRAPHIC_EDGE_TYPES = {
     'overlies', 'is_overlain_by',
     'cuts', 'is_cut_by',
@@ -639,10 +643,7 @@ class GraphMerger:
                 cand = incoming.find_node_by_id(edge.edge_target)
                 if not isinstance(cand, PropertyNode):
                     continue
-                cand_type = cand.property_type
-                if not cand_type or cand_type == 'string':
-                    cand_type = cand.name
-                if cand_type == prop_type:
+                if self._qualia_key(cand) == prop_type:
                     inc_pn = cand
                     break
         if inc_pn is None:
@@ -784,10 +785,7 @@ class GraphMerger:
                 cand = graph.find_node_by_id(e.edge_target)
                 if not isinstance(cand, PropertyNode):
                     continue
-                cand_type = cand.property_type
-                if not cand_type or cand_type == 'string':
-                    cand_type = cand.name
-                if cand_type == prop_type:
+                if self._qualia_key(cand) == prop_type:
                     pn_to_remove = cand
                     break
         if pn_to_remove is None:
@@ -989,11 +987,25 @@ class GraphMerger:
             pn = graph.find_node_by_id(edge.edge_target)
             if not host_name or not isinstance(pn, PropertyNode):
                 continue
-            prop_type = pn.property_type
-            if not prop_type or prop_type == 'string':
-                prop_type = pn.name or 'definition'
-            out[(host_name, prop_type)] = pn
+            out[(host_name, self._qualia_key(pn))] = pn
         return out
+
+    @staticmethod
+    def _qualia_key(pn: PropertyNode) -> str:
+        """The quale a PropertyNode answers, as the maps key it: its
+        ``property_type`` (its name when the type is missing or the legacy
+        ``"string"``). A REPEATABLE quale (``alternative_label``: one
+        PropertyNode per label, A1 5 Oct 2026) is keyed with its value too —
+        two labels of one unit are two claims, so a label the table adds is
+        ``qualia_added`` and never a ``qualia_changed`` of the other one."""
+        prop_type = pn.property_type
+        if not prop_type or prop_type == 'string':
+            prop_type = pn.name or 'definition'
+        if prop_type in REPEATABLE_QUALIA:
+            value = " ".join(str(getattr(pn, "value", "") or "").split())
+            scheme = " ".join(str((getattr(pn, "data", None) or {}).get("scheme") or "").split())
+            return f"{prop_type}={value}" + (f" [{scheme}]" if scheme else "")
+        return prop_type
 
     @staticmethod
     def _pn_display_value(pn: PropertyNode) -> str:

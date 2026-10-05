@@ -284,6 +284,41 @@ def shared_properties(graph: Graph) -> List[Dict[str, Any]]:
     return _shared(graph)
 
 
+# ── A1 · the alternative labels of a unit, each with its source ─────────────
+def add_alternative_label(graph: Graph, unit_id: str, label: str, *,
+                          sources: Optional[Sequence[str]] = None,
+                          scheme: Optional[str] = None,
+                          author: Optional[str] = None) -> Dict[str, Any]:
+    """Another label of ``unit_id`` (quale ``alternative_label``, like
+    skos:altLabel): ONE PropertyNode per label, its sources as paradata
+    (property → extractor → the document that uses the label), an optional
+    ``scheme`` (the numbering it belongs to). The unit's own label does not
+    change. Same label, unit and scheme again → the same nodes.
+    See :mod:`s3dgraphy.labels`."""
+    from .labels import add_alternative_label as _add
+    return _add(graph, unit_id, label, sources=sources, scheme=scheme, author=author)
+
+
+def alternative_labels(graph: Graph, unit_id: str) -> List[Dict[str, Any]]:
+    """``[{property_id, label, scheme, sources: [{id, name, extractor_id}]}]``."""
+    from .labels import alternative_labels as _labels
+    return _labels(graph, unit_id)
+
+
+def remove_alternative_label(graph: Graph, unit_id: str, property_id: str) -> bool:
+    """Take one alternative label off a unit (its extractors stay)."""
+    from .labels import remove_alternative_label as _remove
+    return _remove(graph, unit_id, property_id)
+
+
+def find_by_label(graph: Graph, text: str, *, exact: bool = False) -> List[Dict[str, Any]]:
+    """The nodes whose label or one of whose alternative labels matches
+    ``text`` (case-insensitive, substring unless ``exact``): ``[{node_id,
+    name, matched, scheme}]``."""
+    from .labels import find_by_label as _find
+    return _find(graph, text, exact=exact)
+
+
 # ── human authorship with AI support, and its verification ──────────────────
 def unvalidated_ai(graph: Graph) -> List[Dict[str, Any]]:
     """Every node made with AI (``data.ai_assisted``) that no person has

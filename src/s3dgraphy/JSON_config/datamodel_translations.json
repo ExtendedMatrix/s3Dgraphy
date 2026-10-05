@@ -2324,6 +2324,27 @@
     "de": "Ästhetischer Wert"
    }
   },
+  "alternative_label": {
+   "label": {
+    "en": "Alternative Label",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Etichetta alternativa",
+    "el": "Εναλλακτική ετικέτα",
+    "he": "תווית חלופית",
+    "es": "Etiqueta alternativa",
+    "pl": "Etykieta alternatywna",
+    "ro": "Etichetă alternativă",
+    "fr": "Libellé alternatif",
+    "de": "Alternative Bezeichnung"
+   }
+  },
   "area": {
    "label": {
     "en": "Area",

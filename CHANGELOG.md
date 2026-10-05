@@ -5,6 +5,21 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
+- **A1 · The alternative labels of a unit, each with its source** (MICRO le
+  decisioni della sera, 5 October 2026). Quale `alternative_label`
+  (em_qualia_types **1.6.7**, contextual ▸ administrative), like
+  `skos:altLabel`: the first quale declared `repeatable` — one PropertyNode per
+  label, its source the ordinary chain (property `has_data_provenance` →
+  extractor `extracted_from` → the document that uses the label), an optional
+  `data.scheme` («scavo 2013», «tesi Demetrescu»). The unit's own label
+  (area.settore.tipoNumero) does not change. `s3dgraphy.labels` and
+  `api.add_alternative_label / alternative_labels / remove_alternative_label /
+  find_by_label` (the search finds a unit by any of its labels). The RDF
+  export also says `<unit> crm:P1_is_identified_by <label>` (an E41_Appellation)
+  and `skos:altLabel "…"` (`mappings.unit_predicate`); the merger keys a
+  repeatable quale with its value, so a label a re-imported table adds is
+  `qualia_added`, never a change of another label. Labels in nine languages;
+  golden `tests/fixtures/alternative_labels.em.json`.
 - **W4 · The release builds the EM site.** Step 13 of `./em.sh release … --desktop`:
   after the desktop, with its countdown, `gh workflow run build.yml -R
   zalmoxes-laran/ExtendedMatrix-site --ref main`, its jobs watched, then

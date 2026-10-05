@@ -1,0 +1,211 @@
+{
+ "graph": {
+  "edges": [
+   {
+    "edge_type": "has_property",
+    "id": "9c1131bf-26b5-59ca-8b95-4149e7681e8c",
+    "source": "us10",
+    "target": "a7d9363c-0ef3-5568-823a-c241b5e2a5a8"
+   },
+   {
+    "edge_type": "extracted_from",
+    "id": "2882ed12-d2ef-5cfd-a48d-7231ee74d7cd",
+    "source": "d4df6388-a7e9-5e99-ac72-dabbb80ab0ad",
+    "target": "d2013"
+   },
+   {
+    "edge_type": "has_data_provenance",
+    "id": "d2e2dbd7-976e-5b9f-be17-7912b4f8b46b",
+    "source": "a7d9363c-0ef3-5568-823a-c241b5e2a5a8",
+    "target": "d4df6388-a7e9-5e99-ac72-dabbb80ab0ad"
+   },
+   {
+    "edge_type": "has_property",
+    "id": "7c0d63d3-23eb-5711-b889-5fce22d56e24",
+    "source": "us10",
+    "target": "e07ff0c9-ff29-5bb9-8133-dd47428eaa9b"
+   },
+   {
+    "edge_type": "extracted_from",
+    "id": "63f9fce8-5b13-5829-beb3-893ffb3b400c",
+    "source": "f8478591-2825-565f-be0c-32de285e0d35",
+    "target": "dtesi"
+   },
+   {
+    "edge_type": "has_data_provenance",
+    "id": "7eeba4cc-65cb-5db4-bc03-b9668420f830",
+    "source": "e07ff0c9-ff29-5bb9-8133-dd47428eaa9b",
+    "target": "f8478591-2825-565f-be0c-32de285e0d35"
+   },
+   {
+    "edge_type": "has_property",
+    "id": "18472095-9be5-5e86-8595-722d50eada8e",
+    "source": "us10",
+    "target": "c28d815d-f825-5d6f-8b38-d702b332587f"
+   },
+   {
+    "edge_type": "extracted_from",
+    "id": "fb5aaca5-01ea-595f-a0ef-e651434b17fa",
+    "source": "acf8cc55-69f9-50dd-b36f-1e463eee2634",
+    "target": "d1931"
+   },
+   {
+    "edge_type": "extracted_from",
+    "id": "799a0cbc-7adb-5842-b364-7c6d26329930",
+    "source": "69b65abb-825c-5bc5-a6cc-66a83f9c2c90",
+    "target": "d2013"
+   },
+   {
+    "edge_type": "combines",
+    "id": "fd94173d-33f6-508a-a891-374ede297ec3",
+    "source": "48ed01cf-230b-51bf-b614-072d18b7b562",
+    "target": "acf8cc55-69f9-50dd-b36f-1e463eee2634"
+   },
+   {
+    "edge_type": "combines",
+    "id": "ab4d5eeb-f18b-58fc-af45-eee996423a93",
+    "source": "48ed01cf-230b-51bf-b614-072d18b7b562",
+    "target": "69b65abb-825c-5bc5-a6cc-66a83f9c2c90"
+   },
+   {
+    "edge_type": "has_data_provenance",
+    "id": "fcb7f088-d25d-5aa5-bdeb-2ea436efd353",
+    "source": "c28d815d-f825-5d6f-8b38-d702b332587f",
+    "target": "48ed01cf-230b-51bf-b614-072d18b7b562"
+   }
+  ],
+  "graph_id": "templu",
+  "nodes": [
+   {
+    "data": {
+     "rotation": 0.0,
+     "rotation_reference": "grid",
+     "shift_x": 0.0,
+     "shift_y": 0.0,
+     "shift_z": 0.0
+    },
+    "id": "geo_templu",
+    "name": "geo_position",
+    "node_type": "geo_position"
+   },
+   {
+    "data": {
+     "label": "US (or SU)",
+     "symbol": "white rectangle"
+    },
+    "description": "il muro",
+    "id": "us10",
+    "name": "1.US10",
+    "node_type": "US"
+   },
+   {
+    "data": {
+     "label": "US (or SU)",
+     "symbol": "white rectangle"
+    },
+    "id": "us11",
+    "name": "1.US11",
+    "node_type": "US"
+   },
+   {
+    "id": "d2013",
+    "name": "D.2013 Relazione di scavo",
+    "node_type": "document"
+   },
+   {
+    "id": "dtesi",
+    "name": "D.TESI Tesi di dottorato",
+    "node_type": "document"
+   },
+   {
+    "id": "d1931",
+    "name": "D.1931 Diario di scavo",
+    "node_type": "document"
+   },
+   {
+    "data": {
+     "property_type": "alternative_label",
+     "scheme": "scavo 2013",
+     "value": "US 1004"
+    },
+    "id": "a7d9363c-0ef3-5568-823a-c241b5e2a5a8",
+    "name": "alternative_label",
+    "node_type": "property"
+   },
+   {
+    "description": "the label «US 1004» as D.2013 Relazione di scavo uses it",
+    "id": "d4df6388-a7e9-5e99-ac72-dabbb80ab0ad",
+    "name": "US 1004 in D.2013 Relazione di scavo",
+    "node_type": "extractor"
+   },
+   {
+    "data": {
+     "property_type": "alternative_label",
+     "scheme": "tesi Demetrescu",
+     "value": "A.12"
+    },
+    "id": "e07ff0c9-ff29-5bb9-8133-dd47428eaa9b",
+    "name": "alternative_label",
+    "node_type": "property"
+   },
+   {
+    "description": "the label «A.12» as D.TESI Tesi di dottorato uses it",
+    "id": "f8478591-2825-565f-be0c-32de285e0d35",
+    "name": "A.12 in D.TESI Tesi di dottorato",
+    "node_type": "extractor"
+   },
+   {
+    "data": {
+     "property_type": "alternative_label",
+     "value": "Muro del podio"
+    },
+    "id": "c28d815d-f825-5d6f-8b38-d702b332587f",
+    "name": "alternative_label",
+    "node_type": "property"
+   },
+   {
+    "description": "the label «Muro del podio» as D.1931 Diario di scavo uses it",
+    "id": "acf8cc55-69f9-50dd-b36f-1e463eee2634",
+    "name": "Muro del podio in D.1931 Diario di scavo",
+    "node_type": "extractor"
+   },
+   {
+    "description": "the label «Muro del podio» as D.2013 Relazione di scavo uses it",
+    "id": "69b65abb-825c-5bc5-a6cc-66a83f9c2c90",
+    "name": "Muro del podio in D.2013 Relazione di scavo",
+    "node_type": "extractor"
+   },
+   {
+    "description": "the same label in several sources",
+    "id": "48ed01cf-230b-51bf-b614-072d18b7b562",
+    "name": "Muro del podio · sources",
+    "node_type": "combiner"
+   }
+  ]
+ },
+ "header": {
+  "datamodel_versions": {
+   "connections": "1.6.35",
+   "nodes": "1.6.25",
+   "qualia": "1.6.7"
+  },
+  "format": "em.json",
+  "generator": {
+   "tool": "s3dgraphy",
+   "version": "1.6.0.dev37"
+  },
+  "ontology_versions": {
+   "CIDOC-CRM": "7.1.3",
+   "CRMarchaeo": "2.1.1",
+   "CRMdig": "5.0",
+   "CRMem": "1.6.15",
+   "CRMgeo": "1.2",
+   "CRMinf": "1.2.1",
+   "CRMsci": "3.2",
+   "HDT-O": "1.0",
+   "PROV-O": "W3C Recommendation 2013-04-30"
+  },
+  "schema_version": 2,
+  "version": "1.0"
+ }
+}

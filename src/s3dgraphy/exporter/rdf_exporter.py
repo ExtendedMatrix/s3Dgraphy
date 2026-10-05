@@ -266,6 +266,7 @@ class _Datamodel:
         #: quale id → the fields of an OBJECT value that are natural language
         #: (dev27: attribution.note) — the object is not text, its note is
         self._qualia_natural_language_fields: Dict[str, Tuple[str, ...]] = {}
+        self._qualia_unit_predicates: Dict[str, Tuple[str, str]] = {}
         self._build_qualia_index(self.qualia_types)
 
         #: reverse edge name → canonical edge name. The connections datamodel
@@ -312,6 +313,14 @@ class _Datamodel:
                     if qid and isinstance(fields, list):
                         self._qualia_natural_language_fields[qid] = tuple(
                             str(f) for f in fields)
+                    # A1 · a quale that ALSO says something of its unit with a
+                    # predicate of its own (alternative_label: the unit is
+                    # identified by the label, P1, and the label is its
+                    # skos:altLabel)
+                    if qid and mappings.get("unit_predicate"):
+                        self._qualia_unit_predicates[qid] = (
+                            str(mappings["unit_predicate"]),
+                            str(mappings.get("skos") or ""))
 
     # ─── public lookups ─────────────────────────────────────────────────────
 
@@ -559,6 +568,13 @@ class _Datamodel:
             if key in index:
                 return key
         return None
+
+    def unit_predicate_for(self, property_type: Optional[str]):
+        """``(unit_predicate, skos_predicate)`` of a quale that declares one
+        (``mappings.unit_predicate``), else None."""
+        if not property_type:
+            return None
+        return self._qualia_unit_predicates.get(property_type)
 
     def get_qualia_crm_iri(self, property_type: Optional[str]) -> Optional[URIRef]:
         """Resolve a property_type string to its CIDOC class IRI.
@@ -1051,6 +1067,26 @@ class RDFExporter:
                 ctx.add((self._node_iri(g.graph_id, edge.edge_source),
                          EM.inheritsQualia,
                          self._node_iri(g.graph_id, edge.edge_target)))
+
+        # A1 · the qualia with a predicate of their own on the unit: an
+        # alternative_label leaves as <unit> crm:P1_is_identified_by <label>
+        # and <unit> skos:altLabel "the label" — beside em:hasQualia, so a
+        # reader that knows only CIDOC or only SKOS finds it too
+        for edge in g.edges:
+            if edge.edge_type != "has_property":
+                continue
+            pn = g.find_node_by_id(edge.edge_target)
+            ptype = getattr(pn, "property_type", None) or getattr(pn, "name", None)
+            pred = self.datamodel.unit_predicate_for(ptype)
+            if pn is None or pred is None:
+                continue
+            unit_iri = self._node_iri(g.graph_id, edge.edge_source)
+            if pred[0]:
+                ctx.add((unit_iri, _resolve_prefixed(pred[0]),
+                         self._node_iri(g.graph_id, pn.node_id)))
+            value = str(getattr(pn, "value", "") or "").strip()
+            if pred[1] and value:
+                ctx.add((unit_iri, _resolve_prefixed(pred[1]), Literal(value)))
 
         # CRMinf belief propositions (J4 → I17) — needs the full edge
         # topology, so it runs as a post-pass after nodes and edges.
