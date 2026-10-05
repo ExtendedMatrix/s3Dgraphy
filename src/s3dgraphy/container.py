@@ -388,7 +388,8 @@ def parse_container(doc: Dict[str, Any], *,
         }
         try:
             graph, member_warnings = parse_emjson(member_doc,
-                                                  project_root=project_root)
+                                                  project_root=project_root,
+                                                  study=doc)
         except Exception as exc:
             # One unreadable member must not lose the rest of the project.
             warnings.append(f"container member '{member_id}' not readable: {exc}")

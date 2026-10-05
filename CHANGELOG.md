@@ -5,6 +5,24 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
+- **B3 · An edge towards a node of another graph of the study is refused, in
+  the CRDT and in the reader, with one sentence** (MICRO lo studio in stanza
+  nomina il grafo, 5 October 2026). `crdt.edge_outside_graph` is the rule and
+  the sentence («the node '…' is in the graph '…', not in this one: an edge
+  joins two nodes of the same graph, and a link between graphs does not exist
+  yet»); `crdt.apply_op_to_section(…, study=)` and `api.apply_op(…, study=)`
+  take the container the section belongs to (a room passes it), and
+  `container.parse_container` hands it to the reader, which drops such an edge
+  with the same sentence. Until now the CRDT took the edge and the reader then
+  dropped it. An end that is in NO graph is not this rule and stays as it was —
+  the CRDT takes the edge (its node may not have arrived: the result must not
+  depend on the order, `crdt-parity.json` applies the ops reversed), the reader
+  drops it. The link between graphs of one study (I-4) is still to build.
+  Around it, in the other repositories: StratiGraph Server refuses a
+  `graph_id` the study does not have, keeps the graph in the room's log and
+  names it in the replay, and lets a room be born with the study's sections;
+  EMStudio brings the whole study into a room and its operations name their
+  graph; EM Tools names the graph when the room holds it.
 - **A1 · The alternative labels of a unit, each with its source** (MICRO le
   decisioni della sera, 5 October 2026). Quale `alternative_label`
   (em_qualia_types **1.6.7**, contextual ▸ administrative), like

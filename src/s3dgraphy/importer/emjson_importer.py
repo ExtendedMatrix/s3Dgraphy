@@ -177,7 +177,8 @@ def _instantiate(node_type: str, payload: Dict[str, Any],
 
 
 def parse_emjson(doc: Dict[str, Any], *,
-                 project_root: Optional[str] = None) -> Tuple[Graph, List[str]]:
+                 project_root: Optional[str] = None,
+                 study: Optional[Dict[str, Any]] = None) -> Tuple[Graph, List[str]]:
     """Parse an already-loaded .em.json dict into a Graph.
 
     **Both shapes are accepted.** An em.json is a CONTAINER since 2026-08-13
@@ -281,7 +282,21 @@ def parse_emjson(doc: Dict[str, Any], *,
         normalise_canonical_attributes(getattr(node, "data", None))
         graph.add_node(node)
 
+    # THE CRDT'S RULE, WITH ITS SENTENCE (``crdt.edge_outside_graph``): an edge
+    # towards a node of another graph of the study is refused here as a room
+    # refuses it. `study` is the container this section is a member of, handed
+    # by `container.parse_container`; a lone graph has no other graph to point at.
+    from ..crdt import edge_outside_graph, graph_holding
+    present = {str(n.node_id) for n in graph.nodes}
+    member_id = str(gsec.get("graph_id") or "")
+    elsewhere = ((lambda i: graph_holding(study, i, besides_id=member_id))
+                 if study is not None else None)
     for e in gsec.get("edges", []):
+        outside = edge_outside_graph(present.__contains__,
+                                     e.get("source"), e.get("target"), elsewhere)
+        if outside:
+            warnings.append(f"skipped edge {e.get('id')!r}: {outside}")
+            continue
         try:
             edge = graph.add_edge(
                 e.get("id") or f"{e['source']}__{e['edge_type']}__{e['target']}",

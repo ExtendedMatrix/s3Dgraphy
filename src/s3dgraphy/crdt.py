@@ -980,6 +980,62 @@ def local_change_for_op(op: Dict[str, Any]) -> Dict[str, Any]:
 NOT_NEWS = ("stale", "idempotent", "already removed, not older")
 
 
+def graph_holding(study: Optional[Dict[str, Any]], node_id: str, *,
+                  besides: Optional[Dict[str, Any]] = None,
+                  besides_id: Optional[str] = None) -> Optional[str]:
+    """The id of the graph of ``study`` (a container, ``{"graphs": {...}}``)
+    that holds ``node_id``, leaving out the section ``besides`` (or the member
+    called ``besides_id``); None when no other graph has it. The shelf and the DTC corpus are members of the
+    container and are looked at too: an edge into them from a graph is the same
+    mistake."""
+    if not study or not node_id:
+        return None
+    for gid, sec in (study.get("graphs") or {}).items():
+        if sec is besides or not isinstance(sec, dict):
+            continue
+        if besides_id is not None and besides_id in (gid, sec.get("graph_id")):
+            continue
+        for node in sec.get("nodes") or []:
+            if str(node.get("id")) == node_id:
+                return str(sec.get("graph_id") or gid)
+    return None
+
+
+def edge_outside_graph(has_node, source: Any, target: Any,
+                       elsewhere=None) -> Optional[str]:
+    """Why an edge between ``source`` and ``target`` cannot stand in this graph,
+    or None. ONE rule, ONE sentence, for the two places that meet an edge: the
+    CRDT that takes an ``add_edge`` (:func:`apply_op_to_section`) and the reader
+    that builds a graph from a section (``importer.emjson_importer``).
+
+    **The rule: an end that is a node of ANOTHER graph of the study refuses the
+    edge.** An edge lives in the section of one graph and joins two nodes of it;
+    a link between graphs of one study (I-4, graph + UUID) does not exist yet.
+    Until 5 Oct 2026 the CRDT took such an edge and the reader then dropped it:
+    a room accepted what its own file threw away.
+
+    ``has_node(id)`` answers whether an id is a node of this graph (a removed
+    node, with its tombstone, still is). ``elsewhere(id)`` names the other graph
+    that holds it, or None.
+
+    **An end that is in no graph at all is NOT this rule**, and the two places
+    treat it as before: the CRDT takes the edge, because its node may simply not
+    have arrived yet — refusing it would make the result depend on the order
+    the operations come in (:func:`apply_ops_to_section`: «convergence does NOT
+    depend on it», ``tests/fixtures/crdt-parity.json`` applies them reversed);
+    the reader, which has the whole file, drops it with its own warning."""
+    for end in (source, target):
+        node_id = str(end or "")
+        if has_node(node_id) or elsewhere is None:
+            continue
+        other = elsewhere(node_id)
+        if other:
+            return (f"the node '{node_id}' is in the graph '{other}', not in "
+                    f"this one: an edge joins two nodes of the same graph, and "
+                    f"a link between graphs does not exist yet")
+    return None
+
+
 def refusal_is_news(reason: str) -> bool:
     """Whether an ``op_result`` with ``applied: false`` must reach the person
     (Log and status bar): yes, unless the state simply already knew."""
@@ -1017,8 +1073,14 @@ def _merge_declared(attrs: Dict[str, Any], declared: Dict[str, Any]) -> bool:
     return learned
 
 
-def apply_op_to_section(section: Dict[str, Any], op: Dict[str, Any]) -> OpResult:
+def apply_op_to_section(section: Dict[str, Any], op: Dict[str, Any], *,
+                        study: Optional[Dict[str, Any]] = None) -> OpResult:
     """Apply ONE operation to an em.json graph section. Pure and testable.
+
+    ``study`` is the container the section belongs to, when the caller has it
+    (a room does): with it an ``add_edge`` towards a node of another graph is
+    refused (:func:`edge_outside_graph`). Without it the section is all there
+    is, and the edge is taken as before.
 
     The section is the record; the operation is the vocabulary the merge reasons
     in. There is deliberately no persistent op-log here (that is the relay's job
@@ -1140,6 +1202,12 @@ def apply_op_to_section(section: Dict[str, Any], op: Dict[str, Any]) -> OpResult
         }
         if not edge["id"]:
             edge["id"] = f"{edge['source']}__{edge['edge_type']}__{edge['target']}"
+        outside = edge_outside_graph(
+            lambda i: i in by_id, edge["source"], edge["target"],
+            (lambda i: graph_holding(study, i, besides=section))
+            if study is not None else None)
+        if outside:
+            return OpResult(False, outside)
         declared = _declared_edge_attributes(op.get("attributes"))
         triple = (edge["source"], edge["edge_type"], edge["target"])
         for existing in edges:

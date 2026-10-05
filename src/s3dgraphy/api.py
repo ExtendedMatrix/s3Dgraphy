@@ -678,10 +678,16 @@ def unstamped_fields(node) -> List[str]:
     return _audit(_node_payload(node))
 
 
-def apply_op(section: Dict[str, Any], op: Dict[str, Any]) -> Dict[str, Any]:
+def apply_op(section: Dict[str, Any], op: Dict[str, Any], *,
+             study: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """Apply ONE CRDT operation to an em.json graph section. See
     :mod:`s3dgraphy.crdt` — idempotent, and refusing a stale op is a normal
     answer, not an error.
+
+    ``study``: the container the section is a graph of. A room passes it, and
+    then an edge towards a node of another graph is refused with a sentence
+    (``crdt.edge_outside_graph``) instead of taken and later dropped by the
+    reader.
 
     Returns a **dict** (`{applied, reason, node_id, fields}`), not the internal
     dataclass: this is the api surface, which is what another PROCESS talks to
@@ -690,7 +696,7 @@ def apply_op(section: Dict[str, Any], op: Dict[str, Any]) -> Dict[str, Any]:
     into a transport.
     """
     from .crdt import apply_op_to_section
-    return apply_op_to_section(section, op).as_dict()
+    return apply_op_to_section(section, op, study=study).as_dict()
 
 
 def make_op(kind: str, **fields):
