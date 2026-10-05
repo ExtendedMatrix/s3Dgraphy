@@ -1,5 +1,5 @@
 {
-  "_version": "1.0.0",
+  "_version": "1.1.0",
   "_note": "I1 (decided by E.D., 4 Oct 2026) · ONE list of the STATES the EM tools show, with the SYMBOL of each and its MEANING. What is standardised is the symbol and what it means, not the final form: colour, stroke and style stay each tool's (EMStudio, EM Tools, StratiField draw their own version of the glyph). Each tool tests that every state here has its sign and that it shows no state that is not here. The file states are those of the one resolver (s3dgraphy.resources.locate.STATES). Vendored by EMStudio's ./em.sh sync next to em_visual_rules.json.",
   "families": {
     "file": "Where the bytes of a resource are (the resolver, R1)",
@@ -152,6 +152,18 @@
       "meaning": {
         "it": "Nessuna stanza: il grafo è un file su questo computer.",
         "en": "No room: the graph is a file on this computer."
+      }
+    },
+    "room.paired": {
+      "family": "room",
+      "glyph": "⇄",
+      "label": {
+        "it": "con l'altra app",
+        "en": "with the other app"
+      },
+      "meaning": {
+        "it": "Nessuna stanza: EMStudio e Blender su questo computer lavorano sullo stesso grafo (una persona, due schermi); le modifiche vanno all'altra app.",
+        "en": "No room: EMStudio and Blender on this computer work on the same graph (one person, two screens); the edits go to the other app."
       }
     },
     "room.read_only": {

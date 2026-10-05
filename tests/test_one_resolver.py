@@ -133,3 +133,6 @@ def test_i1_the_list_covers_the_resolver_and_every_glyph_is_one():
         assert v["label"]["it"] and v["label"]["en"] and v["meaning"]["it"] and v["meaning"]["en"]
     fams = {v["family"] for v in doc["states"].values()}
     assert fams == {"file", "node", "room", "sync", "role", "scene"}
+    # Q2 (E.D., 5 Oct 2026) · «⇄» is in the list: the graph shared with the
+    # other app on this computer, beside □ outside and ▣ inside a room
+    assert doc["states"]["room.paired"]["glyph"] == "⇄"
