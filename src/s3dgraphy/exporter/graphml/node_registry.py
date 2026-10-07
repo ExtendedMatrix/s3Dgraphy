@@ -13,6 +13,7 @@ documented in ``PALETTE_AUDIT.md`` (Variante A).
 """
 
 import json
+import logging
 import os
 import re
 import warnings
@@ -20,6 +21,8 @@ from importlib.resources import files, as_file
 from typing import Dict, Tuple, Optional, List
 from lxml import etree as ET
 from dataclasses import dataclass
+
+logger = logging.getLogger(__name__)
 
 
 class S3DgraphyPaletteWarning(UserWarning):
@@ -135,7 +138,7 @@ class NodeRegistry:
             with resource.open('r', encoding='utf-8') as f:
                 data = json.load(f)
         except (FileNotFoundError, ModuleNotFoundError) as e:
-            print(f"[s3dgraphy] Warning: Node datamodel not found: {type(e).__name__}: {e}")
+            logger.warning("Node datamodel not found: %s: %s", type(e).__name__, e)
             self.datamodel = {}
             return
 
@@ -314,7 +317,7 @@ class NodeRegistry:
                 text_color=text_color
             )
         except Exception as e:
-            print(f"Warning: Error extracting visual properties: {e}")
+            logger.warning("Error extracting visual properties: %s", e)
             return None
 
     def get_visual_properties(self, node_type: str) -> Optional[NodeVisualProperties]:

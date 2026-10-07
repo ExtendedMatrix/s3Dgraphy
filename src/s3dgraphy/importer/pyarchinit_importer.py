@@ -3,13 +3,16 @@
 import ast
 import re
 from typing import Dict, Any, List, Optional, Tuple
-from .base_importer import BaseImporter
+from .base_importer import BaseImporter, redact_dsn
+import logging
 import sqlite3
 import os
 from ..graph import Graph
 from ..nodes.base_node import Node
 from ..nodes.property_node import PropertyNode
 from ..nodes.stratigraphic_node import StratigraphicNode
+
+logger = logging.getLogger(__name__)
 from ..utils.utils import apply_legacy_kind, get_stratigraphic_node_class
 from ..multigraph.multigraph import multi_graph_manager
 
@@ -92,7 +95,7 @@ class PyArchInitImporter(BaseImporter):
             else:
                 raise ValueError(
                     "Unsupported connection_url scheme: "
-                    f"{connection_url!r}. "
+                    f"{redact_dsn(repr(connection_url))}. "
                     "Use sqlite:///<path>, postgresql://..., "
                     "or postgres://..."
                 )
@@ -903,7 +906,14 @@ class PyArchInitImporter(BaseImporter):
             conn.close()
 
     def parse(self) -> Graph:
-        """Parse pyArchInit database using mapping configuration"""
+        """Parse pyArchInit database using mapping configuration.
+
+        The connection is closed whatever happens (#27: on a failure it
+        leaked). A failure is logged — with the traceback, on this module's
+        logger, no longer printed to stderr — and raised to the caller as an
+        ``ImportError`` chained to its cause.
+        """
+        conn = None
         try:
             # print("\n=== Starting PyArchInit Import ===")
             conn = self._connect()
@@ -971,7 +981,6 @@ class PyArchInitImporter(BaseImporter):
                     self.warnings.append(error_msg)
                     # print(f"❌ {error_msg}")
             
-            conn.close()
             
             # Summary
             # print(f"\n=== Import Summary ===")
@@ -992,6 +1001,10 @@ class PyArchInitImporter(BaseImporter):
             return self.graph
             
         except Exception as e:
-            import traceback
-            traceback.print_exc()
-            raise ImportError(f"Error parsing pyArchInit database: {str(e)}")
+            logger.error("pyArchInit import from %s failed",
+                         redact_dsn(self.filepath), exc_info=True)
+            raise ImportError(
+                f"Error parsing pyArchInit database: {redact_dsn(e)}") from e
+        finally:
+            if conn is not None:
+                conn.close()

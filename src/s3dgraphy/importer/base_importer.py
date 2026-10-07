@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 import json
 import os
 import logging
+import re as _re
 from typing import Dict, Any, Optional
 from ..graph import Graph
 from ..nodes.base_node import Node
@@ -14,6 +15,22 @@ from typing import Dict, Any, Optional
 
 # Configurazione logging opzionale per debug
 logger = logging.getLogger(__name__)
+
+#: `scheme://user:password@` — also after `os.path.abspath`, which folds the
+#: two slashes of a DSN into one (`/cwd/postgresql:/user:password@host/db`)
+_DSN_PASSWORD = _re.compile(r"([A-Za-z][A-Za-z0-9+.\-]*:/{1,2}[^:/@\s]*:)[^@\s]*(@)")
+
+
+def redact_dsn(text) -> str:
+    """`text` with the password of any DSN in it replaced by ``***``.
+
+    ``postgresql://enzo:secret@db.example/site`` →
+    ``postgresql://enzo:***@db.example/site``: the user, the host and the
+    database stay readable, which is what a log is for (#27: the DSN reached
+    the DEBUG log whole, password included).
+    """
+    return _DSN_PASSWORD.sub(r"\1***\2", str(text))
+
 
 #: The four directed physical relations plus the two symmetric ones — the SEED
 #: of the set below, and the only part still written by hand. Their reverses and
@@ -186,11 +203,13 @@ class BaseImporter(ABC):
             # Se siamo in Blender, usa bpy.path.abspath
             import bpy
             self.filepath = bpy.path.abspath(filepath)
-            logger.debug(f"Converted filepath using bpy.path.abspath: {filepath} -> {self.filepath}")
+            logger.debug("Converted filepath using bpy.path.abspath: %s -> %s",
+                         redact_dsn(filepath), redact_dsn(self.filepath))
         except ImportError:
             # Se non siamo in Blender, usa os.path.abspath standard
             self.filepath = os.path.abspath(filepath)
-            logger.debug(f"Converted filepath using os.path.abspath: {filepath} -> {self.filepath}")
+            logger.debug("Converted filepath using os.path.abspath: %s -> %s",
+                         redact_dsn(filepath), redact_dsn(self.filepath))
         
         # Verifica che il file esista
         #if not os.path.exists(self.filepath):

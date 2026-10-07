@@ -7,6 +7,7 @@ a single TableNode swimlane (matching yEd reference structure).
 """
 
 import json
+import logging
 
 from lxml import etree as ET
 from typing import List, Dict
@@ -16,6 +17,12 @@ from .node_generator import NodeGenerator
 from .group_node_generator import GroupNodeGenerator
 from .edge_generator import EdgeGenerator
 from .utils import IDManager, generate_uuid
+
+#: Everything the export used to print — progress, the per-pass counts, the
+#: summary — goes here (#27): a server exporting GraphML must not find thirty
+#: lines on its stdout. The progress is DEBUG, the summary INFO, a cycle or a
+#: skipped side channel a WARNING.
+logger = logging.getLogger(__name__)
 
 
 # Physical stratigraphic relations preserved as a graph-level GraphML
@@ -73,7 +80,7 @@ class GraphMLExporter:
                 ``injected_by`` / ``_aux_overrides`` tags so the enrichment
                 layer becomes graph-native.
         """
-        print(f"Starting GraphML export to {output_path} "
+        logger.debug(f"Starting GraphML export to {output_path} "
               f"({'BAKE' if persist_auxiliary else 'volatile'} mode)")
 
         # Apply the Hybrid-C policy BEFORE generating XML so every
@@ -84,7 +91,7 @@ class GraphMLExporter:
         if persist_auxiliary:
             bake_report = clear_aux_tags(self.graph)
             if bake_report["injected_cleared"] or bake_report["overrides_cleared"]:
-                print(f"  [bake] cleared {bake_report['injected_cleared']} "
+                logger.debug(f"  [bake] cleared {bake_report['injected_cleared']} "
                       f"injected_by tags, {bake_report['overrides_cleared']} "
                       f"_aux_overrides entries")
         else:
@@ -92,13 +99,13 @@ class GraphMLExporter:
             # then drop injected children.
             rev_report = apply_override_reversal_policy(self.graph)
             if any(rev_report.values()):
-                print(f"  [volatile] attribute overrides: "
+                logger.debug(f"  [volatile] attribute overrides: "
                       f"{rev_report['reverted']} reverted, "
                       f"{rev_report['kept']} kept (user re-edited), "
                       f"{rev_report['unseen']} unseen (kept)")
             strip_report = strip_injected_content(self.graph)
             if strip_report["nodes"] or strip_report["edges"]:
-                print(f"  [volatile] stripped {strip_report['nodes']} "
+                logger.debug(f"  [volatile] stripped {strip_report['nodes']} "
                       f"injected nodes and {strip_report['edges']} edges")
 
         # GraphML is a DISSEMINATION surface: a tombstone must not be hidden
@@ -113,7 +120,7 @@ class GraphMLExporter:
         from ...dissemination import live_view
         self.graph, hidden = live_view(self.graph, surface="graphml")
         if hidden.total:
-            print(f"  [dissemination] left out {hidden.nodes} removed nodes, "
+            logger.debug(f"  [dissemination] left out {hidden.nodes} removed nodes, "
                   f"{hidden.edges} removed edges and {hidden.dangling} edges "
                   f"dangling on them")
 
@@ -129,10 +136,10 @@ class GraphMLExporter:
             materialize_continuity)
         mat_report = materialize_continuity(self.graph)
         if mat_report["swept"]:
-            print(f"  [materialize] swept {mat_report['swept']} stale "
+            logger.debug(f"  [materialize] swept {mat_report['swept']} stale "
                   f"synthetic items from a prior run")
         if mat_report["nodes"]:
-            print(f"  [materialize] injected {mat_report['nodes']} BR "
+            logger.debug(f"  [materialize] injected {mat_report['nodes']} BR "
                   f"diamonds + {mat_report['edges']} edges "
                   f"(skipped {mat_report['skipped_user_authored']} "
                   f"nodes with user-authored BR)")
@@ -188,7 +195,7 @@ class GraphMLExporter:
             self._physical_relationships_by_node: Dict[str, list] = (
                 serialize_rapporti_from_edges(self.graph, default_sito))
         except Exception as exc:  # pragma: no cover - defensive
-            print(f"  [physical_relationships] skipped serialization: "
+            logger.warning(f"  [physical_relationships] skipped serialization: "
                   f"{exc}")
             self._physical_relationships_by_node = {}
 
@@ -209,7 +216,7 @@ class GraphMLExporter:
 
         # 3. TEMPORAL INFERENCE: derive minimal temporal edges from topological relations
         # Must be done BEFORE generating XML so we know positions and edges
-        print("Deriving temporal edges from topological relations...")
+        logger.debug("Deriving temporal edges from topological relations...")
         from ...temporal.inference_engine import TemporalInferenceEngine
         from ...nodes.epoch_node import EpochNode
         from ...nodes.stratigraphic_node import StratigraphicNode
@@ -227,7 +234,7 @@ class GraphMLExporter:
                 minimal_edges = engine.transitive_reduction(temporal_edges)
             except ValueError as e:
                 warning_msg = f"Temporal cycle detected: {str(e).splitlines()[0]}"
-                print(f"  ⚠️ {warning_msg}")
+                logger.warning(warning_msg)
                 self.graph.add_warning(warning_msg)
                 minimal_edges = temporal_edges  # fallback: use unreduced
 
@@ -310,7 +317,7 @@ class GraphMLExporter:
 
         positions = {}
         if epoch_nodes:
-            print(f"Generating epoch swimlanes ({len(epoch_nodes)} epochs)...")
+            logger.debug(f"Generating epoch swimlanes ({len(epoch_nodes)} epochs)...")
             from .epoch_generator import EpochSwimlanesGenerator
             epoch_gen = EpochSwimlanesGenerator()
 
@@ -425,7 +432,7 @@ class GraphMLExporter:
             activity_graph_of[aid] = act_xml.find(
                 './/{http://graphml.graphdrawing.org/xmlns}graph')
         if activity_members_present:
-            print(f"Generating {len(activity_members_present)} activity "
+            logger.debug(f"Generating {len(activity_members_present)} activity "
                   f"group(s)...")
 
         def _slot_for(node_id):
@@ -443,7 +450,7 @@ class GraphMLExporter:
         # those groups) are skipped here, but ALL stratigraphic nodes are
         # still collected in ``stratigraphic_nodes`` so PD-group building
         # below sees them (a member or container may carry properties).
-        print(f"Generating {len(strat_nodes)} stratigraphic nodes inside swimlane...")
+        logger.debug(f"Generating {len(strat_nodes)} stratigraphic nodes inside swimlane...")
         stratigraphic_nodes = []
         for i, node in enumerate(strat_nodes):
             stratigraphic_nodes.append(node)
@@ -468,7 +475,7 @@ class GraphMLExporter:
         # description; the importer re-creates the stratigraphic node and
         # the child->container is_part_of edges from this structure.
         if container_ids:
-            print(f"Generating {len(container_ids)} is_part_of "
+            logger.debug(f"Generating {len(container_ids)} is_part_of "
                   f"container(s) with {len(member_ids)} member(s)...")
         for cid, members in container_members.items():
             container = strat_by_id[cid]
@@ -492,7 +499,7 @@ class GraphMLExporter:
                 container_graph.append(member_xml)
 
         # 7. Build and generate ParadataNodeGroups INSIDE the swimlane
-        print("Building ParadataNodeGroups...")
+        logger.debug("Building ParadataNodeGroups...")
         paradata_groups = self._build_paradata_groups(stratigraphic_nodes)
 
         internal_edge_total = 0
@@ -753,7 +760,7 @@ class GraphMLExporter:
             # the group at load time.
 
         # 8. Generate US → ParadataNodeGroup dashed edges
-        print("Generating US→ParadataNodeGroup edges...")
+        logger.debug("Generating US→ParadataNodeGroup edges...")
         for group_data in paradata_groups:
             us_node = group_data['us_node']
             group_uuid = group_data.get('group_uuid', '')
@@ -769,7 +776,7 @@ class GraphMLExporter:
         is_after_count = sum(1 for e in export_edges if e.edge_type == 'is_after')
         same_time_count = sum(1 for e in export_edges if e.edge_type == 'has_same_time')
         pd_count = sum(1 for e in export_edges if e.edge_type == 'has_paradata_nodegroup')
-        print(f"Generating {len(export_edges)} edges ({is_after_count} is_after, "
+        logger.debug(f"Generating {len(export_edges)} edges ({is_after_count} is_after, "
               f"{same_time_count} has_same_time, {pd_count} has_paradata_nodegroup, "
               f"{internal_edge_total} internal PD edges)...")
 
@@ -792,7 +799,7 @@ class GraphMLExporter:
         root.append(resources)
 
         # 12. Write file
-        print(f"Writing GraphML to {output_path}...")
+        logger.debug(f"Writing GraphML to {output_path}...")
         tree = ET.ElementTree(root)
         tree.write(output_path, encoding='UTF-8', xml_declaration=True, pretty_print=True)
 
@@ -805,19 +812,19 @@ class GraphMLExporter:
             dematerialize_continuity)
         dem_report = dematerialize_continuity(self.graph)
         if dem_report["nodes"] or dem_report["edges"]:
-            print(f"  [dematerialize] cleaned up "
+            logger.debug(f"  [dematerialize] cleaned up "
                   f"{dem_report['nodes']} synthetic BR nodes and "
                   f"{dem_report['edges']} edges")
 
-        print(f"GraphML export completed successfully!")
-        print(f"  - Stratigraphic nodes: {len(stratigraphic_nodes)}")
-        print(f"  - Epoch nodes: {len(epoch_nodes)}")
-        print(f"  - Temporal edges (is_after): {is_after_count}")
-        print(f"  - Same-time edges: {same_time_count}")
-        print(f"  - US→PD edges: {pd_count}")
-        print(f"  - Total edges exported: {len(export_edges)}")
-        print(f"  - Internal PD edges: {internal_edge_total}")
-        print(f"  - ParadataGroups: {len(paradata_groups)}")
+        logger.info(f"GraphML export completed successfully!")
+        logger.info(f"  - Stratigraphic nodes: {len(stratigraphic_nodes)}")
+        logger.info(f"  - Epoch nodes: {len(epoch_nodes)}")
+        logger.info(f"  - Temporal edges (is_after): {is_after_count}")
+        logger.info(f"  - Same-time edges: {same_time_count}")
+        logger.info(f"  - US→PD edges: {pd_count}")
+        logger.info(f"  - Total edges exported: {len(export_edges)}")
+        logger.info(f"  - Internal PD edges: {internal_edge_total}")
+        logger.info(f"  - ParadataGroups: {len(paradata_groups)}")
 
     def _write_physical_relations_data(self, graph_elem: ET.Element,
                                        canvas: CanvasGenerator) -> int:
@@ -878,7 +885,7 @@ class GraphMLExporter:
                                separators=(",", ":"))
 
         if physical_relations:
-            print(f"  [lossless] preserved {len(physical_relations)} "
+            logger.debug(f"  [lossless] preserved {len(physical_relations)} "
                   f"physical stratigraphic relations in "
                   f"{canvas.PHYSICAL_RELATIONS_ATTR_NAME}")
         return len(physical_relations)
@@ -936,7 +943,7 @@ class GraphMLExporter:
                                 ensure_ascii=False,
                                 separators=(",", ":"))
         if property_map:
-            print(f"  [lossless] preserved structured metadata for "
+            logger.debug(f"  [lossless] preserved structured metadata for "
                   f"{len(property_map)} PropertyNode(s) in "
                   f"{canvas.PROPERTY_METADATA_ATTR_NAME}")
         return len(property_map)

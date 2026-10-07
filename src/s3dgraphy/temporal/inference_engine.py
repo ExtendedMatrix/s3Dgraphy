@@ -6,10 +6,14 @@ temporal relations (is_after, is_before) and performs transitive reduction
 to obtain the minimal set of temporal edges.
 """
 
+import logging
+
 import networkx as nx
 from typing import List, Tuple, Dict, Set
 from ..edges.edge import Edge
 from ..edges import get_connections_datamodel
+
+logger = logging.getLogger(__name__)
 
 
 class TemporalInferenceEngine:
@@ -223,23 +227,23 @@ class TemporalInferenceEngine:
         minimal_edges: List[Tuple[str, str]]
     ):
         """
-        Print a report of temporal inference results.
+        Log a report of temporal inference results, at DEBUG.
+
+        The name stays; the report no longer goes to stdout (#27): one line
+        per redundant edge, on every GraphML export, is a log's business and
+        not a server's stdout's.
 
         Args:
             temporal_edges: Original temporal edges (before reduction)
             minimal_edges: Minimal edges (after reduction)
         """
-        print("\n" + "="*60)
-        print("Temporal Inference Report")
-        print("="*60)
-        print(f"Original temporal edges: {len(temporal_edges)}")
-        print(f"Minimal edges (after reduction): {len(minimal_edges)}")
-        print(f"Redundant edges removed: {len(temporal_edges) - len(minimal_edges)}")
-
+        if not logger.isEnabledFor(logging.DEBUG):
+            return
+        logger.debug("Temporal Inference Report: %d temporal edges, %d after "
+                     "transitive reduction, %d redundant removed",
+                     len(temporal_edges), len(minimal_edges),
+                     len(temporal_edges) - len(minimal_edges))
         if len(temporal_edges) != len(minimal_edges):
-            print("\nRedundant edges (transitive):")
             redundant = set(temporal_edges) - set(minimal_edges)
             for source, target in redundant:
-                print(f"  - {source} → {target}")
-
-        print("="*60 + "\n")
+                logger.debug("  redundant (transitive): %s → %s", source, target)

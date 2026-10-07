@@ -224,16 +224,19 @@ def test_the_inference_engine_sees_either_spelling(spelling, canonical):
 
 @pytest.mark.parametrize("spelling,canonical", SPELLINGS)
 def test_graphml_turns_either_spelling_into_has_same_time(
-        tmp_path, capsys, spelling, canonical):
+        tmp_path, caplog, spelling, canonical):
     """`bonded_to` used to leave raw (in the yEd body the difference cannot be
-    seen: same line), so the count the exporter reports is what is read."""
+    seen: same line), so the count the exporter reports is what is read — in
+    its log since #27, no longer on stdout."""
+    import logging
     from s3dgraphy.exporter.graphml.graphml_exporter import GraphMLExporter
     g = Graph(graph_id="x")
     _units(g, "US1", "US2", "US3")
     g.add_edge("e1", "US1", "US2", spelling)
     g.add_edge("e2", "US1", "US3", "overlies")
-    GraphMLExporter(g).export(str(tmp_path / "x.graphml"))
-    line = next(ln for ln in capsys.readouterr().out.splitlines()
+    with caplog.at_level(logging.DEBUG, logger="s3dgraphy.exporter.graphml"):
+        GraphMLExporter(g).export(str(tmp_path / "x.graphml"))
+    line = next(ln for ln in caplog.messages
                 if ln.startswith("Generating") and "has_same_time" in ln)
     assert re.search(r"Generating 2 edges \(1 is_after, 1 has_same_time", line), line
 
