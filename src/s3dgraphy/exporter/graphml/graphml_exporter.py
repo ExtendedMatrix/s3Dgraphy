@@ -1123,15 +1123,14 @@ class GraphMLExporter:
         from ...utils.utils import get_base_name
         from ...edges.connections_loader import get_connections_datamodel
         datamodel = get_connections_datamodel()
-        node_map = {n.node_id: n for n in self.graph.nodes}
         relations: dict = {}
-        for edge in self.graph.edges:
-            if edge.edge_source != us_node.node_id:
-                continue
+        # the node's outgoing edges, in list order, from the index: this ran
+        # once per US over every node and every edge (#27)
+        for edge in self.graph.indices.edges_by_source.get(us_node.node_id, []):
             edge_type = (datamodel.normalize_edge_name(
                 edge.edge_type, prefer_canonical=False) or edge.edge_type)
             if edge_type in self._TOPO_EDGE_TYPES:
-                target = node_map.get(edge.edge_target)
+                target = self.graph.find_node_by_id(edge.edge_target)
                 if target:
                     name = get_base_name(target.name) or target.name
                     names = relations.setdefault(edge_type, [])
@@ -1582,10 +1581,9 @@ class GraphMLExporter:
                 continue
 
             target_epoch = None
-            for edge in self.graph.edges:
-                if (edge.edge_source == node.node_id
-                        and edge.edge_type == "has_first_epoch"
-                        and edge.edge_target in epoch_ids):
+            for edge in self.graph.indices.edges_by_source_type.get(
+                    (node.node_id, "has_first_epoch"), []):
+                if edge.edge_target in epoch_ids:
                     target_epoch = id_to_node.get(edge.edge_target)
                     break
             if target_epoch is None:
@@ -1617,7 +1615,8 @@ class GraphMLExporter:
                 local_copies[tgt.node_id] = local
                 image_nodes_list.append(local)
 
-            for edge in self.graph.edges:
+            # the SL_PD's own edges, in list order (`_edges_of`), not all
+            for edge in self._edges_of(node.node_id):
                 # Path A: SL_PD outgoing edges to the paradata image.
                 if edge.edge_source == node.node_id:
                     accepted = edge_to_class.get(edge.edge_type)
@@ -1637,7 +1636,7 @@ class GraphMLExporter:
             # SL_PD via ``is_in_paradata_nodegroup``.
             prop_nodes_list: List = []
             seen_props: set = set()
-            for edge in self.graph.edges:
+            for edge in self._edges_of(node.node_id):
                 candidate = None
                 if (edge.edge_source == node.node_id
                         and edge.edge_type == "has_property"):
@@ -1665,6 +1664,17 @@ class GraphMLExporter:
             })
 
         return groups
+
+    def _edges_of(self, node_id):
+        """The edges with `node_id` at either end, each once, in the order of
+        ``self.graph.edges``: a loop over them sees what a loop over the whole
+        list filtered on the node sees."""
+        ix = self.graph.indices
+        outgoing = ix.edges_by_source.get(node_id, [])
+        incoming = ix.edges_by_target.get(node_id, [])
+        both = {id(e): e for e in outgoing}
+        both.update((id(e), e) for e in incoming)
+        return sorted(both.values(), key=lambda e: ix.edge_seq[id(e)])
 
     def _collect_paradata_image_attachments(self, chains, local_doc_copies,
                                             us_node=None):
@@ -1709,16 +1719,16 @@ class GraphMLExporter:
         image_attachments: List = []
         seen_attachments: set = set()
 
-        id_to_node = {n.node_id: n for n in self.graph.nodes}
+        # by id and by source from the graph's indices: this ran once per PD
+        # group over every node and, per chain element, every edge (#27)
+        edges_by_source = self.graph.indices.edges_by_source
 
         def _collect(source_local, original_uuid):
-            for e in self.graph.edges:
-                if e.edge_source != original_uuid:
-                    continue
+            for e in edges_by_source.get(original_uuid, []):
                 accepted = edge_type_classes.get(e.edge_type)
                 if accepted is None:
                     continue
-                tgt = id_to_node.get(e.edge_target)
+                tgt = self.graph.find_node_by_id(e.edge_target)
                 if tgt is None or not isinstance(tgt, accepted):
                     continue
                 pair = (source_local.node_id, tgt.node_id)

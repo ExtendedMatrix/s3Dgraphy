@@ -1478,38 +1478,39 @@ class Graph:
         ✅ OPTIMIZATION: O(1) lookup using composite index instead of O(E) iteration
         """
         connected_nodes = []
-
-        # Use composite index if available (O(1) lookup)
-        if not self._indices_dirty and self._indices is not None:
-            # Check outgoing edges (source -> target)
-            source_key = (node_id, edge_type)
-            for edge in self._indices.edges_by_source_type.get(source_key, []):
+        for edge in self._edges_touching(node_id, edge_type):
+            if edge.edge_source == node_id:
                 target_node = self.find_node_by_id(edge.edge_target)
                 if target_node:
                     connected_nodes.append(target_node)
-
-            # Check incoming edges (target <- source)
-            target_key = (node_id, edge_type)
-            for edge in self._indices.edges_by_target_type.get(target_key, []):
+            else:
                 source_node = self.find_node_by_id(edge.edge_source)
                 if source_node:
                     connected_nodes.append(source_node)
-
-            return connected_nodes
-
-        # Fallback to linear search if indices not ready
-        for edge in self.edges:
-            if edge.edge_type == edge_type:
-                if edge.edge_source == node_id:
-                    target_node = self.find_node_by_id(edge.edge_target)
-                    if target_node:
-                        connected_nodes.append(target_node)
-                elif edge.edge_target == node_id:
-                    source_node = self.find_node_by_id(edge.edge_source)
-                    if source_node:
-                        connected_nodes.append(source_node)
-
         return connected_nodes
+
+    def _edges_touching(self, node_id, edge_type):
+        """The `edge_type` edges with `node_id` at either end, each once, in
+        the order of `self.edges` — what a scan of the whole list gives, read
+        from the composite indices (rebuilt first if stale).
+
+        Until 2026-10-07 `get_connected_nodes_by_edge_type` answered in two
+        orders: the scan's when the index was stale, all outgoing then all
+        incoming (and a self-loop twice) when it was clean. The scan's is the
+        one kept: it is what imports and exports, which write while they
+        read, have always seen.
+        """
+        ix = self.indices
+        outgoing = ix.edges_by_source_type.get((node_id, edge_type), [])
+        incoming = ix.edges_by_target_type.get((node_id, edge_type), [])
+        if not incoming:
+            return list(outgoing)
+        if not outgoing:
+            return list(incoming)
+        seq = ix.edge_seq
+        both = {id(e): e for e in outgoing}
+        both.update((id(e), e) for e in incoming)
+        return sorted(both.values(), key=lambda e: seq[id(e)])
 
     def get_property_nodes_for_node(self, node_id):
         """
@@ -1541,22 +1542,12 @@ class Graph:
         ✅ OPTIMIZATION: O(1) lookup using source index instead of O(E) iteration
         """
         combiners = []
-
-        # Use index if available (O(1) lookup)
-        if not self._indices_dirty and self._indices is not None:
-            for edge in self._indices.edges_by_source.get(property_node_id, []):
-                target_node = self.find_node_by_id(edge.edge_target)
-                if target_node and target_node.node_type == "combiner":
-                    combiners.append(target_node)
-            return combiners
-
-        # Fallback to linear search
-        for edge in self.edges:
-            if edge.edge_source == property_node_id:
-                target_node = self.find_node_by_id(edge.edge_target)
-                if target_node and target_node.node_type == "combiner":
-                    combiners.append(target_node)
-
+        # the edges by source are in the order of `self.edges`: the same
+        # answer the linear scan gave, which a stale index used to fall to
+        for edge in self.indices.edges_by_source.get(property_node_id, []):
+            target_node = self.find_node_by_id(edge.edge_target)
+            if target_node and target_node.node_type == "combiner":
+                combiners.append(target_node)
         return combiners
 
     def get_extractor_nodes_for_node(self, node_id):
@@ -1576,29 +1567,36 @@ class Graph:
         # Lista di edge types da considerare
         edge_types = ["has_data_provenance", "extracted_from", "combines", "generic_connection"]
         
+        # The edges by target and by source, in the order of `self.edges`:
+        # the three scans of the whole list this used to make were most of a
+        # GraphML export's time (#27).
+        incoming = self.indices.edges_by_target.get(node_id, [])
+        outgoing = self.indices.edges_by_source.get(node_id, [])
+
         # Check per estrattori che sono source delle relazioni (estrattore -> nodo)
-        for edge in self.edges:
-            if edge.edge_source in edge_types and edge.edge_target == node_id:
+        # (until 2026-10-07 this compared `edge.edge_source` with the edge
+        # types, so it never found anything)
+        for edge in incoming:
+            if edge.edge_type in edge_types:
                 source_node = self.find_node_by_id(edge.edge_source)
                 if source_node and source_node.node_type == "extractor":
                     extractors.append(source_node)
                     # print(f"  Trovato estrattore (source): {source_node.name} (edge: {edge.edge_type})")
         
         # Check per estrattori che sono target delle relazioni (nodo -> estrattore)
-        for edge in self.edges:
-            if edge.edge_type in edge_types and edge.edge_source == node_id:
+        for edge in outgoing:
+            if edge.edge_type in edge_types:
                 target_node = self.find_node_by_id(edge.edge_target)
                 if target_node and target_node.node_type == "extractor":
                     extractors.append(target_node)
                     # print(f"  Trovato estrattore (target): {target_node.name} (edge: {edge.edge_type})")
         
         # Verifica le relazioni inverse (estrattore è source e questo nodo è target)
-        for edge in self.edges:
-            if edge.edge_target == node_id:
-                source_node = self.find_node_by_id(edge.edge_source)
-                if source_node and source_node.node_type == "extractor":
-                    extractors.append(source_node)
-                    # print(f"  Trovato estrattore (rel inverse): {source_node.name} (edge: {edge.edge_type})")
+        for edge in incoming:
+            source_node = self.find_node_by_id(edge.edge_source)
+            if source_node and source_node.node_type == "extractor":
+                extractors.append(source_node)
+                # print(f"  Trovato estrattore (rel inverse): {source_node.name} (edge: {edge.edge_type})")
         
         # Nel caso specifico dei combiner, verifica anche relazioni di tipo "combines"
         node = self.find_node_by_id(node_id)
@@ -1645,16 +1643,16 @@ class Graph:
         edge_types = ["extracted_from", "has_data_provenance", "generic_connection"]
         
         # Cerca relazioni (estrattore -> documento)
-        for edge in self.edges:
-            if edge.edge_type in edge_types and edge.edge_source == extractor_node_id:
+        for edge in self.indices.edges_by_source.get(extractor_node_id, []):
+            if edge.edge_type in edge_types:
                 target_node = self.find_node_by_id(edge.edge_target)
                 if target_node and target_node.node_type == "document":
                     documents.append(target_node)
                     # print(f"  Trovato documento (target): {target_node.name} (edge: {edge.edge_type})")
         
         # Cerca relazioni (documento -> estrattore)
-        for edge in self.edges:
-            if edge.edge_type in edge_types and edge.edge_target == extractor_node_id:
+        for edge in self.indices.edges_by_target.get(extractor_node_id, []):
+            if edge.edge_type in edge_types:
                 source_node = self.find_node_by_id(edge.edge_source)
                 if source_node and source_node.node_type == "document":
                     documents.append(source_node)
