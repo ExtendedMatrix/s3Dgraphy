@@ -7,6 +7,7 @@ and by target now, and give the same answer whether the index was clean or
 stale before the call — the order of the list, the scan's.
 """
 
+from s3dgraphy.edges.edge import Edge
 from s3dgraphy.graph import Graph
 from s3dgraphy.nodes import DocumentNode, ExtractorNode, StratigraphicUnit
 from s3dgraphy.nodes.combiner_node import CombinerNode
@@ -64,3 +65,27 @@ def test_connected_nodes_by_edge_type_follow_the_list_order_both_ways():
         g.add_edge("c", "US1", "US1", "is_after")   # a self-loop
         answers.append([n.node_id for n in g.get_connected_nodes_by_edge_type("US1", "is_after")])
     assert answers == [["US2", "US3", "US1"], ["US2", "US3", "US1"]]
+
+
+def test_epochs_by_edge_type_follow_the_list_order_clean_or_stale():
+    from s3dgraphy.nodes.epoch_node import EpochNode
+    answers = []
+    for clean in (True, False):
+        g = Graph(graph_id="g")
+        g.add_node(StratigraphicUnit("US1", name="US1"))
+        for i in (1, 2):
+            g.add_node(EpochNode(node_id=f"E{i}", name=f"E{i}", start_time=-i, end_time=0))
+        if clean:
+            g.indices
+        # incoming and first in the list (survive_in_epoch runs US → epoch:
+        # the reverse arrives only from elsewhere, hence the direct append)
+        g.edges.append(Edge("in", "E2", "US1", "survive_in_epoch"))
+        g.invalidate_indices()
+        if clean:
+            g.indices
+        g.add_edge("out", "US1", "E1", "survive_in_epoch")
+        us1 = g.find_node_by_id("US1")
+        answers.append((
+            g.get_connected_epoch_node_by_edge_type(us1, "survive_in_epoch").node_id,
+            [n.node_id for n in g.get_connected_epoch_nodes_list_by_edge_type(us1, "survive_in_epoch")]))
+    assert answers == [("E2", ["E2", "E1"])] * 2

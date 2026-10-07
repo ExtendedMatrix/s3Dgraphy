@@ -683,43 +683,12 @@ class Graph:
         Returns:
             EpochNode | None: Il nodo EpochNode connesso, oppure None se non trovato.
 
-        ✅ OPTIMIZATION: O(1) lookup using composite index instead of O(E) iteration
+        The first one in the order of `self.edges`, either end, read from
+        the composite indices (`_edges_touching`): until 2026-10-07 a stale
+        index scanned every edge and a clean one preferred the outgoing edges.
         """
-        # Use composite index if available (O(1) lookup)
-        if not self._indices_dirty and self._indices is not None:
-            # Check outgoing edges (source -> target)
-            source_key = (node.node_id, edge_type)
-            for edge in self._indices.edges_by_source_type.get(source_key, []):
-                target_node = self.find_node_by_id(edge.edge_target)
-                if target_node and target_node.node_type == "EpochNode":
-                    return target_node
-
-            # Check incoming edges (target <- source)
-            target_key = (node.node_id, edge_type)
-            for edge in self._indices.edges_by_target_type.get(target_key, []):
-                source_node = self.find_node_by_id(edge.edge_source)
-                if source_node and source_node.node_type == "EpochNode":
-                    return source_node
-
-            return None
-
-        # Fallback to linear search if indices not ready
-        for edge in self.edges:
-            if (edge.edge_source == node.node_id and edge.edge_type == edge_type):
-                target_node = self.find_node_by_id(edge.edge_target)
-                if target_node and target_node.node_type == "EpochNode":
-                    return target_node
-                else:
-                    pass
-                    # print(f"NOT found any epochnode for {node.name} con id {node.node_id}")
-            elif (edge.edge_target == node.node_id and edge.edge_type == edge_type):
-                source_node = self.find_node_by_id(edge.edge_source)
-                if source_node and source_node.node_type == "EpochNode":
-                    return source_node
-                else:
-                    pass
-                    # print(f"NOT found any epochnode for {node.name} con id {node.id}")
-
+        for epoch in self._epochs_touching(node, edge_type):
+            return epoch
         return None
 
 
@@ -732,43 +701,18 @@ class Graph:
             edge_type (str): Il tipo di arco da filtrare.
 
         Returns:
-            List[EpochNode]: Lista di nodi EpochNode connessi.
-
-        ✅ OPTIMIZATION: O(1) lookup using composite index instead of O(E) iteration
+            List[EpochNode]: Lista di nodi EpochNode connessi, in the order of
+            `self.edges` (see :meth:`get_connected_epoch_node_by_edge_type`).
         """
-        connected_epoch_nodes = []
+        return list(self._epochs_touching(node, edge_type))
 
-        # Use composite index if available (O(1) lookup)
-        if not self._indices_dirty and self._indices is not None:
-            # Check outgoing edges (source -> target)
-            source_key = (node.node_id, edge_type)
-            for edge in self._indices.edges_by_source_type.get(source_key, []):
-                target_node = self.find_node_by_id(edge.edge_target)
-                if target_node and target_node.node_type == "EpochNode":
-                    connected_epoch_nodes.append(target_node)
-
-            # Check incoming edges (target <- source)
-            target_key = (node.node_id, edge_type)
-            for edge in self._indices.edges_by_target_type.get(target_key, []):
-                source_node = self.find_node_by_id(edge.edge_source)
-                if source_node and source_node.node_type == "EpochNode":
-                    connected_epoch_nodes.append(source_node)
-
-            return connected_epoch_nodes
-
-        # Fallback to linear search if indices not ready
-        for edge in self.edges:
-            if (edge.edge_source == node.node_id and edge.edge_type == edge_type):
-                target_node = self.find_node_by_id(edge.edge_target)
-                if target_node and target_node.node_type == "EpochNode":
-                    # print(f"Found connected EpochNode '{target_node.node_id}' via edge type '{edge_type}'.")
-                    connected_epoch_nodes.append(target_node)
-            elif (edge.edge_target == node.node_id and edge.edge_type == edge_type):
-                source_node = self.find_node_by_id(edge.edge_source)
-                if source_node and source_node.node_type == "EpochNode":
-                    # print(f"Found connected EpochNode '{source_node.node_id}' via edge type '{edge_type}'.")
-                    connected_epoch_nodes.append(source_node)
-        return connected_epoch_nodes
+    def _epochs_touching(self, node, edge_type):
+        for edge in self._edges_touching(node.node_id, edge_type):
+            other_id = (edge.edge_target if edge.edge_source == node.node_id
+                        else edge.edge_source)
+            other = self.find_node_by_id(other_id)
+            if other and other.node_type == "EpochNode":
+                yield other
 
 
     # =========================================================================
