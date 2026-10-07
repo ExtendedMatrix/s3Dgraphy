@@ -20,6 +20,10 @@ from .indices import GraphIndices
 # (loaded by edges/connections_loader.py)
 _connections_datamodel = get_connections_datamodel()
 
+#: the key of a node (edge) without an id in the id maps: a sentinel, so that
+#: no lookup can ever reach it
+_NO_ID = object()
+
 class Graph:
     """
     Class representing a graph containing nodes and edges.
@@ -43,6 +47,11 @@ class Graph:
         self.audio = audio if audio is not None else {}
         self.video = video if video is not None else {}
         self.data = data if data is not None else {}
+        self._node_by_id = {}
+        self._edge_by_id = {}
+        self._ids_stale = True
+        self._ids_duplicated = False
+        self._property_stale = True
         self.nodes = []
         self.edges = []
         self.warnings = []
@@ -92,6 +101,39 @@ class Graph:
         self._edges = value
         self._indices_dirty = True
 
+    # ── the indices: three layers, three ways of going stale ────────────────
+    #
+    # 1. The id maps (`_node_by_id`, `_edge_by_id`) answer `find_node_by_id`
+    #    and `find_edge_by_id`, ALWAYS: `add_node` and `add_edge` write them,
+    #    and anything that replaces or mutates the lists (the setters,
+    #    `remove_*`, `invalidate_indices()`, `_indices_dirty = True`) marks
+    #    them stale, to be rebuilt in one pass at the next lookup. Until
+    #    2026-10-07 a lookup after a write scanned the whole list, which made
+    #    an import that alternates the two quadratic (#27).
+    # 2. The structural indices of `GraphIndices` (by id, by type, by
+    #    source, by target, by source+type, by target+type): when they are
+    #    clean, `add_node`/`add_edge` extend them in place and they STAY
+    #    clean; when they are stale they stay stale and are rebuilt at the
+    #    next read of `indices`, as before.
+    # 3. The property indices of `GraphIndices` read a property's name and
+    #    description, which an importer may set after the edge: a write that
+    #    touches them marks only them stale, and `indices` rebuilds only
+    #    them.
+    #
+    # `_indices_dirty` keeps its old meaning (layer 2 is stale) and its old
+    # contract for whoever sets it to True from outside: everything is stale.
+
+    @property
+    def _indices_dirty(self):
+        return self._structure_stale
+
+    @_indices_dirty.setter
+    def _indices_dirty(self, value):
+        self._structure_stale = bool(value)
+        if value:
+            self._ids_stale = True
+            self._property_stale = True
+
     def invalidate_indices(self):
         """Say the indices are stale, after mutating a list or an edge in place."""
         self._indices_dirty = True
@@ -99,46 +141,71 @@ class Graph:
     @property
     def indices(self):
         """Lazy loading degli indici con rebuild automatico se necessario"""
-        if self._indices is None:
-            self._indices = GraphIndices()
-        if self._indices_dirty:
+        if self._indices is None or self._structure_stale:
             self._rebuild_indices()
+        elif self._property_stale:
+            self._rebuild_property_indices()
         return self._indices
-    
+
     def _rebuild_indices(self):
         """Ricostruisce gli indici del grafo"""
-        if self._indices is None:
-            self._indices = GraphIndices()
-
-        self._indices.clear()
+        # A new object, not `clear()`: a shallow copy of the graph (the
+        # dissemination views) may still be holding the old one.
+        self._indices = GraphIndices()
 
         # ✅ OPTIMIZATION: Use add_node() which populates both node_id and type indices
         for node in self.nodes:
             self._indices.add_node(node)
 
-            # Indicizzazione speciale per property nodes
-            node_type = getattr(node, 'node_type', None)
-            if node_type == 'property' and hasattr(node, 'name'):
-                self._indices.add_property_node(node.name, node)
-        
         # Indicizza edges
         for edge in self.edges:
             self._indices.add_edge(edge)
 
+        self._structure_stale = False
+        self._rebuild_property_indices()
+
+    def _rebuild_property_indices(self):
+        """Rebuild the property indices alone, from the (clean) structure."""
+        self._indices.clear_property_indices()
+        for node in self.nodes:
+            # Indicizzazione speciale per property nodes
+            node_type = getattr(node, 'node_type', None)
+            if node_type == 'property' and hasattr(node, 'name'):
+                self._indices.add_property_node(node.name, node)
+
+        for edge in self._indices.edges_by_type.get('has_property', []):
             # Indicizzazione speciale per has_property edges
             # ✅ FIX: Use newly built index instead of find_node_by_id() to avoid recursion
-            if edge.edge_type == 'has_property':
-                source_node = self._indices.nodes_by_id.get(edge.edge_source)
-                target_node = self._indices.nodes_by_id.get(edge.edge_target)
-                if source_node and target_node and hasattr(target_node, 'name'):
-                    prop_value = getattr(target_node, 'description', 'empty')
-                    self._indices.add_property_relation(
-                        target_node.name,
-                        edge.edge_source,
-                        prop_value
-                    )
-        
-        self._indices_dirty = False
+            source_node = self._indices.nodes_by_id.get(edge.edge_source)
+            target_node = self._indices.nodes_by_id.get(edge.edge_target)
+            if source_node and target_node and hasattr(target_node, 'name'):
+                prop_value = getattr(target_node, 'description', 'empty')
+                self._indices.add_property_relation(
+                    target_node.name,
+                    edge.edge_source,
+                    prop_value
+                )
+        self._property_stale = False
+
+    def _id_maps(self):
+        """The two id maps, rebuilt first if stale. The FIRST node (edge)
+        with an id wins, as in the linear scan they replace."""
+        if self._ids_stale:
+            by_node, by_edge, duplicated = {}, {}, False
+            for node in self._nodes:
+                key = getattr(node, 'node_id', _NO_ID)
+                if key in by_node:
+                    duplicated = True
+                else:
+                    by_node[key] = node
+            for edge in self._edges:
+                key = getattr(edge, 'edge_id', _NO_ID)
+                if key not in by_edge:
+                    by_edge[key] = edge
+            self._node_by_id, self._edge_by_id = by_node, by_edge
+            self._ids_duplicated = duplicated
+            self._ids_stale = False
+        return self._node_by_id, self._edge_by_id
 
 
     @staticmethod
@@ -201,16 +268,31 @@ class Graph:
         self.warnings.append(message)
 
     def add_node(self, node: Node, overwrite=False) -> Node:
-        """Adds a node to the graph."""
+        """Adds a node to the graph.
+
+        The id map learns the node; the structural indices, when clean, are
+        extended in place (see the note above `_indices_dirty`).
+        """
         existing_node = self.find_node_by_id(node.node_id)
         if existing_node:
             if overwrite:
                 self.nodes.remove(existing_node)
                 self.add_warning(f"Node '{node.node_id}' overwritten.")
+                if self._ids_duplicated:
+                    # another node with this id may now come first
+                    self._ids_stale = True
+                if not self._structure_stale and self._indices is not None:
+                    self._indices.discard_node(existing_node)
+                self._property_stale = True
             else:
                 return existing_node
         self.nodes.append(node)
-        self._indices_dirty = True  # ← Aggiunto per invalidare gli indici
+        if not self._ids_stale:
+            self._node_by_id[node.node_id] = node
+        if not self._structure_stale and self._indices is not None:
+            self._indices.add_node(node)
+            if getattr(node, 'node_type', None) == 'property':
+                self._property_stale = True
         return node
 
     def add_edge(self, edge_id: str, edge_source: str, edge_target: str, edge_type: str) -> Edge:
@@ -245,7 +327,12 @@ class Graph:
 
         edge = Edge(edge_id, edge_source, edge_target, edge_type)
         self.edges.append(edge)
-        self._indices_dirty = True  # ← Aggiunto per invalidare gli indici
+        if not self._ids_stale:
+            self._edge_by_id[edge_id] = edge
+        if not self._structure_stale and self._indices is not None:
+            self._indices.add_edge(edge)
+            if edge_type == 'has_property':
+                self._property_stale = True
         return edge
 
     def connect_paradatagroup_propertynode_to_stratigraphic(self, verbose=False):
@@ -439,26 +526,18 @@ class Graph:
             pass
 
     def find_node_by_id(self, node_id):
-        """Finds a node by ID.
-
-        ✅ OPTIMIZATION: O(1) lookup using indices instead of O(n) iteration
-        """
-        # Use index if available (O(1) lookup)
-        if not self._indices_dirty and self._indices is not None:
-            return self._indices.nodes_by_id.get(node_id)
-
-        # Fallback to linear search if indices not ready
-        for node in self.nodes:
-            if node.node_id == node_id:
-                return node
-        return None
+        """Finds a node by ID, in O(1): the id map is always answerable."""
+        try:
+            return self._id_maps()[0].get(node_id)
+        except TypeError:  # an unhashable id names no node
+            return None
 
     def find_edge_by_id(self, edge_id):
-        """Finds an edge by ID."""
-        for edge in self.edges:
-            if edge.edge_id == edge_id:
-                return edge
-        return None
+        """Finds an edge by ID, in O(1): the id map is always answerable."""
+        try:
+            return self._id_maps()[1].get(edge_id)
+        except TypeError:
+            return None
 
     def get_connected_nodes(self, node_id):
         """Gets all nodes connected to a given node."""
@@ -490,7 +569,8 @@ class Graph:
         """
         # Use index if available (O(1) lookup)
         if not self._indices_dirty and self._indices is not None:
-            return self._indices.nodes_by_type.get(node_type, [])
+            # a copy: the index list grows in place with add_node now
+            return list(self._indices.nodes_by_type.get(node_type, []))
 
         # Fallback to linear search if indices not ready
         return [node for node in self.nodes if node.node_type == node_type]
@@ -520,6 +600,10 @@ class Graph:
             raise ValueError(f"Node with ID '{node_id}' not found.")
         for key, value in kwargs.items():
             setattr(node, key, value)
+        if 'node_type' in kwargs:
+            self.invalidate_indices()
+        else:
+            self._property_stale = True
         # print(f"Node '{node_id}' updated successfully.")
 
     def update_edge(self, edge_id, **kwargs):
@@ -529,6 +613,8 @@ class Graph:
             raise ValueError(f"Edge with ID '{edge_id}' not found.")
         for key, value in kwargs.items():
             setattr(edge, key, value)
+        if kwargs.keys() & {'edge_id', 'edge_source', 'edge_target', 'edge_type'}:
+            self.invalidate_indices()
         # print(f"Edge '{edge_id}' updated successfully.")
 
 

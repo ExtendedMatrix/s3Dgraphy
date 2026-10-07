@@ -30,6 +30,21 @@ class GraphIndices:
         # ✅ OPTIMIZATION: Composite edge index (source_id, edge_type) -> [edges]
         self.edges_by_source_type = {}  # {(source_id, edge_type): [edges]}
         self.edges_by_target_type = {}  # {(target_id, edge_type): [edges]}
+
+        # Where each edge sits in Graph.edges (id(edge) -> int, increasing
+        # in list order): what lets a query that merges the edges by source
+        # and the edges by target give them back in the order of the list,
+        # as the linear scan does.
+        self.edge_seq = {}
+        self._next_seq = 0
+
+    def clear_property_indices(self):
+        """Empty the four property indices, the only ones that read VALUES
+        (a property's name and description) rather than ids and types."""
+        self.property_nodes_by_name = {}
+        self.property_values_by_name = {}
+        self.strat_to_properties = {}
+        self.properties_to_strat = {}
     
     def add_node(self, node):
         """Adds a node to all relevant indices"""
@@ -40,6 +55,21 @@ class GraphIndices:
         # Add to type index
         if hasattr(node, 'node_type'):
             self.add_node_by_type(node.node_type, node)
+
+    def discard_node(self, node):
+        """Take `node` (this object, not its id) out of the id and type
+        indices: what `Graph.add_node(overwrite=True)` replaces."""
+        node_id = getattr(node, 'node_id', None)
+        if self.nodes_by_id.get(node_id) is node:
+            del self.nodes_by_id[node_id]
+        same_type = self.nodes_by_type.get(getattr(node, 'node_type', None))
+        if same_type is not None:
+            for i, other in enumerate(same_type):
+                if other is node:
+                    del same_type[i]
+                    break
+            if not same_type:
+                del self.nodes_by_type[node.node_type]
 
     def add_node_by_type(self, node_type, node):
         """Adds a node to the index by type"""
@@ -62,6 +92,9 @@ class GraphIndices:
     
     def add_edge(self, edge):
         """Adds an edge to indices"""
+        self.edge_seq[id(edge)] = self._next_seq
+        self._next_seq += 1
+
         # Per tipo
         if edge.edge_type not in self.edges_by_type:
             self.edges_by_type[edge.edge_type] = []
