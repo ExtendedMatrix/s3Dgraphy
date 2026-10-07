@@ -46,6 +46,15 @@ All notable changes to **s3dgraphy** are documented here.
   `append` of the swimlane into the root document (lxml, 1.1 s).
   The test suite runs in about 5 minutes (291 s and 304 s, two runs) instead
   of 7 min 16 s.
+- **A contradiction in the matrix is reported at once** (#27). When the
+  temporal graph is not acyclic, `TemporalInferenceEngine.transitive_reduction`
+  enumerated every simple cycle (`list(nx.simple_cycles)`) only to print the
+  first: on a matrix with redundant relations — A after B, B after C and A
+  after C, as pyArchInit records them — one contradiction makes that count
+  grow like Fibonacci (32 US: 3 s; 40 US: minutes). It now asks networkx for
+  one cycle (`find_cycle`): a 200-US chain of that shape fails in 0.15 s with
+  the same message, where the previous code was still running after 20 s.
+  The likeliest cause of the 990-US GraphML export that did not finish.
 - **#27 · the small points**. `PyArchInitImporter.parse()` closes its
   connection on a failure too, logs the failure with its traceback instead of
   printing it to stderr, and raises `ImportError` chained to the cause.

@@ -131,8 +131,11 @@ class TemporalInferenceEngine:
 
         # Check for cycles
         if not nx.is_directed_acyclic_graph(G):
-            cycles = list(nx.simple_cycles(G))
-            cycle_str = " → ".join(cycles[0] + [cycles[0][0]])
+            # One cycle is enough for the message. Enumerating them all
+            # (list(simple_cycles)) is exponential on a matrix with redundant
+            # relations and a single contradiction: issue #27.
+            cycle = [u for u, _v in nx.find_cycle(G)]
+            cycle_str = " → ".join(cycle + [cycle[0]])
             raise ValueError(
                 f"Temporal graph contains cycle: {cycle_str}\n"
                 f"This indicates inconsistent stratigraphic data. "
