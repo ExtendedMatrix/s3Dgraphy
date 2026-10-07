@@ -5,6 +5,57 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
+- **The index stays alive** (MICRO l'indice del grafo, 7 October 2026, issue
+  #27 by Enzo Cocca: a 990-US pyArchInit site imported in 8.7 s and its GraphML
+  export did not finish in 30 minutes). `find_node_by_id` and `find_edge_by_id`
+  answer in O(1) always, from id maps `add_node` (with `overwrite=True` too)
+  and `add_edge` keep up to date; the list setters, `remove_*`,
+  `invalidate_indices()` and `_indices_dirty = True` mark them stale and the
+  next lookup rebuilds them in one pass. Until now a lookup after a write
+  scanned the whole list, so an import, which alternates the two, was
+  quadratic; `find_edge_by_id` had no index at all. The structural indices
+  (by type, source, target, source+type, target+type), when clean, are
+  extended in place by `add_node`/`add_edge` and stay clean; the property
+  indices, which read a description an importer may set after the edge, are
+  rebuilt alone. A seeded random sequence of every kind of write checks after
+  each step that every index equals the one rebuilt from scratch and every
+  lookup returns the linear scan's object. The helpers a GraphML export calls
+  per node — `get_extractor_nodes_for_node`, `get_document_nodes_for_extractor`,
+  `get_combiner_nodes_for_property`, `get_connected_nodes_by_edge_type`, the
+  two `get_connected_epoch_node*_by_edge_type`, and in the exporter the
+  relations string, the paradata-image attachments and the SL_PD groups —
+  read the indices instead of scanning every edge, and answer in the order of
+  the edge list whether the index was clean or stale (a clean index used to
+  give outgoing then incoming edges, a self-loop twice). Measured on the same
+  machine before and after (min of three runs; every GraphML and em.json
+  written byte-identical, with `uuid4` and the hash seed fixed):
+
+  | bench | operation | before | after |
+  |---|---|---|---|
+  | synthetic, 1000 US + 10 epochs (7,011 nodes) | build | 3.02 s | 0.048 s |
+  | | GraphML export | 16.07 s | 1.03 s |
+  | synthetic, 2000 US (14,011 nodes) | build | 11.96 s | 0.094 s |
+  | | GraphML export | 67.1 s | 3.21 s |
+  | Basilica Iulia GraphML (2,958 nodes, 11,577 edges) | import | 2.84 s | 0.39 s |
+  | | GraphML export | 3.29 s | 0.39 s |
+  | | em.json re-read | 2.17 s | 0.10 s |
+  | pyArchInit demo, 51 US | import + em.json + GraphML | 0.156 s | 0.109 s |
+
+  What is left of a GraphML export at 2000 US is quadratic in two places,
+  neither touched here: the transitive reduction (networkx, 2.1 s) and the one
+  `append` of the swimlane into the root document (lxml, 1.1 s).
+  The test suite runs in about 5 minutes (291 s and 304 s, two runs) instead
+  of 7 min 16 s.
+- **#27 · the small points**. `PyArchInitImporter.parse()` closes its
+  connection on a failure too, logs the failure with its traceback instead of
+  printing it to stderr, and raises `ImportError` chained to the cause.
+  `importer.base_importer.redact_dsn` replaces a DSN's password with `***`
+  (user, host and database stay readable), and the importer's DEBUG lines go
+  through it: a `postgresql://user:password@…` no longer reaches the log
+  whole. `GraphMLExporter` prints nothing on stdout: progress at DEBUG, the
+  summary at INFO, a cycle at WARNING, and the Temporal Inference Report, one
+  line per redundant edge, at DEBUG.
+
 - **Templu Mare v2 · the resolver reads a dataset folder as it is** (MICRO
   Templu Mare v2, 6 October 2026). `resources.locate.resolve_graph`: a resource
   of SEVERAL files (`has_file`) has no locator of its own and was «missing»; its
@@ -149,6 +200,14 @@ All notable changes to **s3dgraphy** are documented here.
 - **D2 · The scene's rotation is measured from the GRID north** of the CRS:
   `GeoPositionNode` writes `data.rotation_reference = "grid"` (set on load
   when a document does not carry it); the docstrings said «geographic north».
+
+### Fixed
+- **`get_extractor_nodes_for_node` compared `edge.edge_source` with the edge
+  types** (#27), so its first loop, the extractor as the source of a
+  provenance edge, never matched. Fixed. The set it returns cannot change (its
+  third loop found the same extractors later); a node with extractors on both
+  sides now gets the sources first. No GraphML of the fixtures or of the
+  benches changed.
 
 ### Changed (the release)
 - **W2 · Step 7 waits for PyPI too.** Every `pip install`/`pip download` of a
