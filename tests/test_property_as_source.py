@@ -16,7 +16,10 @@ from s3dgraphy.graph import Graph
 from s3dgraphy.nodes import DocumentNode, ExtractorNode, PropertyNode, StratigraphicUnit
 from s3dgraphy.nodes.group_node import ParadataNodeGroup
 from s3dgraphy.ownership import original_owner
-from s3dgraphy.property_source import INSTANCE_OF, INSTANCE_OWNER, is_instance
+from s3dgraphy.property_source import (
+    INSTANCE_OF, INSTANCE_OWNER, READ_AT, READ_VALUE, diagnose, is_instance,
+    message, source_changed,
+)
 from s3dgraphy.utils.utils import get_stratigraphic_node_class
 
 USVs = get_stratigraphic_node_class("USVs")
@@ -134,6 +137,8 @@ def test_validate_is_quiet_on_the_case():
     g = _capriate()
     res = api.validate(g)
     assert res["ok"], res["issues"]
+    assert diagnose(g) == []
+    assert not [w for w in res["warnings"] if "source" in w]
 
 
 def test_reading_a_master_directly_is_a_hint():
@@ -150,6 +155,8 @@ def test_emjson_round_trip_is_stable():
     g2, _ = api.load_emjson(doc)
     inst = _instance(g2)
     assert inst.data[INSTANCE_OF] == "P12" and inst.data[INSTANCE_OWNER] == "US_12"
+    ext = g2.find_node_by_id("E40")
+    assert ext.data[READ_VALUE] == "quercia" and ext.data[READ_AT] == "2026-10-09T10:05:00Z"
     assert {(e.edge_source, e.edge_type, e.edge_target) for e in g2.edges} == \
         {(e.edge_source, e.edge_type, e.edge_target) for e in g.edges}
     doc2 = api.graph_to_emjson(g2)
@@ -173,3 +180,36 @@ def test_the_words_are_translated():
     # every diagnostic code has its words
     assert {"source_changed", "source_removed", "reasoning_cycle",
             "undeclared_owners"} <= words
+
+
+# ── part 2 · the value read ──────────────────────────────────────────────────
+
+def test_the_source_has_changed():
+    g = _capriate()
+    g.find_node_by_id("P12").value = "castagno"
+    recs = source_changed(g)
+    assert sorted(r["on"] for r in recs) == ["extractor", "instance"]
+    for r in recs:
+        assert (r["unit_name"], r["property_name"], r["read"], r["current"]) == \
+            ("US 12", "essenza", "quercia", "castagno")
+    text = message([r for r in recs if r["on"] == "extractor"][0])
+    for word in ("US 12", "essenza", "quercia", "castagno", "essenza.1"):
+        assert word in text
+    assert any("the source has changed" in w for w in api.validate(g)["warnings"])
+    # the instance is realigned; the extractor keeps its reading
+    out = api.refresh_instance(g, _instance(g).node_id, at="2026-10-09T11:00:00Z")
+    assert out["changed"] and out["before"] == "quercia" and out["after"] == "castagno"
+    assert [r["on"] for r in source_changed(g)] == ["extractor"]
+    # a person re-reads: quiet again
+    api.read_property(g, "E40", _instance(g).node_id)
+    assert source_changed(g) == []
+    assert g.find_node_by_id("E40").data[READ_VALUE] == "castagno"
+
+
+def test_a_number_and_its_text_are_the_same_reading():
+    g = _capriate()
+    g.find_node_by_id("P12").value = 3
+    api.refresh_instance(g, _instance(g).node_id)
+    api.read_property(g, "E40", _instance(g).node_id)
+    g.find_node_by_id("P12").value = "3"
+    assert source_changed(g) == []

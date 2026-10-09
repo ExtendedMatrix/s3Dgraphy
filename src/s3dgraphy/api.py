@@ -156,7 +156,9 @@ def validate(graph: Graph) -> Dict[str, Any]:
             f"from '{r['unit_name']}', which has no '{r['property_name']}' "
             f"property of its own")
     warnings = list(getattr(graph, "warnings", []) or [])
-    from .property_source import is_instance
+    # a property as a source (connections 1.6.36): the source changed
+    from .property_source import diagnose, is_instance, message
+    warnings.extend(message(r) for r in diagnose(graph))
     by_id = {n.node_id: n for n in nodes}
     for e in edges:
         tgt = by_id.get(e.edge_target)
@@ -333,6 +335,23 @@ def read_property(graph: Graph, extractor_id: str, instance_id: str, *,
     value it read (``data.read_value`` / ``data.read_at``); again = re-read."""
     from .property_source import read_property as _read
     return _read(graph, extractor_id, instance_id, at=at)
+
+
+def refresh_instance(graph: Graph, instance_id: str, *,
+                     at: Optional[str] = None) -> Dict[str, Any]:
+    """Realign an instance with its master's value: ``{instance, master,
+    before, after, changed}``."""
+    from .property_source import refresh_instance as _refresh
+    return _refresh(graph, instance_id, at=at)
+
+
+def reasoning_diagnostics(graph: Graph) -> List[Dict[str, Any]]:
+    """The records of ``source_changed``, ``source_removed``,
+    ``reasoning_cycle`` and ``undeclared_owners``, each with its ``code`` (the
+    key of the words in ``datamodel_translations.json`` section
+    ``reasoning``)."""
+    from .property_source import diagnose
+    return diagnose(graph)
 
 
 # ── A1 · the alternative labels of a unit, each with its source ─────────────

@@ -30,6 +30,15 @@ All notable changes to **s3dgraphy** are documented here.
   `connection_resolver.candidate_edge_types` names `extracted_from` only
   towards an instance (a line from an extractor to a plain property is still
   outside the language: the chain runs property → extractor).
+- **The value read, and «the source has changed»** (MICRO «la proprietà come
+  fonte», part 2). `read_property` keeps on the extractor what it read, flat
+  like the passage a region quotes: `data.read_value` (the master's value) and
+  `data.read_at`; asked again it re-reads. The diagnostic `source_changed`
+  (`property_source.source_changed`, among the warnings of `api.validate`):
+  the master's value is no longer the one read — on an extractor, or on an
+  instance, which `refresh_instance` realigns; the extractor keeps its reading
+  until a person re-reads. `api.reasoning_diagnostics` gives the records, each
+  with the `code` of its words in the translations.
 - **A version of several files, and a version made again** (MICRO «i parametri
   diventano la ricetta della versione», E.D. 6 October 2026: for Heriverse/ATON
   the version is a glTF with its textures). `add_version` with several files

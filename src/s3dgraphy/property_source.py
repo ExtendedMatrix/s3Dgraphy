@@ -297,6 +297,27 @@ def instantiate_property(graph, master_id: str, into_group_id: str, *,
     return inst
 
 
+def refresh_instance(graph, instance_id: str, *, at: Optional[str] = None) -> Dict[str, Any]:
+    """Realign an instance with its master: value and type again the master's.
+    Returns ``{instance, master, before, after, changed}``. The extractors that
+    read it keep THEIR reading: a reasoning is re-read by a person
+    (:func:`read_property` again), never refreshed behind their back."""
+    inst = graph.find_node_by_id(instance_id)
+    master = master_of(graph, inst)
+    if master is None:
+        raise ValueError(f"'{instance_id}' is not an instance with its master in the graph")
+    before = inst.value
+    changed = not _same(before, master.value) or inst.property_type != master.property_type
+    inst.value = master.value
+    inst.property_type = master.property_type
+    data = _ensure_data(inst)
+    data[INSTANCE_OWNER] = original_owner(graph, master.node_id) or data.get(INSTANCE_OWNER)
+    if changed:
+        data[INSTANTIATED_AT] = at or _now()
+    return {"instance": inst.node_id, "master": master.node_id,
+            "before": before, "after": master.value, "changed": changed}
+
+
 def read_property(graph, extractor_id: str, instance_id: str, *,
                   at: Optional[str] = None):
     """The extractor ``extractor_id`` reads the property instance
@@ -314,6 +335,66 @@ def read_property(graph, extractor_id: str, instance_id: str, *,
         raise ValueError(
             f"'{instance_id}' is not a property instance: instantiate the "
             f"source property in the reader's group first (instantiate_property)")
+    master = master_of(graph, inst)
     edge = _ensure_edge(graph, extractor_id, EXTRACTED_FROM, instance_id)
+    data = _ensure_data(ext)
+    data[READ_VALUE] = (master if master is not None else inst).value
+    data[READ_AT] = at or _now()
     return edge
+
+
+# ── diagnostics ──────────────────────────────────────────────────────────────
+
+def source_changed(graph) -> List[Dict[str, Any]]:
+    """Readings whose source moved on. Two cases, one code:
+
+    * ``on: "extractor"`` — an extractor read a property through an instance
+      and the master's value is no longer the one it read (``data.read_value``);
+    * ``on: "instance"`` — an instance no longer carries its master's value
+      (cure: :func:`refresh_instance`).
+
+    ``{code: "source_changed", on, node, node_name, master, unit, unit_name,
+    property_name, read, current}``. Removed nodes are not asked (a trace
+    has no reading to check); a removed master is :func:`source_removed`'s.
+    """
+    out: List[Dict[str, Any]] = []
+
+    def rec(on, node, master, read):
+        unit = owner_unit_of(graph, master.node_id) or _data(node).get(INSTANCE_OWNER)
+        return {"code": "source_changed", "on": on, "node": node.node_id,
+                "node_name": node.name, "master": master.node_id,
+                "unit": unit, "unit_name": _name(graph, unit) if unit else None,
+                "property_name": master.name, "read": read, "current": master.value}
+
+    for inst in graph.nodes:
+        if not is_instance(inst) or is_removed(inst):
+            continue
+        master = master_of(graph, inst)
+        if master is None or is_removed(master):
+            continue
+        if not _same(inst.value, master.value):
+            out.append(rec("instance", inst, master, inst.value))
+        for e in _edges(graph, target=inst.node_id, edge_type=EXTRACTED_FROM):
+            ext = graph.find_node_by_id(e.edge_source)
+            if ext is None or is_removed(ext) or READ_VALUE not in _data(ext):
+                continue
+            if not _same(_data(ext)[READ_VALUE], master.value):
+                out.append(rec("extractor", ext, master, _data(ext)[READ_VALUE]))
+    return out
+
+
+def diagnose(graph) -> List[Dict[str, Any]]:
+    """Every diagnostic of this module, as records with a ``code``:
+    ``source_changed``."""
+    return source_changed(graph)
+
+def message(record: Dict[str, Any]) -> str:
+    """The English sentence of a diagnostic record (the validator's)."""
+    code = record.get("code")
+    if code == "source_changed":
+        where = "the instance" if record["on"] == "instance" else f"extractor '{record['node_name']}'"
+        return (f"the source has changed: {where} read '{record['property_name']}' of "
+                f"'{record['unit_name']}' as '{record['read']}', it is now '{record['current']}'")
+    return str(record)
+
 
