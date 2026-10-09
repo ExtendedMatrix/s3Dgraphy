@@ -67,10 +67,10 @@
     "txt"
   ],
   "_validated_against": {
-    "s3dgraphy": "1.6.0.dev38",
+    "s3dgraphy": "1.6.0.dev40",
     "schema_version": "1",
     "node_datamodel": "1.6.26",
-    "connections_datamodel": "1.6.35",
-    "on": "2026-10-05"
+    "connections_datamodel": "1.6.36",
+    "on": "2026-10-09"
   }
 }

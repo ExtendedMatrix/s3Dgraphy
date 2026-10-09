@@ -130,8 +130,17 @@ def candidate_edge_types(src: Any, tgt: Any, *,
     from . import get_connections_datamodel
     names = get_connections_datamodel().get_all_edge_names(
         canonical_only=canonical_only)
-    return sorted(n for n in names
-                  if n != GENERIC_CONNECTION and connection_allowed(src, tgt, n))
+    out = sorted(n for n in names
+                 if n != GENERIC_CONNECTION and connection_allowed(src, tgt, n))
+    # connections 1.6.36: extracted_from reaches a PropertyNode only as an
+    # INSTANCE of another unit's property (data.instance_of,
+    # s3dgraphy.property_source) — a rule on the node the datamodel, which
+    # matches by class, cannot say. A line from an extractor to a plain
+    # property is still outside the language (the chain is property → extractor).
+    if ("extracted_from" in out and _node_type(tgt) == "property"
+            and not (getattr(tgt, "data", None) or {}).get("instance_of")):
+        out.remove("extracted_from")
+    return out
 
 
 def _node_type(node: Any) -> str:

@@ -30,8 +30,16 @@ Shape — one section per kind of key, each keyed by a STABLE identity::
                                                      "ui_phrase_as_target": {...}}},
       "dtc_kinds":            {"<dtc kind>":        {"label": {...}}},
       "stratigraphic_kinds":  {"<kind>":            {"label": {...}}},
-      "packagings":           {"<packaging>":       {"label": {...}}}
+      "packagings":           {"<packaging>":       {"label": {...}}},
+      "reasoning":            {"<word>":            {"label": {...}, "description": {...}}}
     }
+
+`reasoning.<word>` (1.7, connections 1.6.36) are the EM words of the reasoning
+between properties (E.D. 9 Oct 2026, «la proprietà come fonte»), seeded from the
+connections datamodel's ``paradata_reasoning`` block: the instance and its badge
+(«from {unit}» → «da {unit}»), the diagnostics (``source_changed``,
+``source_removed``, ``reasoning_cycle``, ``undeclared_owners``) and the cures —
+``label`` the title, ``description`` the sentence, ``{placeholders}`` kept.
 
 `packagings.<packaging>.label` (1.6, dev30) is the name of how a resource's bytes
 are packed — the `packaging` field of ResourceNode, seeded from its `labels`:
@@ -117,6 +125,7 @@ SECTIONS: Dict[str, str] = {
     "dtc_kinds": "dtc",
     "stratigraphic_kinds": "strat_kind",
     "packagings": "packaging",
+    "reasoning": "reasoning",
 }
 #: the two directions of an edge's `ui_phrase`, as fields of the `edge_types`
 #: section — `ui_phrase.as_source` in the datamodel is `ui_phrase_as_source` here
@@ -265,6 +274,20 @@ def _collect_packagings_en(dm: Dict[str, Any]) -> Dict[str, Dict[str, str]]:
     return out
 
 
+def _collect_reasoning_en(connections: Dict[str, Any]) -> Dict[str, Dict[str, str]]:
+    """{word: {"label": ..., "description": ...}} from the connections
+    datamodel's ``paradata_reasoning`` block (1.6.36); ``_`` keys are notes."""
+    out: Dict[str, Dict[str, str]] = {}
+    for word, spec in (connections.get("paradata_reasoning") or {}).items():
+        if word.startswith("_") or not isinstance(spec, dict):
+            continue
+        fields = {f: spec[f] for f in FIELDS
+                  if isinstance(spec.get(f), str) and spec[f].strip()}
+        if fields:
+            out[word] = fields
+    return out
+
+
 def _collect_all_en() -> Dict[str, Dict[str, Dict[str, str]]]:
     out = {"entries": _collect_en(_load(DATAMODEL))}
     out.update(_collect_qualia_en(_load(QUALIA)))
@@ -272,6 +295,7 @@ def _collect_all_en() -> Dict[str, Dict[str, Dict[str, str]]]:
     out["dtc_kinds"] = _collect_dtc_kinds_en(_load(VISUAL_RULES))
     out["stratigraphic_kinds"] = _collect_stratigraphic_kinds_en(_load(DATAMODEL))
     out["packagings"] = _collect_packagings_en(_load(DATAMODEL))
+    out["reasoning"] = _collect_reasoning_en(_load(CONNECTIONS))
     return out
 
 
@@ -286,7 +310,7 @@ def seed(write: bool = True) -> Dict[str, Any]:
         existing = {}
     doc: Dict[str, Any] = {
         "schema": "s3Dgraphy_datamodel_translations",
-        "version": "1.6",
+        "version": "1.7",
         "languages": LANGUAGES,
     }
     for section in SECTIONS:
@@ -332,7 +356,8 @@ def _rows(doc: Dict[str, Any]) -> List[Tuple[str, str, str]]:
     categories/subcategories/qualia, then the edge phrases."""
     keys: List[Tuple[str, str, str]] = []
     for section in ("entries", "qualia_categories", "qualia_subcategories", "qualia",
-                    "edge_types", "dtc_kinds", "stratigraphic_kinds", "packagings"):
+                    "edge_types", "dtc_kinds", "stratigraphic_kinds", "packagings",
+                    "reasoning"):
         entries = doc.get(section, {})
         for key in sorted(entries):
             for field in ("label", "description") + PHRASE_FIELDS:
@@ -429,6 +454,14 @@ def packaging_label(packaging: str, lang: str = "en") -> Optional[str]:
     """The name of a resource's packaging in ``lang`` («file_set» → «Insieme di
     file»), English fallback; ``None`` for a packaging the datamodel does not have."""
     return translate("packagings", packaging, "label", lang)
+
+
+def reasoning_text(word: str, field: str = "label", lang: str = "en") -> Optional[str]:
+    """A word of the reasoning between properties (connections 1.6.36
+    ``paradata_reasoning``) in ``lang`` — ``reasoning_text("instance_badge",
+    lang="it")`` → «da {unit}» — placeholders left for the caller; English
+    fallback, ``None`` for an unknown word."""
+    return translate("reasoning", word, field, lang)
 
 
 def edge_ui_phrase(edge_type: str, direction: str, lang: str = "en") -> Optional[str]:
@@ -567,6 +600,11 @@ def export_xlsx(path: str, force: bool = False) -> None:
             area = "resource packaging"
             note = (f"Name of the packaging '{key}' of a resource (how its bytes are "
                     "packed), shown on the resource's chip in an inspector")
+        elif section == "reasoning":
+            area = "reasoning between properties"
+            note = (f"{'Title' if field == 'label' else 'Sentence'} of '{key}' (an instance of a "
+                    "property read as a source, a warning on it, or its cure). Keep every "
+                    "{placeholder} in braces exactly as written.")
         elif section == "dtc_kinds":
             area = "DTC vocabulary"
             note = (f"Name of the acquisition family '{key[7:]}'" if key.startswith("family_")

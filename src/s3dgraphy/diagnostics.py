@@ -389,7 +389,9 @@ def paradata_group_incoherences(graph) -> List[dict]:
 
     Only PropertyNode members are checked: extractors, combiners and documents
     live in a group as the property's provenance, not as the owner's
-    properties. Returns one record per (owner, property) pair,
+    properties. A property INSTANCE (``data.instance_of``, connections 1.6.36,
+    :mod:`s3dgraphy.property_source`) is not checked either: it is in the
+    reader's group as a SOURCE, like a document, and is nobody's property. Returns one record per (owner, property) pair,
     ``{owner, owner_name, group, property, property_name}``; read-only.
     """
     by_id = {n.node_id: n for n in graph.nodes}
@@ -406,6 +408,8 @@ def paradata_group_incoherences(graph) -> List[dict]:
             continue
         prop = by_id.get(e.edge_source)
         if prop is None or getattr(prop, "node_type", None) != "property":
+            continue
+        if (getattr(prop, "data", None) or {}).get("instance_of"):
             continue
         for owner_id in owners_of.get(e.edge_target, ()):
             if (owner_id, prop.node_id) in owned:

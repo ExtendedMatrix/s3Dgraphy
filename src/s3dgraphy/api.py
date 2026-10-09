@@ -156,6 +156,17 @@ def validate(graph: Graph) -> Dict[str, Any]:
             f"from '{r['unit_name']}', which has no '{r['property_name']}' "
             f"property of its own")
     warnings = list(getattr(graph, "warnings", []) or [])
+    from .property_source import is_instance
+    by_id = {n.node_id: n for n in nodes}
+    for e in edges:
+        tgt = by_id.get(e.edge_target)
+        if (e.edge_type == "extracted_from"
+                and getattr(tgt, "node_type", None) == "property"
+                and not is_instance(tgt)):
+            info.append(
+                f"extractor '{getattr(by_id.get(e.edge_source), 'name', e.edge_source)}' "
+                f"reads property '{tgt.name}' directly: read another unit's property "
+                f"through an instance of it in the reader's group (instantiate_property)")
     warnings.extend(_dtc_warnings(graph))
     warnings.extend(_license_warnings(graph))
     warnings.extend(_camera_gps_warnings(graph))
@@ -282,6 +293,46 @@ def shared_properties(graph: Graph) -> List[Dict[str, Any]]:
     original}]``."""
     from .ownership import shared_properties as _shared
     return _shared(graph)
+
+
+# ── a property as a source (E.D. 9 Oct 2026, connections 1.6.36) ────────────
+def instantiate_property(graph: Graph, master_id: str, into_group_id: str, *,
+                         at: Optional[str] = None):
+    """An INSTANCE of the property ``master_id`` in the paradata group
+    ``into_group_id`` of the unit that reads it: a PropertyNode with
+    ``data.instance_of`` (the master) and ``data.instance_owner`` (the master's
+    unit, for the badge), the master's value now, no chain of its own. Same
+    master and group again → the same instance. See
+    :mod:`s3dgraphy.property_source`."""
+    from .property_source import instantiate_property as _inst
+    return _inst(graph, master_id, into_group_id, at=at)
+
+
+def master_of(graph: Graph, instance):
+    """The master property of an instance, or ``None``."""
+    from .property_source import master_of as _master
+    return _master(graph, instance)
+
+
+def instances_of(graph: Graph, master) -> List[Any]:
+    """Every instance of a master property."""
+    from .property_source import instances_of as _instances
+    return _instances(graph, master)
+
+
+def owner_unit_of(graph: Graph, prop) -> Optional[str]:
+    """The unit a property belongs to (its original owner); through an
+    instance, the master's."""
+    from .property_source import owner_unit_of as _owner
+    return _owner(graph, prop)
+
+
+def read_property(graph: Graph, extractor_id: str, instance_id: str, *,
+                  at: Optional[str] = None):
+    """``extractor —extracted_from→ instance``, the extractor remembering the
+    value it read (``data.read_value`` / ``data.read_at``); again = re-read."""
+    from .property_source import read_property as _read
+    return _read(graph, extractor_id, instance_id, at=at)
 
 
 # ── A1 · the alternative labels of a unit, each with its source ─────────────

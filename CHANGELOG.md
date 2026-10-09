@@ -5,6 +5,31 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
+- **A property as a source: the instance** (connections 1.6.36, MICRO «la
+  proprietà come fonte», decided by E.D. 9 October 2026: the trusses take the
+  wood species of the fragments found, the upper parts of a temple the material
+  of the lower ones). One extracts from the PROPERTY, not from the unit: the
+  source property is INSTANTIATED in the reader's paradata group, and the
+  reader's extractor points at the instance. New module
+  `s3dgraphy.property_source`: the instance is a `PropertyNode` with a sign —
+  `data.instance_of` (the master), `data.instance_owner` (the master's unit, for
+  the badge), the master's value at that moment, no chain of its own — measured
+  first: the graph has no node form for a document instance either (the yEd
+  occurrences are folded into one node and listed in `attributes.instances`,
+  EMStudio's Matrix draws `instanceOf` at drawing time), so the documents are
+  not migrated. `api.instantiate_property`, `master_of`, `instances_of`,
+  `owner_unit_of` (through an instance, the master's unit), `read_property`.
+  `extracted_from.target += PropertyNode` (`_note_property` WIDENED,
+  `property_source_note`); `is_in_paradata_nodegroup` already admitted it
+  (`property_instance_note`). The new block `paradata_reasoning` holds the EM
+  words of the reasoning between properties, translated in
+  `datamodel_translations.json` 1.7, section `reasoning` (en/it/de;
+  `datamodel_i18n.reasoning_text`). The paradata-group coherence rule no longer
+  asks an instance to be its group owner's property; `api.validate` hints
+  (`info`) at an extractor that reads a property that is not an instance, and
+  `connection_resolver.candidate_edge_types` names `extracted_from` only
+  towards an instance (a line from an extractor to a plain property is still
+  outside the language: the chain runs property → extractor).
 - **A version of several files, and a version made again** (MICRO «i parametri
   diventano la ricetta della versione», E.D. 6 October 2026: for Heriverse/ATON
   the version is a glTF with its textures). `add_version` with several files
