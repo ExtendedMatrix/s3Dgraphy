@@ -164,6 +164,54 @@ if TYPE_CHECKING:
 log = logging.getLogger("modules.s3dgraphy.sync.graph_ingestor")
 
 
+#: The tables this ingestor INSERTs into with the serial, and their
+#: primary key, for the realignment below.
+_SERIAL_PK_TABLES = (
+    ("us_table", "id_us"),
+    ("periodizzazione_table", "id_perfas"),
+)
+
+
+def _resync_pg_serial_sequences(conn, handle) -> None:
+    """Realign each serial sequence to ``MAX(pk)`` before writing.
+
+    A restored PostgreSQL dump leaves its sequences behind the data —
+    ``pg_restore`` copies the primary keys and does not reset them — so
+    the first auto-key INSERT asks for a value the table already holds
+    and PostgreSQL raises ``UniqueViolation`` on the primary key:
+    creating the epochs of a new site died on
+    ``periodizzazione_table_pkey`` and took the whole ingest with it.
+
+    ``setval`` is not transactional, so the correction stays even when
+    the ingest afterwards rolls back (a dry run, or an error). That is
+    the right outcome either way: ``MAX(pk)`` is the value the sequence
+    should have had. It reads no row and writes none, so nothing that
+    is already in the table moves or is renumbered.
+
+    A no-op on SQLite, whose ``AUTOINCREMENT`` corrects itself, and
+    best-effort everywhere: a schema without one of these tables (the
+    minimal ones the tests build) must not block the ingest.
+    """
+    if not getattr(handle, "is_postgres", False):
+        return
+    for table, pk in _SERIAL_PK_TABLES:
+        # One SAVEPOINT each: in PostgreSQL a failed statement aborts
+        # the whole transaction, so a plain try/except would not
+        # recover — every later INSERT would fail with "current
+        # transaction is aborted". begin_nested() lets a missing table,
+        # column or sequence roll back just this savepoint and leaves
+        # the ingest transaction intact.
+        try:
+            with conn.begin_nested():
+                conn.execute(text(
+                    "SELECT setval("
+                    "pg_get_serial_sequence(:table, :pk), "
+                    "GREATEST((SELECT COALESCE(MAX(%s), 0) FROM %s), 1))"
+                    % (pk, table)), {"table": table, "pk": pk})
+        except Exception:  # pragma: no cover - housekeeping, never fatal
+            log.debug("sequence of %s.%s left as it was", table, pk)
+
+
 class GraphIngestor:
     """Persist a s3dgraphy Graph back to the PyArchInit SQL tables.
 
@@ -391,6 +439,12 @@ class GraphIngestor:
         # _DryRunRollback sentinel to force rollback at the end.
         try:
             with handle.engine.begin() as conn:
+                # Before anything is written: a restored dump's sequences sit
+                # behind its rows, and the first INSERT with the serial would
+                # collide on the primary key. Runs in a dry run too, which
+                # executes the INSERTs before rolling back and would
+                # otherwise crash on the preview.
+                _resync_pg_serial_sequences(conn, handle)
                 # Ensure site_table has a row for `sito` — create if missing.
                 count_row = conn.execute(
                     text("SELECT COUNT(*) FROM site_table WHERE sito = :sito"),
