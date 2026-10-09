@@ -10,11 +10,14 @@ shown. The decisions this module follows:
    property, with its justification and its sources: a property becomes a
    source like a document (CRMinf: an inference based on a proposition already
    adopted).
-2. **The source property is instantiated**, like a document, and no long thread
-   crosses the graph. The INSTANCE is a node in the paradata group of the unit
-   that reads it, pointing at its MASTER (the property in its own unit). The
-   reader's extractor points at the instance (``extracted_from``) and holds the
-   reasoning; several sources are gathered by a combiner as usual.
+2. **The extractor points at the MASTER** (E.D., 9 Oct 2026, evening: «non ha
+   nessun senso fare un'istanza nel triple store: è solamente una modalità
+   grafica di rappresentare il grafo»). In the data the reader's extractor is
+   ``extracted_from`` the property in its own unit, as it is a document; there
+   is no instance node in em.json nor in the RDF. The instance is a VIEW: each
+   client draws, inside the reader's paradata group, the master it reads, with
+   the badge of where it comes from — one rule for documents and properties,
+   :func:`s3dgraphy.paradata_view.view_instances`.
 3. **Inheritance and extraction are different.** An inheritance
    (:mod:`s3dgraphy.ownership`, ``has_property`` marked ``inherited``) is the
    SAME node with the SAME value. An extraction gives the reader a property of
@@ -27,36 +30,27 @@ shown. The decisions this module follows:
 5. **Two undeclared owners** are a warning with two cures:
    :func:`duplicate_per_owner` and :func:`declare_inheritance`.
 
-The form of an instance
------------------------
-
-An instance is a ``PropertyNode`` with a SIGN, not a class of its own (measured
-2026-10-09: the graph has no node form for a document instance either — the
-yEd occurrences are folded into one node and remembered in
-``attributes["instances"]``, and EMStudio's Matrix draws its instances at
-drawing time with ``instanceOf``). Its ``data``:
-
-``instance_of``      the master property's id — the sign;
-``instance_owner``   the master's original owner (the unit of the badge), as
-                     :func:`s3dgraphy.ownership.original_owner` names it;
-``instantiated_at``  when it was made (or last realigned).
-
-Its ``value`` and ``property_type`` are the master's at that moment. It has no
-chain of its own (no ``has_data_provenance``): its justification is the
-master's. It sits in the reader's group by ``is_in_paradata_nodegroup`` and is
-nobody's ``has_property``.
-
 The reading
 -----------
 
-An extractor that reads a property through an instance keeps in its ``data``
-what it read, flat like the passage a region quotes (``data.text``)::
+An extractor that reads a property keeps in its ``data`` what it read, flat
+like the passage a region quotes (``data.text``)::
 
     read_value   the master's value when the reading was made
     read_at      when
 
 so a later change of the master is seen (``source_changed``) — the principle of
-the dtcstamp applied to reasoning.
+the dtcstamp applied to reasoning. It is the extractor's data, not an instance:
+it stays in em.json.
+
+A stored instance (the form of the afternoon of 9 Oct 2026)
+-----------------------------------------------------------
+
+For a few hours an instance was a ``PropertyNode`` with ``data.instance_of``
+(and ``instance_owner``, ``instantiated_at``) in the reader's group. Somebody
+may have written one: :func:`fold_stored_instances`, run when an em.json is
+read, folds it onto its master — the edges towards the instance pass to the
+master, the node goes, one warning line says so.
 
 The trace
 ---------
@@ -77,11 +71,12 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence, Set, Tuple
 from .ownership import (HAS_PROPERTY, INHERITED_KEY, is_inherited_edge,
                         original_owner, owner_edges)
 
-INSTANCE_OF = "instance_of"
-INSTANCE_OWNER = "instance_owner"
-INSTANTIATED_AT = "instantiated_at"
 READ_VALUE = "read_value"
 READ_AT = "read_at"
+#: the sign of a STORED instance (9 Oct 2026, afternoon) — read, never written:
+#: :func:`fold_stored_instances` folds it onto its master
+LEGACY_INSTANCE_OF = "instance_of"
+_LEGACY_INSTANCE_KEYS = ("instance_of", "instance_owner", "instantiated_at")
 
 EXTRACTED_FROM = "extracted_from"
 HAS_DATA_PROVENANCE = "has_data_provenance"
@@ -163,7 +158,7 @@ def _kind(node) -> str:
     from .nodes.stratigraphic_node import StratigraphicNode
     nt = getattr(node, "node_type", None)
     if nt == "property":
-        return "instance" if is_instance(node) else "property"
+        return "property"
     if nt in ("extractor", "combiner"):
         return nt
     if isinstance(node, DocumentNode):
@@ -191,44 +186,15 @@ def _name(graph, ref) -> str:
     return str(getattr(node, "name", None) or _id(ref) or "")
 
 
-# ── the instance ─────────────────────────────────────────────────────────────
-
-def is_instance(node) -> bool:
-    """True for a PropertyNode that is an instance of another (``data.instance_of``)."""
-    return (getattr(node, "node_type", None) == "property"
-            and bool(_data(node).get(INSTANCE_OF)))
-
-
-def master_of(graph, instance):
-    """The master property of ``instance`` (a node or an id), or ``None`` when
-    it is not an instance or its master is not in the graph."""
-    node = _node(graph, instance)
-    if not is_instance(node):
-        return None
-    return graph.find_node_by_id(_data(node)[INSTANCE_OF])
-
-
-def instances_of(graph, master) -> List[Any]:
-    """Every instance of ``master`` (a node or an id), in graph order."""
-    mid = _id(master)
-    return [n for n in graph.nodes
-            if is_instance(n) and _data(n).get(INSTANCE_OF) == mid]
-
+# ── the source property ──────────────────────────────────────────────────────
 
 def owner_unit_of(graph, prop) -> Optional[str]:
     """The id of the unit a property belongs to — its ORIGINAL owner
-    (:func:`s3dgraphy.ownership.original_owner`). Through an instance, the
-    master's owner; when the master is gone, the owner the instance recorded."""
+    (:func:`s3dgraphy.ownership.original_owner`): the unit of the badge when
+    a view draws the property inside a group that reads it."""
     node = _node(graph, prop)
     if node is None:
         return None
-    if is_instance(node):
-        master = master_of(graph, node)
-        if master is not None:
-            owner = original_owner(graph, master.node_id)
-            if owner:
-                return owner
-        return _data(node).get(INSTANCE_OWNER)
     return original_owner(graph, node.node_id)
 
 
@@ -269,92 +235,113 @@ def _ensure_edge(graph, source: str, edge_type: str, target: str,
     return edge
 
 
-def instantiate_property(graph, master_id: str, into_group_id: str, *,
-                         at: Optional[str] = None):
-    """An instance of the property ``master_id`` in the paradata group
-    ``into_group_id`` (the group of the unit that reads it). Returns the
-    instance node.
+def reads_as_source(graph, extractor, prop) -> bool:
+    """Is a line from ``extractor`` to the property ``prop`` a READING
+    (``extracted_from``: the extractor reads ``prop`` as a source) rather than a
+    provenance drawn backwards (the EM chain is property → extractor,
+    ``has_data_provenance``)?
 
-    It carries the master's value and type at this moment, the master's id
-    and the id of the master's owner (``data.instance_of`` /
-    ``data.instance_owner``), and no chain of its own. Asked again for the same
-    master and group it returns the instance already there. An instance given
-    as master is resolved to its own master: there are no instances of
-    instances.
+    A reading: the extractor already feeds a property (directly or through a
+    combiner) and ``prop`` is not one of them. An extractor that feeds nothing,
+    or feeds ``prop`` itself, with a line towards ``prop`` is the old yEd
+    provenance line drawn the other way. Measured 2026-10-09: no such line in
+    the fifteen GraphML files at hand (Aiano, Templu Mare, Great Temple, San
+    Pietro, Montebelluna, Volterra fixtures), only the test of
+    ``test_recompute_warnings``; the rule keeps that case outside the language.
     """
-    from .nodes.group_node import ParadataNodeGroup
-    from .nodes.property_node import PropertyNode
-    master = graph.find_node_by_id(master_id)
-    if master is None or getattr(master, "node_type", None) != "property":
-        raise ValueError(f"'{master_id}' is not a property of this graph")
-    if is_instance(master):
-        resolved = master_of(graph, master)
-        if resolved is None:
-            raise ValueError(f"'{master_id}' is an instance whose master is not here")
-        master = resolved
-    group = graph.find_node_by_id(into_group_id)
-    if not isinstance(group, ParadataNodeGroup):
-        raise ValueError(f"'{into_group_id}' is not a ParadataNodeGroup")
-    for inst in instances_of(graph, master.node_id):
-        if _edges(graph, source=inst.node_id, target=into_group_id, edge_type=IN_GROUP):
-            return inst
-    iid = _stable_id(f"instance|{master.node_id}|{into_group_id}")
-    inst = graph.find_node_by_id(iid)
-    if inst is None:
-        inst = PropertyNode(iid, master.name, value=master.value,
-                            property_type=master.property_type,
-                            data={INSTANCE_OF: master.node_id,
-                                  INSTANCE_OWNER: original_owner(graph, master.node_id),
-                                  INSTANTIATED_AT: at or _now()})
-        graph.add_node(inst)
-    _ensure_edge(graph, inst.node_id, IN_GROUP, into_group_id)
-    return inst
+    ext = _node(graph, extractor)
+    target = _node(graph, prop)
+    if getattr(ext, "node_type", None) != "extractor" or \
+            getattr(target, "node_type", None) != "property":
+        return False
+    fed = {p.node_id for p in _fed_properties(graph, ext.node_id)}
+    return bool(fed) and target.node_id not in fed
 
 
-def refresh_instance(graph, instance_id: str, *, at: Optional[str] = None) -> Dict[str, Any]:
-    """Realign an instance with its master: value and type again the master's.
-    Returns ``{instance, master, before, after, changed}``. The extractors that
-    read it keep THEIR reading: a reasoning is re-read by a person
-    (:func:`read_property` again), never refreshed behind their back."""
-    inst = graph.find_node_by_id(instance_id)
-    master = master_of(graph, inst)
-    if master is None:
-        raise ValueError(f"'{instance_id}' is not an instance with its master in the graph")
-    before = inst.value
-    changed = not _same(before, master.value) or inst.property_type != master.property_type
-    inst.value = master.value
-    inst.property_type = master.property_type
-    data = _ensure_data(inst)
-    data[INSTANCE_OWNER] = original_owner(graph, master.node_id) or data.get(INSTANCE_OWNER)
-    if changed:
-        data[INSTANTIATED_AT] = at or _now()
-    return {"instance": inst.node_id, "master": master.node_id,
-            "before": before, "after": master.value, "changed": changed}
-
-
-def read_property(graph, extractor_id: str, instance_id: str, *,
+def read_property(graph, extractor_id: str, property_id: str, *,
                   at: Optional[str] = None):
-    """The extractor ``extractor_id`` reads the property instance
-    ``instance_id``: ``extractor —extracted_from→ instance``, and the extractor
-    remembers what it read (``data.read_value``: the MASTER's value now,
-    ``data.read_at``). Asked again it re-reads: the same edge, a new reading —
-    the way a person confirms a reasoning after its source changed. Returns
-    the edge. A property that is not an instance is refused: one reads another
-    unit's property through its instance (:func:`instantiate_property`)."""
+    """The extractor ``extractor_id`` reads the property ``property_id`` —
+    the MASTER, in its own unit: ``extractor —extracted_from→ property``, and
+    the extractor remembers what it read (``data.read_value``, ``data.read_at``).
+    Asked again it re-reads: the same edge, a new reading — the way a person
+    confirms a reasoning after its source changed. Returns the edge. A property
+    the extractor itself feeds is refused (that is its provenance, not a
+    source)."""
     ext = graph.find_node_by_id(extractor_id)
     if getattr(ext, "node_type", None) != "extractor":
         raise ValueError(f"'{extractor_id}' is not an extractor")
-    inst = graph.find_node_by_id(instance_id)
-    if not is_instance(inst):
+    prop = graph.find_node_by_id(property_id)
+    if getattr(prop, "node_type", None) != "property":
+        raise ValueError(f"'{property_id}' is not a property of this graph")
+    if property_id in {p.node_id for p in _fed_properties(graph, extractor_id)}:
         raise ValueError(
-            f"'{instance_id}' is not a property instance: instantiate the "
-            f"source property in the reader's group first (instantiate_property)")
-    master = master_of(graph, inst)
-    edge = _ensure_edge(graph, extractor_id, EXTRACTED_FROM, instance_id)
+            f"extractor '{ext.name}' feeds '{prop.name}': it is its provenance, "
+            f"it cannot read it as a source")
+    edge = _ensure_edge(graph, extractor_id, EXTRACTED_FROM, property_id)
     data = _ensure_data(ext)
-    data[READ_VALUE] = (master if master is not None else inst).value
+    data[READ_VALUE] = prop.value
     data[READ_AT] = at or _now()
     return edge
+
+
+def fold_stored_instances(graph) -> Dict[str, Any]:
+    """Fold every STORED property instance onto its master — the reader of a
+    file written in the afternoon of 9 Oct 2026, when an instance was a
+    ``PropertyNode`` with ``data.instance_of``. The rule of the other load-time
+    migrations (:mod:`s3dgraphy.annotation.migrate_reading`): the old form is
+    read, never written again; idempotent.
+
+    Every edge of the instance passes to its master (an ``extracted_from``
+    towards the instance becomes one towards the master) unless the master
+    already has it; the instance's membership of the reader's group goes (the
+    view draws it, :func:`s3dgraphy.paradata_view.view_instances`); the node
+    goes. An instance whose master is not in the graph is kept as a plain
+    property without its sign, and said. Returns ``{folded: [{instance,
+    master}], kept: [ids], warnings: [line]}`` — one line for all."""
+    folded: List[Dict[str, str]] = []
+    kept: List[str] = []
+    for inst in list(graph.nodes):
+        if getattr(inst, "node_type", None) != "property":
+            continue
+        data = _data(inst)
+        mid = data.get(LEGACY_INSTANCE_OF)
+        if not mid:
+            continue
+        master = graph.find_node_by_id(mid)
+        if master is None or getattr(master, "node_type", None) != "property" \
+                or master is inst:
+            for k in _LEGACY_INSTANCE_KEYS:
+                data.pop(k, None)
+            kept.append(inst.node_id)
+            continue
+        for e in list(graph.edges):
+            if e.edge_source != inst.node_id and e.edge_target != inst.node_id:
+                continue
+            if e.edge_source == inst.node_id and e.edge_type == IN_GROUP:
+                graph.remove_edge(e.edge_id)
+                continue
+            src = master.node_id if e.edge_source == inst.node_id else e.edge_source
+            tgt = master.node_id if e.edge_target == inst.node_id else e.edge_target
+            attrs = dict(e.attributes or {})
+            graph.remove_edge(e.edge_id)
+            if src == tgt or any(x.edge_source == src and x.edge_target == tgt
+                                 and x.edge_type == e.edge_type for x in graph.edges):
+                continue
+            new = graph.add_edge(e.edge_id, src, tgt, e.edge_type)
+            if attrs:
+                new.attributes.update(attrs)
+        graph.remove_node(inst.node_id)
+        folded.append({"instance": inst.node_id, "master": master.node_id})
+    warnings = []
+    if folded or kept:
+        names = sorted({_name(graph, f["master"]) for f in folded})
+        line = (f"stored property instances folded onto their masters: {len(folded)}"
+                + (f" ({', '.join(names)})" if names else "")
+                + " — the instance is a view now, the extractor reads the master")
+        if kept:
+            line += f"; {len(kept)} without their master kept as plain properties ({', '.join(kept)})"
+        warnings.append(line)
+    return {"folded": folded, "kept": kept, "warnings": warnings}
 
 
 # ── who leans on what ────────────────────────────────────────────────────────
@@ -395,9 +382,9 @@ def _based_on(graph, node_id: str) -> List[str]:
     reasoning, the one :func:`dependents_of` walks backwards.
 
     property → its provenance (extractor / combiner); combiner → its
-    extractors; extractor → what it read (document, region, instance, unit);
-    instance → its master; region → what it is on; unit read as a source → its
-    properties of the name the extractor feeds (connections 1.6.24).
+    extractors; extractor → what it read (document, region, property, unit);
+    region → what it is on; unit read as a source → its properties of the name
+    the extractor feeds (connections 1.6.24).
     """
     node = graph.find_node_by_id(node_id)
     kind = _kind(node)
@@ -414,9 +401,6 @@ def _based_on(graph, node_id: str) -> List[str]:
                 out.extend(p for p in _own_properties(graph, e.edge_target)
                            if _key(graph.find_node_by_id(p)) in keys)
         return out
-    if kind == "instance":
-        mid = _data(node).get(INSTANCE_OF)
-        return [mid] if mid else []
     if kind == "region":
         return [e.edge_target for e in _edges(graph, source=node_id, edge_type=IS_ON_RESOURCE)]
     return []
@@ -439,8 +423,9 @@ def _leaning_on(graph, node_id: str) -> List[Tuple[str, str]]:
         for e in _edges(graph, target=node_id, edge_type=EXTRACTED_FROM):
             add(e.edge_source)
     elif kind == "property":
-        for inst in instances_of(graph, node_id):
-            add(inst.node_id, "instance")
+        # an extractor reading the property itself (its master)
+        for e in _edges(graph, target=node_id, edge_type=EXTRACTED_FROM):
+            add(e.edge_source)
         # the heirs (ownership.py) share the very node
         for e in owner_edges(graph, node_id):
             if is_inherited_edge(e):
@@ -452,9 +437,6 @@ def _leaning_on(graph, node_id: str) -> List[Tuple[str, str]]:
             for e in _edges(graph, target=owner, edge_type=EXTRACTED_FROM):
                 if key in {_key(p) for p in _fed_properties(graph, e.edge_source)}:
                     add(e.edge_source)
-    elif kind == "instance":
-        for e in _edges(graph, target=node_id, edge_type=EXTRACTED_FROM):
-            add(e.edge_source)
     elif kind in ("document", "region"):
         for e in _edges(graph, target=node_id, edge_type=EXTRACTED_FROM):
             add(e.edge_source)
@@ -476,7 +458,7 @@ def dependents_of(graph, node_id: str) -> List[Dict[str, Any]]:
 
     One record per dependent, ``{id, name, node_type, kind, via, depth,
     owner, owner_name}``: ``kind`` is ``property`` (a unit's own property, or a
-    property of another unit fed by the chain), ``instance``, ``extractor``,
+    property of another unit fed by the chain), ``extractor``,
     ``combiner``, ``region`` or ``heir`` (a unit that inherits the very
     property, :mod:`s3dgraphy.ownership`); ``via`` the node it leans on;
     ``owner`` the unit of a property. A cycle is walked once. Read-only.
@@ -499,7 +481,7 @@ def dependents_of(graph, node_id: str) -> List[Dict[str, Any]]:
                 rec = {"id": dep, "name": getattr(n, "name", dep),
                        "node_type": getattr(n, "node_type", None), "kind": kind,
                        "via": cur, "depth": depth, "owner": None, "owner_name": None}
-                if kind in ("property", "instance"):
+                if kind == "property":
                     owner = owner_unit_of(graph, dep)
                     rec["owner"], rec["owner_name"] = owner, (_name(graph, owner) if owner else None)
                 out.append(rec)
@@ -537,8 +519,6 @@ def _all_gone(graph, nid: str, gone: Set[str]) -> bool:
     if kind == "property":
         owners = [e.edge_source for e in owner_edges(graph, nid)]
         return bool(owners) and all(o in gone for o in owners)
-    if kind == "instance":
-        return _data(node).get(INSTANCE_OF) in gone
     if kind in ("extractor", "region"):
         heads = [e.edge_target for e in _edges(
             graph, source=nid, edge_type=EXTRACTED_FROM if kind == "extractor" else IS_ON_RESOURCE)]
@@ -553,7 +533,7 @@ def remove_cascade(graph, node_id: str) -> Dict[str, Any]:
     """Remove ``node_id`` and what depends ONLY on it — the explicit choice.
 
     What goes: the node; a unit's own properties that have no other owner; the
-    instances of a property that goes; the extractors whose every source goes
+    extractors whose every source goes
     (an extractor reads one place); the combiners whose every extractor goes;
     the regions of a document that goes; the chain (extractors, combiners)
     that served only properties that go; a paradata group left empty. What
@@ -640,40 +620,34 @@ def remove_cascade(graph, node_id: str) -> Dict[str, Any]:
 # ── diagnostics ──────────────────────────────────────────────────────────────
 
 def source_changed(graph) -> List[Dict[str, Any]]:
-    """Readings whose source moved on. Two cases, one code:
+    """Readings whose source moved on: an extractor read a property
+    (``data.read_value``) and the property's value is no longer that one.
 
-    * ``on: "extractor"`` — an extractor read a property through an instance
-      and the master's value is no longer the one it read (``data.read_value``);
-    * ``on: "instance"`` — an instance no longer carries its master's value
-      (cure: :func:`refresh_instance`).
-
-    ``{code: "source_changed", on, node, node_name, master, unit, unit_name,
-    property_name, read, current}``. Removed nodes are not asked (a trace
-    has no reading to check); a removed master is :func:`source_removed`'s.
+    ``{code: "source_changed", node, node_name, master, unit, unit_name,
+    property_name, read, current}`` — ``master`` the property read, ``unit``
+    its unit. Removed nodes are not asked (a trace has no reading to check);
+    a removed property is :func:`source_removed`'s. The cure is a person
+    reading again (:func:`read_property`).
     """
     out: List[Dict[str, Any]] = []
-
-    def rec(on, node, master, read):
-        unit = owner_unit_of(graph, master.node_id) or _data(node).get(INSTANCE_OWNER)
-        return {"code": "source_changed", "on": on, "node": node.node_id,
-                "node_name": node.name, "master": master.node_id,
-                "unit": unit, "unit_name": _name(graph, unit) if unit else None,
-                "property_name": master.name, "read": read, "current": master.value}
-
-    for inst in graph.nodes:
-        if not is_instance(inst) or is_removed(inst):
+    for ext in graph.nodes:
+        if getattr(ext, "node_type", None) != "extractor" or is_removed(ext):
             continue
-        master = master_of(graph, inst)
-        if master is None or is_removed(master):
+        data = _data(ext)
+        if READ_VALUE not in data:
             continue
-        if not _same(inst.value, master.value):
-            out.append(rec("instance", inst, master, inst.value))
-        for e in _edges(graph, target=inst.node_id, edge_type=EXTRACTED_FROM):
-            ext = graph.find_node_by_id(e.edge_source)
-            if ext is None or is_removed(ext) or READ_VALUE not in _data(ext):
+        for e in _edges(graph, source=ext.node_id, edge_type=EXTRACTED_FROM):
+            master = graph.find_node_by_id(e.edge_target)
+            if _kind(master) != "property" or is_removed(master):
                 continue
-            if not _same(_data(ext)[READ_VALUE], master.value):
-                out.append(rec("extractor", ext, master, _data(ext)[READ_VALUE]))
+            if _same(data[READ_VALUE], master.value):
+                continue
+            unit = owner_unit_of(graph, master.node_id)
+            out.append({"code": "source_changed", "node": ext.node_id,
+                        "node_name": ext.name, "master": master.node_id,
+                        "unit": unit, "unit_name": _name(graph, unit) if unit else None,
+                        "property_name": master.name, "read": data[READ_VALUE],
+                        "current": master.value})
     return out
 
 
@@ -682,22 +656,17 @@ def source_removed(graph) -> List[Dict[str, Any]]:
 
     ``{code: "source_removed", node, node_name, kind, source, source_name,
     source_kind, value, unit, unit_name, affects}``: ``node`` is the live
-    instance or extractor that leans on the removed ``source`` (a master
-    property, the unit of that master, a document, a region, a unit read as a
-    source); ``value`` the source's last value; ``affects`` the properties the
-    chain feeds. The chain still reads; this is the warning that goes with it.
+    extractor that reads the removed ``source`` (a property, the unit of that
+    property, a document, a region, a unit read as a source); ``value`` the
+    source's last value; ``affects`` the properties the chain feeds. The chain
+    still reads; this is the warning that goes with it.
     """
     out: List[Dict[str, Any]] = []
 
     def add(node, source, why_unit=None):
-        props = []
-        if _kind(node) == "extractor":
-            props = _fed_properties(graph, node.node_id)
-        else:
-            for e in _edges(graph, target=node.node_id, edge_type=EXTRACTED_FROM):
-                props.extend(_fed_properties(graph, e.edge_source))
+        props = _fed_properties(graph, node.node_id)
         unit = why_unit or (owner_unit_of(graph, source.node_id)
-                            if _kind(source) in ("property", "instance") else None)
+                            if _kind(source) == "property" else None)
         out.append({"code": "source_removed", "node": node.node_id,
                     "node_name": node.name, "kind": _kind(node),
                     "source": source.node_id, "source_name": source.name,
@@ -706,29 +675,26 @@ def source_removed(graph) -> List[Dict[str, Any]]:
                     "affects": list(dict.fromkeys(p.node_id for p in props))})
 
     for node in graph.nodes:
-        if is_removed(node):
+        if is_removed(node) or _kind(node) != "extractor":
             continue
-        if is_instance(node):
-            master = master_of(graph, node)
-            if master is not None and is_removed(master):
-                add(node, master)
+        for e in _edges(graph, source=node.node_id, edge_type=EXTRACTED_FROM):
+            src = graph.find_node_by_id(e.edge_target)
+            if src is None:
                 continue
-            unit = owner_unit_of(graph, node)
-            unit_node = graph.find_node_by_id(unit) if unit else None
-            if unit_node is not None and is_removed(unit_node):
-                add(node, unit_node, unit)
-        elif _kind(node) == "extractor":
-            for e in _edges(graph, source=node.node_id, edge_type=EXTRACTED_FROM):
-                src = graph.find_node_by_id(e.edge_target)
-                if src is not None and is_removed(src):
-                    add(node, src)
+            if is_removed(src):
+                add(node, src)
+            elif _kind(src) == "property":
+                unit = owner_unit_of(graph, src.node_id)
+                unit_node = graph.find_node_by_id(unit) if unit else None
+                if unit_node is not None and is_removed(unit_node):
+                    add(node, unit_node, unit)
     return out
 
 
 def reasoning_cycles(graph) -> List[List[str]]:
     """Chains of reasoning that come back to themselves (A is based on B,
     which is based on A). Each cycle is the list of the PROPERTIES on it, in
-    the order of the reasoning, starting from the smallest id; the instances,
+    the order of the reasoning, starting from the smallest id; the
     extractors and combiners between them are walked, not listed. Uses the
     forward step of :func:`dependents_of` (``_based_on``)."""
     ids = [n.node_id for n in graph.nodes if not is_removed(n)]
@@ -833,8 +799,7 @@ def message(record: Dict[str, Any]) -> str:
     """The English sentence of a diagnostic record (the validator's)."""
     code = record.get("code")
     if code == "source_changed":
-        where = "the instance" if record["on"] == "instance" else f"extractor '{record['node_name']}'"
-        return (f"the source has changed: {where} read '{record['property_name']}' of "
+        return (f"the source has changed: extractor '{record['node_name']}' read '{record['property_name']}' of "
                 f"'{record['unit_name']}' as '{record['read']}', it is now '{record['current']}'")
     if code == "source_removed":
         return (f"source removed: '{record['node_name']}' leans on {record['source_kind']} "
@@ -909,15 +874,15 @@ def duplicate_per_owner(graph, property_id: str) -> Dict[str, Any]:
     """«Duplica per ogni proprietario»: the first undeclared owner (edge order)
     keeps the node; every other undeclared owner gets a COPY of the property,
     its ``has_property`` moved to the copy (attributes kept). The rule of
-    EMStudio's ``duplicateForEachOwner``, with the instance this module adds:
-    combiners and extractors are DUPLICATED all the way down; an extractor that
-    reads a property instance reads, in its copy, an instance of the same master
-    in the new owner's group (source properties are INSTANTIATED); documents,
-    regions and units are read as they are (a document instance has no node
-    form, documents are not migrated). A membership of the property in the
-    other owner's group moves to the copy with its chain. Declared heirs are
-    left alone. Returns ``{property, copies: [{owner, property, chain}],
-    duplicates, instances}``.
+    EMStudio's ``duplicateForEachOwner``: combiners and extractors are
+    DUPLICATED all the way down, and a copied extractor reads the SAME master
+    — the document, the region, the unit or the property the original reads,
+    with the original's reading (``read_value``/``read_at``); nothing is
+    instantiated, the view draws the master in the new owner's group
+    (:func:`s3dgraphy.paradata_view.view_instances`). A membership of the
+    property in the other owner's group moves to the copy with its chain.
+    Declared heirs are left alone. Returns ``{property, copies: [{owner,
+    property, chain}], duplicates}``.
     """
     from .nodes.combiner_node import CombinerNode
     from .nodes.extractor_node import ExtractorNode
@@ -927,7 +892,7 @@ def duplicate_per_owner(graph, property_id: str) -> Dict[str, Any]:
         raise ValueError(f"'{property_id}' is not a property")
     edges = [e for e in owner_edges(graph, property_id) if not is_inherited_edge(e)]
     owners = list(dict.fromkeys(e.edge_source for e in edges))
-    res = {"property": property_id, "copies": [], "duplicates": 0, "instances": 0}
+    res = {"property": property_id, "copies": [], "duplicates": 0}
     if len(owners) < 2:
         return res
     import copy as _copy
@@ -985,14 +950,6 @@ def duplicate_per_owner(graph, property_id: str) -> Dict[str, Any]:
                     continue
                 if e.edge_type == COMBINES:
                     _ensure_edge(graph, nid, COMBINES, copy_chain(e.edge_target))
-                elif e.edge_type == EXTRACTED_FROM and is_instance(graph.find_node_by_id(e.edge_target)):
-                    master = master_of(graph, e.edge_target)
-                    if master is not None and group:
-                        inst = instantiate_property(graph, master.node_id, group)
-                        res["instances"] += 1
-                        _ensure_edge(graph, nid, EXTRACTED_FROM, inst.node_id)
-                    else:
-                        _ensure_edge(graph, nid, EXTRACTED_FROM, e.edge_target)
                 else:
                     _ensure_edge(graph, nid, e.edge_type, e.edge_target)
             return nid

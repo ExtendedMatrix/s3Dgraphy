@@ -1,6 +1,6 @@
 {
  "schema": "s3Dgraphy_datamodel_translations",
- "version": "1.7",
+ "version": "1.8",
  "languages": [
   "en",
   "it",
@@ -8341,9 +8341,9 @@
     "fr": "Dupliquer pour chaque propriétaire"
    }
   },
-  "instance_badge": {
+  "instance": {
    "description": {
-    "en": "The badge of an instance, top left: the unit its master belongs to. Clicking it reaches the master.",
+    "en": "A source drawn inside the group that reads it — a document, or another unit's property. It is a view: the node is the master, in its own place; clicking it reaches the master.",
     "validated_it": false,
     "validated_el": false,
     "validated_he": false,
@@ -8352,17 +8352,17 @@
     "validated_ro": false,
     "validated_fr": false,
     "validated_de": false,
-    "it": "Il badge di un'istanza, in alto a sinistra: l'unità a cui appartiene il suo master. Cliccandolo si raggiunge il master.",
-    "de": "Das Abzeichen einer Instanz, oben links: die Einheit, zu der ihr Master gehört. Ein Klick darauf führt zum Master.",
-    "el": "Το σήμα ενός στιγμιότυπου, πάνω αριστερά: η μονάδα στην οποία ανήκει ο master του. Με κλικ φτάνει κανείς στον master.",
-    "he": "התג של מופע, למעלה משמאל: היחידה שאליה שייך ה-master שלו. לחיצה עליו מובילה ל-master.",
-    "es": "La insignia de una instancia, arriba a la izquierda: la unidad a la que pertenece su máster. Al pulsarla se llega al máster.",
-    "pl": "Plakietka instancji, w lewym górnym rogu: jednostka, do której należy jej master. Kliknięcie prowadzi do mastera.",
-    "ro": "Insigna unei instanțe, stânga sus: unitatea căreia îi aparține master-ul ei. Un clic pe ea duce la master.",
-    "fr": "Le badge d'une instance, en haut à gauche : l'unité à laquelle appartient son maître. Un clic mène au maître."
+    "it": "Una fonte disegnata dentro il gruppo che la legge — un documento, o la proprietà di un'altra unità. È una vista: il nodo è il master, al suo posto; un clic porta al master.",
+    "de": "Eine Quelle, gezeichnet in der Gruppe, die sie liest — ein Dokument oder die Eigenschaft einer anderen Einheit. Sie ist eine Ansicht: Der Knoten ist der Master an seinem Ort; ein Klick führt zum Master.",
+    "el": "Μια πηγή σχεδιασμένη μέσα στην ομάδα που τη διαβάζει — ένα έγγραφο ή η ιδιότητα άλλης μονάδας. Είναι μια όψη: ο κόμβος είναι ο master, στη θέση του· ένα κλικ οδηγεί στον master.",
+    "he": "מקור המצויר בתוך הקבוצה שקוראת אותו — מסמך, או תכונה של יחידה אחרת. זוהי תצוגה: הצומת הוא ה-master, במקומו; לחיצה מובילה ל-master.",
+    "es": "Una fuente dibujada dentro del grupo que la lee — un documento, o la propiedad de otra unidad. Es una vista: el nodo es el máster, en su sitio; un clic lleva al máster.",
+    "pl": "Źródło narysowane wewnątrz grupy, która je czyta — dokument albo właściwość innej jednostki. To widok: węzłem jest master, na swoim miejscu; kliknięcie prowadzi do mastera.",
+    "ro": "O sursă desenată în interiorul grupului care o citește — un document sau proprietatea altei unități. Este o vedere: nodul este master-ul, la locul lui; un clic duce la master.",
+    "fr": "Une source dessinée dans le groupe qui la lit — un document, ou la propriété d'une autre unité. C'est une vue : le nœud est le maître, à sa place ; un clic mène au maître."
    },
    "label": {
-    "en": "from {unit}",
+    "en": "Instance",
     "validated_it": false,
     "validated_el": false,
     "validated_he": false,
@@ -8371,19 +8371,19 @@
     "validated_ro": false,
     "validated_fr": false,
     "validated_de": false,
-    "it": "da {unit}",
-    "de": "aus {unit}",
-    "el": "από {unit}",
-    "he": "מתוך {unit}",
-    "es": "de {unit}",
-    "pl": "z {unit}",
-    "ro": "din {unit}",
-    "fr": "de {unit}"
+    "it": "Istanza",
+    "de": "Instanz",
+    "el": "Στιγμιότυπο",
+    "he": "מופע",
+    "es": "Instancia",
+    "pl": "Instancja",
+    "ro": "Instanță",
+    "fr": "Instance"
    }
   },
-  "property_instance": {
+  "instance_badge": {
    "description": {
-    "en": "An instance of another unit's property, read as a source: it carries the master's value and its justification is the master's.",
+    "en": "The badge of an instance, top left: the unit the property belongs to, or the epoch where the document is born. Clicking it reaches the master.",
     "validated_it": false,
     "validated_el": false,
     "validated_he": false,
@@ -8392,17 +8392,17 @@
     "validated_ro": false,
     "validated_fr": false,
     "validated_de": false,
-    "it": "Un'istanza della proprietà di un'altra unità, letta come fonte: porta il valore del master e la sua giustificazione è quella del master.",
-    "de": "Eine Instanz der Eigenschaft einer anderen Einheit, als Quelle gelesen: Sie trägt den Wert des Masters, und ihre Begründung ist die des Masters.",
-    "el": "Ένα στιγμιότυπο της ιδιότητας άλλης μονάδας, που διαβάζεται ως πηγή: φέρει την τιμή του master και η αιτιολόγησή του είναι εκείνη του master.",
-    "he": "מופע של תכונה של יחידה אחרת, הנקרא כמקור: הוא נושא את ערך ה-master והצדקתו היא זו של ה-master.",
-    "es": "Una instancia de la propiedad de otra unidad, leída como fuente: lleva el valor del máster y su justificación es la del máster.",
-    "pl": "Instancja właściwości innej jednostki, czytana jako źródło: niesie wartość mastera, a jej uzasadnieniem jest uzasadnienie mastera.",
-    "ro": "O instanță a proprietății altei unități, citită ca sursă: poartă valoarea master-ului, iar justificarea ei este cea a master-ului.",
-    "fr": "Une instance de la propriété d'une autre unité, lue comme source : elle porte la valeur du maître et sa justification est celle du maître."
+    "it": "Il badge di un'istanza, in alto a sinistra: l'unità a cui appartiene la proprietà, o l'epoca in cui nasce il documento. Un clic porta al master.",
+    "de": "Das Abzeichen einer Instanz, oben links: die Einheit, zu der die Eigenschaft gehört, oder die Epoche, in der das Dokument entsteht. Ein Klick führt zum Master.",
+    "el": "Το σήμα ενός στιγμιότυπου, πάνω αριστερά: η μονάδα στην οποία ανήκει η ιδιότητα ή η εποχή όπου γεννιέται το έγγραφο. Ένα κλικ οδηγεί στον master.",
+    "he": "התג של מופע, למעלה משמאל: היחידה שאליה שייכת התכונה, או התקופה שבה נולד המסמך. לחיצה מובילה ל-master.",
+    "es": "La insignia de una instancia, arriba a la izquierda: la unidad a la que pertenece la propiedad, o la época en que nace el documento. Un clic lleva al máster.",
+    "pl": "Plakietka instancji, w lewym górnym rogu: jednostka, do której należy właściwość, albo epoka, w której powstaje dokument. Kliknięcie prowadzi do mastera.",
+    "ro": "Insigna unei instanțe, stânga sus: unitatea căreia îi aparține proprietatea sau epoca în care se naște documentul. Un clic duce la master.",
+    "fr": "Le badge d'une instance, en haut à gauche : l'unité à laquelle appartient la propriété, ou l'époque où naît le document. Un clic mène au maître."
    },
    "label": {
-    "en": "Property instance",
+    "en": "from {owner}",
     "validated_it": false,
     "validated_el": false,
     "validated_he": false,
@@ -8411,14 +8411,14 @@
     "validated_ro": false,
     "validated_fr": false,
     "validated_de": false,
-    "it": "Istanza di proprietà",
-    "de": "Eigenschaftsinstanz",
-    "el": "Στιγμιότυπο ιδιότητας",
-    "he": "מופע של תכונה",
-    "es": "Instancia de propiedad",
-    "pl": "Instancja właściwości",
-    "ro": "Instanță a proprietății",
-    "fr": "Instance de propriété"
+    "it": "da {owner}",
+    "de": "aus {owner}",
+    "el": "από {owner}",
+    "he": "מתוך {owner}",
+    "es": "de {owner}",
+    "pl": "z {owner}",
+    "ro": "din {owner}",
+    "fr": "de {owner}"
    }
   },
   "reasoning_cycle": {
@@ -8461,49 +8461,9 @@
     "fr": "Raisonnement circulaire"
    }
   },
-  "refresh_instance": {
-   "description": {
-    "en": "The instance takes the current value of its master.",
-    "validated_it": false,
-    "validated_el": false,
-    "validated_he": false,
-    "validated_es": false,
-    "validated_pl": false,
-    "validated_ro": false,
-    "validated_fr": false,
-    "validated_de": false,
-    "it": "L'istanza prende il valore attuale del suo master.",
-    "de": "Die Instanz übernimmt den aktuellen Wert ihres Masters.",
-    "el": "Το στιγμιότυπο παίρνει την τρέχουσα τιμή του master του.",
-    "he": "המופע מקבל את הערך הנוכחי של ה-master שלו.",
-    "es": "La instancia toma el valor actual de su máster.",
-    "pl": "Instancja przyjmuje bieżącą wartość swojego mastera.",
-    "ro": "Instanța preia valoarea curentă a master-ului ei.",
-    "fr": "L'instance prend la valeur actuelle de son maître."
-   },
-   "label": {
-    "en": "Realign with the source",
-    "validated_it": false,
-    "validated_el": false,
-    "validated_he": false,
-    "validated_es": false,
-    "validated_pl": false,
-    "validated_ro": false,
-    "validated_fr": false,
-    "validated_de": false,
-    "it": "Riallinea alla fonte",
-    "de": "Mit der Quelle abgleichen",
-    "el": "Ευθυγράμμιση με την πηγή",
-    "he": "יישור עם המקור",
-    "es": "Realinear con la fuente",
-    "pl": "Wyrównaj ze źródłem",
-    "ro": "Realiniază cu sursa",
-    "fr": "Réaligner sur la source"
-   }
-  },
   "remove_cascade": {
    "description": {
-    "en": "The node goes with the instances and the chains that rely only on it; the properties of other units stay.",
+    "en": "The node goes with the chains that rely only on it; the properties of other units stay.",
     "validated_it": false,
     "validated_el": false,
     "validated_he": false,
@@ -8512,14 +8472,14 @@
     "validated_ro": false,
     "validated_fr": false,
     "validated_de": false,
-    "it": "Il nodo se ne va con le istanze e le catene che dipendono solo da lui; le proprietà delle altre unità restano.",
-    "de": "Der Knoten wird mit den Instanzen und Ketten entfernt, die nur von ihm abhängen; die Eigenschaften anderer Einheiten bleiben.",
-    "el": "Ο κόμβος φεύγει μαζί με τα στιγμιότυπα και τις αλυσίδες που εξαρτώνται μόνο από αυτόν· οι ιδιότητες των άλλων μονάδων μένουν.",
-    "he": "הצומת מוסר יחד עם המופעים והשרשראות התלויים רק בו; התכונות של יחידות אחרות נשארות.",
-    "es": "El nodo se va con las instancias y las cadenas que dependen solo de él; las propiedades de las demás unidades quedan.",
-    "pl": "Węzeł znika wraz z instancjami i łańcuchami, które zależą tylko od niego; właściwości innych jednostek pozostają.",
-    "ro": "Nodul pleacă împreună cu instanțele și lanțurile care depind doar de el; proprietățile celorlalte unități rămân.",
-    "fr": "Le nœud s'en va avec les instances et les chaînes qui ne dépendent que de lui ; les propriétés des autres unités restent."
+    "it": "Il nodo se ne va con le catene che dipendono solo da lui; le proprietà delle altre unità restano.",
+    "de": "Der Knoten wird mit den Ketten entfernt, die nur von ihm abhängen; die Eigenschaften anderer Einheiten bleiben.",
+    "el": "Ο κόμβος φεύγει μαζί με τις αλυσίδες που εξαρτώνται μόνο από αυτόν· οι ιδιότητες των άλλων μονάδων μένουν.",
+    "he": "הצומת מוסר יחד עם השרשראות התלויות רק בו; התכונות של יחידות אחרות נשארות.",
+    "es": "El nodo se va con las cadenas que dependen solo de él; las propiedades de las demás unidades quedan.",
+    "pl": "Węzeł znika wraz z łańcuchami, które zależą tylko od niego; właściwości innych jednostek pozostają.",
+    "ro": "Nodul pleacă împreună cu lanțurile care depind doar de el; proprietățile celorlalte unități rămân.",
+    "fr": "Le nœud s'en va avec les chaînes qui ne dépendent que de lui ; les propriétés des autres unités restent."
    },
    "label": {
     "en": "Remove in cascade",

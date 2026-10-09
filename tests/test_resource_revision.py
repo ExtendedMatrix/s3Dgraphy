@@ -146,8 +146,9 @@ def test_l_arco_nel_datamodel():
     assert dm.get_reverse_name("was_revision_of") == "had_revision"
     raw = json.loads((CONFIG / "s3Dgraphy_connections_datamodel.json").read_text())
     # 1.6.35 dal 31 ott 2026 (dev27, il riallineamento), 1.6.36 dal 9 ott
-    # (la proprietà come fonte); la voce 1.6.31 resta nella storia
-    assert raw["s3Dgraphy_connections_model_version"] == "1.6.36"
+    # (la proprietà come fonte), 1.6.37 la sera stessa (l'istanza è una vista);
+    # la voce 1.6.31 resta nella storia
+    assert raw["s3Dgraphy_connections_model_version"] == "1.6.37"
     assert "v1.6.31 (LA REVISIONE DELLA RISORSA" in raw["description"]
     entry = raw["edge_types"]["was_revision_of"]
     # dev27: a realigned translation is a revision too (realign_translation)

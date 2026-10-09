@@ -158,18 +158,8 @@ def validate(graph: Graph) -> Dict[str, Any]:
     warnings = list(getattr(graph, "warnings", []) or [])
     # a property as a source (connections 1.6.36): the source changed, was
     # removed, the reasoning comes back to itself, two owners nobody declared
-    from .property_source import diagnose, is_instance, message
+    from .property_source import diagnose, message
     warnings.extend(message(r) for r in diagnose(graph))
-    by_id = {n.node_id: n for n in nodes}
-    for e in edges:
-        tgt = by_id.get(e.edge_target)
-        if (e.edge_type == "extracted_from"
-                and getattr(tgt, "node_type", None) == "property"
-                and not is_instance(tgt)):
-            info.append(
-                f"extractor '{getattr(by_id.get(e.edge_source), 'name', e.edge_source)}' "
-                f"reads property '{tgt.name}' directly: read another unit's property "
-                f"through an instance of it in the reader's group (instantiate_property)")
     warnings.extend(_dtc_warnings(graph))
     warnings.extend(_license_warnings(graph))
     warnings.extend(_camera_gps_warnings(graph))
@@ -299,51 +289,21 @@ def shared_properties(graph: Graph) -> List[Dict[str, Any]]:
 
 
 # ── a property as a source (E.D. 9 Oct 2026, connections 1.6.36) ────────────
-def instantiate_property(graph: Graph, master_id: str, into_group_id: str, *,
-                         at: Optional[str] = None):
-    """An INSTANCE of the property ``master_id`` in the paradata group
-    ``into_group_id`` of the unit that reads it: a PropertyNode with
-    ``data.instance_of`` (the master) and ``data.instance_owner`` (the master's
-    unit, for the badge), the master's value now, no chain of its own. Same
-    master and group again → the same instance. See
-    :mod:`s3dgraphy.property_source`."""
-    from .property_source import instantiate_property as _inst
-    return _inst(graph, master_id, into_group_id, at=at)
-
-
-def master_of(graph: Graph, instance):
-    """The master property of an instance, or ``None``."""
-    from .property_source import master_of as _master
-    return _master(graph, instance)
-
-
-def instances_of(graph: Graph, master) -> List[Any]:
-    """Every instance of a master property."""
-    from .property_source import instances_of as _instances
-    return _instances(graph, master)
-
-
 def owner_unit_of(graph: Graph, prop) -> Optional[str]:
-    """The unit a property belongs to (its original owner); through an
-    instance, the master's."""
+    """The unit a property belongs to (its original owner) — the badge of
+    the property when a view draws it in a group that reads it."""
     from .property_source import owner_unit_of as _owner
     return _owner(graph, prop)
 
 
-def read_property(graph: Graph, extractor_id: str, instance_id: str, *,
+def read_property(graph: Graph, extractor_id: str, property_id: str, *,
                   at: Optional[str] = None):
-    """``extractor —extracted_from→ instance``, the extractor remembering the
-    value it read (``data.read_value`` / ``data.read_at``); again = re-read."""
+    """``extractor —extracted_from→ property`` — the MASTER, in its own unit,
+    as a document is read — the extractor remembering the value it read
+    (``data.read_value`` / ``data.read_at``); again = re-read. See
+    :mod:`s3dgraphy.property_source`."""
     from .property_source import read_property as _read
-    return _read(graph, extractor_id, instance_id, at=at)
-
-
-def refresh_instance(graph: Graph, instance_id: str, *,
-                     at: Optional[str] = None) -> Dict[str, Any]:
-    """Realign an instance with its master's value: ``{instance, master,
-    before, after, changed}``."""
-    from .property_source import refresh_instance as _refresh
-    return _refresh(graph, instance_id, at=at)
+    return _read(graph, extractor_id, property_id, at=at)
 
 
 def dependents_of(graph: Graph, node_id: str) -> List[Dict[str, Any]]:
@@ -390,8 +350,8 @@ def declare_inheritance(graph: Graph, property_id: str,
 
 def duplicate_per_owner(graph: Graph, property_id: str) -> Dict[str, Any]:
     """«Duplica per ogni proprietario»: every undeclared owner after the first
-    gets its own copy, combiners and extractors duplicated, source properties
-    instantiated in its group, documents read as they are."""
+    gets its own copy, combiners and extractors duplicated; the copied
+    extractors read the same masters (documents, properties) as they are."""
     from .property_source import duplicate_per_owner as _dup
     return _dup(graph, property_id)
 

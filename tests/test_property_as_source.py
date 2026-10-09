@@ -2,8 +2,10 @@
 
 The case of the trusses: US 12 has the property «essenza: quercia», justified by
 an extractor on a document; the USV 40 (the trusses) has its own essenza,
-extracted from an INSTANCE of the property of US 12. Then US 12's value
-changes, it is removed with a trace, removed in cascade, and a cycle is made.
+extracted from the property of US 12 — the MASTER, in its own unit: the
+instance is a view (E.D. 9 Oct 2026, evening), computed by
+``view_instances`` and never stored. Then US 12's value changes, it is
+removed with a trace, removed in cascade, and a cycle is made.
 """
 
 import json
@@ -17,8 +19,8 @@ from s3dgraphy.nodes import DocumentNode, ExtractorNode, PropertyNode, Stratigra
 from s3dgraphy.nodes.group_node import ParadataNodeGroup
 from s3dgraphy.ownership import original_owner
 from s3dgraphy.property_source import (
-    INSTANCE_OF, INSTANCE_OWNER, READ_AT, READ_VALUE, diagnose, is_instance,
-    message, reasoning_cycles, source_changed, source_removed, undeclared_owners,
+    READ_AT, READ_VALUE, diagnose, message, reasoning_cycles, source_changed,
+    source_removed, undeclared_owners,
 )
 from s3dgraphy.utils.utils import get_stratigraphic_node_class
 
@@ -52,85 +54,63 @@ def _capriate() -> Graph:
     g.add_edge("p40", "P40", "E40", "has_data_provenance")
     for nid in ("P40", "E40"):
         g.add_edge(f"m_{nid}", nid, "PD_USV_40", "is_in_paradata_nodegroup")
-    inst = api.instantiate_property(g, "P12", "PD_USV_40", at="2026-10-09T10:00:00Z")
-    api.read_property(g, "E40", inst.node_id, at="2026-10-09T10:05:00Z")
+    api.read_property(g, "E40", "P12", at="2026-10-09T10:05:00Z")
     return g
 
 
-def _instance(g):
-    (inst,) = api.instances_of(g, "P12")
-    return inst
+# ── part 1 · the extractor reads the master; the instance is a view ──────────
 
-
-# ── part 1 · the instance ────────────────────────────────────────────────────
-
-def test_the_instance_is_a_property_with_a_sign():
+def test_the_extractor_points_at_the_master():
     g = _capriate()
-    inst = _instance(g)
-    assert is_instance(inst) and inst.node_type == "property"
-    assert inst.data[INSTANCE_OF] == "P12" and inst.data[INSTANCE_OWNER] == "US_12"
-    assert inst.value == "quercia" and inst.name == "essenza"
-    # in the reader's group, nobody's property, no chain of its own
-    out = {(e.edge_type, e.edge_target) for e in g.edges if e.edge_source == inst.node_id}
-    assert out == {("is_in_paradata_nodegroup", "PD_USV_40")}
-    assert not [e for e in g.edges if e.edge_target == inst.node_id
-                and e.edge_type == "has_property"]
-
-
-def test_master_instances_and_owner():
-    g = _capriate()
-    inst = _instance(g)
-    assert api.master_of(g, inst).node_id == "P12"
-    assert api.master_of(g, "P12") is None
-    assert api.owner_unit_of(g, inst) == "US_12"
-    assert api.owner_unit_of(g, "P40") == "USV_40"
+    (e,) = [e for e in g.edges if e.edge_source == "E40" and e.edge_type == "extracted_from"]
+    assert e.edge_target == "P12"
+    # no node but the ones drawn by hand: nothing instantiated
+    assert {n.node_id for n in g.nodes if n.node_type != "geo_position"} == {
+        "US_12", "PD_US_12", "USV_40", "PD_USV_40", "D1", "P12", "E12", "P40", "E40"}
+    assert not any("instance_of" in (getattr(n, "data", None) or {}) for n in g.nodes)
     assert api.owner_unit_of(g, "P12") == "US_12"
+    assert api.owner_unit_of(g, "P40") == "USV_40"
+    for gone in ("instantiate_property", "master_of", "instances_of", "refresh_instance"):
+        assert not hasattr(api, gone), gone
 
 
-def test_instantiate_is_idempotent_and_flattens_an_instance():
-    g = _capriate()
-    inst = _instance(g)
-    assert api.instantiate_property(g, "P12", "PD_USV_40") is inst
-    # an instance given as master: the instance of its master
-    again = api.instantiate_property(g, inst.node_id, "PD_USV_40")
-    assert again is inst
-    with pytest.raises(ValueError):
-        api.instantiate_property(g, "E12", "PD_USV_40")
-    with pytest.raises(ValueError):
-        api.instantiate_property(g, "P12", "USV_40")
-
-
-def test_extracted_from_the_instance_is_not_degraded():
-    g = _capriate()
-    inst = _instance(g)
-    (e,) = [e for e in g.edges if e.edge_source == "E40"
-            and e.edge_target == inst.node_id]
-    assert e.edge_type == "extracted_from"
+def test_extracted_from_a_property_in_the_datamodel():
     raw = json.loads((pathlib.Path(api.__file__).parent / "JSON_config" /
                       "s3Dgraphy_connections_datamodel.json").read_text("utf-8"))
     ef = raw["edge_types"]["extracted_from"]
     assert "PropertyNode" in ef["allowed_connections"]["target"]
-    assert "WIDENED" in ef["allowed_connections"]["_note_property"]
-    assert "PropertyNode" in raw["edge_types"]["is_in_paradata_nodegroup"][
-        "allowed_connections"]["source"]
+    note = ef["allowed_connections"]["_note_property"]
+    assert "WIDENED" in note and "MASTER" in note
+    assert "data.instance_of" not in ef["property_source_note"].split("STORED")[0]
+    assert "property_instance_note" not in raw["edge_types"]["is_in_paradata_nodegroup"]
 
 
-def test_a_generic_line_to_an_instance_names_extracted_from():
+def test_a_generic_line_to_a_property_is_named_from_the_graph():
     from s3dgraphy.edges.connection_resolver import candidate_edge_types
     g = _capriate()
-    inst = _instance(g)
-    ext = g.find_node_by_id("E40")
-    assert candidate_edge_types(ext, inst) == ["extracted_from"]
-    # to a plain property the chain runs the other way: no reading
-    assert candidate_edge_types(ext, g.find_node_by_id("P12")) == []
+    ext, p12, p40 = (g.find_node_by_id(i) for i in ("E40", "P12", "P40"))
+    # E40 feeds P40: a line to another property is a reading
+    assert candidate_edge_types(ext, p12, graph=g) == ["extracted_from"]
+    # a line to the property it feeds is its provenance drawn backwards
+    assert candidate_edge_types(ext, p40, graph=g) == []
+    # an extractor that feeds nothing: the old yEd line, drawn backwards
+    g.add_node(ExtractorNode("Ex", name="D.1.2"))
+    assert candidate_edge_types(g.find_node_by_id("Ex"), p12, graph=g) == []
+    # without the graph the endpoints alone cannot tell: not named
+    assert candidate_edge_types(ext, p12) == []
 
 
-def test_read_property_needs_an_instance():
+def test_read_property_reads_the_master():
     g = _capriate()
-    with pytest.raises(ValueError, match="instantiate"):
-        api.read_property(g, "E40", "P12")
+    with pytest.raises(ValueError, match="provenance"):
+        api.read_property(g, "E40", "P40")         # it feeds P40
     with pytest.raises(ValueError):
-        api.read_property(g, "P40", _instance(g).node_id)
+        api.read_property(g, "P40", "P12")
+    with pytest.raises(ValueError):
+        api.read_property(g, "E40", "D1")          # a document is read by its edge
+    e = api.read_property(g, "E40", "P12")         # again: the same edge
+    assert [x.edge_id for x in g.edges if x.edge_source == "E40"
+            and x.edge_type == "extracted_from"] == [e.edge_id]
 
 
 def test_validate_is_quiet_on_the_case():
@@ -139,40 +119,80 @@ def test_validate_is_quiet_on_the_case():
     assert res["ok"], res["issues"]
     assert diagnose(g) == []
     assert not [w for w in res["warnings"] if "source" in w or "cycle" in w]
-
-
-def test_reading_a_master_directly_is_a_hint():
-    g = _capriate()
-    g.add_node(ExtractorNode("Ex", name="essenza.2"))
-    edge = g.add_edge("xx", "Ex", "P12", "extracted_from")
-    assert edge.edge_type == "extracted_from"
-    assert any("reads property 'essenza' directly" in i for i in api.validate(g)["info"])
+    assert not [i for i in res["info"] if "essenza" in i]
 
 
 def test_emjson_round_trip_is_stable():
     g = _capriate()
     doc = api.graph_to_emjson(g)
-    g2, _ = api.load_emjson(doc)
-    inst = _instance(g2)
-    assert inst.data[INSTANCE_OF] == "P12" and inst.data[INSTANCE_OWNER] == "US_12"
+    g2, warnings = api.load_emjson(doc)
+    assert not [w for w in warnings if "folded" in w]
     ext = g2.find_node_by_id("E40")
     assert ext.data[READ_VALUE] == "quercia" and ext.data[READ_AT] == "2026-10-09T10:05:00Z"
     assert {(e.edge_source, e.edge_type, e.edge_target) for e in g2.edges} == \
         {(e.edge_source, e.edge_type, e.edge_target) for e in g.edges}
-    doc2 = api.graph_to_emjson(g2)
-    assert doc2 == doc
+    assert api.graph_to_emjson(g2) == doc
+
+
+def _afternoon_doc():
+    """An em.json as it was written in the afternoon of 9 Oct 2026: the
+    instance STORED in the reader's group, the extractor pointing at it."""
+    g = _capriate()
+    doc = api.graph_to_emjson(g)
+    graph = doc["graph"]
+    graph["nodes"].append({"id": "I12", "node_type": "property", "name": "essenza",
+                           "data": {"value": "quercia", "property_type": "string",
+                                    "instance_of": "P12", "instance_owner": "US_12",
+                                    "instantiated_at": "2026-10-09T10:00:00Z"}})
+    for e in graph["edges"]:
+        if e["source"] == "E40" and e["edge_type"] == "extracted_from":
+            e["target"] = "I12"
+    graph["edges"].append({"id": "m_I12", "source": "I12", "target": "PD_USV_40",
+                         "edge_type": "is_in_paradata_nodegroup"})
+    return doc
+
+
+def test_a_stored_instance_folds_onto_its_master():
+    doc = _afternoon_doc()
+    g, warnings = api.load_emjson(doc)
+    assert g.find_node_by_id("I12") is None
+    (e,) = [e for e in g.edges if e.edge_source == "E40" and e.edge_type == "extracted_from"]
+    assert e.edge_target == "P12"
+    assert not [e for e in g.edges if "I12" in (e.edge_source, e.edge_target)]
+    (line,) = [w for w in warnings if "folded" in w]
+    assert "1" in line and "essenza" in line
+    # the same graph as if it had been written this evening
+    clean, _ = api.load_emjson(api.graph_to_emjson(_capriate()))
+    assert {(e.edge_source, e.edge_type, e.edge_target) for e in g.edges} == \
+        {(e.edge_source, e.edge_type, e.edge_target) for e in clean.edges}
+    assert api.validate(g)["ok"] and diagnose(g) == []
+    # written again, nothing of the instance is left; read again, nothing to fold
+    doc2 = api.graph_to_emjson(g)
+    assert "instance_of" not in json.dumps(doc2)
+    assert not [w for w in api.load_emjson(doc2)[1] if "folded" in w]
+
+
+def test_a_stored_instance_without_its_master_is_kept_and_said():
+    doc = _afternoon_doc()
+    doc["graph"]["nodes"][-1]["data"]["instance_of"] = "GONE"
+    g, warnings = api.load_emjson(doc)
+    inst = g.find_node_by_id("I12")
+    assert inst is not None and "instance_of" not in inst.data
+    assert any("without their master" in w and "I12" in w for w in warnings)
 
 
 def test_the_words_are_translated():
     from s3dgraphy.tools.datamodel_i18n import reasoning_text
-    assert reasoning_text("instance_badge", lang="it") == "da {unit}"
-    assert reasoning_text("instance_badge", lang="de") == "aus {unit}"
+    assert reasoning_text("instance_badge", lang="it") == "da {owner}"
+    assert reasoning_text("instance_badge", lang="de") == "aus {owner}"
+    assert reasoning_text("instance", lang="it") == "Istanza"
     assert reasoning_text("source_changed", lang="it") == "La fonte è cambiata"
     assert reasoning_text("declare_inheritance", lang="it") == "Dichiara l'eredità"
     assert reasoning_text("duplicate_per_owner", lang="it") == "Duplica per ogni proprietario"
     raw = json.loads((pathlib.Path(api.__file__).parent / "JSON_config" /
                       "s3Dgraphy_connections_datamodel.json").read_text("utf-8"))
     words = {k for k in raw["paradata_reasoning"] if not k.startswith("_")}
+    assert not words & {"property_instance", "refresh_instance"}
     for w in words:
         for f in ("label", "description"):
             for lang in ("en", "it", "de"):
@@ -187,21 +207,15 @@ def test_the_words_are_translated():
 def test_the_source_has_changed():
     g = _capriate()
     g.find_node_by_id("P12").value = "castagno"
-    recs = source_changed(g)
-    assert sorted(r["on"] for r in recs) == ["extractor", "instance"]
-    for r in recs:
-        assert (r["unit_name"], r["property_name"], r["read"], r["current"]) == \
-            ("US 12", "essenza", "quercia", "castagno")
-    text = message([r for r in recs if r["on"] == "extractor"][0])
+    (r,) = source_changed(g)
+    assert (r["node"], r["master"], r["unit_name"], r["property_name"], r["read"],
+            r["current"]) == ("E40", "P12", "US 12", "essenza", "quercia", "castagno")
+    text = message(r)
     for word in ("US 12", "essenza", "quercia", "castagno", "essenza.1"):
         assert word in text
     assert any("the source has changed" in w for w in api.validate(g)["warnings"])
-    # the instance is realigned; the extractor keeps its reading
-    out = api.refresh_instance(g, _instance(g).node_id, at="2026-10-09T11:00:00Z")
-    assert out["changed"] and out["before"] == "quercia" and out["after"] == "castagno"
-    assert [r["on"] for r in source_changed(g)] == ["extractor"]
     # a person re-reads: quiet again
-    api.read_property(g, "E40", _instance(g).node_id)
+    api.read_property(g, "E40", "P12")
     assert source_changed(g) == []
     assert g.find_node_by_id("E40").data[READ_VALUE] == "castagno"
 
@@ -209,8 +223,7 @@ def test_the_source_has_changed():
 def test_a_number_and_its_text_are_the_same_reading():
     g = _capriate()
     g.find_node_by_id("P12").value = 3
-    api.refresh_instance(g, _instance(g).node_id)
-    api.read_property(g, "E40", _instance(g).node_id)
+    api.read_property(g, "E40", "P12")
     g.find_node_by_id("P12").value = "3"
     assert source_changed(g) == []
 
@@ -219,15 +232,14 @@ def test_a_number_and_its_text_are_the_same_reading():
 
 def test_dependents_of_the_unit_and_of_the_document():
     g = _capriate()
-    inst = _instance(g)
     deps = {r["id"]: r for r in api.dependents_of(g, "US_12")}
-    assert set(deps) == {"P12", inst.node_id, "E40", "P40"}
-    assert deps["P12"]["kind"] == "property" and deps[inst.node_id]["kind"] == "instance"
-    assert deps["E40"]["kind"] == "extractor" and deps["E40"]["via"] == inst.node_id
+    assert set(deps) == {"P12", "E40", "P40"}
+    assert deps["P12"]["kind"] == "property"
+    assert deps["E40"]["kind"] == "extractor" and deps["E40"]["via"] == "P12"
     assert deps["P40"]["owner"] == "USV_40" and deps["P40"]["owner_name"] == "USV 40"
-    assert deps["P40"]["depth"] == 4
+    assert deps["P40"]["depth"] == 3
     deps_doc = {r["id"]: r["kind"] for r in api.dependents_of(g, "D1")}
-    assert deps_doc == {"E12": "extractor", "P12": "property", inst.node_id: "instance",
+    assert deps_doc == {"E12": "extractor", "P12": "property",
                         "E40": "extractor", "P40": "property"}
     # the heir shares the node: listed, not walked
     g.add_node(USVs("USV_41", name="USV 41"))
@@ -244,7 +256,7 @@ def test_remove_keeping_trace_the_unit():
     assert us is not None and us.name == "US 12"
     assert [e for e in g.edges if e.edge_target == "US_12" or e.edge_source == "US_12"]
     (rec,) = source_removed(g)
-    assert rec["node"] == _instance(g).node_id and rec["source"] == "US_12"
+    assert rec["node"] == "E40" and rec["source"] == "US_12"
     assert rec["affects"] == ["P40"]
     assert any("source removed" in w and "US 12" in w for w in api.validate(g)["warnings"])
 
@@ -281,21 +293,19 @@ def test_the_trace_in_the_projections():
                           "data": {"removed": {"ts": "2026-10-09T12:00:00Z"}}},
                          {"id": "X", "node_type": "property", "name": "gone",
                           "data": {"removed": {"ts": "2026-10-09T12:00:00Z"}}},
-                         {"id": "I", "node_type": "property", "name": "essenza",
-                          "data": {"instance_of": "P12"}}],
-               "edges": [{"id": "e", "source": "I", "edge_type": "generic_connection",
+                         {"id": "E", "node_type": "extractor", "name": "essenza.1"}],
+               "edges": [{"id": "e", "source": "E", "edge_type": "extracted_from",
                           "target": "P12"}]}
     report = compact_section(section, Clock(ts="2027-01-01T00:00:00Z"))
-    assert [n["id"] for n in section["nodes"]] == ["P12", "I"]
+    assert [n["id"] for n in section["nodes"]] == ["P12", "E"]
     assert report.nodes_dropped == 1
 
 
 def test_remove_cascade_the_unit():
     g = _capriate()
-    inst_id = _instance(g).node_id
     out = api.remove_cascade(g, "US_12")
     removed = {r["id"] for r in out["removed"]}
-    assert removed == {"US_12", "P12", "E12", inst_id, "E40", "PD_US_12"}
+    assert removed == {"US_12", "P12", "E12", "E40", "PD_US_12"}
     assert [(k["id"], k["kind"]) for k in out["kept"]] == [("P40", "property")]
     assert [o["id"] for o in out["orphaned"]] == ["P40"]
     assert out["orphaned"][0]["owner_name"] == "USV 40"
@@ -310,7 +320,7 @@ def test_remove_cascade_the_unit():
 def test_remove_cascade_keeps_a_combiner_with_other_sources():
     from s3dgraphy.nodes.combiner_node import CombinerNode
     g = _capriate()
-    # P40 is now combined: the instance of P12 and a document of its own
+    # P40 is now combined: its reading of P12 and a document of its own
     g.add_node(DocumentNode("D2", name="D.2"))
     g.add_node(ExtractorNode("E40b", name="D.2.1"))
     g.add_edge("x40b", "E40b", "D2", "extracted_from")
@@ -329,10 +339,9 @@ def test_remove_cascade_keeps_a_combiner_with_other_sources():
 def test_a_reasoning_cycle():
     g = _capriate()
     # US 12's essenza now leans on USV 40's too: A → B → A
-    inst40 = api.instantiate_property(g, "P40", "PD_US_12")
     g.add_node(ExtractorNode("E12b", name="essenza.1"))
     g.add_edge("p12b", "P12", "E12b", "has_data_provenance")
-    api.read_property(g, "E12b", inst40.node_id)
+    api.read_property(g, "E12b", "P40")
     cycles = reasoning_cycles(g)
     assert cycles == [["P12", "P40"]]
     (rec,) = [r for r in diagnose(g) if r["code"] == "reasoning_cycle"]
@@ -387,24 +396,21 @@ def test_declare_inheritance():
     assert api.validate(g)["ok"]
 
 
-def test_duplicate_per_owner_instantiates_the_source_property():
+def test_duplicate_per_owner_copies_read_the_same_master():
     g = _two_owners()
     g.add_edge("m_P40_41", "P40", "PD_USV_41", "is_in_paradata_nodegroup")
     out = api.duplicate_per_owner(g, "P40")
     (copy,) = out["copies"]
-    assert copy["owner"] == "USV_41" and out["duplicates"] == 1 and out["instances"] == 1
+    assert copy["owner"] == "USV_41" and out["duplicates"] == 1 and "instances" not in out
     cp = g.find_node_by_id(copy["property"])
     assert cp.value == "quercia" and cp.name == "essenza"
     assert undeclared_owners(g) == []
-    # the copy's extractor reads a NEW instance of P12, in USV 41's group
+    # the copy's extractor reads the SAME master, with the original's reading
     (ext,) = copy["chain"]
-    (src,) = [e.edge_target for e in g.edges
-              if e.edge_source == ext and e.edge_type == "extracted_from"]
-    inst = g.find_node_by_id(src)
-    assert is_instance(inst) and api.master_of(g, inst).node_id == "P12"
-    assert {e.edge_target for e in g.edges if e.edge_source == src
-            and e.edge_type == "is_in_paradata_nodegroup"} == {"PD_USV_41"}
-    assert len(api.instances_of(g, "P12")) == 2
+    assert [e.edge_target for e in g.edges
+            if e.edge_source == ext and e.edge_type == "extracted_from"] == ["P12"]
+    assert g.find_node_by_id(ext).data[READ_VALUE] == "quercia"
+    assert not any("instance_of" in (getattr(n, "data", None) or {}) for n in g.nodes)
     # the copy and its chain are in USV 41's group; the original stays in 40's
     assert {e.edge_target for e in g.edges if e.edge_source == copy["property"]
             and e.edge_type == "is_in_paradata_nodegroup"} == {"PD_USV_41"}
@@ -422,4 +428,4 @@ def test_duplicate_per_owner_reads_a_document_as_it_is():
     (ext,) = copy["chain"]
     assert [e.edge_target for e in g.edges if e.edge_source == ext
             and e.edge_type == "extracted_from"] == ["D1"]
-    assert out["instances"] == 0
+

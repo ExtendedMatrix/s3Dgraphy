@@ -120,26 +120,35 @@ def resolve_edge_type(src: Any, tgt: Any, declared_type: str) -> str:
 
 # ── diagnosing the edges that are ALREADY generic ─────────────────────────────
 def candidate_edge_types(src: Any, tgt: Any, *,
-                         canonical_only: bool = True) -> List[str]:
+                         canonical_only: bool = True,
+                         graph: Any = None) -> List[str]:
     """Every edge type the datamodel would allow between these two endpoints.
 
     Used to ask, of an edge that already carries ``generic_connection``: *what
     type would it take, judging only by its endpoints?* Reverse-generated names
     are excluded by default — they would double every answer without adding
-    meaning. Pure; nothing is re-typed anywhere."""
+    meaning. Pure; nothing is re-typed anywhere.
+
+    One answer needs the ``graph`` around the two endpoints: an extractor
+    towards a property (connections 1.6.36). It is a READING
+    (``extracted_from``, the extractor reads the property as a source) or the
+    old yEd provenance line drawn backwards (the chain is property →
+    extractor); :func:`s3dgraphy.property_source.reads_as_source` tells them
+    apart. Without the graph the edge is not named."""
     from . import get_connections_datamodel
     names = get_connections_datamodel().get_all_edge_names(
         canonical_only=canonical_only)
     out = sorted(n for n in names
                  if n != GENERIC_CONNECTION and connection_allowed(src, tgt, n))
-    # connections 1.6.36: extracted_from reaches a PropertyNode only as an
-    # INSTANCE of another unit's property (data.instance_of,
-    # s3dgraphy.property_source) — a rule on the node the datamodel, which
-    # matches by class, cannot say. A line from an extractor to a plain
-    # property is still outside the language (the chain is property → extractor).
-    if ("extracted_from" in out and _node_type(tgt) == "property"
-            and not (getattr(tgt, "data", None) or {}).get("instance_of")):
-        out.remove("extracted_from")
+    # connections 1.6.36: extracted_from reaches a PropertyNode when an
+    # extractor reads another property as a source. The datamodel matches by
+    # class and cannot tell that from a provenance line drawn backwards: the
+    # graph can (s3dgraphy.property_source.reads_as_source).
+    if "extracted_from" in out and _node_type(tgt) == "property":
+        from ..property_source import reads_as_source
+        if graph is None or isinstance(src, type) or isinstance(tgt, type) \
+                or not reads_as_source(graph, src, tgt):
+            out.remove("extracted_from")
     return out
 
 
@@ -478,7 +487,7 @@ def state_warning_records(graph: Any) -> List[Dict[str, Any]]:
             # told about the node, and repeating it per edge buries the real
             # relation errors under a hundred consequences.
             continue
-        candidates = candidate_edge_types(src, tgt)
+        candidates = candidate_edge_types(src, tgt, graph=graph)
         head = (f"Connection {_name_of(src)} → {_name_of(tgt)} is "
                 f"'{GENERIC_CONNECTION}'")
         if len(candidates) == 1:
@@ -493,6 +502,11 @@ def state_warning_records(graph: Any) -> List[Dict[str, Any]]:
             message = (f"{head}: the datamodel allows no relation between a "
                        f"'{_node_type(src)}' and a '{_node_type(tgt)}'. This "
                        f"connection is outside the EM language.")
+            if _node_type(src) == "extractor" and _node_type(tgt) == "property":
+                message += (" Drawn backwards? The chain runs property → "
+                            "extractor (has_data_provenance); an extractor "
+                            "reads a property as a source only when it feeds "
+                            "another one.")
         out.append({
             "kind": KIND_DEGRADED_EDGE,
             "node_id": edge.edge_source,

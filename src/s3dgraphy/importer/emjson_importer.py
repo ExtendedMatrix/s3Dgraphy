@@ -344,6 +344,12 @@ def parse_emjson(doc: Dict[str, Any], *,
     # without it the old form stays, and the warning says so). The file stays.
     warnings.extend(migrate_reading_glbs(graph, project_root=project_root)["warnings"])
 
+    # 2026-10-09 (evening) · the instance is a view: a property instance
+    # STORED in the afternoon (a PropertyNode with data.instance_of in the
+    # reader's group) folds onto its master. See property_source. Idempotent.
+    from ..property_source import fold_stored_instances
+    warnings.extend(fold_stored_instances(graph)["warnings"])
+
     # dtc_kinds 1.6.22 · the capture is an acquisition: an acquisition written
     # in EMStudio's provisional form (`local_import` + `data.capture`) opens as
     # an acquisition OF that capture. See dtc/capture.py. Idempotent.

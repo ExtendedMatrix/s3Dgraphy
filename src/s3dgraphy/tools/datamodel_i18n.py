@@ -36,8 +36,9 @@ Shape — one section per kind of key, each keyed by a STABLE identity::
 
 `reasoning.<word>` (1.7, connections 1.6.36) are the EM words of the reasoning
 between properties (E.D. 9 Oct 2026, «la proprietà come fonte»), seeded from the
-connections datamodel's ``paradata_reasoning`` block: the instance and its badge
-(«from {unit}» → «da {unit}»), the diagnostics (``source_changed``,
+connections datamodel's ``paradata_reasoning`` block: the instance a view draws
+and its badge («from {owner}» → «da {owner}»; 1.8, connections 1.6.37, «l'istanza
+è una vista»: ``instance`` for documents and properties, no ``refresh_instance``), the diagnostics (``source_changed``,
 ``source_removed``, ``reasoning_cycle``, ``undeclared_owners``) and the cures —
 ``label`` the title, ``description`` the sentence, ``{placeholders}`` kept.
 
@@ -310,7 +311,7 @@ def seed(write: bool = True) -> Dict[str, Any]:
         existing = {}
     doc: Dict[str, Any] = {
         "schema": "s3Dgraphy_datamodel_translations",
-        "version": "1.7",
+        "version": "1.8",
         "languages": LANGUAGES,
     }
     for section in SECTIONS:

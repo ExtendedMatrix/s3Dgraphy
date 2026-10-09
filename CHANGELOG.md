@@ -5,43 +5,48 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
-- **A property as a source: the instance** (connections 1.6.36, MICRO «la
-  proprietà come fonte», decided by E.D. 9 October 2026: the trusses take the
-  wood species of the fragments found, the upper parts of a temple the material
-  of the lower ones). One extracts from the PROPERTY, not from the unit: the
-  source property is INSTANTIATED in the reader's paradata group, and the
-  reader's extractor points at the instance. New module
-  `s3dgraphy.property_source`: the instance is a `PropertyNode` with a sign —
-  `data.instance_of` (the master), `data.instance_owner` (the master's unit, for
-  the badge), the master's value at that moment, no chain of its own — measured
-  first: the graph has no node form for a document instance either (the yEd
-  occurrences are folded into one node and listed in `attributes.instances`,
-  EMStudio's Matrix draws `instanceOf` at drawing time), so the documents are
-  not migrated. `api.instantiate_property`, `master_of`, `instances_of`,
-  `owner_unit_of` (through an instance, the master's unit), `read_property`.
+- **A property as a source** (connections 1.6.36, MICRO «la proprietà come
+  fonte», decided by E.D. 9 October 2026: the trusses take the wood species of
+  the fragments found, the upper parts of a temple the material of the lower
+  ones). One extracts from the PROPERTY, not from the unit: the reader's
+  extractor is `extracted_from` the MASTER — the property in its own unit — as
+  it is a document. New module `s3dgraphy.property_source`;
+  `api.owner_unit_of`, `api.read_property`.
   `extracted_from.target += PropertyNode` (`_note_property` WIDENED,
-  `property_source_note`); `is_in_paradata_nodegroup` already admitted it
-  (`property_instance_note`). The new block `paradata_reasoning` holds the EM
+  `property_source_note`). The new block `paradata_reasoning` holds the EM
   words of the reasoning between properties, translated in
   `datamodel_translations.json` 1.7, section `reasoning` (en/it/de;
-  `datamodel_i18n.reasoning_text`). The paradata-group coherence rule no longer
-  asks an instance to be its group owner's property; `api.validate` hints
-  (`info`) at an extractor that reads a property that is not an instance, and
-  `connection_resolver.candidate_edge_types` names `extracted_from` only
-  towards an instance (a line from an extractor to a plain property is still
-  outside the language: the chain runs property → extractor).
+  `datamodel_i18n.reasoning_text`). A line from an extractor to a property is
+  also what an old yEd provenance line drawn backwards looks like:
+  `property_source.reads_as_source` tells them apart from the graph (a reading
+  is an extractor that feeds ANOTHER property), and
+  `connection_resolver.candidate_edge_types(..., graph=)` names
+  `extracted_from` only then; without the graph it does not.
+- **The instance is a view** (connections 1.6.37, translations 1.8, MICRO «l'istanza è una
+  vista», decided by E.D. 9 October 2026, evening: «non ha nessun senso fare
+  un'istanza nel triple store: è solamente una modalità grafica di
+  rappresentare il grafo»). No instance node in em.json nor in the RDF: the
+  instance is drawn by the clients. A property instance STORED in the afternoon of the same
+  day (a `PropertyNode` with `data.instance_of`) is folded onto its master when
+  an em.json is read (`property_source.fold_stored_instances`, one warning
+  line); the afternoon's `instantiate_property`, `master_of`, `instances_of`
+  and `refresh_instance` are gone. A new connections version rather than
+  1.6.36 revised in place: EMStudio had already vendored the afternoon's
+  1.6.36, and one version must mean one content. In `paradata_reasoning`
+  `property_instance` becomes `instance`, the badge says `{owner}` (a unit, or
+  the epoch of a document), `refresh_instance` goes; the nine shipped mappings
+  are re-stamped against 1.6.37.
 - **The value read, and «the source has changed»** (MICRO «la proprietà come
   fonte», part 2). `read_property` keeps on the extractor what it read, flat
   like the passage a region quotes: `data.read_value` (the master's value) and
   `data.read_at`; asked again it re-reads. The diagnostic `source_changed`
   (`property_source.source_changed`, among the warnings of `api.validate`):
-  the master's value is no longer the one read — on an extractor, or on an
-  instance, which `refresh_instance` realigns; the extractor keeps its reading
+  the master's value is no longer the one the extractor read; it says so
   until a person re-reads. `api.reasoning_diagnostics` gives the records, each
   with the `code` of its words in the translations.
 - **Who leans on what, and «source removed»** (MICRO «la proprietà come fonte»,
   part 3). `dependents_of(graph, node_id)`: for a unit, a property or a document,
-  the chains that lean on it in cascade — its own properties, instances,
+  the chains that lean on it in cascade — its own properties,
   extractors, combiners, regions, the properties of other units, the heirs —
   each with its kind, the node it leans on and its depth (nothing similar
   existed: `diagnostics` attributes claims and finds stratigraphic cycles).
@@ -63,9 +68,8 @@ All notable changes to **s3dgraphy** are documented here.
   owners `inherited` and moves the property, with the chain that serves only
   it, to the original owner's paradata group (the rule of `ownership.py`);
   `duplicate_per_owner(graph, property_id)` follows EMStudio's
-  `duplicateForEachOwner` — combiners and extractors duplicated — with the
-  instance added: a source property is INSTANTIATED in the new owner's group,
-  documents are read as they are.
+  `duplicateForEachOwner` — combiners and extractors duplicated, the copies
+  reading the same masters (documents, properties) as they are.
 - **A version of several files, and a version made again** (MICRO «i parametri
   diventano la ricetta della versione», E.D. 6 October 2026: for Heriverse/ATON
   the version is a glTF with its textures). `add_version` with several files
