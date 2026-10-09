@@ -18,7 +18,7 @@ from s3dgraphy.nodes.group_node import ParadataNodeGroup
 from s3dgraphy.ownership import original_owner
 from s3dgraphy.property_source import (
     INSTANCE_OF, INSTANCE_OWNER, READ_AT, READ_VALUE, diagnose, is_instance,
-    message, reasoning_cycles, source_changed, source_removed,
+    message, reasoning_cycles, source_changed, source_removed, undeclared_owners,
 )
 from s3dgraphy.utils.utils import get_stratigraphic_node_class
 
@@ -345,3 +345,81 @@ def test_a_reasoning_cycle():
 
 def test_no_cycle_without_one():
     assert reasoning_cycles(_capriate()) == []
+
+
+# ── part 4 · two owners nobody declared ──────────────────────────────────────
+
+def _two_owners() -> Graph:
+    g = _capriate()
+    _unit(g, USVs, "USV_41")
+    g.add_edge("h41", "USV_41", "P40", "has_property")      # not declared
+    return g
+
+
+def test_undeclared_owners_is_a_warning():
+    g = _two_owners()
+    (rec,) = undeclared_owners(g)
+    assert rec["property"] == "P40" and rec["owner_names"] == ["USV 40", "USV 41"]
+    assert any("nobody declared" in w for w in api.validate(g)["warnings"])
+    # a declared heir is not a second owner
+    g2 = _capriate()
+    g2.add_node(USVs("USV_41", name="USV 41"))
+    api.inherit_property(g2, "USV_41", "P40")
+    assert undeclared_owners(g2) == []
+
+
+def test_declare_inheritance():
+    g = _two_owners()
+    # the property sits, wrongly, in the second owner's group too
+    g.add_edge("m_P40_41", "P40", "PD_USV_41", "is_in_paradata_nodegroup")
+    out = api.declare_inheritance(g, "P40", "USV_41")
+    assert out["original"] == "USV_41" and out["heirs"] == ["USV_40"]
+    assert original_owner(g, "P40") == "USV_41"
+    assert undeclared_owners(g) == []
+    groups = {e.edge_target for e in g.edges
+              if e.edge_source == "P40" and e.edge_type == "is_in_paradata_nodegroup"}
+    assert groups == {"PD_USV_41"}
+    # its chain went with it
+    assert {e.edge_target for e in g.edges if e.edge_source == "E40"
+            and e.edge_type == "is_in_paradata_nodegroup"} == {"PD_USV_41"}
+    with pytest.raises(ValueError):
+        api.declare_inheritance(g, "P40", "US_12")
+    assert api.validate(g)["ok"]
+
+
+def test_duplicate_per_owner_instantiates_the_source_property():
+    g = _two_owners()
+    g.add_edge("m_P40_41", "P40", "PD_USV_41", "is_in_paradata_nodegroup")
+    out = api.duplicate_per_owner(g, "P40")
+    (copy,) = out["copies"]
+    assert copy["owner"] == "USV_41" and out["duplicates"] == 1 and out["instances"] == 1
+    cp = g.find_node_by_id(copy["property"])
+    assert cp.value == "quercia" and cp.name == "essenza"
+    assert undeclared_owners(g) == []
+    # the copy's extractor reads a NEW instance of P12, in USV 41's group
+    (ext,) = copy["chain"]
+    (src,) = [e.edge_target for e in g.edges
+              if e.edge_source == ext and e.edge_type == "extracted_from"]
+    inst = g.find_node_by_id(src)
+    assert is_instance(inst) and api.master_of(g, inst).node_id == "P12"
+    assert {e.edge_target for e in g.edges if e.edge_source == src
+            and e.edge_type == "is_in_paradata_nodegroup"} == {"PD_USV_41"}
+    assert len(api.instances_of(g, "P12")) == 2
+    # the copy and its chain are in USV 41's group; the original stays in 40's
+    assert {e.edge_target for e in g.edges if e.edge_source == copy["property"]
+            and e.edge_type == "is_in_paradata_nodegroup"} == {"PD_USV_41"}
+    assert {e.edge_target for e in g.edges if e.edge_source == "P40"
+            and e.edge_type == "is_in_paradata_nodegroup"} == {"PD_USV_40"}
+    assert api.validate(g)["ok"] and diagnose(g) == []
+
+
+def test_duplicate_per_owner_reads_a_document_as_it_is():
+    g = _capriate()
+    _unit(g, USVs, "USV_41")
+    g.add_edge("h41", "USV_41", "P12", "has_property")
+    out = api.duplicate_per_owner(g, "P12")
+    (copy,) = out["copies"]
+    (ext,) = copy["chain"]
+    assert [e.edge_target for e in g.edges if e.edge_source == ext
+            and e.edge_type == "extracted_from"] == ["D1"]
+    assert out["instances"] == 0

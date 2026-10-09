@@ -157,7 +157,7 @@ def validate(graph: Graph) -> Dict[str, Any]:
             f"property of its own")
     warnings = list(getattr(graph, "warnings", []) or [])
     # a property as a source (connections 1.6.36): the source changed, was
-    # removed, the reasoning comes back to itself
+    # removed, the reasoning comes back to itself, two owners nobody declared
     from .property_source import diagnose, is_instance, message
     warnings.extend(message(r) for r in diagnose(graph))
     by_id = {n.node_id: n for n in nodes}
@@ -377,6 +377,23 @@ def reasoning_diagnostics(graph: Graph) -> List[Dict[str, Any]]:
     ``reasoning``)."""
     from .property_source import diagnose
     return diagnose(graph)
+
+
+def declare_inheritance(graph: Graph, property_id: str,
+                        original_owner_id: str) -> Dict[str, Any]:
+    """«Dichiara l'eredità»: the chosen owner is the original, every other
+    has_property becomes ``inherited``; the property (with the chain that
+    serves only it) goes to the original's paradata group."""
+    from .property_source import declare_inheritance as _declare
+    return _declare(graph, property_id, original_owner_id)
+
+
+def duplicate_per_owner(graph: Graph, property_id: str) -> Dict[str, Any]:
+    """«Duplica per ogni proprietario»: every undeclared owner after the first
+    gets its own copy, combiners and extractors duplicated, source properties
+    instantiated in its group, documents read as they are."""
+    from .property_source import duplicate_per_owner as _dup
+    return _dup(graph, property_id)
 
 
 # ── A1 · the alternative labels of a unit, each with its source ─────────────

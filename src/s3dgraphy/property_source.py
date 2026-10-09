@@ -238,6 +238,20 @@ def _group_of(graph, owner_id: str) -> Optional[str]:
     return None
 
 
+def _ensure_group(graph, owner_id: str) -> str:
+    """The owner's ParadataNodeGroup, made when missing (``<name>_PD``, the
+    name ParadataNodeGroup's own docstring gives)."""
+    gid = _group_of(graph, owner_id)
+    if gid:
+        return gid
+    from .nodes.group_node import ParadataNodeGroup
+    gid = _stable_id(f"group|{owner_id}")
+    if graph.find_node_by_id(gid) is None:
+        graph.add_node(ParadataNodeGroup(gid, f"{_name(graph, owner_id)}_PD"))
+    _ensure_edge(graph, owner_id, HAS_GROUP, gid)
+    return gid
+
+
 def _ensure_edge(graph, source: str, edge_type: str, target: str,
                  attributes: Optional[Dict[str, Any]] = None):
     for e in _edges(graph, source=source, target=target, edge_type=edge_type):
@@ -780,9 +794,31 @@ def reasoning_cycles(graph) -> List[List[str]]:
     return out
 
 
+def undeclared_owners(graph) -> List[Dict[str, Any]]:
+    """Properties with two or more ``has_property`` NOT declared ``inherited``
+    — two owners nobody declared (E.D. 9 Oct 2026: a warning, with the cures
+    :func:`duplicate_per_owner` and :func:`declare_inheritance`). The declared
+    heir is not a second owner. ``{code: "undeclared_owners", property,
+    property_name, owners, owner_names}``, owners in edge order (the first
+    keeps the node when duplicated) — the rule of EMStudio's
+    ``compact.undeclaredOwners``, brought here."""
+    out = []
+    for n in graph.nodes:
+        if getattr(n, "node_type", None) != "property" or is_removed(n):
+            continue
+        owners = list(dict.fromkeys(e.edge_source for e in owner_edges(graph, n.node_id)
+                                    if not is_inherited_edge(e)))
+        if len(owners) > 1:
+            out.append({"code": "undeclared_owners", "property": n.node_id,
+                        "property_name": n.name, "owners": owners,
+                        "owner_names": [_name(graph, o) for o in owners]})
+    return out
+
+
 def diagnose(graph) -> List[Dict[str, Any]]:
     """Every diagnostic of this module, as records with a ``code``:
-    ``source_changed``, ``source_removed`` and ``reasoning_cycle``."""
+    ``source_changed``, ``source_removed``, ``reasoning_cycle`` and
+    ``undeclared_owners``."""
     out = source_changed(graph) + source_removed(graph)
     for cyc in reasoning_cycles(graph):
         out.append({"code": "reasoning_cycle", "properties": cyc,
@@ -790,7 +826,7 @@ def diagnose(graph) -> List[Dict[str, Any]]:
                     "units": [owner_unit_of(graph, p) for p in cyc],
                     "unit_names": [_name(graph, owner_unit_of(graph, p)) if owner_unit_of(graph, p) else None
                                    for p in cyc]})
-    return out
+    return out + undeclared_owners(graph)
 
 
 def message(record: Dict[str, Any]) -> str:
@@ -810,6 +846,158 @@ def message(record: Dict[str, Any]) -> str:
     if code == "reasoning_cycle":
         chain = " → ".join(f"{u or '?'}.{n}" for u, n in zip(record["unit_names"], record["names"]))
         return f"reasoning cycle: {chain} → back to the start"
+    if code == "undeclared_owners":
+        return (f"property '{record['property_name']}' has {len(record['owners'])} owners "
+                f"nobody declared: {', '.join(record['owner_names'])} — duplicate it for "
+                f"each owner, or declare the inheritance")
     return str(record)
 
 
+# ── the two cures for two undeclared owners ──────────────────────────────────
+
+def declare_inheritance(graph, property_id: str, original_owner_id: str) -> Dict[str, Any]:
+    """«Dichiara l'eredità»: ``original_owner_id`` is the owner that created
+    the property; every other ``has_property`` towards it becomes an heir's
+    (``inherited: true``) and the original's loses the mark. The property goes
+    to the original owner's ParadataNodeGroup (made when missing) and leaves the
+    heirs' groups — the heirs refer to it by their ``has_property`` only
+    (:mod:`s3dgraphy.ownership`); the extractors and combiners that serve only
+    this property follow it. Returns ``{property, original, heirs, moved}``.
+    """
+    edges = owner_edges(graph, property_id)
+    owners = list(dict.fromkeys(e.edge_source for e in edges))
+    if original_owner_id not in owners:
+        raise ValueError(f"'{original_owner_id}' is not an owner of '{property_id}'")
+    heirs = []
+    for e in edges:
+        if e.edge_source == original_owner_id:
+            e.attributes.pop(INHERITED_KEY, None)
+        else:
+            e.attributes[INHERITED_KEY] = True
+            if e.edge_source not in heirs:
+                heirs.append(e.edge_source)
+    target = _ensure_group(graph, original_owner_id)
+    heir_groups = {g for g in (_group_of(graph, h) for h in heirs) if g}
+    chain = [property_id]
+    todo = list(_based_on(graph, property_id))
+    while todo:
+        head = todo.pop()
+        if _kind(graph.find_node_by_id(head)) not in ("extractor", "combiner") or head in chain:
+            continue
+        served = {e.edge_source for e in _edges(graph, target=head, edge_type=HAS_DATA_PROVENANCE)} | \
+                 {e.edge_source for e in _edges(graph, target=head, edge_type=COMBINES)}
+        if served <= set(chain):
+            chain.append(head)
+            todo.extend(_based_on(graph, head))
+    moved = []
+    for nid in chain:
+        left = False
+        for e in _edges(graph, source=nid, edge_type=IN_GROUP):
+            if e.edge_target in heir_groups and e.edge_target != target:
+                graph.remove_edge(e.edge_id)
+                left = True
+        if not _edges(graph, source=nid, target=target, edge_type=IN_GROUP):
+            _ensure_edge(graph, nid, IN_GROUP, target)
+            left = True
+        if left:
+            moved.append(nid)
+    return {"property": property_id, "original": original_owner_id,
+            "heirs": heirs, "moved": moved}
+
+
+def duplicate_per_owner(graph, property_id: str) -> Dict[str, Any]:
+    """«Duplica per ogni proprietario»: the first undeclared owner (edge order)
+    keeps the node; every other undeclared owner gets a COPY of the property,
+    its ``has_property`` moved to the copy (attributes kept). The rule of
+    EMStudio's ``duplicateForEachOwner``, with the instance this module adds:
+    combiners and extractors are DUPLICATED all the way down; an extractor that
+    reads a property instance reads, in its copy, an instance of the same master
+    in the new owner's group (source properties are INSTANTIATED); documents,
+    regions and units are read as they are (a document instance has no node
+    form, documents are not migrated). A membership of the property in the
+    other owner's group moves to the copy with its chain. Declared heirs are
+    left alone. Returns ``{property, copies: [{owner, property, chain}],
+    duplicates, instances}``.
+    """
+    from .nodes.combiner_node import CombinerNode
+    from .nodes.extractor_node import ExtractorNode
+    from .nodes.property_node import PropertyNode
+    prop = graph.find_node_by_id(property_id)
+    if getattr(prop, "node_type", None) != "property":
+        raise ValueError(f"'{property_id}' is not a property")
+    edges = [e for e in owner_edges(graph, property_id) if not is_inherited_edge(e)]
+    owners = list(dict.fromkeys(e.edge_source for e in edges))
+    res = {"property": property_id, "copies": [], "duplicates": 0, "instances": 0}
+    if len(owners) < 2:
+        return res
+    import copy as _copy
+
+    def fresh(d):
+        from .crdt import META_KEYS
+        return {k: _copy.deepcopy(v) for k, v in (d or {}).items()
+                if k not in META_KEYS and k not in ("original_id", "original_emid")}
+
+    for owner in owners[1:]:
+        cid = _stable_id(f"dup|{property_id}|{owner}")
+        cp = PropertyNode(cid, prop.name, description=prop.description, value=prop.value,
+                          property_type=prop.property_type, data=fresh(_data(prop)))
+        graph.add_node(cp)
+        for e in list(edges):
+            if e.edge_source == owner:
+                attrs = dict(e.attributes)
+                graph.remove_edge(e.edge_id)
+                ne = _ensure_edge(graph, owner, HAS_PROPERTY, cid)
+                ne.attributes.update({k: v for k, v in attrs.items() if k != "removed"})
+        group = _group_of(graph, owner)
+        in_group = bool(group) and bool(_edges(graph, source=property_id, target=group, edge_type=IN_GROUP))
+        if in_group:
+            for e in _edges(graph, source=property_id, target=group, edge_type=IN_GROUP):
+                graph.remove_edge(e.edge_id)
+            _ensure_edge(graph, cid, IN_GROUP, group)
+        # the other edges of the property (documentation, visual reference…)
+        for e in _edges(graph, source=property_id):
+            if e.edge_type in (IN_GROUP, HAS_DATA_PROVENANCE):
+                continue
+            _ensure_edge(graph, cid, e.edge_type, e.edge_target)
+        chain = []
+
+        def copy_chain(orig_id: str) -> str:
+            orig = graph.find_node_by_id(orig_id)
+            kind = _kind(orig)
+            if kind not in ("extractor", "combiner"):
+                return orig_id
+            nid = _stable_id(f"dup|{orig_id}|{owner}")
+            cls = CombinerNode if kind == "combiner" else ExtractorNode
+            node = graph.find_node_by_id(nid)
+            if node is None:
+                node = cls(nid, orig.name, description=orig.description)
+                node.data = fresh(_data(orig))
+                graph.add_node(node)
+            res["duplicates"] += 1
+            chain.append(nid)
+            if in_group:
+                for e in _edges(graph, source=orig_id, target=group, edge_type=IN_GROUP):
+                    graph.remove_edge(e.edge_id)
+            if group and in_group:
+                _ensure_edge(graph, nid, IN_GROUP, group)
+            for e in _edges(graph, source=orig_id):
+                if e.edge_type in (IN_GROUP,):
+                    continue
+                if e.edge_type == COMBINES:
+                    _ensure_edge(graph, nid, COMBINES, copy_chain(e.edge_target))
+                elif e.edge_type == EXTRACTED_FROM and is_instance(graph.find_node_by_id(e.edge_target)):
+                    master = master_of(graph, e.edge_target)
+                    if master is not None and group:
+                        inst = instantiate_property(graph, master.node_id, group)
+                        res["instances"] += 1
+                        _ensure_edge(graph, nid, EXTRACTED_FROM, inst.node_id)
+                    else:
+                        _ensure_edge(graph, nid, EXTRACTED_FROM, e.edge_target)
+                else:
+                    _ensure_edge(graph, nid, e.edge_type, e.edge_target)
+            return nid
+
+        for e in _edges(graph, source=property_id, edge_type=HAS_DATA_PROVENANCE):
+            _ensure_edge(graph, cid, HAS_DATA_PROVENANCE, copy_chain(e.edge_target))
+        res["copies"].append({"owner": owner, "property": cid, "chain": chain})
+    return res

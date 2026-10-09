@@ -54,6 +54,18 @@ All notable changes to **s3dgraphy** are documented here.
   without provenance). `reasoning_cycle`: a reasoning that comes back to itself,
   as the list of its properties. `crdt.compact_section` keeps a tombstoned node
   a live edge still reaches (it dropped it and left the edge dangling).
+- **Two owners nobody declared: «Declare the inheritance»** (MICRO «la proprietà
+  come fonte», part 4). The diagnostic `undeclared_owners` — two or more
+  `has_property` not marked `inherited` — brought here from EMStudio's
+  `compact.undeclaredOwners` (s3Dgraphy had the listing
+  `ownership.shared_properties`, no diagnostic). Its two cures:
+  `declare_inheritance(graph, property_id, original_owner_id)` marks the other
+  owners `inherited` and moves the property, with the chain that serves only
+  it, to the original owner's paradata group (the rule of `ownership.py`);
+  `duplicate_per_owner(graph, property_id)` follows EMStudio's
+  `duplicateForEachOwner` — combiners and extractors duplicated — with the
+  instance added: a source property is INSTANTIATED in the new owner's group,
+  documents are read as they are.
 - **A version of several files, and a version made again** (MICRO «i parametri
   diventano la ricetta della versione», E.D. 6 October 2026: for Heriverse/ATON
   the version is a glTF with its textures). `add_version` with several files
