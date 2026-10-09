@@ -39,6 +39,21 @@ All notable changes to **s3dgraphy** are documented here.
   instance, which `refresh_instance` realigns; the extractor keeps its reading
   until a person re-reads. `api.reasoning_diagnostics` gives the records, each
   with the `code` of its words in the translations.
+- **Who leans on what, and «source removed»** (MICRO «la proprietà come fonte»,
+  part 3). `dependents_of(graph, node_id)`: for a unit, a property or a document,
+  the chains that lean on it in cascade — its own properties, instances,
+  extractors, combiners, regions, the properties of other units, the heirs —
+  each with its kind, the node it leans on and its depth (nothing similar
+  existed: `diagnostics` attributes claims and finds stratigraphic cycles).
+  `remove_keeping_trace`: the node stays with its name and last value, marked
+  as the CRDT marks a deletion (`data.removed = {ts, by}`), the edges towards it
+  live; em.json and the RDF round trip keep it, GraphML / Heriverse / RDF publish
+  leave it out (`dissemination.live_view`), and the diagnostic `source_removed`
+  names who still leans on it. `remove_cascade`: the node and what depends ONLY
+  on it, the properties of other units kept and reported (`orphaned` when left
+  without provenance). `reasoning_cycle`: a reasoning that comes back to itself,
+  as the list of its properties. `crdt.compact_section` keeps a tombstoned node
+  a live edge still reaches (it dropped it and left the edge dangling).
 - **A version of several files, and a version made again** (MICRO «i parametri
   diventano la ricetta della versione», E.D. 6 October 2026: for Heriverse/ATON
   the version is a glTF with its textures). `add_version` with several files

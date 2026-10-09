@@ -18,7 +18,7 @@ from s3dgraphy.nodes.group_node import ParadataNodeGroup
 from s3dgraphy.ownership import original_owner
 from s3dgraphy.property_source import (
     INSTANCE_OF, INSTANCE_OWNER, READ_AT, READ_VALUE, diagnose, is_instance,
-    message, source_changed,
+    message, reasoning_cycles, source_changed, source_removed,
 )
 from s3dgraphy.utils.utils import get_stratigraphic_node_class
 
@@ -138,7 +138,7 @@ def test_validate_is_quiet_on_the_case():
     res = api.validate(g)
     assert res["ok"], res["issues"]
     assert diagnose(g) == []
-    assert not [w for w in res["warnings"] if "source" in w]
+    assert not [w for w in res["warnings"] if "source" in w or "cycle" in w]
 
 
 def test_reading_a_master_directly_is_a_hint():
@@ -213,3 +213,135 @@ def test_a_number_and_its_text_are_the_same_reading():
     api.read_property(g, "E40", _instance(g).node_id)
     g.find_node_by_id("P12").value = "3"
     assert source_changed(g) == []
+
+
+# ── part 3 · who leans on what, the trace, the cascade, the cycle ───────────
+
+def test_dependents_of_the_unit_and_of_the_document():
+    g = _capriate()
+    inst = _instance(g)
+    deps = {r["id"]: r for r in api.dependents_of(g, "US_12")}
+    assert set(deps) == {"P12", inst.node_id, "E40", "P40"}
+    assert deps["P12"]["kind"] == "property" and deps[inst.node_id]["kind"] == "instance"
+    assert deps["E40"]["kind"] == "extractor" and deps["E40"]["via"] == inst.node_id
+    assert deps["P40"]["owner"] == "USV_40" and deps["P40"]["owner_name"] == "USV 40"
+    assert deps["P40"]["depth"] == 4
+    deps_doc = {r["id"]: r["kind"] for r in api.dependents_of(g, "D1")}
+    assert deps_doc == {"E12": "extractor", "P12": "property", inst.node_id: "instance",
+                        "E40": "extractor", "P40": "property"}
+    # the heir shares the node: listed, not walked
+    g.add_node(USVs("USV_41", name="USV 41"))
+    api.inherit_property(g, "USV_41", "P12")
+    assert {r["id"]: r["kind"] for r in api.dependents_of(g, "P12")}["USV_41"] == "heir"
+
+
+def test_remove_keeping_trace_the_unit():
+    g = _capriate()
+    out = api.remove_keeping_trace(g, "US_12", by="dev", at="2026-10-09T12:00:00Z")
+    assert out["removed"] == {"ts": "2026-10-09T12:00:00Z", "by": "dev"}
+    assert {d["id"] for d in out["dependents"]} >= {"P12", "E40", "P40"}
+    us = g.find_node_by_id("US_12")
+    assert us is not None and us.name == "US 12"
+    assert [e for e in g.edges if e.edge_target == "US_12" or e.edge_source == "US_12"]
+    (rec,) = source_removed(g)
+    assert rec["node"] == _instance(g).node_id and rec["source"] == "US_12"
+    assert rec["affects"] == ["P40"]
+    assert any("source removed" in w and "US 12" in w for w in api.validate(g)["warnings"])
+
+
+def test_remove_keeping_trace_the_property():
+    g = _capriate()
+    api.remove_keeping_trace(g, "P12", at="2026-10-09T12:00:00Z")
+    p = g.find_node_by_id("P12")
+    assert p.value == "quercia" and p.name == "essenza"
+    (rec,) = source_removed(g)
+    assert (rec["source"], rec["value"], rec["unit_name"], rec["affects"]) == \
+        ("P12", "quercia", "US 12", ["P40"])
+    text = message(rec)
+    assert "quercia" in text and "US 12" in text and "still reads" in text
+    # a trace has no reading to check: no source_changed on top
+    assert source_changed(g) == []
+
+
+def test_the_trace_in_the_projections():
+    from s3dgraphy.crdt import Clock, compact_section
+    from s3dgraphy.dissemination import live_view
+    g = _capriate()
+    api.remove_keeping_trace(g, "P12", at="2026-10-09T12:00:00Z")
+    # em.json keeps it, with its mark
+    doc = api.graph_to_emjson(g)
+    g2, _ = api.load_emjson(doc)
+    assert g2.find_node_by_id("P12").data["removed"]["ts"] == "2026-10-09T12:00:00Z"
+    assert [r["source"] for r in source_removed(g2)] == ["P12"]
+    # a dissemination surface leaves it out, with the edges onto it
+    view, hidden = live_view(g, surface="graphml")
+    assert view.find_node_by_id("P12") is None and hidden.nodes == 1
+    # a compaction keeps a trace still read by a live edge
+    section = {"nodes": [{"id": "P12", "node_type": "property", "name": "essenza",
+                          "data": {"removed": {"ts": "2026-10-09T12:00:00Z"}}},
+                         {"id": "X", "node_type": "property", "name": "gone",
+                          "data": {"removed": {"ts": "2026-10-09T12:00:00Z"}}},
+                         {"id": "I", "node_type": "property", "name": "essenza",
+                          "data": {"instance_of": "P12"}}],
+               "edges": [{"id": "e", "source": "I", "edge_type": "generic_connection",
+                          "target": "P12"}]}
+    report = compact_section(section, Clock(ts="2027-01-01T00:00:00Z"))
+    assert [n["id"] for n in section["nodes"]] == ["P12", "I"]
+    assert report.nodes_dropped == 1
+
+
+def test_remove_cascade_the_unit():
+    g = _capriate()
+    inst_id = _instance(g).node_id
+    out = api.remove_cascade(g, "US_12")
+    removed = {r["id"] for r in out["removed"]}
+    assert removed == {"US_12", "P12", "E12", inst_id, "E40", "PD_US_12"}
+    assert [(k["id"], k["kind"]) for k in out["kept"]] == [("P40", "property")]
+    assert [o["id"] for o in out["orphaned"]] == ["P40"]
+    assert out["orphaned"][0]["owner_name"] == "USV 40"
+    for nid in removed:
+        assert g.find_node_by_id(nid) is None
+    # the document, the reader and its group stay
+    for nid in ("D1", "USV_40", "P40", "PD_USV_40"):
+        assert g.find_node_by_id(nid) is not None
+    assert api.validate(g)["ok"]
+
+
+def test_remove_cascade_keeps_a_combiner_with_other_sources():
+    from s3dgraphy.nodes.combiner_node import CombinerNode
+    g = _capriate()
+    # P40 is now combined: the instance of P12 and a document of its own
+    g.add_node(DocumentNode("D2", name="D.2"))
+    g.add_node(ExtractorNode("E40b", name="D.2.1"))
+    g.add_edge("x40b", "E40b", "D2", "extracted_from")
+    g.add_node(CombinerNode("C40", name="C.1"))
+    g.remove_edge("p40")
+    g.add_edge("p40c", "P40", "C40", "has_data_provenance")
+    g.add_edge("c1", "C40", "E40", "combines")
+    g.add_edge("c2", "C40", "E40b", "combines")
+    out = api.remove_cascade(g, "P12")
+    removed = {r["id"] for r in out["removed"]}
+    assert "E40" in removed and "C40" not in removed and "E40b" not in removed
+    assert out["orphaned"] == []
+    assert {(k["id"], k["why"]) for k in out["kept"]} >= {("C40", "it leans on other sources too")}
+
+
+def test_a_reasoning_cycle():
+    g = _capriate()
+    # US 12's essenza now leans on USV 40's too: A → B → A
+    inst40 = api.instantiate_property(g, "P40", "PD_US_12")
+    g.add_node(ExtractorNode("E12b", name="essenza.1"))
+    g.add_edge("p12b", "P12", "E12b", "has_data_provenance")
+    api.read_property(g, "E12b", inst40.node_id)
+    cycles = reasoning_cycles(g)
+    assert cycles == [["P12", "P40"]]
+    (rec,) = [r for r in diagnose(g) if r["code"] == "reasoning_cycle"]
+    assert rec["unit_names"] == ["US 12", "USV 40"]
+    assert any("reasoning cycle: US 12.essenza → USV 40.essenza" in w
+               for w in api.validate(g)["warnings"])
+    # the walk of the dependents does not loop
+    assert {r["id"] for r in api.dependents_of(g, "P12")} >= {"P40", "E12b"}
+
+
+def test_no_cycle_without_one():
+    assert reasoning_cycles(_capriate()) == []

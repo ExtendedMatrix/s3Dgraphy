@@ -156,7 +156,8 @@ def validate(graph: Graph) -> Dict[str, Any]:
             f"from '{r['unit_name']}', which has no '{r['property_name']}' "
             f"property of its own")
     warnings = list(getattr(graph, "warnings", []) or [])
-    # a property as a source (connections 1.6.36): the source changed
+    # a property as a source (connections 1.6.36): the source changed, was
+    # removed, the reasoning comes back to itself
     from .property_source import diagnose, is_instance, message
     warnings.extend(message(r) for r in diagnose(graph))
     by_id = {n.node_id: n for n in nodes}
@@ -343,6 +344,30 @@ def refresh_instance(graph: Graph, instance_id: str, *,
     before, after, changed}``."""
     from .property_source import refresh_instance as _refresh
     return _refresh(graph, instance_id, at=at)
+
+
+def dependents_of(graph: Graph, node_id: str) -> List[Dict[str, Any]]:
+    """Who leans on a unit, a property or a document, in cascade: ``[{id,
+    name, node_type, kind, via, depth, owner, owner_name}]`` — what an
+    interface shows before a removal."""
+    from .property_source import dependents_of as _deps
+    return _deps(graph, node_id)
+
+
+def remove_keeping_trace(graph: Graph, node_id: str, *, by: Optional[str] = None,
+                         at: Optional[str] = None) -> Dict[str, Any]:
+    """The default removal of a source: the node stays, marked
+    ``data.removed = {ts, by}`` (the CRDT's mark), with its name and last
+    value; what leans on it still reads, with ``source_removed``."""
+    from .property_source import remove_keeping_trace as _remove
+    return _remove(graph, node_id, by=by, at=at)
+
+
+def remove_cascade(graph: Graph, node_id: str) -> Dict[str, Any]:
+    """The explicit removal: the node and what depends ONLY on it; reports
+    ``{removed, kept, orphaned, edges_removed}``."""
+    from .property_source import remove_cascade as _cascade
+    return _cascade(graph, node_id)
 
 
 def reasoning_diagnostics(graph: Graph) -> List[Dict[str, Any]]:

@@ -343,6 +343,286 @@ def read_property(graph, extractor_id: str, instance_id: str, *,
     return edge
 
 
+# ── who leans on what ────────────────────────────────────────────────────────
+
+def _key(prop) -> str:
+    from .diagnostics import _property_key
+    return _property_key(prop)
+
+
+def _fed_properties(graph, head_id: str) -> List[Any]:
+    """The properties an extractor or a combiner feeds, through combiners."""
+    out, seen, todo = [], set(), [head_id]
+    while todo:
+        cur = todo.pop()
+        if cur in seen:
+            continue
+        seen.add(cur)
+        for e in _edges(graph, target=cur, edge_type=HAS_DATA_PROVENANCE):
+            p = graph.find_node_by_id(e.edge_source)
+            if getattr(p, "node_type", None) == "property":
+                out.append(p)
+        for e in _edges(graph, target=cur, edge_type=COMBINES):
+            todo.append(e.edge_source)
+    return out
+
+
+def _own_properties(graph, unit_id: str) -> List[str]:
+    """The properties whose ORIGINAL owner is ``unit_id``."""
+    out = []
+    for e in _edges(graph, source=unit_id, edge_type=HAS_PROPERTY):
+        if e.edge_target not in out and original_owner(graph, e.edge_target) == unit_id:
+            out.append(e.edge_target)
+    return out
+
+
+def _based_on(graph, node_id: str) -> List[str]:
+    """What ``node_id`` is directly based on — the forward step of a chain of
+    reasoning, the one :func:`dependents_of` walks backwards.
+
+    property → its provenance (extractor / combiner); combiner → its
+    extractors; extractor → what it read (document, region, instance, unit);
+    instance → its master; region → what it is on; unit read as a source → its
+    properties of the name the extractor feeds (connections 1.6.24).
+    """
+    node = graph.find_node_by_id(node_id)
+    kind = _kind(node)
+    if kind == "property":
+        return [e.edge_target for e in _edges(graph, source=node_id, edge_type=HAS_DATA_PROVENANCE)]
+    if kind == "combiner":
+        return [e.edge_target for e in _edges(graph, source=node_id, edge_type=COMBINES)]
+    if kind == "extractor":
+        out = []
+        keys = {_key(p) for p in _fed_properties(graph, node_id)}
+        for e in _edges(graph, source=node_id, edge_type=EXTRACTED_FROM):
+            out.append(e.edge_target)
+            if _kind(graph.find_node_by_id(e.edge_target)) == "unit":
+                out.extend(p for p in _own_properties(graph, e.edge_target)
+                           if _key(graph.find_node_by_id(p)) in keys)
+        return out
+    if kind == "instance":
+        mid = _data(node).get(INSTANCE_OF)
+        return [mid] if mid else []
+    if kind == "region":
+        return [e.edge_target for e in _edges(graph, source=node_id, edge_type=IS_ON_RESOURCE)]
+    return []
+
+
+def _leaning_on(graph, node_id: str) -> List[Tuple[str, str]]:
+    """``[(dependent id, kind)]`` that lean DIRECTLY on ``node_id``."""
+    node = graph.find_node_by_id(node_id)
+    kind = _kind(node)
+    out: List[Tuple[str, str]] = []
+
+    def add(nid: str, k: Optional[str] = None):
+        n = graph.find_node_by_id(nid)
+        if n is not None:
+            out.append((nid, k or _kind(n)))
+
+    if kind == "unit":
+        for pid in _own_properties(graph, node_id):
+            add(pid, "property")
+        for e in _edges(graph, target=node_id, edge_type=EXTRACTED_FROM):
+            add(e.edge_source)
+    elif kind == "property":
+        for inst in instances_of(graph, node_id):
+            add(inst.node_id, "instance")
+        # the heirs (ownership.py) share the very node
+        for e in owner_edges(graph, node_id):
+            if is_inherited_edge(e):
+                add(e.edge_source, "heir")
+        # an extractor reading the property's unit, for this property's name
+        owner = original_owner(graph, node_id)
+        if owner:
+            key = _key(node)
+            for e in _edges(graph, target=owner, edge_type=EXTRACTED_FROM):
+                if key in {_key(p) for p in _fed_properties(graph, e.edge_source)}:
+                    add(e.edge_source)
+    elif kind == "instance":
+        for e in _edges(graph, target=node_id, edge_type=EXTRACTED_FROM):
+            add(e.edge_source)
+    elif kind in ("document", "region"):
+        for e in _edges(graph, target=node_id, edge_type=EXTRACTED_FROM):
+            add(e.edge_source)
+        for e in _edges(graph, target=node_id, edge_type=IS_ON_RESOURCE):
+            n = graph.find_node_by_id(e.edge_source)
+            if _kind(n) == "region":
+                add(e.edge_source, "region")
+    elif kind in ("extractor", "combiner"):
+        for e in _edges(graph, target=node_id, edge_type=COMBINES):
+            add(e.edge_source, "combiner")
+        for e in _edges(graph, target=node_id, edge_type=HAS_DATA_PROVENANCE):
+            add(e.edge_source, "property")
+    return out
+
+
+def dependents_of(graph, node_id: str) -> List[Dict[str, Any]]:
+    """Every chain that leans on ``node_id`` — a unit, a property, a document
+    (any node works) — in cascade, breadth first.
+
+    One record per dependent, ``{id, name, node_type, kind, via, depth,
+    owner, owner_name}``: ``kind`` is ``property`` (a unit's own property, or a
+    property of another unit fed by the chain), ``instance``, ``extractor``,
+    ``combiner``, ``region`` or ``heir`` (a unit that inherits the very
+    property, :mod:`s3dgraphy.ownership`); ``via`` the node it leans on;
+    ``owner`` the unit of a property. A cycle is walked once. Read-only.
+    """
+    if graph.find_node_by_id(node_id) is None:
+        raise KeyError(f"no node {node_id!r}")
+    out: List[Dict[str, Any]] = []
+    seen = {node_id}
+    frontier = [node_id]
+    depth = 0
+    while frontier:
+        depth += 1
+        nxt = []
+        for cur in frontier:
+            for dep, kind in _leaning_on(graph, cur):
+                if dep in seen:
+                    continue
+                seen.add(dep)
+                n = graph.find_node_by_id(dep)
+                rec = {"id": dep, "name": getattr(n, "name", dep),
+                       "node_type": getattr(n, "node_type", None), "kind": kind,
+                       "via": cur, "depth": depth, "owner": None, "owner_name": None}
+                if kind in ("property", "instance"):
+                    owner = owner_unit_of(graph, dep)
+                    rec["owner"], rec["owner_name"] = owner, (_name(graph, owner) if owner else None)
+                out.append(rec)
+                if kind != "heir":
+                    nxt.append(dep)
+        frontier = nxt
+    return out
+
+
+# ── removal ──────────────────────────────────────────────────────────────────
+
+def remove_keeping_trace(graph, node_id: str, *, by: Optional[str] = None,
+                         at: Optional[str] = None) -> Dict[str, Any]:
+    """Remove ``node_id`` leaving its TRACE — the default removal of a source.
+
+    The node stays with its id, name and last value, marked as the CRDT marks a
+    deletion (``data.removed = {ts, by}``); the edges towards it stay, so the
+    chains that lean on it still read, and :func:`source_removed` says so.
+    Returns ``{node, removed, dependents}`` (the dependents as
+    :func:`dependents_of` gives them, computed before the mark).
+    """
+    from .crdt import REMOVED_KEY, Clock
+    node = graph.find_node_by_id(node_id)
+    if node is None:
+        raise KeyError(f"no node {node_id!r}")
+    deps = dependents_of(graph, node_id)
+    _ensure_data(node)[REMOVED_KEY] = Clock(ts=at or _now(), by=by).as_dict()
+    return {"node": node_id, "removed": node.data[REMOVED_KEY], "dependents": deps}
+
+
+def _all_gone(graph, nid: str, gone: Set[str]) -> bool:
+    """Does ``nid`` lean ONLY on what is going (and on something at all)?"""
+    node = graph.find_node_by_id(nid)
+    kind = _kind(node)
+    if kind == "property":
+        owners = [e.edge_source for e in owner_edges(graph, nid)]
+        return bool(owners) and all(o in gone for o in owners)
+    if kind == "instance":
+        return _data(node).get(INSTANCE_OF) in gone
+    if kind in ("extractor", "region"):
+        heads = [e.edge_target for e in _edges(
+            graph, source=nid, edge_type=EXTRACTED_FROM if kind == "extractor" else IS_ON_RESOURCE)]
+        return bool(heads) and all(h in gone for h in heads)
+    if kind == "combiner":
+        heads = [e.edge_target for e in _edges(graph, source=nid, edge_type=COMBINES)]
+        return bool(heads) and all(h in gone for h in heads)
+    return False
+
+
+def remove_cascade(graph, node_id: str) -> Dict[str, Any]:
+    """Remove ``node_id`` and what depends ONLY on it — the explicit choice.
+
+    What goes: the node; a unit's own properties that have no other owner; the
+    instances of a property that goes; the extractors whose every source goes
+    (an extractor reads one place); the combiners whose every extractor goes;
+    the regions of a document that goes; the chain (extractors, combiners)
+    that served only properties that go; a paradata group left empty. What
+    stays and is reported: the properties of OTHER units (a claim is its
+    owner's to withdraw), with ``orphaned`` naming those left without any
+    provenance; documents read by a chain that goes (a source may serve
+    others). Returns ``{removed: [{id, name, kind}], kept: [{id, name, kind,
+    why}], orphaned: [{id, name, owner}], edges_removed}``.
+    """
+    if graph.find_node_by_id(node_id) is None:
+        raise KeyError(f"no node {node_id!r}")
+    gone: Set[str] = {node_id}
+    changed = True
+    while changed:
+        changed = False
+        for cur in list(gone):
+            for dep, kind in _leaning_on(graph, cur):
+                if dep in gone or kind == "heir":
+                    continue
+                n = graph.find_node_by_id(dep)
+                if kind == "property" and _kind(n) == "property" and \
+                        _kind(graph.find_node_by_id(cur)) != "unit":
+                    continue          # another unit's claim: kept, reported
+                if _all_gone(graph, dep, gone):
+                    gone.add(dep)
+                    changed = True
+        # the chain of a property that goes, when it serves nothing else
+        for cur in list(gone):
+            if _kind(graph.find_node_by_id(cur)) != "property":
+                continue
+            todo = list(_based_on(graph, cur))
+            while todo:
+                head = todo.pop()
+                if head in gone:
+                    continue
+                hk = _kind(graph.find_node_by_id(head))
+                if hk not in ("extractor", "combiner"):
+                    continue
+                served = [e.edge_source for e in _edges(graph, target=head, edge_type=HAS_DATA_PROVENANCE)] \
+                    + [e.edge_source for e in _edges(graph, target=head, edge_type=COMBINES)]
+                if served and all(s in gone for s in served):
+                    gone.add(head)
+                    changed = True
+                    if hk == "combiner":
+                        todo.extend(_based_on(graph, head))
+    # groups left empty, and the group of a unit that goes
+    for g in list(graph.nodes):
+        if getattr(g, "node_type", None) != "ParadataNodeGroup" or g.node_id in gone:
+            continue
+        members = [e.edge_source for e in _edges(graph, target=g.node_id, edge_type=IN_GROUP)]
+        owners = [e.edge_source for e in _edges(graph, target=g.node_id, edge_type=HAS_GROUP)]
+        if members and all(m in gone for m in members) and \
+                (not owners or all(o in gone for o in owners)):
+            gone.add(g.node_id)
+        elif not members and owners and all(o in gone for o in owners):
+            gone.add(g.node_id)
+
+    deps = dependents_of(graph, node_id)
+    removed = [{"id": nid, "name": _name(graph, nid),
+                "kind": _kind(graph.find_node_by_id(nid))} for nid in
+               [node_id] + [d for d in (r["id"] for r in deps) if d in gone] +
+               sorted(gone - {node_id} - {r["id"] for r in deps})]
+    kept = [{"id": r["id"], "name": r["name"], "kind": r["kind"],
+             "why": ("another unit's property" if r["kind"] == "property"
+                     else "an heir keeps its own has_property" if r["kind"] == "heir"
+                     else "it leans on other sources too")}
+            for r in deps if r["id"] not in gone]
+    orphaned = []
+    for r in kept:
+        if r["kind"] != "property":
+            continue
+        heads = [e.edge_target for e in _edges(graph, source=r["id"], edge_type=HAS_DATA_PROVENANCE)]
+        if heads and all(h in gone for h in heads):
+            owner = owner_unit_of(graph, r["id"])
+            orphaned.append({"id": r["id"], "name": r["name"], "owner": owner,
+                             "owner_name": _name(graph, owner) if owner else None})
+    before = len(graph.edges)
+    for nid in gone:
+        graph.remove_node(nid)
+    return {"removed": removed, "kept": kept, "orphaned": orphaned,
+            "edges_removed": before - len(graph.edges)}
+
+
 # ── diagnostics ──────────────────────────────────────────────────────────────
 
 def source_changed(graph) -> List[Dict[str, Any]]:
@@ -383,10 +663,135 @@ def source_changed(graph) -> List[Dict[str, Any]]:
     return out
 
 
+def source_removed(graph) -> List[Dict[str, Any]]:
+    """Live chains that lean on a removed node («fonte rimossa»).
+
+    ``{code: "source_removed", node, node_name, kind, source, source_name,
+    source_kind, value, unit, unit_name, affects}``: ``node`` is the live
+    instance or extractor that leans on the removed ``source`` (a master
+    property, the unit of that master, a document, a region, a unit read as a
+    source); ``value`` the source's last value; ``affects`` the properties the
+    chain feeds. The chain still reads; this is the warning that goes with it.
+    """
+    out: List[Dict[str, Any]] = []
+
+    def add(node, source, why_unit=None):
+        props = []
+        if _kind(node) == "extractor":
+            props = _fed_properties(graph, node.node_id)
+        else:
+            for e in _edges(graph, target=node.node_id, edge_type=EXTRACTED_FROM):
+                props.extend(_fed_properties(graph, e.edge_source))
+        unit = why_unit or (owner_unit_of(graph, source.node_id)
+                            if _kind(source) in ("property", "instance") else None)
+        out.append({"code": "source_removed", "node": node.node_id,
+                    "node_name": node.name, "kind": _kind(node),
+                    "source": source.node_id, "source_name": source.name,
+                    "source_kind": _kind(source), "value": _value(source),
+                    "unit": unit, "unit_name": _name(graph, unit) if unit else None,
+                    "affects": list(dict.fromkeys(p.node_id for p in props))})
+
+    for node in graph.nodes:
+        if is_removed(node):
+            continue
+        if is_instance(node):
+            master = master_of(graph, node)
+            if master is not None and is_removed(master):
+                add(node, master)
+                continue
+            unit = owner_unit_of(graph, node)
+            unit_node = graph.find_node_by_id(unit) if unit else None
+            if unit_node is not None and is_removed(unit_node):
+                add(node, unit_node, unit)
+        elif _kind(node) == "extractor":
+            for e in _edges(graph, source=node.node_id, edge_type=EXTRACTED_FROM):
+                src = graph.find_node_by_id(e.edge_target)
+                if src is not None and is_removed(src):
+                    add(node, src)
+    return out
+
+
+def reasoning_cycles(graph) -> List[List[str]]:
+    """Chains of reasoning that come back to themselves (A is based on B,
+    which is based on A). Each cycle is the list of the PROPERTIES on it, in
+    the order of the reasoning, starting from the smallest id; the instances,
+    extractors and combiners between them are walked, not listed. Uses the
+    forward step of :func:`dependents_of` (``_based_on``)."""
+    ids = [n.node_id for n in graph.nodes if not is_removed(n)]
+    alive = set(ids)
+    succ = {i: [t for t in _based_on(graph, i) if t in alive] for i in ids}
+    # Tarjan, iterative
+    index, low, on, stack, sccs, counter = {}, {}, set(), [], [], [0]
+    for root in ids:
+        if root in index:
+            continue
+        work = [(root, iter(succ[root]))]
+        index[root] = low[root] = counter[0]; counter[0] += 1
+        stack.append(root); on.add(root)
+        while work:
+            v, it = work[-1]
+            advanced = False
+            for w in it:
+                if w not in index:
+                    index[w] = low[w] = counter[0]; counter[0] += 1
+                    stack.append(w); on.add(w)
+                    work.append((w, iter(succ[w])))
+                    advanced = True
+                    break
+                if w in on:
+                    low[v] = min(low[v], index[w])
+            if advanced:
+                continue
+            work.pop()
+            if work:
+                low[work[-1][0]] = min(low[work[-1][0]], low[v])
+            if low[v] == index[v]:
+                comp = []
+                while True:
+                    w = stack.pop(); on.discard(w); comp.append(w)
+                    if w == v:
+                        break
+                if len(comp) > 1 or v in succ[v]:
+                    sccs.append(set(comp))
+    out = []
+    for comp in sccs:
+        props = [i for i in comp if _kind(graph.find_node_by_id(i)) == "property"]
+        if not props:
+            continue
+        # the order of the reasoning: walk the component from the smallest id
+        start = min(props)
+        order, cur, seen = [start], start, {start}
+        while True:
+            nxt = None
+            todo, visited = list(succ[cur]), set()
+            while todo and nxt is None:
+                t = todo.pop(0)
+                if t in visited or t not in comp:
+                    continue
+                visited.add(t)
+                if _kind(graph.find_node_by_id(t)) == "property":
+                    nxt = t
+                else:
+                    todo.extend(succ[t])
+            if nxt is None or nxt in seen:
+                break
+            order.append(nxt); seen.add(nxt); cur = nxt
+        out.append(order)
+    return out
+
+
 def diagnose(graph) -> List[Dict[str, Any]]:
     """Every diagnostic of this module, as records with a ``code``:
-    ``source_changed``."""
-    return source_changed(graph)
+    ``source_changed``, ``source_removed`` and ``reasoning_cycle``."""
+    out = source_changed(graph) + source_removed(graph)
+    for cyc in reasoning_cycles(graph):
+        out.append({"code": "reasoning_cycle", "properties": cyc,
+                    "names": [_name(graph, p) for p in cyc],
+                    "units": [owner_unit_of(graph, p) for p in cyc],
+                    "unit_names": [_name(graph, owner_unit_of(graph, p)) if owner_unit_of(graph, p) else None
+                                   for p in cyc]})
+    return out
+
 
 def message(record: Dict[str, Any]) -> str:
     """The English sentence of a diagnostic record (the validator's)."""
@@ -395,6 +800,16 @@ def message(record: Dict[str, Any]) -> str:
         where = "the instance" if record["on"] == "instance" else f"extractor '{record['node_name']}'"
         return (f"the source has changed: {where} read '{record['property_name']}' of "
                 f"'{record['unit_name']}' as '{record['read']}', it is now '{record['current']}'")
+    if code == "source_removed":
+        return (f"source removed: '{record['node_name']}' leans on {record['source_kind']} "
+                f"'{record['source_name']}'"
+                + (f" of '{record['unit_name']}'" if record.get("unit_name")
+                   and record["source_kind"] != "unit" else "")
+                + (f" (last value '{record['value']}')" if record.get("value") is not None else "")
+                + ", which has been removed; the chain still reads")
+    if code == "reasoning_cycle":
+        chain = " → ".join(f"{u or '?'}.{n}" for u, n in zip(record["unit_names"], record["names"]))
+        return f"reasoning cycle: {chain} → back to the start"
     return str(record)
 
 
