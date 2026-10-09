@@ -352,9 +352,13 @@ class GraphProjector:
             else:
                 from s3dgraphy.importer.pyarchinit_importer import (
                     PyArchInitImporter)
+                # Only the rows of ``sito``, as the PG branch does with
+                # its WHERE: without the filter a multi-site DB brings
+                # the units, documents and epochs of every site (#25).
                 importer = PyArchInitImporter(
                     filepath=str(sqlite_path),
                     mapping_name="pyarchinit_us_mapping",
+                    filters={"sito": sito},
                 )
                 imported = importer.parse()
         except Exception as e:

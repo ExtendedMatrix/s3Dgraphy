@@ -248,6 +248,21 @@ All notable changes to **s3dgraphy** are documented here.
   third loop found the same extractors later); a node with extractors on both
   sides now gets the sources first. No GraphML of the fixtures or of the
   benches changed.
+- **The projector's groups keep their `kind`, and a SQLite projection keeps
+  only its site** (#25, Enzo Cocca's report and reproduction of 7 and 9
+  October). `GraphProjector` replaced `node.attributes` of the groups it builds
+  — the toponym chain and the group-spec groups — instead of updating it, so
+  the `kind`, `propagation` and `y_pos` the `LocationNodeGroup` constructor puts
+  there for the serialisers were lost: em.json wrote the group without
+  `data.kind` and reading it back failed («kind must be one of …») and degraded
+  the node to `Node`. Now an update. The SQLite branch built
+  `PyArchInitImporter` without `filters={"sito": sito}` (the PostgreSQL branch
+  already selects `WHERE sito = :sito`), so one site of a multi-site DB brought
+  the units, documents and epochs of the others: on the pyArchInit demo DB
+  (ten sites), «Scavo archeologico» goes from 210 units / 342 documents / 132
+  epochs to 51 / 87 / 24, the numbers Enzo measured with his patch. pyArchInit
+  can drop its kind shim and its filter context manager. Tests in
+  `tests/sync/test_issue25_group_kind_and_site_filter.py`.
 
 ### Changed (the release)
 - **W2 · Step 7 waits for PyPI too.** Every `pip install`/`pip download` of a

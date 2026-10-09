@@ -1,4 +1,4 @@
-"""#25 (Enzo Cocca, 7 and 9 Oct 2026): holes in the projector.
+"""#25 (Enzo Cocca, 7 and 9 Oct 2026): two holes in the projector.
 
 * The groups it builds (toponym chain, group-spec) lost ``kind`` in em.json:
   ``node.attributes = {...}`` replaced the dict the ``LocationNodeGroup``
@@ -93,3 +93,42 @@ def test_group_spec_groups_round_trip_kind(tmp_path):
         assert n.attributes["kind"] == "functional"
         assert _doc_node(doc, n.node_id)["data"]["kind"] == "functional"
         assert back.find_node_by_id(n.node_id).kind == "functional"
+
+
+def _two_site_db(tmp_path):
+    """mini_volterra with every unit copied into a second site, numbered
+    100+ so the copies cannot collapse onto the first site's node ids."""
+    db = tmp_path / "two_sites.sqlite"
+    shutil.copy2(FIXTURES / "mini_volterra.sqlite", db)
+    conn = sqlite3.connect(db)
+    cols = [r[1] for r in conn.execute("PRAGMA table_info(us_table)")]
+    pk = "id_us"
+    rest = [c for c in cols if c not in (pk, "sito", "us")]
+    top = conn.execute(f"SELECT MAX({pk}) FROM us_table").fetchone()[0]
+    conn.execute(
+        f"INSERT INTO us_table ({pk}, sito, us, {', '.join(rest)}) "
+        f"SELECT {pk} + {top}, 'AltroSito', CAST(us + 100 AS TEXT), "
+        f"{', '.join(rest)} "
+        f"FROM us_table WHERE sito = 'TestSite'")
+    conn.commit(); conn.close()
+    from tests.sync._uuid_backfill import add_columns, backfill_uuids
+    add_columns(db); backfill_uuids(db)
+    return db
+
+
+def test_sqlite_projection_keeps_only_the_site(tmp_path):
+    db = _two_site_db(tmp_path)
+    conn = sqlite3.connect(db)
+    per_site = dict(conn.execute(
+        "SELECT sito, COUNT(*) FROM us_table GROUP BY sito"))
+    conn.close()
+    assert per_site == {"TestSite": 5, "AltroSito": 5}
+
+    graph = GraphProjector().populate_graph(db, sito="TestSite")
+    units = [n for n in graph.nodes if type(n).__name__ == "StratigraphicUnit"
+             or getattr(n, "node_type", None) == "US"]
+    assert len(units) == 5
+    assert not any(str(n.name).endswith(("101", "102", "103", "104", "105"))
+                   for n in units)
+    assert all(getattr(n, "attributes", {}).get("sito", "TestSite")
+               == "TestSite" for n in units)
