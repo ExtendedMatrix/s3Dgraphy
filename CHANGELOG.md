@@ -314,6 +314,17 @@ All notable changes to **s3dgraphy** are documented here.
   when a document does not carry it); the docstrings said «geographic north».
 
 ### Fixed
+- **The graph's own scaffolding is not an excavated unit** (#25, pyArchInit).
+  `ContinuityNode` and `GraphNode` were missing from `_NON_STRAT_TYPES`, so
+  `GraphIngestor.populate_list` wrote them into `us_table` as units: a graph
+  that had been through `transforms.materialize_continuity` left rows like
+  `us = '_synth_BR_1'` in the archaeologists' sheets, and the node standing
+  for the document left a row whose `us` was the site's own name. Neither has
+  a row in `us_table`, nor an `unita_tipo` that would fit it. A round trip
+  through GraphML or em.json can also hand the diamond back as a plain
+  stratigraphic unit, with only `_synth_BR_<label>` left to recognise it by,
+  so `_is_synthetic_node` checks the name, the node id and `attributes["us"]`
+  in both loops. Tests in `tests/sync/test_ingest_skips_synthetic_nodes.py`.
 - **`get_extractor_nodes_for_node` compared `edge.edge_source` with the edge
   types** (#27), so its first loop, the extractor as the source of a
   provenance edge, never matched. Fixed. The set it returns cannot change (its
