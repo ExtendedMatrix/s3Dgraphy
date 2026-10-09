@@ -470,6 +470,8 @@ class GraphIngestor:
                     type_name = type(node).__name__
                     if type_name in _NON_STRAT_TYPES:
                         continue
+                    if _is_synthetic_node(node):
+                        continue
                     attrs = dict(getattr(node, "attributes", None) or {})
                     # Look up by node_uuid. Prefer the explicit attribute
                     # (set by GraphProjector._propagate_node_uuid_and_us);
@@ -594,6 +596,8 @@ class GraphIngestor:
                     for node in graph.nodes:
                         type_name = type(node).__name__
                         if type_name in _NON_STRAT_TYPES:
+                            continue
+                        if _is_synthetic_node(node):
                             continue
                         attrs = dict(getattr(node, "attributes", None) or {})
                         # Same priority as the detection loop above:
@@ -1110,6 +1114,23 @@ def _values_equal(col: str, a, b) -> bool:
     return str(a) == str(b)
 
 
+def _is_synthetic_node(node) -> bool:
+    """True for a materialised continuity diamond, by name.
+
+    ``transforms.materialize_continuity`` names them
+    ``_synth_BR_<label>``, and a round trip through GraphML or em.json can
+    hand one back as a plain stratigraphic unit: the class is gone and the
+    name is all that is left to recognise it by. Writing it as a unit gave
+    rows like ``us = '_synth_BR_1'``.
+    """
+    for valore in (getattr(node, "name", None),
+                   getattr(node, "node_id", None),
+                   (getattr(node, "attributes", None) or {}).get("us")):
+        if valore is not None and str(valore).startswith("_synth"):
+            return True
+    return False
+
+
 def _is_epoch_node_local(node) -> bool:
     return type(node).__name__ == "EpochNode"
 
@@ -1382,4 +1403,10 @@ _NON_STRAT_TYPES: frozenset[str] = frozenset({
     "ActivityNodeGroup",
     "LocationNodeGroup",       # AI07: new spatial group node class
     "TimeBranchNodeGroup",
+    # The graph's own scaffolding. A ContinuityNode is the end of a unit's
+    # life, derived from the epochs and synthesised by
+    # transforms.materialize_continuity; a GraphNode stands for the document.
+    # us_table has no row for either — and no unita_tipo that fits them.
+    "ContinuityNode",
+    "GraphNode",
 })

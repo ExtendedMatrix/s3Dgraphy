@@ -1484,12 +1484,23 @@ def compact_section(section: Dict[str, Any], before: Clock) -> CompactionReport:
         return report
 
     nodes: List[Dict[str, Any]] = section.get("nodes") or []
+    # «fonte rimossa» (E.D. 2026-10-09, s3dgraphy.property_source): a removed
+    # node that a LIVE edge still reaches is a trace somebody reads — a chain
+    # of reasoning leaning on a removed source. Dropping it would leave that
+    # edge dangling, so it is kept whatever its age.
+    still_read = set()
+    for edge in section.get("edges") or []:
+        attrs = edge.get("attributes") if isinstance(edge.get("attributes"), dict) else {}
+        if not Clock.from_dict(attrs.get(REMOVED_KEY)).stamped:
+            still_read.add(edge.get("source"))
+            still_read.add(edge.get("target"))
     kept_nodes: List[Dict[str, Any]] = []
     for node in nodes:
         mark = tombstone(node)
         # a node whose deletion is settled disappears for good — it was already
         # invisible, so nothing on screen changes
-        if mark is not None and is_removed(node) and clock_order(mark, before) < 0:
+        if mark is not None and is_removed(node) and clock_order(mark, before) < 0 \
+                and node.get("id") not in still_read:
             report.nodes_dropped += 1
             continue
         kept_nodes.append(node)

@@ -5,6 +5,78 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
+- **A property as a source** (connections 1.6.36, MICRO «la proprietà come
+  fonte», decided by E.D. 9 October 2026: the trusses take the wood species of
+  the fragments found, the upper parts of a temple the material of the lower
+  ones). One extracts from the PROPERTY, not from the unit: the reader's
+  extractor is `extracted_from` the MASTER — the property in its own unit — as
+  it is a document. New module `s3dgraphy.property_source`;
+  `api.owner_unit_of`, `api.read_property`.
+  `extracted_from.target += PropertyNode` (`_note_property` WIDENED,
+  `property_source_note`). The new block `paradata_reasoning` holds the EM
+  words of the reasoning between properties, translated in
+  `datamodel_translations.json` 1.7, section `reasoning` (en/it/de;
+  `datamodel_i18n.reasoning_text`). A line from an extractor to a property is
+  also what an old yEd provenance line drawn backwards looks like:
+  `property_source.reads_as_source` tells them apart from the graph (a reading
+  is an extractor that feeds ANOTHER property), and
+  `connection_resolver.candidate_edge_types(..., graph=)` names
+  `extracted_from` only then; without the graph it does not.
+- **The instance is a view** (connections 1.6.37, translations 1.8,
+  em_visual_rules 1.6.33, MICRO «l'istanza è una
+  vista», decided by E.D. 9 October 2026, evening: «non ha nessun senso fare
+  un'istanza nel triple store: è solamente una modalità grafica di
+  rappresentare il grafo»). No instance node in em.json nor in the RDF: for a
+  paradata group, every master outside it — a document or a property — that a
+  reader of the group reaches is DRAWN inside it, with the badge of where it
+  comes from (the property's unit, the document's epoch). One rule for every
+  client, the block `paradata_instances` of `em_visual_rules.json`, read by the
+  pure function `s3dgraphy.paradata_view.view_instances(graph, group_id)`
+  (`api.view_instances`), which also gives the instance's id
+  (`<master>##<group>`). A property instance STORED in the afternoon of the same
+  day (a `PropertyNode` with `data.instance_of`) is folded onto its master when
+  an em.json is read (`property_source.fold_stored_instances`, one warning
+  line); the afternoon's `instantiate_property`, `master_of`, `instances_of`
+  and `refresh_instance` are gone. A new connections version rather than
+  1.6.36 revised in place: EMStudio had already vendored the afternoon's
+  1.6.36, and one version must mean one content. In `paradata_reasoning`
+  `property_instance` becomes `instance`, the badge says `{owner}` (a unit, or
+  the epoch of a document), `refresh_instance` goes; the nine shipped mappings
+  are re-stamped against 1.6.37.
+- **The value read, and «the source has changed»** (MICRO «la proprietà come
+  fonte», part 2). `read_property` keeps on the extractor what it read, flat
+  like the passage a region quotes: `data.read_value` (the master's value) and
+  `data.read_at`; asked again it re-reads. The diagnostic `source_changed`
+  (`property_source.source_changed`, among the warnings of `api.validate`):
+  the master's value is no longer the one the extractor read; it says so
+  until a person re-reads. `api.reasoning_diagnostics` gives the records, each
+  with the `code` of its words in the translations.
+- **Who leans on what, and «source removed»** (MICRO «la proprietà come fonte»,
+  part 3). `dependents_of(graph, node_id)`: for a unit, a property or a document,
+  the chains that lean on it in cascade — its own properties,
+  extractors, combiners, regions, the properties of other units, the heirs —
+  each with its kind, the node it leans on and its depth (nothing similar
+  existed: `diagnostics` attributes claims and finds stratigraphic cycles).
+  `remove_keeping_trace`: the node stays with its name and last value, marked
+  as the CRDT marks a deletion (`data.removed = {ts, by}`), the edges towards it
+  live; em.json and the RDF round trip keep it, GraphML / Heriverse / RDF publish
+  leave it out (`dissemination.live_view`), and the diagnostic `source_removed`
+  names who still leans on it. `remove_cascade`: the node and what depends ONLY
+  on it, the properties of other units kept and reported (`orphaned` when left
+  without provenance). `reasoning_cycle`: a reasoning that comes back to itself,
+  as the list of its properties. `crdt.compact_section` keeps a tombstoned node
+  a live edge still reaches (it dropped it and left the edge dangling).
+- **Two owners nobody declared: «Declare the inheritance»** (MICRO «la proprietà
+  come fonte», part 4). The diagnostic `undeclared_owners` — two or more
+  `has_property` not marked `inherited` — brought here from EMStudio's
+  `compact.undeclaredOwners` (s3Dgraphy had the listing
+  `ownership.shared_properties`, no diagnostic). Its two cures:
+  `declare_inheritance(graph, property_id, original_owner_id)` marks the other
+  owners `inherited` and moves the property, with the chain that serves only
+  it, to the original owner's paradata group (the rule of `ownership.py`);
+  `duplicate_per_owner(graph, property_id)` follows EMStudio's
+  `duplicateForEachOwner` — combiners and extractors duplicated, the copies
+  reading the same masters (documents, properties) as they are.
 - **A version of several files, and a version made again** (MICRO «i parametri
   diventano la ricetta della versione», E.D. 6 October 2026: for Heriverse/ATON
   the version is a glTF with its textures). `add_version` with several files
@@ -242,6 +314,17 @@ All notable changes to **s3dgraphy** are documented here.
   when a document does not carry it); the docstrings said «geographic north».
 
 ### Fixed
+- **The graph's own scaffolding is not an excavated unit** (#25, pyArchInit).
+  `ContinuityNode` and `GraphNode` were missing from `_NON_STRAT_TYPES`, so
+  `GraphIngestor.populate_list` wrote them into `us_table` as units: a graph
+  that had been through `transforms.materialize_continuity` left rows like
+  `us = '_synth_BR_1'` in the archaeologists' sheets, and the node standing
+  for the document left a row whose `us` was the site's own name. Neither has
+  a row in `us_table`, nor an `unita_tipo` that would fit it. A round trip
+  through GraphML or em.json can also hand the diamond back as a plain
+  stratigraphic unit, with only `_synth_BR_<label>` left to recognise it by,
+  so `_is_synthetic_node` checks the name, the node id and `attributes["us"]`
+  in both loops. Tests in `tests/sync/test_ingest_skips_synthetic_nodes.py`.
 - **A restored PostgreSQL dump can be written to** (#25, pyArchInit).
   `pg_restore` copies the rows with their primary keys and does not reset the
   serial sequences, so the first auto-key INSERT asks for a value the table

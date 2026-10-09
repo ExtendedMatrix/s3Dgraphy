@@ -42,7 +42,8 @@ def test_datamodel_target_is_every_stratigraphic_node():
     raw = json.loads((pathlib.Path(api.__file__).parent / "JSON_config" /
                       "s3Dgraphy_connections_datamodel.json").read_text("utf-8"))
     target = raw["edge_types"]["extracted_from"]["allowed_connections"]["target"]
-    assert target == ["DocumentNode", "AnnotationRegionNode", "StratigraphicNode"]
+    # 1.6.36 adds PropertyNode (a property instance read as a source)
+    assert target[:3] == ["DocumentNode", "AnnotationRegionNode", "StratigraphicNode"]
     assert "unit_source_note" in raw["edge_types"]["extracted_from"]
 
 

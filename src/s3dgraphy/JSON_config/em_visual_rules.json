@@ -1,6 +1,6 @@
 {
   "formal_language": "EM",
-  "version": "1.6.32",
+  "version": "1.6.33",
   "_note_material_vs_qualia_color": [
     "DUE COSE DIVERSE CHE SI CHIAMANO ENTRAMBE color. Non confonderle: e gia successo.",
     "1) QUI, in node_styles.<tipo>.style.material.rgba_color — il COLORE DEL MATERIALE BLENDER del proxy 3D, in float LINEARI. UNA sola chiave: `rgba_color`. Fino a S8 il file ne usava due (`color` sui 13 tipi stratigrafici, `rgba_color` sugli altri) e get_material_color() ne leggeva una sola, restituendo None per 21 tipi su 38; ora sono unificate e la vecchia `color` e letta solo come tolleranza verso file scritti prima. Un tipo che non diventa mai una mesh NON ha material affatto (i contenitori di gruppo, e da S7 i dieci nodi che rendono per icona): per loro get_material_color() torna None, ed e corretto.",
@@ -45,7 +45,8 @@
     "1.5.2": "Added RSF (Reused Special Find / spolia) node style — octagon, red border (#9B3333), white fill. Sibling of SF/VSF, distinguished by border colour. Originating DP: DP-26.",
     "1.5.1": "Added LocationNodeGroup node style (dashed roundrectangle, kind-based border colour) and is_in_location edge style with primary_modifier override.",
     "1.5.0": "Initial EM 1.5 visual rules.",
-    "1.6.17": "Added RepresentationModelNodeGroup node style (EM16-RMNG): the group family's dashed roundrectangle with the RM family's #FF6600 title-tab, and the is_in_representation_model_group edge style. Additive only — no existing style touched, and the epoch↔RM / Document→RM edges keep the rendering they had."
+    "1.6.17": "Added RepresentationModelNodeGroup node style (EM16-RMNG): the group family's dashed roundrectangle with the RM family's #FF6600 title-tab, and the is_in_representation_model_group edge style. Additive only — no existing style touched, and the epoch↔RM / Document→RM edges keep the rendering they had.",
+    "1.6.33": "Added paradata_instances (E.D. 2026-10-09, «l'istanza è una vista»): the one rule by which every client draws, inside a paradata group, the masters its readers reach from outside — documents and properties alike. Nothing in the graph: s3dgraphy.paradata_view.view_instances reads this block."
   },
   "2d_render_glyph_types": {
     "_comment": "Node types the 2D renderer draws as a CENTRED GLYPH (their official icon) instead of a shape. Their box is HEIGHT-DRIVEN: the height is the engine node height and the width is that height times the `aspect` below (EM2 made them square; EM3 generalised the square to a per-glyph aspect). Keyed by RUNTIME node_type, deliberately: this block is read both by EMStudio's icons.ts and by its Rust layout engine, and a list keyed by node_type needs no alias table on either side (`node_styles` is keyed by the short abbreviation, EXT/COMB/..., which the engine does not know). Added in 1.6.11 (EM2) because the fact had been living as a hand-written set inside icons.ts, and the layout engine needs the same fact to give those nodes a height-driven box: a glyph drawn 32 wide inside a 90x32 box leaves empty margins, and the connect handle — anchored to the right edge of the box — ends up floating away from the glyph. NB two things this does NOT include. (1) `document` and `property`: their LABEL sits on the drawing (a sheet with a folded corner, a bracketed text annotation), so they are not centred icons. Since 1.6.21 the document has paths all the same and is listed in `sheet_types` below; the property has none (its width is its text). (2) DTC nodes: their glyph is chosen per NODE from `data.dtc_kind` and not from the type, so a consumer decides that node by node — a plain `link` is not a glyph, a `link` with a dtc_kind is.",
@@ -6199,6 +6200,32 @@
       "border_width": 4.0,
       "description": "3D reconstruction produced via the Extended Matrix methodology — the document itself IS an EM-derived reconstruction. Typical case: a hypothesis model built from another EM graph, used here as a comparative or derivative source."
     }
+  },
+  "paradata_instances": {
+    "_comment": "E.D. 2026-10-09 (evening): «non ha nessun senso fare un'istanza nel triple store: è solamente una modalità grafica di rappresentare il grafo». In the DATA an extractor is extracted_from the MASTER — the canonical document, or the property in its own unit — and there is no instance node in em.json nor in the RDF. In the VIEW, for every ParadataNodeGroup G: every master OUTSIDE G (not itself a member of G) reached by a reader of G is drawn as an INSTANCE inside G, with the badge of where it comes from. One rule for documents and properties. A reader is an extractor member of G, or a combiner member of G through the extractors it combines; a reading through an annotation region reaches the document the region is on. The reference implementation is s3dgraphy.paradata_view.view_instances (api.view_instances), which reads this block; a client that draws without Python follows the same fields. The instance's id is `id`, so every client names it the same; clicking the instance (or its badge) reaches the master.",
+    "membership": "is_in_paradata_nodegroup",
+    "reads": "extracted_from",
+    "readers": {
+      "ExtractorNode": null,
+      "CombinerNode": "combines"
+    },
+    "through": {
+      "AnnotationRegionNode": "is_on_resource"
+    },
+    "masters": {
+      "DocumentNode": {
+        "kind": "document",
+        "badge": "has_first_epoch",
+        "_badge_note": "the canonical document sits in the epoch where it is born (has_first_epoch): the badge names that epoch"
+      },
+      "PropertyNode": {
+        "kind": "property",
+        "badge": "has_property",
+        "_badge_note": "the property's ORIGINAL owner (has_property not marked inherited, s3dgraphy.ownership.original_owner): the badge names that unit"
+      }
+    },
+    "id": "{master}##{group}",
+    "badge_word": "reasoning.instance_badge"
   },
   "dtc_kinds": {
     "_comment": "DATA-DRIVEN, EXPANDABLE per-kind vocabulary for the DTC substrate profile (ECHOES). Mirrors the Master-Document axis vocabularies above (document_roles/content_natures): the three base kinds (input/process/output) each list specific kinds seeded from the 2017 DTC palette. Adding a new kind (e.g. audio, spectroscopy) is a JSON entry here (+ a glyph) — NOT a code change; the DTC node classes validate against these keys via s3dgraphy.utils.get_dtc_kinds(). `glyph` names the 2017 DTC SVG (wired in the later glyph/visual-manager slice; recorded here as data only).",

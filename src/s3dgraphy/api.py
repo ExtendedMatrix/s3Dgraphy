@@ -156,6 +156,10 @@ def validate(graph: Graph) -> Dict[str, Any]:
             f"from '{r['unit_name']}', which has no '{r['property_name']}' "
             f"property of its own")
     warnings = list(getattr(graph, "warnings", []) or [])
+    # a property as a source (connections 1.6.36): the source changed, was
+    # removed, the reasoning comes back to itself, two owners nobody declared
+    from .property_source import diagnose, message
+    warnings.extend(message(r) for r in diagnose(graph))
     warnings.extend(_dtc_warnings(graph))
     warnings.extend(_license_warnings(graph))
     warnings.extend(_camera_gps_warnings(graph))
@@ -282,6 +286,85 @@ def shared_properties(graph: Graph) -> List[Dict[str, Any]]:
     original}]``."""
     from .ownership import shared_properties as _shared
     return _shared(graph)
+
+
+# ── a property as a source (E.D. 9 Oct 2026, connections 1.6.36) ────────────
+def owner_unit_of(graph: Graph, prop) -> Optional[str]:
+    """The unit a property belongs to (its original owner) — the badge of
+    the property when a view draws it in a group that reads it."""
+    from .property_source import owner_unit_of as _owner
+    return _owner(graph, prop)
+
+
+def read_property(graph: Graph, extractor_id: str, property_id: str, *,
+                  at: Optional[str] = None):
+    """``extractor —extracted_from→ property`` — the MASTER, in its own unit,
+    as a document is read — the extractor remembering the value it read
+    (``data.read_value`` / ``data.read_at``); again = re-read. See
+    :mod:`s3dgraphy.property_source`."""
+    from .property_source import read_property as _read
+    return _read(graph, extractor_id, property_id, at=at)
+
+
+def view_instances(graph: Graph, group_id: str) -> List[Dict[str, Any]]:
+    """The instances a client draws inside the paradata group ``group_id``:
+    every master (document or property) outside the group that a reader of the
+    group reaches, with the badge of where it comes from. Computed, never
+    stored (E.D. 9 Oct 2026: the instance is a view). The rule is
+    ``em_visual_rules.json`` → ``paradata_instances``; see
+    :func:`s3dgraphy.paradata_view.view_instances`."""
+    from .paradata_view import view_instances as _view
+    return _view(graph, group_id)
+
+
+def dependents_of(graph: Graph, node_id: str) -> List[Dict[str, Any]]:
+    """Who leans on a unit, a property or a document, in cascade: ``[{id,
+    name, node_type, kind, via, depth, owner, owner_name}]`` — what an
+    interface shows before a removal."""
+    from .property_source import dependents_of as _deps
+    return _deps(graph, node_id)
+
+
+def remove_keeping_trace(graph: Graph, node_id: str, *, by: Optional[str] = None,
+                         at: Optional[str] = None) -> Dict[str, Any]:
+    """The default removal of a source: the node stays, marked
+    ``data.removed = {ts, by}`` (the CRDT's mark), with its name and last
+    value; what leans on it still reads, with ``source_removed``."""
+    from .property_source import remove_keeping_trace as _remove
+    return _remove(graph, node_id, by=by, at=at)
+
+
+def remove_cascade(graph: Graph, node_id: str) -> Dict[str, Any]:
+    """The explicit removal: the node and what depends ONLY on it; reports
+    ``{removed, kept, orphaned, edges_removed}``."""
+    from .property_source import remove_cascade as _cascade
+    return _cascade(graph, node_id)
+
+
+def reasoning_diagnostics(graph: Graph) -> List[Dict[str, Any]]:
+    """The records of ``source_changed``, ``source_removed``,
+    ``reasoning_cycle`` and ``undeclared_owners``, each with its ``code`` (the
+    key of the words in ``datamodel_translations.json`` section
+    ``reasoning``)."""
+    from .property_source import diagnose
+    return diagnose(graph)
+
+
+def declare_inheritance(graph: Graph, property_id: str,
+                        original_owner_id: str) -> Dict[str, Any]:
+    """«Dichiara l'eredità»: the chosen owner is the original, every other
+    has_property becomes ``inherited``; the property (with the chain that
+    serves only it) goes to the original's paradata group."""
+    from .property_source import declare_inheritance as _declare
+    return _declare(graph, property_id, original_owner_id)
+
+
+def duplicate_per_owner(graph: Graph, property_id: str) -> Dict[str, Any]:
+    """«Duplica per ogni proprietario»: every undeclared owner after the first
+    gets its own copy, combiners and extractors duplicated; the copied
+    extractors read the same masters (documents, properties) as they are."""
+    from .property_source import duplicate_per_owner as _dup
+    return _dup(graph, property_id)
 
 
 # ── A1 · the alternative labels of a unit, each with its source ─────────────
