@@ -314,6 +314,34 @@ All notable changes to **s3dgraphy** are documented here.
   when a document does not carry it); the docstrings said «geographic north».
 
 ### Fixed
+- **The projector finds its nodes by `node_uuid`, not by label** (#25, with
+  E.D.'s diagnosis of 9 October). `_propagate_node_uuid_and_us` matched a row
+  to its node by `name == str(us_table.us)`. Since 1.6 the importer names
+  nodes from `node_name_template`, so the row's `'1'` never met the node's
+  `'1.US1'` and no row matched; the fallback node it then built could not be
+  added either, its id being already in the graph, so **every row was dropped
+  in silence** and a projected graph carried no `us`, `area`, `unita_tipo` or
+  `node_uuid` in `attributes` at all. The match now keys on the identity the
+  importer already gave the node — the row's `node_uuid` is its `node_id` —
+  and falls back to the name for graphs built outside the importer. A paradata
+  row keeps its own path, which builds it a freshly typed node on purpose:
+  binding it to the generic unit would alias the edges `_enrich_into` has
+  already added onto a document or combiner class (Bug N). The label itself is
+  unchanged and stays what it is: in Blender two nodes cannot share one, so
+  across sites it also carries a site code (`TM16.1.USM100`), and a label is
+  not something to parse back into columns. `strip_us_prefix` stays as the
+  last resort for a graph that arrives with labels and no attributes, and now
+  reads the unit type in the last dotted segment (`1.US1` → `1`,
+  `TM16.1.USM100` → `100`) before falling back to the whole name, which is how
+  the paradata codes are written (`D.4001` → `4001`); a name whose dot belongs
+  to the value (`12.3`) is left alone rather than truncated.
+  **14 of the known failures turn green** — all of
+  `test_groups_export_em_template.py`, `test_update_preserves_unmapped_columns`,
+  `test_sql_update_when_flag_enabled` among them — with no new failure, and
+  `scripts/known-test-failures.txt` goes from 29 entries to 15.
+  `test_round_trip_preserves_mapped_fields` stays, and now fails on its real
+  cause: the serialiser writes `'>>'` where the column said `'copre'`. Tests in
+  `tests/sync/test_projector_propagates_by_node_uuid.py`.
 - **The graph's own scaffolding is not an excavated unit** (#25, pyArchInit).
   `ContinuityNode` and `GraphNode` were missing from `_NON_STRAT_TYPES`, so
   `GraphIngestor.populate_list` wrote them into `us_table` as units: a graph

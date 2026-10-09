@@ -419,23 +419,47 @@ _US_PREFIX_PATTERN = _re.compile(
 
 
 def strip_us_prefix(name: str) -> str:
-    """Strip the unita-tipo prefix from a node name.
+    """Read the ``us`` value out of a node name.
+
+    The LAST RESORT, for a graph that arrives with labels and no
+    ``attributes``. A graph built by the importer carries the columns in
+    ``attributes`` and is never read this way (see
+    ``graph_projector._propagate_node_uuid_and_us``).
+
+    Since 1.6 ``node_name_template`` puts the area, and across sites a
+    site code, in front of the unit type — ``1.US1``,
+    ``TM16.1.USM100`` — so the segment after the last dot is taken
+    first, and the unit-type prefix stripped from that. The dotted
+    paradata codes (``D.``, ``C.``) are unaffected: their own dot is the
+    last one, and what follows is already the bare value.
 
     Examples::
 
-        strip_us_prefix("USM6")    == "6"
-        strip_us_prefix("USV102")  == "102"
-        strip_us_prefix("US103a")  == "103a"
-        strip_us_prefix("D.4001")  == "4001"
-        strip_us_prefix("C.900")   == "900"
-        strip_us_prefix("6")       == "6"   # no prefix → unchanged
+        strip_us_prefix("1.US1")         == "1"
+        strip_us_prefix("TM16.1.USM100") == "100"
+        strip_us_prefix("USM6")          == "6"
+        strip_us_prefix("USV102")        == "102"
+        strip_us_prefix("US103a")        == "103a"
+        strip_us_prefix("D.4001")        == "4001"
+        strip_us_prefix("C.900")         == "900"
+        strip_us_prefix("6")             == "6"   # no prefix → unchanged
     """
     if not name:
         return name
-    m = _US_PREFIX_PATTERN.match(str(name))
+    testo = str(name)
+    # The unit type sits in the last dotted segment of a 1.6 label.
+    coda = testo.rsplit(".", 1)[-1]
+    m = _US_PREFIX_PATTERN.match(coda)
     if m:
-        return str(name)[m.end():]
-    return str(name)
+        return coda[m.end():]
+    # Not there: the whole name may be the prefix, dot included, which is
+    # how the paradata codes are written (``D.4001`` → ``4001``).
+    m = _US_PREFIX_PATTERN.match(testo)
+    if m:
+        return testo[m.end():]
+    # No unit type anywhere: a bare value (``6``), or a name whose dot
+    # belongs to the value itself (``12.3``). Keep what came in.
+    return testo
 
 
 # ---------------------------------------------------------------------------
