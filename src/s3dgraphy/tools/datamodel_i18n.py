@@ -31,6 +31,7 @@ Shape — one section per kind of key, each keyed by a STABLE identity::
       "dtc_kinds":            {"<dtc kind>":        {"label": {...}}},
       "stratigraphic_kinds":  {"<kind>":            {"label": {...}}},
       "packagings":           {"<packaging>":       {"label": {...}}},
+      "property_names":       {"<property name>":   {"label": {...}}},
       "reasoning":            {"<word>":            {"label": {...}, "description": {...}}}
     }
 
@@ -41,6 +42,12 @@ and its badge («from {owner}» → «da {owner}»; 1.8, connections 1.6.37, «l
 è una vista»: ``instance`` for documents and properties, no ``refresh_instance``), the diagnostics (``source_changed``,
 ``source_removed``, ``reasoning_cycle``, ``undeclared_owners``) and the cures —
 ``label`` the title, ``description`` the sentence, ``{placeholders}`` kept.
+
+`property_names.<name>.label` (1.9, em_qualia_types 1.6.8) is the readable label
+of a PROPERTY NAME in use that is not a quale — `definition`, `material` — seeded
+from the `property_names` block of the qualia file: «Material» → «Materiale». A
+client shows it beside the technical name; a name in neither section is shown
+as it is.
 
 `packagings.<packaging>.label` (1.6, dev30) is the name of how a resource's bytes
 are packed — the `packaging` field of ResourceNode, seeded from its `labels`:
@@ -127,6 +134,7 @@ SECTIONS: Dict[str, str] = {
     "stratigraphic_kinds": "strat_kind",
     "packagings": "packaging",
     "reasoning": "reasoning",
+    "property_names": "property_name",
 }
 #: the two directions of an edge's `ui_phrase`, as fields of the `edge_types`
 #: section — `ui_phrase.as_source` in the datamodel is `ui_phrase_as_source` here
@@ -196,6 +204,22 @@ def _collect_qualia_en(qualia: Dict[str, Any]) -> Dict[str, Dict[str, Dict[str, 
                 qid = q["id"]
                 assert qid not in out["qualia"], f"duplicate qualia {qid}"
                 out["qualia"][qid] = {"label": q["name"]}
+    return out
+
+
+def _collect_property_names_en(qualia: Dict[str, Any]) -> Dict[str, Dict[str, str]]:
+    """{name: {"label": name}} from the qualia file's ``property_names`` block
+    (1.6.8): EM property names that are not a quale. ``_`` keys are notes; a
+    name that is also a quale id is refused (one label per name)."""
+    ids = {q["id"] for cat in qualia.get("qualia_categories", [])
+           for sub in cat.get("subcategories", {}).values() for q in sub.get("qualia", [])}
+    out: Dict[str, Dict[str, str]] = {}
+    for name, spec in (qualia.get("property_names") or {}).items():
+        if name.startswith("_") or not isinstance(spec, dict):
+            continue
+        assert name not in ids, f"property name {name} is a quale"
+        if isinstance(spec.get("name"), str) and spec["name"].strip():
+            out[name] = {"label": spec["name"]}
     return out
 
 
@@ -297,6 +321,7 @@ def _collect_all_en() -> Dict[str, Dict[str, Dict[str, str]]]:
     out["stratigraphic_kinds"] = _collect_stratigraphic_kinds_en(_load(DATAMODEL))
     out["packagings"] = _collect_packagings_en(_load(DATAMODEL))
     out["reasoning"] = _collect_reasoning_en(_load(CONNECTIONS))
+    out["property_names"] = _collect_property_names_en(_load(QUALIA))
     return out
 
 
@@ -311,7 +336,7 @@ def seed(write: bool = True) -> Dict[str, Any]:
         existing = {}
     doc: Dict[str, Any] = {
         "schema": "s3Dgraphy_datamodel_translations",
-        "version": "1.8",
+        "version": "1.9",
         "languages": LANGUAGES,
     }
     for section in SECTIONS:
@@ -415,6 +440,12 @@ def is_validated(section: str, key: str, field: str = "label", lang: str = "en")
 def qualia_label(qualia_id: str, lang: str = "en") -> Optional[str]:
     """Label of a qualia (``em_qualia_types.json`` id) in ``lang``, English fallback."""
     return translate("qualia", qualia_id, "label", lang)
+
+
+def property_name_label(name: str, lang: str = "en") -> Optional[str]:
+    """Label of an EM property name that is not a quale (``property_names``,
+    em_qualia_types 1.6.8) in ``lang``, English fallback; ``None`` when unknown."""
+    return translate("property_names", name, "label", lang)
 
 
 def qualia_category_label(category_id: str, lang: str = "en") -> Optional[str]:
