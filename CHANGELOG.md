@@ -5,6 +5,21 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
+- **A version of several files, and a version made again** (MICRO «i parametri
+  diventano la ricetta della versione», E.D. 6 October 2026: for Heriverse/ATON
+  the version is a glTF with its textures). `add_version` with several files
+  (`packaging: file_set`) gives the version the url of its entry point — the
+  `.gltf` a reader opens, where Heriverse looks (`data.url`) — and its media
+  type; its checksum is the members digest, and adding the same set again is
+  recognised by that digest (it compared the door's sha256 with the set's and
+  refused the same bytes). `versions_of` takes the url from the entry point
+  when the resource has none. `add_version(…, revise=True)`: other bytes at a
+  level whose version shares the use make a REVISION of it — a new resource
+  `was_revision_of` the version there, made by its own `lod_generation` step —
+  and `versions_of` / `version_for` give the revision (the glb made for
+  Heriverse on 6 October becomes a glTF with its textures at the same level).
+  `planned_version` says the id before anything is written, so a tool can stamp
+  a version before it is born. Tests in `test_asset_versions.py`.
 - **The glyphs of the 3D objects** (em_visual_rules 1.6.32, MICRO grafo
   reattivo G9, 9 October 2026; drawings approved by E.D. on 6 October). The
   three Representation Models (`representation_model`, `_doc` — the checkered

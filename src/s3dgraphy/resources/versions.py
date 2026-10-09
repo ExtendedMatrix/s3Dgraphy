@@ -57,8 +57,8 @@ import re
 import uuid
 from typing import Any, Dict, List, Optional, Sequence
 
-from .files import (_data, _is_resource, _node, add_resource, resource_files,
-                    revisions_of)
+from .files import (EDGE_REVISION_OF, _data, _is_resource, _locator, _node,
+                    add_resource, resource_files, revisions_of)
 
 #: The computed level of a version: ``lod0`` (the first workable version), ``lod1``…
 LOD_LEVEL_PATTERN = r"^lod(0|[1-9][0-9]*)$"
@@ -235,7 +235,7 @@ def _entry(graph, res_id: str, *, level, purpose, process_id, master: bool,
     except ValueError:
         chain = [origin]
     checksum, url, media = d.get("checksum"), d.get("url"), d.get("media_type")
-    if not checksum:
+    if not checksum or not url:
         #: a revision writes its files as nodes: one file (or the entry point)
         #: carries the bytes the version is
         files = resource_files(graph, res_id)
@@ -595,6 +595,23 @@ def inherited_links(graph, res_id: str) -> Dict[str, Any]:
             "facets": facets, "binds": binds}
 
 
+def _specs_digest(specs: Sequence[Dict[str, Any]]) -> Optional[str]:
+    """The identity of the bytes ``specs`` describe: the one file's checksum,
+    or the members digest of several (``dtcstamp.members_digest``, the
+    ``checksum`` a ``file_set`` carries) — None when a member has none."""
+    if len(specs) <= 1:
+        return next((s.get("checksum") for s in specs if s.get("checksum")), None)
+    from dtcstamp import BadMembers, canonical_members, members_digest
+    door = next((i for i, s in enumerate(specs) if s.get("role") == "entry_point"), 0)
+    rows = [{"role": "entry_point" if i == door else "member",
+             "path": s.get("path"), "digest": s.get("checksum"),
+             "size_bytes": s.get("size_bytes")} for i, s in enumerate(specs)]
+    try:
+        return members_digest(canonical_members(rows))
+    except BadMembers:
+        return None
+
+
 def add_version(graph, master_id: str, *, level: Optional[str] = None, purpose: str = "",
                 use: Optional[Sequence[str]] = None,
                 measures: Optional[Dict[str, Any]] = None,
@@ -610,7 +627,8 @@ def add_version(graph, master_id: str, *, level: Optional[str] = None, purpose: 
                 primitives: Optional[Dict[str, int]] = None,
                 version_id: Optional[str] = None,
                 author: Optional[str] = None,
-                at: Optional[str] = None) -> Dict[str, Any]:
+                at: Optional[str] = None,
+                revise: bool = False) -> Dict[str, Any]:
     """A new version of the asset ``master_id`` at ``level``, for ``purpose``.
 
     Writes the version resource (kind of the master, ``tier: distribution``,
@@ -624,8 +642,15 @@ def add_version(graph, master_id: str, *, level: Optional[str] = None, purpose: 
     different claim from a LOD2 made from the master, and it is written as it
     is said; :func:`asset_of` walks up to the master either way.
 
+    ``revise`` (E.D. 6 Oct 2026, a version made again with another recipe:
+    the glb for Heriverse becomes a glTF with its textures): other bytes at a
+    level make a REVISION of the version there — a new resource
+    ``was_revision_of`` it, made by its own ``lod_generation`` step — instead
+    of an error; :func:`versions_of` then gives the revision. The id is
+    :func:`planned_version`'s, so a caller can stamp it before it is born.
+
     Returns ``{version_id, process_id, created, asset_id, level, purpose,
-    warnings}``.
+    revises, warnings}``.
     """
     from ..dtc.ingest import declare_derivation
 
@@ -636,18 +661,22 @@ def add_version(graph, master_id: str, *, level: Optional[str] = None, purpose: 
     measured = check_measures(measures)
     # D1 · the level, when nobody names it, is the computed one: a version of
     # the master is lod0, a version of lodK is lod(K+1)
-    lvl = _level(level or f"lod{lod_steps(graph, master_id)}")
-    asset = asset_of(graph, master_id)
-    vid = version_id or version_id_for(master_id, lvl)
-    for entry in versions_of(graph, asset):
-        if entry["level"] == lvl and not entry["master"] \
-                and vid not in entry["revisions"]:
-            raise ValueError(f"{asset!r} already has a version at {lvl!r} "
-                             f"({entry['id']}): replace its file to revise it")
     specs = [dict(f) for f in files or ()]
+    plan = planned_version(graph, master_id, level=level, files=specs,
+                           revise=revise, version_id=version_id)
+    lvl, vid, revises = plan["level"], plan["version_id"], plan["revises"]
+    asset = asset_of(graph, master_id)
     node = _node(graph, vid)
     created = node is None
-    if node is None:
+    if node is None and revises:
+        old = _node(graph, revises)
+        add_resource(graph, name=getattr(old, "name", "") or f"{master.name} {lvl}",
+                     kind=_data(master).get("url_type") or "", files=specs,
+                     tier="distribution", residency=residency,
+                     packaging=packaging, size_bytes=size_bytes,
+                     primitives=primitives, resource_id=vid)
+        graph.add_edge(f"{vid}~revision~>{revises}", vid, revises, EDGE_REVISION_OF)
+    elif node is None:
         # named after the ASSET, not after the version it was made from: a
         # lod2 of a lod1 is «<asset> lod2», not «<asset> lod0 lod1 lod2»
         asset_node = _node(graph, asset)
@@ -660,13 +689,21 @@ def add_version(graph, master_id: str, *, level: Optional[str] = None, purpose: 
         if not _is_resource(node):
             raise ValueError(f"{vid!r} is a {getattr(node, 'node_type', '?')}, "
                              f"not a resource")
-        new_sum = next((s.get("checksum") for s in specs if s.get("checksum")), None)
+        new_sum = _specs_digest(specs)
         old_sum = _data(node).get("checksum")
         if new_sum and old_sum and new_sum != old_sum:
             raise ValueError(f"the version {lvl!r} of {asset!r} holds other bytes "
                              f"({old_sum}): replace its file to revise it")
     # D1 · uses and measures are the VERSION's (beside its tier), not the step's
     vdata = _data(_node(graph, vid))
+    if len(specs) > 1:
+        # a version of several files (a glTF with its .bin and textures) is
+        # opened by its entry point: its url is the one a reader loads
+        # (Heriverse reads ``data.url``), its checksum the members digest
+        door = next((s for s in specs if s.get("role") == "entry_point"), specs[0])
+        vdata["url"] = vdata.get("url") or _locator(door)
+        if door.get("media_type") and not vdata.get("media_type"):
+            vdata["media_type"] = door["media_type"]
     if measured:
         vdata.update(measured)
     if uses:
@@ -686,5 +723,39 @@ def add_version(graph, master_id: str, *, level: Optional[str] = None, purpose: 
     return {"version_id": vid, "process_id": step["process_id"],
             "created": created, "asset_id": asset, "level": lvl,
             "lod_level": lod_level_of(graph, vid), "use": uses,
-            "measures": measured,
+            "measures": measured, "revises": revises,
             "purpose": str(purpose or ""), "warnings": step["warnings"]}
+
+
+def planned_version(graph, master_id: str, *, level: Optional[str] = None,
+                    files: Sequence[Dict[str, Any]] = (), revise: bool = False,
+                    version_id: Optional[str] = None) -> Dict[str, Any]:
+    """The id :func:`add_version` will give, before anything is written:
+    ``{version_id, level, revises}``.
+
+    The level is the one named, else the computed one. A version already at
+    that level with the same bytes is that version (``revises`` None); with
+    other bytes it is refused, or with ``revise`` it is a revision of its
+    current state, with an id derived from it and the new bytes."""
+    lvl = _level(level or f"lod{lod_steps(graph, master_id)}")
+    asset = asset_of(graph, master_id)
+    vid = version_id or version_id_for(master_id, lvl)
+    new_sum = _specs_digest([dict(f) for f in files or ()])
+    for entry in versions_of(graph, asset):
+        if entry["level"] != lvl or entry["master"]:
+            continue
+        same_bytes = bool(new_sum) and entry["checksum"] == new_sum
+        if vid in entry["revisions"] and (same_bytes or not new_sum
+                                          or not entry["checksum"]):
+            return {"version_id": entry["id"], "level": lvl, "revises": None}
+        if same_bytes:
+            return {"version_id": entry["id"], "level": lvl, "revises": None}
+        if not revise:
+            if vid in entry["revisions"]:
+                raise ValueError(f"the version {lvl!r} of {asset!r} holds other bytes "
+                                 f"({entry['checksum']}): replace its file to revise it")
+            raise ValueError(f"{asset!r} already has a version at {lvl!r} "
+                             f"({entry['id']}): replace its file to revise it")
+        rid = str(uuid.uuid5(_NS, f"revision|{entry['id']}|{new_sum}"))
+        return {"version_id": rid, "level": lvl, "revises": entry["id"]}
+    return {"version_id": vid, "level": lvl, "revises": None}

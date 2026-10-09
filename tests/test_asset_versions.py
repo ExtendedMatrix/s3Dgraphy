@@ -164,3 +164,78 @@ def test_a_level_is_required():
     g = _podio()
     with pytest.raises(ValueError, match="level"):
         api.add_version(g, "podio", level="  ")
+
+
+def _gltf_set(texture="a"):
+    """A glTF written separate: the door, its .bin, one texture (E.D., 6 Oct
+    2026: the version for Heriverse/ATON is glTF + textures)."""
+    return [{"path": "PODIO.gltf", "url": "/v/PODIO.gltf", "checksum": "sha256:" + "c" * 64,
+             "size_bytes": 10, "media_type": "model/gltf+json", "role": "entry_point"},
+            {"path": "PODIO.bin", "url": "/v/PODIO.bin", "checksum": "sha256:" + "d" * 64,
+             "size_bytes": 20},
+            {"path": "textures/podio.jpg", "url": "/v/textures/podio.jpg",
+             "checksum": "sha256:" + texture * 64, "size_bytes": 30}]
+
+
+def test_a_version_of_several_files_is_opened_by_its_entry_point():
+    g = _podio()
+    out = api.add_version(g, "podio", use=["heriverse", "aton"], packaging="file_set",
+                          files=_gltf_set())
+    v = g.find_node_by_id(out["version_id"])
+    files = api.resource_files(g, out["version_id"])
+    assert [(f["role"], f["path"]) for f in files] == [
+        ("entry_point", "PODIO.gltf"), ("member", "PODIO.bin"),
+        ("member", "textures/podio.jpg")]
+    # the url a reader loads is the door's, the checksum the members digest
+    assert v.data["url"] == "/v/PODIO.gltf"
+    assert v.data["media_type"] == "model/gltf+json"
+    assert v.data["digest_covers"] == "members"
+    assert v.data["checksum"].startswith("sha256:")
+    assert v.data["checksum"] not in {f["checksum"] for f in _gltf_set()}
+    entry = next(r for r in api.versions_of(g, "podio") if not r["master"])
+    assert entry["url"] == "/v/PODIO.gltf" and entry["checksum"] == v.data["checksum"]
+    choice = api.version_for(g, "rm", ["heriverse"])
+    assert choice["entry"]["url"] == "/v/PODIO.gltf"
+
+
+def test_the_same_set_again_changes_nothing_another_texture_is_a_revision():
+    g = _podio()
+    one = api.add_version(g, "podio", use=["heriverse"], packaging="file_set",
+                          files=_gltf_set())
+    n = len(g.nodes)
+    again = api.add_version(g, "podio", use=["heriverse"], packaging="file_set",
+                            files=_gltf_set())
+    assert again["version_id"] == one["version_id"] and len(g.nodes) == n
+    # a texture changed behind the same door is other bytes
+    with pytest.raises(ValueError, match="replace its file"):
+        api.add_version(g, "podio", use=["heriverse"], packaging="file_set",
+                        files=_gltf_set("e"))
+
+
+def test_a_version_made_again_with_another_recipe_is_its_revision():
+    """E.D. 6 Oct 2026: the version for Heriverse was a glb, it is now a glTF
+    with its textures; made again at its level it REVISES the version there."""
+    g = _podio()
+    glb = api.add_version(g, "podio", use=["aton", "heriverse"],
+                          files=[{"path": "PODIO.glb", "checksum": "sha256:" + "9" * 64}])
+    with pytest.raises(ValueError, match="replace its file"):
+        api.add_version(g, "podio", use=["aton", "heriverse"], packaging="file_set",
+                        files=_gltf_set())
+    from s3dgraphy.resources.versions import planned_version
+    plan = planned_version(g, "podio", files=_gltf_set(), revise=True)
+    assert plan["revises"] == glb["version_id"] and plan["level"] == "lod0"
+    out = api.add_version(g, "podio", use=["aton", "heriverse"], packaging="file_set",
+                          files=_gltf_set(), revise=True)
+    assert out["version_id"] == plan["version_id"] and out["revises"] == glb["version_id"]
+    edges = {(e.edge_source, e.edge_target, e.edge_type) for e in g.edges}
+    assert (out["version_id"], glb["version_id"], "was_revision_of") in edges
+    rows = [r for r in api.versions_of(g, "podio") if not r["master"]]
+    assert [r["id"] for r in rows] == [out["version_id"]]
+    assert rows[0]["lod_level"] == "lod0" and rows[0]["url"] == "/v/PODIO.gltf"
+    assert rows[0]["revisions"] == [glb["version_id"], out["version_id"]]
+    assert api.version_for(g, "rm", ["heriverse"])["entry"]["id"] == out["version_id"]
+    # the same bytes again: nothing new
+    n = len(g.nodes)
+    again = api.add_version(g, "podio", use=["aton", "heriverse"], packaging="file_set",
+                            files=_gltf_set(), revise=True)
+    assert again["version_id"] == out["version_id"] and len(g.nodes) == n
