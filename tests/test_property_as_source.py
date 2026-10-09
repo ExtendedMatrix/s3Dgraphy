@@ -504,3 +504,17 @@ def test_duplicate_per_owner_reads_a_document_as_it_is():
     assert [e.edge_target for e in g.edges if e.edge_source == ext
             and e.edge_type == "extracted_from"] == ["D1"]
 
+
+def test_rdf_round_trip_keeps_the_reading_of_the_master():
+    pytest.importorskip("rdflib")
+    from s3dgraphy.importer.rdf_importer import import_rdf
+    g = _capriate()
+    (g2,), _ = import_rdf(api.project_ttl(g))
+    # the extractor still reads the master (crm:P67_refers_to, as a document)
+    assert [e.edge_target for e in g2.edges if e.edge_source == "E40"
+            and e.edge_type == "extracted_from"] == ["P12"]
+    # and the view draws it again, with its badge
+    assert [(r["master"], r["owner"]) for r in api.view_instances(g2, "PD_USV_40")] == \
+        [("P12", "US_12")]
+    # no em: term for the value read (not in this MICRO): it stays in em.json
+    assert "read_value" not in (g2.find_node_by_id("E40").data or {})
