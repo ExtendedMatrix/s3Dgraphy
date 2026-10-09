@@ -77,6 +77,20 @@ All notable changes to **s3dgraphy** are documented here.
   `duplicate_per_owner(graph, property_id)` follows EMStudio's
   `duplicateForEachOwner` — combiners and extractors duplicated, the copies
   reading the same masters (documents, properties) as they are.
+- **The continuity labels are read, in the ten languages that write them**
+  (#25, pyArchInit). «Genera continuità» writes a localized pair into
+  `us_table.rapporti` — «Continuità successiva a» / «Continuità precedente a»
+  and its nine translations — for the relation that says a unit's life
+  continues past the epoch it was born in. `parse_rapporti` did not know the
+  pair, and an unknown label is skipped by design, so a site that used the
+  feature projected those relations as no edge at all and said nothing. The
+  pair joins `_REL_TERMS_BY_LANG` and `_REL_INDEX_EDGE_TYPE` as indices 10 and
+  11, inside the table the suite already keeps in step, mapping to `is_after`
+  and to `is_before` — the reverse *reading* the datamodel declares for it,
+  exactly as `is_overlain_by` is for `overlies`. The mapping is one-way:
+  *input* aliases only, nothing localized reaches the graph, and the labels
+  shown to people stay with the datamodel's own translations. Tests in
+  `tests/sync/test_rapporti_continuity_labels.py`.
 - **A version of several files, and a version made again** (MICRO «i parametri
   diventano la ricetta della versione», E.D. 6 October 2026: for Heriverse/ATON
   the version is a glTF with its textures). `add_version` with several files
