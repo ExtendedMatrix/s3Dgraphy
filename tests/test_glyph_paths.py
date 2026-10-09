@@ -76,7 +76,9 @@ def layer_problems(layer, vocabulary):
     if "opacity" in layer and not 0 < layer["opacity"] < 1:
         out.append(f"opacity {layer['opacity']} is not in (0,1) — 1 is written by omission")
     known = {"d", "role", "fill", "fill_rule", "stroke", "stroke_width",
-             "line_cap", "line_join", "opacity"}
+             "line_cap", "line_join", "opacity", "frame"}
+    if "frame" in layer and layer["frame"] is not True:
+        out.append(f"frame is written only as true, got {layer['frame']!r}")
     if set(layer) - known:
         out.append(f"unknown fields {sorted(set(layer) - known)}")
     return out
@@ -89,6 +91,7 @@ def test_every_glyph_type_and_every_DTC_kind_has_an_entry():
     entries = _entries(rules)
     wanted = tool.glyph_node_types(rules)                  # types + sheet_types
     wanted += [f"dtc:{kind}" for _axis, kind, _g in tool.dtc_kinds(rules)]
+    wanted += [key for key, _g in tool.data_glyphs(rules)]   # 1.6.32
     missing = [k for k in wanted if k not in entries]
     assert not missing, (
         "these glyphs have no paths, so a consumer reading 2d_glyphs falls back to "
@@ -251,3 +254,91 @@ def test_the_normaliser_on_the_shapes_it_must_convert(tmp_path):
     assert e["layers"][3]["stroke_width"] == 1.0            # scaled with the glyph
     for layer in e["layers"]:
         assert layer_problems(layer, _roles()) == [], layer
+
+
+# ── the frame and the data glyphs (1.6.32) ──────────────────────────────────
+
+def test_the_frame_is_the_first_layers_and_frameless_box_is_inside_the_viewBox():
+    """`frame: true` marks the DTC circle — its `paper` fill and its `ink` stroke,
+    drawn first — and `frameless_box` is what a consumer fits instead below 24 px.
+    An entry with no frame has no box: there is nothing to skip."""
+    seen = 0
+    for key, entry in _entries().items():
+        flags = [bool(layer.get("frame")) for layer in entry["layers"]]
+        if not any(flags):
+            assert "frameless_box" not in entry, key
+            continue
+        seen += 1
+        k = flags.index(False)
+        assert all(flags[:k]) and not any(flags[k:]), (key, "the frame comes first")
+        assert {layer["role"] for layer in entry["layers"][:k]} <= {"paper", "ink"}, key
+        x, y, w, h = entry["frameless_box"]
+        vw, vh = entry["viewBox"][2], entry["viewBox"][3]
+        assert 0 <= x and 0 <= y and x + w <= vw and y + h <= vh, (key, entry["frameless_box"])
+        # the drawing without its frame is smaller than the frame: that is the point
+        assert w < vw * 0.9 and h < vh * 0.9, key
+    assert seen >= 10
+
+
+def _matches(rules, node_type, data):
+    """The reference resolution of `data_glyphs` — what docs/drawing-a-glyph.md
+    tells a consumer to do, written once so the table can be checked against it."""
+    import posixpath
+    table = rules["2d_render_glyph_types"]["data_glyphs"]
+    url = str(data.get("url", "")).split("?")[0].rstrip("/").lower()
+    name = posixpath.basename(url)
+    ext = posixpath.splitext(name)[1]
+
+    def field(f):
+        if f == "node_type":
+            return [node_type]
+        if f == "url_ext":
+            return [ext]
+        if f == "url_name":
+            return [name]
+        v = data.get(f.split(".", 1)[1])
+        return [str(x) for x in v] if isinstance(v, list) else ([] if v is None else [str(v)])
+
+    for key, spec in table.items():
+        if key.startswith("_"):
+            continue
+        for alt in spec["when"]:
+            if all(set(field(f)) & set(vals) for f, vals in alt.items()):
+                return key
+    return None
+
+
+def test_data_glyphs_resolve_the_resources_measured_on_templu_mare():
+    rules = _rules()
+    m = lambda t, **d: _matches(rules, t, d)                 # noqa: E731
+    dist = dict(tier="distribution", url_type="3d_model")
+    assert m("resource", url="RB/versions/podium_lod1.glb", **dist) == "version:gltf"
+    assert m("resource", url="RB/versions/podium_obj", packaging="file_set", **dist) == "version:mesh"
+    assert m("resource", url="RB/tiles/survey.3tz", **dist,
+             media_type="application/vnd.maxar.archive.3tz+zip") == "version:tiles"
+    assert m("resource", url="RB/tiles/survey/tileset.json", packaging="directory", **dist) == "version:tiles"
+    assert m("resource", url="TempluMare.blend/US001", tier="master", url_type="3d_model",
+             packaging="datablock", media_type="application/x-blender") == "version:scene"
+    # a tileset that is no version of anything is the tileset
+    assert m("resource", url="x/tileset.json") == "tileset"
+    assert m("resource", url="proxies/US001.glb", url_type="proxy_model") == "proxy"
+    assert m("semantic_shape") == "proxy"
+    assert m("RepresentationModelNodeGroup") == "container"
+    # what is not a 3D object keeps its own drawing
+    assert m("resource", url="docs/photo.jpg", url_type="External link") is None
+    assert m("US") is None
+
+
+def test_every_data_glyph_is_square_in_the_DTC_frame_and_says_what_it_is():
+    rules = _rules()
+    table = rules["2d_render_glyph_types"]["data_glyphs"]
+    entries = _entries(rules)
+    for key, spec in table.items():
+        if key.startswith("_"):
+            continue
+        assert spec["glyph"].startswith("src/2D/") and spec["label"], key
+        assert spec["when"] and all(alt for alt in spec["when"]), key
+        assert entries[key]["source"] == spec["glyph"], key
+        assert entries[key]["aspect"] == 1.0 and any(layer.get("frame") for layer in entries[key]["layers"]), key
+        # the checker of the EMtools icons is never recoloured
+        assert "accent" in {layer["role"] for layer in entries[key]["layers"]}, key

@@ -1,6 +1,6 @@
 {
   "formal_language": "EM",
-  "version": "1.6.31",
+  "version": "1.6.32",
   "_note_material_vs_qualia_color": [
     "DUE COSE DIVERSE CHE SI CHIAMANO ENTRAMBE color. Non confonderle: e gia successo.",
     "1) QUI, in node_styles.<tipo>.style.material.rgba_color — il COLORE DEL MATERIALE BLENDER del proxy 3D, in float LINEARI. UNA sola chiave: `rgba_color`. Fino a S8 il file ne usava due (`color` sui 13 tipi stratigrafici, `rgba_color` sugli altri) e get_material_color() ne leggeva una sola, restituendo None per 21 tipi su 38; ora sono unificate e la vecchia `color` e letta solo come tolleranza verso file scritti prima. Un tipo che non diventa mai una mesh NON ha material affatto (i contenitori di gruppo, e da S7 i dieci nodi che rendono per icona): per loro get_material_color() torna None, ed e corretto.",
@@ -9,6 +9,7 @@
     "In breve: qui si decide di che colore DISEGNARE una US; li si registra di che colore ERA."
   ],
   "_changelog": {
+    "1.6.32": "THE GLYPHS OF THE 3D OBJECTS (MICRO «grafo reattivo», G9, 9 Oct 2026; drawings approved by E.D. on 6 Oct, APPROVATE.md). representation_model, representation_model_doc (the checkered picture seen three-quarters, with its frame's depth and a shadow on the ground: an image PLACED in 3D space) and representation_model_sf replace the three identical Font Awesome cubes of src/2D/ and join `2d_render_glyph_types.types`; proxy, tileset, container (the RM container, RepresentationModelNodeGroup) and the four versions version:gltf / version:mesh / version:tiles / version:scene are new files, resolved from the node's DATA by the new table `2d_render_glyph_types.data_glyphs` (keyed like dtc:<kind>; its rule is written in its _comment, measured on Templu Mare v2). All ten in the DTC frame (circle r 41.14, viewBox 87.12) with the 2×2 checker of the EMtools icons: the checker colours are `accent`, never recoloured; black `ink`, white `paper`, the grey of the picture's frame `ground`, the shadow `halo`. NEW in the layer format: `frame: true` marks the layers of the frame circle (its `paper` fill and its `ink` stroke), and the entry's `frameless_box` is the box of everything else — below 24 px a consumer may skip the frame and fit that box instead (docs/drawing-a-glyph.md §5). Additive: no existing glyph changed.",
     "1.6.31": "THE CHOICES OF DEV29, CONFIRMED (E.D., 2 Oct 2026, on the dev29 report, D5). dtc_kinds.process.texturing is projection AND baking of the photographs onto the mesh, one act, one kind; the baking of levels of detail in Blender stays lod_generation, an act of its own. The «until E.D. says otherwise» of 1.6.30 is gone from the description. Text only: no kind, glyph or label changed.",
     "1.6.30": "AN IMAGE SET AND TEXTURING (dev29, 2 Oct 2026, proposed from the measurements on San Pietro and confirmed by E.D. the same day). dtc_kinds.output += image_set (a set of photographs kept and handed on as ONE product, its images the members of one resource), glyph 09_photos reused; dtc_kinds.process += texturing (a model given its colour from images: projection onto a mesh and baking into an atlas, one kind — confirmed in 1.6.31), glyph 03_mesh reused. Labels in the nine languages (not validated); 2d_glyphs regenerated. Like every process kind texturing declares no mapping.",
     "1.6.29": "THE FOUR GESTURES OF WHOEVER EXPORTS (dev28, decision of E.D. 1 Oct 2026 on the dev27 report, part D). dtc_kinds.process += export (an object of a working project written as a file of its own), lod_generation (a level of detail baked from the master), tiling (a mesh divided into a 3D Tiles tree), packing (a tree packed into one archive, the .3tz). Until dev28 EM Tools and 3DSC wrote them format_conversion / decimation / transformation with the gesture in `technique`; those stamps stay true. NO NEW GLYPH: they reuse 17_format_conversion (export, packing), 15_decimation (lod_generation), 00_transformation (tiling) — a mark of their own is an act of EM iconography, left to E.D.; 2d_glyphs regenerated (dtc:<kind> entries). NO MAPPING, measured: no process kind declares one; a step is the crmdig:D7 of DTCProcessNode whatever its kind. Labels in the nine languages in datamodel_translations.json (dtc_kinds).",
@@ -56,12 +57,282 @@
       "license",
       "embargo",
       "narrative",
-      "SE"
+      "SE",
+      "representation_model",
+      "representation_model_doc",
+      "representation_model_sf"
     ],
     "sheet_types": [
       "document"
     ],
     "_sheet_types_comment": "1.6.21 · types that have a `2d_glyphs` entry (drawn from paths, box = height x aspect like every glyph) but are NOT centred icons, because their LABEL is written ON the drawing. Only the document. WHY NOT IN `types`: being in `types` is a promise about the LABEL as well as the drawing, and every consumer reads it that way. EMStudio (measured 2026-10-02, read-only): a `types` member resolves through glyphs.ts GLYPH_TYPES, so svg-export.ts would print its name UNDER the glyph, and the renderer's generic glyph branch clips an 'over' label to the glyph width minus 10 — at 32 x 0.636 = 20.4 units that is ~10 units, an ellipsis. The document's name sits on the sheet (node_styles.DOC.label_position = 'over'; yEd palette: internal label, centred; EMStudio renderer.ts draws it at 62% of the sheet height, unclipped). Listing it in `types` would squash that label to '…', so it gets a list of its own. What the list does NOT change: the layout box (em-core gives `document` the EM3 box from SHEET_TYPES_PENDING and reads `aspect.document`, whichever list it is in).",
+    "data_glyphs": {
+      "_comment": "1.6.32 · glyphs a node takes from its DATA, not from its type: the RM container, the proxy, the tileset and the VERSIONS of a 3D asset (resources/versions.py: the master and the versions derived from it, `data.tier`). Keyed like `dtc:<kind>`: the key is the `2d_glyphs` entry, `glyph` its authored SVG. A consumer resolves a node in this order: its node_type in `types`/`sheet_types` → its `data.dtc_kind` → the FIRST entry of this table whose `when` matches → its shape. `when` is a list of alternatives (any may match); inside one alternative every field must match one of its values. Fields: `node_type`; `data.<field>` (the value as a string, or any item of a list); `url_ext` — the extension of `data.url`, lower case, with its dot, after dropping a query and a trailing slash; `url_name` — the last segment of `data.url`, lower case. MEASURED on Templu Mare v2 (9 Oct 2026, 1555 nodes): no resource carries a `data.format`, so the file's kind comes from `media_type`, the URL's extension and `packaging` — 196 `.glb` distributions → version:gltf, 33 OBJ `file_set` → version:mesh, a `.3tz` and a `tileset.json` → version:tiles, 99 `application/x-blender` datablock masters → version:scene. The format's acronym (GLB, 3TZ, BLEND) is NOT in the glyph: a consumer writes it as text when there is room.",
+      "container": {
+        "glyph": "src/2D/container.svg",
+        "label": "RM container",
+        "when": [
+          {
+            "node_type": [
+              "RepresentationModelNodeGroup"
+            ]
+          }
+        ]
+      },
+      "proxy": {
+        "glyph": "src/2D/proxy.svg",
+        "label": "Proxy",
+        "when": [
+          {
+            "node_type": [
+              "semantic_shape"
+            ]
+          },
+          {
+            "node_type": [
+              "resource"
+            ],
+            "data.url_type": [
+              "proxy_model"
+            ]
+          }
+        ]
+      },
+      "version:tiles": {
+        "glyph": "src/2D/version_tiles.svg",
+        "label": "Version · 3D Tiles",
+        "when": [
+          {
+            "node_type": [
+              "resource"
+            ],
+            "data.tier": [
+              "master",
+              "distribution"
+            ],
+            "data.url_type": [
+              "3d_model"
+            ],
+            "data.media_type": [
+              "application/vnd.maxar.archive.3tz+zip"
+            ]
+          },
+          {
+            "node_type": [
+              "resource"
+            ],
+            "data.tier": [
+              "master",
+              "distribution"
+            ],
+            "data.url_type": [
+              "3d_model"
+            ],
+            "url_ext": [
+              ".3tz"
+            ]
+          },
+          {
+            "node_type": [
+              "resource"
+            ],
+            "data.tier": [
+              "master",
+              "distribution"
+            ],
+            "data.url_type": [
+              "3d_model"
+            ],
+            "url_name": [
+              "tileset.json"
+            ]
+          }
+        ]
+      },
+      "version:gltf": {
+        "glyph": "src/2D/version_gltf.svg",
+        "label": "Version · glTF",
+        "when": [
+          {
+            "node_type": [
+              "resource"
+            ],
+            "data.tier": [
+              "master",
+              "distribution"
+            ],
+            "data.url_type": [
+              "3d_model"
+            ],
+            "url_ext": [
+              ".glb",
+              ".gltf"
+            ]
+          },
+          {
+            "node_type": [
+              "resource"
+            ],
+            "data.tier": [
+              "master",
+              "distribution"
+            ],
+            "data.url_type": [
+              "3d_model"
+            ],
+            "data.media_type": [
+              "model/gltf-binary",
+              "model/gltf+json"
+            ]
+          }
+        ]
+      },
+      "version:scene": {
+        "glyph": "src/2D/version_scene.svg",
+        "label": "Version · scene",
+        "when": [
+          {
+            "node_type": [
+              "resource"
+            ],
+            "data.tier": [
+              "master",
+              "distribution"
+            ],
+            "data.url_type": [
+              "3d_model"
+            ],
+            "data.media_type": [
+              "application/x-blender"
+            ]
+          },
+          {
+            "node_type": [
+              "resource"
+            ],
+            "data.tier": [
+              "master",
+              "distribution"
+            ],
+            "data.url_type": [
+              "3d_model"
+            ],
+            "data.packaging": [
+              "datablock"
+            ]
+          },
+          {
+            "node_type": [
+              "resource"
+            ],
+            "data.tier": [
+              "master",
+              "distribution"
+            ],
+            "data.url_type": [
+              "3d_model"
+            ],
+            "url_ext": [
+              ".blend",
+              ".usd",
+              ".usda",
+              ".usdc",
+              ".usdz"
+            ]
+          }
+        ]
+      },
+      "version:mesh": {
+        "glyph": "src/2D/version_mesh.svg",
+        "label": "Version · mesh",
+        "when": [
+          {
+            "node_type": [
+              "resource"
+            ],
+            "data.tier": [
+              "master",
+              "distribution"
+            ],
+            "data.url_type": [
+              "3d_model"
+            ],
+            "url_ext": [
+              ".obj",
+              ".ply",
+              ".stl",
+              ".fbx",
+              ".off",
+              ".3ds",
+              ".dae",
+              ".abc"
+            ]
+          },
+          {
+            "node_type": [
+              "resource"
+            ],
+            "data.tier": [
+              "master",
+              "distribution"
+            ],
+            "data.url_type": [
+              "3d_model"
+            ],
+            "data.media_type": [
+              "model/obj",
+              "model/stl",
+              "model/ply"
+            ]
+          },
+          {
+            "node_type": [
+              "resource"
+            ],
+            "data.tier": [
+              "master",
+              "distribution"
+            ],
+            "data.url_type": [
+              "3d_model"
+            ],
+            "data.packaging": [
+              "file_set"
+            ]
+          }
+        ]
+      },
+      "tileset": {
+        "glyph": "src/2D/tileset.svg",
+        "label": "Tileset",
+        "when": [
+          {
+            "node_type": [
+              "resource"
+            ],
+            "data.media_type": [
+              "application/vnd.maxar.archive.3tz+zip"
+            ]
+          },
+          {
+            "node_type": [
+              "resource"
+            ],
+            "url_ext": [
+              ".3tz"
+            ]
+          },
+          {
+            "node_type": [
+              "resource"
+            ],
+            "url_name": [
+              "tileset.json"
+            ]
+          }
+        ]
+      }
+    },
     "_aspect_comment": "EM3 - width of a glyph box = its HEIGHT x this aspect (natural width / natural height of the drawing). The height is the engine's node height, so every glyph keeps the same height and only the width differs (E.D.'s rule). Default 1.0 (square) when a type or kind is absent, which is what the eleven DTC glyphs are after the POL4 autocrop and what extractor/combiner are by construction. STATIC ON PURPOSE: these numbers are measured from the assets ONCE, here, and never read from the loaded image at runtime. An aspect taken from naturalWidth would make the layout depend on when a bitmap finishes decoding - the box would jump under the user and two runs of the same document could differ, which is the determinism contract (EMStudio invariant 7). The cost of a static number is that it can go stale if an asset is redrawn: frontend/scripts/sync-datamodels.sh re-measures every vendored file and WARNS when a declaration is more than 2% off, so the staleness is caught where the assets are copied. Values below measured 2026-08-05 from the files each type actually renders (SVG viewBox, PNG header; narrative uses EMNarrative.png because of its 2d_icon_prefer raster).",
     "aspect": {
       "extractor": 1.0,
@@ -72,7 +343,17 @@
       "embargo": 0.992,
       "narrative": 0.981,
       "SE": 1.331,
-      "document": 0.636
+      "document": 0.636,
+      "representation_model": 1.0,
+      "representation_model_doc": 1.0,
+      "representation_model_sf": 1.0,
+      "container": 1.0,
+      "proxy": 1.0,
+      "tileset": 1.0,
+      "version:tiles": 1.0,
+      "version:gltf": 1.0,
+      "version:scene": 1.0,
+      "version:mesh": 1.0
     },
     "_aspect_correction_1_6_18": "author 0.875 → 0.984 (2026-09-30). 0.875 was measured from src/2D/author.svg (448×512), a Font Awesome silhouette that is NOT the palette pictogram; the pictogram (author.png, 126×128, redrawn as src/2D/bozze/author.svg) is 0.984, the same as author_ai. The drawing wins (2d_glyphs rule), and the layout reads this number. Until EMStudio draws 2d_glyphs, sync-datamodels.sh will WARN on author, because icons.ts still resolves the FA author.svg.",
     "_aspect_correction_1_6_21": "document declared for the first time: 0.636, from src/2D/document.svg (16.11 x 25.34) — the drawing wins (2d_glyphs rule). It agrees with the yEd palette's document node (35 x 55 = 0.636) and with document.png (128 x 199 = 0.643, within the 2% sync-datamodels.sh tolerates). EMStudio's 0.78 (em-core geometry.rs SHEET_TYPES_PENDING, shape-geom.ts DOC_SHEET_ASPECT) measured the sheet its renderer drew by hand, 23.4 x 30, which is not the manual's: both read this key when it exists, so the sheet narrows from 24.96 to 20.35 units at the 32-unit node height."
@@ -425,6 +706,372 @@
         }
       ],
       "source": "src/2D/SE.svg"
+    },
+    "representation_model": {
+      "viewBox": [
+        0,
+        0,
+        87.12,
+        87.12
+      ],
+      "aspect": 1.0,
+      "layers": [
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.42 66.28 2.42 43.56C2.42 20.84 20.84 2.42 43.56 2.42C66.28 2.42 84.7 20.84 84.7 43.56Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "frame": true
+        },
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.42 66.28 2.42 43.56C2.42 20.84 20.84 2.42 43.56 2.42C66.28 2.42 84.7 20.84 84.7 43.56Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.5,
+          "frame": true
+        },
+        {
+          "d": "M43.56 17.26L55.06 23.91L43.56 30.56L32.06 23.91Z",
+          "role": "accent",
+          "fill": "#E53935"
+        },
+        {
+          "d": "M32.06 23.91L43.56 30.56L32.06 37.21L20.56 30.56Z",
+          "role": "accent",
+          "fill": "#F4B400"
+        },
+        {
+          "d": "M55.06 23.91L66.56 30.56L55.06 37.21L43.56 30.56Z",
+          "role": "accent",
+          "fill": "#1E6FD9"
+        },
+        {
+          "d": "M43.56 30.56L55.06 37.21L43.56 43.86L32.06 37.21Z",
+          "role": "accent",
+          "fill": "#2E9E44"
+        },
+        {
+          "d": "M20.56 30.56L32.06 37.21L32.06 50.21L20.56 43.56Z",
+          "role": "accent",
+          "fill": "#1E6FD9"
+        },
+        {
+          "d": "M20.56 43.56L32.06 50.21L32.06 63.21L20.56 56.56Z",
+          "role": "accent",
+          "fill": "#2E9E44"
+        },
+        {
+          "d": "M32.06 37.21L43.56 43.86L43.56 56.86L32.06 50.21Z",
+          "role": "accent",
+          "fill": "#F4B400"
+        },
+        {
+          "d": "M32.06 50.21L43.56 56.86L43.56 69.86L32.06 63.21Z",
+          "role": "accent",
+          "fill": "#E53935"
+        },
+        {
+          "d": "M43.56 43.86L55.06 37.21L55.06 50.21L43.56 56.86Z",
+          "role": "accent",
+          "fill": "#F4B400"
+        },
+        {
+          "d": "M43.56 56.86L55.06 50.21L55.06 63.21L43.56 69.86Z",
+          "role": "accent",
+          "fill": "#E53935"
+        },
+        {
+          "d": "M55.06 37.21L66.56 30.56L66.56 43.56L55.06 50.21Z",
+          "role": "accent",
+          "fill": "#2E9E44"
+        },
+        {
+          "d": "M55.06 50.21L66.56 43.56L66.56 56.56L55.06 63.21Z",
+          "role": "accent",
+          "fill": "#1E6FD9"
+        },
+        {
+          "d": "M43.56 17.26L66.56 30.56L66.56 56.56L43.56 69.86L20.56 56.56L20.56 30.56Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.8,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M20.56 30.56L43.56 43.86L66.56 30.56",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.8,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M43.56 43.86L43.56 69.86",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.8,
+          "line_cap": "round",
+          "line_join": "round"
+        }
+      ],
+      "source": "src/2D/representation_model.svg",
+      "frameless_box": [
+        19.66,
+        16.36,
+        47.81,
+        54.41
+      ]
+    },
+    "representation_model_doc": {
+      "viewBox": [
+        0,
+        0,
+        87.12,
+        87.12
+      ],
+      "aspect": 1.0,
+      "layers": [
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.42 66.28 2.42 43.56C2.42 20.84 20.84 2.42 43.56 2.42C66.28 2.42 84.7 20.84 84.7 43.56Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "frame": true
+        },
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.42 66.28 2.42 43.56C2.42 20.84 20.84 2.42 43.56 2.42C66.28 2.42 84.7 20.84 84.7 43.56Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.5,
+          "frame": true
+        },
+        {
+          "d": "M56.72 77.5C55.56 79.51 48.03 77.33 39.9 72.64C31.77 67.94 26.12 62.51 27.28 60.5C28.44 58.49 35.97 60.67 44.1 65.36C52.23 70.06 57.88 75.49 56.72 77.5Z",
+          "role": "halo",
+          "fill": "#000000",
+          "opacity": 0.18
+        },
+        {
+          "d": "M30 17L30 57L25.8 54.6L25.8 14.6Z",
+          "role": "ground",
+          "fill": "#5E5C5D"
+        },
+        {
+          "d": "M30 17L30 57L25.8 54.6L25.8 14.6Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.8,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M30 17L56 32L51.8 29.6L25.8 14.6Z",
+          "role": "ground",
+          "fill": "#A9A7A8"
+        },
+        {
+          "d": "M30 17L56 32L51.8 29.6L25.8 14.6Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.8,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M30 17L56 32L56 72L30 57Z",
+          "role": "ground",
+          "fill": "#888687"
+        },
+        {
+          "d": "M30 17L56 32L56 72L30 57Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.8,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M33.64 23.1L43 28.5L43 44.5L33.64 39.1Z",
+          "role": "accent",
+          "fill": "#E53935"
+        },
+        {
+          "d": "M33.64 39.1L43 44.5L43 60.5L33.64 55.1Z",
+          "role": "accent",
+          "fill": "#F4B400"
+        },
+        {
+          "d": "M43 28.5L52.36 33.9L52.36 49.9L43 44.5Z",
+          "role": "accent",
+          "fill": "#1E6FD9"
+        },
+        {
+          "d": "M43 44.5L52.36 49.9L52.36 65.9L43 60.5Z",
+          "role": "accent",
+          "fill": "#2E9E44"
+        },
+        {
+          "d": "M33.64 23.1L52.36 33.9L52.36 65.9L33.64 55.1Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.1,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M30 17L56 32L56 72L30 57Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.8,
+          "line_cap": "round",
+          "line_join": "round"
+        }
+      ],
+      "source": "src/2D/representation_model_doc.svg",
+      "frameless_box": [
+        24.9,
+        13.7,
+        32.99,
+        65.81
+      ]
+    },
+    "representation_model_sf": {
+      "viewBox": [
+        0,
+        0,
+        87.12,
+        87.12
+      ],
+      "aspect": 1.0,
+      "layers": [
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.42 66.28 2.42 43.56C2.42 20.84 20.84 2.42 43.56 2.42C66.28 2.42 84.7 20.84 84.7 43.56Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "frame": true
+        },
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.42 66.28 2.42 43.56C2.42 20.84 20.84 2.42 43.56 2.42C66.28 2.42 84.7 20.84 84.7 43.56Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.5,
+          "frame": true
+        },
+        {
+          "d": "M32 41L43.5 41L43.5 56L32 56Z",
+          "role": "accent",
+          "fill": "#1E6FD9"
+        },
+        {
+          "d": "M32 56L43.5 56L43.5 71L32 71Z",
+          "role": "accent",
+          "fill": "#2E9E44"
+        },
+        {
+          "d": "M43.5 41L55 41L55 56L43.5 56Z",
+          "role": "accent",
+          "fill": "#F4B400"
+        },
+        {
+          "d": "M43.5 56L55 56L55 71L43.5 71Z",
+          "role": "accent",
+          "fill": "#E53935"
+        },
+        {
+          "d": "M32 41L55 41L55 71L32 71Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.8,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M26 33L61 33L58 41L29 41Z",
+          "role": "accent",
+          "fill": "#E53935"
+        },
+        {
+          "d": "M26 33L61 33L58 41L29 41Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.8,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M22 26L65 26L65 31L22 31Z",
+          "role": "accent",
+          "fill": "#1E6FD9"
+        },
+        {
+          "d": "M22 26L65 26L65 31L22 31Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.8,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M31.5 36.5C31.5 40.37 28.37 43.5 24.5 43.5C20.63 43.5 17.5 40.37 17.5 36.5C17.5 32.63 20.63 29.5 24.5 29.5C28.37 29.5 31.5 32.63 31.5 36.5Z",
+          "role": "accent",
+          "fill": "#F4B400"
+        },
+        {
+          "d": "M31.5 36.5C31.5 40.37 28.37 43.5 24.5 43.5C20.63 43.5 17.5 40.37 17.5 36.5C17.5 32.63 20.63 29.5 24.5 29.5C28.37 29.5 31.5 32.63 31.5 36.5Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.8
+        },
+        {
+          "d": "M27.9 36.5C27.9 38.38 26.38 39.9 24.5 39.9C22.62 39.9 21.1 38.38 21.1 36.5C21.1 34.62 22.62 33.1 24.5 33.1C26.38 33.1 27.9 34.62 27.9 36.5Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M27.9 36.5C27.9 38.38 26.38 39.9 24.5 39.9C22.62 39.9 21.1 38.38 21.1 36.5C21.1 34.62 22.62 33.1 24.5 33.1C26.38 33.1 27.9 34.62 27.9 36.5Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.4
+        },
+        {
+          "d": "M25.5 36.5C25.5 37.05 25.05 37.5 24.5 37.5C23.95 37.5 23.5 37.05 23.5 36.5C23.5 35.95 23.95 35.5 24.5 35.5C25.05 35.5 25.5 35.95 25.5 36.5Z",
+          "role": "ink",
+          "fill": "#000000"
+        },
+        {
+          "d": "M69.6 36.5C69.6 40.37 66.47 43.5 62.6 43.5C58.73 43.5 55.6 40.37 55.6 36.5C55.6 32.63 58.73 29.5 62.6 29.5C66.47 29.5 69.6 32.63 69.6 36.5Z",
+          "role": "accent",
+          "fill": "#F4B400"
+        },
+        {
+          "d": "M69.6 36.5C69.6 40.37 66.47 43.5 62.6 43.5C58.73 43.5 55.6 40.37 55.6 36.5C55.6 32.63 58.73 29.5 62.6 29.5C66.47 29.5 69.6 32.63 69.6 36.5Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.8
+        },
+        {
+          "d": "M66 36.5C66 38.38 64.48 39.9 62.6 39.9C60.72 39.9 59.2 38.38 59.2 36.5C59.2 34.62 60.72 33.1 62.6 33.1C64.48 33.1 66 34.62 66 36.5Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M66 36.5C66 38.38 64.48 39.9 62.6 39.9C60.72 39.9 59.2 38.38 59.2 36.5C59.2 34.62 60.72 33.1 62.6 33.1C64.48 33.1 66 34.62 66 36.5Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.4
+        },
+        {
+          "d": "M63.6 36.5C63.6 37.05 63.15 37.5 62.6 37.5C62.05 37.5 61.6 37.05 61.6 36.5C61.6 35.95 62.05 35.5 62.6 35.5C63.15 35.5 63.6 35.95 63.6 36.5Z",
+          "role": "ink",
+          "fill": "#000000"
+        }
+      ],
+      "source": "src/2D/representation_model_sf.svg",
+      "frameless_box": [
+        16.6,
+        25.1,
+        53.9,
+        46.81
+      ]
     },
     "document": {
       "viewBox": [
@@ -3494,6 +4141,1245 @@
         }
       ],
       "source": "src/2D/dtc/11_device_gnss.svg"
+    },
+    "container": {
+      "viewBox": [
+        0,
+        0,
+        87.12,
+        87.12
+      ],
+      "aspect": 1.0,
+      "layers": [
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.42 66.28 2.42 43.56C2.42 20.84 20.84 2.42 43.56 2.42C66.28 2.42 84.7 20.84 84.7 43.56Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "frame": true
+        },
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.42 66.28 2.42 43.56C2.42 20.84 20.84 2.42 43.56 2.42C66.28 2.42 84.7 20.84 84.7 43.56Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.5,
+          "frame": true
+        },
+        {
+          "d": "M36.56 20L55.56 31L36.56 42L17.56 31Z",
+          "role": "accent",
+          "fill": "#5B7BD5"
+        },
+        {
+          "d": "M17.56 31L36.56 42L36.56 64L17.56 53Z",
+          "role": "accent",
+          "fill": "#3F5FB8"
+        },
+        {
+          "d": "M36.56 42L55.56 31L55.56 53L36.56 64Z",
+          "role": "accent",
+          "fill": "#2C468F"
+        },
+        {
+          "d": "M36.56 20L55.56 31L55.56 53L36.56 64L17.56 53L17.56 31Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.8,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M17.56 31L36.56 42L55.56 31",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.8,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M36.56 42L36.56 64",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.8,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M57.56 44L67.06 49.5L57.56 55L48.06 49.5Z",
+          "role": "accent",
+          "fill": "#F08A24"
+        },
+        {
+          "d": "M48.06 49.5L57.56 55L57.56 65.5L48.06 60Z",
+          "role": "accent",
+          "fill": "#D06A10"
+        },
+        {
+          "d": "M57.56 55L67.06 49.5L67.06 60L57.56 65.5Z",
+          "role": "accent",
+          "fill": "#A9520A"
+        },
+        {
+          "d": "M57.56 44L67.06 49.5L67.06 60L57.56 65.5L48.06 60L48.06 49.5Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.4,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M48.06 49.5L57.56 55L67.06 49.5",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.4,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M57.56 55L57.56 65.5",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.4,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M57.56 55.5L67.06 61L57.56 66.5L48.06 61Z",
+          "role": "accent",
+          "fill": "#F08A24"
+        },
+        {
+          "d": "M48.06 61L57.56 66.5L57.56 77L48.06 71.5Z",
+          "role": "accent",
+          "fill": "#D06A10"
+        },
+        {
+          "d": "M57.56 66.5L67.06 61L67.06 71.5L57.56 77Z",
+          "role": "accent",
+          "fill": "#A9520A"
+        },
+        {
+          "d": "M57.56 55.5L67.06 61L67.06 71.5L57.56 77L48.06 71.5L48.06 61Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.4,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M48.06 61L57.56 66.5L67.06 61",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.4,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M57.56 66.5L57.56 77",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.4,
+          "line_cap": "round",
+          "line_join": "round"
+        }
+      ],
+      "source": "src/2D/container.svg",
+      "frameless_box": [
+        16.66,
+        19.1,
+        51.11,
+        58.6
+      ]
+    },
+    "proxy": {
+      "viewBox": [
+        0,
+        0,
+        87.12,
+        87.12
+      ],
+      "aspect": 1.0,
+      "layers": [
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.42 66.28 2.42 43.56C2.42 20.84 20.84 2.42 43.56 2.42C66.28 2.42 84.7 20.84 84.7 43.56Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "frame": true
+        },
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.42 66.28 2.42 43.56C2.42 20.84 20.84 2.42 43.56 2.42C66.28 2.42 84.7 20.84 84.7 43.56Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.5,
+          "frame": true
+        },
+        {
+          "d": "M43.56 17.26L66.56 30.56L43.56 43.86L20.56 30.56Z",
+          "role": "accent",
+          "fill": "#E53935"
+        },
+        {
+          "d": "M20.56 30.56L43.56 43.86L43.56 69.86L20.56 56.56Z",
+          "role": "accent",
+          "fill": "#1E6FD9"
+        },
+        {
+          "d": "M43.56 43.86L66.56 30.56L66.56 56.56L43.56 69.86Z",
+          "role": "accent",
+          "fill": "#2E9E44"
+        },
+        {
+          "d": "M43.56 17.26L66.56 30.56L66.56 56.56L43.56 69.86L20.56 56.56L20.56 30.56Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.8,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M20.56 30.56L43.56 43.86L66.56 30.56",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.8,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M43.56 43.86L43.56 69.86",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.8,
+          "line_cap": "round",
+          "line_join": "round"
+        }
+      ],
+      "source": "src/2D/proxy.svg",
+      "frameless_box": [
+        19.66,
+        16.36,
+        47.81,
+        54.41
+      ]
+    },
+    "version:tiles": {
+      "viewBox": [
+        0,
+        0,
+        87.12,
+        87.12
+      ],
+      "aspect": 1.0,
+      "layers": [
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.42 66.28 2.42 43.56C2.42 20.84 20.84 2.42 43.56 2.42C66.28 2.42 84.7 20.84 84.7 43.56Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "frame": true
+        },
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.42 66.28 2.42 43.56C2.42 20.84 20.84 2.42 43.56 2.42C66.28 2.42 84.7 20.84 84.7 43.56Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.5,
+          "frame": true
+        },
+        {
+          "d": "M25 15L51 15L62 26L62 72L25 72Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M25 15L51 15L62 26L62 72L25 72Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.8,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M51 15L51 26L62 26",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.8,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M43.5 40.5L48.93 43.65L43.5 46.8L38.07 43.65Z",
+          "role": "accent",
+          "fill": "#2E9E44"
+        },
+        {
+          "d": "M38.07 43.65L43.5 46.8L43.5 53.01L38.07 49.86Z",
+          "role": "ground",
+          "fill": "#D9D9D9"
+        },
+        {
+          "d": "M43.5 46.8L48.93 43.65L48.93 49.86L43.5 53.01Z",
+          "role": "ground",
+          "fill": "#B5B5B5"
+        },
+        {
+          "d": "M43.5 40.5L48.93 43.65L48.93 49.86L43.5 53.01L38.07 49.86L38.07 43.65Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.9,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M38.07 43.65L43.5 46.8L48.93 43.65",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.9,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M43.5 46.8L43.5 53.01",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.9,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M43.5 34.1L48.93 37.25L43.5 40.41L38.07 37.25Z",
+          "role": "accent",
+          "fill": "#2E9E44"
+        },
+        {
+          "d": "M38.07 37.25L43.5 40.41L43.5 46.61L38.07 43.46Z",
+          "role": "ground",
+          "fill": "#D9D9D9"
+        },
+        {
+          "d": "M43.5 40.41L48.93 37.25L48.93 43.46L43.5 46.61Z",
+          "role": "ground",
+          "fill": "#B5B5B5"
+        },
+        {
+          "d": "M43.5 34.1L48.93 37.25L48.93 43.46L43.5 46.61L38.07 43.46L38.07 37.25Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.9,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M38.07 37.25L43.5 40.41L48.93 37.25",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.9,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M43.5 40.41L43.5 46.61",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.9,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M37.9 43.75L43.33 46.9L37.9 50.05L32.47 46.9Z",
+          "role": "accent",
+          "fill": "#1E6FD9"
+        },
+        {
+          "d": "M32.47 46.9L37.9 50.05L37.9 56.26L32.47 53.11Z",
+          "role": "ground",
+          "fill": "#D9D9D9"
+        },
+        {
+          "d": "M37.9 50.05L43.33 46.9L43.33 53.11L37.9 56.26Z",
+          "role": "ground",
+          "fill": "#B5B5B5"
+        },
+        {
+          "d": "M37.9 43.75L43.33 46.9L43.33 53.11L37.9 56.26L32.47 53.11L32.47 46.9Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.9,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M32.47 46.9L37.9 50.05L43.33 46.9",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.9,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M37.9 50.05L37.9 56.26",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.9,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M49.1 43.75L54.53 46.9L49.1 50.05L43.67 46.9Z",
+          "role": "accent",
+          "fill": "#F4B400"
+        },
+        {
+          "d": "M43.67 46.9L49.1 50.05L49.1 56.26L43.67 53.11Z",
+          "role": "ground",
+          "fill": "#D9D9D9"
+        },
+        {
+          "d": "M49.1 50.05L54.53 46.9L54.53 53.11L49.1 56.26Z",
+          "role": "ground",
+          "fill": "#B5B5B5"
+        },
+        {
+          "d": "M49.1 43.75L54.53 46.9L54.53 53.11L49.1 56.26L43.67 53.11L43.67 46.9Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.9,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M43.67 46.9L49.1 50.05L54.53 46.9",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.9,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M49.1 50.05L49.1 56.26",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.9,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M37.9 37.35L43.33 40.5L37.9 43.66L32.47 40.5Z",
+          "role": "accent",
+          "fill": "#1E6FD9"
+        },
+        {
+          "d": "M32.47 40.5L37.9 43.66L37.9 49.86L32.47 46.71Z",
+          "role": "ground",
+          "fill": "#D9D9D9"
+        },
+        {
+          "d": "M37.9 43.66L43.33 40.5L43.33 46.71L37.9 49.86Z",
+          "role": "ground",
+          "fill": "#B5B5B5"
+        },
+        {
+          "d": "M37.9 37.35L43.33 40.5L43.33 46.71L37.9 49.86L32.47 46.71L32.47 40.5Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.9,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M32.47 40.5L37.9 43.66L43.33 40.5",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.9,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M37.9 43.66L37.9 49.86",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.9,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M49.1 37.35L54.53 40.5L49.1 43.66L43.67 40.5Z",
+          "role": "accent",
+          "fill": "#E53935"
+        },
+        {
+          "d": "M43.67 40.5L49.1 43.66L49.1 49.86L43.67 46.71Z",
+          "role": "ground",
+          "fill": "#D9D9D9"
+        },
+        {
+          "d": "M49.1 43.66L54.53 40.5L54.53 46.71L49.1 49.86Z",
+          "role": "ground",
+          "fill": "#B5B5B5"
+        },
+        {
+          "d": "M49.1 37.35L54.53 40.5L54.53 46.71L49.1 49.86L43.67 46.71L43.67 40.5Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.9,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M43.67 40.5L49.1 43.66L54.53 40.5",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.9,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M49.1 43.66L49.1 49.86",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.9,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M43.5 47L48.93 50.15L43.5 53.3L38.07 50.15Z",
+          "role": "accent",
+          "fill": "#E53935"
+        },
+        {
+          "d": "M38.07 50.15L43.5 53.3L43.5 59.51L38.07 56.36Z",
+          "role": "ground",
+          "fill": "#D9D9D9"
+        },
+        {
+          "d": "M43.5 53.3L48.93 50.15L48.93 56.36L43.5 59.51Z",
+          "role": "ground",
+          "fill": "#B5B5B5"
+        },
+        {
+          "d": "M43.5 47L48.93 50.15L48.93 56.36L43.5 59.51L38.07 56.36L38.07 50.15Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.9,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M38.07 50.15L43.5 53.3L48.93 50.15",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.9,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M43.5 53.3L43.5 59.51",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.9,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M43.5 40.6L48.93 43.75L43.5 46.91L38.07 43.75Z",
+          "role": "accent",
+          "fill": "#F08A24"
+        },
+        {
+          "d": "M38.07 43.75L43.5 46.91L43.5 53.11L38.07 49.96Z",
+          "role": "ground",
+          "fill": "#D9D9D9"
+        },
+        {
+          "d": "M43.5 46.91L48.93 43.75L48.93 49.96L43.5 53.11Z",
+          "role": "ground",
+          "fill": "#B5B5B5"
+        },
+        {
+          "d": "M43.5 40.6L48.93 43.75L48.93 49.96L43.5 53.11L38.07 49.96L38.07 43.75Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.9,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M38.07 43.75L43.5 46.91L48.93 43.75",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.9,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M43.5 46.91L43.5 53.11",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 0.9,
+          "line_cap": "round",
+          "line_join": "round"
+        }
+      ],
+      "source": "src/2D/version_tiles.svg",
+      "frameless_box": [
+        24.1,
+        14.1,
+        38.8,
+        58.81
+      ]
+    },
+    "version:gltf": {
+      "viewBox": [
+        0,
+        0,
+        87.12,
+        87.12
+      ],
+      "aspect": 1.0,
+      "layers": [
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.42 66.28 2.42 43.56C2.42 20.84 20.84 2.42 43.56 2.42C66.28 2.42 84.7 20.84 84.7 43.56Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "frame": true
+        },
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.42 66.28 2.42 43.56C2.42 20.84 20.84 2.42 43.56 2.42C66.28 2.42 84.7 20.84 84.7 43.56Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.5,
+          "frame": true
+        },
+        {
+          "d": "M25 15L51 15L62 26L62 72L25 72Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M25 15L51 15L62 26L62 72L25 72Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.8,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M51 15L51 26L62 26",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.8,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M43.5 33.9L49.25 37.2L43.5 40.5L37.75 37.2Z",
+          "role": "accent",
+          "fill": "#E53935"
+        },
+        {
+          "d": "M37.75 37.2L43.5 40.5L37.75 43.8L32 40.5Z",
+          "role": "accent",
+          "fill": "#F4B400"
+        },
+        {
+          "d": "M49.25 37.2L55 40.5L49.25 43.8L43.5 40.5Z",
+          "role": "accent",
+          "fill": "#1E6FD9"
+        },
+        {
+          "d": "M43.5 40.5L49.25 43.8L43.5 47.1L37.75 43.8Z",
+          "role": "accent",
+          "fill": "#2E9E44"
+        },
+        {
+          "d": "M32 40.5L37.75 43.8L37.75 50.3L32 47Z",
+          "role": "accent",
+          "fill": "#1E6FD9"
+        },
+        {
+          "d": "M32 47L37.75 50.3L37.75 56.8L32 53.5Z",
+          "role": "accent",
+          "fill": "#2E9E44"
+        },
+        {
+          "d": "M37.75 43.8L43.5 47.1L43.5 53.6L37.75 50.3Z",
+          "role": "accent",
+          "fill": "#F4B400"
+        },
+        {
+          "d": "M37.75 50.3L43.5 53.6L43.5 60.1L37.75 56.8Z",
+          "role": "accent",
+          "fill": "#E53935"
+        },
+        {
+          "d": "M43.5 47.1L49.25 43.8L49.25 50.3L43.5 53.6Z",
+          "role": "accent",
+          "fill": "#F4B400"
+        },
+        {
+          "d": "M43.5 53.6L49.25 50.3L49.25 56.8L43.5 60.1Z",
+          "role": "accent",
+          "fill": "#E53935"
+        },
+        {
+          "d": "M49.25 43.8L55 40.5L55 47L49.25 50.3Z",
+          "role": "accent",
+          "fill": "#2E9E44"
+        },
+        {
+          "d": "M49.25 50.3L55 47L55 53.5L49.25 56.8Z",
+          "role": "accent",
+          "fill": "#1E6FD9"
+        },
+        {
+          "d": "M43.5 33.9L55 40.5L55 53.5L43.5 60.1L32 53.5L32 40.5Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.5,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M32 40.5L43.5 47.1L55 40.5",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.5,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M43.5 47.1L43.5 60.1",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.5,
+          "line_cap": "round",
+          "line_join": "round"
+        }
+      ],
+      "source": "src/2D/version_gltf.svg",
+      "frameless_box": [
+        24.1,
+        14.1,
+        38.8,
+        58.81
+      ]
+    },
+    "version:scene": {
+      "viewBox": [
+        0,
+        0,
+        87.12,
+        87.12
+      ],
+      "aspect": 1.0,
+      "layers": [
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.42 66.28 2.42 43.56C2.42 20.84 20.84 2.42 43.56 2.42C66.28 2.42 84.7 20.84 84.7 43.56Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "frame": true
+        },
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.42 66.28 2.42 43.56C2.42 20.84 20.84 2.42 43.56 2.42C66.28 2.42 84.7 20.84 84.7 43.56Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.5,
+          "frame": true
+        },
+        {
+          "d": "M25 15L51 15L62 26L62 72L25 72Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M25 15L51 15L62 26L62 72L25 72Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.8,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M51 15L51 26L62 26",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.8,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M43.5 33.9L55 40.5L55 53.5L43.5 60.1L32 53.5L32 40.5L43.5 33.9",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.5,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M32 40.5L43.5 47.1L55 40.5",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.5,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M43.5 47.1L43.5 60.1",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.5,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M58.72 44.06C59.66 46.94 53.6 51.5 45.2 54.23C36.8 56.96 29.22 56.83 28.28 53.94C27.34 51.06 33.4 46.5 41.8 43.77C50.2 41.04 57.78 41.17 58.72 44.06Z",
+          "role": "accent",
+          "stroke": "#F08A24",
+          "stroke_width": 1.6
+        },
+        {
+          "d": "M59.7 39.9C59.7 41.12 58.72 42.1 57.5 42.1C56.28 42.1 55.3 41.12 55.3 39.9C55.3 38.68 56.28 37.7 57.5 37.7C58.72 37.7 59.7 38.68 59.7 39.9Z",
+          "role": "accent",
+          "fill": "#F08A24"
+        }
+      ],
+      "source": "src/2D/version_scene.svg",
+      "frameless_box": [
+        24.1,
+        14.1,
+        38.8,
+        58.81
+      ]
+    },
+    "version:mesh": {
+      "viewBox": [
+        0,
+        0,
+        87.12,
+        87.12
+      ],
+      "aspect": 1.0,
+      "layers": [
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.42 66.28 2.42 43.56C2.42 20.84 20.84 2.42 43.56 2.42C66.28 2.42 84.7 20.84 84.7 43.56Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "frame": true
+        },
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.42 66.28 2.42 43.56C2.42 20.84 20.84 2.42 43.56 2.42C66.28 2.42 84.7 20.84 84.7 43.56Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.5,
+          "frame": true
+        },
+        {
+          "d": "M25 15L51 15L62 26L62 72L25 72Z",
+          "role": "paper",
+          "fill": "#FFFFFF"
+        },
+        {
+          "d": "M25 15L51 15L62 26L62 72L25 72Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.8,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M51 15L51 26L62 26",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.8,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M43.5 33.9L55 40.5L43.5 47.1L32 40.5Z",
+          "role": "accent",
+          "fill": "#E53935"
+        },
+        {
+          "d": "M32 40.5L43.5 47.1L43.5 60.1L32 53.5Z",
+          "role": "accent",
+          "fill": "#1E6FD9"
+        },
+        {
+          "d": "M43.5 47.1L55 40.5L55 53.5L43.5 60.1Z",
+          "role": "accent",
+          "fill": "#2E9E44"
+        },
+        {
+          "d": "M43.5 33.9L55 40.5L55 53.5L43.5 60.1L32 53.5L32 40.5Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.5,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M32 40.5L43.5 47.1L55 40.5",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.5,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M43.5 47.1L43.5 60.1",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.5,
+          "line_cap": "round",
+          "line_join": "round"
+        }
+      ],
+      "source": "src/2D/version_mesh.svg",
+      "frameless_box": [
+        24.1,
+        14.1,
+        38.8,
+        58.81
+      ]
+    },
+    "tileset": {
+      "viewBox": [
+        0,
+        0,
+        87.12,
+        87.12
+      ],
+      "aspect": 1.0,
+      "layers": [
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.42 66.28 2.42 43.56C2.42 20.84 20.84 2.42 43.56 2.42C66.28 2.42 84.7 20.84 84.7 43.56Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "frame": true
+        },
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.42 66.28 2.42 43.56C2.42 20.84 20.84 2.42 43.56 2.42C66.28 2.42 84.7 20.84 84.7 43.56Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.5,
+          "frame": true
+        },
+        {
+          "d": "M43.56 30.86L54.34 37.08L43.56 43.31L32.78 37.08Z",
+          "role": "accent",
+          "fill": "#2E9E44"
+        },
+        {
+          "d": "M32.78 37.08L43.56 43.31L43.56 55.46L32.78 49.24Z",
+          "role": "ground",
+          "fill": "#D9D9D9"
+        },
+        {
+          "d": "M43.56 43.31L54.34 37.08L54.34 49.24L43.56 55.46Z",
+          "role": "ground",
+          "fill": "#B5B5B5"
+        },
+        {
+          "d": "M43.56 30.86L54.34 37.08L54.34 49.24L43.56 55.46L32.78 49.24L32.78 37.08Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.2,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M32.78 37.08L43.56 43.31L54.34 37.08",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.2,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M43.56 43.31L43.56 55.46",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.2,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M43.56 18.46L54.34 24.68L43.56 30.91L32.78 24.68Z",
+          "role": "accent",
+          "fill": "#2E9E44"
+        },
+        {
+          "d": "M32.78 24.68L43.56 30.91L43.56 43.06L32.78 36.84Z",
+          "role": "ground",
+          "fill": "#D9D9D9"
+        },
+        {
+          "d": "M43.56 30.91L54.34 24.68L54.34 36.84L43.56 43.06Z",
+          "role": "ground",
+          "fill": "#B5B5B5"
+        },
+        {
+          "d": "M43.56 18.46L54.34 24.68L54.34 36.84L43.56 43.06L32.78 36.84L32.78 24.68Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.2,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M32.78 24.68L43.56 30.91L54.34 24.68",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.2,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M43.56 30.91L43.56 43.06",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.2,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M32.56 37.21L43.34 43.43L32.56 49.66L21.78 43.43Z",
+          "role": "accent",
+          "fill": "#1E6FD9"
+        },
+        {
+          "d": "M21.78 43.43L32.56 49.66L32.56 61.81L21.78 55.59Z",
+          "role": "ground",
+          "fill": "#D9D9D9"
+        },
+        {
+          "d": "M32.56 49.66L43.34 43.43L43.34 55.59L32.56 61.81Z",
+          "role": "ground",
+          "fill": "#B5B5B5"
+        },
+        {
+          "d": "M32.56 37.21L43.34 43.43L43.34 55.59L32.56 61.81L21.78 55.59L21.78 43.43Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.2,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M21.78 43.43L32.56 49.66L43.34 43.43",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.2,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M32.56 49.66L32.56 61.81",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.2,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M54.56 37.21L65.34 43.43L54.56 49.66L43.78 43.43Z",
+          "role": "accent",
+          "fill": "#F4B400"
+        },
+        {
+          "d": "M43.78 43.43L54.56 49.66L54.56 61.81L43.78 55.59Z",
+          "role": "ground",
+          "fill": "#D9D9D9"
+        },
+        {
+          "d": "M54.56 49.66L65.34 43.43L65.34 55.59L54.56 61.81Z",
+          "role": "ground",
+          "fill": "#B5B5B5"
+        },
+        {
+          "d": "M54.56 37.21L65.34 43.43L65.34 55.59L54.56 61.81L43.78 55.59L43.78 43.43Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.2,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M43.78 43.43L54.56 49.66L65.34 43.43",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.2,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M54.56 49.66L54.56 61.81",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.2,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M32.56 24.81L43.34 31.03L32.56 37.26L21.78 31.03Z",
+          "role": "accent",
+          "fill": "#1E6FD9"
+        },
+        {
+          "d": "M21.78 31.03L32.56 37.26L32.56 49.41L21.78 43.19Z",
+          "role": "ground",
+          "fill": "#D9D9D9"
+        },
+        {
+          "d": "M32.56 37.26L43.34 31.03L43.34 43.19L32.56 49.41Z",
+          "role": "ground",
+          "fill": "#B5B5B5"
+        },
+        {
+          "d": "M32.56 24.81L43.34 31.03L43.34 43.19L32.56 49.41L21.78 43.19L21.78 31.03Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.2,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M21.78 31.03L32.56 37.26L43.34 31.03",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.2,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M32.56 37.26L32.56 49.41",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.2,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M54.56 24.81L65.34 31.03L54.56 37.26L43.78 31.03Z",
+          "role": "accent",
+          "fill": "#E53935"
+        },
+        {
+          "d": "M43.78 31.03L54.56 37.26L54.56 49.41L43.78 43.19Z",
+          "role": "ground",
+          "fill": "#D9D9D9"
+        },
+        {
+          "d": "M54.56 37.26L65.34 31.03L65.34 43.19L54.56 49.41Z",
+          "role": "ground",
+          "fill": "#B5B5B5"
+        },
+        {
+          "d": "M54.56 24.81L65.34 31.03L65.34 43.19L54.56 49.41L43.78 43.19L43.78 31.03Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.2,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M43.78 31.03L54.56 37.26L65.34 31.03",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.2,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M54.56 37.26L54.56 49.41",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.2,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M43.56 43.56L54.34 49.78L43.56 56.01L32.78 49.78Z",
+          "role": "accent",
+          "fill": "#E53935"
+        },
+        {
+          "d": "M32.78 49.78L43.56 56.01L43.56 68.16L32.78 61.94Z",
+          "role": "ground",
+          "fill": "#D9D9D9"
+        },
+        {
+          "d": "M43.56 56.01L54.34 49.78L54.34 61.94L43.56 68.16Z",
+          "role": "ground",
+          "fill": "#B5B5B5"
+        },
+        {
+          "d": "M43.56 43.56L54.34 49.78L54.34 61.94L43.56 68.16L32.78 61.94L32.78 49.78Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.2,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M32.78 49.78L43.56 56.01L54.34 49.78",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.2,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M43.56 56.01L43.56 68.16",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.2,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M43.56 31.16L54.34 37.38L43.56 43.61L32.78 37.38Z",
+          "role": "accent",
+          "fill": "#F08A24"
+        },
+        {
+          "d": "M32.78 37.38L43.56 43.61L43.56 55.76L32.78 49.54Z",
+          "role": "ground",
+          "fill": "#D9D9D9"
+        },
+        {
+          "d": "M43.56 43.61L54.34 37.38L54.34 49.54L43.56 55.76Z",
+          "role": "ground",
+          "fill": "#B5B5B5"
+        },
+        {
+          "d": "M43.56 31.16L54.34 37.38L54.34 49.54L43.56 55.76L32.78 49.54L32.78 37.38Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.2,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M32.78 37.38L43.56 43.61L54.34 37.38",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.2,
+          "line_cap": "round",
+          "line_join": "round"
+        },
+        {
+          "d": "M43.56 43.61L43.56 55.76",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.2,
+          "line_cap": "round",
+          "line_join": "round"
+        }
+      ],
+      "source": "src/2D/tileset.svg",
+      "frameless_box": [
+        21.18,
+        17.86,
+        44.76,
+        50.9
+      ]
     }
   },
   "node_styles": {

@@ -137,6 +137,14 @@ def sheet_section(rules: Dict[str, object], key: str, entry: Dict[str, object]) 
             f'</h4><div class="cells">{"".join(tiles)}</div></div></div></section>')
 
 
+def frameless(entry: Dict[str, object]) -> Dict[str, object]:
+    """The entry as a consumer draws it below 24 px (1.6.32, drawing-a-glyph.md
+    §5): without its `frame` layers, fitted on `frameless_box`."""
+    x, y, w, h = entry["frameless_box"]                                    # type: ignore[misc]
+    return {**entry, "viewBox": [x, y, w, h], "aspect": round(w / h, 3),
+            "layers": [layer for layer in entry["layers"] if not layer.get("frame")]}  # type: ignore[union-attr]
+
+
 def row(rules: Dict[str, object], key: str, entry: Dict[str, object]) -> str:
     draft = bool(entry.get("draft"))
     scales = "".join(
@@ -146,6 +154,16 @@ def row(rules: Dict[str, object], key: str, entry: Dict[str, object]) -> str:
               f'<figcaption>chiaro</figcaption></figure>'
               f'<figure><div class="tile dark">{g.entry_to_svg(entry, BASE_PX * 2, DARK)}</div>'
               f'<figcaption>scuro, ruoli ricolorati</figcaption></figure>')
+    if entry.get("frameless_box"):
+        # 1.6.32 · the two variants side by side at the small sizes: with the
+        # frame, and without it (the drawing takes the frame's room)
+        small = "".join(
+            f'<figure><div class="tile light">{g.entry_to_svg(e, px)}</div>'
+            f'<figcaption>{cap} · {px}px</figcaption></figure>'
+            for px in (16, 24) for e, cap in ((entry, "cornice"), (frameless(entry), "senza cornice")))
+        themed += (f'</div></div><div class="group"><h4>sotto i 24 px</h4><div class="cells">{small}'
+                   f'<figure><div class="tile dark">{g.entry_to_svg(frameless(entry), 24, DARK)}</div>'
+                   f'<figcaption>senza cornice, scuro</figcaption></figure>')
     roles = sorted({str(layer["role"]) for layer in entry["layers"]})      # type: ignore[union-attr]
     size = len(json.dumps(entry, separators=(",", ":")))
     badge = '<span class="badge draft">BOZZA</span>' if draft else '<span class="badge">dal file d’autore</span>'

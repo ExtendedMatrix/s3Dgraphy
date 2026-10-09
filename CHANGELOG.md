@@ -5,6 +5,22 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
+- **The glyphs of the 3D objects** (em_visual_rules 1.6.32, MICRO grafo
+  reattivo G9, 9 October 2026; drawings approved by E.D. on 6 October). The
+  three Representation Models (`representation_model`, `_doc` — the checkered
+  picture seen three-quarters, an image placed in 3D space — and `_sf`) get
+  their own pictograms in place of three identical Font Awesome cubes and join
+  `2d_render_glyph_types.types`; `proxy`, `tileset`, `container` (the RM
+  container) and the versions `version:gltf`, `version:mesh`, `version:tiles`,
+  `version:scene` come from the new table `2d_render_glyph_types.data_glyphs`,
+  which resolves a node by its data (node type, `data.*`, the URL's extension or
+  name), keyed like `dtc:<kind>`; the rule for a version's kind was measured on
+  Templu Mare v2, where no resource carries a `data.format`. All in the DTC
+  frame with the 2×2 checker of the EMtools icons (`accent`, never recoloured).
+  `glyphs_from_svg` turns `data-frame="true"` into `frame: true` layers and
+  writes each entry's `frameless_box`, so a consumer can draw the glyph without
+  its circle below 24 px (`docs/drawing-a-glyph.md` §5); `glyph_sheet` shows the
+  two variants side by side.
 - **The index stays alive** (MICRO l'indice del grafo, 7 October 2026, issue
   #27 by Enzo Cocca: a 990-US pyArchInit site imported in 8.7 s and its GraphML
   export did not finish in 30 minutes). `find_node_by_id` and `find_edge_by_id`

@@ -47,7 +47,17 @@ In this order, and the first that exists wins:
 2. the style's declared `2d_file_vect`, when it is an `.svg` and is not listed
    in :data:`NOT_A_GLYPH`;
 3. `src/2D/<node_type>.svg`, the naming convention most files follow;
-4. for a DTC kind, `src/2D/dtc/<glyph>.svg`.
+4. for a DTC kind, `src/2D/dtc/<glyph>.svg`;
+5. for a data glyph (`2d_render_glyph_types.data_glyphs`, 1.6.32: the proxy, the
+   tileset, the RM container, the versions `version:<kind>`), the `glyph` file
+   the table names.
+
+## The frame (1.6.32)
+
+An element marked `data-frame="true"` (the DTC circle) gives layers with
+`"frame": true`, and the entry gets `frameless_box`: the box of every OTHER
+layer, which a consumer fits below 24 px when it skips the frame
+(docs/drawing-a-glyph.md §5).
 
 A file carrying the marker :data:`DRAFT_MARKER` produces an entry with
 `"draft": true`. The drafts live in `src/2D/bozze/` on purpose, not beside the
@@ -126,7 +136,7 @@ _SKIP = {"defs", "metadata", "namedview", "title", "desc", "style", "RDF",
 _UNSUPPORTED = {"use", "image", "text", "tspan", "foreignObject"}
 _INHERITED = ("fill", "fill-opacity", "fill-rule", "stroke", "stroke-width",
               "stroke-opacity", "stroke-linecap", "stroke-linejoin",
-              "visibility", "data-role")
+              "visibility", "data-role", "data-frame")
 _NAMED = {"black": "#000000", "white": "#FFFFFF", "none": None,
           "transparent": None}
 
@@ -509,6 +519,8 @@ def glyph_from_svg(path: Path) -> Dict[str, object]:
     minx, miny, w, h = _viewbox(root)
     base = (1.0, 0.0, 0.0, 1.0, -minx, -miny)
     layers: List[Dict[str, object]] = []
+    #: (segments, half stroke, is it the frame) per layer, for `frameless_box`
+    extents: List[Tuple[List[Seg], float, bool]] = []
 
     def walk(el: ET.Element, inherited: Dict[str, str], m: Matrix, alpha: float):
         tag = el.tag.split("}")[-1]
@@ -543,6 +555,7 @@ def glyph_from_svg(path: Path) -> Dict[str, object]:
         if stroke and sw > 0 and dash not in (None, "none"):
             raise GlyphError(f"{path.name}: dashed strokes are not supported")
         forced = st.get("data-role")
+        frame = st.get("data-frame") == "true"
         if forced and forced not in vocabulary:
             raise GlyphError(f"{path.name}: data-role {forced!r} is not in the vocabulary")
         if fill:
@@ -554,7 +567,10 @@ def glyph_from_svg(path: Path) -> Dict[str, object]:
                     layer["fill_rule"] = "evenodd"
                 if op < 1:
                     layer["opacity"] = round(op, 3)
+                if frame:
+                    layer["frame"] = True
                 layers.append(layer)
+                extents.append((segs, 0.0, frame))
         if stroke and sw > 0:
             op = alpha * _opacity(st.get("stroke-opacity"))
             if op > 0:
@@ -567,7 +583,10 @@ def glyph_from_svg(path: Path) -> Dict[str, object]:
                     layer["line_join"] = join
                 if op < 1:
                     layer["opacity"] = round(op, 3)
+                if frame:
+                    layer["frame"] = True
                 layers.append(layer)
+                extents.append((segs, sw / 2, frame))
 
     walk(root, {}, base, 1.0)
     if not layers:
@@ -579,9 +598,33 @@ def glyph_from_svg(path: Path) -> Dict[str, object]:
         "source": (path.relative_to(CONFIG).as_posix()
                    if path.is_relative_to(CONFIG) else path.as_posix()),
     }
+    if any(f for _s, _h, f in extents):
+        box = _box([(s, h) for s, h, f in extents if not f])
+        if box:
+            entry["frameless_box"] = box
     if any(DRAFT_MARKER in c for c in re.findall(r"<!--(.*?)-->", text, flags=re.S)):
         entry["draft"] = True
     return entry
+
+
+def _box(parts: List[Tuple[List[Seg], float]]) -> Optional[List[float]]:
+    """`[x, y, w, h]` around every point of `parts` — the control points of a
+    cubic included, so the box may be a little wide, never too tight — grown by
+    each layer's half stroke. Rounded outwards to 2 decimals."""
+    xs: List[float] = []
+    ys: List[float] = []
+    for segs, half in parts:
+        for _cmd, args in segs:
+            for k in range(0, len(args), 2):
+                xs += [args[k] - half, args[k] + half]
+                ys += [args[k + 1] - half, args[k + 1] + half]
+    if not xs:
+        return None
+    x0 = math.floor(min(xs) * 100) / 100
+    y0 = math.floor(min(ys) * 100) / 100
+    x1 = math.ceil(max(xs) * 100) / 100
+    y1 = math.ceil(max(ys) * 100) / 100
+    return [float(_num(x0)), float(_num(y0)), float(_num(x1 - x0)), float(_num(y1 - y0))]
 
 
 def entry_to_svg(entry: Dict[str, object], px: Optional[float] = None,
@@ -661,7 +704,20 @@ def wanted(rules: Dict[str, object]) -> List[Tuple[str, Optional[Path]]]:
     for _axis, kind, glyph in dtc_kinds(rules):
         cands = [CONFIG / DRAFTS_DIR / f"dtc_{glyph}.svg", CONFIG / DTC_DIR / f"{glyph}.svg"]
         out.append((f"dtc:{kind}", next((c for c in cands if c.is_file()), None)))
+    for key, glyph in data_glyphs(rules):
+        cands = [CONFIG / DRAFTS_DIR / Path(glyph).name, CONFIG / glyph]
+        out.append((key, next((c for c in cands if c.is_file()), None)))
     return out
+
+
+def data_glyphs(rules: Dict[str, object]) -> Iterator[Tuple[str, str]]:
+    """(key, glyph file) for every entry of `2d_render_glyph_types.data_glyphs`
+    (1.6.32): the glyphs a node takes from its DATA rather than from its type —
+    the proxy, the tileset, the RM container and the versions `version:<kind>`."""
+    table = (rules.get("2d_render_glyph_types") or {}).get("data_glyphs") or {}   # type: ignore[union-attr]
+    for key, spec in table.items():
+        if not key.startswith("_") and isinstance(spec, dict) and isinstance(spec.get("glyph"), str):
+            yield key, spec["glyph"]
 
 
 def build(rules: Optional[Dict[str, object]] = None) -> Dict[str, object]:
@@ -678,8 +734,12 @@ def build(rules: Optional[Dict[str, object]] = None) -> Dict[str, object]:
 
 def declared_aspect(rules: Dict[str, object], key: str) -> float:
     """What the LAYOUT reads: `2d_render_glyph_types.aspect[<node_type>]`, and for
-    a DTC node the bare kind (em-core `glyph_aspect(kind)`), 1.0 when absent."""
+    a DTC node the bare kind (em-core `glyph_aspect(kind)`), 1.0 when absent. A
+    data glyph is looked up by its whole key first (`version:mesh`), so it can
+    never borrow the aspect of the DTC kind of the same name (`mesh`)."""
     table = (rules.get("2d_render_glyph_types") or {}).get("aspect") or {}   # type: ignore[union-attr]
+    if key in table:
+        return float(table[key])
     return float(table.get(key.split(":", 1)[-1], 1.0))
 
 
