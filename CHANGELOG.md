@@ -242,6 +242,21 @@ All notable changes to **s3dgraphy** are documented here.
   when a document does not carry it); the docstrings said «geographic north».
 
 ### Fixed
+- **A restored PostgreSQL dump can be written to** (#25, pyArchInit).
+  `pg_restore` copies the rows with their primary keys and does not reset the
+  serial sequences, so the first auto-key INSERT asks for a value the table
+  already holds: `GraphIngestor.populate_list` died on
+  `periodizzazione_table_pkey` while creating the epochs of a new site, and
+  the whole ingest rolled back — on such a database the site could not be
+  populated at all. `_resync_pg_serial_sequences` now realigns the sequences
+  of `us_table` and `periodizzazione_table` to `MAX(pk)` before anything is
+  written, each inside its own SAVEPOINT so a schema without one of those
+  tables does not abort the transaction, and a no-op on SQLite, whose
+  `AUTOINCREMENT` corrects itself. It reads no row and writes none, so
+  nothing already in the table moves or is renumbered. Tests in
+  `tests/sync/test_ingest_pg_sequence_resync.py`, measured against a
+  PostgreSQL 17 whose periodisation rows hold the keys 1..3 with the sequence
+  at 1.
 - **`get_extractor_nodes_for_node` compared `edge.edge_source` with the edge
   types** (#27), so its first loop, the extractor as the source of a
   provenance edge, never matched. Fixed. The set it returns cannot change (its
