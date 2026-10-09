@@ -1159,15 +1159,17 @@ class GraphProjector:
                 )
                 edge_type = "is_in_activity"
 
-            # Carry pyarchinit metadata as attributes (round-trip)
+            # Carry pyarchinit metadata as attributes (round-trip). An
+            # update, not an assignment: the constructor already put
+            # kind / propagation / y_pos there for the serialisers (#25).
             data_key = f"pyarchinit.{spec.group_kind}"
-            node.attributes = {
+            node.attributes.update({
                 "group_kind": spec.group_kind,
                 "sito": sito,
                 "name": spec.name,
                 data_key: spec.name,
                 "group_uuid": spec.group_uuid,
-            }
+            })
             graph.add_node(node)
             existing_ids.add(spec.group_uuid)
 
@@ -1292,12 +1294,14 @@ class GraphProjector:
                 kind="toponym",
                 description=f"Administrative level: {level_name}",
             )
-            node.attributes = {
+            # Update, keeping the constructor's kind / propagation /
+            # y_pos (#25).
+            node.attributes.update({
                 "group_kind": "toponym",
                 "level": level_name,
                 "name": value,
                 "group_uuid": uid,
-            }
+            })
             graph.add_node(node)
             existing_ids.add(uid)
 
