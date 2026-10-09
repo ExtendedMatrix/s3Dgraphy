@@ -306,6 +306,17 @@ def read_property(graph: Graph, extractor_id: str, property_id: str, *,
     return _read(graph, extractor_id, property_id, at=at)
 
 
+def view_instances(graph: Graph, group_id: str) -> List[Dict[str, Any]]:
+    """The instances a client draws inside the paradata group ``group_id``:
+    every master (document or property) outside the group that a reader of the
+    group reaches, with the badge of where it comes from. Computed, never
+    stored (E.D. 9 Oct 2026: the instance is a view). The rule is
+    ``em_visual_rules.json`` → ``paradata_instances``; see
+    :func:`s3dgraphy.paradata_view.view_instances`."""
+    from .paradata_view import view_instances as _view
+    return _view(graph, group_id)
+
+
 def dependents_of(graph: Graph, node_id: str) -> List[Dict[str, Any]]:
     """Who leans on a unit, a property or a document, in cascade: ``[{id,
     name, node_type, kind, via, depth, owner, owner_name}]`` — what an

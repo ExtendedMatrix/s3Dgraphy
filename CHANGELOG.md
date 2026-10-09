@@ -22,11 +22,18 @@ All notable changes to **s3dgraphy** are documented here.
   is an extractor that feeds ANOTHER property), and
   `connection_resolver.candidate_edge_types(..., graph=)` names
   `extracted_from` only then; without the graph it does not.
-- **The instance is a view** (connections 1.6.37, translations 1.8, MICRO «l'istanza è una
+- **The instance is a view** (connections 1.6.37, translations 1.8,
+  em_visual_rules 1.6.33, MICRO «l'istanza è una
   vista», decided by E.D. 9 October 2026, evening: «non ha nessun senso fare
   un'istanza nel triple store: è solamente una modalità grafica di
-  rappresentare il grafo»). No instance node in em.json nor in the RDF: the
-  instance is drawn by the clients. A property instance STORED in the afternoon of the same
+  rappresentare il grafo»). No instance node in em.json nor in the RDF: for a
+  paradata group, every master outside it — a document or a property — that a
+  reader of the group reaches is DRAWN inside it, with the badge of where it
+  comes from (the property's unit, the document's epoch). One rule for every
+  client, the block `paradata_instances` of `em_visual_rules.json`, read by the
+  pure function `s3dgraphy.paradata_view.view_instances(graph, group_id)`
+  (`api.view_instances`), which also gives the instance's id
+  (`<master>##<group>`). A property instance STORED in the afternoon of the same
   day (a `PropertyNode` with `data.instance_of`) is folded onto its master when
   an em.json is read (`property_source.fold_stored_instances`, one warning
   line); the afternoon's `instantiate_property`, `master_of`, `instances_of`

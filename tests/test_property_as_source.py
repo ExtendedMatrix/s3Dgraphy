@@ -181,6 +181,78 @@ def test_a_stored_instance_without_its_master_is_kept_and_said():
     assert any("without their master" in w and "I12" in w for w in warnings)
 
 
+# ── part 3 bis · the instances, computed ─────────────────────────────────────
+
+def test_view_instances_draws_the_property_in_the_reader_group():
+    g = _capriate()
+    (rec,) = api.view_instances(g, "PD_USV_40")
+    assert rec == {"id": "P12##PD_USV_40", "master": "P12", "kind": "property",
+                   "node_type": "property", "name": "essenza",
+                   "owner": "US_12", "owner_kind": "unit", "owner_name": "US 12",
+                   "removed": False, "readers": ["E40"], "extractors": ["E40"],
+                   "through": []}
+    # US 12's group reads D.1 — a document outside it: drawn there as well
+    (doc,) = api.view_instances(g, "PD_US_12")
+    assert (doc["master"], doc["kind"], doc["readers"]) == ("D1", "document", ["E12"])
+    # the graph is only read
+    assert g.find_node_by_id("P12##PD_USV_40") is None
+
+
+def test_view_instances_one_rule_for_documents_and_properties():
+    from s3dgraphy.nodes.combiner_node import CombinerNode
+    from s3dgraphy.nodes.epoch_node import EpochNode
+    g = _capriate()
+    # D.1 is born in an epoch: its badge
+    g.add_node(EpochNode("EP1", name="Roman", start_time=0, end_time=100))
+    g.add_edge("ep_d1", "D1", "EP1", "has_first_epoch")
+    # P40 now combines its reading of P12 with a reading of D.1 by an
+    # extractor that sits outside the group
+    g.add_node(ExtractorNode("E40b", name="D.1.2"))
+    g.add_edge("x40b", "E40b", "D1", "extracted_from")
+    g.add_node(CombinerNode("C40", name="C.1"))
+    g.remove_edge("p40")
+    g.add_edge("p40c", "P40", "C40", "has_data_provenance")
+    g.add_edge("c1", "C40", "E40", "combines")
+    g.add_edge("c2", "C40", "E40b", "combines")
+    g.add_edge("m_C40", "C40", "PD_USV_40", "is_in_paradata_nodegroup")
+    recs = {r["master"]: r for r in api.view_instances(g, "PD_USV_40")}
+    assert set(recs) == {"P12", "D1"}
+    assert recs["D1"]["owner"] == "EP1" and recs["D1"]["owner_kind"] == "epoch"
+    assert recs["D1"]["readers"] == ["C40"] and recs["D1"]["extractors"] == ["E40b"]
+    assert set(recs["P12"]["readers"]) == {"E40", "C40"}
+    # a master that IS a member of the group is drawn as itself
+    g.add_edge("m_D1", "D1", "PD_USV_40", "is_in_paradata_nodegroup")
+    assert "D1" not in {r["master"] for r in api.view_instances(g, "PD_USV_40")}
+    # not a paradata group: nothing
+    assert api.view_instances(g, "USV_40") == [] and api.view_instances(g, "nope") == []
+
+
+def test_view_instances_through_a_region_and_a_removed_master():
+    from s3dgraphy.nodes.annotation_region_node import AnnotationRegionNode
+    g = _capriate()
+    g.add_node(AnnotationRegionNode("R1", name="D.1 p.3", geometry_kind="passage",
+                                    text="quercus", start=0, end=7))
+    g.add_edge("on_r1", "R1", "D1", "is_on_resource")
+    g.add_node(ExtractorNode("E40c", name="D.1.3"))
+    g.add_edge("x40c", "E40c", "R1", "extracted_from")
+    g.add_edge("m_E40c", "E40c", "PD_USV_40", "is_in_paradata_nodegroup")
+    recs = {r["master"]: r for r in api.view_instances(g, "PD_USV_40")}
+    assert recs["D1"]["through"] == ["R1"] and recs["D1"]["extractors"] == ["E40c"]
+    api.remove_keeping_trace(g, "P12", at="2026-10-09T12:00:00Z")
+    assert {r["master"]: r["removed"] for r in api.view_instances(g, "PD_USV_40")}["P12"]
+
+
+def test_the_rule_is_in_the_visual_rules():
+    from s3dgraphy.paradata_view import instance_rule
+    raw = json.loads((pathlib.Path(api.__file__).parent / "JSON_config" /
+                      "em_visual_rules.json").read_text("utf-8"))
+    block = raw["paradata_instances"]
+    assert block == instance_rule()
+    assert block["id"] == "{master}##{group}" and block["reads"] == "extracted_from"
+    assert {v["kind"] for k, v in block["masters"].items()
+            if not k.startswith("_")} == {"document", "property"}
+
+
 def test_the_words_are_translated():
     from s3dgraphy.tools.datamodel_i18n import reasoning_text
     assert reasoning_text("instance_badge", lang="it") == "da {owner}"
@@ -416,6 +488,9 @@ def test_duplicate_per_owner_copies_read_the_same_master():
             and e.edge_type == "is_in_paradata_nodegroup"} == {"PD_USV_41"}
     assert {e.edge_target for e in g.edges if e.edge_source == "P40"
             and e.edge_type == "is_in_paradata_nodegroup"} == {"PD_USV_40"}
+    # the view draws P12 in both readers' groups
+    for group in ("PD_USV_40", "PD_USV_41"):
+        assert [r["master"] for r in api.view_instances(g, group)] == ["P12"]
     assert api.validate(g)["ok"] and diagnose(g) == []
 
 
