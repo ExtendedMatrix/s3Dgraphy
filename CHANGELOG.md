@@ -356,6 +356,41 @@ All notable changes to **s3dgraphy** are documented here.
   `test_round_trip_preserves_mapped_fields` stays, and now fails on its real
   cause: the serialiser writes `'>>'` where the column said `'copre'`. Tests in
   `tests/sync/test_projector_propagates_by_node_uuid.py`.
+- **The PostgreSQL test suite runs again** (#25, pyArchInit). None of it had
+  run for a long time: with no PostgreSQL the fixtures skip, so in CI nothing
+  showed, and on a machine that has one all 17 of those tests failed — which is
+  why none of them is in `scripts/known-test-failures.txt`. What was wrong, in
+  the tests and the fixtures only: `test_ingest_pg.py` built nodes with
+  `StratigraphicNode(…, data={})`, a kwarg the constructor no longer takes;
+  `test_group_store_pg.py` called `add_group(group_uuid=…)`, which now mints
+  and returns the uuid7 itself; `conftest_pg._apply_pyarchinit_schema` declared
+  `site_table.descrizione` while the ingestor's site auto-creation writes
+  `definizione_sito`, and added nothing to a test database an older copy had
+  already created, so the columns added since are now stated one by one with
+  `ADD COLUMN IF NOT EXISTS`; `pg_with_volterra` mirrored **all 149 tables** of
+  the spatialite fixture into PG, which cannot work (the virtual `SpatialIndex`
+  and the `idx_*` R*Tree triples cannot be reflected without mod_spatialite,
+  and an R*Tree shadow table carries a column `xmin`, which PostgreSQL refuses
+  as a system column name) and now mirrors the three the bridge reads, aligning
+  their columns with the fixture's so the INSERT does not stop on the first
+  column PG has not; four tests read the mirrored rows while asking for
+  `"Volterra"`, where the fixture's site is `TestSite`;
+  `test_node_uuid_backfill_pg.py` tested the migration that *adds* `node_uuid`
+  from a fixture that created the tables *with* it, so no `ALTER` was ever
+  issued and the mid-flight-failure test could not raise — it now starts from
+  the un-migrated state and puts the column back afterwards, the session's
+  schema being shared; and `test_pg_smoke.py` asked `us_table` for an exact
+  column list, which a database shared by the whole session cannot promise, so
+  it asks for the Foundation columns as a subset.
+  **29 of the 32 PG tests pass, and no test errors at setup any more (there
+  were 8).** Of the three left, one was already known; the two others ran for
+  the first time and are now in `scripts/known-test-failures.txt` with their
+  cause: `site_filter=` empties the export on SQLite, because `export_graphml`
+  projects with `strict_schema=False` — which skips
+  `_propagate_node_uuid_and_us` — while `_filter_by_site` matches on
+  `attributes['sito']`, which only the PostgreSQL importer sets by itself. On
+  the same fixture, `site_filter="TestSite"` gives 1 node where no filter gives
+  19, and 8 on PostgreSQL.
 - **The graph's own scaffolding is not an excavated unit** (#25, pyArchInit).
   `ContinuityNode` and `GraphNode` were missing from `_NON_STRAT_TYPES`, so
   `GraphIngestor.populate_list` wrote them into `us_table` as units: a graph
