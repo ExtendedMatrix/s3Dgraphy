@@ -382,6 +382,26 @@ All notable changes to **s3dgraphy** are documented here.
   `tests/sync/test_ingest_pg_sequence_resync.py`, measured against a
   PostgreSQL 17 whose periodisation rows hold the keys 1..3 with the sequence
   at 1.
+- **A graph delivered to another site lands there as a copy, and `node_uuid`
+  is never rewritten** (#25, pyArchInit). `GraphIngestor.populate_list` looked
+  a node up with `WHERE node_uuid = :uuid` and no site, then wrote
+  `sito = <target>` over the row it found: importing into site B a graph built
+  for site A *moved* A's rows into B, and the site the graph came from was
+  emptied — what pyArchInit's users reported as «l'import azzera le US». The
+  lookup now resolves the row for the target site (`_resolve_target_row`):
+  same site → UPDATE in place, which keeps the export → edit → reimport
+  round-trip idempotent; another site's row → never touched, and the search
+  moves to the natural key `(sito, area, us, unita_tipo)` inside the target,
+  so a copy already there is updated and a copy that is not yet there is
+  INSERTed with a fresh `uuid7`; unknown anywhere → INSERT keeping the
+  identity the graph carries. `node_uuid` is an identity and not a payload, so
+  it is excluded from the selective UPDATE and from the change detection: a
+  copy matched by natural key has an identity of its own by design, and the
+  difference is not a change to apply. Measured on a two-site copy of
+  `mini_volterra`: delivering `AltroSito`'s graph into `TestSite` left
+  `AltroSito` at 5 rows byte-identical (it used to drop to 0), `TestSite` went
+  to 10 with five new `node_uuid`s, and a second delivery changed nothing.
+  Tests in `tests/sync/test_ingest_cross_site_copy.py`.
 - **`get_extractor_nodes_for_node` compared `edge.edge_source` with the edge
   types** (#27), so its first loop, the extractor as the source of a
   provenance edge, never matched. Fixed. The set it returns cannot change (its
