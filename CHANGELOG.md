@@ -77,6 +77,20 @@ All notable changes to **s3dgraphy** are documented here.
   `duplicate_per_owner(graph, property_id)` follows EMStudio's
   `duplicateForEachOwner` — combiners and extractors duplicated, the copies
   reading the same masters (documents, properties) as they are.
+- **The continuity labels are read, in the ten languages that write them**
+  (#25, pyArchInit). «Genera continuità» writes a localized pair into
+  `us_table.rapporti` — «Continuità successiva a» / «Continuità precedente a»
+  and its nine translations — for the relation that says a unit's life
+  continues past the epoch it was born in. `parse_rapporti` did not know the
+  pair, and an unknown label is skipped by design, so a site that used the
+  feature projected those relations as no edge at all and said nothing. The
+  pair joins `_REL_TERMS_BY_LANG` and `_REL_INDEX_EDGE_TYPE` as indices 10 and
+  11, inside the table the suite already keeps in step, mapping to `is_after`
+  and to `is_before` — the reverse *reading* the datamodel declares for it,
+  exactly as `is_overlain_by` is for `overlies`. The mapping is one-way:
+  *input* aliases only, nothing localized reaches the graph, and the labels
+  shown to people stay with the datamodel's own translations. Tests in
+  `tests/sync/test_rapporti_continuity_labels.py`.
 - **A version of several files, and a version made again** (MICRO «i parametri
   diventano la ricetta della versione», E.D. 6 October 2026: for Heriverse/ATON
   the version is a glTF with its textures). `add_version` with several files
@@ -314,6 +328,89 @@ All notable changes to **s3dgraphy** are documented here.
   when a document does not carry it); the docstrings said «geographic north».
 
 ### Fixed
+- **The projector finds its nodes by `node_uuid`, not by label** (#25, with
+  E.D.'s diagnosis of 9 October). `_propagate_node_uuid_and_us` matched a row
+  to its node by `name == str(us_table.us)`. Since 1.6 the importer names
+  nodes from `node_name_template`, so the row's `'1'` never met the node's
+  `'1.US1'` and no row matched; the fallback node it then built could not be
+  added either, its id being already in the graph, so **every row was dropped
+  in silence** and a projected graph carried no `us`, `area`, `unita_tipo` or
+  `node_uuid` in `attributes` at all. The match now keys on the identity the
+  importer already gave the node — the row's `node_uuid` is its `node_id` —
+  and falls back to the name for graphs built outside the importer. A paradata
+  row keeps its own path, which builds it a freshly typed node on purpose:
+  binding it to the generic unit would alias the edges `_enrich_into` has
+  already added onto a document or combiner class (Bug N). The label itself is
+  unchanged and stays what it is: in Blender two nodes cannot share one, so
+  across sites it also carries a site code (`TM16.1.USM100`), and a label is
+  not something to parse back into columns. `strip_us_prefix` stays as the
+  last resort for a graph that arrives with labels and no attributes, and now
+  reads the unit type in the last dotted segment (`1.US1` → `1`,
+  `TM16.1.USM100` → `100`) before falling back to the whole name, which is how
+  the paradata codes are written (`D.4001` → `4001`); a name whose dot belongs
+  to the value (`12.3`) is left alone rather than truncated.
+  **14 of the known failures turn green** — all of
+  `test_groups_export_em_template.py`, `test_update_preserves_unmapped_columns`,
+  `test_sql_update_when_flag_enabled` among them — with no new failure, and
+  `scripts/known-test-failures.txt` goes from 29 entries to 15.
+  `test_round_trip_preserves_mapped_fields` stays, and now fails on its real
+  cause: the serialiser writes `'>>'` where the column said `'copre'`. Tests in
+  `tests/sync/test_projector_propagates_by_node_uuid.py`.
+- **The PostgreSQL test suite runs again** (#25, pyArchInit). None of it had
+  run for a long time: with no PostgreSQL the fixtures skip, so in CI nothing
+  showed, and on a machine that has one all 17 of those tests failed — which is
+  why none of them is in `scripts/known-test-failures.txt`. What was wrong, in
+  the tests and the fixtures only: `test_ingest_pg.py` built nodes with
+  `StratigraphicNode(…, data={})`, a kwarg the constructor no longer takes;
+  `test_group_store_pg.py` called `add_group(group_uuid=…)`, which now mints
+  and returns the uuid7 itself; `conftest_pg._apply_pyarchinit_schema` declared
+  `site_table.descrizione` while the ingestor's site auto-creation writes
+  `definizione_sito`, and added nothing to a test database an older copy had
+  already created, so the columns added since are now stated one by one with
+  `ADD COLUMN IF NOT EXISTS`; `pg_with_volterra` mirrored **all 149 tables** of
+  the spatialite fixture into PG, which cannot work (the virtual `SpatialIndex`
+  and the `idx_*` R*Tree triples cannot be reflected without mod_spatialite,
+  and an R*Tree shadow table carries a column `xmin`, which PostgreSQL refuses
+  as a system column name) and now mirrors the three the bridge reads, aligning
+  their columns with the fixture's so the INSERT does not stop on the first
+  column PG has not; four tests read the mirrored rows while asking for
+  `"Volterra"`, where the fixture's site is `TestSite`;
+  `test_node_uuid_backfill_pg.py` tested the migration that *adds* `node_uuid`
+  from a fixture that created the tables *with* it, so no `ALTER` was ever
+  issued and the mid-flight-failure test could not raise — it now starts from
+  the un-migrated state and puts the column back afterwards, the session's
+  schema being shared; and `test_pg_smoke.py` asked `us_table` for an exact
+  column list, which a database shared by the whole session cannot promise, so
+  it asks for the Foundation columns as a subset.
+  **29 of the 32 PG tests pass, and no test errors at setup any more (there
+  were 8).** Of the three left, one was already known; the two others ran for
+  the first time and are now in `scripts/known-test-failures.txt` with their
+  cause: `site_filter=` empties the export on SQLite, because `export_graphml`
+  projects with `strict_schema=False` — which skips
+  `_propagate_node_uuid_and_us` — while `_filter_by_site` matches on
+  `attributes['sito']`, which only the PostgreSQL importer sets by itself. On
+  the same fixture, `site_filter="TestSite"` gives 1 node where no filter gives
+  19, and 8 on PostgreSQL.
+- **One epoch per (periodo, fase), and only this site's** (#25, pyArchInit).
+  Two things met in the same place in `GraphProjector`. The pyarchinit importer
+  already builds an epoch node per periodisation row,
+  `epoch::<sito>::<periodo>::<fase>`; the projector then built its own,
+  `epoch_<p>_<f>`, for the same row — the same period in the graph twice. And
+  its periodisation query carried no `WHERE sito`, where the `us_table` query
+  ten lines below already had one, so on a multi-site database it read every
+  site's rows: a period the site does not have arrived, and the name of a
+  period it does have came from whichever site happened to win. Measured on
+  pyArchInit's ten-site demo, where ten translations of the same twelve
+  periods live side by side: «Scavo archeologico» had 12 periodisation rows and
+  **24 EpochNodes, 12 of them named in another language**; it now has 12 and no
+  repeated name. `_adopt_importer_epoch` folds the importer's twin into the id
+  this projector mints — which stays the canonical one, because the round-trip
+  and the tests key on it — retargeting its edges, dropping one that would
+  become a duplicate, and removing the twin; it does nothing when there is no
+  twin, which is every path that did not come through the pyarchinit importer.
+  No edge is left pointing at an epoch that is gone (measured). pyArchInit can
+  drop its own `_fix_epochs` merge pass. Tests in
+  `tests/sync/test_projector_epochs_once_per_period.py`.
 - **`group_store.add_group` keeps what the constructor put in `attributes`**
   (#25, pyArchInit). The same pattern as the two places in `graph_projector`
   fixed on 9 October: `node.attributes = {…}` replaces the dict the
@@ -356,6 +453,26 @@ All notable changes to **s3dgraphy** are documented here.
   `tests/sync/test_ingest_pg_sequence_resync.py`, measured against a
   PostgreSQL 17 whose periodisation rows hold the keys 1..3 with the sequence
   at 1.
+- **A graph delivered to another site lands there as a copy, and `node_uuid`
+  is never rewritten** (#25, pyArchInit). `GraphIngestor.populate_list` looked
+  a node up with `WHERE node_uuid = :uuid` and no site, then wrote
+  `sito = <target>` over the row it found: importing into site B a graph built
+  for site A *moved* A's rows into B, and the site the graph came from was
+  emptied — what pyArchInit's users reported as «l'import azzera le US». The
+  lookup now resolves the row for the target site (`_resolve_target_row`):
+  same site → UPDATE in place, which keeps the export → edit → reimport
+  round-trip idempotent; another site's row → never touched, and the search
+  moves to the natural key `(sito, area, us, unita_tipo)` inside the target,
+  so a copy already there is updated and a copy that is not yet there is
+  INSERTed with a fresh `uuid7`; unknown anywhere → INSERT keeping the
+  identity the graph carries. `node_uuid` is an identity and not a payload, so
+  it is excluded from the selective UPDATE and from the change detection: a
+  copy matched by natural key has an identity of its own by design, and the
+  difference is not a change to apply. Measured on a two-site copy of
+  `mini_volterra`: delivering `AltroSito`'s graph into `TestSite` left
+  `AltroSito` at 5 rows byte-identical (it used to drop to 0), `TestSite` went
+  to 10 with five new `node_uuid`s, and a second delivery changed nothing.
+  Tests in `tests/sync/test_ingest_cross_site_copy.py`.
 - **`get_extractor_nodes_for_node` compared `edge.edge_source` with the edge
   types** (#27), so its first loop, the extractor as the source of a
   provenance edge, never matched. Fixed. The set it returns cannot change (its

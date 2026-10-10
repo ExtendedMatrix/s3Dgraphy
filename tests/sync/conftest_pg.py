@@ -67,9 +67,25 @@ def _apply_pyarchinit_schema(engine: Engine) -> None:
                 provincia TEXT,
                 comune TEXT,
                 descrizione TEXT,
+                definizione_sito TEXT,
                 node_uuid TEXT
             )
         """))
+        # A database built by an older copy of this fixture keeps the table
+        # it was given: CREATE TABLE IF NOT EXISTS adds no column to it. So
+        # say the columns added since, each one idempotently, or a reused
+        # test database fails on whichever is missing — definizione_sito is
+        # the one the ingestor writes when it auto-creates a site.
+        for tabella, colonna, tipo in (
+            ("site_table", "definizione_sito", "TEXT"),
+            ("site_table", "node_uuid", "TEXT"),
+            ("us_table", "node_uuid", "TEXT"),
+            ("us_table", "other_locations", "TEXT"),
+            ("periodizzazione_table", "node_uuid", "TEXT"),
+        ):
+            conn.execute(text(
+                "ALTER TABLE %s ADD COLUMN IF NOT EXISTS %s %s"
+                % (tabella, colonna, tipo)))
         conn.execute(text("""
             CREATE TABLE IF NOT EXISTS periodizzazione_table (
                 id_perfas SERIAL PRIMARY KEY,
@@ -154,8 +170,17 @@ def load_sqlite_into_pg(sqlite_path, pg_engine, tables=None):
     Args:
         sqlite_path: Path to the SQLite fixture file.
         pg_engine: SQLAlchemy Engine connected to PG.
-        tables: Optional list of table names to limit the load.
-                None (default) = all user tables (excludes sqlite_*).
+        tables: The table names to load. **Say them.** A pyarchinit
+                fixture is a spatialite database — ``mini_volterra`` has
+                149 tables — and mirroring all of it into PG is neither
+                wanted nor possible: the virtual ones
+                (``SpatialIndex``, the ``idx_*`` R*Tree triples) cannot
+                even be reflected without mod_spatialite (``no such
+                module: VirtualSpatialIndex``), and an R*Tree shadow
+                table that CAN be reflected carries a column ``xmin``,
+                which PostgreSQL refuses as a system column name.
+                ``None`` still means "every user table it can read", for
+                a caller with a plain SQLite file.
     """
     from pathlib import Path
     from sqlalchemy import create_engine, inspect
@@ -170,7 +195,13 @@ def load_sqlite_into_pg(sqlite_path, pg_engine, tables=None):
     counts: dict = {}
 
     for table in tables:
-        cols = sqlite_inspector.get_columns(table)
+        try:
+            cols = sqlite_inspector.get_columns(table)
+        except Exception:
+            # A virtual table whose module this interpreter has not
+            # loaded: spatialite's SpatialIndex and the idx_* R*Tree
+            # triples. There is no schema to read and nothing to mirror.
+            continue
         if not cols:
             counts[table] = 0
             continue
@@ -182,6 +213,17 @@ def load_sqlite_into_pg(sqlite_path, pg_engine, tables=None):
             conn.execute(text(
                 f"CREATE TABLE IF NOT EXISTS {table} ({col_defs})"
             ))
+            # The table may already be there and narrower than the fixture
+            # — _apply_pyarchinit_schema builds a us_table of 20 columns
+            # while the fixture's has every pyarchinit column — and
+            # CREATE TABLE IF NOT EXISTS adds nothing to it. Say each
+            # column, idempotently, or the INSERT below fails on the first
+            # one the fixture has and PG has not (it was `descrizione`).
+            for col in cols:
+                conn.execute(text(
+                    "ALTER TABLE %s ADD COLUMN IF NOT EXISTS %s %s"
+                    % (table, col["name"],
+                       _sqlite_type_to_pg(col["type"]))))
             conn.execute(text(
                 f"TRUNCATE {table} RESTART IDENTITY CASCADE"
             ))
@@ -207,6 +249,13 @@ def load_sqlite_into_pg(sqlite_path, pg_engine, tables=None):
     return counts
 
 
+#: The tables the bridge reads, and the only ones worth mirroring into PG.
+#: Named explicitly because the fixture is a spatialite database whose other
+#: 146 tables are either unreadable here or illegal in PostgreSQL — see
+#: ``load_sqlite_into_pg``.
+MIRRORED_TABLES = ("site_table", "us_table", "periodizzazione_table")
+
+
 @pytest.fixture
 def pg_with_volterra(pg_engine):
     """PG seeded with the mini_volterra.sqlite fixture data.
@@ -218,5 +267,5 @@ def pg_with_volterra(pg_engine):
     fixture = Path(__file__).parent / "fixtures" / "mini_volterra.sqlite"
     if not fixture.exists():
         pytest.skip(f"Fixture missing: {fixture}")
-    load_sqlite_into_pg(fixture, pg_engine)
+    load_sqlite_into_pg(fixture, pg_engine, tables=MIRRORED_TABLES)
     yield pg_engine
