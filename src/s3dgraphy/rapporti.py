@@ -121,46 +121,66 @@ _REL_INDEX_EDGE_TYPE: tuple[str, ...] = (
     "is_cut_by",               # 7  Tagliato da / Cut by
     "abuts",                   # 8  Si appoggia a / Abuts
     "is_abutted_by",           # 9  Gli si appoggia / Supports
+    # pyArchInit's «Genera continuità» writes this pair for the relation
+    # that says a unit's life continues past the epoch it was born in.
+    # Input aliases only: `is_before` is the reverse READING the datamodel
+    # declares for `is_after`, exactly as `is_overlain_by` is for
+    # `overlies`, so nothing localized reaches the graph and what people
+    # are shown stays with the datamodel translations (#25).
+    "is_after",                # 10 Continuità successiva a
+    "is_before",               # 11 Continuità precedente a
 )
 
 #: 10 relationship terms per language (same indices as _REL_INDEX_EDGE_TYPE).
 _REL_TERMS_BY_LANG: dict[str, tuple[str, ...]] = {
     "it": ("Uguale a", "Si lega a", "Copre", "Coperto da", "Riempie",
            "Riempito da", "Taglia", "Tagliato da", "Si appoggia a",
-           "Gli si appoggia"),
+           "Gli si appoggia",
+           "Continuità successiva a", "Continuità precedente a"),
     "en": ("Same as", "Connected to", "Covers", "Covered by", "Fills",
-           "Filled by", "Cuts", "Cut by", "Abuts", "Supports"),
+           "Filled by", "Cuts", "Cut by", "Abuts", "Supports",
+           "Subsequent continuity of", "Prior continuity of"),
     "de": ("Entspricht", "Bindet an", "Liegt über", "Liegt unter",
            "Verfüllt", "Wird verfüllt durch", "Schneidet",
-           "Wird geschnitten", "Stützt sich auf", "Wird gestützt von"),
+           "Wird geschnitten", "Stützt sich auf", "Wird gestützt von",
+           "Nachfolgende Kontinuität von", "Vorherige Kontinuität von"),
     "es": ("Igual a", "Se liga a", "Cubre", "Cubierto por", "Rellena",
            "Rellenado por", "Corta", "Cortado por", "Se apoya en",
-           "Le se apoya"),
+           "Le se apoya",
+           "Continuidad posterior a", "Continuidad anterior a"),
     "fr": ("Égal à", "Se lie à", "Couvre", "Couvert par",
            "Remplit", "Rempli par", "Coupe", "Coupé par",
-           "S’appuie sur", "Lui s’appuie"),
+           "S’appuie sur", "Lui s’appuie",
+           "Continuité postérieure à", "Continuité antérieure à"),
     "ar": ("مساوي ل", "يرتبط ب",
            "يغطي", "مغطى من",
            "يملأ", "ممتلئ من",
            "يقطع", "مقطوع من",
            "يستند إلى",
-           "يستند عليه"),
+           "يستند عليه",
+           "استمرارية لاحقة لـ",
+           "استمرارية سابقة لـ"),
     "ca": ("Igual a", "Es lliga a", "Cobreix", "Cobert per", "Omple",
            "Omplert per", "Talla", "Tallat per", "S’recolza en",
-           "Li es recolza"),
+           "Li es recolza",
+           "Continuïtat posterior a", "Continuïtat anterior a"),
     "ro": ("Egal cu", "Se leagă de", "Acoperă", "Acoperit de",
            "Umple", "Umplut de", "Taie", "Tăiat de",
-           "Se sprijină pe", "I se sprijină"),
+           "Se sprijină pe", "I se sprijină",
+           "Continuitate ulterioară a", "Continuitate anterioară a"),
     "pt": ("Igual a", "Liga-se a", "Cobre", "Coberto por", "Preenche",
            "Preenchido por", "Corta", "Cortado por", "Apoia-se em",
-           "Apoiado por"),
+           "Apoiado por",
+           "Continuidade posterior a", "Continuidade anterior a"),
     "el": ("Ίσο με", "Συνδέεται με",
            "Καλύπτει",
            "Καλύπτεται από",
            "Γεμίζει",
            "Γεμίζεται από",
            "Τέμνει", "Τέμνεται από",
-           "Εφάπτεται", "Υποστηρίζει"),
+           "Εφάπτεται", "Υποστηρίζει",
+           "Μεταγενέστερη συνέχεια του",
+           "Προγενέστερη συνέχεια του"),
 }
 
 # Fold every language's terms into RAPPORTI_TO_EDGE_TYPE (keys lowercased to
