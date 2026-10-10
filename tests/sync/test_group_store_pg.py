@@ -50,18 +50,20 @@ def test_group_store_write_read_roundtrip_on_pg(
     store = GroupStore(db_path=handle, sito="TestSite")
     assert not store.exists()
 
-    # add_group writes the file
-    store.add_group(
-        group_uuid="test-group-uuid-1",
+    # add_group writes the file. It mints the uuid7 itself and returns it,
+    # so the identity is not the caller's to choose.
+    group_uuid = store.add_group(
         name="TestGroup",
         description="A test group",
         member_us_uuids=[],
     )
+    assert group_uuid
     assert store.exists()
 
     groups = store.list_groups()
     assert len(groups) == 1, f"expected 1 group, got {len(groups)}"
     assert groups[0].get("name") == "TestGroup"
+    assert groups[0].get("group_uuid") == group_uuid
 
 
 def test_group_store_conn_slug_deterministic_on_pg(pg_engine):

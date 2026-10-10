@@ -96,6 +96,7 @@ from typing import TYPE_CHECKING, Any, Callable, Optional
 from sqlalchemy import text
 
 from .conflict_resolver import ConflictResolver
+from .uuid7 import uuid7
 from .ingest_result import (
     ConflictRecord, ConflictResolution, IngestResult)
 from .yed_rapporti_policy import FolderEdgePolicy
@@ -210,6 +211,48 @@ def _resync_pg_serial_sequences(conn, handle) -> None:
                     % (pk, table)), {"table": table, "pk": pk})
         except Exception:  # pragma: no cover - housekeeping, never fatal
             log.debug("sequence of %s.%s left as it was", table, pk)
+def _resolve_target_row(conn, node_uuid, sito, area, us, unita_tipo):
+    """Map a graph node onto the ``us_table`` row it must write.
+
+    Returns ``(existing_row | None, effective_node_uuid)``. Three cases:
+
+    * **Same site** — a row with this ``node_uuid`` already lives in
+      ``sito``: return it for UPDATE. This is the idempotent
+      export → edit → reimport round-trip.
+    * **Another site** — the ``node_uuid`` belongs to a row of a
+      *different* site, because the graph was built for site A and is
+      being delivered to site B. The source row is never touched: the
+      lookup moves to the natural key ``(sito, area, us, unita_tipo)``
+      inside the target site, so a copy already there is updated in
+      place and carries its own identity; when there is none, the
+      caller INSERTs a fresh copy with a fresh ``uuid7``.
+    * **Unknown** — no row anywhere has it: INSERT, keeping the
+      identity the graph carries.
+
+    Without the site in the first lookup the ingestor found the source
+    row and wrote ``sito = <target>`` over it, emptying the site the
+    graph came from.
+    """
+    res = conn.execute(
+        text("SELECT * FROM us_table WHERE node_uuid = :u AND sito = :s"),
+        {"u": node_uuid, "s": sito})
+    row = res.fetchone()
+    if row is not None:
+        return dict(zip(res.keys(), row)), node_uuid
+    owner = conn.execute(
+        text("SELECT sito FROM us_table WHERE node_uuid = :u LIMIT 1"),
+        {"u": node_uuid}).fetchone()
+    if owner is None:
+        return None, node_uuid
+    res = conn.execute(
+        text("SELECT * FROM us_table WHERE sito = :s AND area = :a "
+             "AND us = :us AND unita_tipo = :ut"),
+        {"s": sito, "a": str(area), "us": str(us), "ut": str(unita_tipo)})
+    row = res.fetchone()
+    if row is not None:
+        keys = list(res.keys())
+        return dict(zip(keys, row)), row[keys.index("node_uuid")]
+    return None, str(uuid7())
 
 
 class GraphIngestor:
@@ -512,20 +555,21 @@ class GraphIngestor:
                                    or attrs.get("url"))
                         if doc_url:
                             attrs["documentazione"] = str(doc_url)
-                    result = conn.execute(
-                        text("SELECT * FROM us_table WHERE node_uuid = :uuid"),
-                        {"uuid": node_uuid},
-                    )
-                    row = result.fetchone()
-                    if row is None:
+                    # Same resolution as the apply loop below: same-site
+                    # UPDATE, another site's row left alone, a copy already in
+                    # the target site updated in place.
+                    db_row, _eff_uuid = _resolve_target_row(
+                        conn, node_uuid, sito, attrs.get("area") or "1",
+                        attrs.get("us"), attrs.get("unita_tipo"))
+                    if db_row is None:
                         inserted += 1
                         continue
-                    # Build {col: db_val} dict from row + result.keys()
-                    col_names = list(result.keys())
-                    db_row = dict(zip(col_names, row))
                     row_changed = False
                     for col in MAPPED_COLUMNS:
-                        if col not in attrs:
+                        if col not in attrs or col == "node_uuid":
+                            # node_uuid is the identity, never a payload: a
+                            # copy matched by natural key has its own by
+                            # design and a difference there is not a change.
                             continue
                         db_val = db_row.get(col)
                         graph_val = attrs.get(col)
@@ -658,15 +702,13 @@ class GraphIngestor:
                                 "fase_iniziale" not in attrs
                                 or not attrs["fase_iniziale"]):
                             attrs["fase_iniziale"] = str(f_iniz)
-                        result = conn.execute(
-                            text("SELECT * FROM us_table WHERE node_uuid = :uuid"),
-                            {"uuid": node_uuid},
-                        )
-                        existing = result.fetchone()
+                        existing, eff_uuid = _resolve_target_row(
+                            conn, node_uuid, sito, attrs.get("area") or "1",
+                            attrs.get("us"), attrs.get("unita_tipo"))
                         col_payload = {col: attrs.get(col)
                                        for col in MAPPED_COLUMNS
                                        if col in attrs}
-                        col_payload["node_uuid"] = node_uuid
+                        col_payload["node_uuid"] = eff_uuid
                         col_payload["sito"] = sito
                         if existing is None:
                             # INSERT
@@ -683,16 +725,16 @@ class GraphIngestor:
                             applied += 1
                         else:
                             # UPDATE selettivo: only the MAPPED_COLUMNS that
-                            # actually differ. Any column not in attrs and
+                            # actually differ. node_uuid is the identity and
+                            # is never rewritten. Any column not in attrs and
                             # any us_table column not in MAPPED_COLUMNS is
                             # left untouched (preserves descrizione, foto,
                             # etc.).
-                            col_names = list(result.keys())
-                            db_row = dict(zip(col_names, existing))
+                            db_row = existing
                             diff_cols = []
                             diff_vals = []
                             for col in MAPPED_COLUMNS:
-                                if col not in attrs:
+                                if col not in attrs or col == "node_uuid":
                                     continue
                                 if _values_equal(col, db_row.get(col),
                                                   attrs.get(col)):
@@ -703,7 +745,7 @@ class GraphIngestor:
                                 set_clause = ", ".join(
                                     f"{c} = :{c}" for c in diff_cols)
                                 params = {c: v for c, v in zip(diff_cols, diff_vals)}
-                                params["__node_uuid"] = node_uuid
+                                params["__node_uuid"] = eff_uuid
                                 conn.execute(
                                     text(
                                         f"UPDATE us_table SET {set_clause} "
