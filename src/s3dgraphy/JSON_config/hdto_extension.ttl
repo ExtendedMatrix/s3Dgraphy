@@ -30,6 +30,10 @@
 #          of crminf:I4 Proposition Set and HC15 Persistent Digital Object (was
 #          crm:E73 Information Object alone). Both were recorded as open in
 #          docs/hdto-coverage.md, measured on D7.1_final.docx.
+# v0.4 (2026-10-10): HC1 Heritage Entity becomes a subclass of crm:E70 Thing
+#          (was crm:E1 CRM Entity), as the official RDFS says
+#          (HDT_v2.0.1.rdf, ECHOES D7.1: HC1_Heritage_Entity rdfs:subClassOf
+#          crm:E70_Thing). Node datamodel 1.6.28.
 # License: CC-BY-4.0
 #
 # What this file does:
@@ -70,7 +74,7 @@
 hdto:HC1_Heritage_Entity
     a owl:Class ;
     rdfs:label "Heritage Entity"@en ;
-    rdfs:subClassOf crm:E1_CRM_Entity ;
+    rdfs:subClassOf crm:E70_Thing ;
     rdfs:comment "Any real-world entity socially recognized as having cultural, historical, or scientific value. Heritage status is context-dependent, dynamic, and socially constructed (an attributed ROLE, not an intrinsic property — DOLCE sense). Specialized as HC3 Tangible Heritage Entity or HC4 Intangible Heritage Entity."@en .
 
 hdto:HC2_Heritage_Digital_Twin

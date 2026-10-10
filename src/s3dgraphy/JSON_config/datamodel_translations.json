@@ -1,6 +1,6 @@
 {
  "schema": "s3Dgraphy_datamodel_translations",
- "version": "1.10",
+ "version": "1.11",
  "languages": [
   "en",
   "it",
@@ -7321,6 +7321,65 @@
     "ro": "Este o revizie a",
     "fr": "Est une révision de",
     "de": "Ist eine Revision von"
+   }
+  },
+  "study_took_place_at": {
+   "ui_phrase_as_source": {
+    "en": "{node} at {x}",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "{node} a {x}",
+    "el": "{node} σε {x}",
+    "he": "{node} ב-{x}",
+    "es": "{node} en {x}",
+    "pl": "{node} w {x}",
+    "ro": "{node} la {x}",
+    "fr": "{node} à {x}",
+    "de": "{node} in {x}"
+   },
+   "ui_phrase_as_target": {
+    "en": "{node} where {x} took place",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "{node} dove si è svolto {x}",
+    "el": "{node} όπου διεξήχθη {x}",
+    "he": "{node} שבו התקיים {x}",
+    "es": "{node} donde tuvo lugar {x}",
+    "pl": "{node}, gdzie odbyło się {x}",
+    "ro": "{node} unde s-a desfășurat {x}",
+    "fr": "{node} où s'est déroulé {x}",
+    "de": "{node}, wo {x} stattfand"
+   },
+   "label": {
+    "en": "Study took place at",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Lo studio si è svolto in",
+    "el": "Η μελέτη διεξήχθη σε",
+    "he": "המחקר התקיים ב",
+    "es": "El estudio tuvo lugar en",
+    "pl": "Badanie odbyło się w",
+    "ro": "Studiul s-a desfășurat la",
+    "fr": "L'étude s'est déroulée à",
+    "de": "Studie fand statt in"
    }
   }
  },

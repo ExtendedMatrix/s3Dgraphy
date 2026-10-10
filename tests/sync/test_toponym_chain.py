@@ -65,14 +65,17 @@ def test_two_sites_same_comune_share_node(tmp_path):
     g2 = proj.populate_graph(db_path=TOPONYM_DB, sito="Volterra2")
     # Same projector, same DB, two calls — UUIDs must match
     volterra_uuid_1 = _toponym_uuid("Volterra")
+    # the comune, not the site of the same name (level 'sito', its own id)
     locs_1 = [n for n in g1.nodes
               if type(n).__name__ == "LocationNodeGroup"
               and n.name == "Volterra"
-              and getattr(n, "kind", None) == "toponym"]
+              and getattr(n, "kind", None) == "toponym"
+              and n.attributes.get("level") == "comune"]
     locs_2 = [n for n in g2.nodes
               if type(n).__name__ == "LocationNodeGroup"
               and n.name == "Volterra"
-              and getattr(n, "kind", None) == "toponym"]
+              and getattr(n, "kind", None) == "toponym"
+              and n.attributes.get("level") == "comune"]
     assert len(locs_1) == 1
     assert len(locs_2) == 1
     assert locs_1[0].node_id == locs_2[0].node_id == volterra_uuid_1
@@ -102,7 +105,8 @@ def test_us_connects_to_deepest_level_only(tmp_path):
 
 
 def test_all_admin_levels_empty_no_chain(tmp_path):
-    """If site_table has all 4 admin levels empty → no toponym chain."""
+    """If site_table has all 4 admin levels empty → no administrative chain:
+    only the site's own place (MICRO lo studio usabile, 10 Oct 2026)."""
     db = tmp_path / "x.sqlite"
     db.write_bytes(TOPONYM_DB.read_bytes())
     conn = sqlite3.connect(str(db))
@@ -120,7 +124,10 @@ def test_all_admin_levels_empty_no_chain(tmp_path):
     toponyms = [n for n in graph.nodes
                 if type(n).__name__ == "LocationNodeGroup"
                 and getattr(n, "kind", None) == "toponym"]
-    assert toponyms == []
+    assert [(n.name, n.attributes.get("level")) for n in toponyms] == [
+        ("NoToponym", "sito")]
+    assert not [e for e in graph.edges if e.edge_type == "is_in_location"
+                and e.edge_source == toponyms[0].node_id]
 
 
 def test_round_trip_preserves_site_table(tmp_path):
@@ -149,3 +156,15 @@ def test_round_trip_preserves_site_table(tmp_path):
     finally:
         conn.close()
     assert before == after, "projector must not mutate site_table"
+
+
+def test_the_site_closes_the_chain(tmp_path):
+    """The site is the last link (E.D., 10 Oct 2026: «il sito è topografia»):
+    its own place, in the comune, with the id hdto.declare_hdto uses."""
+    from s3dgraphy.hdto import site_place_id
+    graph = GraphProjector().populate_graph(db_path=TOPONYM_DB, sito="Volterra")
+    site = graph.find_node_by_id(site_place_id("Volterra"))
+    assert site is not None and site.attributes["level"] == "sito"
+    assert site.node_id != _toponym_uuid("Volterra")  # not the comune
+    assert ("chain_%s_%s" % (site.node_id, _toponym_uuid("Volterra"))
+            in {e.edge_id for e in graph.edges})

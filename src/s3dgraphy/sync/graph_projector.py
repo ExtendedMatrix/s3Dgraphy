@@ -1288,7 +1288,13 @@ class GraphProjector:
         chain from site_table.{nazione,regione,provincia,comune}.
 
         Empty levels are skipped (Q4=c). If all 4 levels are empty, no
-        chain is emitted.
+        administrative chain is emitted.
+
+        The site itself closes the chain (MICRO lo studio usabile, E.D.
+        10 Oct 2026): a LocationNodeGroup(kind='toponym', level='sito'),
+        id ``hdto.site_place_id(sito, site_table.entity_uuid)``,
+        is_in_location the deepest administrative level. It is always made,
+        and it is the place ``hdto.declare_hdto`` hangs a study off.
 
         Cross-site dedupe: each (name, "toponym") pair maps to a
         deterministic group_uuid (sha1) so two sites in the same comune
@@ -1305,11 +1311,15 @@ class GraphProjector:
         import hashlib
         try:
             handle = _resolve_db_handle(db_path)
+            # the site's own stable identity, when the DB has the column
+            # (pyArchInit's entity_uuid): the id of the site's place
+            has_uuid = "entity_uuid" in _columns_of(handle.engine, "site_table")
             with handle.engine.connect() as conn:
                 row = conn.execute(
                     text(
-                        "SELECT nazione, regione, provincia, comune "
-                        "FROM site_table WHERE sito=:sito"
+                        "SELECT nazione, regione, provincia, comune, "
+                        + ("entity_uuid " if has_uuid else "NULL ")
+                        + "FROM site_table WHERE sito=:sito"
                     ),
                     {"sito": sito},
                 ).fetchone()
@@ -1336,10 +1346,20 @@ class GraphProjector:
             if v is not None and str(v).strip():
                 levels.append((col_name, str(v).strip()))
 
+        # The SITE is the last link (E.D., 10 Oct 2026: «il sito è
+        # topografia»): a place of its own under the deepest administrative
+        # level, the place a study took place at (hdto.declare_hdto finds it
+        # by the same id). Made even when no administrative level is known.
+        from s3dgraphy.hdto import make_site_place
+        site_place = make_site_place(sito, row[4])
+        if site_place.node_id not in {getattr(n, "node_id", None)
+                                      for n in graph.nodes}:
+            graph.add_node(site_place)
+
         if not levels:
             logging.getLogger(__name__).info(
                 "_emit_toponym_chain: all admin levels empty for sito '%s'; "
-                "skipping toponym chain",
+                "only the site's place",
                 sito,
             )
             return
@@ -1399,7 +1419,25 @@ class GraphProjector:
                     "_emit_toponym_chain: skipping edge %s (%s)", edge_id, e
                 )
 
-        # US edges: each US connects to the DEEPEST level (last in `levels`)
+        # The site is in the deepest administrative level
+        try:
+            edge = graph.add_edge(
+                edge_id=f"chain_{site_place.node_id}_{level_uuids[-1]}",
+                edge_source=site_place.node_id,
+                edge_target=level_uuids[-1],
+                edge_type="is_in_location",
+            )
+            if edge is not None:
+                if getattr(edge, "attributes", None) is None:
+                    edge.attributes = {}
+                edge.attributes["is_primary"] = False
+        except ValueError as e:
+            logging.getLogger(__name__).debug(
+                "_emit_toponym_chain: skipping site edge (%s)", e
+            )
+
+        # US edges: each US connects to the DEEPEST ADMINISTRATIVE level (last
+        # in `levels`), as before the site's place existed
         deepest_uuid = level_uuids[-1]
         us_nodes = [n for n in graph.nodes if _is_us_node(n)]
         for us in us_nodes:

@@ -637,6 +637,55 @@ def merge_containers(container, other):
     return merge_into_container(container, other)
 
 
+# ── HDT-O: the study, its place, the heritage it is about ────────────────────
+
+def declare_hdto(graph: Graph, *, study=None, place=None, about=None,
+                 parent=None, project=None, twin=None) -> Dict[str, Any]:
+    """Declare the HDT-O chain of a graph, idempotently — EMStudio's roles,
+    types and edges (``applyHdto``), plus the study's ``place``
+    (``study_took_place_at``, crm:P7). ``about`` (HC1) is optional: no HC1 is
+    made unless the heritage is declared. See :mod:`s3dgraphy.hdto`."""
+    from .hdto import declare_hdto as _declare
+    return _declare(graph, study=study, place=place, about=about,
+                    parent=parent, project=project, twin=twin)
+
+
+def read_hdto(graph: Graph) -> Dict[str, Any]:
+    """The chain of a graph — study, place, HC1, parent, project, proposition
+    set, twin (none / provisional / registered, as EMStudio's ``readTwin``).
+    Whatever is missing is ``None``."""
+    from .hdto import read_hdto as _read
+    return _read(graph)
+
+
+def graphs_at(container, place) -> List[str]:
+    """The member graphs whose study took place at ``place`` or at a place
+    inside it (up ``is_in_location``). pyArchInit's site filter."""
+    from .hdto import graphs_at as _at
+    return _at(container, place)
+
+
+def graphs_about(container, entity) -> List[str]:
+    """The member graphs whose study is about the heritage ``entity`` (its id,
+    or its heritage_entity_iri / authority URI)."""
+    from .hdto import graphs_about as _about
+    return _about(container, entity)
+
+
+def study_code(graph: Graph) -> Optional[str]:
+    """The study's short name (GT16): ``StudyNode.data.code``, else the
+    GraphML's header ID, never invented."""
+    from .hdto import study_code as _code
+    return _code(graph)
+
+
+def unit_label(graph: Graph, name: str, separator: str = ".") -> str:
+    """A unit's name with the study's code as prefix, or as it is when the
+    study has none."""
+    from .hdto import unit_label as _label
+    return _label(graph, name, separator)
+
+
 # ── editorial stamps (last hand) ──────────────────────────────────────────────
 def stamp_created(node, *, by=None, at: Optional[str] = None,
                   auth=None) -> Dict[str, Any]:

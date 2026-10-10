@@ -42,6 +42,9 @@ value came from:
 * **version** — the container's `ProjectVersion` (top level, NOT the header:
   the header describes the FORMAT, the version describes the WORK);
 * **hc1 / hc2** — the HDT-O nodes, if the study carries them;
+* **studies** — per member graph, its StudyNode and the place it took place
+  at (:func:`s3dgraphy.hdto.read_hdto`): ``{graph_id, study, place}``, each
+  ``None`` when the graph does not say (MICRO lo studio usabile);
 * **spatial** — `GraphNode.data.site_position` (GEO1), which is the SITE, not
   the georeferencing shift;
 * **language** — the working language of the study (la lingua dei dati,
@@ -386,6 +389,13 @@ def study_metadata(container: Any, *, study_id: Optional[str] = None
         spatial = spatial or _spatial_of(graph)
         em_id = em_id or _em_id_of(graph)
 
+    from .hdto import read_hdto
+    studies = []
+    for gid in container.graph_ids():
+        chain = read_hdto(container.graphs[gid])
+        studies.append({"graph_id": gid, "study": chain["study"],
+                        "place": chain["place"]})
+
     title = _text(header.get("title"))
     if not title and active is not None:
         title = _text(getattr(active, "name", None)) or _text(active.graph_id)
@@ -434,6 +444,7 @@ def study_metadata(container: Any, *, study_id: Optional[str] = None
         "hc1": hdt["hc1"],
         "hc1s": hc1s,
         "hc2": hdt["hc2"],
+        "studies": studies,
         "spatial": spatial,
         "language": language,
         "graph_ids": list(container.graph_ids()),

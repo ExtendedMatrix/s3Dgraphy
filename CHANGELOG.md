@@ -4,6 +4,47 @@ All notable changes to **s3dgraphy** are documented here.
 
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
+### Added
+- **The study made usable** (MICRO «lo studio usabile», decided by E.D.
+  10 October 2026: the stratigraphic trench is a STUDY, the site is
+  TOPOGRAPHY, HC1 is heritage only where recognised; studies hang off the
+  place always, off an HC1 only when the heritage is recognised). Node
+  datamodel 1.6.28, connections 1.6.39, translations 1.11.
+  - New edge **`study_took_place_at`** (StudyNode → LocationNodeGroup,
+    reverse `was_place_of_study`, `crm:P7_took_place_at`: HC9 ⊑ E65 ⊑ E7 ⊑
+    E5 ⊑ E4, so the CIDOC term already exists and no em: term is coined),
+    with ui_phrase and labels in 8 languages, not validated.
+  - `StudyNode` gains **`study_kind`** (`stratigraphic_excavation` |
+    `survey` | `documentation` | `other`) and **`code`** (GT16: given by the
+    source or by the user, never derived). A `stratigraphic_excavation` is
+    also `crmarchaeo:A9_Archaeological_Excavation`: declared per value in the
+    field (`mapping.subclass_of_by_value`, the `subclass_of` form) and
+    emitted by the RDF exporter as a second `rdf:type`.
+  - New module **`s3dgraphy.hdto`** and its api wrappers: `declare_hdto`
+    (idempotent, one node per `data.hdto_role`, EMStudio's roles, types and
+    edges for what EMStudio writes, plus the role `place`; `about` optional;
+    the twin's three states, registered ⟺ key), `read_hdto`, `graphs_at`
+    (the graphs whose study took place at a place or inside it, up
+    `is_in_location` — pyArchInit's site filter), `graphs_about`, `study_code`
+    and `unit_label` (the label prefix comes from the study's code; no code,
+    no prefix; the GraphML header ID is read only when no study says one, never
+    its `MISSINGCODE`).
+  - **The projector closes the toponym chain with the site**: a
+    LocationNodeGroup (kind `toponym`, level `sito`) under the deepest
+    administrative level, id `hdto.site_place_id(sito, site_table.entity_uuid)`
+    — the node `declare_hdto` hangs a study off. Made even when no
+    administrative level is known. The units keep their edge to the deepest
+    administrative level.
+  - `study.study_metadata` exposes **`studies`**: per member graph its study
+    and its place, `None` when the graph does not say.
+
+### Changed
+- **HC9 Study ⊑ `crm:E65_Creation`** in the node datamodel (was
+  `crm:E7_Activity`), as `hdto_extension.ttl` and the official HDT-O RDFS
+  (HDT_v2.0.1.rdf, ECHOES D7.1) say; **HC1 Heritage Entity ⊑
+  `crm:E70_Thing`** (was `crm:E1_CRM_Entity`) in the node datamodel and in
+  `hdto_extension.ttl` (v0.4), as the official RDFS says.
+
 ### Changed
 - **The em.json no longer carries `y_pos` / `x_pos`** (MICRO y_pos, decided
   by E.D. 10 October 2026: «`y_pos` è un fossile del GraphML»). They are the

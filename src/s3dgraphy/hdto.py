@@ -1,0 +1,474 @@
+"""The HDT-O chain of a graph: the study, its place, the heritage it is about.
+
+MICRO «lo studio usabile» (E.D., 10 Oct 2026, final version):
+
+* **the stratigraphic trench is a study** — a StudyNode (HDT-O HC9) and, when
+  the study is an excavation, also crmarchaeo:A9 Archaeological Excavation
+  (``data.study_kind = "stratigraphic_excavation"``);
+* **the site is topography** — a place, a ``LocationNodeGroup`` (E53), the last
+  link of the toponym chain (nation → region → province → comune → site);
+* **HC1 is heritage where it is recognised**, with an identity of its own (the
+  Colosseum, not a wall found in a trench). Never made by default;
+* **studies hang off the topographic place always, off the HC1 only when the
+  heritage is recognised.**
+
+The writer follows EMStudio's ``applyHdto`` (frontend/src/model.ts) for every
+role EMStudio already writes — the same roles in ``data.hdto_role``, one node
+per role, the same node types and edges, edge ids ``<src>__<type>__<tgt>``:
+
+    Project ─includes_study→ Study ─study_about_heritage→ HC1 (about)
+    Study ─study_produced_proposition_set→ GraphNode (HC16)
+    HC1 (about) ─has_digital_twin→ HDT (HC2) ─contains_proposition_set→ HC16
+    HC1 (about) ─heritage_part_of→ HC1 (parent)
+
+and adds the role EMStudio does not know yet, ``place``:
+
+    Study ─study_took_place_at→ LocationNodeGroup (crm:P7_took_place_at)
+
+The place is the SAME node the pyArchInit projector makes for the site
+(:func:`site_place_id`), so declaring a study on a projected graph does not
+duplicate it. The twin has EMStudio's three states (``readTwin``): none,
+provisional, registered — and registered means there is a key
+(``heritage_entity_iri``), whatever else was said.
+"""
+
+from __future__ import annotations
+
+import hashlib
+import uuid
+from typing import Any, Dict, Iterable, List, Optional, Union
+
+#: role → s3dgraphy class (EMStudio's HDTO_ROLE_CLASS, plus ``place``)
+ROLE_CLASS = {
+    "proposition_set": "GraphNode",
+    "about": "HeritageEntityNode",
+    "parent": "HeritageEntityNode",
+    "twin": "HDTNode",
+    "study": "StudyNode",
+    "project": "ProjectNode",
+    "place": "LocationNodeGroup",
+}
+
+TWIN_NONE = "none"
+TWIN_PROVISIONAL = "provisional"
+TWIN_REGISTERED = "registered"
+
+#: What ``graph.attributes['graph_code']`` holds when a GraphML has no ID: a
+#: code nobody gave, so never a code.
+_NO_CODE = ("", "MISSINGCODE")
+
+
+# ── helpers ─────────────────────────────────────────────────────────────────
+
+def _text(value: Any) -> str:
+    return str(value).strip() if value is not None else ""
+
+
+def _get(node: Any, key: str) -> Any:
+    """A key of the node wherever it lives: ``data`` (em.json import) or
+    ``attributes`` (made in memory) — the exporter merges the two."""
+    data = getattr(node, "data", None)
+    if isinstance(data, dict) and key in data:
+        return data[key]
+    attrs = getattr(node, "attributes", None)
+    if isinstance(attrs, dict):
+        return attrs.get(key)
+    return None
+
+
+def _data(node: Any) -> Dict[str, Any]:
+    if not isinstance(getattr(node, "data", None), dict):
+        node.data = {}
+    return node.data
+
+
+def _role_node(graph, role: str):
+    for node in graph.nodes:
+        if _get(node, "hdto_role") == role:
+            return node
+    if role == "proposition_set":
+        # EMStudio's graphRootNode: the graph-self node, marked or not
+        for node in graph.nodes:
+            if getattr(node, "node_type", None) == "graph":
+                return node
+    return None
+
+
+def _out(graph, node, edge_type: str) -> List[Any]:
+    if node is None:
+        return []
+    found = []
+    for e in graph.edges:
+        if e.edge_source == node.node_id and e.edge_type == edge_type:
+            target = graph.find_node_by_id(e.edge_target)
+            if target is not None:
+                found.append(target)
+    return found
+
+
+def _ensure_edge(graph, src, tgt, edge_type: str) -> None:
+    if src is None or tgt is None:
+        return
+    for e in graph.edges:
+        if (e.edge_source == src.node_id and e.edge_target == tgt.node_id
+                and e.edge_type == edge_type):
+            return
+    graph.add_edge(f"{src.node_id}__{edge_type}__{tgt.node_id}",
+                   src.node_id, tgt.node_id, edge_type)
+
+
+def _as_dict(value: Union[None, str, Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    if value is None:
+        return None
+    if isinstance(value, str):
+        return {"name": value}
+    if isinstance(value, dict):
+        return dict(value)
+    raise TypeError(f"expected a name or a dict, got {type(value).__name__}")
+
+
+def _ensure(graph, role: str, name: str, make):
+    """EMStudio's ``ensure``: the role's node, renamed only by a non-empty
+    name that differs; made with a fresh id when missing."""
+    node = _role_node(graph, role)
+    if node is None:
+        node = make(str(uuid.uuid4()), name or "")
+        graph.add_node(node)
+    elif name and name != node.name:
+        node.name = name
+    _data(node)["hdto_role"] = role
+    return node
+
+
+def _authority_refs(spec: Dict[str, Any]) -> List[Dict[str, Any]]:
+    if isinstance(spec.get("authority_refs"), list):
+        return list(spec["authority_refs"])
+    uri = _text(spec.get("uri") or spec.get("iri"))
+    return [{"uri": uri}] if uri else []
+
+
+# ── the place of the site ───────────────────────────────────────────────────
+
+def site_place_id(site: str, entity_uuid: Optional[str] = None) -> str:
+    """The id of the LocationNodeGroup of a site — the projector's and
+    :func:`declare_hdto`'s alike, so the two make one node.
+
+    The source's stable identity when it has one (pyArchInit's
+    ``site_table.entity_uuid``); otherwise deterministic from the name, with
+    a suffix of its own: a site is often called like its comune (Volterra in
+    Volterra), and the comune's id is ``sha1(name|toponym)``.
+    """
+    if _text(entity_uuid):
+        return _text(entity_uuid)
+    return hashlib.sha1(f"{_text(site)}|site".encode()).hexdigest()[:32]
+
+
+def make_site_place(site: str, entity_uuid: Optional[str] = None):
+    """A new LocationNodeGroup for a site: kind ``toponym``, level ``sito``."""
+    from .nodes.group_node import LocationNodeGroup
+    uid = site_place_id(site, entity_uuid)
+    node = LocationNodeGroup(node_id=uid, name=_text(site), kind="toponym",
+                             description="Site")
+    node.attributes.update({"group_kind": "toponym", "level": "sito",
+                            "name": _text(site), "group_uuid": uid})
+    if _text(entity_uuid):
+        node.attributes["entity_uuid"] = _text(entity_uuid)
+    return node
+
+
+def _find_place(graph, spec: Dict[str, Any]):
+    from .nodes.group_node import LocationNodeGroup
+    wanted_id = _text(spec.get("id")) or (
+        site_place_id(spec.get("name"), spec.get("entity_uuid"))
+        if _text(spec.get("name")) else "")
+    if wanted_id:
+        node = graph.find_node_by_id(wanted_id)
+        if isinstance(node, LocationNodeGroup):
+            return node
+    name = _text(spec.get("name"))
+    for node in graph.nodes:
+        if (isinstance(node, LocationNodeGroup) and name
+                and node.name == name and _get(node, "level") == "sito"):
+            return node
+    return None
+
+
+# ── the writer ──────────────────────────────────────────────────────────────
+
+def declare_hdto(graph, *, study=None, place=None, about=None, parent=None,
+                 project=None, twin=None) -> Dict[str, Any]:
+    """Declare the HDT-O chain of ``graph``. Idempotent: twice is once.
+
+    Every argument is a name or a dict; ``None`` leaves that role as it is.
+
+    ``study``   ``{name, code, study_kind, disciplinary_focus, authors, date,
+                project_iri}``. ``code`` (GT16) only when given: never derived.
+    ``place``   ``{name, id, entity_uuid}`` — the site; the projector's node
+                when it exists (:func:`site_place_id`), else a new one.
+    ``about``   the HC1, ``{name, uri | authority_refs}``. OPTIONAL: without
+                it no HC1 and no study_about_heritage — a trench is not
+                heritage by being dug.
+    ``parent``  the HC1 the ``about`` is part of; needs ``about``.
+    ``project`` ``{name}``.
+    ``twin``    ``{name, key, registry}``: registered when ``key``, else
+                provisional. Needs an HC1.
+
+    Returns :func:`read_hdto` of the result.
+    """
+    from .nodes.graph_node import GraphNode
+    from .nodes.hdt_node import HDTNode
+    from .nodes.heritage_entity_node import HeritageEntityNode
+    from .nodes.project_node import ProjectNode
+    from .nodes.study_node import StudyNode
+
+    study_s, place_s = _as_dict(study), _as_dict(place)
+    about_s, parent_s = _as_dict(about), _as_dict(parent)
+    project_s, twin_s = _as_dict(project), _as_dict(twin)
+
+    if study_s is not None and study_s.get("study_kind") is not None \
+            and study_s["study_kind"] not in StudyNode.STUDY_KINDS:
+        raise ValueError(f"study_kind must be one of {StudyNode.STUDY_KINDS}, "
+                         f"got {study_s['study_kind']!r}")
+    has_about = about_s is not None and (
+        _text(about_s.get("name")) or _authority_refs(about_s))
+    hc1 = _role_node(graph, "about")
+    if parent_s is not None and not has_about and hc1 is None:
+        raise ValueError("a parent needs the HC1 it contains (about)")
+    if twin_s is not None and not has_about and hc1 is None:
+        raise ValueError("a twin needs an HC1 (about): EMStudio never makes one without")
+
+    # HC16 · the proposition set, as soon as there is a study or an HC1
+    proposition_set = _role_node(graph, "proposition_set")
+    if (study_s is not None or has_about) and proposition_set is None:
+        proposition_set = _ensure(
+            graph, "proposition_set",
+            _text(getattr(graph, "name", None)) or "Proposition set",
+            lambda i, n: GraphNode(i, name=n))
+    elif proposition_set is not None and (study_s is not None or has_about):
+        _data(proposition_set)["hdto_role"] = "proposition_set"
+
+    # HC1 · only when declared
+    if has_about:
+        hc1 = _ensure(graph, "about", _text(about_s.get("name")),
+                      lambda i, n: HeritageEntityNode(i, name=n))
+        _data(hc1)["authority_refs"] = _authority_refs(about_s)
+
+    if twin_s is not None:
+        key = _text(twin_s.get("key") or twin_s.get("heritage_entity_iri"))
+        name = _text(twin_s.get("name")) or f"{_text(hc1.name) or 'Heritage'} HDT"
+        hdt = _ensure(graph, "twin", name, lambda i, n: HDTNode(i, name=n))
+        d = _data(hdt)
+        d["hdt_status"] = TWIN_REGISTERED if key else TWIN_PROVISIONAL
+        if key:
+            d["heritage_entity_iri"] = key
+            registry = twin_s.get("registry")
+            if isinstance(registry, dict) and registry.get("source"):
+                d["hdt_registry"] = registry
+            else:
+                d.pop("hdt_registry", None)
+        else:
+            d["heritage_entity_iri"] = None
+            d.pop("hdt_registry", None)
+        _ensure_edge(graph, hc1, hdt, "has_digital_twin")
+        _ensure_edge(graph, hdt, proposition_set, "contains_proposition_set")
+
+    if parent_s is not None and (_text(parent_s.get("name")) or _authority_refs(parent_s)):
+        whole = _ensure(graph, "parent", _text(parent_s.get("name")),
+                        lambda i, n: HeritageEntityNode(i, name=n))
+        _data(whole)["authority_refs"] = _authority_refs(parent_s)
+        _ensure_edge(graph, hc1, whole, "heritage_part_of")
+
+    study_node = _role_node(graph, "study")
+    if study_s is not None:
+        study_node = _ensure(graph, "study", _text(study_s.get("name")),
+                             lambda i, n: StudyNode(i, name=n))
+        d = _data(study_node)
+        for key in ("study_kind", "disciplinary_focus", "project_iri",
+                    "authors", "date"):
+            if study_s.get(key) is not None:
+                d[key] = study_s[key]
+        if _text(study_s.get("code")):
+            d["code"] = _text(study_s["code"])
+        _ensure_edge(graph, study_node, proposition_set,
+                     "study_produced_proposition_set")
+    if study_node is not None and hc1 is not None and has_about:
+        _ensure_edge(graph, study_node, hc1, "study_about_heritage")
+
+    if place_s is not None and (_text(place_s.get("name")) or _text(place_s.get("id"))):
+        place_node = _find_place(graph, place_s)
+        if place_node is None:
+            place_node = make_site_place(place_s.get("name") or place_s.get("id"),
+                                         place_s.get("entity_uuid"))
+            if _text(place_s.get("id")):
+                place_node.node_id = _text(place_s["id"])
+            graph.add_node(place_node)
+        _ensure_edge(graph, study_node, place_node, "study_took_place_at")
+
+    if project_s is not None and _text(project_s.get("name")):
+        prj = _ensure(graph, "project", _text(project_s["name"]),
+                      lambda i, n: ProjectNode(i, name=n))
+        _ensure_edge(graph, prj, study_node, "includes_study")
+
+    return read_hdto(graph)
+
+
+# ── the reader ──────────────────────────────────────────────────────────────
+
+def read_twin(graph) -> Dict[str, Any]:
+    """EMStudio's ``readTwin``: the key decides, not ``hdt_status``."""
+    hdt = _role_node(graph, "twin")
+    if hdt is None:
+        return {"state": TWIN_NONE, "id": None, "name": None, "key": None,
+                "registry": None}
+    key = _text(_get(hdt, "heritage_entity_iri"))
+    registry = _get(hdt, "hdt_registry")
+    return {
+        "state": TWIN_REGISTERED if key else TWIN_PROVISIONAL,
+        "id": hdt.node_id,
+        "name": hdt.name,
+        "key": key or None,
+        "registry": registry if key and isinstance(registry, dict)
+        and registry.get("source") else None,
+    }
+
+
+def _hc1_view(node) -> Optional[Dict[str, Any]]:
+    if node is None:
+        return None
+    return {"id": node.node_id, "name": node.name or None,
+            "authority_refs": list(_get(node, "authority_refs") or [])}
+
+
+def _place_chain(graph, place) -> List[Dict[str, Any]]:
+    """The place and every place it is in, up the ``is_in_location`` chain."""
+    from .nodes.group_node import LocationNodeGroup
+    chain, seen, current = [], set(), place
+    while current is not None and current.node_id not in seen:
+        seen.add(current.node_id)
+        chain.append(current)
+        ups = [n for n in _out(graph, current, "is_in_location")
+               if isinstance(n, LocationNodeGroup)]
+        current = ups[0] if ups else None
+    return chain
+
+
+def _place_view(graph, place) -> Optional[Dict[str, Any]]:
+    if place is None:
+        return None
+    chain = _place_chain(graph, place)
+    return {"id": place.node_id, "name": place.name or None,
+            "level": _get(place, "level"), "kind": getattr(place, "kind", None),
+            "within": [{"id": n.node_id, "name": n.name,
+                        "level": _get(n, "level")} for n in chain[1:]]}
+
+
+def read_hdto(graph) -> Dict[str, Any]:
+    """The chain of ``graph`` as one dict; whatever is missing is ``None``.
+
+    ``{"study": {id, name, code, study_kind, disciplinary_focus, authors,
+    date, project_iri} | None, "place": {id, name, level, kind, within[]} |
+    None, "about": {id, name, authority_refs} | None, "parent": … | None,
+    "project": {id, name} | None, "proposition_set": {id, name} | None,
+    "twin": {state, id, name, key, registry}}``
+    """
+    study = _role_node(graph, "study")
+    places = _out(graph, study, "study_took_place_at")
+    project = _role_node(graph, "project")
+    pset = _role_node(graph, "proposition_set")
+    study_view = None
+    if study is not None:
+        study_view = {"id": study.node_id, "name": study.name or None}
+        for key in ("code", "study_kind", "disciplinary_focus", "authors",
+                    "date", "project_iri"):
+            value = _get(study, key)
+            study_view[key] = value if value not in ("",) else None
+    return {
+        "study": study_view,
+        "place": _place_view(graph, places[0] if places else None),
+        "about": _hc1_view(_role_node(graph, "about")),
+        "parent": _hc1_view(_role_node(graph, "parent")),
+        "project": ({"id": project.node_id, "name": project.name or None}
+                    if project is not None else None),
+        "proposition_set": ({"id": pset.node_id, "name": pset.name or None}
+                            if pset is not None and _get(pset, "hdto_role")
+                            == "proposition_set" else None),
+        "twin": read_twin(graph),
+    }
+
+
+# ── the code of the study ───────────────────────────────────────────────────
+
+def study_code(graph) -> Optional[str]:
+    """The short name of the study (GT16), or ``None``.
+
+    ONE source: ``StudyNode.data.code``. A GraphML's header ID
+    (``graph.attributes['graph_code']``) is read only when no study says a
+    code — it is what the source gave — and never its ``MISSINGCODE``
+    placeholder. Nothing is derived (E.D., 10 Oct 2026).
+    """
+    study = _role_node(graph, "study")
+    code = _text(_get(study, "code")) if study is not None else ""
+    if code:
+        return code
+    legacy = _text((getattr(graph, "attributes", None) or {}).get("graph_code"))
+    return legacy if legacy not in _NO_CODE else None
+
+
+def unit_label(graph, name: str, separator: str = ".") -> str:
+    """``name`` with the study's code as prefix (GT16.US001), or ``name`` as it
+    is when the study has no code — never an invented one."""
+    from .utils.utils import manage_id_prefix
+    code = study_code(graph)
+    return manage_id_prefix(name, code, "add", separator) if code else name
+
+
+# ── the graphs of a place, the graphs of a heritage ─────────────────────────
+
+def _member_graphs(container) -> Iterable[Any]:
+    ids = container.graph_ids() if callable(getattr(container, "graph_ids", None)) \
+        else list(container.graphs)
+    for gid in ids:
+        yield gid, container.graphs[gid]
+
+
+def _ref_id(ref: Any) -> str:
+    return _text(getattr(ref, "node_id", ref))
+
+
+def graphs_at(container, place) -> List[str]:
+    """The ids of the member graphs whose study took place at ``place`` or at a
+    place inside it (up ``is_in_location``): a trench in an area of a site is
+    found by asking for the site. ``place`` is a node or its id. pyArchInit's
+    site filter is this."""
+    wanted = _ref_id(place)
+    found = []
+    for gid, graph in _member_graphs(container):
+        for study in [n for n in graph.nodes if getattr(n, "node_type", None) == "study"]:
+            hit = any(wanted in {n.node_id for n in _place_chain(graph, p)}
+                      for p in _out(graph, study, "study_took_place_at"))
+            if hit:
+                found.append(gid)
+                break
+    return found
+
+
+def graphs_about(container, entity) -> List[str]:
+    """The ids of the member graphs whose study is about the heritage
+    ``entity`` — its stable id (a node or its id), or its
+    ``heritage_entity_iri`` / authority URI."""
+    wanted = _ref_id(entity)
+    found = []
+    for gid, graph in _member_graphs(container):
+        for study in [n for n in graph.nodes if getattr(n, "node_type", None) == "study"]:
+            for hc1 in _out(graph, study, "study_about_heritage"):
+                keys = {hc1.node_id}
+                keys.update(_text(r.get("uri")) for r in _get(hc1, "authority_refs") or []
+                            if isinstance(r, dict))
+                keys.update(_text(_get(t, "heritage_entity_iri"))
+                            for t in _out(graph, hc1, "has_digital_twin"))
+                if wanted in keys:
+                    found.append(gid)
+                    break
+            if gid in found:
+                break
+    return found

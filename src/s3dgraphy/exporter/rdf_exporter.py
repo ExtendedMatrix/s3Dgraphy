@@ -351,6 +351,31 @@ class _Datamodel:
                 result.append(iri)
         return result
 
+    def get_value_superclasses(self, class_name: str, node: Any) -> List[URIRef]:
+        """The classes a node takes from the VALUE of one of its fields.
+
+        A field may declare ``mapping.subclass_of_by_value`` — the same form as
+        ``em_extension.subclass_of``, per value: a StudyNode whose
+        ``study_kind`` is ``stratigraphic_excavation`` is also a
+        crmarchaeo:A9_Archaeological_Excavation (MICRO lo studio usabile,
+        E.D. 10 Oct 2026). Any other value adds nothing."""
+        entry = self._node_class_index.get(class_name)
+        if not entry:
+            return []
+        data = getattr(node, "data", None)
+        if not isinstance(data, dict):
+            return []
+        result: List[URIRef] = []
+        for field, spec in (entry.get("fields") or {}).items():
+            by_value = ((spec or {}).get("mapping") or {}).get("subclass_of_by_value")
+            if not isinstance(by_value, dict):
+                continue
+            for sc in by_value.get(data.get(field)) or []:
+                iri = _resolve_prefixed(sc)
+                if iri is not None and iri not in result:
+                    result.append(iri)
+        return result
+
     def resolve_edge_direction(self, edge_type: str) -> Tuple[str, bool]:
         """``edge_type`` → ``(canonical_name, inverted)``.
 
@@ -1240,8 +1265,8 @@ class RDFExporter:
         else:
             self.stats["nodes_unmapped"] += 1
 
-        # Multi-type via subclass_of
-        for sc in superclasses:
+        # Multi-type via subclass_of, and via the value of a field
+        for sc in superclasses + self.datamodel.get_value_superclasses(cls_name, node):
             ctx.add((node_iri, RDF.type, sc))
 
         # Base triples — label, description, identifier

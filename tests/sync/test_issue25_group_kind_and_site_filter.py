@@ -59,7 +59,8 @@ def test_toponym_chain_round_trips_kind(tmp_path):
         db_path=FIXTURES / "toponym_volterra.sqlite", sito="Volterra")
     toponyms = [n for n in graph.nodes
                 if isinstance(n, LocationNodeGroup) and n.kind == "toponym"]
-    assert len(toponyms) == 4  # Italia → Toscana → Pisa → Volterra
+    # Italia → Toscana → Pisa → Volterra, and the site Volterra (level sito)
+    assert len(toponyms) == 5
     for n in toponyms:
         assert n.attributes["kind"] == "toponym"
         assert "propagation" in n.attributes
