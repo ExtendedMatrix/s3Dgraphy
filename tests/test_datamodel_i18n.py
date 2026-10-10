@@ -176,3 +176,29 @@ def test_reader_on_the_committed_sidecar():
         assert t.is_validated("qualia", "thickness", "label", lang) is False  # a draft
     assert t.qualia_category_label("physical_material", "en") == "Physical and Material Qualia"
     assert t.node_label("EpochNode", "it")
+
+
+def test_property_names_are_labelled_and_are_not_qualia():
+    """em_qualia_types 1.6.8 / translations 1.9 (MICRO badge PD e cronologia,
+    part 5): the EM property names in use that are not a quale — `definition`,
+    `material` — have their own section, seeded from the qualia file's
+    `property_names` block, labelled in every language, it/de validated; a
+    name of that block is never a quale id, and `_` keys are notes."""
+    t._doc.cache_clear()
+    qualia = json.loads(t.QUALIA.read_text(encoding="utf-8"))
+    en = t._collect_property_names_en(qualia)
+    assert set(en) == {"definition", "material"}
+    assert not any(k.startswith("_") for k in en)
+    ids = set(t._collect_qualia_en(qualia)["qualia"])
+    assert not (set(en) & ids)
+    assert qualia["property_names"]["material"]["quale"] in ids
+    assert t.property_name_label("material", "it") == "Materiale"
+    assert t.property_name_label("definition", "it") == "Definizione"
+    assert t.property_name_label("material", "xx") == "Material"
+    assert t.property_name_label("riser_depth", "it") is None
+    for name in en:
+        for lang in ("it", "de"):
+            assert t.is_validated("property_names", name, "label", lang) is True
+    # E.D.'s words for the dating qualia
+    assert t.qualia_label("absolute_time_start", "it") == "Data di inizio"
+    assert t.qualia_label("absolute_time_end", "it") == "Data di fine"
