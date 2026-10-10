@@ -1,6 +1,6 @@
 {
  "schema": "s3Dgraphy_datamodel_translations",
- "version": "1.8",
+ "version": "1.9",
  "languages": [
   "en",
   "it",
@@ -2243,43 +2243,43 @@
   "absolute_time_end": {
    "label": {
     "en": "Absolute Time — End",
-    "validated_it": false,
+    "validated_it": true,
     "validated_el": false,
     "validated_he": false,
     "validated_es": false,
     "validated_pl": false,
     "validated_ro": false,
     "validated_fr": false,
-    "validated_de": false,
-    "it": "Tempo assoluto — fine",
+    "validated_de": true,
+    "it": "Data di fine",
     "el": "Απόλυτος χρόνος — Τέλος",
     "he": "זמן מוחלט — סיום",
     "es": "Tiempo absoluto — Fin",
     "pl": "Czas bezwzględny — koniec",
     "ro": "Timp absolut — sfârșit",
     "fr": "Temps absolu — fin",
-    "de": "Absolute Zeit — Ende"
+    "de": "Enddatum"
    }
   },
   "absolute_time_start": {
    "label": {
     "en": "Absolute Time — Start",
-    "validated_it": false,
+    "validated_it": true,
     "validated_el": false,
     "validated_he": false,
     "validated_es": false,
     "validated_pl": false,
     "validated_ro": false,
     "validated_fr": false,
-    "validated_de": false,
-    "it": "Tempo assoluto — inizio",
+    "validated_de": true,
+    "it": "Data di inizio",
     "el": "Απόλυτος χρόνος — Αρχή",
     "he": "זמן מוחלט — התחלה",
     "es": "Tiempo absoluto — Inicio",
     "pl": "Czas bezwzględny — początek",
     "ro": "Timp absolut — început",
     "fr": "Temps absolu — début",
-    "de": "Absolute Zeit — Beginn"
+    "de": "Anfangsdatum"
    }
   },
   "access_conditions": {
@@ -8659,6 +8659,50 @@
     "pl": "Niezadeklarowani właściciele",
     "ro": "Proprietari nedeclarați",
     "fr": "Propriétaires non déclarés"
+   }
+  }
+ },
+ "property_names": {
+  "definition": {
+   "label": {
+    "en": "Definition",
+    "validated_it": true,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": true,
+    "it": "Definizione",
+    "de": "Definition",
+    "el": "Ορισμός",
+    "he": "הגדרה",
+    "es": "Definición",
+    "pl": "Definicja",
+    "ro": "Definiție",
+    "fr": "Définition"
+   }
+  },
+  "material": {
+   "label": {
+    "en": "Material",
+    "validated_it": true,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": true,
+    "it": "Materiale",
+    "de": "Material",
+    "el": "Υλικό",
+    "he": "חומר",
+    "es": "Material",
+    "pl": "Materiał",
+    "ro": "Material",
+    "fr": "Matériau"
    }
   }
  }

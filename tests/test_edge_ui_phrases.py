@@ -225,7 +225,9 @@ def test_the_version_went_up():
     # 1.7 (2026-10-09): the `reasoning` section — see test_property_as_source
     # 1.8 (2026-10-09, evening): `instance` for documents and properties, the
     # badge's {owner}, no refresh_instance — the instance is a view
-    assert _translations()["version"] == "1.8"
+    # 1.9 (2026-10-09, night): the `property_names` section — see
+    # test_datamodel_i18n.test_property_names_are_labelled_and_are_not_qualia
+    assert _translations()["version"] == "1.9"
 
 
 def test_combines_reads_of_in_english():
