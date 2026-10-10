@@ -6,13 +6,14 @@ class GroupNode(Node):
     """
     Nodo che rappresenta un gruppo di nodi. Tali gruppi possono essere di vari tipi: vedi sottoclassi di seguito.
 
-    Attributes:
-        y_pos (float): Posizione verticale del nodo.
+    No ``y_pos``: the vertical coordinate of a group in the yEd drawing is a
+    fossil of the GraphML (E.D., 10 Oct 2026). The GraphML importer sets it on
+    ``attributes`` while it rebuilds the chronology from the drawing; the
+    em.json does not carry it (``emjson_exporter.GRAPHML_DRAWING_KEYS``).
     """
     node_type = "Group"
-    def __init__(self, node_id, name, description="", y_pos=0.0):
+    def __init__(self, node_id, name, description=""):
         super().__init__(node_id, name, description=description)
-        self.attributes['y_pos'] = y_pos
 
 class ActivityNodeGroup(GroupNode):
     """
@@ -37,9 +38,9 @@ class ActivityNodeGroup(GroupNode):
     """
     node_type = "ActivityNodeGroup"
 
-    def __init__(self, node_id, name, description="", y_pos=0.0,
+    def __init__(self, node_id, name, description="",
                  narrative="", narrative_ref=None):
-        super().__init__(node_id, name, description=description, y_pos=y_pos)
+        super().__init__(node_id, name, description=description)
         self.data = {}
         if narrative:
             self.data["narrative"] = narrative
@@ -72,8 +73,8 @@ class ParadataNodeGroup(GroupNode):
 
     node_type = "ParadataNodeGroup"
 
-    def __init__(self, node_id, name, description="", y_pos=0.0):
-        super().__init__(node_id, name, description=description, y_pos=y_pos)
+    def __init__(self, node_id, name, description=""):
+        super().__init__(node_id, name, description=description)
         #self.node_type = "ParadataNodeGroup"
 
 
@@ -83,8 +84,8 @@ class TimeBranchNodeGroup(GroupNode):
 
     """
     node_type = "TimeBranchNodeGroup"
-    def __init__(self, node_id, name, description="", y_pos=0.0):
-        super().__init__(node_id, name, description=description, y_pos=y_pos)
+    def __init__(self, node_id, name, description=""):
+        super().__init__(node_id, name, description=description)
         #self.node_type = "TimeBranchNodeGroup"
 
 
@@ -143,7 +144,7 @@ class LocationNodeGroup(GroupNode):
     VALID_PROPAGATIONS = ("additive", "substitutive")
 
     def __init__(self, node_id, name, kind, description="",
-                 propagation="additive", y_pos=0.0):
+                 propagation="additive"):
         if kind not in self.VALID_KINDS:
             raise ValueError(
                 "LocationNodeGroup.kind must be one of "
@@ -154,7 +155,7 @@ class LocationNodeGroup(GroupNode):
                 "LocationNodeGroup.propagation must be one of "
                 f"{self.VALID_PROPAGATIONS}, got {propagation!r}"
             )
-        super().__init__(node_id, name, description=description, y_pos=y_pos)
+        super().__init__(node_id, name, description=description)
         # Required spatial-plane discriminator. Stored both as a Python
         # attribute (ergonomic access) and inside the .attributes dict
         # (for serialisers / round-trip with the JSON datamodel).
@@ -233,9 +234,9 @@ class FunctionalUnitNodeGroup(GroupNode):
 
     node_type = "FunctionalUnitNodeGroup"
 
-    def __init__(self, node_id, name, description="", y_pos=0.0,
+    def __init__(self, node_id, name, description="",
                  geometry_type_ref=None):
-        super().__init__(node_id, name, description=description, y_pos=y_pos)
+        super().__init__(node_id, name, description=description)
         # Geometry type BY REFERENCE only (DP-72): an opaque pointer into an
         # external taxonomy (bSDD / Getty AAT / HBIM shape grammar). Free-form
         # on purpose — no vocabulary is internalized or validated here, and the
@@ -309,9 +310,9 @@ class RepresentationModelNodeGroup(GroupNode):
 
     node_type = "RepresentationModelNodeGroup"
 
-    def __init__(self, node_id, name, description="", y_pos=0.0):
+    def __init__(self, node_id, name, description=""):
         # The sisters' signature exactly, and nothing more: a container has a
         # stable id and a user label, and every other fact about it (which
         # Document, which members) is an EDGE. Adding fields here would move
         # part of the topology into the node.
-        super().__init__(node_id, name, description=description, y_pos=y_pos)
+        super().__init__(node_id, name, description=description)

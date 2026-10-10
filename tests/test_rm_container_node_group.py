@@ -102,10 +102,12 @@ def test_LA_CLASSE_e_una_sorella_a_tutti_gli_effetti():
     #: la stessa firma delle sorelle, verificata eseguendola
     for cls in (ActivityNodeGroup, ParadataNodeGroup, TimeBranchNodeGroup,
                 RepresentationModelNodeGroup):
-        n = cls("id1", "etichetta", description="d", y_pos=12.5)
+        n = cls("id1", "etichetta", description="d")
         assert n.node_id == "id1" and n.name == "etichetta"
         assert n.description == "d"
-        assert n.attributes["y_pos"] == 12.5
+        #: niente y_pos: è un fossile del GraphML, lo scrive solo l'importer
+        #: GraphML (E.D., 10 ott 2026)
+        assert "y_pos" not in n.attributes
 
 
 def test_E_SI_REGISTRA_DA_SE_nel_node_type_map():

@@ -4,6 +4,31 @@ All notable changes to **s3dgraphy** are documented here.
 
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
+### Changed
+- **The em.json no longer carries `y_pos` / `x_pos`** (MICRO y_pos, decided
+  by E.D. 10 October 2026: «`y_pos` è un fossile del GraphML»). They are the
+  coordinates of a node in the yEd drawing, which the GraphML importer reads
+  to rebuild the chronology from the swimlanes and nothing after (measured:
+  removing them after the import changes neither `chronology()` nor
+  `validate()`). `emjson_exporter.GRAPHML_DRAWING_KEYS` leaves them out of
+  `data` and out of each Master document's `instances` — a list of its own,
+  not `CALCULATED_KEYS`, which are computed from the graph. The em.json
+  importer drops them silently from a file an older writer made (Templu Mare:
+  145, 134 in `data` and 11 in `instances`). EM-tools stopped reading them
+  first (EM-blender-tools `2705f85`, order from the chronology), so an em.json
+  opened there keeps its order. The GraphML importer still reads them.
+- **`GroupNode` and its subclasses lose the `y_pos` argument**: only the
+  GraphML importer passed it, and it now sets `attributes['y_pos']` itself.
+  A group made anywhere else (projector, group store, an API) is born without.
+
+### Fixed
+- **A key named like a method no longer replaces the method on em.json
+  import.** `is_canonical: false` on a Master document's instance went through
+  `setattr` and turned `DocumentNode.is_canonical()` into a bool, then
+  vanished at the next export (Templu Mare: 11 documents differed between
+  em.json → graph → em.json and its repetition). It now goes to `attributes`,
+  where the method reads it.
+
 ### Added
 - **Documents and authors are spatiotemporal entities** (node datamodel
   1.6.27, connections 1.6.38, qualia 1.6.9, translations 1.10, em_visual_rules

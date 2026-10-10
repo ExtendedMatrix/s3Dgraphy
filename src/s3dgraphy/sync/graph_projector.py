@@ -1232,7 +1232,7 @@ class GraphProjector:
 
             # Carry pyarchinit metadata as attributes (round-trip). An
             # update, not an assignment: the constructor already put
-            # kind / propagation / y_pos there for the serialisers (#25).
+            # kind / propagation there for the serialisers (#25).
             data_key = f"pyarchinit.{spec.group_kind}"
             node.attributes.update({
                 "group_kind": spec.group_kind,
@@ -1365,8 +1365,8 @@ class GraphProjector:
                 kind="toponym",
                 description=f"Administrative level: {level_name}",
             )
-            # Update, keeping the constructor's kind / propagation /
-            # y_pos (#25).
+            # Update, keeping the constructor's kind / propagation
+            # (#25).
             node.attributes.update({
                 "group_kind": "toponym",
                 "level": level_name,

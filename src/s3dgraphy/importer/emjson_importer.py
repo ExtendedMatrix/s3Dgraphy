@@ -109,9 +109,16 @@ def _instantiate(node_type: str, payload: Dict[str, Any],
     # datum: it does not enter the node, where it would pass for something
     # somebody asserted and — sitting in node.data — win over the next
     # computation on re-export. It is recomputed from the relations on demand.
-    from ..exporter.emjson_exporter import CALCULATED_KEYS
+    from ..exporter.emjson_exporter import (
+        CALCULATED_KEYS, GRAPHML_DRAWING_KEYS, _without_drawing)
     for k in CALCULATED_KEYS:
         data.pop(k, None)
+    # The yEd coordinates an older writer copied from a GraphML: a fossil of
+    # the drawing (E.D., 10 Oct 2026), left behind without a word.
+    for k in GRAPHML_DRAWING_KEYS:
+        data.pop(k, None)
+    if "instances" in data:
+        data["instances"] = _without_drawing(data["instances"])
     kwargs: Dict[str, Any] = {}
     sig = inspect.signature(cls.__init__)
     for pname, param in sig.parameters.items():
@@ -165,6 +172,13 @@ def _instantiate(node_type: str, payload: Dict[str, Any],
             node.attributes = {}
         for k, v in leftover.items():
             if k in _ATTR_KEYS:
+                node.attributes[k] = v
+            elif callable(getattr(node, k, None)):
+                # A key that names a METHOD is an attribute of the node, not
+                # the method: `is_canonical: false` on a Master document's
+                # instance replaced `DocumentNode.is_canonical()` with a bool
+                # and was gone at the next export (measured on Templu Mare,
+                # 11 documents, 10 Oct 2026). The method reads `attributes`.
                 node.attributes[k] = v
             elif hasattr(node, k) and not isinstance(getattr(node, k), dict):
                 try:

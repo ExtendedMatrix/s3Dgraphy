@@ -2,7 +2,7 @@
 
 * The groups it builds (toponym chain, group-spec) lost ``kind`` in em.json:
   ``node.attributes = {...}`` replaced the dict the ``LocationNodeGroup``
-  constructor fills with kind / propagation / y_pos for the serialisers.
+  constructor fills with kind / propagation for the serialisers.
 * The SQLite branch read the whole ``us_table``: projecting one site of a
   multi-site DB brought the units, documents and epochs of the others.
 """
@@ -62,7 +62,8 @@ def test_toponym_chain_round_trips_kind(tmp_path):
     assert len(toponyms) == 4  # Italia → Toscana → Pisa → Volterra
     for n in toponyms:
         assert n.attributes["kind"] == "toponym"
-        assert "propagation" in n.attributes and "y_pos" in n.attributes
+        assert "propagation" in n.attributes
+        assert "y_pos" not in n.attributes  # a GraphML fossil (E.D., 10 Oct 2026)
         assert n.attributes["group_kind"] == "toponym"  # projector's own keys
 
     doc, back = _round_trip(graph, tmp_path)

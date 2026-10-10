@@ -3,16 +3,16 @@
 
 The same pattern as the two places in ``graph_projector`` fixed on 9
 October: ``node.attributes = {...}`` replaces the dict the constructor
-filled, instead of updating it. On an ``ActivityNodeGroup`` the only key
-the constructor sets today is ``y_pos``, and it is not serialised, so
-**nothing observable breaks right now** — the GroupStore round trip comes
-out identical either way (measured). What breaks is the next attribute
-the class gains: ``LocationNodeGroup`` already carries ``kind`` and
-``propagation`` from its constructor, and a group built that way here
-would lose them in silence.
+filled, instead of updating it. Since ``y_pos`` left the constructor (a
+GraphML fossil, E.D. 10 Oct 2026) an ``ActivityNodeGroup`` is born with
+empty ``attributes``, so **nothing observable breaks right now**. What
+breaks is the next attribute the class gains: ``LocationNodeGroup``
+already carries ``kind`` and ``propagation`` from its constructor, and a
+group built that way here would lose them in silence.
 
 So this pins the invariant rather than a symptom: whatever the
 constructor puts in ``attributes`` is still there after ``add_group``.
+The constructor is given a key of its own for the purpose.
 """
 from __future__ import annotations
 
@@ -37,8 +37,15 @@ def test_add_group_keeps_what_the_constructor_put_there(store, monkeypatch):
     perché a rileggere è il costruttore a rimettere la chiave. È l'unico
     punto dove l'invariante è osservabile — ed è anche l'unico che conta,
     perché è quello che un chiamante futuro si troverà in mano."""
-    dal_costruttore = set(
-        ActivityNodeGroup(node_id="x", name="x").attributes)
+    import s3dgraphy.nodes.group_node as group_node
+
+    class ConUnaChiave(ActivityNodeGroup):
+        def __init__(self, *a, **kw):
+            super().__init__(*a, **kw)
+            self.attributes["dal_costruttore"] = True
+
+    monkeypatch.setattr(group_node, "ActivityNodeGroup", ConUnaChiave)
+    dal_costruttore = set(ConUnaChiave(node_id="x", name="x").attributes)
     assert dal_costruttore, "il costruttore non mette niente: test inutile"
 
     visti = []

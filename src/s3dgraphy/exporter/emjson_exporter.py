@@ -94,6 +94,28 @@ def _json_safe(value: Any) -> bool:
 #: does hold — so anyone can recompute it (E.D., 29 Sep 2026).
 CALCULATED_KEYS = ("CALCUL_START_T", "CALCUL_END_T")
 
+#: The coordinates of a node in the yEd drawing, which the GraphML importer
+#: reads to rebuild the chronology from the swimlanes. A fossil of the GraphML
+#: (E.D., 10 Oct 2026): they serve only while a GraphML is being read, so the
+#: em.json does not carry them — not in `data`, not in a Master document's
+#: `instances` — and a file from an older writer that has them leaves them
+#: behind on import. Not CALCULATED_KEYS: those are computed from the graph;
+#: these belong to a drawing the em.json is not.
+GRAPHML_DRAWING_KEYS = ("y_pos", "x_pos")
+
+#: Every key the document leaves out of a node's `data`.
+_NOT_IN_DATA = CALCULATED_KEYS + GRAPHML_DRAWING_KEYS
+
+
+def _without_drawing(value: Any) -> Any:
+    """A Master document's `instances` without the drawing keys of each one.
+    A copy: the in-memory record the GraphML importer made stays as it is."""
+    if not isinstance(value, list):
+        return value
+    return [{k: v for k, v in item.items() if k not in GRAPHML_DRAWING_KEYS}
+            if isinstance(item, dict) else item
+            for item in value]
+
 
 def _node_payload(node: Any) -> Dict[str, Any]:
     data: Dict[str, Any] = {}
@@ -104,17 +126,19 @@ def _node_payload(node: Any) -> Dict[str, Any]:
     node_data = to_data() if callable(to_data) else getattr(node, "data", None)
     if isinstance(node_data, dict):
         data.update({k: v for k, v in node_data.items()
-                     if _json_safe(v) and k not in CALCULATED_KEYS})
+                     if _json_safe(v) and k not in _NOT_IN_DATA})
     # generic per-node attribute store (the GraphML importer writes Master/
     # Instance document metadata here: is_canonical, certainty_class,
     # border_color, instances) — lossless lift, node.data wins on clashes
     node_attrs = getattr(node, "attributes", None)
     if isinstance(node_attrs, dict):
         for k, v in node_attrs.items():
-            if k in CALCULATED_KEYS:
-                continue  # derived state, see CALCULATED_KEYS
+            if k in _NOT_IN_DATA:
+                continue  # see CALCULATED_KEYS and GRAPHML_DRAWING_KEYS
             if k not in data and v not in (None, "") and _json_safe(v):
                 data[k] = v
+    if "instances" in data:
+        data["instances"] = _without_drawing(data["instances"])
     for attr in _LIFTED_ATTRS:
         if attr in data:
             continue

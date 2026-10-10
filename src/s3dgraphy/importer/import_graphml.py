@@ -1809,29 +1809,25 @@ class GraphMLImporter:
             group_node = ActivityNodeGroup(
                 node_id=uuid_id,
                 name=group_name,
-                description=group_description,
-                y_pos=group_y_pos
+                description=group_description
             )
         elif group_node_type == 'ParadataNodeGroup':
             group_node = ParadataNodeGroup(
                 node_id=uuid_id,
                 name=group_name,
-                description=group_description,
-                y_pos=group_y_pos
+                description=group_description
             )
         elif group_node_type == 'TimeBranchNodeGroup':
             group_node = TimeBranchNodeGroup(
                 node_id=uuid_id,
                 name=group_name,
-                description=group_description,
-                y_pos=group_y_pos
+                description=group_description
             )
         else:
             group_node = GroupNode(
                 node_id=uuid_id,
                 name=group_name,
-                description=group_description,
-                y_pos=group_y_pos
+                description=group_description
             )
             # No palette colour, so no EM role: the file simply does not say what
             # this box means. We neither guess it nor silently drop it — the
@@ -1847,6 +1843,9 @@ class GraphMLImporter:
 
         # Aggiungi attributi di tracciamento
         group_node.attributes['original_id'] = original_id
+        # The drawing's y, for the epoch assignment below and nothing after
+        # the import: the em.json does not carry it (E.D., 10 Oct 2026).
+        group_node.attributes['y_pos'] = float(group_y_pos)
         group_node.attributes['graph_id'] = self.graph.graph_id
 
         # Aggiungi URI se presente
