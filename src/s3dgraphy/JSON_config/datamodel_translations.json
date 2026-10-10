@@ -1,6 +1,6 @@
 {
  "schema": "s3Dgraphy_datamodel_translations",
- "version": "1.9",
+ "version": "1.10",
  "languages": [
   "en",
   "it",
@@ -2259,6 +2259,44 @@
     "ro": "Timp absolut — sfârșit",
     "fr": "Temps absolu — fin",
     "de": "Enddatum"
+   },
+   "label_author": {
+    "en": "Date of death",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Data di scomparsa",
+    "de": "Sterbedatum",
+    "fr": "Date de décès",
+    "es": "Fecha de fallecimiento",
+    "ro": "Data decesului",
+    "pl": "Data śmierci",
+    "el": "Ημερομηνία θανάτου",
+    "he": "תאריך פטירה"
+   },
+   "label_author_ai": {
+    "en": "Retirement date",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Data di dismissione",
+    "de": "Datum der Außerbetriebnahme",
+    "fr": "Date de retrait",
+    "es": "Fecha de retirada",
+    "ro": "Data retragerii",
+    "pl": "Data wycofania",
+    "el": "Ημερομηνία απόσυρσης",
+    "he": "תאריך הוצאה משימוש"
    }
   },
   "absolute_time_start": {
@@ -2280,6 +2318,44 @@
     "ro": "Timp absolut — început",
     "fr": "Temps absolu — début",
     "de": "Anfangsdatum"
+   },
+   "label_author": {
+    "en": "Date of birth",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Data di nascita",
+    "de": "Geburtsdatum",
+    "fr": "Date de naissance",
+    "es": "Fecha de nacimiento",
+    "ro": "Data nașterii",
+    "pl": "Data urodzenia",
+    "el": "Ημερομηνία γέννησης",
+    "he": "תאריך לידה"
+   },
+   "label_author_ai": {
+    "en": "Release date",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Data di rilascio",
+    "de": "Veröffentlichungsdatum",
+    "fr": "Date de publication",
+    "es": "Fecha de lanzamiento",
+    "ro": "Data lansării",
+    "pl": "Data wydania",
+    "el": "Ημερομηνία κυκλοφορίας",
+    "he": "תאריך שחרור"
    }
   },
   "access_conditions": {

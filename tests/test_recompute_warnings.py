@@ -176,7 +176,9 @@ def test_recompute_takes_over_the_add_edge_degradation_lines():
     g = Graph(graph_id="g")
     g.add_node(DocumentNode(node_id="d1", name="D.1"))
     g.add_node(DocumentNode(node_id="d2", name="D.2"))
-    g.add_edge("e1", "d1", "d2", "is_after")   # not allowed → add_edge warns
+    # not allowed → add_edge warns (a document cuts nothing; since connections
+    # 1.6.38 a document may be after another, so the example is `cuts`)
+    g.add_edge("e1", "d1", "d2", "cuts")
     assert any("Using 'generic_connection' instead." in w for w in g.warnings)
     recompute_warnings(g)
     assert not any("Using 'generic_connection' instead." in w for w in g.warnings)

@@ -1,6 +1,6 @@
 {
   "formal_language": "EM",
-  "version": "1.6.33",
+  "version": "1.6.34",
   "_note_material_vs_qualia_color": [
     "DUE COSE DIVERSE CHE SI CHIAMANO ENTRAMBE color. Non confonderle: e gia successo.",
     "1) QUI, in node_styles.<tipo>.style.material.rgba_color — il COLORE DEL MATERIALE BLENDER del proxy 3D, in float LINEARI. UNA sola chiave: `rgba_color`. Fino a S8 il file ne usava due (`color` sui 13 tipi stratigrafici, `rgba_color` sugli altri) e get_material_color() ne leggeva una sola, restituendo None per 21 tipi su 38; ora sono unificate e la vecchia `color` e letta solo come tolleranza verso file scritti prima. Un tipo che non diventa mai una mesh NON ha material affatto (i contenitori di gruppo, e da S7 i dieci nodi che rendono per icona): per loro get_material_color() torna None, ed e corretto.",
@@ -9,6 +9,7 @@
     "In breve: qui si decide di che colore DISEGNARE una US; li si registra di che colore ERA."
   ],
   "_changelog": {
+    "1.6.34": "THE AUTHOR AS AN INSTANCE (MICRO le entità spaziotemporali, decided by E.D. 10 Oct 2026: documents, authors and units are spatiotemporal entities, and an author «si istanzia come avviene con i documenti»). paradata_instances gains `authorship`: the author of a reader of the group (the extractor, or the combiner and the extractors it combines) reached by has_author, when the author is not itself a member of the group, is drawn inside the group as an INSTANCE of kind `author`, with the badge of the epoch where the author begins (has_first_epoch). Still a view: nothing is written in em.json or RDF. s3dgraphy.paradata_view.view_instances reads it.",
     "1.6.32": "THE GLYPHS OF THE 3D OBJECTS (MICRO «grafo reattivo», G9, 9 Oct 2026; drawings approved by E.D. on 6 Oct, APPROVATE.md). representation_model, representation_model_doc (the checkered picture seen three-quarters, with its frame's depth and a shadow on the ground: an image PLACED in 3D space) and representation_model_sf replace the three identical Font Awesome cubes of src/2D/ and join `2d_render_glyph_types.types`; proxy, tileset, container (the RM container, RepresentationModelNodeGroup) and the four versions version:gltf / version:mesh / version:tiles / version:scene are new files, resolved from the node's DATA by the new table `2d_render_glyph_types.data_glyphs` (keyed like dtc:<kind>; its rule is written in its _comment, measured on Templu Mare v2). All ten in the DTC frame (circle r 41.14, viewBox 87.12) with the 2×2 checker of the EMtools icons: the checker colours are `accent`, never recoloured; black `ink`, white `paper`, the grey of the picture's frame `ground`, the shadow `halo`. NEW in the layer format: `frame: true` marks the layers of the frame circle (its `paper` fill and its `ink` stroke), and the entry's `frameless_box` is the box of everything else — below 24 px a consumer may skip the frame and fit that box instead (docs/drawing-a-glyph.md §5). Additive: no existing glyph changed.",
     "1.6.31": "THE CHOICES OF DEV29, CONFIRMED (E.D., 2 Oct 2026, on the dev29 report, D5). dtc_kinds.process.texturing is projection AND baking of the photographs onto the mesh, one act, one kind; the baking of levels of detail in Blender stays lod_generation, an act of its own. The «until E.D. says otherwise» of 1.6.30 is gone from the description. Text only: no kind, glyph or label changed.",
     "1.6.30": "AN IMAGE SET AND TEXTURING (dev29, 2 Oct 2026, proposed from the measurements on San Pietro and confirmed by E.D. the same day). dtc_kinds.output += image_set (a set of photographs kept and handed on as ONE product, its images the members of one resource), glyph 09_photos reused; dtc_kinds.process += texturing (a model given its colour from images: projection onto a mesh and baking into an atlas, one kind — confirmed in 1.6.31), glyph 03_mesh reused. Labels in the nine languages (not validated); 2d_glyphs regenerated. Like every process kind texturing declares no mapping.",
@@ -6225,7 +6226,18 @@
       }
     },
     "id": "{master}##{group}",
-    "badge_word": "reasoning.instance_badge"
+    "badge_word": "reasoning.instance_badge",
+    "authorship": {
+      "_comment": "1.6.34: the author of a reading is drawn in the group that reads, like the document it reads. A reader's own has_author and the has_author of the extractors it reaches; a combiner's authors and its extractors' authors. Members of the group are not drawn twice.",
+      "edge": "has_author",
+      "masters": {
+        "AuthorNode": {
+          "kind": "author",
+          "badge": "has_first_epoch",
+          "_badge_note": "the epoch where the author begins: the lane a client draws the author in"
+        }
+      }
+    }
   },
   "dtc_kinds": {
     "_comment": "DATA-DRIVEN, EXPANDABLE per-kind vocabulary for the DTC substrate profile (ECHOES). Mirrors the Master-Document axis vocabularies above (document_roles/content_natures): the three base kinds (input/process/output) each list specific kinds seeded from the 2017 DTC palette. Adding a new kind (e.g. audio, spectroscopy) is a JSON entry here (+ a glyph) — NOT a code change; the DTC node classes validate against these keys via s3dgraphy.utils.get_dtc_kinds(). `glyph` names the 2017 DTC SVG (wired in the later glyph/visual-manager slice; recorded here as data only).",

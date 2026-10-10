@@ -306,6 +306,22 @@ def read_property(graph: Graph, extractor_id: str, property_id: str, *,
     return _read(graph, extractor_id, property_id, at=at)
 
 
+def spatiotemporal_profile(graph: Graph, node_id: str, *,
+                           chronology: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
+    """When and where in the matrix a unit, a document or an author is: start
+    and end with their rule, first epoch and lanes, the entities it is after /
+    before / contemporary with, its activities (connections 1.6.38, MICRO le
+    entità spaziotemporali). See :func:`s3dgraphy.spatiotemporal.spatiotemporal_profile`."""
+    from .spatiotemporal import spatiotemporal_profile as _profile
+    return _profile(graph, node_id, chronology=chronology)
+
+
+def is_spatiotemporal(node) -> bool:
+    """True for a unit, a document or an author (human or AI)."""
+    from .spatiotemporal import is_spatiotemporal as _is
+    return _is(node)
+
+
 def view_instances(graph: Graph, group_id: str) -> List[Dict[str, Any]]:
     """The instances a client draws inside the paradata group ``group_id``:
     every master (document or property) outside the group that a reader of the

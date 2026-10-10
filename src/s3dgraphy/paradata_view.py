@@ -93,8 +93,9 @@ def view_instances(graph, group_id: str) -> List[Dict[str, Any]]:
         {id, master, kind, node_type, name, owner, owner_kind, owner_name,
          removed, readers, extractors, through}
 
-    ``id`` the instance's id (the same in every client); ``kind`` ``document``
-    or ``property``; ``owner`` the badge — the unit of a property
+    ``id`` the instance's id (the same in every client); ``kind`` ``document``,
+    ``property`` or ``author`` (1.6.34: the author of a reader, reached by
+    ``has_author``, badge the epoch where the author begins); ``owner`` the badge — the unit of a property
     (``owner_kind: "unit"``), the epoch of a document (``"epoch"``), ``None``
     when there is none; ``readers`` the members of the group that read it (an
     extractor, or the combiner through which an outside extractor reads);
@@ -167,6 +168,42 @@ def view_instances(graph, group_id: str) -> List[Dict[str, Any]]:
                 if r not in rec["through"]:
                     rec["through"].append(r)
 
+    # 1.6.34 (MICRO le entità spaziotemporali): the author of a reading is drawn
+    # in the group that reads, like the document it reads.
+    authorship = rule.get("authorship") or {}
+    author_edge = authorship.get("edge") or "has_author"
+    author_masters: Dict[str, Dict[str, Any]] = {
+        k: v for k, v in (authorship.get("masters") or {}).items()
+        if not k.startswith("_")}
+
+    def author_of(reader_id: str, node_id: str) -> None:
+        if not author_masters:
+            return
+        for e in out_edges(node_id, author_edge):
+            author = graph.find_node_by_id(e.edge_target)
+            cls = _class_of(author, author_masters)
+            if cls is None or author.node_id in member_set:
+                continue
+            rec = records.get(author.node_id)
+            if rec is None:
+                spec = author_masters[cls]
+                owner = _badge(graph, author, spec)
+                owner_node = graph.find_node_by_id(owner) if owner else None
+                rec = records[author.node_id] = {
+                    "id": instance_id(author.node_id, group_id),
+                    "master": author.node_id, "kind": spec.get("kind"),
+                    "node_type": getattr(author, "node_type", None),
+                    "name": getattr(author, "name", author.node_id),
+                    "owner": owner,
+                    "owner_kind": "epoch" if owner else None,
+                    "owner_name": getattr(owner_node, "name", owner) if owner else None,
+                    "removed": _removed(author),
+                    "readers": [], "extractors": [], "through": []}
+            if reader_id not in rec["readers"]:
+                rec["readers"].append(reader_id)
+            if node_id != reader_id and node_id not in rec["extractors"]:
+                rec["extractors"].append(node_id)
+
     for mid in members:
         node = graph.find_node_by_id(mid)
         if node is None or _removed(node):
@@ -175,6 +212,7 @@ def view_instances(graph, group_id: str) -> List[Dict[str, Any]]:
         if cls is None:
             continue
         via = readers_spec[cls]
+        author_of(mid, mid)
         if via is None:
             reach(mid, mid)
             continue
@@ -182,6 +220,7 @@ def view_instances(graph, group_id: str) -> List[Dict[str, Any]]:
             ext = graph.find_node_by_id(e.edge_target)
             if ext is not None and not _removed(ext):
                 reach(mid, ext.node_id)
+                author_of(mid, ext.node_id)
     return list(records.values())
 
 

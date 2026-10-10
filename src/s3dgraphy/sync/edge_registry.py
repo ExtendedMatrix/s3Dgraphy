@@ -177,6 +177,10 @@ def resolve_edge_style(edge_type: str) -> dict | None:
 # ----------------------------------------------------------------------
 _STRUCTURAL_NON_PARADATA_EDGES: frozenset[str] = frozenset({
     "is_in_location",   # AI07: spatial / locational membership
+    # connections 1.6.38 (MICRO le entità spaziotemporali): documents and
+    # authors take the temporal edges of a unit, which stay STRUCTURAL — the
+    # sequence and the lanes of the matrix, not a paradata flow.
+    "is_after", "has_same_time", "has_first_epoch", "survive_in_epoch",
 })
 
 

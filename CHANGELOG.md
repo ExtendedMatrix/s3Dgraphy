@@ -5,6 +5,36 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
+- **Documents and authors are spatiotemporal entities** (node datamodel
+  1.6.27, connections 1.6.38, qualia 1.6.9, translations 1.10, em_visual_rules
+  1.6.34, em.ttl 1.6.16; MICRO «le entità spaziotemporali», decided by E.D.
+  10 October 2026: «documenti, autori e unità stratigrafiche sono entità
+  spaziotemporali e dovrebbero avere tutto il potenziale e la formalità delle
+  US»). The new block `spatiotemporal_entities` names StratigraphicNode,
+  DocumentNode and AuthorNode (with AuthorAINode) and what they share: a start
+  and an end (`absolute_time_start` / `absolute_time_end`), the lane where they
+  begin (`has_first_epoch`) and the ones they last through
+  (`survive_in_epoch`), their place in the sequence (`is_after`,
+  `has_same_time`), an activity (`is_in_activity`). Edges WIDENED:
+  `has_property.source += AuthorNode`; `has_first_epoch.source += AuthorNode`;
+  `survive_in_epoch.source += DocumentNode, AuthorNode`; `is_after` and
+  `has_same_time` source and target `+= DocumentNode, AuthorNode`;
+  `is_in_activity.source += AuthorNode`. Matter stays between units: the
+  physical relations, `changed_from`, `is_part_of` and `is_in_timebranch` are
+  not widened. The chronology dates documents and authors with the same rules
+  as the units (`Graph.CHRONOLOGY_TYPES`). A person's time reads with its own
+  words: the qualia carry `owner_names` and the translations
+  `label_author` / `label_author_ai` — «Data di nascita» / «Data di
+  scomparsa», «Data di rilascio» / «Data di dismissione»
+  (`datamodel_i18n.qualia_label(..., owner=)`). An author is shown as an
+  instance in a paradata group like a document (`paradata_instances.authorship`,
+  `paradata_view.view_instances`, kind `author`, badge `has_first_epoch`). New
+  module `s3dgraphy.spatiotemporal` (`spatiotemporal_profile`,
+  `is_spatiotemporal`, `time_label`), with `api.spatiotemporal_profile` and
+  `api.is_spatiotemporal`. em.ttl: `em:survivesInEpoch` and
+  `em:firstAttestedInEpoch` take the domain `crm:E77_Persistent_Item`. The
+  shipped mappings are re-stamped. Additive: no field changes, no graph
+  changes.
 - **A property as a source** (connections 1.6.36, MICRO «la proprietà come
   fonte», decided by E.D. 9 October 2026: the trusses take the wood species of
   the fragments found, the upper parts of a temple the material of the lower

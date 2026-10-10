@@ -213,14 +213,16 @@ def test_generic_connection_fallback_duplicates_and_warnings_are_unchanged():
     g.add_node(DocumentNode("D1", name="D.1"))
     g.add_node(StratigraphicUnit("US1", name="US1"))
     g.indices
-    edge = g.add_edge("x", "US1", "D1", "is_after")
+    # a document does not cut a unit (since connections 1.6.38 it may be
+    # after one: the temporal edges admit documents, the physical ones do not)
+    edge = g.add_edge("x", "US1", "D1", "cuts")
     assert edge.edge_type == "generic_connection"
     assert any("generic_connection" in w for w in g.warnings)
     assert g.find_edge_by_id("x") is edge
     with pytest.raises(ValueError, match="already exists"):
-        g.add_edge("x", "US1", "D1", "is_after")
+        g.add_edge("x", "US1", "D1", "cuts")
     with pytest.raises(ValueError, match="must exist"):
-        g.add_edge("y", "US1", "nowhere", "is_after")
+        g.add_edge("y", "US1", "nowhere", "cuts")
     assert [e.edge_id for e in g.indices.edges_by_type["generic_connection"]] == ["x"]
 
 

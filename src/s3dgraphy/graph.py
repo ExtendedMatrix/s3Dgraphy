@@ -730,9 +730,14 @@ class Graph:
     #: ``SE`` are helper nodes (``family`` None): they are not seeded, only
     #: reached as neighbours of the propagation, exactly as before.
     #: RSF, TSU, UL, USN, USNt were missing until 1.6 (MICRO-cronologia § 2).
+    #: Documents and authors join in 1.6.38 (MICRO le entità spaziotemporali,
+    #: E.D. 10 Oct 2026): they are spatiotemporal entities like a unit and are
+    #: dated by the same rules — a written start/end, their epochs, tpq/taq
+    #: along is_after / has_same_time (connections 1.6.38 admits them there).
     CHRONOLOGY_TYPES = ('US', 'USVs', 'USVn', 'VSF', 'SF', 'USD',
                         'serSU', 'serUSD', 'serUSVn', 'serUSVs', 'USM',
-                        'RSF', 'TSU', 'UL', 'USN', 'USNt')
+                        'RSF', 'TSU', 'UL', 'USN', 'USNt',
+                        'document', 'author', 'author_ai')
 
     #: Where a bound can come from, in :meth:`chronology`'s ``rule`` field.
     CHRONOLOGY_RULES = ('written', 'epoch', 'contained', 'tpq', 'taq')

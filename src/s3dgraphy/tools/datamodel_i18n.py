@@ -43,6 +43,13 @@ and its badge («from {owner}» → «da {owner}»; 1.8, connections 1.6.37, «l
 ``source_removed``, ``reasoning_cycle``, ``undeclared_owners``) and the cures —
 ``label`` the title, ``description`` the sentence, ``{placeholders}`` kept.
 
+`qualia.<id>.label_<owner>` (1.10, em_qualia_types 1.6.9, MICRO le entità
+spaziotemporali) is the name of a quale on an owner whose time is not a unit's,
+seeded from the quale's ``owner_names``: ``absolute_time_start`` on an ``author``
+is «Date of birth» → «Data di nascita», ``absolute_time_end`` «Date of death» →
+«Data di scomparsa» (E.D.: a decent word for a person, never «terminato»);
+``qualia_label(id, lang, owner=…)`` reads it and falls back to the plain label.
+
 `property_names.<name>.label` (1.9, em_qualia_types 1.6.8) is the readable label
 of a PROPERTY NAME in use that is not a quale — `definition`, `material` — seeded
 from the `property_names` block of the qualia file: «Material» → «Materiale». A
@@ -204,6 +211,11 @@ def _collect_qualia_en(qualia: Dict[str, Any]) -> Dict[str, Dict[str, Dict[str, 
                 qid = q["id"]
                 assert qid not in out["qualia"], f"duplicate qualia {qid}"
                 out["qualia"][qid] = {"label": q["name"]}
+                # 1.6.9: the name of the quale on an owner whose time is not a
+                # unit's — label_author «Date of birth», label_author_ai …
+                for owner, name in (q.get("owner_names") or {}).items():
+                    if not owner.startswith("_") and isinstance(name, str) and name.strip():
+                        out["qualia"][qid][f"label_{owner}"] = name
     return out
 
 
@@ -336,7 +348,7 @@ def seed(write: bool = True) -> Dict[str, Any]:
         existing = {}
     doc: Dict[str, Any] = {
         "schema": "s3Dgraphy_datamodel_translations",
-        "version": "1.9",
+        "version": "1.10",
         "languages": LANGUAGES,
     }
     for section in SECTIONS:
@@ -389,6 +401,9 @@ def _rows(doc: Dict[str, Any]) -> List[Tuple[str, str, str]]:
             for field in ("label", "description") + PHRASE_FIELDS:
                 if field in entries[key]:
                     keys.append((section, key, field))
+            # 1.10: the owner labels of a quale (label_author, label_author_ai)
+            for field in sorted(f for f in entries[key] if f.startswith("label_")):
+                keys.append((section, key, field))
     return keys
 
 
@@ -437,8 +452,21 @@ def is_validated(section: str, key: str, field: str = "label", lang: str = "en")
     return lang == "en" or fe.get(f"validated_{lang}") is True
 
 
-def qualia_label(qualia_id: str, lang: str = "en") -> Optional[str]:
-    """Label of a qualia (``em_qualia_types.json`` id) in ``lang``, English fallback."""
+def qualia_label(qualia_id: str, lang: str = "en",
+                 owner: Optional[str] = None) -> Optional[str]:
+    """Label of a qualia (``em_qualia_types.json`` id) in ``lang``, English fallback.
+
+    ``owner`` (1.10) is the node_type of the node that has the property, or the
+    node itself: a quale may be named differently on an owner whose time is not
+    a unit's — ``absolute_time_end`` on an ``author`` is «Date of death» / «Data
+    di scomparsa», on an ``author_ai`` «Retirement date» (em_qualia_types 1.6.9
+    ``owner_names``). Without an owner label, the quale's own label."""
+    if owner is not None and not isinstance(owner, str):
+        owner = getattr(owner, "node_type", None)
+    if owner:
+        text = translate("qualia", qualia_id, f"label_{owner}", lang)
+        if text:
+            return text
     return translate("qualia", qualia_id, "label", lang)
 
 
