@@ -40,7 +40,7 @@ def test_pg_export_structural_fingerprint_matches_sqlite_baseline(
         db_path=handle,
         mapping="pyarchinit_us_mapping",
         output_path=out,
-        site_filter="Volterra",
+        site_filter="TestSite",
     )
 
     actual = _structure(out.read_text(encoding="utf-8"))

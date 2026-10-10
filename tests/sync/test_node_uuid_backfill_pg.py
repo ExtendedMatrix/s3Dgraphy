@@ -14,6 +14,7 @@ from sqlalchemy import inspect, text
 
 # Import pg_engine fixture explicitly - conftest_pg.py is not auto-discovered
 from tests.sync.conftest_pg import pg_engine  # noqa: F401
+from tests.sync._uuid_backfill import TABLES
 
 
 UUID_V7_REGEX = re.compile(
@@ -35,8 +36,7 @@ def clean_pg_with_seed(pg_engine):
             CREATE TABLE IF NOT EXISTS inventario_materiali_table (
                 id_invmat SERIAL PRIMARY KEY,
                 sito TEXT,
-                numero_inventario TEXT,
-                node_uuid TEXT
+                numero_inventario TEXT
             )
         """))
         conn.execute(text(
@@ -53,7 +53,24 @@ def clean_pg_with_seed(pg_engine):
             "INSERT INTO periodizzazione_table (sito, periodo, fase) "
             "VALUES ('S', 1, 'I')"
         ))
+        # This module tests the migration that ADDS node_uuid, so each test
+        # has to start from a database where it is not there yet. The shared
+        # schema (conftest_pg._apply_pyarchinit_schema) declares it, and
+        # add_columns skips a table that has it — which is why the
+        # mid-flight-failure test saw no ALTER at all and never raised.
+        for tabella in TABLES:
+            conn.execute(text(
+                "DROP INDEX IF EXISTS ix_%s_node_uuid" % tabella))
+            conn.execute(text(
+                "ALTER TABLE %s DROP COLUMN IF EXISTS node_uuid" % tabella))
     yield pg_engine
+    # Put it back: pg_engine is session-scoped and the modules that run
+    # after this one expect the shared schema they were given.
+    with pg_engine.begin() as conn:
+        for tabella in TABLES:
+            conn.execute(text(
+                "ALTER TABLE %s ADD COLUMN IF NOT EXISTS node_uuid TEXT"
+                % tabella))
 
 
 def test_add_columns_idempotent_on_pg(clean_pg_with_seed):

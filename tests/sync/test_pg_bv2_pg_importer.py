@@ -125,7 +125,7 @@ def test_pg_export_graphml_end_to_end(pg_with_volterra, tmp_path):
     projector = GraphProjector()
     graph = projector.populate_graph(
         handle,
-        sito="Volterra",
+        sito="TestSite",
         include_paradata=False,
         strict_schema=False,
     )
@@ -136,7 +136,7 @@ def test_pg_export_graphml_end_to_end(pg_with_volterra, tmp_path):
         db_path=handle,
         mapping="pyarchinit_us_mapping",
         output_path=str(out_file),
-        site_filter="Volterra",
+        site_filter="TestSite",
         persist_auxiliary=False,
         language="it",
     )
@@ -170,7 +170,7 @@ def test_pg_export_graphml_structural_match_sqlite(
         db_path=handle,
         mapping="pyarchinit_us_mapping",
         output_path=str(pg_out),
-        site_filter="Volterra",
+        site_filter="TestSite",
         persist_auxiliary=False,
         language="it",
     )
@@ -189,7 +189,7 @@ def test_pg_export_graphml_structural_match_sqlite(
         db_path=sqlite_fixture,
         mapping="pyarchinit_us_mapping",
         output_path=str(sqlite_out),
-        site_filter="Volterra",
+        site_filter="TestSite",
         persist_auxiliary=False,
         language="it",
     )

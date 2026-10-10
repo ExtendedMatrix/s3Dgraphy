@@ -32,8 +32,14 @@ def test_pg_smoke_columns_of_us_table(pg_engine):
         "struttura", "attivita", "settore", "ambient", "saggio",
         "quad_par", "unita_tipo", "node_uuid",
     }
-    assert cols == expected, (
-        f"PG us_table columns mismatch.\n"
-        f"  Expected: {sorted(expected)}\n"
-        f"  Got:      {sorted(cols)}"
+    # A subset, not an equality: pg_engine is session-scoped and the test
+    # database persists between runs, so another module may legitimately
+    # have widened us_table — load_sqlite_into_pg mirrors the fixture's
+    # full column set. What this smoke test can promise is that the
+    # bootstrap put the Foundation columns there and _columns_of reads
+    # them through information_schema.
+    assert expected <= cols, (
+        f"PG us_table is missing Foundation columns.\n"
+        f"  Missing: {sorted(expected - cols)}\n"
+        f"  Got:     {sorted(cols)}"
     )

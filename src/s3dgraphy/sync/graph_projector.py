@@ -213,6 +213,42 @@ def compute_primary(memberships: list, priority_order: list) -> dict:
     return out
 
 
+def _adopt_importer_epoch(graph, node_id, sito, key):
+    """Fold the importer's epoch node for *key* into ``node_id``.
+
+    The pyarchinit importer already builds one epoch node per
+    periodisation row, ``epoch::<sito>::<periodo>::<fase>``; this
+    projector then built its own for the same row, ``epoch_<p>_<f>``, and
+    the period ended up in the graph twice — on pyArchInit's ten-site
+    demo, 12 periodisation rows gave 24 EpochNodes (#25). The id this
+    projector mints stays the canonical one, because the round-trip and
+    the tests key on it: the twin's edges are retargeted onto it, an edge
+    that would become a duplicate is dropped, and the twin goes.
+
+    Does nothing when there is no twin, which is every path that did not
+    come through the pyarchinit importer.
+    """
+    if sito is None:
+        return
+    twin_id = "epoch::%s::%s::%s" % (sito, key[0], key[1])
+    if graph.find_node_by_id(twin_id) is None:
+        return
+    altrui = {(e.edge_source, e.edge_target, e.edge_type)
+              for e in graph.edges
+              if twin_id not in (e.edge_source, e.edge_target)}
+    for edge in list(graph.edges):
+        if twin_id not in (edge.edge_source, edge.edge_target):
+            continue
+        source = node_id if edge.edge_source == twin_id else edge.edge_source
+        target = node_id if edge.edge_target == twin_id else edge.edge_target
+        if (source, target, edge.edge_type) in altrui or source == target:
+            graph.remove_edge(edge.edge_id)
+            continue
+        edge.edge_source, edge.edge_target = source, target
+        altrui.add((source, target, edge.edge_type))
+    graph.remove_node(twin_id)
+
+
 def _is_us_node(node) -> bool:
     """Return True if *node* is a stratigraphic unit (US/USM/USVs/...)."""
     cls_name = type(node).__name__
@@ -519,9 +555,18 @@ class GraphProjector:
         """Set attributes['node_uuid'], 'us' and the remaining mapped
         columns on each StratigraphicUnit-family node.
 
-        Match nodes by `name` (the importer emits name=str(us_table.us))
-        within the requested sito. Idempotent: re-running yields the
-        same attribute values.
+        Match a row to its node by ``node_uuid``: the importer gives
+        each row's node the row's own ``node_uuid`` as its ``node_id``.
+        The node's NAME is not a key — since 1.6 it comes from
+        ``node_name_template`` and carries the area and, across sites, a
+        site code (``1.US1``, ``TM16.1.USM100``), so it never equals the
+        ``us`` column. Matching by name alone therefore found nothing on
+        any graph built by the importer, the fallback node could not be
+        added (its id was already in the graph) and every row was dropped
+        in silence. Name stays as the fallback, for graphs built outside
+        the importer where the name IS the ``us`` value.
+
+        Idempotent: re-running yields the same attribute values.
         """
         # Bug K (2026-05-15 user feedback): same ``us`` value can appear
         # across DIFFERENT unita_tipo (e.g. us='01' with US, DOC,
@@ -539,6 +584,10 @@ class GraphProjector:
         #      node the bridge collapsed — otherwise these rows are
         #      silently dropped on re-export.
         nodes_by_key: dict[tuple[str, str], object] = {}
+        #: node_id → node, for the match by identity. The importer uses the
+        #: row's node_uuid as the node_id, so this is the key that holds
+        #: whatever the node ends up being called.
+        nodes_by_uuid: dict[str, object] = {}
         for n in graph.nodes:
             cls = type(n).__name__
             name = str(getattr(n, "name", ""))
@@ -548,6 +597,9 @@ class GraphProjector:
                 continue
             if cls.startswith("Stratigraphic") or cls == "USNode":
                 nodes_by_key[(name, "__STRAT__")] = n
+                nid = getattr(n, "node_id", None)
+                if nid:
+                    nodes_by_uuid[str(nid)] = n
         if not nodes_by_key:
             return  # nothing to propagate
 
@@ -604,10 +656,17 @@ class GraphProjector:
             # rapporti dispatch.
             ut_canon = canonical_unita_tipo(ut_str)
             node = None
+            # The row's own node, by identity. A paradata row is left to
+            # the branch further down, which builds it a freshly typed
+            # node on purpose: binding it to the generic unit the importer
+            # made would alias the edges ``_enrich_into`` already added
+            # onto a document / combiner class (Bug N, 2026-05-15).
+            if node_uuid and ut_str not in _PARADATA_UNITA_TIPO_TO_CLASS_PATH:
+                node = nodes_by_uuid.get(str(node_uuid))
             # Direct hit by composite key (paradata that the bridge
             # correctly classified OR a stratigraphic node already
             # claimed by a prior row of the same unita_tipo).
-            if ut_str:
+            if node is None and ut_str:
                 node = nodes_by_key.get((us_name, ut_str))
             # Stratigraphic-family row: try to claim the bridge's
             # generic StratigraphicUnit for this name; if it's already
@@ -619,11 +678,12 @@ class GraphProjector:
             # order (e.g. yEd document order interleaves US01 and
             # DOC.01 — DOC.01 might claim the bridge's '01' placeholder
             # before US01 row is iterated).
-            if node is None and ut_canon in (
+            if ut_canon in (
                 "US", "USM", "USR", "USD", "USV", "USVs", "USVn", "USVc",
                 "SF", "VSF", "RSF",
             ):
-                node = nodes_by_key.pop((us_name, "__STRAT__"), None)
+                if node is None:
+                    node = nodes_by_key.pop((us_name, "__STRAT__"), None)
                 if node is None:
                     node = _create_stratigraphic_node_for_unita_tipo(
                         ut_canon, us_name, node_uuid or us_name,
@@ -640,6 +700,9 @@ class GraphProjector:
                     from s3dgraphy.utils.utils import apply_legacy_kind
                     apply_legacy_kind(node, ut_str)
                     nodes_by_key[(us_name, ut_str)] = node
+                    # Claimed: no later row may take it by name as well.
+                    if nodes_by_key.get((us_name, "__STRAT__")) is node:
+                        del nodes_by_key[(us_name, "__STRAT__")]
             # Paradata row (DOC / Combinar / Extractor / property):
             # ALWAYS create a fresh node of the right class. Don't
             # reuse the bridge's StratigraphicUnit uuid — that would
@@ -839,7 +902,10 @@ class GraphProjector:
                     text(
                         "SELECT periodo, fase, cron_iniziale, cron_finale, "
                         "descrizione FROM periodizzazione_table"
-                    )
+                        + (" WHERE sito = :sito" if sito_filter is not None
+                           else "")
+                    ),
+                    ({"sito": sito_filter} if sito_filter is not None else {}),
                 ).fetchall()
             except Exception:
                 raw_rows = []
@@ -901,6 +967,7 @@ class GraphProjector:
                     # node_id may be reassigned by GraphMLExporter).
                     if not hasattr(ep, "attributes") or ep.attributes is None:
                         ep.attributes = {}
+                    _adopt_importer_epoch(graph, node_id, sito_filter, key)
                     ep.attributes["periodo"] = str(key[0])
                     ep.attributes["fase"] = str(key[1])
                     if cron_ini is not None:
