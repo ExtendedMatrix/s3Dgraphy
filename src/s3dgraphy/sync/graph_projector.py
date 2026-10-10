@@ -213,6 +213,42 @@ def compute_primary(memberships: list, priority_order: list) -> dict:
     return out
 
 
+def _adopt_importer_epoch(graph, node_id, sito, key):
+    """Fold the importer's epoch node for *key* into ``node_id``.
+
+    The pyarchinit importer already builds one epoch node per
+    periodisation row, ``epoch::<sito>::<periodo>::<fase>``; this
+    projector then built its own for the same row, ``epoch_<p>_<f>``, and
+    the period ended up in the graph twice — on pyArchInit's ten-site
+    demo, 12 periodisation rows gave 24 EpochNodes (#25). The id this
+    projector mints stays the canonical one, because the round-trip and
+    the tests key on it: the twin's edges are retargeted onto it, an edge
+    that would become a duplicate is dropped, and the twin goes.
+
+    Does nothing when there is no twin, which is every path that did not
+    come through the pyarchinit importer.
+    """
+    if sito is None:
+        return
+    twin_id = "epoch::%s::%s::%s" % (sito, key[0], key[1])
+    if graph.find_node_by_id(twin_id) is None:
+        return
+    altrui = {(e.edge_source, e.edge_target, e.edge_type)
+              for e in graph.edges
+              if twin_id not in (e.edge_source, e.edge_target)}
+    for edge in list(graph.edges):
+        if twin_id not in (edge.edge_source, edge.edge_target):
+            continue
+        source = node_id if edge.edge_source == twin_id else edge.edge_source
+        target = node_id if edge.edge_target == twin_id else edge.edge_target
+        if (source, target, edge.edge_type) in altrui or source == target:
+            graph.remove_edge(edge.edge_id)
+            continue
+        edge.edge_source, edge.edge_target = source, target
+        altrui.add((source, target, edge.edge_type))
+    graph.remove_node(twin_id)
+
+
 def _is_us_node(node) -> bool:
     """Return True if *node* is a stratigraphic unit (US/USM/USVs/...)."""
     cls_name = type(node).__name__
@@ -839,7 +875,10 @@ class GraphProjector:
                     text(
                         "SELECT periodo, fase, cron_iniziale, cron_finale, "
                         "descrizione FROM periodizzazione_table"
-                    )
+                        + (" WHERE sito = :sito" if sito_filter is not None
+                           else "")
+                    ),
+                    ({"sito": sito_filter} if sito_filter is not None else {}),
                 ).fetchall()
             except Exception:
                 raw_rows = []
@@ -901,6 +940,7 @@ class GraphProjector:
                     # node_id may be reassigned by GraphMLExporter).
                     if not hasattr(ep, "attributes") or ep.attributes is None:
                         ep.attributes = {}
+                    _adopt_importer_epoch(graph, node_id, sito_filter, key)
                     ep.attributes["periodo"] = str(key[0])
                     ep.attributes["fase"] = str(key[1])
                     if cron_ini is not None:
