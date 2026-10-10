@@ -391,6 +391,26 @@ All notable changes to **s3dgraphy** are documented here.
   `attributes['sito']`, which only the PostgreSQL importer sets by itself. On
   the same fixture, `site_filter="TestSite"` gives 1 node where no filter gives
   19, and 8 on PostgreSQL.
+- **One epoch per (periodo, fase), and only this site's** (#25, pyArchInit).
+  Two things met in the same place in `GraphProjector`. The pyarchinit importer
+  already builds an epoch node per periodisation row,
+  `epoch::<sito>::<periodo>::<fase>`; the projector then built its own,
+  `epoch_<p>_<f>`, for the same row — the same period in the graph twice. And
+  its periodisation query carried no `WHERE sito`, where the `us_table` query
+  ten lines below already had one, so on a multi-site database it read every
+  site's rows: a period the site does not have arrived, and the name of a
+  period it does have came from whichever site happened to win. Measured on
+  pyArchInit's ten-site demo, where ten translations of the same twelve
+  periods live side by side: «Scavo archeologico» had 12 periodisation rows and
+  **24 EpochNodes, 12 of them named in another language**; it now has 12 and no
+  repeated name. `_adopt_importer_epoch` folds the importer's twin into the id
+  this projector mints — which stays the canonical one, because the round-trip
+  and the tests key on it — retargeting its edges, dropping one that would
+  become a duplicate, and removing the twin; it does nothing when there is no
+  twin, which is every path that did not come through the pyarchinit importer.
+  No edge is left pointing at an epoch that is gone (measured). pyArchInit can
+  drop its own `_fix_epochs` merge pass. Tests in
+  `tests/sync/test_projector_epochs_once_per_period.py`.
 - **The graph's own scaffolding is not an excavated unit** (#25, pyArchInit).
   `ContinuityNode` and `GraphNode` were missing from `_NON_STRAT_TYPES`, so
   `GraphIngestor.populate_list` wrote them into `us_table` as units: a graph
