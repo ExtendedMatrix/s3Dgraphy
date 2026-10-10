@@ -411,6 +411,22 @@ All notable changes to **s3dgraphy** are documented here.
   No edge is left pointing at an epoch that is gone (measured). pyArchInit can
   drop its own `_fix_epochs` merge pass. Tests in
   `tests/sync/test_projector_epochs_once_per_period.py`.
+- **`group_store.add_group` keeps what the constructor put in `attributes`**
+  (#25, pyArchInit). The same pattern as the two places in `graph_projector`
+  fixed on 9 October: `node.attributes = {…}` replaces the dict the
+  constructor filled instead of updating it. **Measured, and worth saying
+  plainly: nothing observable breaks today.** On an `ActivityNodeGroup` the
+  only key the constructor sets is `y_pos`; it is not serialised to the
+  groups GraphML, and reading the file back reconstructs the node, so the
+  `GroupStore` round trip — `add_group` → file → `read` / `list_groups` —
+  comes out identical either way. What this closes is the next attribute the
+  class gains: `LocationNodeGroup` already carries `kind` and `propagation`
+  from its constructor, and a group built that way here would lose them in
+  silence, which is exactly how the em.json `kind` went missing. So the test
+  pins the invariant rather than a symptom, on the node as `add_group` builds
+  it — the only place it is observable — and compares its keys against a
+  freshly constructed node's, so it keeps working when the class grows.
+  Tests in `tests/sync/test_group_store_keeps_constructor_attributes.py`.
 - **The graph's own scaffolding is not an excavated unit** (#25, pyArchInit).
   `ContinuityNode` and `GraphNode` were missing from `_NON_STRAT_TYPES`, so
   `GraphIngestor.populate_list` wrote them into `us_table` as units: a graph

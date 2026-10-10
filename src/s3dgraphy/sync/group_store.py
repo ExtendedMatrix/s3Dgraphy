@@ -357,14 +357,18 @@ class GroupStore:
         group_uuid = str(uuid7())
         members = list(member_us_uuids or [])
         node = ActivityNodeGroup(node_id=group_uuid, name=str(name))
-        node.attributes = {
+        # `.update`, not an assignment: the constructor has already filled
+        # `attributes` (y_pos today; LocationNodeGroup also puts kind and
+        # propagation there), and replacing the dict throws that away in
+        # silence. Same as the two places in graph_projector fixed for #25.
+        node.attributes.update({
             "group_kind": str(group_kind),
             "sito": self._sito,
             "name": str(name),
             "member_us_uuids": ",".join(members),  # serialise as CSV
             "description": str(description or ""),
             "group_uuid": group_uuid,
-        }
+        })
         self.add_node(node)
         return group_uuid
 
