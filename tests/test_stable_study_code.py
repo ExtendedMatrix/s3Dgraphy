@@ -170,6 +170,14 @@ def test_a_proposal_is_confirmed_or_replaced_by_the_user_only():
     assert api.study_code(h) == "VLT24" and not api.is_code_proposed(h)
 
 
+def test_a_code_written_through_declare_hdto_is_no_longer_a_proposal():
+    g = _site_study("a", "Volterra", "2024")
+    api.propose_study_code(g)
+    assert api.is_code_proposed(g)
+    api.declare_hdto(g, study={"code": "VOL24"})
+    assert api.study_code(g) == "VOL24" and not api.is_code_proposed(g)
+
+
 def test_a_graph_without_study_gets_one_to_hold_its_code():
     g = Graph("lonely")
     g.attributes["graph_code"] = "GT16"

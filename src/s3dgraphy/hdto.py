@@ -308,7 +308,10 @@ def declare_hdto(graph, *, study=None, place=None, about=None, parent=None,
             if study_s.get(key) is not None:
                 d[key] = study_s[key]
         if _text(study_s.get("code")):
+            # a code GIVEN is a person's (or the source's): it is no longer a
+            # proposal, whatever was written before (E.D., 11 Oct 2026)
             d["code"] = _text(study_s["code"])
+            d.pop("code_proposed", None)
         _ensure_edge(graph, study_node, proposition_set,
                      "study_produced_proposition_set")
     if study_node is not None and hc1 is not None and has_about:
