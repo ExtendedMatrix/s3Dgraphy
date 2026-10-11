@@ -72,6 +72,13 @@ def _site_place_of(graph, sito: str):
     return None
 
 
+def _has_site_place(graph) -> bool:
+    """Whether a projected graph has the place of any site (``level: sito``)."""
+    return any(type(n).__name__ == "LocationNodeGroup"
+               and (getattr(n, "attributes", None) or {}).get("level") == "sito"
+               for n in graph.nodes)
+
+
 def _graphs_of_site(graphs: dict, sito: str) -> list:
     """The ids of the graphs in ``graphs`` that belong to the site ``sito``.
 
@@ -79,15 +86,20 @@ def _graphs_of_site(graphs: dict, sito: str) -> list:
     site when its study took place there or at a place inside it — a saggio —
     which is :func:`s3dgraphy.hdto.graphs_at`, read from the graph's own
     chain and no longer from ``attributes['sito']`` on every unit (which only
-    the PostgreSQL importer set, so the SQLite export came out empty). When
-    the site has no place (not in site_table) the model has nothing to ask:
-    the projection, made for ``sito`` only, is the site's.
+    the PostgreSQL importer set, so the SQLite export came out empty).
+
+    A site the model does not find gives NO graph (Enzo, #25: with two graphs,
+    «Gamma» gave both). The one inclusive fallback is a SINGLE graph with no
+    site place at all (the site is not in site_table): the projection, made
+    for ``sito`` only, is the site's, and the model has nothing to ask.
     """
     from s3dgraphy.container import Container
     from s3dgraphy.hdto import graphs_at
     places = {gid: _site_place_of(g, sito) for gid, g in graphs.items()}
     if not any(places.values()):
-        return list(graphs)
+        if len(graphs) == 1 and not _has_site_place(next(iter(graphs.values()))):
+            return list(graphs)
+        return []
     container = Container(graphs=dict(graphs))
     found = []
     for gid, place in places.items():
@@ -176,6 +188,24 @@ def _read_first_sito(db_path: Path) -> str:
                 "explicit site_filter or check the DB."),
         )
     return str(row[0])
+
+
+def _site_has_rows(db_path, sito: str) -> bool:
+    """Whether ``us_table`` has at least one row of the site ``sito``."""
+    # a plain filesystem-path string is a SQLite file, as in populate_graph
+    if (isinstance(db_path, str) and not db_path.startswith("sqlite:")
+            and not db_path.startswith("postgresql")):
+        db_path = Path(db_path)
+    try:
+        handle = _resolve_db_handle(db_path)
+        with handle.engine.connect() as conn:
+            row = conn.execute(
+                text("SELECT 1 FROM us_table WHERE sito = :sito LIMIT 1"),
+                {"sito": sito}).fetchone()
+    except Exception as e:
+        raise GraphMLExportError(
+            "filter", RuntimeError(f"Cannot read us_table.sito: {e}")) from e
+    return row is not None
 
 
 # PyArchInit `rapporti` strings (Italian + English) → s3dgraphy
@@ -1903,7 +1933,8 @@ def export_graphml(
     Raises:
         EmptyGraphError: if the (filtered) graph has no nodes.
         GraphMLExportError(stage=...): wraps any failure in import,
-            filter, export or write stages.
+            filter, export or write stages; ``stage="filter"`` also when
+            ``site_filter`` names a site without rows in us_table.
     """
     output_path = Path(output_path)
 
@@ -2025,17 +2056,20 @@ def export_graphml(
           f"{len(_group_snapshot)} groups; "
           f"non-primary US memberships: {len(_us_other_locations)}")
 
-    # Stage 2: the site's graph (hdto.graphs_at), then the export layer.
-    # No site_filter: the whole projection, as before.
-    try:
-        if site_filter is not None:
-            if graph.graph_id in _graphs_of_site({graph.graph_id: graph},
-                                                 sito_for_projection):
-                graph = _export_layer(graph)
-            else:
-                graph.nodes = []
-    except Exception as e:
-        raise GraphMLExportError("filter", e) from e
+    # Stage 2: the export layer. The projection is already the site's
+    # (populate_graph(sito=…)), so there is nothing to choose: a site without
+    # rows is refused, and said (Enzo, #25: it came out as a GraphML with one
+    # node and no US, without a word). No site_filter: the whole projection,
+    # as before.
+    if site_filter is not None:
+        if not _site_has_rows(db_path, site_filter):
+            raise GraphMLExportError(
+                "filter", ValueError(
+                    f"the site {site_filter!r} has no rows in us_table"))
+        try:
+            graph = _export_layer(graph)
+        except Exception as e:
+            raise GraphMLExportError("filter", e) from e
 
     if len(graph.nodes) == 0:
         raise EmptyGraphError(

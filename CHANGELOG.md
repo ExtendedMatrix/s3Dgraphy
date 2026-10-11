@@ -5,6 +5,19 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
+- **The code in the header of every graph** (E.D., 11 October 2026). In an
+  em.json each graph section carries the study's code next to its
+  `graph_id`: `graphs.<id>.code`, plus `code_proposed: true` while it is a
+  proposal; written only when there is a code (the shelf and the DTC corpus
+  have none). It is a MIRROR of `StudyNode.data.code`, written by
+  `build_emjson` and checked by `parse_emjson`: when the two differ the study
+  wins and the reader warns. A study without a code writes what
+  `study_code` reads (the GraphML header ID, the em_id), and the reader puts
+  a header code back in `graph.attributes['graph_code']` when nothing in the
+  graph says one — so the code of a graph read by an older GraphML importer
+  is no longer lost at its first em.json. Additive: a reader that ignores the
+  key reads the graph as before; `SCHEMA_VERSION` stays 2.
+
 - **The study's code is stable, the rapporti between saggi are kept, one
   saggio is one node** (giro dell'11 ottobre (2), decided by E.D. 11 October
   2026). Node datamodel 1.6.30 (`StudyNode.code_proposed`).
@@ -34,6 +47,15 @@ All notable changes to **s3dgraphy** are documented here.
     (its edges move to the group, the id kept as `importer_id`).
 
 ### Fixed
+- **`graphml_writer._graphs_of_site` and a site nobody has** (Enzo, #25):
+  with two graphs, asking for a site the model does not find («Gamma») gave
+  both. With more than one graph, or one graph that has a site place, an
+  unknown site now gives no graph; the inclusive fallback is kept only for
+  a single graph without any site place.
+- **`export_graphml` with a site without rows** (Enzo, #25): it wrote a
+  GraphML with one node and no unit, silently. It now raises
+  `GraphMLExportError(stage="filter")` «the site 'X' has no rows in
+  us_table»; the second filter, which could never discard, is gone.
 - **The projector made no rapporto edge** when the units are named
   `1.US3`: a rapporto names the `us` column, and the target was looked up by
   the node's name only (measured on `mini_volterra`: 0 edges). Looked up by

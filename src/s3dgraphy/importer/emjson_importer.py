@@ -190,6 +190,28 @@ def _instantiate(node_type: str, payload: Dict[str, Any],
     return node
 
 
+def _check_header_code(graph: Graph, gsec: Dict[str, Any]) -> List[str]:
+    """Compare ``graphs.<id>.code`` with the study's code; see the caller."""
+    from ..hdto import is_code_proposed, study_code
+    header = gsec.get("code")
+    header = str(header).strip() if header not in (None, "") else ""
+    if not header:
+        return []
+    code = study_code(graph)
+    if not code:
+        graph.attributes["graph_code"] = header
+        return []
+    gid = gsec.get("graph_id")
+    if code != header:
+        return [f"graph '{gid}': the header says code {header!r}, the study "
+                f"{code!r}; the study's is kept"]
+    if (gsec.get("code_proposed") is True) != is_code_proposed(graph):
+        said = "proposed" if gsec.get("code_proposed") is True else "confirmed"
+        return [f"graph '{gid}': the header says code {header!r} is {said}, "
+                f"the study does not; the study's is kept"]
+    return []
+
+
 def parse_emjson(doc: Dict[str, Any], *,
                  project_root: Optional[str] = None,
                  study: Optional[Dict[str, Any]] = None) -> Tuple[Graph, List[str]]:
@@ -352,6 +374,12 @@ def parse_emjson(doc: Dict[str, Any], *,
                     f"link {link['id']!r}: no node '{t['node_id']}' in the "
                     f"graph '{t['graph_id']}' of this container; kept")
         graph.links.append(link)
+
+    # The header's code (E.D., 11 Oct 2026) is the mirror of the study's: the
+    # study wins, and a divergence is said. With no code anywhere in the graph
+    # the header's is kept where study_code reads it (graph_code), so the code
+    # of an old file survives the em.json → graph → em.json round.
+    warnings.extend(_check_header_code(graph, gsec))
 
     # MIG1-A (DP-65) · one-shot legacy migration of graph-scope rights metadata.
     _migrate_legacy_graph_scope(graph)

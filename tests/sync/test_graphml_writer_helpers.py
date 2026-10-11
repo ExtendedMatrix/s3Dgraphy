@@ -168,3 +168,31 @@ def test_export_layer_keeps_row_level_paradata_nodes():
         g.add_node(n)
     kept = {n.node_id for n in _export_layer(g).nodes}
     assert {"us1", "doc1", "cmb1", "ext1", "prop1"} <= kept
+
+
+def test_graphs_of_site_an_unknown_site_gives_no_graph_when_there_are_several():
+    """Enzo, #25: with two graphs, «Gamma» (nowhere) gave ['Alfa', 'Beta']."""
+    from s3dgraphy.sync.graphml_writer import _graphs_of_site
+    graphs = {"Alfa": _site_graph("Alfa", "SiteA"),
+              "Beta": _site_graph("Beta", "SiteB")}
+    assert _graphs_of_site(graphs, "Gamma") == []
+    assert _graphs_of_site(graphs, "SiteA") == ["Alfa"]
+    # a single graph that HAS a site place, but another one: no graph either
+    assert _graphs_of_site({"b": _site_graph("b", "SiteB")}, "Gamma") == []
+    # two graphs without any place: nothing to ask, nothing chosen
+    assert _graphs_of_site({"t": _make_test_graph(),
+                            "u": _make_test_graph()}, "SiteA") == []
+
+
+def test_export_graphml_refuses_a_site_without_rows(tmp_path):
+    """Enzo, #25: a site without rows in us_table came out as a GraphML with
+    one node and no US, and no warning."""
+    import pytest
+    from s3dgraphy.sync.graphml_writer import GraphMLExportError, export_graphml
+    from tests.sync.test_saggio_under_the_site import _db
+    out = tmp_path / "out.graphml"
+    with pytest.raises(GraphMLExportError) as info:
+        export_graphml(_db(tmp_path), "pyarchinit", out, site_filter="Nessuno")
+    assert info.value.stage == "filter"
+    assert "'Nessuno' has no rows in us_table" in str(info.value)
+    assert not out.exists()

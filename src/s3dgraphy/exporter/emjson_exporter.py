@@ -240,6 +240,18 @@ def build_emjson(graph: Graph, layout: Optional[Dict[str, Any]] = None) -> Dict[
         "nodes": nodes,
         "edges": edges,
     }
+    # the HEADER of the graph (E.D., 11 Oct 2026): its stable id and the
+    # study's code side by side, readable without walking the nodes. The code
+    # is a MIRROR of StudyNode.data.code — written here, checked on import,
+    # and the study wins — or, when the study has none, what study_code reads
+    # (the GraphML header's ID, the retired em_id), so an old file's code is
+    # no longer lost at its first em.json. Written only when there is a code.
+    from ..hdto import is_code_proposed, study_code
+    code = study_code(graph)
+    if code:
+        graph_section["code"] = code
+        if is_code_proposed(graph):
+            graph_section["code_proposed"] = True
     # the rapporti towards other graphs of the container (s3dgraphy.links):
     # written only when there are some, so a graph without stays as it was
     links = [dict(l) for l in (getattr(graph, "links", None) or [])
