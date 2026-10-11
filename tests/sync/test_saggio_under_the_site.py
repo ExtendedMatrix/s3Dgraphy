@@ -104,6 +104,35 @@ def test_one_saggio_the_study_is_the_saggio_at_its_place_under_the_site(tmp_path
         "TestSite", "Volterra", "Pisa", "Toscana", "Italia"]
 
 
+def test_without_the_grouping_the_importer_s_saggio_is_the_place(tmp_path):
+    """Measured: the importer makes the saggio's place by itself
+    (``loc::saggio::study::<name>``, the mapping's LocationNodeGroup column),
+    whatever ``groups`` says. It is hung off the site and the study took
+    place at it."""
+    db = _db(tmp_path, {u: "S1" for u in ("1", "2", "3", "4", "5")})
+    graph = GraphProjector().populate_graph(db, sito="TestSite")
+    chain = read_hdto(graph)
+    assert chain["place"]["id"] == "loc::saggio::study::S1"
+    assert chain["place"]["within"][0]["id"] == site_place_id("TestSite")
+
+
+def test_with_the_grouping_the_saggio_has_two_places_both_in_the_site(tmp_path):
+    """Measured (pre-existing): with groups=["saggio"] a saggio has two
+    places, the importer's and the grouped one. Both are in the site; the
+    study takes the grouped one."""
+    db = _db(tmp_path, {u: "S1" for u in ("1", "2", "3", "4", "5")})
+    graph = GraphProjector().populate_graph(db, sito="TestSite", groups=["saggio"])
+    s1 = [n for n in graph.nodes if type(n).__name__ == "LocationNodeGroup"
+          and n.name == "S1"]
+    assert len(s1) == 2
+    site = site_place_id("TestSite")
+    for place in s1:
+        assert (place.node_id, site) in {(e.edge_source, e.edge_target)
+                                         for e in graph.edges
+                                         if e.edge_type == "is_in_location"}
+    assert read_hdto(graph)["place"]["id"] != "loc::saggio::study::S1"
+
+
 def test_the_projection_is_idempotent_ids_included(tmp_path):
     db = _db(tmp_path, {u: "S1" for u in ("1", "2", "3", "4", "5")})
     a = GraphProjector().populate_graph(db, sito="TestSite", groups=["saggio"])
@@ -124,9 +153,10 @@ def test_two_saggi_make_one_graph_each_in_a_container(tmp_path):
         names[gid] = (chain["study"]["name"], chain["place"]["name"],
                       chain["place"]["within"][0]["name"],
                       sorted(_short(u.name) for u in _units(g)))
-        # one saggio's place only
-        assert [n.name for n in g.nodes if type(n).__name__ == "LocationNodeGroup"
-                and n.attributes.get("group_kind") == "saggio"] == [chain["study"]["name"]]
+        # one saggio's places only (the importer's loc::saggio::…)
+        assert {n.name for n in g.nodes if type(n).__name__ == "LocationNodeGroup"
+                and (n.attributes.get("group_kind") == "saggio"
+                     or n.node_id.startswith("loc::saggio::"))} == {chain["study"]["name"]}
     assert names == {"TestSite|S1": ("S1", "S1", "TestSite", ["1", "2", "3"]),
                      "TestSite|S2": ("S2", "S2", "TestSite", ["4", "5"])}
     # the site finds both, going up from each saggio

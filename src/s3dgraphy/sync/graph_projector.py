@@ -518,8 +518,7 @@ class GraphProjector:
 
         * no saggio, or one: one graph, the one :meth:`populate_graph` makes
           (id ``sito``);
-        * several: the site is projected once (with the ``saggio`` grouping
-          added to ``groups``), then split — graph id ``"<sito>|<saggio>"``,
+        * several: the site is projected once, then split — graph id ``"<sito>|<saggio>"``,
           the saggio's units, the shared topography and epochs, its own
           study at the saggio's place (:meth:`_declare_study`). The units in
           no saggio, if any, make one more graph, id ``sito``, whose study
@@ -536,30 +535,30 @@ class GraphProjector:
             graph = self.populate_graph(db_path, sito, groups=groups, **kwargs)
             return Container(graphs={graph.graph_id: graph},
                              active_graph_id=graph.graph_id)
-        dims = list(groups or [])
-        if "saggio" not in dims:
-            dims.append("saggio")
-        full = self.populate_graph(db_path, sito, groups=dims,
+        full = self.populate_graph(db_path, sito, groups=groups,
                                    declare_study=False, **kwargs)
         from s3dgraphy.hdto import site_place_id
         site_place = next(
             (n for n in full.nodes if type(n).__name__ == "LocationNodeGroup"
              and (getattr(n, "attributes", None) or {}).get("level") == "sito"
              and n.name == sito), None)
-        places = {p.name: p for p in self._saggio_places(full)}
-        place_ids = {p.node_id for p in places.values()}
+        # a saggio may have two places (see _saggio_places): by name
+        places: dict = {}
+        for p in self._saggio_places(full):
+            places.setdefault(p.name, []).append(p)
+        place_ids = {p.node_id for ps in places.values() for p in ps}
         in_a_saggio = set()
         graphs = {}
         for saggio in saggi:
-            place = places.get(saggio)
-            if place is None:
+            own = {p.node_id for p in places.get(saggio, [])}
+            if not own:
                 continue
             members = {e.edge_source for e in full.edges
                        if e.edge_type == "is_in_location"
-                       and e.edge_target == place.node_id}
+                       and e.edge_target in own}
             in_a_saggio |= members
             gid = f"{sito}|{saggio}"
-            part = _part_graph(full, members, place_ids - {place.node_id}, gid)
+            part = _part_graph(full, members, place_ids - own, gid)
             part.name = saggio
             self._declare_study(part, db_path, sito, site_place, saggio=saggio)
             graphs[gid] = part
@@ -577,10 +576,19 @@ class GraphProjector:
 
     @staticmethod
     def _saggio_places(graph) -> list:
-        return [n for n in graph.nodes
-                if type(n).__name__ == "LocationNodeGroup"
-                and (getattr(n, "attributes", None) or {}).get("group_kind")
-                == "saggio"]
+        """The places of the saggi. Measured on 11 Oct 2026: a saggio is made
+        TWICE when the ``saggio`` grouping is asked — by the importer
+        (``loc::saggio::study::<name>``, from the mapping's LocationNodeGroup
+        column, always) and by :meth:`_merge_groups` (group_kind ``saggio``,
+        uuid5). Both are the saggio; the grouped one first."""
+        found = [n for n in graph.nodes
+                 if type(n).__name__ == "LocationNodeGroup"
+                 and (getattr(n, "attributes", None) or {}).get("group_kind")
+                 == "saggio"]
+        found += [n for n in graph.nodes
+                  if type(n).__name__ == "LocationNodeGroup"
+                  and str(getattr(n, "node_id", "")).startswith("loc::saggio::")]
+        return found
 
     def _hang_saggi(self, graph, site_place) -> None:
         """Each saggio's LocationNodeGroup (kind ``study``) is in the site:
@@ -613,7 +621,8 @@ class GraphProjector:
 
         * one saggio (``saggio`` given, or the only one in us_table): the
           study IS the saggio, named after it, and took place at the
-          saggio's place when it is projected, else at the site;
+          saggio's place (the importer always makes one; the grouped one
+          wins when both exist), else at the site;
         * no saggio, or several in one graph: the excavation of the site,
           named after the site, at the site — :meth:`populate_container`
           is the way to one graph per saggio.
