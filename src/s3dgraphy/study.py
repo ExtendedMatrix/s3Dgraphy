@@ -389,7 +389,10 @@ def study_metadata(container: Any, *, study_id: Optional[str] = None
         spatial = spatial or _spatial_of(graph)
         em_id = em_id or _em_id_of(graph)
 
-    from .hdto import read_hdto
+    from .hdto import read_hdto, study_code
+    # the code of the study (GT16): the study's own, never the retired em_id
+    # (E.D., 11 Oct 2026) — `em_id` stays on the card, read as it was
+    code = next((c for c in (study_code(g) for g in ordered) if c), None)
     studies = []
     for gid in container.graph_ids():
         chain = read_hdto(container.graphs[gid])
@@ -425,6 +428,7 @@ def study_metadata(container: Any, *, study_id: Optional[str] = None
     return {
         "id": study_id or em_id,
         "em_id": em_id,
+        "code": code,
         "title": title,
         "description": description,
         "authors": authors,

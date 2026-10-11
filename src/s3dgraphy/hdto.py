@@ -12,6 +12,18 @@ MICRO «lo studio usabile» (E.D., 10 Oct 2026, final version):
 * **studies hang off the topographic place always, off the HC1 only when the
   heritage is recognised.**
 
+Giro dell'11 ottobre (E.D., 11 Oct 2026):
+
+* **the saggio is a study AND a place** (strada b): its LocationNodeGroup
+  (kind ``study``) is ``is_in_location`` the site, and the saggio's study took
+  place at it — ``graphs_at(site)`` finds it going up;
+* **a graph is normally one study** (the singleton by ``hdto_role`` stays): an
+  export with several saggi is one graph per saggio in a Container
+  (``GraphProjector.populate_container``);
+* **the code is the study's**: the graph's «EM-ID» (``GraphNode.data.em_id``)
+  is retired; :func:`study_code` never reads it and :func:`migrate_em_id`
+  carries it to ``StudyNode.data.code`` only when the study has none.
+
 The writer follows EMStudio's ``applyHdto`` (frontend/src/model.ts) for every
 role EMStudio already writes — the same roles in ``data.hdto_role``, one node
 per role, the same node types and edges, edge ids ``<src>__<type>__<tgt>``:
@@ -404,7 +416,9 @@ def study_code(graph) -> Optional[str]:
     ONE source: ``StudyNode.data.code``. A GraphML's header ID
     (``graph.attributes['graph_code']``) is read only when no study says a
     code — it is what the source gave — and never its ``MISSINGCODE``
-    placeholder. Nothing is derived (E.D., 10 Oct 2026).
+    placeholder. Nothing is derived (E.D., 10 Oct 2026). The retired
+    ``GraphNode.data.em_id`` is NEVER read here (E.D., 11 Oct 2026): it
+    becomes the study's code through :func:`migrate_em_id`, explicitly.
     """
     study = _role_node(graph, "study")
     code = _text(_get(study, "code")) if study is not None else ""
@@ -412,6 +426,47 @@ def study_code(graph) -> Optional[str]:
         return code
     legacy = _text((getattr(graph, "attributes", None) or {}).get("graph_code"))
     return legacy if legacy not in _NO_CODE else None
+
+
+def legacy_em_id(graph) -> Optional[str]:
+    """The retired «EM-ID (site id)» of a graph — ``GraphNode.data.em_id`` on
+    the graph-self node — or ``None``. Read only to migrate it: the code of a
+    graph is the code of its study (E.D., 11 Oct 2026)."""
+    for node in graph.nodes:
+        if getattr(node, "node_type", None) == "graph":
+            value = _text(_get(node, "em_id"))
+            if value:
+                return value
+    return None
+
+
+def migrate_em_id(graph) -> Dict[str, Any]:
+    """Carry a file's retired ``em_id`` to the study's ``code`` — only when
+    there is a study and it has no code of its own. Nothing is lost and
+    nothing is invented:
+
+    * the ``em_id`` stays where it was (a reader that still wants it finds it);
+    * no study → no study is made for the sake of a code;
+    * a study with a code keeps it, even when it differs (reported).
+
+    Returns ``{"em_id", "code", "migrated", "reason"}``; ``reason`` is one of
+    ``"no em_id"``, ``"no study"``, ``"study has its code"``,
+    ``"study has another code"``, ``"migrated"``. Idempotent.
+    """
+    em_id = legacy_em_id(graph)
+    study = _role_node(graph, "study")
+    code = _text(_get(study, "code")) if study is not None else ""
+    if not em_id:
+        reason = "no em_id"
+    elif study is None:
+        reason = "no study"
+    elif code:
+        reason = "study has its code" if code == em_id else "study has another code"
+    else:
+        _data(study)["code"] = em_id
+        code, reason = em_id, "migrated"
+    return {"em_id": em_id, "code": code or None,
+            "migrated": reason == "migrated", "reason": reason}
 
 
 def unit_label(graph, name: str, separator: str = ".") -> str:

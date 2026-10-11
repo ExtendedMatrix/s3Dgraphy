@@ -13,6 +13,7 @@ underlying implementation evolves.
 from __future__ import annotations
 
 import logging
+import uuid
 from pathlib import Path
 from typing import Optional, TYPE_CHECKING
 
@@ -285,6 +286,7 @@ class GraphProjector:
         strict_schema: bool = True,
         groups: list = None,                # NEW (AI06 D7-A: None = no grouping)
         primary_priority: list = None,      # NEW (AI07 C: per-US is_primary order)
+        declare_study: bool = True,
     ) -> "s3dgraphy.Graph":
         """Build and return a s3dgraphy.Graph populated with the
         stratigraphic rows of `sito` from the SQLite at `db_path`.
@@ -318,6 +320,10 @@ class GraphProjector:
                 ``is_primary`` selection (compute_primary). When None,
                 ``DEFAULT_PRIMARY_PRIORITY`` is used. Toponym is
                 always excluded.
+            declare_study: when True (default), the graph declares its
+                study (``hdto.declare_hdto``): a StudyNode
+                ``stratigraphic_excavation`` at the saggio or the site —
+                see :meth:`_declare_study`.
 
         Returns:
             A populated `s3dgraphy.Graph`. Empty graph (zero nodes) is
@@ -478,8 +484,10 @@ class GraphProjector:
         # NOT from the `groups` parameter. It is unconditional even
         # when `groups=None`. To opt out, future callers may add an
         # `include_toponym=False` kwarg.
+        site_place = None
         try:
-            self._emit_toponym_chain(graph, db_path, sito)
+            site_place = self._emit_toponym_chain(graph, db_path, sito)
+            self._site_memberships(graph, site_place)
         except Exception as e:
             logging.getLogger(__name__).warning(
                 f"_emit_toponym_chain failed, continuing without "
@@ -494,7 +502,166 @@ class GraphProjector:
                 logging.getLogger(__name__).warning(
                     f"_merge_groups failed, continuing without groups: {e}")
 
+        # The saggi under the site, and the study of the graph (E.D.,
+        # 11 Oct 2026, «strada (b)»)
+        self._hang_saggi(graph, site_place)
+        if declare_study:
+            self._declare_study(graph, db_path, sito, site_place)
+
         return graph
+
+    def populate_container(self, db_path, sito: str, *,
+                           groups: list = None, **kwargs):
+        """The site as a :class:`s3dgraphy.container.Container`: **one graph
+        per saggio** (E.D., 11 Oct 2026: «un export con più saggi diventa un
+        grafo per saggio, raccolti in un container»).
+
+        * no saggio, or one: one graph, the one :meth:`populate_graph` makes
+          (id ``sito``);
+        * several: the site is projected once (with the ``saggio`` grouping
+          added to ``groups``), then split — graph id ``"<sito>|<saggio>"``,
+          the saggio's units, the shared topography and epochs, its own
+          study at the saggio's place (:meth:`_declare_study`). The units in
+          no saggio, if any, make one more graph, id ``sito``, whose study
+          is the site's. A rapporto between units of two saggi is cut (see
+          :func:`_part_graph`).
+
+        ``hdto.graphs_at(container, site_place_id(sito, entity_uuid))`` finds
+        every graph of the site, each saggio's going up ``is_in_location``.
+        ``kwargs`` go to :meth:`populate_graph`.
+        """
+        from s3dgraphy.container import Container
+        saggi = _distinct_saggi(db_path, sito)
+        if len(saggi) <= 1:
+            graph = self.populate_graph(db_path, sito, groups=groups, **kwargs)
+            return Container(graphs={graph.graph_id: graph},
+                             active_graph_id=graph.graph_id)
+        dims = list(groups or [])
+        if "saggio" not in dims:
+            dims.append("saggio")
+        full = self.populate_graph(db_path, sito, groups=dims,
+                                   declare_study=False, **kwargs)
+        from s3dgraphy.hdto import site_place_id
+        site_place = next(
+            (n for n in full.nodes if type(n).__name__ == "LocationNodeGroup"
+             and (getattr(n, "attributes", None) or {}).get("level") == "sito"
+             and n.name == sito), None)
+        places = {p.name: p for p in self._saggio_places(full)}
+        place_ids = {p.node_id for p in places.values()}
+        in_a_saggio = set()
+        graphs = {}
+        for saggio in saggi:
+            place = places.get(saggio)
+            if place is None:
+                continue
+            members = {e.edge_source for e in full.edges
+                       if e.edge_type == "is_in_location"
+                       and e.edge_target == place.node_id}
+            in_a_saggio |= members
+            gid = f"{sito}|{saggio}"
+            part = _part_graph(full, members, place_ids - {place.node_id}, gid)
+            part.name = saggio
+            self._declare_study(part, db_path, sito, site_place, saggio=saggio)
+            graphs[gid] = part
+        rest = {n.node_id for n in full.nodes
+                if _is_us_node(n) and n.node_id not in in_a_saggio}
+        if rest:
+            part = _part_graph(full, rest, place_ids, sito)
+            self._declare_study(part, db_path, sito, site_place, saggio=None)
+            # the site's own study, even though us_table has saggi
+            graphs[sito] = part
+        first = next(iter(graphs), None)
+        return Container(graphs=graphs, active_graph_id=first)
+
+    # ── the saggio: a place under the site, and a study (11 Oct 2026) ──────
+
+    @staticmethod
+    def _saggio_places(graph) -> list:
+        return [n for n in graph.nodes
+                if type(n).__name__ == "LocationNodeGroup"
+                and (getattr(n, "attributes", None) or {}).get("group_kind")
+                == "saggio"]
+
+    def _hang_saggi(self, graph, site_place) -> None:
+        """Each saggio's LocationNodeGroup (kind ``study``) is in the site:
+        ``is_in_location`` saggio → site, so ``hdto.graphs_at(site)`` finds
+        a study that took place at the saggio by going up."""
+        if site_place is None:
+            return
+        for saggio in self._saggio_places(graph):
+            edge_id = f"chain_{saggio.node_id}_{site_place.node_id}"
+            try:
+                edge = graph.add_edge(
+                    edge_id=edge_id,
+                    edge_source=saggio.node_id,
+                    edge_target=site_place.node_id,
+                    edge_type="is_in_location",
+                )
+                if edge is not None:
+                    if getattr(edge, "attributes", None) is None:
+                        edge.attributes = {}
+                    edge.attributes["is_primary"] = False
+            except ValueError as e:
+                logging.getLogger(__name__).debug(
+                    "_hang_saggi: skipping edge %s (%s)", edge_id, e)
+
+    def _declare_study(self, graph, db_path, sito, site_place,
+                       saggio: Optional[str] = None) -> None:
+        """The graph's study — one per graph, the singleton by
+        ``hdto_role`` (E.D., 11 Oct 2026: «un grafo è normalmente uno
+        studio»): a StudyNode ``stratigraphic_excavation``.
+
+        * one saggio (``saggio`` given, or the only one in us_table): the
+          study IS the saggio, named after it, and took place at the
+          saggio's place when it is projected, else at the site;
+        * no saggio, or several in one graph: the excavation of the site,
+          named after the site, at the site — :meth:`populate_container`
+          is the way to one graph per saggio.
+
+        No code: s3dgraphy never derives one (the study's ``code`` is what
+        pyArchInit gives). No place at all when the site is not in
+        site_table and no saggio place exists — the study is still made.
+        """
+        from s3dgraphy.hdto import declare_hdto
+        if saggio is None:
+            saggi = _distinct_saggi(db_path, sito)
+            saggio = saggi[0] if len(saggi) == 1 else None
+        place_node = None
+        if saggio is not None:
+            place_node = next((p for p in self._saggio_places(graph)
+                               if p.name == saggio), None)
+        if place_node is None:
+            place_node = site_place
+        # Deterministic ids for the study and its proposition set, as for
+        # every node the projector makes (AC-7: re-export, same ids);
+        # declare_hdto finds them by their role.
+        from .group_projector import _PYARCHINIT_GROUP_NAMESPACE
+        from s3dgraphy.nodes.graph_node import GraphNode
+        from s3dgraphy.nodes.study_node import StudyNode
+        roles = {(getattr(n, "data", None) or {}).get("hdto_role")
+                 for n in graph.nodes}
+        key = f"{sito}|study|{saggio or ''}"
+        for role, make in (
+                ("proposition_set", lambda i: GraphNode(i, name=saggio or sito)),
+                ("study", lambda i: StudyNode(i, name=saggio or sito))):
+            if role in roles:
+                continue
+            node = make(str(uuid.uuid5(_PYARCHINIT_GROUP_NAMESPACE,
+                                       f"{key}|{role}")))
+            if not isinstance(getattr(node, "data", None), dict):
+                node.data = {}
+            node.data["hdto_role"] = role
+            graph.add_node(node)
+        try:
+            declare_hdto(
+                graph,
+                study={"name": saggio or sito,
+                       "study_kind": "stratigraphic_excavation"},
+                place=({"id": place_node.node_id, "name": place_node.name}
+                       if place_node is not None else None))
+        except Exception as e:
+            logging.getLogger(__name__).warning(
+                f"_declare_study failed, continuing without the study: {e}")
 
     def _verify_node_uuid_column(self, db_path) -> None:
         """Ensure the Phase-1 migration that added ``us_table.node_uuid``
@@ -1300,9 +1467,11 @@ class GraphProjector:
         deterministic group_uuid (sha1) so two sites in the same comune
         share the node.
 
-        Each US in the projected graph gets one is_in_location edge to
-        the DEEPEST non-empty level (typically `comune`), always
-        is_primary=false (toponym never primary).
+        Returns the site's place (``None`` when the site is not in
+        site_table). The US are hung off it by :meth:`_site_memberships`
+        (E.D., 11 Oct 2026: the site, no longer the comune), one
+        is_in_location edge each, always is_primary=false (toponym never
+        primary).
 
         The chain itself is structured top-down via is_in_location edges:
         nazione ← regione ← provincia ← comune (each lower level
@@ -1362,7 +1531,7 @@ class GraphProjector:
                 "only the site's place",
                 sito,
             )
-            return
+            return site_place
 
         # Lazy import (vendored 0.1.41)
         from s3dgraphy.nodes.group_node import LocationNodeGroup
@@ -1436,17 +1605,22 @@ class GraphProjector:
                 "_emit_toponym_chain: skipping site edge (%s)", e
             )
 
-        # US edges: each US connects to the DEEPEST ADMINISTRATIVE level (last
-        # in `levels`), as before the site's place existed
-        deepest_uuid = level_uuids[-1]
-        us_nodes = [n for n in graph.nodes if _is_us_node(n)]
-        for us in us_nodes:
-            edge_id = f"top_{us.node_id}_{deepest_uuid}"
+        return site_place
+
+    @staticmethod
+    def _site_memberships(graph, site_place):
+        """US edges: each US is in the SITE (E.D., 11 Oct 2026: «le US si
+        agganciano al sito, non al comune»), is_primary=false — the site is
+        reached up the chain, the comune from the site."""
+        if site_place is None:
+            return
+        for us in [n for n in graph.nodes if _is_us_node(n)]:
+            edge_id = f"top_{us.node_id}_{site_place.node_id}"
             try:
                 edge = graph.add_edge(
                     edge_id=edge_id,
                     edge_source=us.node_id,
-                    edge_target=deepest_uuid,
+                    edge_target=site_place.node_id,
                     edge_type="is_in_location",
                 )
                 if edge is not None:
@@ -1455,8 +1629,70 @@ class GraphProjector:
                     edge.attributes["is_primary"] = False
             except ValueError as e:
                 logging.getLogger(__name__).debug(
-                    "_emit_toponym_chain: skipping edge %s (%s)", edge_id, e
+                    "_site_memberships: skipping edge %s (%s)", edge_id, e
                 )
+
+
+def _distinct_saggi(db_path, sito) -> list:
+    """The saggi of ``sito`` in us_table, sorted; ``[]`` when the column or
+    the table cannot be read."""
+    try:
+        handle = _resolve_db_handle(db_path)
+        with handle.engine.connect() as conn:
+            rows = conn.execute(
+                text("SELECT DISTINCT saggio FROM us_table "
+                     "WHERE sito=:sito AND saggio IS NOT NULL "
+                     "AND TRIM(saggio)<>''"),
+                {"sito": sito},
+            ).fetchall()
+    except Exception:
+        return []
+    return sorted({str(r[0]).strip() for r in rows})
+
+
+#: never dropped from a per-saggio graph: the time and the georeference are
+#: the site's, not one saggio's (as populate_graph keeps every epoch)
+_SHARED_CLASSES = ("EpochNode", "GeoPositionNode")
+
+
+def _part_graph(full, members: set, other_places: set, graph_id: str):
+    """A copy of the site's graph ``full`` with one part of it: the units in
+    ``members`` (one saggio's; or the units in no saggio).
+
+    Dropped: the other units, the places in ``other_places`` (the other
+    saggi), and then — to a fixpoint — every
+    node that had edges and has none left once those are gone (their
+    paradata, the groups left empty). Kept: the toponym chain and the site,
+    the epochs, the georeference. An edge between a kept and a dropped node
+    goes with the dropped one: a rapporto across two saggi is cut.
+    """
+    import copy
+    graph = copy.deepcopy(full)
+    graph.graph_id = graph_id
+    drop = {n.node_id for n in graph.nodes
+            if _is_us_node(n) and n.node_id not in members}
+    drop |= set(other_places)
+    keep = {n.node_id for n in graph.nodes
+            if type(n).__name__ in _SHARED_CLASSES
+            or (type(n).__name__ == "LocationNodeGroup"
+                and (getattr(n, "attributes", None) or {}).get("group_kind")
+                == "toponym")}
+    was_linked = ({e.edge_source for e in graph.edges}
+                  | {e.edge_target for e in graph.edges})
+    while True:
+        alive = [e for e in graph.edges
+                 if e.edge_source not in drop and e.edge_target not in drop]
+        linked = {e.edge_source for e in alive} | {e.edge_target for e in alive}
+        more = {n.node_id for n in graph.nodes
+                if n.node_id not in drop and n.node_id not in keep
+                and n.node_id in was_linked and n.node_id not in linked}
+        if not more:
+            break
+        drop |= more
+    graph.nodes = [n for n in graph.nodes if n.node_id not in drop]
+    graph.edges = [e for e in graph.edges
+                   if e.edge_source not in drop and e.edge_target not in drop]
+    return graph
 
 
 def _is_epoch_node(node) -> bool:

@@ -679,6 +679,14 @@ def study_code(graph: Graph) -> Optional[str]:
     return _code(graph)
 
 
+def migrate_em_id(graph: Graph) -> Dict[str, Any]:
+    """The retired ``GraphNode.data.em_id`` → ``StudyNode.data.code``, only
+    when the study exists and has no code; the em_id is kept, nothing is
+    invented. See :func:`s3dgraphy.hdto.migrate_em_id`."""
+    from .hdto import migrate_em_id as _migrate
+    return _migrate(graph)
+
+
 def unit_label(graph: Graph, name: str, separator: str = ".") -> str:
     """A unit's name with the study's code as prefix, or as it is when the
     study has none."""

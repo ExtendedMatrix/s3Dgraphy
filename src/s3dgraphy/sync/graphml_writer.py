@@ -61,30 +61,53 @@ class GraphMLExportError(RuntimeError):
             f"GraphML {stage} failed: {type(original).__name__}: {original}")
 
 
-def _filter_by_site(graph, site_filter: Optional[str]):
-    """Return a new Graph containing only nodes/edges relevant to *site_filter*.
+def _site_place_of(graph, sito: str):
+    """The site's LocationNodeGroup in a projected graph (the projector's
+    ``level: sito`` place, id ``hdto.site_place_id``), or ``None`` when the
+    site is not in site_table."""
+    for n in graph.nodes:
+        if (type(n).__name__ == "LocationNodeGroup" and n.name == sito
+                and (getattr(n, "attributes", None) or {}).get("level") == "sito"):
+            return n
+    return None
 
-    Retention rules (per spec §5 step 6.iv.2):
-    - Stratigraphic node kept iff its `attributes['sito']` equals site_filter.
-    - EpochNode kept iff at least one retained stratigraphic node points at
-      it via a `has_first_epoch` edge.
-    - Edges kept iff BOTH endpoints are kept.
 
-    Bug P (2026-05-15 v2 user feedback): row-paradata nodes are now
-    StratigraphicNode-class instances (with attributes['unita_tipo']
-    distinguishing DOC/Combinar/Extractor/property), so the existing
-    StratigraphicNode branch below handles them naturally — no
-    paradata-specific filter logic needed here. Site-level paradata
-    (Author/License/Embargo) is handled by ``_inject_isolated_paradata_nodes``
-    via the ``_PARADATA_INJECT_TYPES`` snapshot/inject path.
+def _graphs_of_site(graphs: dict, sito: str) -> list:
+    """The ids of the graphs in ``graphs`` that belong to the site ``sito``.
 
-    `site_filter=None` returns the original graph unchanged.
+    Replaces ``_filter_by_site`` (E.D., 11 Oct 2026): a graph belongs to a
+    site when its study took place there or at a place inside it — a saggio —
+    which is :func:`s3dgraphy.hdto.graphs_at`, read from the graph's own
+    chain and no longer from ``attributes['sito']`` on every unit (which only
+    the PostgreSQL importer set, so the SQLite export came out empty). When
+    the site has no place (not in site_table) the model has nothing to ask:
+    the projection, made for ``sito`` only, is the site's.
     """
-    if site_filter is None:
-        return graph
+    from s3dgraphy.container import Container
+    from s3dgraphy.hdto import graphs_at
+    places = {gid: _site_place_of(g, sito) for gid, g in graphs.items()}
+    if not any(places.values()):
+        return list(graphs)
+    container = Container(graphs=dict(graphs))
+    found = []
+    for gid, place in places.items():
+        if place is not None and place.node_id not in found:
+            found.extend(g for g in graphs_at(container, place)
+                         if g not in found)
+    return found
 
-    # ext_libs must be importable; this module is also imported from the bridge
-    # which already adds it to sys.path during plugin initialisation.
+
+def _export_layer(graph):
+    """Return a new Graph with what the AI03 GraphML carries: the
+    stratigraphic nodes, the epochs they reach by ``has_first_epoch``, and
+    the edges between kept nodes. Groups, toponyms, paradata of the site and
+    the HDT-O chain are re-injected later from their snapshots.
+
+    Bug P (2026-05-15 v2 user feedback): row-paradata nodes are
+    StratigraphicNode-class instances (with attributes['unita_tipo']
+    distinguishing DOC/Combinar/Extractor/property), so they are kept here
+    with the units.
+    """
     from s3dgraphy.graph import Graph
     from s3dgraphy.nodes.epoch_node import EpochNode
     from s3dgraphy.nodes.stratigraphic_node import StratigraphicNode
@@ -94,41 +117,23 @@ def _filter_by_site(graph, site_filter: Optional[str]):
         name=getattr(graph, "name", "filtered"),
         description=getattr(graph, "description", ""),
     )
-
-    # Pass 1: keep stratigraphic nodes matching site_filter.
-    # Bug P (2026-05-15 v2): row-paradata are StratigraphicNode subclasses
-    # now (with attributes['unita_tipo'] set), so they're handled by the
-    # ``isinstance(n, StratigraphicNode)`` check below — no separate
-    # branch needed.
     kept_strat_ids = set()
     for n in graph.nodes:
         if isinstance(n, StratigraphicNode):
-            if n.attributes.get("sito") == site_filter:
-                out.add_node(n)
-                kept_strat_ids.add(n.node_id)
-
-    # Pass 2: walk has_first_epoch edges from kept strat nodes;
-    # collect epoch ids reachable that way.
-    reachable_epoch_ids = set()
-    for e in graph.edges:
-        if (e.edge_type == "has_first_epoch"
-                and e.edge_source in kept_strat_ids):
-            reachable_epoch_ids.add(e.edge_target)
-
-    # Pass 3: keep EpochNodes whose ids are in reachable_epoch_ids
+            out.add_node(n)
+            kept_strat_ids.add(n.node_id)
+    reachable_epoch_ids = {e.edge_target for e in graph.edges
+                           if e.edge_type == "has_first_epoch"
+                           and e.edge_source in kept_strat_ids}
     for n in graph.nodes:
         if isinstance(n, EpochNode) and n.node_id in reachable_epoch_ids:
             out.add_node(n)
-
-    # Pass 4: keep edges whose BOTH endpoints survived. Note: Graph.add_edge
-    # takes 4 positional strings (edge_id, edge_source, edge_target,
-    # edge_type), not an Edge instance.
+    # Graph.add_edge takes 4 positional strings, not an Edge instance.
     kept_node_ids = {n.node_id for n in out.nodes}
     for e in graph.edges:
         if (e.edge_source in kept_node_ids
                 and e.edge_target in kept_node_ids):
             out.add_edge(e.edge_id, e.edge_source, e.edge_target, e.edge_type)
-
     return out
 
 
@@ -1940,7 +1945,7 @@ def export_graphml(
     # yE-F fan-out (design spec §6): emit N visual copies per
     # multi-folder paradata row. Must run AFTER populate_graph
     # (which propagates other_locations into node.attributes) and
-    # BEFORE _filter_by_site (so sito-filtering keeps the copies).
+    # BEFORE the export layer (so the site's export keeps the copies).
     try:
         copies_created = _apply_yef_fan_out(graph)
         if copies_created:
@@ -1952,7 +1957,7 @@ def export_graphml(
         print(f"[ExportGraphML] yE-F fan-out skipped: {exc}")
 
     # Capture paradata snapshot BEFORE the site filter — the AI04
-    # `_filter_by_site` only retains StratigraphicNode + EpochNode
+    # `_export_layer` only retains StratigraphicNode + EpochNode
     # (it doesn't know about AI05 paradata classes), so it drops
     # isolated AuthorNode/LicenseNode/EmbargoNode. Stage 4d below
     # re-injects from this snapshot. AI05 site-level paradata (D9)
@@ -1964,7 +1969,7 @@ def export_graphml(
     ]
     print(f"[ExportGraphML] paradata snapshot: {len(_paradata_snapshot)}")
 
-    # AI06: capture group snapshot BEFORE Stage 2 _filter_by_site,
+    # AI06: capture group snapshot BEFORE Stage 2 _export_layer,
     # which retains only StratigraphicNode + EpochNode and would
     # drop our ActivityNodeGroup instances. Same lesson as AI05
     # paradata snapshot.
@@ -2020,9 +2025,15 @@ def export_graphml(
           f"{len(_group_snapshot)} groups; "
           f"non-primary US memberships: {len(_us_other_locations)}")
 
-    # Stage 2: filter
+    # Stage 2: the site's graph (hdto.graphs_at), then the export layer.
+    # No site_filter: the whole projection, as before.
     try:
-        graph = _filter_by_site(graph, site_filter)
+        if site_filter is not None:
+            if graph.graph_id in _graphs_of_site({graph.graph_id: graph},
+                                                 sito_for_projection):
+                graph = _export_layer(graph)
+            else:
+                graph.nodes = []
     except Exception as e:
         raise GraphMLExportError("filter", e) from e
 

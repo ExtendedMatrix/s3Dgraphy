@@ -5,6 +5,27 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
+- **The saggio with its place, the units in the site, the study's code**
+  (giro dell'11 ottobre, decided by E.D. 11 October 2026). Node datamodel
+  1.6.29, connections 1.6.40 (descriptions only).
+  - **The saggio is a study and a place** (strada b): the projector keeps the
+    `saggio` as a `LocationNodeGroup` (kind `study`) and now hangs it off the
+    site (`is_in_location`, not primary); every projected graph declares its
+    study (`hdto.declare_hdto`): a `StudyNode` `stratigraphic_excavation`
+    with deterministic ids, at the saggio's place when the graph is one
+    saggio, at the site otherwise, named after the saggio or the site, no
+    code. `populate_graph(..., declare_study=True)`.
+  - **`GraphProjector.populate_container(db, sito, groups=..., **kw)`**: one
+    graph per saggio in a `Container` (ids `"<sito>|<saggio>"`), the units in
+    no saggio in one more graph (id `sito`, the site's study); one saggio or
+    none → the graph `populate_graph` makes. `graphs_at(container,
+    site_place_id(sito, entity_uuid))` finds every graph of the site.
+  - **`hdto.migrate_em_id` / `api.migrate_em_id`** and `hdto.legacy_em_id`:
+    the retired «EM-ID» (`GraphNode.data.em_id`) becomes the study's `code`
+    only when the study exists and has none; the em_id stays, no study is
+    made, no code invented. `study_metadata` gains `code` (the study's,
+    never the em_id; `em_id` stays on the card as it was).
+
 - **The study made usable** (MICRO «lo studio usabile», decided by E.D.
   10 October 2026: the stratigraphic trench is a STUDY, the site is
   TOPOGRAPHY, HC1 is heritage only where recognised; studies hang off the
@@ -39,6 +60,16 @@ All notable changes to **s3dgraphy** are documented here.
     and its place, `None` when the graph does not say.
 
 ### Changed
+- **The units are in the site, no longer in the comune**: the projector's
+  `top_<us>_<…>` edge now targets the site's place (`is_in_location`, not
+  primary), also when site_table has no administrative level.
+- **`graphml_writer._filter_by_site` is gone**: `export_graphml(site_filter=)`
+  chooses the site's graph with `hdto.graphs_at` (`_graphs_of_site`) and keeps
+  its units and epochs (`_export_layer`), no longer the units that carry
+  `attributes['sito']` — which only the PostgreSQL importer set, so the
+  SQLite export came out with one node out of five. Without `site_filter` the
+  whole projection is exported, as before.
+- `study_code` documents that it never reads the em_id.
 - **HC9 Study ⊑ `crm:E65_Creation`** in the node datamodel (was
   `crm:E7_Activity`), as `hdto_extension.ttl` and the official HDT-O RDFS
   (HDT_v2.0.1.rdf, ECHOES D7.1) say; **HC1 Heritage Entity ⊑

@@ -103,82 +103,68 @@ def _make_test_graph():
     return g
 
 
-def test_filter_by_site_keeps_only_matching_strat_nodes():
-    from s3dgraphy.sync.graphml_writer import _filter_by_site
-    g = _make_test_graph()
-    out = _filter_by_site(g, "SiteA")
-    strat_ids = {n.node_id for n in out.nodes
-                 if hasattr(n, "attributes") and n.attributes.get("sito")}
-    assert strat_ids == {"us_a"}, f"expected only us_a, got {strat_ids!r}"
+# _filter_by_site (attributes['sito'] on every unit) was replaced on
+# 11 Oct 2026 by _graphs_of_site (hdto.graphs_at: the graph whose study took
+# place at the site, or in a saggio of it) + _export_layer (what the GraphML
+# carries).
 
-
-def test_filter_by_site_retains_reachable_epoch_nodes():
-    from s3dgraphy.sync.graphml_writer import _filter_by_site
+def test_export_layer_keeps_units_reachable_epochs_and_their_edges():
     from s3dgraphy.nodes.epoch_node import EpochNode
+    from s3dgraphy.nodes.group_node import LocationNodeGroup
+    from s3dgraphy.sync.graphml_writer import _export_layer
     g = _make_test_graph()
-    out = _filter_by_site(g, "SiteA")
-    epoch_ids = {n.node_id for n in out.nodes if isinstance(n, EpochNode)}
-    # ep_1 is reachable from us_a; ep_2 is reachable only from the
-    # discarded us_b, so it must NOT survive the filter.
-    assert epoch_ids == {"ep_1"}, f"expected {{ep_1}}, got {epoch_ids!r}"
+    g.add_node(EpochNode(node_id="ep_3", name="Unused", start_time=0, end_time=1))
+    g.add_node(LocationNodeGroup("site", "SiteA", kind="toponym"))
+    g.add_edge("in", "us_a", "site", "is_in_location")
+    out = _export_layer(g)
+    # (the new Graph's own GeoPositionNode aside, as before)
+    assert {n.node_id for n in out.nodes
+            if n.node_type != "geo_position"} == {"us_a", "us_b", "ep_1", "ep_2"}
+    assert {e.edge_id for e in out.edges} == {"e1", "e2"}
 
 
-def test_filter_by_site_prunes_orphan_edges():
-    from s3dgraphy.sync.graphml_writer import _filter_by_site
-    g = _make_test_graph()
-    out = _filter_by_site(g, "SiteA")
-    edge_ids = {e.edge_id for e in out.edges}
-    # e2 connected discarded us_b → discarded ep_2; must be pruned.
-    assert edge_ids == {"e1"}, f"expected {{e1}}, got {edge_ids!r}"
+def _site_graph(gid, site):
+    from s3dgraphy.graph import Graph
+    from s3dgraphy.hdto import declare_hdto, make_site_place
+    g = Graph(graph_id=gid)
+    g.add_node(make_site_place(site))
+    declare_hdto(g, study={"name": gid, "study_kind": "stratigraphic_excavation"},
+                 place=site)
+    return g
 
 
-def test_filter_by_site_returns_unfiltered_when_none():
-    from s3dgraphy.sync.graphml_writer import _filter_by_site
-    g = _make_test_graph()
-    out = _filter_by_site(g, None)
-    assert len(out.nodes) == len(g.nodes)
-    assert len(out.edges) == len(g.edges)
+def test_graphs_of_site_chooses_by_where_the_study_took_place():
+    from s3dgraphy.sync.graphml_writer import _graphs_of_site
+    graphs = {"a": _site_graph("a", "SiteA"), "b": _site_graph("b", "SiteB")}
+    assert _graphs_of_site(graphs, "SiteA") == ["a"]
+    assert _graphs_of_site(graphs, "SiteB") == ["b"]
 
 
-def test_filter_by_site_keeps_row_level_paradata_nodes():
+def test_graphs_of_site_without_a_site_place_keeps_the_projection():
+    """A site missing from site_table has no place: the projection, made for
+    that site only, is the site's."""
+    from s3dgraphy.sync.graphml_writer import _graphs_of_site
+    assert _graphs_of_site({"t": _make_test_graph()}, "SiteA") == ["t"]
+
+
+def test_export_layer_keeps_row_level_paradata_nodes():
     """Bug P (2026-05-15 v2): row-paradata are StratigraphicNode-class
-    instances now (with ``attributes['unita_tipo']`` set to
-    DOC/Combinar/Extractor/property). They flow through the same
-    ``isinstance(StratigraphicNode)`` filter branch as US/USV/SF/VSF
-    — no row-paradata-specific filter is needed.
-
-    The site filter must keep all 5 us_table records when sito
-    matches, regardless of unita_tipo semantic value, and drop the
-    one with a different sito.
-    """
+    instances (``attributes['unita_tipo']`` DOC/Combinar/Extractor/property)
+    and go with the units, whatever their unita_tipo."""
     from s3dgraphy import Graph
     from s3dgraphy.nodes.stratigraphic_node import StratigraphicUnit
-    from s3dgraphy.sync.graphml_writer import _filter_by_site
+    from s3dgraphy.sync.graphml_writer import _export_layer
 
     g = Graph(graph_id="t")
-    # Row-paradata: StratigraphicUnit class + unita_tipo attribute.
-    def _node(node_id, name, sito, unita_tipo):
+
+    def _node(node_id, name, unita_tipo):
         n = StratigraphicUnit(node_id=node_id, name=name, description="")
-        n.attributes["sito"] = sito
         n.attributes["unita_tipo"] = unita_tipo
         return n
 
-    nodes = [
-        _node("us1",  "01",       "S", "US"),
-        _node("doc1", "01",       "S", "DOC"),
-        _node("cmb1", "01",       "S", "Combinar"),
-        _node("ext1", "01.03",    "S", "Extractor"),
-        _node("prop1","material", "S", "property"),
-        # Different sito — must NOT survive.
-        _node("doc2", "02",       "OTHER", "DOC"),
-    ]
-    for n in nodes:
+    for n in (_node("us1", "01", "US"), _node("doc1", "01", "DOC"),
+              _node("cmb1", "01", "Combinar"), _node("ext1", "01.03", "Extractor"),
+              _node("prop1", "material", "property")):
         g.add_node(n)
-
-    out = _filter_by_site(g, "S")
-    kept = {n.node_id for n in out.nodes}
-    must_keep = {"us1", "doc1", "cmb1", "ext1", "prop1"}
-    assert must_keep <= kept, (
-        f"missing some: expected superset of {must_keep}, got {kept}"
-    )
-    assert "doc2" not in kept
+    kept = {n.node_id for n in _export_layer(g).nodes}
+    assert {"us1", "doc1", "cmb1", "ext1", "prop1"} <= kept

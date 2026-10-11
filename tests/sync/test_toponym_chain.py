@@ -81,10 +81,14 @@ def test_two_sites_same_comune_share_node(tmp_path):
     assert locs_1[0].node_id == locs_2[0].node_id == volterra_uuid_1
 
 
-def test_us_connects_to_deepest_level_only(tmp_path):
+def test_us_connects_to_the_site_only(tmp_path):
     """Each US has exactly one is_in_location edge into the toponym
-    chain (the deepest non-empty level), with is_primary=false.
+    chain — the SITE (E.D., 11 Oct 2026: «le US si agganciano al sito, non
+    al comune»), no longer the deepest administrative level — with
+    is_primary=false. (The fixture's Volterra has no units: see
+    test_saggio_under_the_site.py for the case with units.)
     """
+    from s3dgraphy.hdto import site_place_id
     proj = GraphProjector()
     graph = proj.populate_graph(db_path=TOPONYM_DB, sito="Volterra")
     us_nodes = [n for n in graph.nodes
@@ -92,13 +96,13 @@ def test_us_connects_to_deepest_level_only(tmp_path):
                 or type(n).__name__ == "USNode"]
     if not us_nodes:
         pytest.skip("fixture has no stratigraphic units")
-    volterra_uuid = _toponym_uuid("Volterra")
+    site_uuid = site_place_id("Volterra")
+    chain = {_toponym_uuid(v) for v in ("Volterra", "Pisa", "Toscana", "Italia")}
     for us in us_nodes[:5]:
         toponym_edges = [e for e in graph.edges
                          if e.edge_source == us.node_id
-                         and e.edge_target == volterra_uuid]
-        assert len(toponym_edges) == 1, \
-            f"US {us.node_id} has {len(toponym_edges)} edges to deepest toponym"
+                         and e.edge_target in chain | {site_uuid}]
+        assert [e.edge_target for e in toponym_edges] == [site_uuid]
         e = toponym_edges[0]
         assert getattr(e, "attributes", {}).get("is_primary") is False, \
             "toponym memberships must always be is_primary=false"

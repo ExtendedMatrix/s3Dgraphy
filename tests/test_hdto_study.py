@@ -302,3 +302,77 @@ def test_the_card_shows_the_study_and_the_place_of_each_graph():
     assert by_graph["s1"]["study"]["study_kind"] == "stratigraphic_excavation"
     assert by_graph["a1"]["place"]["name"] == "Aiano"
     assert by_graph["bare"] == {"graph_id": "bare", "study": None, "place": None}
+
+
+# ── 11 Oct 2026: the saggio as the study's place, the em_id retired ─────────
+
+def test_the_place_can_be_the_saggio_and_the_site_finds_it_going_up():
+    """strada (b): the study took place at the saggio's LocationNodeGroup,
+    which is in the site — declare_hdto takes it by id, graphs_at(site)
+    finds the graph going up."""
+    c = Container()
+    g = Graph("t1")
+    site_node = LocationNodeGroup(site_place_id("Sarmizegetusa"), "Sarmizegetusa",
+                                  kind="toponym")
+    site_node.attributes["level"] = "sito"
+    trench = LocationNodeGroup("saggio-1", "Saggio 1", kind="study")
+    g.add_node(site_node)
+    g.add_node(trench)
+    g.add_edge("saggio-1-in-site", "saggio-1", site_node.node_id, "is_in_location")
+    chain = api.declare_hdto(g, study={"name": "Saggio 1",
+                                       "study_kind": "stratigraphic_excavation"},
+                             place={"id": "saggio-1"})
+    assert chain["place"]["id"] == "saggio-1"
+    assert [w["name"] for w in chain["place"]["within"]] == ["Sarmizegetusa"]
+    assert len([n for n in g.nodes if isinstance(n, LocationNodeGroup)]) == 2
+    c.graphs["t1"] = g
+    assert api.graphs_at(c, site_place_id("Sarmizegetusa")) == ["t1"]
+    assert api.graphs_at(c, "saggio-1") == ["t1"]
+
+
+def _with_em_id(em_id, **study):
+    from s3dgraphy.nodes.graph_node import GraphNode
+    g = Graph("g")
+    root = GraphNode("g-root", name="G")
+    root.data = {"em_id": em_id}
+    g.add_node(root)
+    if study:
+        api.declare_hdto(g, study=study)
+    return g
+
+
+def test_study_code_never_reads_the_em_id():
+    g = _with_em_id("TM", name="Templu Mare 2016")
+    assert api.study_code(g) is None  # only em_id: no code, the report says so
+
+
+def test_em_id_migrates_to_the_study_code_only_when_the_study_has_none():
+    g = _with_em_id("TM", name="Templu Mare 2016")
+    note = api.migrate_em_id(g)
+    assert note == {"em_id": "TM", "code": "TM", "migrated": True,
+                    "reason": "migrated"}
+    assert api.study_code(g) == "TM"
+    root = next(n for n in g.nodes if n.node_type == "graph")
+    assert root.data["em_id"] == "TM"  # nothing lost
+    assert api.migrate_em_id(g)["reason"] == "study has its code"  # idempotent
+
+
+def test_em_id_never_overrides_a_code_nor_makes_a_study():
+    g = _with_em_id("TM", name="S", code="TM16")
+    assert api.migrate_em_id(g) == {"em_id": "TM", "code": "TM16",
+                                    "migrated": False,
+                                    "reason": "study has another code"}
+    assert api.study_code(g) == "TM16"
+    bare = _with_em_id("TM")
+    assert api.migrate_em_id(bare)["reason"] == "no study"
+    assert not [n for n in bare.nodes if n.node_type == "study"]
+    assert api.migrate_em_id(Graph("none"))["reason"] == "no em_id"
+
+
+def test_the_card_carries_the_study_code_not_the_em_id():
+    from s3dgraphy.study import study_metadata
+    c = Container(graphs={"g": _with_em_id("TM", name="S")})
+    card = study_metadata(c)
+    assert card["em_id"] == "TM" and card["code"] is None
+    api.migrate_em_id(c.graphs["g"])
+    assert study_metadata(c)["code"] == "TM"

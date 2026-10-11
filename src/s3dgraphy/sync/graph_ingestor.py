@@ -1451,4 +1451,11 @@ _NON_STRAT_TYPES: frozenset[str] = frozenset({
     # us_table has no row for either — and no unita_tipo that fits them.
     "ContinuityNode",
     "GraphNode",
+    # The HDT-O chain (E.D., 11 Oct 2026: every projected graph declares its
+    # study, hdto.declare_hdto): a study, a heritage, a twin, a project are
+    # not units, and us_table has no row for them.
+    "StudyNode",
+    "HeritageEntityNode",
+    "HDTNode",
+    "ProjectNode",
 })
