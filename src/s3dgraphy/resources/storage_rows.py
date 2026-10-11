@@ -69,7 +69,7 @@ def _owner(nodes, set_of, links_to, rid):
     return None
 
 
-def storage_rows(graph, results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def storage_rows(graph, results: List[Dict[str, Any]], graph_name: str = "") -> List[Dict[str, Any]]:
     """One row per resolved resource, grouped by asset: the master, its versions
     by level, the files of each set under it. ``results`` is what
     ``resolve_files`` answered. Every value is a string or a list of strings."""
@@ -134,13 +134,16 @@ def storage_rows(graph, results: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
                "version": (level or "version") + (" · " + ", ".join(uses) if uses else ""),
                "file": "file of a set", "link": "link"}[kind]
         rows.append({
-            "id": rid, "file": file, "doc": doc,
+            "id": rid, "graph": graph_name, "file": file, "doc": doc,
             "doc_id": getattr(owner, "node_id", "") if owner is not None else "",
             "asset": asset_name, "asset_id": asset_id, "kind": kind, "tier": tier,
             "level": level, "use": uses, "state": r.get("state") or "", "where": where,
+            "sha256": str(r.get("sha256") or d.get("checksum") or ""),
+            "size": d.get("size_bytes") if isinstance(d.get("size_bytes"), (int, float)) else None,
+            "media_type": str(d.get("media_type") or ""),
             "tag": tag, "rm": rms,
             "search": " ".join([file, doc, asset_name, tier, level, " ".join(uses),
-                                " ".join(rms), kind]).lower(),
+                                " ".join(rms), kind, graph_name]).lower(),
             "_order": (asset_name.lower(), asset_id, _RANK[kind], _level_key(level), file.lower()),
         })
     rows.sort(key=lambda x: x["_order"])

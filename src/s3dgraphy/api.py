@@ -3059,13 +3059,14 @@ def resolve_file(entry: Dict[str, Any], **kwargs) -> Dict[str, Any]:
 
 
 # ── S1 · the Storage list and «find moved» (E.D., 11 Oct 2026) ────────────────
-def storage_rows(graph: Graph, results: Sequence[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def storage_rows(graph: Graph, results: Sequence[Dict[str, Any]],
+                 graph_name: str = "") -> List[Dict[str, Any]]:
     """The files of ``graph`` as ONE list: master, versions by computed level,
     files of a set, links of a document — with uses, tier, document, the RMs
     that use each, and its state. ``results`` is :func:`resolve_files`. EMtools
     and EMStudio draw these rows. See :mod:`s3dgraphy.resources.storage_rows`."""
     from .resources.storage_rows import storage_rows as _rows
-    return _rows(graph, list(results))
+    return _rows(graph, list(results), graph_name)
 
 
 def find_moved_files(graph: Graph, results: Sequence[Dict[str, Any]],
