@@ -18,8 +18,9 @@ The rule, for a ``ParadataNodeGroup`` G:
   property, or the document an annotation region is on — that is NOT itself a
   member of G is drawn as an instance inside G;
 * the instance carries the badge of where the master comes from: the unit that
-  owns the property (its original owner), the epoch where the document is born
-  (``has_first_epoch``).
+  owns the property (its original owner), the epoch where the document or the
+  author stands — the one of its own date, else its ``has_first_epoch``
+  (:func:`s3dgraphy.spatiotemporal.entity_epoch`, 11 Oct 2026).
 
 A unit read as a source (connections 1.6.24) is not a master of this rule: a
 unit is drawn in the matrix, not in a group. Removed nodes (a CRDT tombstone, a
@@ -77,6 +78,12 @@ def _badge(graph, master, spec: Dict[str, Any]) -> Optional[str]:
     if via == "has_property":
         from .ownership import original_owner
         return original_owner(graph, master.node_id)
+    if via == "has_first_epoch":
+        # MICRO autori nel tempo (E.D., 11 Oct 2026): the epoch a document or an
+        # author stands in is the one of its own date, else its has_first_epoch
+        # (spatiotemporal.entity_epoch, the lane every client draws it in)
+        from .spatiotemporal import entity_epoch
+        return entity_epoch(graph, master.node_id)
     if via:
         for e in graph.edges:
             if e.edge_source == master.node_id and e.edge_type == via and _live(e):

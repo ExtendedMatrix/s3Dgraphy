@@ -322,6 +322,15 @@ def is_spatiotemporal(node) -> bool:
     return _is(node)
 
 
+def entity_epoch(graph: Graph, node_id: str) -> Optional[str]:
+    """The epoch an entity stands in: the narrowest holding its own date (start,
+    else end), else its ``has_first_epoch``, else the nearest to its date
+    (MICRO autori nel tempo, 11 Oct 2026). See
+    :func:`s3dgraphy.spatiotemporal.entity_epoch`."""
+    from .spatiotemporal import entity_epoch as _epoch
+    return _epoch(graph, node_id)
+
+
 def view_instances(graph: Graph, group_id: str) -> List[Dict[str, Any]]:
     """The instances a client draws inside the paradata group ``group_id``:
     every master (document or property) outside the group that a reader of the

@@ -241,6 +241,68 @@ def test_the_instance_writes_nothing():
     assert (len(g.nodes), len(g.edges)) == before
 
 
+# ── 5b · the master in the epoch of its date (E.D., 11 Oct 2026) ──────────────
+# «Un autore ha un master che sta nell'epoca della sua data: absolute_time_start
+# se c'è, altrimenti absolute_time_end, altrimenti has_first_epoch.»
+
+def _diaconescu(start=None, end="2021", declared=None):
+    g = Graph(graph_id="tm")
+    g.add_node(EpochNode("EP_ROM", "II A.D.", start_time=100, end_time=199))
+    g.add_node(EpochNode("EP_POST", "Post antiquity", start_time=200, end_time=1800))
+    g.add_node(EpochNode("EP_XX", "XX sec", start_time=1801, end_time=2013))
+    g.add_node(AuthorNode("AD", name="Alexandru Diaconescu", first_name="Alexandru",
+                          surname="Diaconescu"))
+    for pid, ptype, value in (("P_S", "absolute_time_start", start),
+                              ("P_E", "absolute_time_end", end)):
+        if value is None:
+            continue
+        g.add_node(PropertyNode(node_id=pid, name=ptype, property_type=ptype,
+                                value=value, description=""))
+        g.add_edge(f"hp_{pid}", "AD", pid, "has_property")
+    if declared:
+        g.add_edge("ep", "AD", declared, "has_first_epoch")
+    return g
+
+
+def test_the_start_decides_the_epoch():
+    assert api.entity_epoch(_diaconescu(start="1950"), "AD") == "EP_XX"
+
+
+def test_without_a_start_the_end_decides():
+    assert api.entity_epoch(_diaconescu(end="1700"), "AD") == "EP_POST"
+
+
+def test_a_date_beats_the_declared_epoch():
+    assert api.entity_epoch(_diaconescu(start="150", declared="EP_XX"), "AD") == "EP_ROM"
+
+
+def test_a_date_out_of_every_epoch_keeps_the_declared_one():
+    assert api.entity_epoch(_diaconescu(end="2021", declared="EP_POST"), "AD") == "EP_POST"
+
+
+def test_a_date_out_of_every_epoch_without_one_goes_to_the_nearest():
+    """Templu Mare: Diaconescu passed away in 2021, «XX sec» ends in 2013."""
+    assert api.entity_epoch(_diaconescu(end="2021-09-28"), "AD") == "EP_XX"
+
+
+def test_no_date_and_no_epoch_is_nowhere():
+    assert api.entity_epoch(_diaconescu(end=None), "AD") is None
+    assert api.entity_epoch(_diaconescu(end=None, declared="EP_ROM"), "AD") == "EP_ROM"
+    assert api.entity_epoch(_diaconescu(), "EP_XX") is None
+    assert api.entity_epoch(_diaconescu(), "nope") is None
+
+
+def test_the_instance_badge_is_the_epoch_of_the_date():
+    g = _diaconescu(end="2021")
+    g.add_node(ParadataNodeGroup("PD", "USV104_PD"))
+    g.add_node(ExtractorNode("X1", "D.05.05", description="modulo di 15 piedi"))
+    g.add_edge("x2", "X1", "AD", "has_author")
+    g.add_edge("m1", "X1", "PD", "is_in_paradata_nodegroup")
+    (a,) = api.view_instances(g, "PD")
+    assert (a["kind"], a["owner"], a["owner_kind"], a["owner_name"]) == \
+        ("author", "EP_XX", "epoch", "XX sec")
+
+
 # ── 6 · the round trip ───────────────────────────────────────────────────────
 
 def test_an_author_with_a_life_survives_em_json(tmp_path):
