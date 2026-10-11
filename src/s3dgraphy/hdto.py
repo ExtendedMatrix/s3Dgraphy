@@ -498,12 +498,19 @@ def _site_name_of(graph) -> str:
     return ""
 
 
+#: a name nobody gave (EMStudio's and EM-tools' defaults): no initials
+_PLACEHOLDER_WORDS = {"untitled", "graph", "grafo", "new", "nuovo", "senza",
+                      "titolo", "empty", "slot", "proposition", "set"}
+
+
 def _initials(name: str) -> str:
     import re
     import unicodedata
     plain = unicodedata.normalize("NFKD", name)
     plain = "".join(c for c in plain if not unicodedata.combining(c))
     words = [w for w in re.split(r"[^A-Za-z0-9]+", plain) if w]
+    if words and all(w.lower() in _PLACEHOLDER_WORDS for w in words):
+        return ""
     words = [w for w in words if w.lower() not in _NOT_INITIALS] or words
     if not words:
         return ""

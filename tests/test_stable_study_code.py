@@ -135,6 +135,12 @@ def test_the_proposal_rule_site_initials_and_year():
     api.declare_hdto(g, study={"name": "Templu Mare"})
     assert proposal_for(g) == "TM"  # no site: the study's name
     assert proposal_for(Graph("e")) == "ST"
+    untitled = Graph("f")
+    untitled.name = {"default": "Untitled graph"}  # a name nobody gave
+    assert proposal_for(untitled) == "ST"
+    named = Graph("g")
+    named.name = {"default": "Tempio di Giunone Moneta"}  # measured: no study, no place
+    assert proposal_for(named) == "TGM"
 
 
 def test_the_proposal_avoids_the_codes_of_the_container_and_is_written_once():
