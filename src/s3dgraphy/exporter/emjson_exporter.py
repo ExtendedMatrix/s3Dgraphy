@@ -240,6 +240,12 @@ def build_emjson(graph: Graph, layout: Optional[Dict[str, Any]] = None) -> Dict[
         "nodes": nodes,
         "edges": edges,
     }
+    # the rapporti towards other graphs of the container (s3dgraphy.links):
+    # written only when there are some, so a graph without stays as it was
+    links = [dict(l) for l in (getattr(graph, "links", None) or [])
+             if isinstance(l, dict)]
+    if links:
+        graph_section["links"] = links
     gname = _to_text(getattr(graph, "name", None))
     if gname:
         graph_section["name"] = gname

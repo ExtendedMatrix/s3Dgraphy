@@ -116,21 +116,42 @@ def test_without_the_grouping_the_importer_s_saggio_is_the_place(tmp_path):
     assert chain["place"]["within"][0]["id"] == site_place_id("TestSite")
 
 
-def test_with_the_grouping_the_saggio_has_two_places_both_in_the_site(tmp_path):
-    """Measured (pre-existing): with groups=["saggio"] a saggio has two
-    places, the importer's and the grouped one. Both are in the site; the
-    study takes the grouped one."""
+def test_with_the_grouping_the_saggio_is_one_place_in_the_site(tmp_path):
+    """E.D., 11 Oct 2026 («un saggio è un nodo solo»): with groups=["saggio"]
+    the group takes the place of the importer's loc::saggio::study::S1 — one
+    node, every unit in it once, in the site, the study at it."""
     db = _db(tmp_path, {u: "S1" for u in ("1", "2", "3", "4", "5")})
     graph = GraphProjector().populate_graph(db, sito="TestSite", groups=["saggio"])
     s1 = [n for n in graph.nodes if type(n).__name__ == "LocationNodeGroup"
           and n.name == "S1"]
-    assert len(s1) == 2
+    assert len(s1) == 1
+    place = s1[0]
+    assert place.attributes["group_kind"] == "saggio"
+    assert place.attributes["importer_id"] == "loc::saggio::study::S1"
+    assert graph.find_node_by_id("loc::saggio::study::S1") is None
     site = site_place_id("TestSite")
-    for place in s1:
-        assert (place.node_id, site) in {(e.edge_source, e.edge_target)
-                                         for e in graph.edges
-                                         if e.edge_type == "is_in_location"}
-    assert read_hdto(graph)["place"]["id"] != "loc::saggio::study::S1"
+    loc = [(e.edge_source, e.edge_target) for e in graph.edges
+           if e.edge_type == "is_in_location"]
+    assert (place.node_id, site) in loc
+    units = [s for s, t in loc if t == place.node_id and s != site]
+    assert len(units) == len(set(units)) == 5
+    assert read_hdto(graph)["place"]["id"] == place.node_id
+    assert not [e for e in graph.edges
+                if "loc::saggio::" in e.edge_source + e.edge_target]
+
+
+def test_with_the_grouping_the_area_is_one_place_too(tmp_path):
+    """Measured: the fixture's area "1" is made by the importer
+    (loc::area::study::1) and, with groups=["area"], by the grouping. One."""
+    db = _db(tmp_path, {u: "S1" for u in ("1", "2", "3", "4", "5")})
+    plain = GraphProjector().populate_graph(db, sito="TestSite")
+    grouped = GraphProjector().populate_graph(db, sito="TestSite", groups=["area"])
+    areas = lambda g: [n for n in g.nodes if type(n).__name__ == "LocationNodeGroup"
+                       and (n.node_id.startswith("loc::area::")
+                            or (n.attributes or {}).get("group_kind") == "area")]
+    assert len(areas(plain)) >= 1
+    assert len({n.name for n in areas(grouped)}) == len(areas(grouped))
+    assert not [n for n in grouped.nodes if n.node_id.startswith("loc::area::")]
 
 
 def test_the_projection_is_idempotent_ids_included(tmp_path):

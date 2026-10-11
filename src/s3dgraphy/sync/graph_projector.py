@@ -522,8 +522,9 @@ class GraphProjector:
           the saggio's units, the shared topography and epochs, its own
           study at the saggio's place (:meth:`_declare_study`). The units in
           no saggio, if any, make one more graph, id ``sito``, whose study
-          is the site's. A rapporto between units of two saggi is cut (see
-          :func:`_part_graph`).
+          is the site's. A rapporto between units of two saggi is KEPT as a
+          link «graph → unit» in the graph of its source
+          (:mod:`s3dgraphy.links`, E.D. 11 Oct 2026; :func:`_link_across`).
 
         ``hdto.graphs_at(container, site_place_id(sito, entity_uuid))`` finds
         every graph of the site, each saggio's going up ``is_in_location``.
@@ -569,6 +570,7 @@ class GraphProjector:
             self._declare_study(part, db_path, sito, site_place, saggio=None)
             # the site's own study, even though us_table has saggi
             graphs[sito] = part
+        _link_across(full, graphs)
         first = next(iter(graphs), None)
         return Container(graphs=graphs, active_graph_id=first)
 
@@ -576,19 +578,16 @@ class GraphProjector:
 
     @staticmethod
     def _saggio_places(graph) -> list:
-        """The places of the saggi. Measured on 11 Oct 2026: a saggio is made
-        TWICE when the ``saggio`` grouping is asked — by the importer
-        (``loc::saggio::study::<name>``, from the mapping's LocationNodeGroup
-        column, always) and by :meth:`_merge_groups` (group_kind ``saggio``,
-        uuid5). Both are the saggio; the grouped one first."""
-        found = [n for n in graph.nodes
-                 if type(n).__name__ == "LocationNodeGroup"
-                 and (getattr(n, "attributes", None) or {}).get("group_kind")
-                 == "saggio"]
-        found += [n for n in graph.nodes
-                  if type(n).__name__ == "LocationNodeGroup"
-                  and str(getattr(n, "node_id", "")).startswith("loc::saggio::")]
-        return found
+        """The place of each saggio — ONE per saggio (E.D., 11 Oct 2026):
+        the importer's (``loc::saggio::study::<name>``, from the mapping's
+        LocationNodeGroup column, always made), or the group
+        (``group_kind: saggio``, uuid5) that took its place when the
+        ``saggio`` grouping is asked (:func:`_absorb_place`)."""
+        return [n for n in graph.nodes
+                if type(n).__name__ == "LocationNodeGroup"
+                and ((getattr(n, "attributes", None) or {}).get("group_kind")
+                     == "saggio"
+                     or str(getattr(n, "node_id", "")).startswith("loc::saggio::"))]
 
     def _hang_saggi(self, graph, site_place) -> None:
         """Each saggio's LocationNodeGroup (kind ``study``) is in the site:
@@ -1047,6 +1046,13 @@ class GraphProjector:
                 ut = attrs.get("unita_tipo") or "US"
                 nodes_by_us_ut[(name, ut)] = n
                 nodes_by_name.setdefault(name, []).append(n)
+                # The name is not the key since 1.6 (``1.US3``, see
+                # _propagate_node_uuid_and_us): a rapporto names the ``us``
+                # column, so the unit is found by it too. Measured on
+                # 11 Oct 2026: on mini_volterra no rapporto became an edge.
+                us_key = str(attrs.get("us") or "").strip()
+                if us_key and us_key != name:
+                    nodes_by_name.setdefault(us_key, []).append(n)
 
         # Keep the legacy alias used by the has_first_epoch logic
         # below — it just needs ANY stratigraphic node per name (epoch
@@ -1270,6 +1276,13 @@ class GraphProjector:
                     # Same-family preference picks the right target
                     # when multiple us_table rows share a name.
                     candidates = nodes_by_name.get(target_us, [])
+                    # the same us in two areas: the rapporto's area decides
+                    if len(candidates) > 1 and str(_area or "").strip():
+                        same_area = [c for c in candidates
+                                     if str((getattr(c, "attributes", None) or {})
+                                            .get("area") or "").strip()
+                                     == str(_area).strip()]
+                        candidates = same_area or candidates
                     target_node = None
                     # yE-F resolver: when the target has multi-folder
                     # copies via _apply_yef_fan_out, pick the copy in
@@ -1430,6 +1443,22 @@ class GraphProjector:
                     "edge_type": edge_type,
                     "us_uuid": us_uuid,
                 })
+
+        # One place per saggio, area… (E.D., 11 Oct 2026, «un saggio è un
+        # nodo solo»): the importer already made the place from the mapping's
+        # LocationNodeGroup column, ``loc::<column>::<kind>::<name>``. The
+        # group takes its place — its id (pyArchInit's group_uuid) survives,
+        # the importer's node goes, and the edges it had are the group's.
+        groups_made = [g for g in (graph.find_node_by_id(spec.group_uuid)
+                                   for spec in specs
+                                   if spec.node_class == "LocationNodeGroup")
+                       if g is not None]
+        for group in groups_made:
+            gk = (group.attributes or {}).get("group_kind")
+            twin_id = f"loc::{gk}::{getattr(group, 'kind', '')}::{group.name}"
+            _absorb_place(graph, twin_id, group.node_id,
+                          {m["us_id"] for m in memberships
+                           if m["group_uuid"] == group.node_id})
 
         # AI07: compute is_primary per US using priority order
         priority = primary_priority or DEFAULT_PRIMARY_PRIORITY
@@ -1673,7 +1702,8 @@ def _part_graph(full, members: set, other_places: set, graph_id: str):
     node that had edges and has none left once those are gone (their
     paradata, the groups left empty). Kept: the toponym chain and the site,
     the epochs, the georeference. An edge between a kept and a dropped node
-    goes with the dropped one: a rapporto across two saggi is cut.
+    goes with the dropped one; a rapporto across two saggi comes back as a
+    link (:func:`_link_across`).
     """
     import copy
     graph = copy.deepcopy(full)
@@ -1702,6 +1732,63 @@ def _part_graph(full, members: set, other_places: set, graph_id: str):
     graph.edges = [e for e in graph.edges
                    if e.edge_source not in drop and e.edge_target not in drop]
     return graph
+
+
+def _absorb_place(graph, twin_id: str, group_id: str, members: set) -> None:
+    """The importer's place ``twin_id`` becomes the group ``group_id``: an
+    ``is_in_location`` of a unit the group will hold anyway goes (the group
+    writes its own, with ``is_primary``); every other edge of the twin is
+    moved to the group; then the twin goes."""
+    twin = graph.find_node_by_id(twin_id)
+    if twin is None or twin_id == group_id:
+        return
+    kept = []
+    for e in graph.edges:
+        if twin_id not in (e.edge_source, e.edge_target):
+            kept.append(e)
+            continue
+        if (e.edge_type == "is_in_location" and e.edge_target == twin_id
+                and e.edge_source in members):
+            continue
+        if e.edge_source == twin_id:
+            e.edge_source = group_id
+        if e.edge_target == twin_id:
+            e.edge_target = group_id
+        if any(k.edge_source == e.edge_source and k.edge_target == e.edge_target
+               and k.edge_type == e.edge_type for k in kept):
+            continue
+        kept.append(e)
+    graph.edges = kept
+    graph.nodes = [n for n in graph.nodes if n.node_id != twin_id]
+    group = graph.find_node_by_id(group_id)
+    if group is not None and isinstance(getattr(group, "attributes", None), dict):
+        group.attributes.setdefault("importer_id", twin_id)
+
+
+def _link_across(full, graphs: dict) -> None:
+    """The rapporti :func:`_part_graph` cut — an edge of ``full`` between
+    units that went to two different graphs — written back as links in the
+    graph of the source, with the edge's id, type and attributes, and the
+    target's address «graph → unit» (:mod:`s3dgraphy.links`)."""
+    from s3dgraphy.links import address, links_of_graph
+    home = {}
+    for gid, part in graphs.items():
+        for n in part.nodes:
+            if _is_us_node(n):
+                home.setdefault(n.node_id, gid)
+    for e in full.edges:
+        sg, tg = home.get(e.edge_source), home.get(e.edge_target)
+        if sg is None or tg is None or sg == tg:
+            continue
+        link = {"id": e.edge_id, "edge_type": e.edge_type,
+                "source": e.edge_source,
+                "target": address(tg, e.edge_target)}
+        attrs = getattr(e, "attributes", None)
+        if isinstance(attrs, dict) and attrs:
+            link["attributes"] = dict(attrs)
+        links = links_of_graph(graphs[sg])
+        if all(l["id"] != link["id"] for l in links):
+            links.append(link)
 
 
 def _is_epoch_node(node) -> bool:

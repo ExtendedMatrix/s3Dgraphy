@@ -5,6 +5,42 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
+- **The study's code is stable, the rapporti between saggi are kept, one
+  saggio is one node** (giro dell'11 ottobre (2), decided by E.D. 11 October
+  2026). Node datamodel 1.6.30 (`StudyNode.code_proposed`).
+  - **The code never changes by itself.** `hdto.study_code` reads the
+    study's `code`, then the GraphML header ID (`graph_code`), then the
+    retired `em_id` (read only, the file is not changed). The GraphML
+    importer writes the header `ID` on `StudyNode.data.code` (making the
+    study when the file has none) and still keeps it in `graph_code` and
+    `GraphNode.data.em_id`.
+  - **`hdto.propose_study_code(graph, container=None)`** (+ `api`): when no
+    code exists, ONE proposal is written — the site's initials (particles
+    left out; one word: its first two letters) plus the two digits of the
+    study's year, `-2`, `-3`… against the other codes of the container — and
+    marked `data.code_proposed: true`; never recomputed. `confirm_study_code`
+    takes the mark away (and may replace a proposal, never a confirmed
+    code), `is_code_proposed`, `proposal_for`. `unit_label` proposes when
+    there is no code (`propose=False` to only read).
+  - **Links between the graphs of one em.json** (new module
+    `s3dgraphy.links`, + `api.add_link`, `links_of`, `linked_graphs`): a
+    rapporto towards a unit of another graph is a link of the source's graph
+    with the address `{"graph_id", "node_id"}` — `Graph.links` in memory,
+    `graphs.<id>.links` in the file, written only when there are some; a
+    link whose other end is missing is kept and said. `populate_container`
+    no longer cuts the rapporti between saggi: it writes them as links.
+  - **One node per saggio** (and per area, settore…): with a grouping, the
+    group takes the place of the importer's `loc::<column>::<kind>::<name>`
+    (its edges move to the group, the id kept as `importer_id`).
+
+### Fixed
+- **The projector made no rapporto edge** when the units are named
+  `1.US3`: a rapporto names the `us` column, and the target was looked up by
+  the node's name only (measured on `mini_volterra`: 0 edges). Looked up by
+  `us` too, the area deciding between two units with the same number.
+  `test_projector_recognizes_localized_su_wsu` passes.
+
+### Added (earlier the same day)
 - **The saggio with its place, the units in the site, the study's code**
   (giro dell'11 ottobre, decided by E.D. 11 October 2026). Node datamodel
   1.6.29, connections 1.6.40 (descriptions only).

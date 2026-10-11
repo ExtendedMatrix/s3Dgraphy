@@ -306,7 +306,8 @@ def _composition_of(header: Dict[str, Any]) -> List[Dict[str, Optional[str]]]:
     """The studies a LANDSCAPE is made of — references, never copies.
 
     A landscape does not contain its sites, it *cites* them: each entry names a
-    study by the identity the catalogue can resolve (`id` and/or `em_id`), with
+    study by the identity the catalogue can resolve (`id`, and/or the study's
+    `code` — the retired `em_id`, same value, still read and written), with
     an optional title so a listing can be drawn before the referenced studies
     are fetched. Accepts a bare list of strings too, because that is what
     somebody writes by hand first.
@@ -322,14 +323,18 @@ def _composition_of(header: Dict[str, Any]) -> List[Dict[str, Optional[str]]]:
     out: List[Dict[str, Optional[str]]] = []
     for item in raw or []:
         if isinstance(item, dict):
+            # `code` is the study's code (E.D., 11 Oct 2026), the value the
+            # retired `em_id` held: either names the same study
+            code = _text(item.get("code")) or _text(item.get("em_id"))
             entry = {"id": _text(item.get("id")),
-                     "em_id": _text(item.get("em_id")),
+                     "em_id": _text(item.get("em_id")) or code,
+                     "code": code,
                      "title": _text(item.get("title"))}
         else:
             # one string: it is whichever identity the writer had to hand, and
-            # the catalogue resolves it against both
+            # the catalogue resolves it against all of them
             value = _text(item)
-            entry = {"id": value, "em_id": value, "title": None}
+            entry = {"id": value, "em_id": value, "code": value, "title": None}
         if entry["id"] or entry["em_id"]:
             if entry not in out:
                 out.append(entry)
@@ -390,8 +395,9 @@ def study_metadata(container: Any, *, study_id: Optional[str] = None
         em_id = em_id or _em_id_of(graph)
 
     from .hdto import read_hdto, study_code
-    # the code of the study (GT16): the study's own, never the retired em_id
-    # (E.D., 11 Oct 2026) — `em_id` stays on the card, read as it was
+    # the code of the study (GT16), stable (E.D., 11 Oct 2026, giro 2): the
+    # study's own, else the GraphML header ID, else the retired em_id — the
+    # same value the catalogue indexed as em_id; `em_id` stays on the card
     code = next((c for c in (study_code(g) for g in ordered) if c), None)
     studies = []
     for gid in container.graph_ids():

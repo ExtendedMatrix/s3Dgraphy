@@ -673,10 +673,33 @@ def graphs_about(container, entity) -> List[str]:
 
 
 def study_code(graph: Graph) -> Optional[str]:
-    """The study's short name (GT16): ``StudyNode.data.code``, else the
-    GraphML's header ID, never invented."""
+    """The study's short name (GT16), stable: ``StudyNode.data.code``, else the
+    GraphML's header ID, else the retired em_id (read only). Never writes,
+    never proposes. See :func:`s3dgraphy.hdto.study_code`."""
     from .hdto import study_code as _code
     return _code(graph)
+
+
+def propose_study_code(graph: Graph, container=None) -> Dict[str, Any]:
+    """Give the study a code when it has none — once, marked
+    ``data.code_proposed`` until :func:`confirm_study_code`; never recomputed.
+    ``container`` avoids the codes of its other graphs. See
+    :func:`s3dgraphy.hdto.propose_study_code`."""
+    from .hdto import propose_study_code as _propose
+    return _propose(graph, container)
+
+
+def is_code_proposed(graph: Graph) -> bool:
+    """Whether the study's code is a proposal not yet confirmed."""
+    from .hdto import is_code_proposed as _is
+    return _is(graph)
+
+
+def confirm_study_code(graph: Graph, code: Optional[str] = None) -> Optional[str]:
+    """The user confirms the proposed code (or replaces the PROPOSAL with
+    ``code``); a confirmed code is not changed by confirming."""
+    from .hdto import confirm_study_code as _confirm
+    return _confirm(graph, code)
 
 
 def migrate_em_id(graph: Graph) -> Dict[str, Any]:
@@ -687,11 +710,38 @@ def migrate_em_id(graph: Graph) -> Dict[str, Any]:
     return _migrate(graph)
 
 
-def unit_label(graph: Graph, name: str, separator: str = ".") -> str:
-    """A unit's name with the study's code as prefix, or as it is when the
-    study has none."""
+def unit_label(graph: Graph, name: str, separator: str = ".", *,
+               container=None, propose: bool = True) -> str:
+    """A unit's name with the study's code as prefix (GT16.US001). Without a
+    code, one is proposed and written first (once); ``propose=False`` gives
+    the name as it is."""
     from .hdto import unit_label as _label
-    return _label(graph, name, separator)
+    return _label(graph, name, separator, container=container, propose=propose)
+
+
+# ── rapporti between the graphs of one em.json (11 Oct 2026) ─────────────────
+def add_link(container, source, target, edge_type: str, *,
+             link_id: Optional[str] = None,
+             attributes: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """A rapporto from ``(graph_id, node_id)`` to ``(graph_id, node_id)`` of
+    another graph of ``container``. See :mod:`s3dgraphy.links`."""
+    from .links import add_link as _add
+    return _add(container, source, target, edge_type, link_id=link_id,
+                attributes=attributes)
+
+
+def links_of(container, graph_id: str,
+             node_id: Optional[str] = None) -> List[Dict[str, Any]]:
+    """Every rapporto touching a graph (or one of its nodes), both ways, with
+    the address of the other end to navigate to."""
+    from .links import links_of as _of
+    return _of(container, graph_id, node_id)
+
+
+def linked_graphs(container, graph_id: str) -> List[str]:
+    """The other graphs ``graph_id`` has rapporti with."""
+    from .links import linked_graphs as _linked
+    return _linked(container, graph_id)
 
 
 # ── editorial stamps (last hand) ──────────────────────────────────────────────

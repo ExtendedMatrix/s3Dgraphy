@@ -3,8 +3,8 @@ CRDT and in the reader, with the same sentence.
 
 Before (5 Oct 2026): the CRDT took the edge (``crdt.apply_op_to_section``) and
 the reader dropped it with a generic ``Both nodes … must exist`` — a room
-accepted what its own file threw away. A link between graphs of one study
-(I-4) does not exist yet; until it does, both places refuse.
+accepted what its own file threw away. A rapporto between graphs of one study
+(I-4) is a link (s3dgraphy.links), not an edge: both places refuse the edge.
 
 An end that is in NO graph is another case, left as it was: the CRDT takes the
 edge (its node may not have arrived yet, and the result must not depend on the
@@ -49,8 +49,8 @@ def test_the_crdt_refuses_an_edge_towards_another_graph():
     assert result.applied is False
     assert result.reason == (
         "the node 'us9' is in the graph 'saggio', not in this one: an edge "
-        "joins two nodes of the same graph, and a link between graphs does not "
-        "exist yet")
+        "joins two nodes of the same graph, and a rapporto between graphs is a "
+        "link (graph + node), not an edge")
     assert refusal_is_news(result.reason)          # the person is told
     assert section["edges"] == []                  # nothing written
 

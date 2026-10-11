@@ -21,8 +21,16 @@ Giro dell'11 ottobre (E.D., 11 Oct 2026):
   export with several saggi is one graph per saggio in a Container
   (``GraphProjector.populate_container``);
 * **the code is the study's**: the graph's «EM-ID» (``GraphNode.data.em_id``)
-  is retired; :func:`study_code` never reads it and :func:`migrate_em_id`
-  carries it to ``StudyNode.data.code`` only when the study has none.
+  is retired; :func:`migrate_em_id` carries it to ``StudyNode.data.code`` only
+  when the study has none.
+
+Giro dell'11 ottobre (2) (E.D., 11 Oct 2026):
+
+* **the code is stable**: it is what Blender re-attaches the proxies by
+  (``GT16.1.USM100``), so once written it never changes by itself.
+  :func:`study_code` reads the study's code, then the GraphML header ID, then
+  the em_id (read only); :func:`propose_study_code` writes ONE proposal when
+  there is none, marked ``code_proposed`` until :func:`confirm_study_code`.
 
 The writer follows EMStudio's ``applyHdto`` (frontend/src/model.ts) for every
 role EMStudio already writes — the same roles in ``data.hdto_role``, one node
@@ -411,21 +419,209 @@ def read_hdto(graph) -> Dict[str, Any]:
 # ── the code of the study ───────────────────────────────────────────────────
 
 def study_code(graph) -> Optional[str]:
-    """The short name of the study (GT16), or ``None``.
+    """The short name of the study (GT16), or ``None``. It is the name Blender
+    re-attaches the proxies by (``GT16.1.USM100``), so once a study has a code
+    it never changes by itself (E.D., 11 Oct 2026, «il codice di studio è
+    stabile»). Read, in order:
 
-    ONE source: ``StudyNode.data.code``. A GraphML's header ID
-    (``graph.attributes['graph_code']``) is read only when no study says a
-    code — it is what the source gave — and never its ``MISSINGCODE``
-    placeholder. Nothing is derived (E.D., 10 Oct 2026). The retired
-    ``GraphNode.data.em_id`` is NEVER read here (E.D., 11 Oct 2026): it
-    becomes the study's code through :func:`migrate_em_id`, explicitly.
+    1. ``StudyNode.data.code`` — the code the source gave, the GraphML header's
+       ID carried on import, a migrated em_id, or a proposal already written
+       (:func:`propose_study_code`, ``data.code_proposed``);
+    2. the GraphML header ID (``graph.attributes['graph_code']``), never its
+       ``MISSINGCODE`` placeholder — a graph read by an older importer;
+    3. the retired ``GraphNode.data.em_id``, read only, as a fallback: the
+       file is not changed (:func:`migrate_em_id` writes it to the study).
+
+    Nothing is proposed here: reading never writes. :func:`unit_label` and
+    :func:`ensure_study_code` propose, once, when all three are missing.
     """
     study = _role_node(graph, "study")
     code = _text(_get(study, "code")) if study is not None else ""
     if code:
         return code
     legacy = _text((getattr(graph, "attributes", None) or {}).get("graph_code"))
-    return legacy if legacy not in _NO_CODE else None
+    if legacy not in _NO_CODE:
+        return legacy
+    return legacy_em_id(graph)
+
+
+def is_code_proposed(graph) -> bool:
+    """Whether the study's code is a proposal nobody confirmed yet."""
+    study = _role_node(graph, "study")
+    return bool(study is not None and _text(_get(study, "code"))
+                and _get(study, "code_proposed") is True)
+
+
+def confirm_study_code(graph, code: Optional[str] = None) -> Optional[str]:
+    """The user confirms the study's code: ``data.code_proposed`` goes away.
+
+    ``code`` given and different from the proposal: the user's code replaces
+    the PROPOSAL — the one case a written code changes, and only by a person.
+    A confirmed code is never replaced here: changing it is the user's edit
+    of ``StudyNode.data.code``, not a confirmation. Returns the code."""
+    study = _role_node(graph, "study")
+    if study is None:
+        return None
+    d = _data(study)
+    current = _text(d.get("code"))
+    wanted = _text(code)
+    if wanted and wanted != current:
+        if current and d.get("code_proposed") is not True:
+            raise ValueError(f"the study's code is {current!r}, confirmed: "
+                             f"confirming does not change it")
+        d["code"] = wanted
+    d.pop("code_proposed", None)
+    return _text(d.get("code")) or None
+
+
+#: words that are not initials (Grotta di Tiberio → GT)
+_NOT_INITIALS = {"di", "de", "del", "della", "dei", "delle", "degli", "da",
+                 "la", "le", "il", "lo", "gli", "i", "l", "d", "e", "ed",
+                 "of", "the", "and", "a", "an", "von", "der", "des", "du"}
+
+
+def _site_name_of(graph) -> str:
+    """The name of the site the study took place at: the place itself when it
+    is a site, else the first site up its ``is_in_location`` chain, else the
+    place (a saggio not under a site)."""
+    study = _role_node(graph, "study")
+    for place in _out(graph, study, "study_took_place_at"):
+        chain = _place_chain(graph, place)
+        for p in chain:
+            if _get(p, "level") == "sito" and _text(p.name):
+                return _text(p.name)
+        if _text(place.name):
+            return _text(place.name)
+    return ""
+
+
+def _initials(name: str) -> str:
+    import re
+    import unicodedata
+    plain = unicodedata.normalize("NFKD", name)
+    plain = "".join(c for c in plain if not unicodedata.combining(c))
+    words = [w for w in re.split(r"[^A-Za-z0-9]+", plain) if w]
+    words = [w for w in words if w.lower() not in _NOT_INITIALS] or words
+    if not words:
+        return ""
+    if len(words) == 1:
+        return words[0][:2].upper()
+    return "".join(w[0] for w in words[:4]).upper()
+
+
+def _year_of(value: Any) -> str:
+    import re
+    found = re.search(r"(1[89]|20)(\d\d)", _text(value))
+    return found.group(2) if found else ""
+
+
+def _codes_in(container, besides=None) -> set:
+    taken = set()
+    if container is None:
+        return taken
+    for _gid, other in _member_graphs(container):
+        if other is besides:
+            continue
+        code = study_code(other)
+        if code:
+            taken.add(code.upper())
+    return taken
+
+
+def proposal_for(graph, container=None) -> str:
+    """The code the system would propose for ``graph`` — computed, not
+    written. The rule (E.D., 11 Oct 2026, measured and written in the referto
+    of the giro):
+
+    * the letters: the initials of the site the study took place at (words of
+      two or more: ``Grotta di Tiberio`` → ``GT``, the particles left out;
+      one word: its first two letters, ``Volterra`` → ``VO``); without a site,
+      of the study's name; without that, of the graph's name; else ``ST``;
+    * the year: the last two digits of the first year in the study's
+      ``date`` (``2016`` → ``16``), when there is one;
+    * a collision with a code of another graph of the container (case
+      insensitive) takes ``-2``, ``-3``…: never a ``.``, which is the
+      separator of the proxies' names.
+    """
+    study = _role_node(graph, "study")
+    letters = (_initials(_site_name_of(graph))
+               or _initials(_text(getattr(study, "name", "")) if study is not None else "")
+               or _initials(_text(_to_name(getattr(graph, "name", None))))
+               or "ST")
+    year = _year_of(_get(study, "date")) if study is not None else ""
+    base = f"{letters}{year}"
+    taken = _codes_in(container, besides=graph)
+    code, n = base, 1
+    while code.upper() in taken:
+        n += 1
+        code = f"{base}-{n}"
+    return code
+
+
+def _to_name(value: Any) -> str:
+    if isinstance(value, dict):
+        return _text(value.get("default") or next(iter(value.values()), ""))
+    return _text(value)
+
+
+def propose_study_code(graph, container=None) -> Dict[str, Any]:
+    """Give the study a code when it has none — ONCE: written on
+    ``StudyNode.data.code`` with ``data.code_proposed = True`` until the user
+    confirms it (:func:`confirm_study_code`), and from then on read like any
+    code, never recomputed (E.D., 11 Oct 2026).
+
+    * the study already has a code (proposed or not): nothing changes;
+    * a code without a study — the GraphML header ID, the retired em_id —
+      goes to the study as it is (not a proposal: the source gave it);
+    * nothing at all: :func:`proposal_for`, avoiding the other codes of
+      ``container``.
+
+    A graph without a study gets one (the code has to live somewhere, and the
+    code is the study's): named like the graph, no kind, no place.
+
+    Returns ``{"code", "proposed", "written", "source"}``; ``source`` is
+    ``"study"``, ``"graph_code"``, ``"em_id"`` or ``"proposal"``.
+    """
+    from .nodes.study_node import StudyNode
+    from .nodes.graph_node import GraphNode
+    study = _role_node(graph, "study")
+    code = _text(_get(study, "code")) if study is not None else ""
+    if code:
+        return {"code": code, "proposed": _get(study, "code_proposed") is True,
+                "written": False, "source": "study"}
+    legacy = _text((getattr(graph, "attributes", None) or {}).get("graph_code"))
+    if legacy not in _NO_CODE:
+        code, source = legacy, "graph_code"
+    elif legacy_em_id(graph):
+        code, source = legacy_em_id(graph), "em_id"
+    else:
+        code, source = proposal_for(graph, container), "proposal"
+    if study is None:
+        name = _to_name(getattr(graph, "name", None)) or code
+        if _role_node(graph, "proposition_set") is None:
+            pset = GraphNode(_derived_id(graph, "proposition_set"), name=name)
+            _data(pset)["hdto_role"] = "proposition_set"
+            graph.add_node(pset)
+        study = StudyNode(_derived_id(graph, "study"), name=name)
+        _data(study)["hdto_role"] = "study"
+        graph.add_node(study)
+        declare_hdto(graph, study={"name": name})
+    d = _data(study)
+    d["code"] = code
+    if source == "proposal":
+        d["code_proposed"] = True
+    return {"code": code, "proposed": source == "proposal", "written": True,
+            "source": source}
+
+
+def _derived_id(graph, role: str) -> str:
+    """A deterministic id for a node :func:`propose_study_code` has to make:
+    the same graph gives the same id (a re-import does not move it)."""
+    return str(uuid.uuid5(uuid.NAMESPACE_URL,
+                          f"s3dgraphy:{getattr(graph, 'graph_id', '')}:{role}"))
+
+
+ensure_study_code = propose_study_code
 
 
 def legacy_em_id(graph) -> Optional[str]:
@@ -469,11 +665,18 @@ def migrate_em_id(graph) -> Dict[str, Any]:
             "migrated": reason == "migrated", "reason": reason}
 
 
-def unit_label(graph, name: str, separator: str = ".") -> str:
-    """``name`` with the study's code as prefix (GT16.US001), or ``name`` as it
-    is when the study has no code — never an invented one."""
+def unit_label(graph, name: str, separator: str = ".", *, container=None,
+               propose: bool = True) -> str:
+    """``name`` with the study's code as prefix (GT16.US001).
+
+    The code is :func:`study_code`'s; when there is none and ``propose`` is
+    true, :func:`propose_study_code` writes one first (Blender needs unique
+    proxy names) — once: the next call reads it. ``propose=False``: ``name``
+    as it is."""
     from .utils.utils import manage_id_prefix
     code = study_code(graph)
+    if not code and propose:
+        code = propose_study_code(graph, container)["code"]
     return manage_id_prefix(name, code, "add", separator) if code else name
 
 

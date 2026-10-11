@@ -598,6 +598,16 @@ class GraphMLImporter:
                 orcid=meta.get('orcid'),
             )
 
+        # The header ID is the STUDY's code (E.D., 11 Oct 2026, «il codice di
+        # studio è stabile»): reused as it is, on StudyNode.data.code — the
+        # study made when the GraphML has none. It also stays in
+        # graph.attributes['graph_code'] and GraphNode.data.em_id for whoever
+        # still reads those. No ID (MISSINGCODE): nothing is proposed here —
+        # hdto.propose_study_code does it once, with the container at hand.
+        if graph_code and graph_code != "MISSINGCODE":
+            from ..hdto import propose_study_code
+            propose_study_code(self.graph)
+
         return self.graph
 
     def slipback_uuids_to_graphml(self):

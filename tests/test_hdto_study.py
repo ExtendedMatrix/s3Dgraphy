@@ -224,15 +224,27 @@ def test_a_study_coded_gt16_prefixes_the_labels():
     assert api.unit_label(g, "US001") == "GT16.US001"
 
 
-def test_without_a_code_no_prefix_and_no_code_invented():
+def test_without_a_code_a_proposal_is_written_once_and_marked():
+    """E.D., 11 Oct 2026: when the code is missing the system proposes one
+    (Blender needs unique proxy names), marked until confirmed, and once
+    written it is never recomputed. Reading alone never proposes."""
     g = Graph("g")
-    api.declare_hdto(g, study="Great Temple 2016")
-    assert api.study_code(g) is None
-    assert api.unit_label(g, "US001") == "US001"
+    api.declare_hdto(g, study={"name": "Great Temple", "date": "2016-07"})
+    assert api.study_code(g) is None  # reading never writes
+    assert api.unit_label(g, "US001", propose=False) == "US001"
     assert "code" not in next(n for n in g.nodes if n.node_type == "study").data
+    assert api.unit_label(g, "US001") == "GT16.US001"
+    study = next(n for n in g.nodes if n.node_type == "study")
+    assert study.data["code"] == "GT16" and study.data["code_proposed"] is True
+    assert api.is_code_proposed(g)
+    # renaming the study or its date does not move a written proposal
+    study.name, study.data["date"] = "Another name", "1999"
+    assert api.unit_label(g, "US001") == "GT16.US001"
+    assert api.propose_study_code(g)["written"] is False
     # the GraphML placeholder is not a code either
-    g.attributes["graph_code"] = "MISSINGCODE"
-    assert api.study_code(g) is None and api.unit_label(g, "US001") == "US001"
+    h = Graph("h")
+    h.attributes["graph_code"] = "MISSINGCODE"
+    assert api.study_code(h) is None
 
 
 def test_the_study_is_the_one_source_of_the_code():
@@ -341,9 +353,17 @@ def _with_em_id(em_id, **study):
     return g
 
 
-def test_study_code_never_reads_the_em_id():
+def test_study_code_reads_the_em_id_only_as_a_fallback():
+    """E.D., 11 Oct 2026: study code, then the GraphML header, then the
+    em_id — read only, the file is not changed."""
     g = _with_em_id("TM", name="Templu Mare 2016")
-    assert api.study_code(g) is None  # only em_id: no code, the report says so
+    assert api.study_code(g) == "TM"
+    study = next(n for n in g.nodes if n.node_type == "study")
+    assert "code" not in study.data  # read, not written
+    g.attributes["graph_code"] = "GT16"
+    assert api.study_code(g) == "GT16"  # the header before the em_id
+    study.data["code"] = "TM16"
+    assert api.study_code(g) == "TM16"  # the study before both
 
 
 def test_em_id_migrates_to_the_study_code_only_when_the_study_has_none():
@@ -369,10 +389,10 @@ def test_em_id_never_overrides_a_code_nor_makes_a_study():
     assert api.migrate_em_id(Graph("none"))["reason"] == "no em_id"
 
 
-def test_the_card_carries_the_study_code_not_the_em_id():
+def test_the_card_carries_the_study_code():
     from s3dgraphy.study import study_metadata
     c = Container(graphs={"g": _with_em_id("TM", name="S")})
     card = study_metadata(c)
-    assert card["em_id"] == "TM" and card["code"] is None
+    assert card["em_id"] == "TM" and card["code"] == "TM"  # same value
     api.migrate_em_id(c.graphs["g"])
     assert study_metadata(c)["code"] == "TM"

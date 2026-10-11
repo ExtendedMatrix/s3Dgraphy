@@ -5,7 +5,10 @@ reached ``s3dgraphy.sync.rapporti``, and ``sync/__init__`` requires SQLAlchemy
 (the ``[sync]`` extra). The parser of the rapporti has no database in it: it
 lives in ``s3dgraphy.rapporti`` now, and ``s3dgraphy.sync.rapporti`` re-exports
 it. Measured again in a venv without SQLAlchemy: San Pietro converts to 66
-nodes and 142 edges. Here SQLAlchemy is made unimportable in a subprocess.
+nodes and 142 edges — 67 and 143 since 11 Oct 2026, when the header ID became
+the code of a study the importer makes (the StudyNode and its
+study_produced_proposition_set). Here SQLAlchemy is made unimportable in a
+subprocess.
 """
 
 import os
@@ -36,7 +39,7 @@ SCRIPT = textwrap.dedent("""
 
 def _graphml():
     if os.path.isfile(SAN_PIETRO):
-        return SAN_PIETRO, (66, 142)
+        return SAN_PIETRO, (67, 143)
     for root, _dirs, files in os.walk(FIXTURE):
         for name in files:
             if name.endswith(".graphml"):

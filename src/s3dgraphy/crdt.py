@@ -1010,7 +1010,8 @@ def edge_outside_graph(has_node, source: Any, target: Any,
 
     **The rule: an end that is a node of ANOTHER graph of the study refuses the
     edge.** An edge lives in the section of one graph and joins two nodes of it;
-    a link between graphs of one study (I-4, graph + UUID) does not exist yet.
+    a rapporto between graphs of one study (I-4, graph + UUID) is a LINK of
+    the graph of its source, not an edge — :mod:`s3dgraphy.links`.
     Until 5 Oct 2026 the CRDT took such an edge and the reader then dropped it:
     a room accepted what its own file threw away.
 
@@ -1032,7 +1033,8 @@ def edge_outside_graph(has_node, source: Any, target: Any,
         if other:
             return (f"the node '{node_id}' is in the graph '{other}', not in "
                     f"this one: an edge joins two nodes of the same graph, and "
-                    f"a link between graphs does not exist yet")
+                    f"a rapporto between graphs is a link (graph + node), "
+                    f"not an edge")
     return None
 
 

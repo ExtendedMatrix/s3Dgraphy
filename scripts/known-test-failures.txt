@@ -7,11 +7,12 @@
 # new failure. test_round_trip_preserves_mapped_fields stays, for the
 # serialiser that writes '>>' where the column said 'copre'.
 # .claude/wip/reports/2026-10-26-em-ttl-dev25/failed-after.txt.
+# Re-measured 2026-10-11 (giro 2): test_projector_recognizes_localized_su_wsu
+# passes once the projector finds a rapporto's target by its `us` column.
 # One pytest node id per line; '#' starts a comment.
 tests/sync/test_ai03_export_byte_identical.py::test_export_graphml_matches_baseline
 tests/sync/test_graph_projector.py::test_projector_handles_paradata_name_collisions
 tests/sync/test_graph_projector_groups.py::test_groups_arg_materializes_locationnodegroup_for_struttura
-tests/sync/test_graph_projector_multilingual.py::test_projector_recognizes_localized_su_wsu
 tests/sync/test_graphml_writer_pipeline.py::test_pipeline_applies_transitive_reduction
 tests/sync/test_locationnodegroup_projection.py::test_struttura_emits_locationnodegroup_kind_functional[ambient-functional]
 tests/sync/test_locationnodegroup_projection.py::test_struttura_emits_locationnodegroup_kind_functional[struttura-functional]

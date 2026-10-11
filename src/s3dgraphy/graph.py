@@ -64,6 +64,9 @@ class Graph:
         #: ``warnings`` alone, because nothing here knows what it points at.
         self.warning_records = []
         self.attributes = {}
+        #: the rapporti towards nodes of OTHER graphs of the container — see
+        #: :mod:`s3dgraphy.links` (E.D., 11 Oct 2026)
+        self.links = []
 
         # Initialize graph indices
         self._indices = None

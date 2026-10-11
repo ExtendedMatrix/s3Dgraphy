@@ -325,6 +325,34 @@ def parse_emjson(doc: Dict[str, Any], *,
         if isinstance(attrs, dict) and attrs and edge is not None:
             edge.attributes.update(attrs)
 
+    # The rapporti towards other graphs of the container (s3dgraphy.links,
+    # E.D. 11 Oct 2026). A link whose source is not in this graph is dropped,
+    # with a warning; one whose other end is missing is KEPT and said — a
+    # broken reference must not make the file unopenable (as composition).
+    from ..links import normalise_link
+    for raw in gsec.get("links") or []:
+        link = normalise_link(raw)
+        if link is None:
+            warnings.append(f"skipped link {raw!r}: not a link")
+            continue
+        if link["source"] not in present:
+            warnings.append(f"skipped link {link['id']!r}: its source "
+                            f"'{link['source']}' is not in this graph")
+            continue
+        if study is not None:
+            t = link["target"]
+            sec = next((v for k, v in (study.get("graphs") or {}).items()
+                        if isinstance(v, dict)
+                        and t["graph_id"] in (k, v.get("graph_id"))), None)
+            held = sec is not None and any(
+                str(n.get("id")) == t["node_id"] for n in sec.get("nodes") or []
+                if isinstance(n, dict))
+            if not held:
+                warnings.append(
+                    f"link {link['id']!r}: no node '{t['node_id']}' in the "
+                    f"graph '{t['graph_id']}' of this container; kept")
+        graph.links.append(link)
+
     # MIG1-A (DP-65) · one-shot legacy migration of graph-scope rights metadata.
     _migrate_legacy_graph_scope(graph)
 
