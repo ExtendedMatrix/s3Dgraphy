@@ -3078,6 +3078,47 @@ def find_moved_files(graph: Graph, results: Sequence[Dict[str, Any]],
     return find_moved(graph, list(results), folders, **kwargs)
 
 
+# ── B1 · disk ↔ bucket: the two copies, and what may be let go (E.D., 11 Oct 2026) ──
+def open_object_store(name: Optional[str] = None, config: Any = None):
+    """The object store of the Resource layer — any S3-compatible one (MinIO
+    today). ``S3_*`` environment, ``EM_OBJECT_STORE`` to choose another
+    implementation (:func:`s3dgraphy.resources.object_store.register_store`)."""
+    from .resources.object_store import open_store
+    return open_store(name, config)
+
+
+def bucket_alignment(graph: Graph, results: Sequence[Dict[str, Any]], store: Any = None, *,
+                     deep: bool = False, **kwargs) -> List[Dict[str, Any]]:
+    """How the disk copy and the bucket copy of each file stand: ``aligned`` (the
+    sha256 of both, read now), ``same_size``, ``differ``, ``disk_only``,
+    ``bucket_only``, ``neither``, ``unknown``. Reads only. See
+    :mod:`s3dgraphy.resources.alignment`."""
+    from .resources.alignment import bucket_alignment as _al
+    return _al(graph, list(results), store or open_object_store(), deep=deep, **kwargs)
+
+
+def plan_free_local(graph: Graph, aligned: Sequence[Dict[str, Any]], **kwargs) -> List[Dict[str, Any]]:
+    """The files whose local copy may be freed (aligned, verified): ``safe`` for a
+    distribution, ``confirm`` for a master or an original, each with its warning."""
+    from .resources.alignment import free_plan
+    return free_plan(graph, list(aligned), **kwargs)
+
+
+def free_local_copies(plan: Sequence[Dict[str, Any]], store: Any = None, **kwargs) -> List[Dict[str, Any]]:
+    """Free the local copies of a plan: the bytes are compared again just before
+    each one leaves; moved to a quarantine folder, or deleted with
+    ``permanent=True``; a master only with ``confirm_masters=True``."""
+    from .resources.alignment import free_local
+    return free_local(list(plan), store or open_object_store(), **kwargs)
+
+
+def promote_to_bucket(graph: Graph, resource_id: str, path: str, store: Any = None, **kwargs) -> Dict[str, Any]:
+    """Upload, READ BACK and verify, then record the bucket as the primary address
+    and keep the disk path as an address too."""
+    from .resources.alignment import promote_verified
+    return promote_verified(graph, resource_id, path, store or open_object_store(), **kwargs)
+
+
 # ── C1 · the standard tree of an EM project (E.D., 4 Oct 2026) ─────────────────
 def create_em_project(parent: str, name: str, **kwargs) -> Dict[str, Any]:
     """«New EM project…»: EM/ (DosCo/, proxies/), RB/, SB/, RM/, README.md,

@@ -171,15 +171,24 @@ def resolve(entry: Dict[str, Any], *, project_root: Optional[str] = None,
         look = parsed[0] if parsed else ""
     elif locator.startswith("psx://"):
         look = ""
-    if not path and look and not remote and not look.startswith(("blend://", "psx://")):
-        for cand in local_candidates(look, bases):
+    # a resource may have SEVERAL addresses of the same bytes (the disk and the
+    # bucket): when the primary is not a local one, a local address is tried too
+    cand_look = "" if remote else look
+    if not cand_look:
+        for other in entry.get("addresses") or ():
+            o = str(other or "")
+            if o and o != locator and not o.lower().startswith(_REMOTE + ("blend://", "psx://")):
+                cand_look = o
+                break
+    if not path and cand_look and not cand_look.startswith(("blend://", "psx://")):
+        for cand in local_candidates(cand_look, bases):
             if os.path.isfile(cand) or os.path.isdir(cand):
                 if os.path.isfile(cand) and is_empty_copy(cand):
                     empty = empty or cand
                     continue
                 path = cand
                 break
-        positions.append({"kind": "path", "where": path or empty or locator,
+        positions.append({"kind": "path", "where": path or empty or cand_look,
                           "ok": bool(path)})
     elif locator.startswith(("blend://", "psx://")) and not look:
         positions.append({"kind": "path", "where": locator, "ok": None})
@@ -236,6 +245,8 @@ def entries_of(graph: Any) -> List[Dict[str, Any]]:
         out.append({"id": node.node_id, "name": str(getattr(node, "name", "") or ""),
                     "node_type": node.node_type,
                     "locator": str(data.get("url") or getattr(node, "url", "") or ""),
+                    "addresses": [str(a["locator"]) for a in (data.get("addresses") or [])
+                                  if isinstance(a, dict) and a.get("locator")],
                     "checksum": data.get("checksum") or ""})
     return out
 
