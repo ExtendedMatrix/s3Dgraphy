@@ -3058,6 +3058,26 @@ def resolve_file(entry: Dict[str, Any], **kwargs) -> Dict[str, Any]:
     return resolve(entry, **kwargs)
 
 
+# ── S1 · the Storage list and «find moved» (E.D., 11 Oct 2026) ────────────────
+def storage_rows(graph: Graph, results: Sequence[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """The files of ``graph`` as ONE list: master, versions by computed level,
+    files of a set, links of a document — with uses, tier, document, the RMs
+    that use each, and its state. ``results`` is :func:`resolve_files`. EMtools
+    and EMStudio draw these rows. See :mod:`s3dgraphy.resources.storage_rows`."""
+    from .resources.storage_rows import storage_rows as _rows
+    return _rows(graph, list(results))
+
+
+def find_moved_files(graph: Graph, results: Sequence[Dict[str, Any]],
+                     folders: Sequence[str], **kwargs) -> List[Dict[str, Any]]:
+    """For the files that are ``missing`` (or an empty copy), the candidates found
+    in ``folders`` — by sha256, then by name and size — each saying HOW it was
+    recognised. Proposes only: nothing is changed. See
+    :mod:`s3dgraphy.resources.moved`."""
+    from .resources.moved import find_moved
+    return find_moved(graph, list(results), folders, **kwargs)
+
+
 # ── C1 · the standard tree of an EM project (E.D., 4 Oct 2026) ─────────────────
 def create_em_project(parent: str, name: str, **kwargs) -> Dict[str, Any]:
     """«New EM project…»: EM/ (DosCo/, proxies/), RB/, SB/, RM/, README.md,
