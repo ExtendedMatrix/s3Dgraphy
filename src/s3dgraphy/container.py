@@ -1030,3 +1030,154 @@ def merge_into_container(container: Container, other: Container) -> MergeReport:
     # lie about how much has happened.
     bump_version(container)
     return report
+
+
+#: the id of the graph :func:`merge_graphs` returns
+MERGED_GRAPH_ID = "merged"
+
+
+def merge_graphs(container: Container,
+                 graph_ids: Optional[Iterable[str]] = None
+                 ) -> Tuple[Graph, Dict[str, Any]]:
+    """One graph for the overall view of several graphs of ``container`` —
+    the site whole again, after :meth:`GraphProjector.populate_container`
+    made one graph per saggio (s3Dgraphy#36).
+
+    Each saggio is a study of its own (E.D., 12 Oct 2026): its graph carries
+    a copy of the paradata it shares with the others (documents, authors,
+    epochs, places), with the SAME id. Summing the graphs counts those twice;
+    this does not:
+
+    * **nodes** united by id — the identity of a node shared between graphs
+      is its id, never its label (two documents named «D.01» in two studies
+      may be two documents, and stay two);
+    * **edges** deduplicated by ``(source, type, target)``, the definition of
+      «the same relation» :func:`_merge_graph_into` uses;
+    * **links** (:mod:`s3dgraphy.links`) between two merged graphs become
+      ordinary edges, with the link's id, type and attributes; a link whose
+      other end is not among them stays out, and the report names it.
+
+    The first graph (in ``graph_ids`` order, else the container's) gives the
+    version of a node; when another graph has the same id with different
+    content (the editorial stamps aside, as in a merge), the report says so
+    — node, graphs, which one was kept, which fields diverge. It does not
+    choose in silence. The same for an edge whose attributes differ.
+
+    Reads only: the container, its graphs and their links are not touched
+    (the merged graph holds copies), and nothing is written to file.
+
+    Returns ``(graph, report)``; ``report`` is a dict: ``graphs``,
+    ``nodes_in`` / ``nodes`` / ``nodes_merged`` (rows read, nodes kept, copies
+    folded), the same three for ``edges``, ``links_resolved``,
+    ``links_unresolved`` (one sentence each), ``conflicts`` (nodes),
+    ``edge_conflicts``, ``warnings``.
+    """
+    import copy
+    from .links import links_of_graph
+
+    ids = list(graph_ids) if graph_ids is not None else container.graph_ids()
+    unknown = [gid for gid in ids if gid not in container.graphs]
+    if unknown:
+        raise ValueError(f"no graph {', '.join(map(repr, unknown))} in this container")
+
+    merged = Graph(MERGED_GRAPH_ID, name="merged view")
+    auto_geo = [n.node_id for n in merged.nodes]
+    report: Dict[str, Any] = {
+        "graphs": list(ids), "nodes_in": 0, "nodes": 0, "nodes_merged": 0,
+        "edges_in": 0, "edges": 0, "edges_merged": 0,
+        "links_resolved": 0, "links_unresolved": [],
+        "conflicts": [], "edge_conflicts": [], "warnings": []}
+
+    nodes: Dict[str, Any] = {}
+    origin: Dict[str, str] = {}
+    content: Dict[str, Dict[str, Any]] = {}
+    contested: Dict[str, Dict[str, Any]] = {}
+    for gid in ids:
+        for node in container.graphs[gid].nodes:
+            report["nodes_in"] += 1
+            snap = _content_of(_node_snapshot(node))
+            if node.node_id not in nodes:
+                nodes[node.node_id] = copy.deepcopy(node)
+                origin[node.node_id] = gid
+                content[node.node_id] = snap
+                continue
+            report["nodes_merged"] += 1
+            if snap == content[node.node_id]:
+                continue
+            entry = contested.get(node.node_id)
+            if entry is None:
+                entry = contested[node.node_id] = {
+                    "node_id": node.node_id, "name": getattr(node, "name", None),
+                    "kept_from": origin[node.node_id],
+                    "graphs": [origin[node.node_id]], "fields": []}
+                report["conflicts"].append(entry)
+            entry["graphs"].append(gid)
+            for name in _diverging_fields(content[node.node_id], snap):
+                if name not in entry["fields"]:
+                    entry["fields"].append(name)
+
+    edges: Dict[Tuple[str, str, str], Any] = {}
+    edge_origin: Dict[Tuple[str, str, str], str] = {}
+    edge_ids = set()
+
+    def take(edge, gid: str) -> None:
+        key = (edge.edge_source, edge.edge_type, edge.edge_target)
+        attrs = getattr(edge, "attributes", None) or {}
+        if key in edges:
+            report["edges_merged"] += 1
+            if attrs != (getattr(edges[key], "attributes", None) or {}):
+                report["edge_conflicts"].append({
+                    "edge": list(key), "edge_id": edges[key].edge_id,
+                    "kept_from": edge_origin[key], "other": gid})
+            return
+        edge_id = edge.edge_id
+        # two graphs may have minted the same id for two relations
+        while edge_id in edge_ids:
+            edge_id = f"{edge_id}_merged"
+        kept = copy.deepcopy(edge)
+        kept.edge_id = edge_id
+        edges[key], edge_origin[key] = kept, gid
+        edge_ids.add(edge_id)
+
+    for gid in ids:
+        for edge in container.graphs[gid].edges:
+            report["edges_in"] += 1
+            take(edge, gid)
+
+    from .edges import Edge
+    chosen = set(ids)
+    for gid in ids:
+        for link in links_of_graph(container.graphs[gid]):
+            target = link["target"]
+            where = f"link '{link['id']}' of the graph '{gid}'"
+            if target["graph_id"] not in chosen:
+                report["links_unresolved"].append(
+                    f"{where}: the graph '{target['graph_id']}' is not merged")
+                continue
+            if link["source"] not in nodes or target["node_id"] not in nodes:
+                missing = (link["source"] if link["source"] not in nodes
+                           else target["node_id"])
+                report["links_unresolved"].append(f"{where}: no node '{missing}'")
+                continue
+            try:
+                edge = Edge(link["id"], link["source"], target["node_id"],
+                            link["edge_type"])
+            except ValueError as exc:
+                report["links_unresolved"].append(f"{where}: {exc}")
+                continue
+            edge.attributes = dict(link.get("attributes") or {})
+            report["edges_in"] += 1
+            report["links_resolved"] += 1
+            take(edge, gid)
+
+    # Graph() makes a geo position of its own; the members bring theirs
+    if any(getattr(n, "node_type", None) == "geo_position" for n in nodes.values()):
+        for node_id in auto_geo:
+            if node_id not in nodes:
+                merged.remove_node(node_id)
+    merged.nodes = list(merged.nodes) + [n for i, n in nodes.items()
+                                         if merged.find_node_by_id(i) is None]
+    merged.edges = list(edges.values())
+    report["nodes"] = len(nodes)
+    report["edges"] = len(edges)
+    return merged, report

@@ -526,6 +526,18 @@ class GraphProjector:
           link «graph → unit» in the graph of its source
           (:mod:`s3dgraphy.links`, E.D. 11 Oct 2026; :func:`_link_across`).
 
+        **The shared paradata are copied into every graph, by design** (E.D.,
+        12 Oct 2026, s3Dgraphy#36). Each saggio is a study of its own, so each
+        graph stays self-sufficient: it carries the documents, authors,
+        epochs and places it shares with the others, as copies with the SAME
+        node id. Documents of two graphs may point at the same files, and a
+        study's numbering of its documents is its own; there is no single
+        register of documents in the container. Summing the graphs therefore
+        counts a shared node or relation once per graph:
+        :func:`s3dgraphy.container.merge_graphs` gives the overall view, nodes
+        united by id (the identity of a shared node is its id, not its
+        label), edges by ``(source, type, target)``, the links as edges.
+
         ``hdto.graphs_at(container, site_place_id(sito, entity_uuid))`` finds
         every graph of the site, each saggio's going up ``is_in_location``.
         ``kwargs`` go to :meth:`populate_graph`.

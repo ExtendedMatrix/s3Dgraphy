@@ -5,6 +5,27 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
+- **`merge_graphs(container, graph_ids=None) -> (Graph, report)`**
+  (`s3dgraphy.container`, + `api`; E.D., 12 October 2026, s3Dgraphy#36): one
+  graph for the overall view of the graphs of a container. Nodes united by
+  id (the identity of a node shared between graphs is its id, not its
+  label), edges deduplicated by `(source, type, target)`, the links between
+  the merged graphs resolved into ordinary edges. The report counts what was
+  read, kept and folded, lists the links left out (other end not merged or
+  missing), and names every node with the same id and different content in
+  two graphs — which graph's version was kept, which fields diverge — and
+  every edge whose attributes differ: it does not choose in silence. Reads
+  only: the container is not touched, nothing is written to file. Measured
+  on four saggi of the pyArchInit fixture with a shared document: the
+  distinct relations are those of the one site graph, plus the two edges of
+  each saggio's study.
+- **`populate_container` copies the shared paradata into every graph, by
+  design** — now said in its docstring: each saggio is a study of its own
+  and its graph stays self-sufficient (documents, authors, epochs, places,
+  with the same id); documents of two graphs may point at the same files,
+  a study's document numbering is its own, no single register of documents
+  in the container. `merge_graphs` is the overall view.
+
 - **The code in the header of every graph** (E.D., 11 October 2026). In an
   em.json each graph section carries the study's code next to its
   `graph_id`: `graphs.<id>.code`, plus `code_proposed: true` while it is a

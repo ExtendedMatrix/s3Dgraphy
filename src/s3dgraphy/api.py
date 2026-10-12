@@ -646,6 +646,16 @@ def merge_containers(container, other):
     return merge_into_container(container, other)
 
 
+def merge_graphs(container, graph_ids: Optional[List[str]] = None):
+    """One graph for the overall view of the graphs of ``container`` (all,
+    or ``graph_ids``): nodes united by id, edges deduplicated by
+    ``(source, type, target)``, the links between them as edges. Returns
+    ``(graph, report)``; the container is not touched. See
+    :func:`s3dgraphy.container.merge_graphs`."""
+    from .container import merge_graphs as _merge
+    return _merge(container, graph_ids)
+
+
 # ── HDT-O: the study, its place, the heritage it is about ────────────────────
 
 def declare_hdto(graph: Graph, *, study=None, place=None, about=None,
