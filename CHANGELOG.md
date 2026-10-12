@@ -68,6 +68,29 @@ All notable changes to **s3dgraphy** are documented here.
     (its edges move to the group, the id kept as `importer_id`).
 
 ### Fixed
+- **A saggio's graph carries only the paradata its units reach** (E.D.,
+  12 October 2026, s3Dgraphy#36). `populate_container` put a chain of
+  paradata (property → extractor → document → author) into every saggio's
+  graph, also those none of whose units cite it: `_part_graph` dropped only
+  the nodes left without edges, and a chain cut from its unit (extractor ↔
+  document ↔ author) held itself together. Now a node goes with a saggio
+  only if its units reach it — along the edges as they point, and into a
+  paradata group from its members. A document cited by two saggi is still
+  copied into both; one cited only by another saggio is not. The toponym
+  chain, the epochs, the georeference, and whatever no unit of the site
+  reaches (a node without edges, a document tied only to an epoch) stay in
+  every graph. On the four-saggio fixture with a shared document, the saggio
+  that does not cite it has the 14 nodes it has without paradata (22
+  before); `merge_graphs` gives the same graph as before.
+- **The site graph wrote each unit's `has_first_epoch` twice** (s3Dgraphy#36).
+  The pyarchinit importer writes it (`<unit>_has_first_epoch_epoch::…`,
+  retargeted to the projector's epoch by `_adopt_importer_epoch`), then
+  `_enrich_into` wrote it again as `hfe_<unit>_<epoch>`. `_enrich_into` now
+  writes it only when the triple is missing, in the importer's form
+  `<unit>_has_first_epoch_<epoch>` — the form of `BaseImporter`, `compact`
+  and EMtools, and the one in the em.json files already saved; no reader
+  looks edges up by these ids. On the fixture: 43 edges, 38 distinct →
+  38, 38.
 - **`graphml_writer._graphs_of_site` and a site nobody has** (Enzo, #25):
   with two graphs, asking for a site the model does not find («Gamma») gave
   both. With more than one graph, or one graph that has a site place, an

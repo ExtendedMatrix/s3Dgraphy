@@ -1201,6 +1201,9 @@ class GraphProjector:
             except Exception:
                 rows = []
 
+            first_epochs = {(e.edge_source, e.edge_target)
+                            for e in graph.edges
+                            if e.edge_type == "has_first_epoch"}
             for (us_val, sito, area, unita_tipo, periodo_ini, fase_ini,
                  rapporti_raw, d_stratigrafica) in rows:
                 us_name = str(us_val) if us_val is not None else None
@@ -1251,8 +1254,16 @@ class GraphProjector:
                                 if p == p_int:
                                     epoch = e
                                     break
-                        if epoch is not None:
-                            edge_id = f"hfe_{us_node.node_id}_{epoch.node_id}"
+                        # One writer per edge (E.D., 12 Oct 2026): the
+                        # pyarchinit importer has usually written it
+                        # already, ``<unit>_has_first_epoch_epoch::…``,
+                        # retargeted by _adopt_importer_epoch. Its id is
+                        # kept (it is in the em.json files already saved);
+                        # a missing edge is written in the same form.
+                        if epoch is not None and (
+                                us_node.node_id, epoch.node_id) not in first_epochs:
+                            edge_id = (f"{us_node.node_id}_has_first_epoch_"
+                                       f"{epoch.node_id}")
                             if graph.find_edge_by_id(edge_id) is None:
                                 graph.add_edge(
                                     edge_id=edge_id,
@@ -1260,6 +1271,8 @@ class GraphProjector:
                                     edge_target=epoch.node_id,
                                     edge_type="has_first_epoch",
                                 )
+                                first_epochs.add((us_node.node_id,
+                                                  epoch.node_id))
 
                 # 2b. rapporti → topological edges
                 # The pyArchInit `rapporti` column is a Python-literal
@@ -1709,13 +1722,19 @@ def _part_graph(full, members: set, other_places: set, graph_id: str):
     """A copy of the site's graph ``full`` with one part of it: the units in
     ``members`` (one saggio's; or the units in no saggio).
 
-    Dropped: the other units, the places in ``other_places`` (the other
-    saggi), and then — to a fixpoint — every
-    node that had edges and has none left once those are gone (their
-    paradata, the groups left empty). Kept: the toponym chain and the site,
-    the epochs, the georeference. An edge between a kept and a dropped node
-    goes with the dropped one; a rapporto across two saggi comes back as a
-    link (:func:`_link_across`).
+    Dropped: the other units and the places in ``other_places`` (the other
+    saggi). Of the rest, a node goes with the part only if the part
+    **reaches** it (E.D., 12 Oct 2026, s3Dgraphy#36): from its units, along
+    the edges as they point (unit → property → extractor → document →
+    author; unit → place → site), and into a paradata group from its
+    members. A document cited by the units of two saggi is in both graphs
+    (the copy wanted); one cited only by another saggio's units is not,
+    nor its extractors, properties and authors. Kept in every graph: the
+    toponym chain, the epochs, the georeference, and whatever no unit of
+    the site reaches (a node with no edges, a document tied only to an
+    epoch). An edge between a kept and a dropped node goes with the
+    dropped one; a rapporto across two saggi comes back as a link
+    (:func:`_link_across`).
     """
     import copy
     graph = copy.deepcopy(full)
@@ -1728,22 +1747,45 @@ def _part_graph(full, members: set, other_places: set, graph_id: str):
             or (type(n).__name__ == "LocationNodeGroup"
                 and (getattr(n, "attributes", None) or {}).get("group_kind")
                 == "toponym")}
-    was_linked = ({e.edge_source for e in graph.edges}
-                  | {e.edge_target for e in graph.edges})
-    while True:
-        alive = [e for e in graph.edges
-                 if e.edge_source not in drop and e.edge_target not in drop]
-        linked = {e.edge_source for e in alive} | {e.edge_target for e in alive}
-        more = {n.node_id for n in graph.nodes
-                if n.node_id not in drop and n.node_id not in keep
-                and n.node_id in was_linked and n.node_id not in linked}
-        if not more:
-            break
-        drop |= more
-    graph.nodes = [n for n in graph.nodes if n.node_id not in drop]
+    units = ({n.node_id for n in graph.nodes if _is_us_node(n)} | set(members)
+             | {e.edge_source for e in graph.edges
+                if e.edge_type == "is_in_location"
+                and e.edge_target in other_places})
+    of_the_site = _reach(graph.edges, units | set(other_places), keep)
+    own = _reach(graph.edges, set(members), keep | drop)
+    graph.nodes = [n for n in graph.nodes
+                   if n.node_id not in drop
+                   and (n.node_id in own or n.node_id in keep
+                        or n.node_id not in of_the_site)]
+    alive = {n.node_id for n in graph.nodes}
     graph.edges = [e for e in graph.edges
-                   if e.edge_source not in drop and e.edge_target not in drop]
+                   if e.edge_source in alive and e.edge_target in alive]
     return graph
+
+
+#: the edge that points INTO a group from its members: a part that reaches
+#: the group reaches what it holds
+_MEMBER_EDGES = ("is_in_paradata_nodegroup",)
+
+
+def _reach(edges, start: set, stop: set) -> set:
+    """The nodes reached from ``start`` along the edges as they point, and
+    back along :data:`_MEMBER_EDGES`; a node in ``stop`` is reached but not
+    passed through."""
+    out: dict = {}
+    for e in edges:
+        out.setdefault(e.edge_source, []).append(e.edge_target)
+        if e.edge_type in _MEMBER_EDGES:
+            out.setdefault(e.edge_target, []).append(e.edge_source)
+    seen = set(start)
+    todo = [n for n in start if n not in stop]
+    while todo:
+        for nxt in out.get(todo.pop(), ()):
+            if nxt not in seen:
+                seen.add(nxt)
+                if nxt not in stop:
+                    todo.append(nxt)
+    return seen
 
 
 def _absorb_place(graph, twin_id: str, group_id: str, members: set) -> None:

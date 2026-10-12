@@ -61,10 +61,12 @@ def test_enzo_the_distinct_relations_are_the_site_graph_s(tmp_path):
     site = _WithParadata().populate_graph(db, sito="TestSite", groups=["saggio"],
                                           declare_study=False)
     assert container.graph_ids() == [f"TestSite|S{i}" for i in range(1, 5)]
-    # the copies: one id in every graph, the same content
+    # the copies: one id in every graph that cites it (not S3: E.D.,
+    # 12 Oct 2026, test_part_graph_paradata.py)
     for gid, g in container.graphs.items():
-        assert g.find_node_by_id("doc-D01") is not None, gid
-        assert g.find_node_by_id("auth-ED") is not None, gid
+        cites = gid != "TestSite|S3"
+        assert (g.find_node_by_id("doc-D01") is not None) == cites, gid
+        assert (g.find_node_by_id("auth-ED") is not None) == cites, gid
     before = {gid: (len(g.nodes), len(g.edges), copy.deepcopy(g.links))
               for gid, g in container.graphs.items()}
     summed = sum(len(g.edges) for g in container.graphs.values())
