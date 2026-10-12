@@ -474,7 +474,7 @@ def apply_delta(section: Dict[str, Any], descriptor: ConnectorDescriptor,
     so a rejected write cannot leave half a subgraph behind.
     """
     from ..crdt import apply_op_to_section, make_op
-    from ..editorial import now_iso
+    from ..editorial import now_op_iso
 
     verdict = guard_write(descriptor, capability, delta,
                           node_types={str(n.get("id")): str(n.get("node_type") or "")
@@ -488,8 +488,9 @@ def apply_delta(section: Dict[str, Any], descriptor: ConnectorDescriptor,
     # in `data`) are written by the CRDT only when the op carries a clock —
     # measured: without one, a write landed unattributed even though the author was
     # right there. The identity and the clock are never typed by a caller
-    # (`editorial.py`'s rule), so the seam supplies the clock.
-    at = at or now_iso()
+    # (`editorial.py`'s rule), so the seam supplies the clock — an operation's,
+    # to the millisecond (E.D., 12 Oct 2026); the CRDT keeps the stamps at the second.
+    at = at or now_op_iso()
     applied = {"nodes": 0, "edges": 0}
     refused: List[Dict[str, Any]] = []
 

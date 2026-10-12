@@ -862,3 +862,66 @@ def test_tie_property_200_merges_commute():
                 a["data"]["created_at"], a["data"]["created_by"])
         assert (crdt.canonical(crdt.merge_payloads(a, b).payload)
                 == crdt.canonical(crdt.merge_payloads(b, a).payload)), (i, a, b)
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# MICRO-pareggio, parte 2 — l'orologio delle operazioni al millisecondo
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# Decisione di E.D. (12 ottobre 2026, 18:50): `op.ts`, `field_clocks` e tombe al
+# millisecondo; `created_at` / `modified_at` restano al secondo. Un orologio al
+# secondo resta leggibile e confrontabile.
+
+FIXTURE_MS = (pathlib.Path(__file__).parent / "fixtures" / "crdt-parity-ms.json")
+
+
+def test_ms_a_second_and_a_millisecond_compare():
+    sec, ms = "2026-10-12T07:00:00Z", "2026-10-12T07:00:00.300Z"
+    assert crdt.compare_clocks(crdt.Clock(sec, ANNA), crdt.Clock(ms, ANNA)) == (-1, "newer")
+    assert crdt.clock_order(crdt.Clock(sec, ANNA), crdt.Clock(TS_MS, ANNA)) == 0
+
+
+def test_ms_three_hundred_milliseconds_later_wins_whoever_the_id():
+    """Prova 2 del tavolo: B scrive 300 ms dopo A, nello stesso secondo. Al
+    secondo vinceva l'iD minore (A, 5 volte su 5); al millisecondo vince B."""
+    a = crdt.make_op("update_field", node_id="US4", field="name", value="A",
+                     ts="2026-10-12T07:12:47.100Z", author=BRUNO)
+    b = crdt.make_op("update_field", node_id="US4", field="name", value="B",
+                     ts="2026-10-12T07:12:47.400Z", author=ANNA)
+    for order in ([a, b], [b, a]):
+        sec = _section(_node("US4"))
+        crdt.apply_ops_to_section(sec, order)
+        node = sec["nodes"][0]
+        assert node["name"] == "B"
+        assert node["data"]["field_clocks"]["name"]["ts"] == "2026-10-12T07:12:47.400Z"
+        # the editorial stamp stays at the second (and its hand is the one the
+        # declared tie-author picks inside that second)
+        assert node["data"]["modified_at"] == "2026-10-12T07:12:47Z"
+
+
+def test_ms_set_field_writes_the_op_clock_and_the_stamps_stay_at_the_second():
+    node = StratigraphicUnit("US1", name="US1")
+    api.set_field(node, "description", "muro", author=ANNA)
+    ts = node.data["field_clocks"]["description"]["ts"]
+    assert ts[19] == "." and ts.endswith("Z") and len(ts) == 24
+    sec = _section()
+    crdt.apply_op_to_section(sec, crdt.make_op(
+        "add_node", node=_node("N", lang="it"), ts="2026-10-12T07:00:00.300Z", author=ANNA))
+    data = sec["nodes"][0]["data"]
+    assert data["created_at"] == data["modified_at"] == "2026-10-12T07:00:00Z"
+
+
+def test_ms_parity_fixture_lands_on_the_digest():
+    """La seconda fixture condivisa: orologi al millisecondo, timbri al secondo."""
+    payload = json.loads(FIXTURE_MS.read_text(encoding="utf-8"))
+    ops = payload["ops"]
+    for order in (ops, [ops[1], ops[0], ops[2], ops[3], ops[4]],
+                  [ops[2], ops[1], ops[0], ops[3], ops[4]]):
+        section = copy.deepcopy(payload["section"])
+        crdt.apply_ops_to_section(section, order)
+        assert _digest(section) == payload["expected_digest"]
+    by_id = {n["id"]: n for n in section["nodes"]}
+    assert by_id["US4"]["name"] == "US 4 · B"
+    assert by_id["US5"]["description"] == "nuova", "'…:47.300Z' batte '…:47Z'"
+    assert by_id["US5"]["data"]["removed"]["ts"] == "2026-10-12T07:12:49.900Z"
+    assert section["edges"][0]["attributes"]["created_at"] == "2026-10-12T07:12:48Z"

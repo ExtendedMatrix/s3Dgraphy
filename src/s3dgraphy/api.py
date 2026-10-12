@@ -814,7 +814,7 @@ def set_field(node, field: str, value, *, author=None,
     coming out of its tombstone.
     """
     from .crdt import Clock, write_field
-    from .editorial import normalize_orcid, now_iso
+    from .editorial import normalize_orcid, now_op_iso
 
     if field in ("data.lang", "data.from_lang") and value not in (None, ""):
         # a node's language is a BCP 47 tag; an invalid one is refused, not stored
@@ -822,7 +822,7 @@ def set_field(node, field: str, value, *, author=None,
         check_language_tag(value)
     payload = _node_payload_view(node)
     write_field(payload, field, value,
-                Clock(ts=at or now_iso(), by=normalize_orcid(author)))
+                Clock(ts=at or now_op_iso(), by=normalize_orcid(author)))
     _write_back(node, payload, field)
 
 
@@ -836,10 +836,10 @@ def clear_field(node, field: str, *, author=None,
     correctly, and wrongly, hand the value back.
     """
     from .crdt import Clock, clear_field as _clear
-    from .editorial import normalize_orcid, now_iso
+    from .editorial import normalize_orcid, now_op_iso
 
     payload = _node_payload_view(node)
-    _clear(payload, field, Clock(ts=at or now_iso(), by=normalize_orcid(author)))
+    _clear(payload, field, Clock(ts=at or now_op_iso(), by=normalize_orcid(author)))
     _write_back(node, payload, field)
 
 
@@ -883,7 +883,7 @@ def stamp_field(node, field: str, *, by=None, at: Optional[str] = None) -> None:
     but `set_field` is the one to use: it cannot be half-done.
     """
     from .crdt import Clock, set_field_clock
-    from .editorial import normalize_orcid, now_iso
+    from .editorial import normalize_orcid, now_op_iso
 
     data = getattr(node, "data", None)
     if not isinstance(data, dict):
@@ -891,7 +891,7 @@ def stamp_field(node, field: str, *, by=None, at: Optional[str] = None) -> None:
         node.data = data
     payload = {"data": data}
     set_field_clock(payload, field,
-                    Clock(ts=at or now_iso(), by=normalize_orcid(by)))
+                    Clock(ts=at or now_op_iso(), by=normalize_orcid(by)))
 
 
 def unstamped_fields(node) -> List[str]:

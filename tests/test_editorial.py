@@ -219,3 +219,31 @@ def test_e4_the_round_trip_stays_isomorphic(tmp_path):
     rebuilt = importer.parse(ttl1)
     ttl2 = _export(rebuilt[0], tmp_path / "b.ttl")
     assert isomorphic(to_isomorphic(_rdf(ttl1)), to_isomorphic(_rdf(ttl2)))
+
+
+# ── E5 · the clock of an operation is to the millisecond (E.D., 12 Oct 2026) ──
+
+def test_e5_the_op_clock_is_utc_to_the_millisecond():
+    from s3dgraphy.editorial import now_op_iso
+    stamp = now_op_iso()
+    assert stamp.endswith("Z") and len(stamp) == len("2026-10-12T07:12:47.300Z")
+    assert stamp[19] == "." and stamp[20:23].isdigit()
+
+
+def test_e5_an_op_instant_keeps_its_milliseconds_and_a_second_keeps_its_spelling():
+    from s3dgraphy.editorial import normalize_instant, normalize_op_instant
+    # rdflib's spelling of an instant at the millisecond
+    assert normalize_op_instant("2026-10-12T07:12:47.300000+00:00") == "2026-10-12T07:12:47.300Z"
+    assert normalize_op_instant("2026-10-12T07:12:47.300Z") == "2026-10-12T07:12:47.300Z"
+    assert normalize_op_instant("2026-10-12T07:12:47+00:00") == "2026-10-12T07:12:47Z"
+    assert normalize_op_instant("2026-10-12T09:12:47.300+02:00") == "2026-10-12T09:12:47.300+02:00"
+    # the editorial stamps stay at the second
+    assert normalize_instant("2026-10-12T07:12:47.300Z") == "2026-10-12T07:12:47Z"
+
+
+def test_e5_a_tombstone_comes_back_from_rdf_with_its_milliseconds(tmp_path):
+    g = _stamped_graph()
+    g.find_node_by_id("US1").data["removed"] = {"ts": "2026-10-12T07:12:49.900Z", "by": ORCID}
+    rebuilt = RDFImporter().parse(_export(g, tmp_path / "t.ttl"))
+    back = rebuilt[0].find_node_by_id("US1").data["removed"]
+    assert back == {"ts": "2026-10-12T07:12:49.900Z", "by": ORCID}

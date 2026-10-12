@@ -91,12 +91,54 @@ def normalize_auth(value: Any) -> Optional[Dict[str, str]]:
 def now_iso() -> str:
     """The current instant, UTC, second precision, ISO-8601 with a ``Z``.
 
-    Second precision on purpose: these stamps order edits and answer "when was
-    this touched", and microseconds would only add noise to every diff of every
-    em.json.
+    Second precision on purpose: these stamps (``created_at``, ``modified_at``)
+    answer "when was this touched", and microseconds would only add noise to
+    every diff of every em.json. What ORDERS two hands is the clock of an
+    operation, :func:`now_op_iso`.
     """
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace(
         "+00:00", "Z")
+
+
+def _op_instant(moment: datetime) -> str:
+    return (moment.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
+            + f".{moment.microsecond // 1000:03d}Z")
+
+
+def now_op_iso() -> str:
+    """The clock of an OPERATION: UTC, MILLISECOND precision, ``…:SS.mmmZ``.
+
+    E.D., 12 Oct 2026: the clock that orders two hands — an op's ``ts``, a
+    field's ``data.field_clocks.*.ts``, a tombstone — goes to the millisecond.
+    Measured on the table that morning: at the second, a correction made 300 ms
+    after another, in the same second, lost to it five times out of five
+    (decided by the smaller ORCID), and nobody saw. The editorial stamps stay at
+    the second (:func:`now_iso`). A clock at the second is still read and
+    compared: ``…:00Z`` is the same instant as ``…:00.000Z`` and earlier than
+    ``…:00.300Z``.
+    """
+    return _op_instant(datetime.now(timezone.utc))
+
+
+def normalize_op_instant(value: Any) -> Optional[str]:
+    """:func:`normalize_instant` for an operation's clock: the UTC spellings
+    come back as ``…:SS.mmmZ``, keeping the milliseconds — or as ``…:SSZ`` when
+    there are none, so that a clock written at the second keeps its spelling.
+    (``…:00.000Z`` through rdflib comes back as ``…:00Z``: the same instant.)"""
+    if value is None:
+        return None
+    text = str(value).strip()
+    if not text:
+        return None
+    try:
+        parsed = datetime.fromisoformat(text.replace("Z", "+00:00"))
+    except ValueError:
+        return text
+    if parsed.tzinfo is None or parsed.utcoffset() != timezone.utc.utcoffset(None):
+        return text
+    if parsed.microsecond // 1000 == 0:
+        return normalize_instant(text)
+    return _op_instant(parsed)
 
 
 def normalize_orcid(value: Any) -> Optional[str]:

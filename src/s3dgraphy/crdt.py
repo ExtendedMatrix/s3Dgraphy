@@ -169,6 +169,22 @@ def compare_clocks(a: Clock, b: Clock) -> Tuple[int, str]:
     return (1, "tie-author") if ka < kb else (-1, "tie-author")
 
 
+def editorial_clock(clock: Clock) -> Clock:
+    """The clock as an EDITORIAL stamp records it: at the second.
+
+    Two precisions, one decision (E.D., 12 Oct 2026): the clock of an operation
+    (``op.ts``, ``field_clocks``, tombstones) is to the millisecond, because it
+    orders two hands; ``created_at`` / ``modified_at`` stay at the second
+    (:func:`s3dgraphy.editorial.now_iso`). Every stamp the CRDT writes from an
+    op's clock goes through here, and is compared at the second too — so two
+    hands in one second settle the stamp by the declared ``tie-author``, not by
+    arrival."""
+    if not clock.stamped:
+        return clock
+    from .editorial import normalize_instant
+    return Clock(ts=normalize_instant(clock.ts), by=clock.by)
+
+
 def clock_order(a: Clock, b: Clock) -> int:
     """Just the ordering of two clocks (-1 / 0 / 1), without the reason."""
     return compare_clocks(a, b)[0]
@@ -228,14 +244,17 @@ def field_clock(payload: Dict[str, Any], field_name: str) -> Clock:
     """
     data = payload.get("data") if isinstance(payload.get("data"), dict) else {}
     clocks = data.get(FIELD_CLOCKS_KEY)
+    # the two fallbacks are editorial stamps, so they are read at the second
+    # (`editorial_clock`) — as the CRDT writes them since 12 Oct 2026, and also
+    # when an older tool wrote one with its milliseconds
     if isinstance(clocks, dict):
         if field_name in clocks:
             return Clock.from_dict(clocks[field_name])
         if clocks:
             born = creation_stamp(payload)
             if born.stamped:
-                return born
-    return node_stamp(payload)
+                return editorial_clock(born)
+    return editorial_clock(node_stamp(payload))
 
 
 def is_stale_copy(payload: Dict[str, Any], field_name: str) -> bool:
@@ -658,7 +677,8 @@ def merge_payloads(mine: Dict[str, Any], theirs: Dict[str, Any]) -> MergeOutcome
     _merge_creation(merged, mine, theirs)
     last = Clock()
     for clock in list(winning_clocks.values()) + [node_stamp(mine), node_stamp(theirs)]:
-        last = newer(last, clock)
+        # at the second, like every stamp an op leaves (`_stamp_payload`)
+        last = newer(last, editorial_clock(clock))
     if last.stamped:
         data = merged.setdefault("data", {})
         data["modified_at"] = last.ts
@@ -1235,11 +1255,13 @@ def apply_op_to_section(section: Dict[str, Any], op: Dict[str, Any], *,
             # where `newer` picks the one spelling
             set_field_clock(existing, name, clock, removed=gone)
         if order < 0 or (order == 0 and same_value):
-            # the state is newer (or this is the same op again): nothing moves
-            if order == 0:
-                # …but the last-hand stamp sees this instant like every other,
-                # so its spelling does not depend on which op came first
-                _stamp_payload(existing, clock, creation=False, auth=_op_auth(op)[0])
+            # the state is newer (or this is the same op again): nothing moves…
+            # but the last-hand stamp sees this op like every other. The stamp is
+            # at the second and the field at the millisecond, so a stale op can
+            # still TIE the stamp — and if only applied ops counted, who is
+            # the last hand of that second would depend on the arrival (measured,
+            # 348 pairs in 20000). Counted always, the stamp is the max of all.
+            _stamp_payload(existing, clock, creation=False, auth=_op_auth(op)[0])
             return OpResult(False, "stale" if order < 0 else "idempotent", node_id)
         if order == 0 and not same_value and reason == "unstamped":
             # no clocks anywhere: the arriving value is taken, and declared
@@ -1318,9 +1340,12 @@ def apply_op_to_section(section: Dict[str, Any], op: Dict[str, Any], *,
                 learned = _merge_declared(attrs, declared)
                 # the relation was created by its OLDEST add, whichever arrives
                 # first: without this two adds converge only in one order
-                born = Clock(ts=attrs.get("created_at"), by=attrs.get("created_by"))
-                if clock.stamped and (not born.stamped or clock_order(clock, born) < 0):
-                    attrs.update({"created_at": clock.ts, "created_by": clock.by})
+                # (a stamp, so at the second: `editorial_clock`)
+                born = editorial_clock(Clock(ts=attrs.get("created_at"),
+                                             by=attrs.get("created_by")))
+                stamp = editorial_clock(clock)
+                if stamp.stamped and (not born.stamped or clock_order(stamp, born) < 0):
+                    attrs.update({"created_at": stamp.ts, "created_by": stamp.by})
                     learned = True
                 mark = Clock.from_dict(attrs.get(REMOVED_KEY))
                 if mark.stamped and clock_order(clock, mark) > 0:
@@ -1333,7 +1358,8 @@ def apply_op_to_section(section: Dict[str, Any], op: Dict[str, Any], *,
                         else OpResult(False, "idempotent"))
         attrs = dict(declared)
         if clock.stamped:
-            attrs.update({"created_at": clock.ts, "created_by": clock.by})
+            stamp = editorial_clock(clock)
+            attrs.update({"created_at": stamp.ts, "created_by": stamp.by})
         if attrs:
             edge["attributes"] = attrs
         edges.append(edge)
@@ -1416,6 +1442,9 @@ def _stamp_payload(payload: Dict[str, Any], clock: Clock, *, creation: bool,
     """
     if not clock.stamped:
         return
+    # the op's clock is to the millisecond; the stamps it leaves stay at the
+    # second (E.D., 12 Oct 2026), compared as written — at the second
+    clock = editorial_clock(clock)
     data = payload.setdefault("data", {})
     if creation and not data.get("created_at"):
         data["created_at"] = clock.ts
@@ -1423,7 +1452,7 @@ def _stamp_payload(payload: Dict[str, Any], clock: Clock, *, creation: bool,
             data["created_by"] = clock.by
             if auth:
                 data["created_auth"] = dict(auth)
-    current = node_stamp(payload)
+    current = editorial_clock(node_stamp(payload))
     if newer(clock, current) is clock:
         data["modified_at"] = clock.ts
         if clock.by:

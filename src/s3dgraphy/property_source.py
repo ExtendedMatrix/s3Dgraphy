@@ -508,7 +508,9 @@ def remove_keeping_trace(graph, node_id: str, *, by: Optional[str] = None,
     if node is None:
         raise KeyError(f"no node {node_id!r}")
     deps = dependents_of(graph, node_id)
-    _ensure_data(node)[REMOVED_KEY] = Clock(ts=at or _now(), by=by).as_dict()
+    from .editorial import now_op_iso
+    # the CRDT's tombstone: an operation's clock, to the millisecond
+    _ensure_data(node)[REMOVED_KEY] = Clock(ts=at or now_op_iso(), by=by).as_dict()
     return {"node": node_id, "removed": node.data[REMOVED_KEY], "dependents": deps}
 
 
