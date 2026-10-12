@@ -1,0 +1,161 @@
+{
+  "note": "MICRO-pareggio (12 ottobre 2026) · fixture condivisa Py<->JS: a orologio identico (ts e autore) decide lo stato, non l'arrivo. tie-value: vince il maggiore JSON canonico in ordine di code point (byte UTF-8); uno svuotamento sta sotto ogni valore. tie-explicit: l'orologio proprio del campo batte il ripiego sul timbro del nodo. Lo stesso istante scritto in due grafie ('…:00Z', '…:00.000Z'): tiene la stringa maggiore. Ogni ordine delle ops arriva a expected_digest.",
+  "section": {
+    "graph_id": "tavolo",
+    "name": "Tavolo",
+    "nodes": [
+      {
+        "id": "N1",
+        "node_type": "US",
+        "name": "0",
+        "data": {
+          "created_at": "2026-10-12T07:00:00Z",
+          "created_by": "0000-0002-1825-0097",
+          "field_clocks": {
+            "name": {
+              "ts": "2026-10-12T07:00:00Z",
+              "by": "0000-0002-1825-0097"
+            }
+          }
+        }
+      },
+      {
+        "id": "N2",
+        "node_type": "US",
+        "name": "y",
+        "data": {
+          "created_at": "2026-10-12T07:00:00Z",
+          "created_by": "0000-0002-1825-0097"
+        }
+      }
+    ],
+    "edges": []
+  },
+  "ops": [
+    {
+      "op": "update_field",
+      "node_id": "N1",
+      "field": "name",
+      "ts": "2026-10-12T07:00:00Z",
+      "author": "0000-0002-1825-0097",
+      "value": "P"
+    },
+    {
+      "op": "update_field",
+      "node_id": "N1",
+      "field": "name",
+      "ts": "2026-10-12T07:00:00Z",
+      "author": "0000-0002-1825-0097",
+      "value": "Q"
+    },
+    {
+      "op": "update_field",
+      "node_id": "N1",
+      "field": "name",
+      "ts": "2026-10-12T07:00:00.000Z",
+      "author": "0000-0002-1825-0097",
+      "value": "R"
+    },
+    {
+      "op": "update_field",
+      "node_id": "N1",
+      "field": "description",
+      "ts": "2026-10-12T07:00:00Z",
+      "author": "0000-0002-1825-0097",
+      "value": "d1"
+    },
+    {
+      "op": "update_field",
+      "node_id": "N1",
+      "field": "description",
+      "ts": "2026-10-12T07:00:00Z",
+      "author": "0000-0002-1825-0097",
+      "remove": true
+    },
+    {
+      "op": "update_field",
+      "node_id": "N2",
+      "field": "name",
+      "ts": "2026-10-12T07:00:00Z",
+      "author": "0000-0002-1825-0097",
+      "value": "Z"
+    },
+    {
+      "op": "update_field",
+      "node_id": "N2",
+      "field": "name",
+      "ts": "2026-10-12T07:00:00Z",
+      "author": "0000-0002-1825-0097",
+      "value": "A"
+    },
+    {
+      "op": "update_field",
+      "node_id": "N2",
+      "field": "data.nota",
+      "ts": "2026-10-12T07:00:00Z",
+      "author": "0000-0002-1825-0097",
+      "value": "￿"
+    },
+    {
+      "op": "update_field",
+      "node_id": "N2",
+      "field": "data.nota",
+      "ts": "2026-10-12T07:00:00Z",
+      "author": "0000-0002-1825-0097",
+      "value": "😀"
+    },
+    {
+      "op": "update_field",
+      "node_id": "N1",
+      "field": "data.quota",
+      "ts": "2026-10-12T07:05:00Z",
+      "author": "0000-0002-1825-0097",
+      "value": "1.20"
+    },
+    {
+      "op": "update_field",
+      "node_id": "N1",
+      "field": "data.quota",
+      "ts": "2026-10-12T07:05:00.000Z",
+      "author": "0000-0002-1825-0097",
+      "value": "1.20"
+    },
+    {
+      "op": "add_node",
+      "id": "N3",
+      "node": {
+        "id": "N3",
+        "node_type": "US",
+        "name": "M1",
+        "data": {
+          "lang": "it",
+          "created_at": "2026-10-12T07:00:00Z",
+          "created_by": "0000-0002-1825-0097",
+          "modified_at": "2026-10-12T07:00:00Z",
+          "modified_by": "0000-0002-1825-0097"
+        }
+      },
+      "ts": "2026-10-12T07:00:00Z",
+      "author": "0000-0002-1825-0097"
+    },
+    {
+      "op": "add_node",
+      "id": "N3",
+      "node": {
+        "id": "N3",
+        "node_type": "US",
+        "name": "M2",
+        "data": {
+          "lang": "it",
+          "created_at": "2026-10-12T07:00:00Z",
+          "created_by": "0000-0002-1825-0097",
+          "modified_at": "2026-10-12T07:00:00Z",
+          "modified_by": "0000-0002-1825-0097"
+        }
+      },
+      "ts": "2026-10-12T07:00:00Z",
+      "author": "0000-0002-1825-0097"
+    }
+  ],
+  "expected_digest": "sha256:fa14f72accf5"
+}

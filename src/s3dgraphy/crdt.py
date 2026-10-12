@@ -17,7 +17,10 @@ Three pieces:
 (AUDIT1). Comparison is by instant, then by author, lexicographically smaller
 first. The tie-break is arbitrary and DECLARED (``tie-author``); what it must
 never be is "whichever I saw last", because then two people merging the same two
-files get different projects and no way to tell.
+files get different projects and no way to tell. The SAME clock on two different
+values (one hand, one instant: a connector's batch, a burst of renames) is
+settled by the value itself (``tie-value``, :func:`tie_rank`) — measured on 12
+Oct 2026, it used to be settled by arrival, and two copies kept two names.
 
 **Tombstones.** A deletion is not an absence, it is a mark: ``data.removed =
 {ts, by}``, inline, keeping the id. Views hide it; the merge SEES it. Without
@@ -73,7 +76,16 @@ OPS = ("add_node", "update_field", "remove_node", "add_edge", "remove_edge")
 #:                   The incoming value is kept (P3's behaviour) and the reason
 #:                   exists so nobody reads that as a judgement.
 #: ``resurrected`` — an edit later than a deletion brought the node back.
-FIELD_REASONS = ("newer", "tie-author", "unstamped", "resurrected")
+#: ``tie-explicit``— same instant, same author, and only ONE side carries the
+#:                   field's own clock (the other is dated by its node's stamp):
+#:                   the field's own clock wins — a field is written on a node
+#:                   that is already there.
+#: ``tie-value``   — same instant, same author, both clocks the field's own, two
+#:                   different values: the greater :func:`tie_rank` wins. Not a
+#:                   judgement — the one choice every copy makes whatever order
+#:                   the two arrive in.
+FIELD_REASONS = ("newer", "tie-author", "unstamped", "resurrected",
+                 "tie-explicit", "tie-value")
 
 
 # ── clocks ───────────────────────────────────────────────────────────────────
@@ -163,7 +175,13 @@ def clock_order(a: Clock, b: Clock) -> int:
 
 
 def newer(a: Clock, b: Clock) -> Clock:
-    return a if clock_order(a, b) >= 0 else b
+    order = clock_order(a, b)
+    if order == 0:
+        # the same instant may be spelt two ways ("…:00Z", "…:00.000Z": a clock
+        # at the second and one at the millisecond): ONE spelling, whichever
+        # side is asked, or two copies differ by bytes nobody wrote
+        return a if (a.ts or "", a.by or "") >= (b.ts or "", b.by or "") else b
+    return a if order > 0 else b
 
 
 # ── reading a payload ────────────────────────────────────────────────────────
@@ -444,6 +462,32 @@ def canonical(value: Any) -> str:
                       ensure_ascii=False, default=str)
 
 
+def tie_rank(value: Any, removed: bool = False) -> Tuple[int, bytes]:
+    """Where a field's state stands when two states carry the SAME clock.
+
+    The rule of ``tie-value``: the greater rank wins. An emptying ranks BELOW
+    every value (at the same instant a value is kept rather than lost); values
+    rank by the UTF-8 bytes of their :func:`canonical` JSON, which is code-point
+    order. A twin in another language must compare code points too — not
+    UTF-16 units, which order an emoji before ``"\\uffff"``."""
+    if removed:
+        return (0, b"")
+    return (1, canonical(value).encode("utf-8"))
+
+
+def _settle_tie(mine: Dict[str, Any], theirs: Dict[str, Any], name: str,
+                v_mine: Any, v_theirs: Any, mine_gone: bool,
+                theirs_gone: bool) -> Tuple[str, str]:
+    """``(winning side, reason)`` for two different states of one field under
+    the SAME clock (instant and author): ``tie-explicit``, else ``tie-value``."""
+    explicit_mine = clock_source(mine, name) == "field_clock"
+    explicit_theirs = clock_source(theirs, name) == "field_clock"
+    if explicit_mine != explicit_theirs:
+        return ("mine" if explicit_mine else "theirs"), "tie-explicit"
+    return ("mine" if tie_rank(v_mine, mine_gone) > tie_rank(v_theirs, theirs_gone)
+            else "theirs"), "tie-value"
+
+
 # ── the report ───────────────────────────────────────────────────────────────
 
 @dataclass
@@ -501,11 +545,9 @@ def merge_payloads(mine: Dict[str, Any], theirs: Dict[str, Any]) -> MergeOutcome
         "id": node_id,
         # identity is not a register: a type is decided when the node is made.
         # If the two disagree, the newer node stamp decides — and nothing else in
-        # this module lets identity race.
-        "node_type": (theirs.get("node_type")
-                      if clock_order(node_stamp(theirs), node_stamp(mine)) > 0
-                      else mine.get("node_type")) or mine.get("node_type")
-                     or theirs.get("node_type"),
+        # this module lets identity race. Under the same stamp the greater type
+        # name decides, so that the answer does not depend on which side is mine.
+        "node_type": _merge_type(mine, theirs),
     }
     outcome = MergeOutcome(payload=merged)
 
@@ -558,7 +600,12 @@ def merge_payloads(mine: Dict[str, Any], theirs: Dict[str, Any]) -> MergeOutcome
             # the date did not decide: the incoming state is kept, as it always
             # was, and the reason says the choice was not a judgement
             win_side = "theirs"
-        elif order >= 0:
+        elif order == 0:
+            # the SAME clock on two different states: the state decides, so
+            # that the result does not depend on which side is `mine`
+            win_side, reason = _settle_tie(mine, theirs, name, v_mine, v_theirs,
+                                           mine_gone, theirs_gone)
+        elif order > 0:
             win_side = "mine"
         else:
             win_side = "theirs"
@@ -645,6 +692,16 @@ def merge_payloads(mine: Dict[str, Any], theirs: Dict[str, Any]) -> MergeOutcome
     return outcome
 
 
+def _merge_type(mine: Dict[str, Any], theirs: Dict[str, Any]) -> Any:
+    a, b = mine.get("node_type"), theirs.get("node_type")
+    if not a or not b:
+        return a or b
+    order = clock_order(node_stamp(theirs), node_stamp(mine))
+    if order == 0:
+        return max(str(a), str(b))
+    return b if order > 0 else a
+
+
 def _merge_creation(merged: Dict[str, Any], mine: Dict[str, Any],
                     theirs: Dict[str, Any]) -> None:
     def creation(payload: Dict[str, Any]) -> Clock:
@@ -656,7 +713,14 @@ def _merge_creation(merged: Dict[str, Any], mine: Dict[str, Any],
     a, b = creation(mine), creation(theirs)
     if not a.stamped and not b.stamped:
         return
-    first = a if (not b.stamped or clock_order(a, b) <= 0) and a.stamped else b
+    if not b.stamped:
+        first = a
+    elif not a.stamped:
+        first = b
+    else:
+        order = clock_order(a, b)
+        # the earlier creation; under one clock, the one spelling `newer` picks
+        first = newer(a, b) if order == 0 else (a if order < 0 else b)
     data = merged.setdefault("data", {})
     data["created_at"] = first.ts
     if first.by:
@@ -1160,12 +1224,47 @@ def apply_op_to_section(section: Dict[str, Any], op: Dict[str, Any], *,
         wants_gone = op.get("remove") is True
         same_value = (gone == wants_gone
                       and canonical(get_field(existing, name)) == canonical(op.get("value")))
+        explicit = clock_source(existing, name) == "field_clock"
+        if order == 0 and same_value and reason == "tie-author" and (
+                not explicit or (newer(clock, current) is clock and clock.ts != current.ts)):
+            # the same value under the same clock: no content moves, but the
+            # field takes its OWN clock — against the node-stamp fallback it is
+            # still a write, and without the record an emptying under the same
+            # clock would win or lose by arrival (measured, 45 pairs in 20000);
+            # or the same instant spelt otherwise ("…:00Z" and "…:00.000Z"),
+            # where `newer` picks the one spelling
+            set_field_clock(existing, name, clock, removed=gone)
         if order < 0 or (order == 0 and same_value):
             # the state is newer (or this is the same op again): nothing moves
+            if order == 0:
+                # …but the last-hand stamp sees this instant like every other,
+                # so its spelling does not depend on which op came first
+                _stamp_payload(existing, clock, creation=False, auth=_op_auth(op)[0])
             return OpResult(False, "stale" if order < 0 else "idempotent", node_id)
         if order == 0 and not same_value and reason == "unstamped":
             # no clocks anywhere: the arriving value is taken, and declared
             pass
+        if order == 0 and reason == "tie-author":
+            # the SAME clock (instant and author) on a different state. Against
+            # a node-stamp fallback the op's own clock wins (`tie-explicit`);
+            # against the field's own clock the state decides (`tie-value`),
+            # never the arrival — measured on 12 Oct 2026, a burst of renames in
+            # one millisecond left the room on the last and EMStudio on the first
+            if not explicit:
+                reason = "tie-explicit"
+            elif tie_rank(op.get("value"), wants_gone) < tie_rank(get_field(existing, name), gone):
+                # the value stays; the node's last-hand stamp still sees this
+                # instant, so its spelling does not depend on which op won
+                _stamp_payload(existing, clock, creation=False, auth=_op_auth(op)[0])
+                return OpResult(False, "tie-value", node_id, [FieldOutcome(
+                    node_id=node_id, field=name, reason="tie-value",
+                    winner={"by": current.by, "at": current.ts, "side": "state",
+                            "removed": gone},
+                    loser={"by": clock.by, "at": clock.ts, "side": "op",
+                           "removed": wants_gone},
+                    loser_value=None if wants_gone else op.get("value"))])
+            else:
+                reason = "tie-value"
         loser_value = get_field(existing, name)
         # ONE act, the same one `api.set_field` performs: a value with its clock,
         # or an emptying with its tombstone. `remove: true` (or a null value with
@@ -1325,7 +1424,7 @@ def _stamp_payload(payload: Dict[str, Any], clock: Clock, *, creation: bool,
             if auth:
                 data["created_auth"] = dict(auth)
     current = node_stamp(payload)
-    if clock_order(clock, current) >= 0:
+    if newer(clock, current) is clock:
         data["modified_at"] = clock.ts
         if clock.by:
             data["modified_by"] = clock.by
@@ -1333,6 +1432,12 @@ def _stamp_payload(payload: Dict[str, Any], clock: Clock, *, creation: bool,
                 data["modified_auth"] = dict(auth)
             else:
                 data.pop("modified_auth", None)
+        else:
+            # a later hand nobody named: the previous hand is not the last any
+            # more, and leaving it beside this instant made a clock nobody had
+            # — one that depended on the order (measured, 12 Oct 2026)
+            data.pop("modified_by", None)
+            data.pop("modified_auth", None)
 
 
 def _op_auth(op: Dict[str, Any]):

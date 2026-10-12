@@ -16,6 +16,7 @@ arrivare allo stesso digest. Due implementazioni che non si vedono mai devono
 poter essere confrontate su qualcosa.
 """
 
+import copy
 import json
 import pathlib
 
@@ -42,8 +43,11 @@ FIXTURE = (pathlib.Path(__file__).parent / "fixtures" / "crdt-parity.json")
 
 
 def _section(*nodes, graph_id="scavo"):
+    # a DEEP copy: with `dict(n)` the `data` of a shared base node was one dict
+    # in every section, and the clocks one order wrote leaked into the next
+    # (hidden while the same clock went to the last arrival; 12 Oct 2026)
     return {"graph_id": graph_id, "name": "Scavo",
-            "nodes": [dict(n) for n in nodes], "edges": []}
+            "nodes": [copy.deepcopy(n) for n in nodes], "edges": []}
 
 
 def _node(node_id="US1", **data):
@@ -667,3 +671,194 @@ def test_add_edge_carries_declared_attributes_and_converges():
     section2 = json.loads(FIXTURE_C.read_text(encoding="utf-8"))["section"]
     crdt.apply_ops_to_section(section2, list(reversed(payload["ops"])))
     assert _digest(section2) == payload["expected_digest"], "l'ordine inverso arriva allo stesso posto"
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# MICRO-pareggio (12 ottobre 2026) — a orologio identico decide lo stato
+# ═══════════════════════════════════════════════════════════════════════════
+#
+# La prova del tavolo (prove 2 e 3): stesso `ts`, stesso autore, valore diverso
+# → la stanza teneva l'ultimo arrivato, EMStudio il primo. Due copie, due nomi.
+# La regola: decide lo stato (`tie-value`: il maggiore JSON canonico in ordine
+# di code point, uno svuotamento sotto ogni valore; `tie-explicit`: l'orologio
+# proprio del campo batte il ripiego sul timbro del nodo), mai l'arrivo.
+
+import itertools
+import random
+
+FIXTURE_TIE = (pathlib.Path(__file__).parent / "fixtures" / "crdt-parity-tie.json")
+TS_MS = "2026-10-12T07:00:00.000Z"
+
+
+def _probe(order):
+    """La prova del container, così com'è nel MICRO."""
+    sec = {"nodes": [{"id": "N", "node_type": "US", "name": "x", "data": {}}], "edges": []}
+    out = []
+    for v in order:
+        r = crdt.apply_op_to_section(sec, {"op": "update_field", "node_id": "N",
+                                           "field": "name", "value": v,
+                                           "ts": TS_MS, "author": ANNA})
+        out.append(r.reason)
+    return sec["nodes"][0]["name"], out
+
+
+def test_tie_the_probe_lands_on_one_value_in_both_orders():
+    assert _probe(["P", "Q"]) == ("Q", ["set", "set"])
+    assert _probe(["Q", "P"]) == ("Q", ["set", "tie-value"])
+
+
+def test_tie_value_is_said_and_the_loser_is_reported():
+    sec = _section(_node("N"))
+    crdt.apply_op_to_section(sec, crdt.make_op("update_field", node_id="N", field="name",
+                                               value="Q", ts=T2, author=ANNA))
+    r = crdt.apply_op_to_section(sec, crdt.make_op("update_field", node_id="N", field="name",
+                                                   value="P", ts=T2, author=ANNA))
+    assert (r.applied, r.reason) == (False, "tie-value")
+    assert crdt.refusal_is_news(r.reason), "il valore di qualcuno non è stato scritto: si dice"
+    assert r.fields[0].reason == "tie-value" and r.fields[0].loser_value == "P"
+    r = crdt.apply_op_to_section(sec, crdt.make_op("update_field", node_id="N", field="name",
+                                                   value="R", ts=T2, author=ANNA))
+    assert (r.applied, r.fields[0].reason) == (True, "tie-value")
+
+
+def test_tie_an_emptying_ranks_below_every_value():
+    for order in ((True, False), (False, True)):
+        sec = _section(_node("N"))
+        for remove in order:
+            op = {"op": "update_field", "node_id": "N", "field": "description",
+                  "ts": T2, "author": ANNA}
+            op.update({"remove": True} if remove else {"value": ""})
+            crdt.apply_op_to_section(sec, op)
+        assert sec["nodes"][0]["description"] == "", "anche la stringa vuota è un valore"
+        assert crdt.field_tombstone(sec["nodes"][0], "description") is None
+
+
+def test_tie_explicit_a_node_born_and_renamed_in_one_instant_keeps_the_rename():
+    """Un connettore o un import che crea e subito corregge, con un solo istante:
+    l'orologio del campo batte il timbro del nodo, come prima del MICRO."""
+    sec = _section()
+    crdt.apply_op_to_section(sec, crdt.make_op("add_node", node=_node("N", lang="it"),
+                                               ts=T2, author=ANNA))
+    r = crdt.apply_op_to_section(sec, crdt.make_op("update_field", node_id="N", field="name",
+                                                   value="A", ts=T2, author=ANNA))
+    assert r.applied and r.fields[0].reason == "tie-explicit"
+    assert sec["nodes"][0]["name"] == "A"
+
+
+def test_tie_merge_payloads_is_commutative_under_one_clock():
+    a = {"id": "N", "node_type": "US", "name": "P",
+         "data": {"field_clocks": {"name": {"ts": T2, "by": ANNA}}}}
+    b = {"id": "N", "node_type": "USV", "name": "Q",
+         "data": {"field_clocks": {"name": {"ts": T2, "by": ANNA}}}}
+    ab, ba = crdt.merge_payloads(a, b), crdt.merge_payloads(b, a)
+    assert crdt.canonical(ab.payload) == crdt.canonical(ba.payload)
+    assert ab.payload["name"] == "Q" and [f.reason for f in ab.fields] == ["tie-value"]
+    # anche il tipo, sotto lo stesso timbro del nodo
+    t1 = {"id": "N", "node_type": "US", "data": {"created_at": T2, "created_by": ANNA}}
+    t2 = {"id": "N", "node_type": "USV", "data": {"created_at": T2, "created_by": ANNA}}
+    assert crdt.merge_payloads(t1, t2).payload["node_type"] == "USV"
+    assert crdt.merge_payloads(t2, t1).payload["node_type"] == "USV"
+
+
+def test_tie_the_merge_and_the_op_agree():
+    """Lo stesso pareggio per le due strade: chi applica l'op e chi fonde il file
+    arrivano allo stesso nome."""
+    born = _node("N", created_at=T2, created_by=ANNA)
+    by_op = _section(born)
+    crdt.apply_op_to_section(by_op, crdt.make_op("update_field", node_id="N", field="name",
+                                                 value="A", ts=T2, author=ANNA))
+    merged = crdt.merge_payloads(copy.deepcopy(born), by_op["nodes"][0]).payload
+    assert merged["name"] == by_op["nodes"][0]["name"] == "A"
+
+
+def test_tie_parity_fixture_every_order_lands_on_the_digest():
+    """La fixture condivisa (EMStudio la copia in `testdata/`): avanti, indietro e
+    duecento ordini a caso arrivano allo stesso digest."""
+    payload = json.loads(FIXTURE_TIE.read_text(encoding="utf-8"))
+    rng = random.Random(20261012)
+    orders = [payload["ops"], list(reversed(payload["ops"]))]
+    for _ in range(200):
+        ops = list(payload["ops"])
+        rng.shuffle(ops)
+        orders.append(ops)
+    for ops in orders:
+        section = copy.deepcopy(payload["section"])
+        crdt.apply_ops_to_section(section, ops)
+        assert _digest(section) == payload["expected_digest"]
+    names = {n["id"]: n for n in section["nodes"]}
+    assert names["N1"]["name"] == "R" and names["N1"]["data"]["field_clocks"]["name"]["ts"] == TS_MS
+    assert names["N1"]["description"] == "d1"
+    assert names["N2"]["name"] == "Z"
+    assert names["N2"]["data"]["nota"] == "\U0001F600", "ordine dei code point, non UTF-16"
+    assert names["N3"]["name"] == "M2"
+
+
+#: gli ingredienti delle coppie casuali: istanti uguali in grafie diverse,
+#: istanti vicini, due autori e nessuno, valori di forme diverse e svuotamenti
+_TS = ["2026-10-12T07:00:00Z", TS_MS, "2026-10-12T07:00:00.300Z", "2026-10-12T07:00:01Z"]
+_BY = [ANNA, BRUNO, None]
+_VALUES = ["P", "Q", "", "￿", "\U0001F600", 0, 1.5, None, True, {"a": 1}, [1, 2]]
+_FIELDS = ["name", "description", "data.nota"]
+
+
+def _random_state(rng):
+    node = {"id": "N", "node_type": "US", "name": "x", "description": "d",
+            "data": {"created_at": rng.choice(_TS), "created_by": rng.choice([ANNA, BRUNO])}}
+    if rng.random() < 0.5:
+        node["data"]["nota"] = rng.choice(["P", "Q"])
+    if rng.random() < 0.5:
+        # una parte dei campi porta il proprio orologio, qualcuno svuotato
+        for name in _FIELDS:
+            if rng.random() < 0.5:
+                clock = crdt.Clock(rng.choice(_TS), rng.choice([ANNA, BRUNO]))
+                if rng.random() < 0.2:
+                    crdt.clear_field(node, name, clock)
+                else:
+                    crdt.write_field(node, name, rng.choice(["P", "Q"]), clock)
+    return node
+
+
+def _random_op(rng, name):
+    op = {"op": "update_field", "node_id": "N", "field": name, "ts": rng.choice(_TS)}
+    by = rng.choice(_BY)
+    if by:
+        op["author"] = by
+    if rng.random() < 0.2:
+        op["remove"] = True
+    else:
+        op["value"] = rng.choice(_VALUES)
+    return op
+
+
+def test_tie_property_200_pairs_of_ops_on_one_field_commute():
+    """apply(a, b) == apply(b, a) per 200 coppie casuali sullo stesso campo,
+    metà delle quali a orologio identico."""
+    rng = random.Random(20261012)
+    ties = 0
+    for i in range(200):
+        state = _random_state(rng)
+        name = rng.choice(_FIELDS)
+        a = _random_op(rng, name)
+        b = _random_op(rng, name)
+        if i % 2:
+            b["ts"], b["author"] = a["ts"], a.get("author") or ANNA
+            a["author"] = b["author"]
+        ties += crdt.op_clock(a) == crdt.op_clock(b)
+        ab = {"nodes": [copy.deepcopy(state)], "edges": []}
+        ba = {"nodes": [copy.deepcopy(state)], "edges": []}
+        crdt.apply_ops_to_section(ab, [a, b])
+        crdt.apply_ops_to_section(ba, [b, a])
+        assert crdt.canonical(ab) == crdt.canonical(ba), (i, state, a, b)
+    assert ties >= 100
+
+
+def test_tie_property_200_merges_commute():
+    rng = random.Random(1012)
+    for i in range(200):
+        a, b = _random_state(rng), _random_state(rng)
+        if i % 2:
+            # lo stesso nodo nato insieme: i timbri coincidono
+            b["data"]["created_at"], b["data"]["created_by"] = (
+                a["data"]["created_at"], a["data"]["created_by"])
+        assert (crdt.canonical(crdt.merge_payloads(a, b).payload)
+                == crdt.canonical(crdt.merge_payloads(b, a).payload)), (i, a, b)
