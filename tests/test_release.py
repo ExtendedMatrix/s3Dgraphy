@@ -255,10 +255,37 @@ CHANGELOG = "# Changelog\n\n## [0.1.3] — YYYY-MM-DD <!-- the date is written w
 # FAKE_NODE_UP is set; /v1/health is a file:// URL whose JSON the fake
 # bump-s3dgraphy.sh rewrites FAKE_NODE_RESTART seconds after the rebuild (the
 # container restarting), or never with FAKE_NODE_STUCK
+#
+# StratiField (MICRO-RELEASE-STRATIFIELD): `docker ps` says em-dev-chatbot runs
+# when FAKE_CHATBOT_UP is set; `docker inspect` gives its compose labels (the
+# service FAKE_CHATBOT_SERVICE, the folder $FAKE_STATE/dev-stack); `docker
+# exec … import s3dgraphy` prints $FAKE_STATE/chatbot.version, which `compose
+# up -d --build` rewrites to the pin FAKE_CHATBOT_RESTART seconds later (or
+# never with FAKE_CHATBOT_STUCK); /chat/ is $FAKE_STATE/chat.html
 FAKE_DOCKER = r"""#!/usr/bin/env bash
 echo "docker $*" >> "$FAKE_STATE/docker.log"
-[[ "$1" == ps ]] || exit 0
-[[ -n "$FAKE_NODE_UP" ]] && echo em-dev-server
+case "$1" in
+  ps)
+    if [[ "$*" == *em-dev-chatbot* ]]; then [[ -n "$FAKE_CHATBOT_UP" ]] && echo em-dev-chatbot
+    else [[ -n "$FAKE_NODE_UP" ]] && echo em-dev-server; fi
+    exit 0 ;;
+  inspect)
+    printf '%s\t%s\t%s\n' "${FAKE_CHATBOT_SERVICE-stratigraph-chatbot}" "$FAKE_STATE/dev-stack" \
+      "$FAKE_STATE/dev-stack/docker-compose.dev.yml"
+    exit 0 ;;
+  exec)
+    cat "$FAKE_STATE/chatbot.version" 2>/dev/null || exit 1
+    exit 0 ;;
+  compose)
+    [[ "$2" == version ]] && exit 0
+    { pwd; echo "$*"; } > "$FAKE_STATE/compose.log"
+    [[ -n "$FAKE_CHATBOT_STUCK" ]] && exit 0
+    ( sleep "${FAKE_CHATBOT_RESTART:-0}"
+      grep -o 's3dgraphy>=[^"]*' "$FAKE_STATE/../ws/stratigraph-chatbot/pyproject.toml" | cut -d= -f2 \
+        > "$FAKE_STATE/chatbot.tmp"
+      mv "$FAKE_STATE/chatbot.tmp" "$FAKE_STATE/chatbot.version" ) >/dev/null 2>&1 &
+    exit 0 ;;
+esac
 exit 0
 """
 
@@ -303,6 +330,7 @@ class World:
             "EM_RELEASE_WAIT_PYPI": "5", "EM_RELEASE_WAIT_BUILD": "5", "EM_RELEASE_PROGRESS": "0.02",
             "EM_RELEASE_DOCKER": str(self.bin / "docker"),
             "EM_RELEASE_NODE_HEALTH": (self.state / "health.json").as_uri(),
+            "EM_RELEASE_STRATIFIELD_URL": (self.state / "chat.html").as_uri(),
             "EM_RELEASE_SITE_PAGE": (self.state / "site.html").as_uri(), "EM_RELEASE_WAIT_SITE": "3",
             "EM_RELEASE_DOWNSTREAM": json.dumps([{"repo": "EM-blender-tools", "cmd": [
                 "bash", "-c", 'echo "$FAKE_DOWNSTREAM_SAYS"; exit "${FAKE_DOWNSTREAM_RC:-0}"']}]),
@@ -313,6 +341,10 @@ class World:
         _x(self.bin / "fakepython", FAKE_PYTHON)
         _x(self.bin / "docker", FAKE_DOCKER)
         (self.state / "health.json").write_text('{"version": "1.6.0.dev1", "s3dgraphy": "1.6.0.dev27"}')
+        (self.state / "chatbot.version").write_text("1.6.0.dev27\n")
+        (self.state / "chat.html").write_text("<title>StratiField</title>")
+        (self.state / "dev-stack").mkdir()
+        (self.state / "dev-stack" / ".env.dev").write_text("MINIO_ROOT_USER=minioadmin\n")
         (self.state / "site.html").write_text(
             '<a href="https://github.com/zalmoxes-laran/EMStudio/releases/download/v1.6.0-dev.0/EMStudio.dmg">')
 
@@ -923,6 +955,77 @@ def test_declining_the_node_does_not_stop_the_row(world):
     assert f"not rebuilt. When ready:  (stratigraph-server) ./bump-s3dgraphy.sh {V} --build" in r.stdout
     assert not (world.state / "bump.log").exists()
     assert world.git(world.ws / "stratigraph-server", "rev-list", "--count", "@{u}..HEAD") == "0"
+
+
+# ── MICRO-RELEASE-STRATIFIELD (measured on 12 Oct 2026) ───────────────────────
+#
+# After the release of 1.6.0.dev48 StratiField's pin said dev48 and its
+# container em-dev-chatbot still imported s3dgraphy 1.6.0.dev46: step 10
+# rebuilt only the server.
+
+def test_a_running_stratifield_is_rebuilt_after_the_server_and_measured(world):
+    r = world.release(*FULL, "--yes", FAKE_NODE_UP=1, FAKE_CHATBOT_UP=1, FAKE_CHATBOT_SERVICE="the-field",
+                      FAKE_CHATBOT_RESTART=0.3)
+    assert r.returncode == 0, _all(r)
+    where, said = (world.state / "compose.log").read_text().splitlines()
+    assert where == str(world.state / "dev-stack")                     # the folder of its compose label
+    # the service read from the label, never without .env.dev
+    assert said == (f"compose --env-file .env.dev -f {world.state}/dev-stack/docker-compose.dev.yml "
+                    f"up -d --build the-field")
+    log = (world.state / "docker.log").read_text()
+    assert log.index("compose --env-file") > log.index("ps --filter name=^em-dev-server$")
+    assert "the container is restarting" in r.stdout
+    assert (f"StratiField (em-dev-chatbot, service the-field) imports s3dgraphy {V} and "
+            f"{(world.state / 'chat.html').as_uri()} answers") in r.stdout
+    assert r.stdout.index('the development node answers "s3dgraphy"') < r.stdout.index("StratiField (em-dev-chatbot, service")
+    assert r.stdout.index("StratiField (em-dev-chatbot, service") < r.stdout.index("▸ 11 · the push")
+    assert "rebuilt on this computer: StratiGraph Server (em-dev-server), StratiField (em-dev-chatbot)" in r.stdout
+    st = world.release("status", *FULL, FAKE_NODE_UP=1, FAKE_CHATBOT_UP=1)
+    assert "  ✓ 10 done" in st.stdout and f"StratiField (em-dev-chatbot) imports s3dgraphy {V}" in st.stdout
+
+
+def test_a_stratifield_that_keeps_the_old_s3dgraphy_stops_the_step_and_the_rerun_resumes_there(world):
+    r = world.release(*FULL, "--yes", FAKE_NODE_UP=1, FAKE_CHATBOT_UP=1, FAKE_CHATBOT_STUCK=1,
+                      EM_RELEASE_WAIT_STRATIFIELD=0.3)
+    assert r.returncode == 75, _all(r)
+    assert (f"StratiField (em-dev-chatbot) was rebuilt and s3dgraphy inside it is '1.6.0.dev27', not '{V}'"
+            in r.stderr)
+    assert "docker logs em-dev-chatbot" in r.stderr and "EM_RELEASE_WAIT_STRATIFIELD" in r.stderr
+    assert "▸ 11 · the push" not in r.stdout
+    assert world.git(world.ws / "stratigraph-server", "rev-list", "--count", "@{u}..HEAD") != "0"   # not pushed
+    st = world.release("status", *FULL, FAKE_NODE_UP=1, FAKE_CHATBOT_UP=1)
+    assert "  → 10 to do" in st.stdout and "StratiField (em-dev-chatbot) imports s3dgraphy 1.6.0.dev27" in st.stdout
+    # the rerun: the server already says V, so only StratiField is rebuilt
+    (world.state / "bump.log").unlink()
+    again = world.release(*FULL, "--yes", FAKE_NODE_UP=1, FAKE_CHATBOT_UP=1)
+    assert again.returncode == 0, _all(again)
+    assert f'the server already says "s3dgraphy": "{V}" — not rebuilt again' in again.stdout
+    assert not (world.state / "bump.log").exists()
+    assert "rebuilt on this computer: StratiField (em-dev-chatbot)" in again.stdout
+
+
+def test_a_chat_that_does_not_answer_stops_the_step_saying_so(world):
+    (world.state / "chat.html").unlink()
+    r = world.release(*FULL, "--yes", FAKE_NODE_UP=1, FAKE_CHATBOT_UP=1, EM_RELEASE_WAIT_STRATIFIELD=0.3)
+    assert r.returncode == 75, _all(r)
+    assert f"it imports s3dgraphy {V} and {(world.state / 'chat.html').as_uri()} does not answer" in r.stderr
+
+
+def test_without_stratifield_running_it_says_so_and_goes_on(world):
+    r = world.release(*FULL, "--yes", FAKE_NODE_UP=1)
+    assert r.returncode == 0, _all(r)
+    assert "StratiField: em-dev-chatbot is not running — not rebuilt, the row goes on" in r.stdout
+    assert not (world.state / "compose.log").exists()
+    assert "▸ 11 · the push" in r.stdout
+    assert "rebuilt on this computer: StratiGraph Server (em-dev-server)" in r.stdout
+
+
+def test_without_env_dev_stratifield_is_not_recreated(world):
+    (world.state / "dev-stack" / ".env.dev").unlink()
+    r = world.release(*FULL, "--yes", FAKE_NODE_UP=1, FAKE_CHATBOT_UP=1)
+    assert r.returncode == 1, _all(r)
+    assert ".env.dev is missing, and StratiField is never recreated without it" in r.stderr
+    assert not (world.state / "compose.log").exists()
 
 
 # ── W4: the site in the release (measured on 4 Oct 2026) ─────────────────────

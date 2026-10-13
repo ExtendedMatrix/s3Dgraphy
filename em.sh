@@ -10,7 +10,8 @@
 #                      em.sh of the repositories next door
 #   release            scripts/release.py: the whole round (dtcstamp → bump →
 #                      publish → proof → propagate → EMtools → pin commits →
-#                      the development node → push → desktop), each step
+#                      the development node and StratiField's container →
+#                      push → desktop), each step
 #                      skipped when already done
 #
 # The reports both shells print (fingerprint, PyPI, known failures, StratiField's
@@ -115,6 +116,8 @@ REMOTE or OTHER REPOSITORIES ask for confirmation and take --dry-run.
   release <V> [--dtcstamp X] [--desktop] [--dry-run] [--yes]
                         The whole round in one command, resumable: each step looks first
                         whether it is done. `release status [<V>]` = where it stands.
+                        On this computer it rebuilds the em-dev node: the server, then
+                        StratiField (em-dev-chatbot) if it runs.
                           ./em.sh release 1.6.0.dev28 --dtcstamp 0.1.3 --desktop --dry-run
   metashape <progetto.psx> [--chunk N] [--out file.em.json]
                         Read a Metashape project without Metashape: its sheet (sensors,
@@ -649,8 +652,11 @@ WHAT IT DOES
      9  the pin commits: per repository git diff --stat, the message, [y/N]
     10  the development node: if the em-dev stack is up (em-dev-server running),
         [Y/n] → ./bump-s3dgraphy.sh V --build in stratigraph-server → /v1/health
-        until it says "s3dgraphy": "V" (EM_RELEASE_WAIT_NODE); stack down: said,
-        and the row goes on
+        until it says "s3dgraphy": "V" (EM_RELEASE_WAIT_NODE); then StratiField,
+        if em-dev-chatbot runs: compose --env-file .env.dev up -d --build <the
+        service of its compose label> → s3dgraphy inside it = V and /chat/
+        answers (EM_RELEASE_WAIT_STRATIFIELD, EM_RELEASE_STRATIFIELD_URL); not
+        running: said, and the row goes on. Stack down: said, and the row goes on
     11  the push of what is ahead of origin: the list, one [y/N]
     12  (--desktop) EMStudio: ./em.sh s3d status --check → ./em.sh devrel --yes →
         release.yml watched → the release's URL, its assets and sizes, draft

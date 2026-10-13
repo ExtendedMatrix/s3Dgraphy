@@ -38,6 +38,8 @@ command can be replaced for the tests (tests/test_release.py):
     EM_RELEASE_DOCKER   docker, asked whether em-dev-server runs (default: docker)
     EM_RELEASE_NODE_HEALTH  the development node's health (default: http://localhost:8000/v1/health)
     EM_RELEASE_WAIT_NODE    the cap for it to say V after the rebuild (default: 180)
+    EM_RELEASE_STRATIFIELD_URL  StratiField's page on the node (default: https://em.localhost:8443/chat/)
+    EM_RELEASE_WAIT_STRATIFIELD the cap for em-dev-chatbot to import V and /chat/ to answer (default: 300)
     EM_RELEASE_SITE_REPO    the EM site's repository (default: zalmoxes-laran/ExtendedMatrix-site)
     EM_RELEASE_SITE_PAGE    the page that must offer the new desktop (default: https://extendedmatrix.org/tools/emstudio/)
     EM_RELEASE_WAIT_SITE    the cap for GitHub Pages to serve the new build (default: 300)
@@ -597,6 +599,7 @@ class Ctx:
     def __init__(self, v, d, desktop, dry, yes):
         self.v, self.d, self.desktop, self.dry, self.yes = v, d, desktop, dry, yes
         self.confirmed = yes
+        self.rebuilt = []   # step 10: what was rebuilt on this computer, for the last line
 
     def resume(self) -> str:
         a = f"./em.sh release {self.v}"
@@ -1508,8 +1511,79 @@ def node_health() -> dict:
         return {}
 
 
+# MICRO-RELEASE-STRATIFIELD, measured on 12 Oct 2026 after the release of
+# 1.6.0.dev48: step 8 raised StratiField's floor and step 10 rebuilt only the
+# server, so `em-dev-chatbot` went on importing s3dgraphy 1.6.0.dev46 until it
+# was rebuilt by hand. Now, after the server, StratiField's container is
+# rebuilt too when it is there and running: its service is the compose label
+# of the container (never written here), the compose files are the ones it
+# was made with, and `--env-file .env.dev` is ALWAYS given — without it `up -d`
+# recreates the container with the shell's environment, which is how the
+# server lost MinIO's keys on 2 Oct 2026. It is believed when s3dgraphy INSIDE
+# the container says V and /chat/ answers.
+
+STRATIFIELD_CONTAINER = "em-dev-chatbot"
+STRATIFIELD_URL = os.environ.get("EM_RELEASE_STRATIFIELD_URL") or "https://em.localhost:8443/chat/"
+WAIT["stratifield"] = float(os.environ.get("EM_RELEASE_WAIT_STRATIFIELD") or 300)   # an image built, a restart
+
+
+def _docker(*args, timeout: float = 20):
+    """`docker <args>` → (returncode, stdout) — a READ, never raising."""
+    try:
+        r = subprocess.run([*DOCKER, *args], env=ENV, text=True, stdin=subprocess.DEVNULL,
+                           capture_output=True, timeout=timeout)
+    except (OSError, subprocess.TimeoutExpired):
+        return None, ""
+    return r.returncode, r.stdout
+
+
+def stratifield_running() -> bool:
+    rc, said = _docker("ps", "--filter", f"name=^{STRATIFIELD_CONTAINER}$", "--filter", "status=running",
+                       "--format", "{{.Names}}")
+    return rc == 0 and STRATIFIELD_CONTAINER in said.split()
+
+
+def stratifield_compose() -> dict:
+    """What the container's compose labels say: its service, the folder and the files it was made with."""
+    labels = {"service": "com.docker.compose.service", "dir": "com.docker.compose.project.working_dir",
+              "files": "com.docker.compose.project.config_files"}
+    fmt = "\t".join("{{index .Config.Labels %s}}" % json.dumps(v) for v in labels.values())
+    rc, said = _docker("inspect", "--format", fmt, STRATIFIELD_CONTAINER)
+    parts = said.rstrip("\n").split("\t") if rc == 0 else []
+    got = dict(zip(labels, parts)) if len(parts) == len(labels) else {}
+    return {k: v for k, v in got.items() if v and v != "<no value>"}
+
+
+def stratifield_s3dgraphy() -> str:
+    """The s3dgraphy StratiField imports INSIDE its container, or ""."""
+    rc, said = _docker("exec", STRATIFIELD_CONTAINER, "python", "-c",
+                       "import s3dgraphy; print(s3dgraphy.__version__)", timeout=30)
+    return said.strip() if rc == 0 else ""
+
+
+def stratifield_answers() -> bool:
+    """GET /chat/ succeeds — the node's certificate is the dev CA's, so it is not verified."""
+    import ssl
+    import urllib.request
+    try:
+        with urllib.request.urlopen(STRATIFIELD_URL, timeout=5, context=ssl._create_unverified_context()) as r:
+            return (getattr(r, "status", None) or 200) < 400
+    except Exception:
+        return False
+
+
+def compose_cmd() -> list:
+    """`docker compose` when the plugin answers, else `docker-compose` (dev-stack/platform.sh's sg_compose)."""
+    if _docker("compose", "version")[0] == 0:
+        return [*DOCKER, "compose"]
+    if shutil.which("docker-compose"):
+        return ["docker-compose"]
+    raise Stop("step 10: no Docker Compose here (neither `docker compose` nor `docker-compose`)")
+
+
 class DevNode(Step):
-    n, title = 10, "the development node: ./bump-s3dgraphy.sh V --build if em-dev is up, then /v1/health"
+    n, title = 10, ("the development node: ./bump-s3dgraphy.sh V --build if em-dev is up, then /v1/health; "
+                    "then StratiField's container, if it runs")
 
     def check(self, c):
         if not exists("stratigraph-server"):
@@ -1521,20 +1595,42 @@ class DevNode(Step):
         if not h:
             return TODO, f"{why}, {NODE_HEALTH} does not answer"
         said = h.get("s3dgraphy")
-        if said == c.v:
-            return DONE, f'{NODE_HEALTH} says "s3dgraphy": "{said}" (server {h.get("version")})'
-        return TODO, f'{NODE_HEALTH} says "s3dgraphy": "{said}"'
+        if said != c.v:
+            return TODO, f'{NODE_HEALTH} says "s3dgraphy": "{said}"'
+        server = f'{NODE_HEALTH} says "s3dgraphy": "{said}" (server {h.get("version")})'
+        if not stratifield_running():
+            return DONE, f"{server}; {STRATIFIELD_CONTAINER} is not running"
+        inside = stratifield_s3dgraphy()
+        if inside != c.v:
+            return TODO, f'{server}; StratiField ({STRATIFIELD_CONTAINER}) imports s3dgraphy {inside or "?"}'
+        if not stratifield_answers():
+            return TODO, f"{server}; StratiField says {inside} and {STRATIFIELD_URL} does not answer"
+        return DONE, f"{server}; StratiField ({STRATIFIELD_CONTAINER}) imports s3dgraphy {inside}, {STRATIFIELD_URL} answers"
 
     def plan(self, c):
         return [("stratigraph-server", f"[Y/n, yes in {confirm_seconds()} s] ./bump-s3dgraphy.sh {c.v} --build"),
-                ("", f'GET {NODE_HEALTH} until "s3dgraphy": "{c.v}" (cap {WAIT["node"]:g} s)')]
+                ("", f'GET {NODE_HEALTH} until "s3dgraphy": "{c.v}" (cap {WAIT["node"]:g} s)'),
+                ("", f"if {STRATIFIELD_CONTAINER} runs: docker compose --env-file .env.dev -f <its files> "
+                     f"up -d --build <its service>"),
+                ("", f"docker exec {STRATIFIELD_CONTAINER} python -c 'import s3dgraphy' until {c.v}, "
+                     f"and GET {STRATIFIELD_URL} (cap {WAIT['stratifield']:g} s)")]
 
     def run(self, c):
         r = repo("stratigraph-server")
-        if not c.ask(f"Rebuild and restart the development node ({NODE_CONTAINER}) with s3dgraphy {c.v}?"):
+        if not c.ask(f"Rebuild and restart the development node ({NODE_CONTAINER}, and StratiField's "
+                     f"{STRATIFIELD_CONTAINER} if it runs) with s3dgraphy {c.v}?"):
             # a local node, not a publication: declining it does not stop the row
             print(f"    not rebuilt. When ready:  (stratigraph-server) ./bump-s3dgraphy.sh {c.v} --build", flush=True)
             return
+        if node_health().get("s3dgraphy") == c.v:
+            # the rerun after a StratiField that did not come back: the server is already V
+            print(f'    the server already says "s3dgraphy": "{c.v}" — not rebuilt again', flush=True)
+        else:
+            self.server(c, r)
+            c.rebuilt.append(f"StratiGraph Server ({NODE_CONTAINER})")
+        self.stratifield(c, r)
+
+    def server(self, c, r):
         sh(["./bump-s3dgraphy.sh", c.v, "--build"], r)
         seen = {}
 
@@ -1550,6 +1646,51 @@ class DevNode(Step):
             raise Stop(f'the node was rebuilt and {NODE_HEALTH} still says {seen.get("last")!r}, not {c.v!r}.\n'
                        f"    Look:  docker logs {NODE_CONTAINER} --tail 50", e.code)
         ok(f'the development node answers "s3dgraphy": "{c.v}" (server {h.get("version")})')
+
+    def stratifield(self, c, r):
+        if not stratifield_running():
+            print(f"    StratiField: {STRATIFIELD_CONTAINER} is not running — not rebuilt, the row goes on", flush=True)
+            return
+        if stratifield_s3dgraphy() == c.v and stratifield_answers():
+            print(f"    StratiField ({STRATIFIELD_CONTAINER}) already imports s3dgraphy {c.v}", flush=True)
+            return
+        lab = stratifield_compose()
+        service = lab.get("service")
+        if not service:
+            raise Stop(f"step 10: {STRATIFIELD_CONTAINER} runs and its compose label "
+                       f"(com.docker.compose.service) does not say its service — rebuild it by hand.\n"
+                       f"    Then:  {c.resume()}")
+        where = Path(lab.get("dir") or r / "dev-stack")
+        if not (where / ".env.dev").is_file():
+            raise Stop(f"step 10: {where}/.env.dev is missing, and StratiField is never recreated without it "
+                       f"(the MinIO keys of 2 Oct 2026).\n"
+                       f"    In {where}:  cp .env.dev.example .env.dev    then:  {c.resume()}")
+        files = [f for f in (lab.get("files") or "").split(",") if f] or ["docker-compose.dev.yml"]
+        cmd = [*compose_cmd(), "--env-file", ".env.dev"]
+        for f in files:
+            cmd += ["-f", f]
+        sh([*cmd, "up", "-d", "--build", service], where)
+        seen = {}
+
+        def answers():
+            seen["inside"] = stratifield_s3dgraphy() or "nothing"
+            if seen["inside"] != c.v:
+                seen["chat"] = None
+                return None
+            seen["chat"] = stratifield_answers()
+            return seen["chat"] or None
+
+        try:
+            wait_for(f"StratiField ({STRATIFIELD_CONTAINER}) importing s3dgraphy {c.v} and {STRATIFIELD_URL} answering",
+                     answers, WAIT["stratifield"], c.resume(), not_yet="the container is restarting")
+        except Stop as e:
+            why = (f"s3dgraphy inside it is {seen.get('inside')!r}, not {c.v!r}" if seen.get("inside") != c.v
+                   else f"it imports s3dgraphy {c.v} and {STRATIFIELD_URL} does not answer")
+            raise Stop(f"StratiField ({STRATIFIELD_CONTAINER}) was rebuilt and {why}.\n"
+                       f"    Look:  docker logs {STRATIFIELD_CONTAINER} --tail 50\n"
+                       f"    (waited {WAIT['stratifield']:g} s, EM_RELEASE_WAIT_STRATIFIELD)", e.code)
+        c.rebuilt.append(f"StratiField ({STRATIFIELD_CONTAINER})")
+        ok(f"StratiField ({STRATIFIELD_CONTAINER}, service {service}) imports s3dgraphy {c.v} and {STRATIFIELD_URL} answers")
 
 
 # ── 11 · the push ────────────────────────────────────────────────────────────
@@ -1855,6 +1996,8 @@ def release(c: Ctx) -> int:
         print()
         log(note)
     print()
+    if c.rebuilt:
+        print("    rebuilt on this computer: " + ", ".join(c.rebuilt), flush=True)
     ok(f"release {c.v} done")
     return 0
 
