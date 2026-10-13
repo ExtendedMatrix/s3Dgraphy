@@ -202,6 +202,11 @@ STUDIO_EM = r'''#!/usr/bin/env bash
 set -e
 case "$1 $2" in
   "s3d status") exit 0 ;;
+  "apertura ")
+    [[ -z "$FAKE_APERTURA_DEAD" ]] && exit 0
+    echo "✗ EMStudio does not open: the empty app — ReferenceError: Cannot access 'hubToken' before initialization" >&2
+    echo "    at renderStatusLine (frontend/src/main.ts:1421:7)" >&2
+    exit 1 ;;
   "devrel --yes")
     n=$(( $(git tag -l 'v*' | wc -l) + 1 )); echo "$n" > version.txt
     git commit -q -am "build: dev release 1.6.0-dev.$n"; git tag "v1.6.0-dev.$n"
@@ -438,6 +443,7 @@ def test_the_whole_row_in_dry_run_writes_nothing(world):
     assert "  →  2 to do" in r.stdout
     assert "would run in dtcstamp: ./bump_and_push.sh --set 0.1.3" in r.stdout
     assert "would run in s3Dgraphy: ./em.sh propagate --pins --yes" in r.stdout
+    assert "would run in EMStudio: ./em.sh apertura" in r.stdout
     assert "would run in EMStudio: ./em.sh devrel --yes" in r.stdout
     assert "--dry-run: nothing written" in r.stdout
     assert world.snapshot() == before
@@ -574,6 +580,22 @@ def test_a_commit_not_pushed_stops_it(world):
     r = world.release(*FULL, "--yes")
     assert r.returncode == 1
     assert "stratigraph-server: 1 commit(s) not pushed that are not the release's" in r.stderr
+
+
+def test_an_emstudio_that_does_not_open_is_not_tagged(world):
+    # MICRO-APERTURA-VERA · dev.36 was tagged with every check green and opened
+    # as a dead page: step 12 opens the app first and stops on its verdict
+    r = world.release(*FULL, "--yes", FAKE_APERTURA_DEAD=1)
+    assert r.returncode == 1, _all(r)
+    assert "EMStudio does not open in a browser — no devrel, no tag" in r.stderr
+    assert "Cannot access 'hubToken' before initialization" in r.stderr
+    assert "renderStatusLine (frontend/src/main.ts:1421:7)" in r.stderr
+    assert f"./em.sh release {V} --dtcstamp {D} --desktop" in r.stderr
+    assert "refs/tags/v1.6.0-dev.1" not in world.origin_tags("EMStudio")
+    r = world.release(*FULL, "--yes")                                    # fixed: it resumes
+    assert r.returncode == 0, _all(r)
+    assert "EMStudio opens in a browser (./em.sh apertura)" in r.stdout
+    assert "refs/tags/v1.6.0-dev.1" in world.origin_tags("EMStudio")
 
 
 def test_a_late_pypi_is_waited_for(world):

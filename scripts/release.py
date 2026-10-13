@@ -1761,7 +1761,8 @@ class Desktop(Step):
         return TODO, f"{tag} tagged · release.yml " + (f"{run.get('status')} {run.get('conclusion') or ''}".strip() if run else "not seen")
 
     def plan(self, c):
-        return [("EMStudio", "./em.sh s3d status --check"), ("EMStudio", "./em.sh devrel --yes"),
+        return [("EMStudio", "./em.sh s3d status --check"), ("EMStudio", "./em.sh apertura"),
+                ("EMStudio", "./em.sh devrel --yes"),
                 ("EMStudio", "gh run view <release.yml run of the tag> --json jobs   (every 30 s)"),
                 ("EMStudio", "gh release view <tag> --json url")]
 
@@ -1772,6 +1773,7 @@ class Desktop(Step):
             print(f"    {tag} already carries s3dgraphy=={c.v} — devrel skipped", flush=True)
         else:
             sh(["./em.sh", "s3d", "status", "--check"], r)
+            self.opens(r, c)
             sh(["./em.sh", "devrel", "--yes"], r)
             tag = self.tag_with_pin(c)
             if not tag:
@@ -1782,6 +1784,24 @@ class Desktop(Step):
         ok(f"the desktop {tag}: {url or run.get('url')}")
         for line in self.assets(tag):
             print(f"      {line}", flush=True)
+
+    def opens(self, r, c):
+        """MICRO-APERTURA-VERA · the app OPENS in a real browser, before devrel tags it.
+
+        dev.36 went out with every check green and opened as a dead page (a
+        ReferenceError while main.ts was still being evaluated). The check is
+        EMStudio's own (`frontend/scripts/check-apertura.mjs`, behind
+        `./em.sh apertura`); devrel runs it again in its gate, this call is here
+        so the step stops with its verdict — the first error and its file:line —
+        and with the way to resume, before anything is bumped or tagged."""
+        a = sh(["./em.sh", "apertura"], r, check=False, capture=True)
+        if a.returncode != 0:
+            why = [l for l in (a.stderr or "").strip().splitlines() if l.strip()][-6:]
+            head = ("EMStudio does not open in a browser" if a.returncode == 1
+                    else "the open check could not run (Playwright/Chromium)")
+            raise Stop(f"{head} — no devrel, no tag:\n      "
+                       + "\n      ".join(why) + f"\n    fix it in EMStudio, then {c.resume()}")
+        ok("EMStudio opens in a browser (./em.sh apertura)")
 
     def assets(self, tag) -> list:
         """The release's assets with their size, as GitHub lists them."""
