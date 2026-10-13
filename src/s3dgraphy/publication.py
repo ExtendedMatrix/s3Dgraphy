@@ -52,6 +52,9 @@ _URL_TYPE_BY_MEDIA = {
     "application/pdf": "document",
 }
 
+#: The 3D genres a glTF media type must not flatten into `3d_model`.
+_MORE_SPECIFIC_3D = ("proxy_model", "point_cloud")
+
 
 def _stable_id(key: str) -> str:
     return str(uuid.uuid5(_PROMOTE_NAMESPACE, key))
@@ -225,7 +228,11 @@ def promote_resource(graph: Graph, resource_id: str, *, url: str, sha256: str,
     if media_type:
         data["media_type"] = media_type
         url_type = _URL_TYPE_BY_MEDIA.get(media_type)
-        if url_type:
+        # A proxy's .glb is a `proxy_model` (geometry.proxy): the media type
+        # says only «a 3D model», and writing that over it would make the
+        # unit's proxy a file its chain no longer finds (linked_proxy_resources)
+        if url_type and not (url_type == "3d_model"
+                             and data.get("url_type") in _MORE_SPECIFIC_3D):
             data["url_type"] = url_type
     # WHERE THE BYTES ARE, and the two true answers.
     #
