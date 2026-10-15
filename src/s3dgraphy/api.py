@@ -3068,6 +3068,25 @@ def resolve_file(entry: Dict[str, Any], **kwargs) -> Dict[str, Any]:
     return resolve(entry, **kwargs)
 
 
+# ── a study into a room, from a folder (MICRO-ROOM-IMPORT, 15 Oct 2026) ──────
+def room_import(em_json: str, *, node: str, room: str, title: Optional[str] = None,
+                base_dir: Optional[str] = None, visibility: str = "restricted",
+                token: Optional[str] = None, dry_run: bool = False,
+                pack_tilesets: Optional[str] = None, **kwargs) -> Dict[str, Any]:
+    """Bring the study of ``em_json`` and every file of its folder into
+    ``room`` on ``node``: what is in the folder goes up once (HEAD by sha256
+    first), what is outside stays a reference by digest, the resources become
+    hosted keeping their path, the graph is seated last as operations, then
+    ``study-access``. ``dry_run``: the plan only, nothing written.
+    ``pack_tilesets="3tz"``: a tileset folder goes up as one canonical
+    ``.3tz``. → the report. The one engine of the three doors (the command,
+    EMStudio, EM Tools); see :mod:`s3dgraphy.room_import`."""
+    from .room_import import room_import as _run
+    return _run(em_json, node=node, room=room, title=title, base_dir=base_dir,
+                visibility=visibility, token=token, dry_run=dry_run,
+                pack_tilesets=pack_tilesets, **kwargs)
+
+
 # ── S1 · the Storage list and «find moved» (E.D., 11 Oct 2026) ────────────────
 def storage_rows(graph: Graph, results: Sequence[Dict[str, Any]],
                  graph_name: str = "") -> List[Dict[str, Any]]:

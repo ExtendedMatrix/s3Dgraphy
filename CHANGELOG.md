@@ -5,6 +5,46 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
+- **`s3dgraphy.room_import` — a study into a room, from a folder**
+  (MICRO-ROOM-IMPORT, E.D. 15 October 2026: «un motore, tre porte»). One
+  engine, pure Python and without Blender, for the gesture that existed twice
+  and diverged (EM Tools' «Bring into a room…», EMStudio's
+  `seedOpsForContainer`): it reads an em.json and its folder, takes the
+  inventory of every resource AND every `resource_file` (`file_set` members,
+  which EM Tools never saw), asks the node by sha256 what it already has,
+  uploads the rest once (streamed PUT, the resumable `uploads` door for big
+  files, in a pool), rewrites the resources as hosted by the room keeping
+  their path (`addresses`; `data.path` on a file), leaves what is outside the
+  folder (`onedrive://`, `smb://`, http, `blend://`) a reference by digest,
+  seats the graph LAST as operations (`POST …/ops`, in parts, only the
+  changed ones on a later run) and sets `study-access` (default
+  `restricted`). A stamp beside a file goes up with it (`stamp_asset`). A
+  tileset folder goes up file by file with the canonical list of its files
+  (`members_manifest`); with `pack_tilesets="3tz"` as ONE canonical `.3tz`
+  written by `dtcstamp.write_canonical_3tz` (a sibling resource,
+  `dtc_derived_from` the folder, a DTC step `packing` and its stamp; a
+  canonical sibling the graph already has is used as it is). A journal
+  beside the em.json (`.em_room_import.json`) makes a cut run resume and a
+  second run upload 0 bytes; a file the node keeps at home in another room
+  is hosted here without moving it (`elsewhere="host"`; `reference` and
+  `move` on request). The report in json and md: uploaded, already there,
+  references, missing, requests, the room's link.
+  - **Moved here from EM Tools** (3bfdb93), the parts without `bpy`:
+    `inventory` (+ `file_entries`, trees, `make_reference`), `node` (←
+    `asset_upload` whole, `rooms_list`'s room and ops, `set_study_access`,
+    `open_targets`; + `asset_reference`, the personal node's door), `access`
+    (the renewal; `ON_RENEWED` instead of reaching into EM Tools, and
+    `set_renewer` for a token from a command), `trust` (TLS verified with the
+    system's roots). Their tests came too (`test_room_import_inventory`,
+    `_access`, `_trust`).
+  - The command: `python -m s3dgraphy room-import <em.json> --node <url>
+    --room <id> [--dry-run] [--pack-tilesets 3tz] [--token-cmd …]`
+    (`s3dgraphy/__main__.py`, new), and `api.room_import(...)`.
+  - `tests/test_semantic_purity.py` declares the three transport modules as
+    the importer's exception to «no network»; inventory and engine have none.
+  - Measured on Templu Mare v3.2 against the dev node: see the report of
+    MICRO-ROOM-IMPORT.
+
 - **`merge_graphs(container, graph_ids=None) -> (Graph, report)`**
   (`s3dgraphy.container`, + `api`; E.D., 12 October 2026, s3Dgraphy#36): one
   graph for the overall view of the graphs of a container. Nodes united by

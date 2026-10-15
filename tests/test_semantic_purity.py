@@ -36,6 +36,13 @@ NETWORK_ALLOWED = {
     # says in its own docstring that the HTTP conversation is a wired seam and
     # not a verified path.
     "importer/rdf_importer.py",
+    # The room importer's TRANSPORT (MICRO-ROOM-IMPORT, E.D. 15 Oct 2026: one
+    # engine for «bring a study into a room», here and not in a client). Only
+    # the three modules that talk to a node, moved from EM Tools as they were;
+    # the inventory and the engine stay without a socket.
+    "room_import/node.py",
+    "room_import/access.py",
+    "room_import/trust.py",
 }
 
 #: `urllib.parse` is deliberately NOT here: splitting a URL is string work, and a
