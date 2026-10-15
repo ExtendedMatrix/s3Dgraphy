@@ -68,6 +68,14 @@ All notable changes to **s3dgraphy** are documented here.
     `room_import` takes the same parameters; `progress` is called in the
     caller's thread. A room's title from a graph named in several languages
     is its `default` name (it was the dict written out).
+  - **A client's «Pause» and its bar** (MICRO-PORTA-IN-STANZA-DAL-MOTORE,
+    16 October 2026 — EMStudio's «Bring into a room…» calls the engine
+    through its bridge): `execute(…, hold=fn, on_bytes=fn)` (and
+    `room_import`). `hold()` is called before each file and before each piece
+    of a resumable upload (`node.upload_asset(…, hold=)`) and returns when
+    the run may go on — after a wait the node is asked where the upload is;
+    `on_bytes(n)` gives the bytes as the pieces are read out, from the upload
+    workers.
 
 - **`merge_graphs(container, graph_ids=None) -> (Graph, report)`**
   (`s3dgraphy.container`, + `api`; E.D., 12 October 2026, s3Dgraphy#36): one

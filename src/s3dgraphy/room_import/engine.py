@@ -377,10 +377,15 @@ def _open_room(node: str, token: Optional[str], room: str, title: str,
 def _upload_all(units: List[Dict[str, Any]], *, node: str, room: str,
                 token: Optional[str], journal: Journal, workers: int,
                 by_reference: bool, stop_after: Optional[int] = None,
-                progress: Optional[Callable[[str, int, int], None]] = None
+                progress: Optional[Callable[[str, int, int], None]] = None,
+                hold: Optional[Callable[[], Any]] = None,
+                on_bytes: Optional[Callable[[int], None]] = None
                 ) -> Dict[str, Any]:
     """Every unit not on the node goes up, in a pool. One failure is one row of
-    the report; an unreachable node stops the run (the journal is kept)."""
+    the report; an unreachable node stops the run (the journal is kept).
+    `hold()` before each file and each piece (a client's «Pause»); `on_bytes(n)`
+    as the bytes are read out, from the WORKERS (a client that draws hands it
+    to its own thread)."""
     total = sum(int(u["size"] or 0) for u in units)
     done = {"files": 0, "bytes": 0, "referenced": 0, "already": 0}
     failed: List[Dict[str, str]] = []
@@ -389,6 +394,8 @@ def _upload_all(units: List[Dict[str, Any]], *, node: str, room: str,
     stop = threading.Event()
 
     def one(u):
+        if hold is not None:
+            hold()
         if stop.is_set():
             return
         if by_reference:
@@ -403,8 +410,18 @@ def _upload_all(units: List[Dict[str, Any]], *, node: str, room: str,
                 if exc.status != 409:
                     raise
                 # a node that keeps the bytes it is given: upload them there
+        read = [0]
+
+        def piece_read(sent, _size):
+            if on_bytes is not None and sent > read[0]:
+                on_bytes(sent - read[0])
+                read[0] = sent
+
         info = nodeio.upload_asset(node, room, u["path"], u["sha256"],
-                                   u["media_type"], token)
+                                   u["media_type"], token,
+                                   piece_read if on_bytes is not None else None, hold=hold)
+        if info.get("already") and read[0]:
+            on_bytes(-read[0])      # the node had them after all: nothing was read out
         journal.note_file(u["sha256"], "already" if info.get("already") else "uploaded",
                           u["size"])
         with lock:
@@ -819,7 +836,9 @@ def execute(run: Dict[str, Any], *, visibility: str = "restricted",
             before_seed: Optional[Callable[[Dict[str, Any]], Optional[Dict[str, Any]]]] = None,
             progress: Optional[Callable[[str, int, int], None]] = None,
             report_dir: Optional[str] = None, by_reference: bool = False,
-            reseed: bool = False, stop_after: Optional[int] = None) -> Dict[str, Any]:
+            reseed: bool = False, stop_after: Optional[int] = None,
+            hold: Optional[Callable[[], Any]] = None,
+            on_bytes: Optional[Callable[[int], None]] = None) -> Dict[str, Any]:
     """The second half: the files up, the resources hosted, the graph seated,
     `study-access`, the report (json + md in `report_dir`).
 
@@ -833,7 +852,10 @@ def execute(run: Dict[str, Any], *, visibility: str = "restricted",
     seeding. `info` is `{node, room, token, container, plan}`; it answers
     `{uploaded, bytes, already, failed: [sentence], filled: [resource id]}`
     (any of them), counted in the report. `progress(name, sent, total)`:
-    bytes, after each file."""
+    bytes, after each file. `hold()` — a client's «Pause»: called before each
+    file and each piece, it returns when the run may go on (truthy if it
+    waited); `on_bytes(n)` — the bytes as they are read out, from the upload
+    workers."""
     if run["dry_run"]:
         raise ValueError("a dry run is not executed: prepare it again without dry_run")
     if visibility not in VISIBILITIES:
@@ -856,7 +878,8 @@ def execute(run: Dict[str, Any], *, visibility: str = "restricted",
         _say(f"{len(todo)} file(s) to send, {inventory.human_size(sum(int(u['size'] or 0) for u in todo))}")
         uploads = _upload_all(todo, node=node, room=room, token=token, journal=journal,
                               workers=workers, by_reference=by_reference,
-                              stop_after=stop_after, progress=progress)
+                              stop_after=stop_after, progress=progress,
+                              hold=hold, on_bytes=on_bytes)
         for u in plan["units"].values():
             if u["present"]:
                 journal.note_file(u["sha256"], "already", u["size"])
@@ -988,7 +1011,9 @@ def room_import(em_json: Optional[str] = None, *, node: str, room: str,
                 lots: Optional[Iterable[Dict[str, Any]]] = None,
                 before_seed: Optional[Callable[[Dict[str, Any]], Optional[Dict[str, Any]]]] = None,
                 progress: Optional[Callable[[str, int, int], None]] = None,
-                stop_after: Optional[int] = None) -> Dict[str, Any]:
+                stop_after: Optional[int] = None,
+                hold: Optional[Callable[[], Any]] = None,
+                on_bytes: Optional[Callable[[int], None]] = None) -> Dict[str, Any]:
     """Bring the study of `em_json` (or the `container` a client holds) and
     every file of its folder into `room` on `node`: :func:`prepare`, the
     choices (:func:`apply_choices`), :func:`execute`. → the report (also
@@ -1011,7 +1036,8 @@ def room_import(em_json: Optional[str] = None, *, node: str, room: str,
         return report
     return execute(run, visibility=visibility, elsewhere=elsewhere, move=move, lots=lots,
                    before_seed=before_seed, progress=progress, report_dir=report_dir,
-                   by_reference=by_reference, reseed=reseed, stop_after=stop_after)
+                   by_reference=by_reference, reseed=reseed, stop_after=stop_after,
+                   hold=hold, on_bytes=on_bytes)
 
 
 def sentence(report: Dict[str, Any]) -> str:

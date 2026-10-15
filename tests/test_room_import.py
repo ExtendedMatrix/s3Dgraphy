@@ -487,6 +487,34 @@ class RoomImport(unittest.TestCase):
         self.assertTrue(self.node.uploads)
         self.assertTrue(all(u["data"] for u in self.node.uploads.values()))
 
+    def test_a_client_holds_the_run_between_pieces_and_counts_the_bytes(self):
+        """EMStudio's «Pause» and its bar: `hold()` before each file and each
+        piece, `on_bytes(n)` as the pieces are read out."""
+        em = write_study(self.root)
+        import functools
+        from unittest import mock
+        small = functools.partial(nodeio.upload_asset, single_shot_max=100, piece=64)
+        holds, read = [], []
+        lock = threading.Lock()
+
+        def hold():
+            with lock:
+                holds.append(1)
+            return False
+
+        def on_bytes(n):
+            with lock:
+                read.append(n)
+
+        with mock.patch.object(nodeio, "upload_asset", small):
+            rep = self.run_import(em, hold=hold, on_bytes=on_bytes)
+        self.assertEqual(rep["failed"], [])
+        sent = sum(len(b) for h, b in self.node.blobs.items() if self.node.puts.get(h))
+        manifest = rep["uploaded"]["bytes"] - sum(read)
+        self.assertEqual(sum(read), sent - manifest)
+        # once per file, and again before each piece of the resumable ones
+        self.assertGreater(len(holds), rep["uploaded"]["files"])
+
     def test_pack_tilesets_3tz_adds_the_sibling_the_step_and_the_stamp(self):
         em = write_study(self.root)
         work = os.path.join(self.root, "work")

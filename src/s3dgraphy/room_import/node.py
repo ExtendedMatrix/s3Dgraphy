@@ -275,7 +275,7 @@ def _offset_now(url: str, token, timeout) -> int:
 
 
 def _resumable(node, room, path, hexd, size, media_type, token, progress_cb,
-               timeout, piece) -> Dict[str, Any]:
+               timeout, piece, hold=None) -> Dict[str, Any]:
     start = urllib.request.Request(
         _room_url(node, room, "uploads"), method="POST",
         data=json.dumps({"size": size, "sha256": hexd,
@@ -292,6 +292,10 @@ def _resumable(node, room, path, hexd, size, media_type, token, progress_cb,
     offset = int(session.get("offset") or 0)
     failures = 0
     while True:
+        if hold is not None and hold() and offset:
+            # a client's «Pause» waited here, BETWEEN two pieces: the node
+            # says where it is now, and the upload goes on from there
+            offset = _offset_now(url, token, timeout)
         length = min(piece, size - offset)
         read_so_far = [0]
 
@@ -343,14 +347,17 @@ def upload_asset(node: str, room: str, path: str, sha256: Optional[str],
                  progress_cb: ProgressCb = None, *,
                  timeout: float = 600.0,
                  single_shot_max: int = SINGLE_SHOT_MAX,
-                 piece: int = PIECE) -> Dict[str, Any]:
+                 piece: int = PIECE,
+                 hold: Optional[Callable[[], None]] = None) -> Dict[str, Any]:
     """Put the file at `path` into `room`'s store on `node`.
 
     → `{ref, sha256, size, media_type, created, author, url, already}`.
     `already: True` means the HEAD said the room has it and nothing was sent.
     `sha256` may be None (it is computed here); when given it is checked by
     the node, so a file changed since the inventory read it is refused (422)
-    rather than stored under the wrong name.
+    rather than stored under the wrong name. `hold()` is called before each
+    piece of a resumable upload and returns when the client wants it to go on
+    (its «Pause»), truthy if it waited.
     """
     if not os.path.isfile(path):
         raise RoomError(f"not a file: {path}")
@@ -379,7 +386,7 @@ def upload_asset(node: str, room: str, path: str, sha256: Optional[str],
                             progress_cb, timeout)
     else:
         info = _resumable(node, room, path, hexd, size, media_type, token,
-                          progress_cb, timeout, piece)
+                          progress_cb, timeout, piece, hold)
     got = _hex(info.get("ref") or info.get("sha256") or "")
     if got != hexd:
         raise RoomError(f"the room stored sha256:{got[:12]}…, not the "
