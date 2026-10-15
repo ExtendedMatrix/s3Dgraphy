@@ -41,6 +41,10 @@ class FakeNode:
         self.access = {}
         self.uploads = {}
         self.fail_put = set()      # hex whose PUT answers 500
+        #: rooms a HEAD opened before they were declared: their working copy is
+        #: the empty one, and the sections written at birth never reach it (the
+        #: node's behaviour, measured on 15 Oct 2026)
+        self.opened_early = set()
         self.lock = threading.Lock()
         node = self
 
@@ -73,6 +77,8 @@ class FakeNode:
                 path, _q = self._route()
                 m = re.match(r"^/v1/rooms/([^/]+)/asset/sha256:([0-9a-f]{64})$", path)
                 if m:
+                    if m.group(1) not in node.rooms:
+                        node.opened_early.add(m.group(1))
                     hexd = m.group(2)
                     if hexd in node.blobs:
                         home = node.homes.get(hexd)
@@ -111,6 +117,10 @@ class FakeNode:
                 if m:
                     room = node.rooms[m.group(1)]
                     applied, refused = 0, []
+                    if m.group(1) in node.opened_early and body.get("graph_id"):
+                        return self._send(200, {"applied": 0, "refused": [
+                            {"id": op["id"], "reason": f"the graph '{body['graph_id']}' is "
+                             f"not in this study", "code": "unknown_graph"} for op in body["ops"]]})
                     with node.lock:
                         node.ops_requests += 1
                         held = room["ops"].setdefault(body.get("graph_id") or "", {})
@@ -317,7 +327,16 @@ class RoomImport(unittest.TestCase):
         self.assertEqual(self.node.rooms, {})
         self.assertEqual(self.node.puts, {})
         self.assertFalse(os.path.exists(os.path.join(os.path.dirname(em), ".em_room_import.json")))
-        self.assertEqual(set(rep["requests"]), {"HEAD"})
+        # a room that does not exist yet is not asked about its files: a HEAD
+        # through it would open it before its birth
+        self.assertEqual(set(rep["requests"]), {"GET"})
+        self.assertFalse(rep["asked_the_node"])
+        self.assertEqual(self.node.opened_early, set())
+        # a room that exists is asked
+        self.run_import(em)
+        again = self.run_import(em, dry_run=True)
+        self.assertTrue(again["asked_the_node"])
+        self.assertEqual(again["plan"]["upload"]["files"], 0)
 
     def test_a_run_then_a_second_one_that_sends_nothing(self):
         em = write_study(self.root)
@@ -337,6 +356,11 @@ class RoomImport(unittest.TestCase):
         self.assertIn("DosCo/D.01.pdf", [a["locator"] for a in d01["addresses"]])
         self.assertTrue(d01["stamp_asset"].startswith("sha256:"))
         self.assertEqual(nodes["r-d02"]["node"]["data"]["url"], d01["url"])
+        # the store's address says no type: the file's name gives it, a
+        # declared one stays
+        self.assertEqual(d01["media_type"], "application/pdf")
+        self.assertEqual(nodes["r-d02"]["node"]["data"]["media_type"], "application/pdf")
+        self.assertNotIn("media_type", nodes["f-mtl"]["node"]["data"])
         obj = nodes["f-obj"]["node"]["data"]
         self.assertIn("/asset/sha256:", obj["url"])
         self.assertEqual(obj["path"], "../RB/LOD0/a.obj")
@@ -358,6 +382,30 @@ class RoomImport(unittest.TestCase):
         self.assertEqual(self.node.puts, puts)
         self.assertEqual(second["seeded"]["sent"], 0)
         self.assertEqual(self.node.ops_requests, ops)
+
+    def test_the_room_is_born_before_any_question_about_its_files(self):
+        em = write_study(self.root)
+        rep = self.run_import(em)
+        self.assertEqual(self.node.opened_early, set())
+        self.assertEqual(rep["seeded"]["refused"], 0)
+        self.assertGreater(rep["seeded"]["applied"], 0)
+
+    def test_a_refused_seeding_fails_the_run_and_is_sent_again(self):
+        em = write_study(self.root)
+        self.node.opened_early.add("r1")              # as if a HEAD had opened it
+        from s3dgraphy.__main__ import main
+        code = main(["room-import", em, "--node", self.node.url, "--room", "r1",
+                     "--token", "t"])
+        self.assertEqual(code, 1)
+        rep = json.load(open(os.path.join(os.path.dirname(em), "r1.room-import.json")))
+        self.assertTrue(any("not in this study" in f for f in rep["failed"]))
+        journal = json.load(open(os.path.join(os.path.dirname(em), ".em_room_import.json")))
+        self.assertEqual(next(iter(journal["rooms"].values()))["seeded"]["g1"], {})
+        self.node.opened_early.clear()                # the node restarted
+        rep = self.run_import(em)
+        self.assertEqual(rep["failed"], [])
+        self.assertEqual(rep["seeded"]["sent"], rep["seeded"]["applied"])
+        self.assertIn("r-d01", self.node.ops_of("r1", "g1"))
 
     def test_a_run_cut_half_way_resumes_without_sending_twice(self):
         em = write_study(self.root)

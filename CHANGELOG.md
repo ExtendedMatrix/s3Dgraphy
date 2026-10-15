@@ -42,8 +42,17 @@ All notable changes to **s3dgraphy** are documented here.
     (`s3dgraphy/__main__.py`, new), and `api.room_import(...)`.
   - `tests/test_semantic_purity.py` declares the three transport modules as
     the importer's exception to «no network»; inventory and engine have none.
-  - Measured on Templu Mare v3.2 against the dev node: see the report of
-    MICRO-ROOM-IMPORT.
+  - Measured on Templu Mare v3.2 against the dev node (the report of
+    MICRO-ROOM-IMPORT), and three things learned there: **the room is created
+    before any question about its files** — a HEAD on an asset through a room
+    the node has not declared opens an empty working copy of it, and the
+    sections written at its birth never reach that copy (every operation came
+    back «the graph … is not in this study»), so a dry run on a room that does
+    not exist asks the node nothing; **a refused operation fails the run** and
+    is not remembered as seeded; **a hosted resource says its media type**
+    when the graph did not (from the file's name; a declared one is kept) —
+    a glb at `…/asset/sha256:…` without it was not a glTF for EMStudio's
+    Space, which fell back to the `.blend` master.
 
 - **`merge_graphs(container, graph_ids=None) -> (Graph, report)`**
   (`s3dgraphy.container`, + `api`; E.D., 12 October 2026, s3Dgraphy#36): one

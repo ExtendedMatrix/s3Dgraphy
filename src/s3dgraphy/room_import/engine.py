@@ -197,13 +197,14 @@ def _map(workers: int, fn, items, *, label: str = "", every: float = 5.0):
 
 def make_plan(container, *, base_dirs: List[str], node: str, room: str,
               token: Optional[str], journal: Journal, workers: int = 4,
-              trees: str = inventory.CHOICE_UPLOAD) -> Dict[str, Any]:
+              trees: str = inventory.CHOICE_UPLOAD, probe: bool = True) -> Dict[str, Any]:
     """Every file the study names, in its group, and the work it means.
 
     → `{rows, trees, units, groups}`. A `unit` is ONE upload: one digest, one
     file on this disk — a file named twice goes up once. Nothing is written
-    to the node."""
-    head = _head_fn(node, room, token)
+    to the node. `probe=False`: the node is not asked (a room that does not
+    exist yet), every file here counts as to send."""
+    head = _head_fn(node, room, token) if probe else (lambda _hexd: (False, None))
     entries: List[Tuple[str, Dict[str, Any]]] = []
     for gid, graph in _members(container):
         for entry in inventory.file_entries(graph):
@@ -324,6 +325,17 @@ def summarise_plan(plan: Dict[str, Any], *, elsewhere: str = "host") -> Dict[str
 
 
 # ── the run ──────────────────────────────────────────────────────────────────
+
+def _room_exists(node: str, token: Optional[str], room: str) -> bool:
+    """Whether the node has DECLARED this room. `GET /v1/rooms/{id}` describes
+    any name (an undeclared one as `implicit`, its container missing) and does
+    not open a working copy — so asking it is safe where a HEAD is not."""
+    try:
+        info = nodeio.room_info(node, token, room)
+    except RoomError:
+        return False
+    return not (info.get("implicit") and room in (info.get("missing_refs") or []))
+
 
 def _open_room(node: str, token: Optional[str], room: str, title: str,
                sections: List[Dict[str, Any]], active: Optional[str],
@@ -491,14 +503,16 @@ def _rewrite(container, plan: Dict[str, Any], *, node: str, room: str,
             continue
         if r["group"] == inventory.GROUP_ELSEWHERE and hexd and (
                 elsewhere == "host" or hexd in moved):
-            inventory.make_store_backed(res, url=nodeio.asset_url(node, room, hexd), sha256=hexd)
+            _host(res, url=nodeio.asset_url(node, room, hexd), sha256=hexd,
+                  locator=r.get("path") or r["locator"])
             counts["hosted"] += 1
             counts["elsewhere_hosted"] += 1
             continue
         if r["group"] in (inventory.GROUP_FOUND, inventory.GROUP_STORED) and hexd \
                 and (r["group"] == inventory.GROUP_STORED or r["choice"] == inventory.CHOICE_UPLOAD) \
                 and hexd not in failed_hex:
-            inventory.make_store_backed(res, url=nodeio.asset_url(node, room, hexd), sha256=hexd)
+            _host(res, url=nodeio.asset_url(node, room, hexd), sha256=hexd,
+                  locator=r.get("path") or r["locator"])
             unit = plan["units"].get(hexd) or {}
             if unit.get("stamp") and unit["stamp"] not in failed_hex:
                 res.data["stamp_asset"] = f"sha256:{unit['stamp']}"
@@ -512,6 +526,21 @@ def _rewrite(container, plan: Dict[str, Any], *, node: str, room: str,
                 inventory.make_reference(res)
             counts["references"] += 1
     return counts
+
+
+def _host(res: Any, *, url: str, sha256: str, locator: str) -> None:
+    """`make_store_backed`, and the media type the store's address no longer
+    says. Measured on 15 Oct 2026: a glb version hosted at `…/asset/sha256:…`
+    with no `media_type` was not a glTF for EMStudio's Space (it reads the
+    extension or the type) and the Space fell back to the `.blend` master. The
+    type comes from the file's name; a type the graph declares is never
+    overwritten, and an unknown one is not written."""
+    inventory.make_store_backed(res, url=url, sha256=sha256)
+    data = res.data
+    if not data.get("media_type"):
+        media = inventory.media_type_for(locator)
+        if media != "application/octet-stream":
+            data["media_type"] = media
 
 
 def _graph_of(plan: Dict[str, Any], node_id: Optional[str]) -> Optional[str]:
@@ -553,16 +582,23 @@ def _seed(container, *, node: str, room: str, token: Optional[str],
         not_news = [x for x in part["refused"]
                     if str(x.get("reason") or "") in ("stale", "idempotent",
                                                       "already removed, not older")]
+        refused = [x for x in part["refused"] if x not in not_news]
         out["applied"] += part["applied"]
-        out["refused"] += len(part["refused"]) - len(not_news)
+        out["refused"] += len(refused)
         out["not_news"] += len(not_news)
         out["sent"] += len(todo)
         out["requests"] += part["requests"]
         out["graphs"].append(gid)
-        out.setdefault("refusals", []).extend(
-            [x for x in part["refused"] if x not in not_news][:20])
+        out.setdefault("refusals", []).extend(refused[:20])
+        # only what the room TOOK is remembered: a refused operation is sent
+        # again by the next run
+        bad = {str(x.get("id")) for x in refused}
         with journal.lock:
-            journal.here["seeded"][gid] = digests
+            kept = dict(before)
+            kept.update({k: v for k, v in digests.items() if k not in bad})
+            for k in bad:
+                kept.pop(k, None)
+            journal.here["seeded"][gid] = kept
         journal.flush(force=True)
     return out
 
@@ -599,9 +635,24 @@ def room_import(em_json: str, *, node: str, room: str, title: Optional[str] = No
         os.path.basename(em_json).split(".")[0]
     timings: Dict[str, float] = {}
 
-    plan = make_plan(container, base_dirs=[base], node=node, room=room, token=token,
-                     journal=journal, workers=workers,
-                     trees=inventory.CHOICE_REFERENCE if pack_tilesets else inventory.CHOICE_UPLOAD)
+    # THE ROOM BEFORE ANY QUESTION ABOUT ITS FILES. Measured on 15 Oct 2026: a
+    # HEAD on an asset through a room the node has not created opens a working
+    # copy of it in memory (`rooms().get` → `_empty_container`), and the
+    # sections `POST /v1/rooms` writes afterwards never reach that copy — every
+    # operation of the seeding came back «the graph … is not in this study».
+    # So a run creates (or takes up) the room first; a dry run on a room that
+    # does not exist yet asks the node nothing.
+    where: Dict[str, Any] = {}
+    probe = True
+    if dry_run:
+        probe = _room_exists(node, token, room)
+    else:
+        where = _open_room(node, token, room, title, birth_sections(members),
+                           container.active_graph_id, journal)
+    plan = make_plan(container, base_dirs=[base], node=node, room=room,
+                     token=token if probe else None, journal=journal, workers=workers,
+                     trees=inventory.CHOICE_REFERENCE if pack_tilesets else inventory.CHOICE_UPLOAD,
+                     probe=probe)
     timings["plan"] = round(time.monotonic() - t0, 1)
 
     packs: List[Dict[str, Any]] = []
@@ -639,7 +690,7 @@ def room_import(em_json: str, *, node: str, room: str, title: Optional[str] = No
             # the new siblings are resources like any other: planned again
             plan = make_plan(container, base_dirs=[base, work], node=node, room=room,
                              token=token, journal=journal, workers=workers,
-                             trees=inventory.CHOICE_REFERENCE)
+                             trees=inventory.CHOICE_REFERENCE, probe=probe)
             for p in packs:
                 for row in plan["rows"]:
                     if row["id"] == p.get("archive_id") and row["group"] == inventory.GROUP_MISSING:
@@ -650,7 +701,7 @@ def room_import(em_json: str, *, node: str, room: str, title: Optional[str] = No
     report: Dict[str, Any] = {
         "em_json": em_json, "base_dir": base, "node": node, "room": room, "title": title,
         "visibility": visibility, "dry_run": dry_run, "pack_tilesets": pack_tilesets or "",
-        "elsewhere": elsewhere,
+        "elsewhere": elsewhere, "asked_the_node": probe,
         "started_at": datetime.datetime.fromtimestamp(started).isoformat(timespec="seconds"),
         "plan": summary, "packs": packs, "warnings": warnings[:20],
         "missing": [{"id": r["id"], "name": r["name"], "locator": r["locator"],
@@ -664,8 +715,6 @@ def room_import(em_json: str, *, node: str, room: str, title: Optional[str] = No
         return report
 
     try:
-        where = _open_room(node, token, room, title, birth_sections(members),
-                           container.active_graph_id, journal)
         report["room_state"] = where
         t1 = time.monotonic()
         todo = [u for u in plan["units"].values() if not u["present"]
@@ -762,6 +811,10 @@ def room_import(em_json: str, *, node: str, room: str, title: Optional[str] = No
         "seconds": round(time.monotonic() - t0, 1), "timings": timings,
         "journal": journal_path,
     })
+    if seeded.get("refused"):
+        first = (seeded.get("refusals") or [{}])[0]
+        report["failed"].append(f"the room refused {seeded['refused']} operation(s) of the "
+                                f"graph: {first.get('reason') or first}")
     report["sentence"] = sentence(report)
     write_report(report, report_dir or os.path.dirname(journal_path))
     return report
