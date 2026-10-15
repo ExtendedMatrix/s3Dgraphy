@@ -228,6 +228,14 @@ def node(tmp_path_factory):
     else:  # pragma: no cover
         process.kill()
         pytest.skip("StratiGraph Server did not become healthy in time")
+    # the room, declared before any read: since stratigraph-server 38df0b0
+    # (15 Oct 2026) a HEAD/GET on a room that does not exist answers 404 and
+    # opens nothing — the rule the importer follows (the room first)
+    try:
+        up.create_room(base, None, "p3")
+    except up.RoomError as exc:  # pragma: no cover — a 409: it exists
+        if exc.status != 409:
+            raise
     # does this checkout have the resumable door (1a1bbf8)?
     probe = urllib.request.Request(f"{base}/v1/rooms/p3/uploads", method="POST",
                                    data=b'{"size": 1}',
