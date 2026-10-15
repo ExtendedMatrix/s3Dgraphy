@@ -41,6 +41,7 @@ class FakeNode:
         self.access = {}
         self.uploads = {}
         self.fail_put = set()      # hex whose PUT answers 500
+        self.moved = []            # hex moved home («Move here»)
         #: rooms a HEAD opened before they were declared: their working copy is
         #: the empty one, and the sections written at birth never reach it (the
         #: node's behaviour, measured on 15 Oct 2026)
@@ -143,6 +144,15 @@ class FakeNode:
                     node.blobs.setdefault(hexd, b"")
                     node.homes.setdefault(hexd, m.group(1))
                     return self._send(200, {"ref": f"sha256:{hexd}", "sha256": hexd})
+                m = re.match(r"^/v1/rooms/([^/]+)/asset-home/sha256:([0-9a-f]{64})$", path)
+                if m:
+                    hexd = m.group(2)
+                    with node.lock:
+                        if node.homes.get(hexd) != body.get("from_room"):
+                            return self._send(409, {"detail": "its home changed"})
+                        node.homes[hexd] = m.group(1)
+                        node.moved.append(hexd)
+                    return self._send(200, {"home": m.group(1)})
                 m = re.match(r"^/v1/rooms/([^/]+)/uploads$", path)
                 if m:
                     uid = f"u{len(node.uploads)}"
@@ -510,6 +520,93 @@ class RoomImport(unittest.TestCase):
         self.assertEqual(rep["packs"][0]["reused"], "r-3tz")
         self.assertFalse(os.path.exists(os.path.join(self.root, "w")))
         self.assertIn("/asset/sha256:", _ops_nodes(self.node)["r-3tz"]["node"]["data"]["url"])
+
+    # ── the two halves, as a client with a dialog calls them (EM Tools) ──────
+
+    def test_a_study_held_in_memory_goes_in_as_its_file_does(self):
+        from s3dgraphy.container import load_container_file
+        em = write_study(self.root)
+        container, _w = load_container_file(em)
+        journal = os.path.join(self.root, "j", ".em_room_import.json")
+        os.makedirs(os.path.dirname(journal))
+        rep = self.run_import(None, container=container, base_dirs=[os.path.dirname(em)],
+                              journal_path=journal)
+        self.assertEqual(rep["uploaded"]["files"], 8)
+        self.assertEqual(rep["em_json"], "")
+        self.assertEqual(rep["title"], "Study")
+        self.assertTrue(os.path.isfile(os.path.join(self.root, "j", "r1.room-import.json")))
+        # the client's graphs are rewritten IN PLACE: what it holds is what the
+        # room was seeded with
+        d01 = container.graphs["g1"].find_node_by_id("r-d01").data
+        self.assertEqual(d01["url"], _ops_nodes(self.node)["r-d01"]["node"]["data"]["url"])
+        with self.assertRaises(ValueError):
+            self.run_import(None, container=container)        # no folder to look in
+
+    def test_the_persons_choices_lots_and_the_scene_hook(self):
+        from s3dgraphy.room_import import (apply_choices, execute, plan_report,
+                                           prepare)
+        from s3dgraphy.room_import import inventory
+        from s3dgraphy.nodes.resource_node import ResourceNode
+        em = write_study(self.root)
+        run = prepare(em, node=self.node.url, room="r1", token="t", workers=2)
+        self.assertIn("r1", self.node.rooms)                   # born before the plan
+        before = plan_report(run)["plan"]
+        self.assertEqual(before["upload"]["by_kind"]["member"]["files"], 3)
+        # D.01 left as a reference (its stamp goes with it), the tree too
+        apply_choices(run, per_item={"r-d01": inventory.CHOICE_REFERENCE,
+                                     "r-tiles": inventory.CHOICE_REFERENCE})
+        seen = []
+
+        def scene(info):
+            # what only the client makes: a model exported from its scene
+            graph = info["container"].graphs["g1"]
+            res = ResourceNode(node_id="r-model", name="RM model",
+                               url=nodeio.asset_url(info["node"], info["room"], "c" * 64))
+            graph.add_node(res)
+            seen.append(sorted(n.node_id for n in graph.nodes if n.node_type == "resource"))
+            return {"uploaded": 1, "bytes": 10, "failed": ["Cube: no mesh"],
+                    "filled": ["r-gone"]}
+
+        progress = []
+        rep = execute(run, before_seed=scene,
+                      lots=[{"ids": ["r-d02"], "name": "S1", "camera": "X",
+                             "from": "2026-01-01T10:00:00", "to": "2026-01-01T10:20:00",
+                             "graph_id": "g1", "confirmed": True},
+                            {"ids": ["f-obj"], "name": "no", "confirmed": False}],
+                      progress=lambda name, sent, total: progress.append((sent, total)))
+        nodes = _ops_nodes(self.node)
+        self.assertEqual(nodes["r-d01"]["node"]["data"]["url"], "DosCo/D.01.pdf")
+        self.assertEqual(nodes["r-d01"]["node"]["data"]["residency"], "reference")
+        self.assertIn("/asset/", nodes["r-d02"]["node"]["data"]["url"])  # same bytes, here
+        self.assertEqual(nodes["r-tiles"]["node"]["data"]["residency"], "reference")
+        self.assertNotIn("member", rep["plan"]["upload"]["by_kind"])
+        # D.01's bytes still go up, as D.02's file — whose name has no stamp
+        # beside it — plus a.obj, a.mtl, and the scene's one
+        self.assertEqual(rep["uploaded"]["files"], 3 + 1)
+        self.assertEqual(rep["uploaded"]["bytes"] - 10,
+                         sum(len(v) for v in self.node.blobs.values()))
+        self.assertIn("Cube: no mesh", rep["failed"])
+        self.assertEqual(rep["plan"]["missing"], 0)              # filled by the scene
+        self.assertIn("r-model", nodes)                           # in the one seeding
+        self.assertEqual(len(seen), 1)
+        self.assertEqual(len(rep["lots"]), 1)
+        acq = nodes[rep["lots"][0]]["node"]
+        self.assertEqual(acq["data"]["camera"], "X")
+        self.assertTrue(progress and progress[-1][0] == progress[-1][1])
+
+    def test_move_here_moves_only_what_the_person_said(self):
+        em = write_study(self.root)
+        self.run_import(em, room="older")
+        from s3dgraphy.room_import import execute, prepare
+        run = prepare(em, node=self.node.url, room="r1", token="t")
+        rows = {r["id"]: r for r in run["plan"]["rows"]}
+        self.assertEqual(rows["f-obj"]["group"], "elsewhere")
+        execute(run, move=["f-obj"])
+        self.assertEqual(self.node.moved, [rows["f-obj"]["sha256"]])
+        self.assertEqual(self.node.homes[rows["f-obj"]["sha256"]], "r1")
+        self.assertEqual(self.node.homes[rows["f-mtl"]["sha256"]], "older")
+        nodes = _ops_nodes(self.node)
+        self.assertIn("/v1/rooms/r1/asset/", nodes["f-mtl"]["node"]["data"]["url"])  # host
 
     def test_the_command(self):
         from s3dgraphy.__main__ import main

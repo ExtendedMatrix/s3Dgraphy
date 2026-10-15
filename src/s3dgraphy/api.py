@@ -3069,7 +3069,8 @@ def resolve_file(entry: Dict[str, Any], **kwargs) -> Dict[str, Any]:
 
 
 # ── a study into a room, from a folder (MICRO-ROOM-IMPORT, 15 Oct 2026) ──────
-def room_import(em_json: str, *, node: str, room: str, title: Optional[str] = None,
+def room_import(em_json: Optional[str] = None, *, node: str, room: str,
+                title: Optional[str] = None,
                 base_dir: Optional[str] = None, visibility: str = "restricted",
                 token: Optional[str] = None, dry_run: bool = False,
                 pack_tilesets: Optional[str] = None, **kwargs) -> Dict[str, Any]:
@@ -3079,8 +3080,11 @@ def room_import(em_json: str, *, node: str, room: str, title: Optional[str] = No
     hosted keeping their path, the graph is seated last as operations, then
     ``study-access``. ``dry_run``: the plan only, nothing written.
     ``pack_tilesets="3tz"``: a tileset folder goes up as one canonical
-    ``.3tz``. → the report. The one engine of the three doors (the command,
-    EMStudio, EM Tools); see :mod:`s3dgraphy.room_import`."""
+    ``.3tz``. ``container=`` (a study held in memory) with ``base_dirs=``
+    instead of the path; the person's choices as ``per_group``/``per_batch``/
+    ``per_item``, ``move``, ``lots``; ``before_seed`` for what a client adds
+    before the graph is seated. → the report. The one engine of the three
+    doors (the command, EMStudio, EM Tools); see :mod:`s3dgraphy.room_import`."""
     from .room_import import room_import as _run
     return _run(em_json, node=node, room=room, title=title, base_dir=base_dir,
                 visibility=visibility, token=token, dry_run=dry_run,

@@ -52,13 +52,23 @@ written by dtcstamp (s3Dgraphy stays a reader), a sibling representation
 (`dtc_derived_from` the folder, a DTC step `packing` with its stamp); the
 folder stays as a reference. See :mod:`.pack`.
 
+A CLIENT WITH A DIALOG (EM Tools' «Bring into a room») calls the two halves:
+:func:`prepare` (the room, then the plan, from the study it holds in memory:
+`container=`, `base_dirs=`), shows the rows, and :func:`execute` with the
+person's choices (:func:`apply_choices` per group / batch / item, `move` for
+«Move here», the confirmed `lots`) and its hook for what only the client can
+make (`before_seed`: EM Tools publishes the scene's models there, so they are
+in the one seeding).
+
 Defaults to confirm (E.D.): the name `room_import` / `room-import`, a new
 room's visibility `restricted`.
 """
 
-from .engine import (JOURNAL_NAME, Interrupted, Journal, make_plan, markdown,
-                     room_import, summarise_plan)
+from .engine import (JOURNAL_NAME, Interrupted, Journal, apply_choices,
+                     birth_sections, execute, make_plan, markdown, plan_report,
+                     prepare, room_import, summarise_plan)
 from .errors import RoomError
 
-__all__ = ["JOURNAL_NAME", "Interrupted", "Journal", "RoomError", "make_plan",
-           "markdown", "room_import", "summarise_plan"]
+__all__ = ["JOURNAL_NAME", "Interrupted", "Journal", "RoomError", "apply_choices",
+           "birth_sections", "execute", "make_plan", "markdown", "plan_report",
+           "prepare", "room_import", "summarise_plan"]

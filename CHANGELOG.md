@@ -53,6 +53,21 @@ All notable changes to **s3dgraphy** are documented here.
     when the graph did not (from the file's name; a declared one is kept) —
     a glb at `…/asset/sha256:…` without it was not a glTF for EMStudio's
     Space, which fell back to the `.blend` master.
+  - **The two halves, for a client with a dialog** (MICRO-BRING-CHIAMA-IL-
+    MOTORE, 15 October 2026 — EM Tools' Files and «Bring into a room» now
+    call the engine): `prepare(em_json | container=…, base_dirs=[…])` creates
+    (or takes up) the room and makes the plan from a study held in MEMORY
+    (its graphs rewritten in place), `apply_choices(run, per_group=…,
+    per_batch=…, per_item=…)` takes the person's choices and recounts the
+    work, `execute(run, move=[ids], lots=[…], before_seed=hook,
+    progress=cb)` does the rest: «Move here» only for what the person said,
+    each confirmed lot of photos one acquisition (`bucket_acquisition`), and
+    the client's hook — EM Tools publishes the scene's models there — called
+    after the files are hosted and BEFORE the graph is seated, so they are in
+    the one seeding (its counts and `filled` resources in the report).
+    `room_import` takes the same parameters; `progress` is called in the
+    caller's thread. A room's title from a graph named in several languages
+    is its `default` name (it was the dict written out).
 
 - **`merge_graphs(container, graph_ids=None) -> (Graph, report)`**
   (`s3dgraphy.container`, + `api`; E.D., 12 October 2026, s3Dgraphy#36): one

@@ -376,7 +376,8 @@ def _open_room(node: str, token: Optional[str], room: str, title: str,
 
 def _upload_all(units: List[Dict[str, Any]], *, node: str, room: str,
                 token: Optional[str], journal: Journal, workers: int,
-                by_reference: bool, stop_after: Optional[int] = None
+                by_reference: bool, stop_after: Optional[int] = None,
+                progress: Optional[Callable[[str, int, int], None]] = None
                 ) -> Dict[str, Any]:
     """Every unit not on the node goes up, in a pool. One failure is one row of
     the report; an unreachable node stops the run (the journal is kept)."""
@@ -426,6 +427,15 @@ def _upload_all(units: List[Dict[str, Any]], *, node: str, room: str,
             u = futures[fut]
             try:
                 fut.result()
+                if progress is not None:
+                    # here, in the caller's thread: Blender's progress bar
+                    # must not be touched from a worker
+                    with lock:
+                        sent = done["bytes"]
+                    try:
+                        progress(os.path.basename(u["path"] or ""), sent, total)
+                    except Exception:  # noqa: BLE001 — a client's bar is not the run
+                        pass
             except RoomError as exc:
                 if exc.status is None or exc.status == 401:
                     stop.set()
@@ -603,36 +613,73 @@ def _seed(container, *, node: str, room: str, token: Optional[str],
     return out
 
 
-def room_import(em_json: str, *, node: str, room: str, title: Optional[str] = None,
-                base_dir: Optional[str] = None, visibility: str = "restricted",
-                token: Optional[str] = None, dry_run: bool = False,
-                pack_tilesets: Optional[str] = None, journal_path: Optional[str] = None,
-                work_dir: Optional[str] = None, report_dir: Optional[str] = None,
-                by_reference: bool = False, workers: int = 4, reseed: bool = False,
-                elsewhere: str = "host",
-                stop_after: Optional[int] = None) -> Dict[str, Any]:
-    """Bring the study of `em_json` and every file of its folder into `room` on
-    `node`. → the report (also written as json + md unless `dry_run`)."""
+def _study(em_json: Optional[str], container: Any) -> Tuple[Any, List[str]]:
+    """The study: from its file, or the one a client holds in memory (EM Tools:
+    the graphs of the scene, the file's shelf). Anything with `graphs` (id →
+    Graph), `shelf` and `active_graph_id` — a :class:`~s3dgraphy.container.Container`."""
+    if container is not None:
+        return container, []
+    if not em_json:
+        raise ValueError("room_import needs an em.json or a container")
+    return _load(em_json)
+
+
+def _title_of(container: Any, em_json: Optional[str]) -> str:
+    active = None
+    try:
+        active = container.active()
+    except Exception:  # noqa: BLE001 — a container-like without active()
+        gid = getattr(container, "active_graph_id", None)
+        active = (getattr(container, "graphs", {}) or {}).get(gid)
+    name = getattr(active, "name", "") or ""
+    if isinstance(name, dict):
+        # a graph's name in several languages (`{"default": …}`): measured on
+        # 15 Oct 2026, the title was the dict written out
+        name = name.get("default") or next(iter(name.values()), "")
+    name = str(name or "")
+    if name:
+        return name
+    return os.path.basename(em_json).split(".")[0] if em_json else ""
+
+
+def prepare(em_json: Optional[str] = None, *, container: Any = None,
+            node: str, room: str, title: Optional[str] = None,
+            base_dir: Optional[str] = None, base_dirs: Optional[Iterable[str]] = None,
+            token: Optional[str] = None, dry_run: bool = False,
+            pack_tilesets: Optional[str] = None, journal_path: Optional[str] = None,
+            work_dir: Optional[str] = None, workers: int = 4) -> Dict[str, Any]:
+    """The first half of the gesture: the room (created, or taken up again —
+    unless `dry_run`), then the PLAN, every file the study names in its group.
+    Nothing is uploaded. → the run, for :func:`plan_report` and :func:`execute`.
+
+    A client with a dialog (EM Tools) calls this, shows `run["plan"]["rows"]`,
+    collects the person's choices, and then calls :func:`execute` with them.
+    `container` is the study a client holds in memory (its graphs are
+    rewritten IN PLACE when the files are hosted); `base_dirs` are where its
+    relative paths are looked for (the DosCo, the em.json's folder, the
+    .blend's folder), the first one also where the journal goes when no
+    `em_json` says where."""
     from . import pack as packing
 
     started = time.time()
     t0 = time.monotonic()
     nodeio.seen_requests(reset=True)
     node = node.strip().rstrip("/")
-    em_json = os.path.abspath(em_json)
-    if visibility not in VISIBILITIES:
-        raise ValueError(f"visibility is restricted or public, not {visibility!r}")
-    if elsewhere not in ELSEWHERE:
-        raise ValueError(f"elsewhere is one of {ELSEWHERE}, not {elsewhere!r}")
+    em_json = os.path.abspath(em_json) if em_json else ""
     if pack_tilesets not in (None, "", "3tz"):
         raise ValueError(f"--pack-tilesets knows 3tz, not {pack_tilesets!r}")
-    base = os.path.abspath(base_dir or os.path.dirname(em_json))
-    journal_path = journal_path or os.path.join(os.path.dirname(em_json), JOURNAL_NAME)
+    bases = [os.path.abspath(b) for b in (base_dirs or ()) if b]
+    if base_dir or not bases:
+        if not (base_dir or em_json):
+            raise ValueError("room_import needs base_dirs when there is no em.json")
+        bases.insert(0, os.path.abspath(base_dir or os.path.dirname(em_json)))
+    bases = list(dict.fromkeys(bases))
+    journal_path = journal_path or os.path.join(
+        os.path.dirname(em_json) if em_json else bases[0], JOURNAL_NAME)
     journal = Journal(journal_path, node=node, room=room, write=not dry_run)
-    container, warnings = _load(em_json)
+    container, warnings = _study(em_json, container)
     members = _members(container)
-    title = title or str(getattr(container.active(), "name", "") or "") or \
-        os.path.basename(em_json).split(".")[0]
+    title = title or _title_of(container, em_json) or room
     timings: Dict[str, float] = {}
 
     # THE ROOM BEFORE ANY QUESTION ABOUT ITS FILES. Measured on 15 Oct 2026: a
@@ -648,8 +695,8 @@ def room_import(em_json: str, *, node: str, room: str, title: Optional[str] = No
         probe = _room_exists(node, token, room)
     else:
         where = _open_room(node, token, room, title, birth_sections(members),
-                           container.active_graph_id, journal)
-    plan = make_plan(container, base_dirs=[base], node=node, room=room,
+                           getattr(container, "active_graph_id", None), journal)
+    plan = make_plan(container, base_dirs=bases, node=node, room=room,
                      token=token if probe else None, journal=journal, workers=workers,
                      trees=inventory.CHOICE_REFERENCE if pack_tilesets else inventory.CHOICE_UPLOAD,
                      probe=probe)
@@ -670,7 +717,7 @@ def room_import(em_json: str, *, node: str, room: str, title: Optional[str] = No
                 # its file on this disk, also when the node already has it (a
                 # row the HEAD answered for carries no path)
                 sib_path = (sib_row or {}).get("path") or inventory.resolve_path(
-                    str(sib.data.get("url") or ""), [base])
+                    str(sib.data.get("url") or ""), bases)
                 check = packing.reusable(sib, sib_path, folder_digest)
                 if check["ok"]:
                     packs.append({"tree": r["id"], "reused": sib.node_id,
@@ -688,7 +735,7 @@ def room_import(em_json: str, *, node: str, room: str, title: Optional[str] = No
             packs.append(made)
         if any("archive_id" in p for p in packs):
             # the new siblings are resources like any other: planned again
-            plan = make_plan(container, base_dirs=[base, work], node=node, room=room,
+            plan = make_plan(container, base_dirs=bases + [work], node=node, room=room,
                              token=token, journal=journal, workers=workers,
                              trees=inventory.CHOICE_REFERENCE, probe=probe)
             for p in packs:
@@ -697,23 +744,110 @@ def room_import(em_json: str, *, node: str, room: str, title: Optional[str] = No
                         raise RoomError(f"the packed archive {p['path']} was not found again")
         timings["pack"] = round(time.monotonic() - t0 - timings["plan"], 1)
 
-    summary = summarise_plan(plan, elsewhere=elsewhere)
-    report: Dict[str, Any] = {
-        "em_json": em_json, "base_dir": base, "node": node, "room": room, "title": title,
-        "visibility": visibility, "dry_run": dry_run, "pack_tilesets": pack_tilesets or "",
-        "elsewhere": elsewhere, "asked_the_node": probe,
-        "started_at": datetime.datetime.fromtimestamp(started).isoformat(timespec="seconds"),
-        "plan": summary, "packs": packs, "warnings": warnings[:20],
+    return {"em_json": em_json, "container": container, "members": members,
+            "base_dirs": bases, "node": node, "room": room, "title": title,
+            "token": token, "dry_run": dry_run, "pack_tilesets": pack_tilesets or "",
+            "journal": journal, "journal_path": journal_path, "where": where,
+            "probe": probe, "plan": plan, "packs": packs, "warnings": warnings,
+            "timings": timings, "t0": t0, "started": started, "workers": workers}
+
+
+def plan_report(run: Dict[str, Any], *, elsewhere: str = "host",
+                visibility: str = "restricted") -> Dict[str, Any]:
+    """What :func:`prepare` found, as the report's first half (the dry run's
+    whole report)."""
+    plan = run["plan"]
+    return {
+        "em_json": run["em_json"], "base_dir": run["base_dirs"][0],
+        "base_dirs": run["base_dirs"], "node": run["node"], "room": run["room"],
+        "title": run["title"], "visibility": visibility, "dry_run": run["dry_run"],
+        "pack_tilesets": run["pack_tilesets"], "elsewhere": elsewhere,
+        "asked_the_node": run["probe"],
+        "started_at": datetime.datetime.fromtimestamp(run["started"]).isoformat(timespec="seconds"),
+        "plan": summarise_plan(plan, elsewhere=elsewhere), "packs": run["packs"],
+        "warnings": run["warnings"][:20],
         "missing": [{"id": r["id"], "name": r["name"], "locator": r["locator"],
                      "note": r.get("note", "")}
                     for r in plan["rows"] if r["group"] == inventory.GROUP_MISSING],
     }
-    if dry_run:
-        report["requests"] = nodeio.seen_requests()
-        report["seconds"] = round(time.monotonic() - t0, 1)
-        report["timings"] = timings
-        return report
 
+
+def apply_choices(run: Dict[str, Any], *, per_group: Optional[Dict[str, str]] = None,
+                  per_batch: Optional[Dict[str, str]] = None,
+                  per_item: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    """The person's choices on the plan (`inventory.apply_choices`: item >
+    batch > group), and the work they mean recounted: a file left as a
+    reference or skipped is not a unit any more, a tree left as a reference
+    has no files to send. → the plan."""
+    plan = run["plan"]
+    inventory.apply_choices(plan["rows"], per_group=per_group, per_batch=per_batch,
+                            per_item=per_item)
+    trees = [r for r in plan["rows"] if r.get("tree") and r["choice"] == inventory.CHOICE_UPLOAD]
+    keep = {t["id"] for t in trees}
+    plan["trees"] = trees
+    plan["members"] = [m for m in plan["members"] if m["tree_of"] in keep]
+    token = run["token"] if run["probe"] else None
+    head = _head_fn(run["node"], run["room"], token) if run["probe"] \
+        else (lambda _hexd: (False, None))
+    plan["units"] = _units(plan["rows"], plan["members"], head, run["journal"])
+    return plan
+
+
+def _bucket_lots(run: Dict[str, Any], lots: Iterable[Dict[str, Any]]) -> List[str]:
+    """L1 · each CONFIRMED session of photos becomes ONE acquisition in its
+    graph (`api.bucket_acquisition`, the serial node). → the acquisition ids."""
+    from ..api import bucket_acquisition
+    graphs = dict(run["members"])
+    active = getattr(run["container"], "active_graph_id", None)
+    made = []
+    for lot in lots or ():
+        if lot.get("confirmed") is False or not lot.get("ids"):
+            continue
+        graph = graphs.get(lot.get("graph_id") or active) or next(iter(graphs.values()))
+        out = bucket_acquisition(
+            graph, list(lot["ids"]), name=f"Photos · {lot.get('name') or ''}".strip(),
+            metadata={"camera": lot.get("camera"), "taken_from": lot.get("from"),
+                      "taken_to": lot.get("to"),
+                      "source": lot.get("source") or "room-import"})
+        made.append(str(out.get("acquisition_id") or out.get("id") or ""))
+    return made
+
+
+def execute(run: Dict[str, Any], *, visibility: str = "restricted",
+            elsewhere: str = "host", move: Optional[Iterable[str]] = None,
+            lots: Optional[Iterable[Dict[str, Any]]] = None,
+            before_seed: Optional[Callable[[Dict[str, Any]], Optional[Dict[str, Any]]]] = None,
+            progress: Optional[Callable[[str, int, int], None]] = None,
+            report_dir: Optional[str] = None, by_reference: bool = False,
+            reseed: bool = False, stop_after: Optional[int] = None) -> Dict[str, Any]:
+    """The second half: the files up, the resources hosted, the graph seated,
+    `study-access`, the report (json + md in `report_dir`).
+
+    The person's choices: on the plan (:func:`apply_choices`, before this);
+    `move` — the rows (ids) or digests at home in another room the person
+    said «Move here» for (`elsewhere="move"`: all of them); `lots` — the
+    confirmed sessions of photos, one acquisition each. `before_seed(info)` is
+    the client's hook for the resources only IT can make — EM Tools exports
+    the scene's models and publishes them (`promote_model`) — called after the
+    files are up and hosted, BEFORE the graph is seated, so they are in the one
+    seeding. `info` is `{node, room, token, container, plan}`; it answers
+    `{uploaded, bytes, already, failed: [sentence], filled: [resource id]}`
+    (any of them), counted in the report. `progress(name, sent, total)`:
+    bytes, after each file."""
+    if run["dry_run"]:
+        raise ValueError("a dry run is not executed: prepare it again without dry_run")
+    if visibility not in VISIBILITIES:
+        raise ValueError(f"visibility is restricted or public, not {visibility!r}")
+    if elsewhere not in ELSEWHERE:
+        raise ValueError(f"elsewhere is one of {ELSEWHERE}, not {elsewhere!r}")
+    node, room, token = run["node"], run["room"], run["token"]
+    journal, journal_path = run["journal"], run["journal_path"]
+    plan, where, members = run["plan"], run["where"], run["members"]
+    t0, timings, workers = run["t0"], run["timings"], run["workers"]
+    container = run["container"]
+
+    summary = summarise_plan(plan, elsewhere=elsewhere)
+    report = plan_report(run, elsewhere=elsewhere, visibility=visibility)
     try:
         report["room_state"] = where
         t1 = time.monotonic()
@@ -722,7 +856,7 @@ def room_import(em_json: str, *, node: str, room: str, title: Optional[str] = No
         _say(f"{len(todo)} file(s) to send, {inventory.human_size(sum(int(u['size'] or 0) for u in todo))}")
         uploads = _upload_all(todo, node=node, room=room, token=token, journal=journal,
                               workers=workers, by_reference=by_reference,
-                              stop_after=stop_after)
+                              stop_after=stop_after, progress=progress)
         for u in plan["units"].values():
             if u["present"]:
                 journal.note_file(u["sha256"], "already", u["size"])
@@ -754,22 +888,27 @@ def room_import(em_json: str, *, node: str, room: str, title: Optional[str] = No
         for r in plan["rows"]:
             if r["group"] == inventory.GROUP_ELSEWHERE:
                 homes[r.get("home") or "?"] = homes.get(r.get("home") or "?", 0) + 1
-        if elsewhere == "move":
-            for hexd in sorted({r["sha256"] for r in plan["rows"]
-                                if r["group"] == inventory.GROUP_ELSEWHERE and r.get("sha256")}):
-                row = next(r for r in plan["rows"] if r.get("sha256") == hexd)
-                try:
-                    answer = nodeio.move_asset_home(node, room, hexd, row.get("home"), token)
-                    if answer.get("home") == room:
-                        moved.add(hexd)
-                except RoomError as exc:
+        said = {str(x) for x in (move or ())}
+        to_move = sorted({r["sha256"] for r in plan["rows"]
+                          if r["group"] == inventory.GROUP_ELSEWHERE and r.get("sha256")
+                          and (elsewhere == "move" or r["id"] in said or r["sha256"] in said)})
+        for hexd in to_move:
+            row = next(r for r in plan["rows"] if r.get("sha256") == hexd)
+            try:
+                answer = nodeio.move_asset_home(node, room, hexd, row.get("home"), token)
+                if answer.get("home") == room:
+                    moved.add(hexd)
+                else:
                     uploads["failed"].append({"file": row["name"], "sha256": hexd,
-                                              "why": f"not moved here: {exc}"})
+                                              "why": f"the node kept it in {answer.get('home')}"})
+            except RoomError as exc:
+                uploads["failed"].append({"file": row["name"], "sha256": hexd,
+                                          "why": f"not moved here: {exc}"})
         rewritten = _rewrite(container, plan, node=node, room=room, manifests=manifests,
                              failed_hex=failed_hex, elsewhere=elsewhere, moved=moved)
         rewritten["homes_elsewhere"] = homes
         rewritten["moved_here"] = len(moved)
-        for p in packs:
+        for p in run["packs"]:
             # the packed archive was born in a work folder: that path is not
             # an address of the study, the room's store is
             res = dict(members).get(_graph_of(plan, p.get("archive_id"))) if p.get("archive_id") else None
@@ -780,6 +919,11 @@ def room_import(em_json: str, *, node: str, room: str, title: Optional[str] = No
                     res.data.pop("addresses", None)
                 else:
                     res.data["addresses"] = kept
+        acquisitions = _bucket_lots(run, lots or ())
+        scene: Dict[str, Any] = {}
+        if before_seed is not None:
+            scene = dict(before_seed({"node": node, "room": room, "token": token,
+                                      "container": container, "plan": plan}) or {})
         seeded = {"applied": 0, "refused": 0, "not_news": 0, "sent": 0, "requests": 0,
                   "graphs": []}
         if where["seedable"]:
@@ -796,15 +940,23 @@ def room_import(em_json: str, *, node: str, room: str, title: Optional[str] = No
     finally:
         journal.flush(force=True)
 
+    filled = set(scene.get("filled") or ())
+    if filled:
+        report["missing"] = [m for m in report["missing"] if m["id"] not in filled]
+        report["plan"]["missing"] = len(report["missing"])
     report.update({
-        "uploaded": {"files": uploads["files"], "bytes": uploads["bytes"]},
-        "already": {"files": summary["already"]["files"] + uploads["already"],
+        "uploaded": {"files": uploads["files"] + int(scene.get("uploaded") or 0),
+                     "bytes": uploads["bytes"] + int(scene.get("bytes") or 0)},
+        "already": {"files": summary["already"]["files"] + uploads["already"]
+                    + int(scene.get("already") or 0),
                     "bytes": summary["already"]["bytes"]},
         "referenced_by_node": uploads["referenced"],
         "references": summary["references"],
-        "failed": [f"{f['file']}: {f['why']}" for f in uploads["failed"]],
+        "failed": [f"{f['file']}: {f['why']}" for f in uploads["failed"]]
+        + [str(x) for x in scene.get("failed") or ()],
         "trees": [{"id": k, **v} for k, v in manifests.items()],
-        "rewritten": rewritten, "seeded": seeded,
+        "rewritten": rewritten, "seeded": seeded, "lots": acquisitions,
+        "scene": scene,
         "access": access or {"visibility": journal.here.get("visibility")},
         "link": targets.get("web") or targets.get("scheme") or "",
         "requests": nodeio.seen_requests(),
@@ -818,6 +970,48 @@ def room_import(em_json: str, *, node: str, room: str, title: Optional[str] = No
     report["sentence"] = sentence(report)
     write_report(report, report_dir or os.path.dirname(journal_path))
     return report
+
+
+def room_import(em_json: Optional[str] = None, *, node: str, room: str,
+                container: Any = None, title: Optional[str] = None,
+                base_dir: Optional[str] = None, base_dirs: Optional[Iterable[str]] = None,
+                visibility: str = "restricted",
+                token: Optional[str] = None, dry_run: bool = False,
+                pack_tilesets: Optional[str] = None, journal_path: Optional[str] = None,
+                work_dir: Optional[str] = None, report_dir: Optional[str] = None,
+                by_reference: bool = False, workers: int = 4, reseed: bool = False,
+                elsewhere: str = "host",
+                per_group: Optional[Dict[str, str]] = None,
+                per_batch: Optional[Dict[str, str]] = None,
+                per_item: Optional[Dict[str, str]] = None,
+                move: Optional[Iterable[str]] = None,
+                lots: Optional[Iterable[Dict[str, Any]]] = None,
+                before_seed: Optional[Callable[[Dict[str, Any]], Optional[Dict[str, Any]]]] = None,
+                progress: Optional[Callable[[str, int, int], None]] = None,
+                stop_after: Optional[int] = None) -> Dict[str, Any]:
+    """Bring the study of `em_json` (or the `container` a client holds) and
+    every file of its folder into `room` on `node`: :func:`prepare`, the
+    choices (:func:`apply_choices`), :func:`execute`. → the report (also
+    written as json + md unless `dry_run`)."""
+    if visibility not in VISIBILITIES:
+        raise ValueError(f"visibility is restricted or public, not {visibility!r}")
+    if elsewhere not in ELSEWHERE:
+        raise ValueError(f"elsewhere is one of {ELSEWHERE}, not {elsewhere!r}")
+    run = prepare(em_json, container=container, node=node, room=room, title=title,
+                  base_dir=base_dir, base_dirs=base_dirs, token=token, dry_run=dry_run,
+                  pack_tilesets=pack_tilesets, journal_path=journal_path,
+                  work_dir=work_dir, workers=workers)
+    if per_group or per_batch or per_item:
+        apply_choices(run, per_group=per_group, per_batch=per_batch, per_item=per_item)
+    if dry_run:
+        report = plan_report(run, elsewhere=elsewhere, visibility=visibility)
+        report["requests"] = nodeio.seen_requests()
+        report["seconds"] = round(time.monotonic() - run["t0"], 1)
+        report["timings"] = run["timings"]
+        return report
+    return execute(run, visibility=visibility, elsewhere=elsewhere, move=move, lots=lots,
+                   before_seed=before_seed, progress=progress, report_dir=report_dir,
+                   by_reference=by_reference, reseed=reseed, stop_after=stop_after)
 
 
 def sentence(report: Dict[str, Any]) -> str:
