@@ -4,6 +4,15 @@ All notable changes to **s3dgraphy** are documented here.
 
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
+### Changed
+- **The RM is bound to the epoch only directly** (em_visual_rules 1.6.36,
+  MICRO lo spazio 3D 2, Parte 0, E.D. 16 October 2026).
+  `threed_instances.representation_model` loses `via_property` and the RM
+  record loses `via`: an epoch reaches its model only by a direct
+  `has_representation_model`, the one form the connections datamodel admits
+  and the only one in the data. «×N» counts the epochs bound directly. Templu
+  Mare v2: still 99 RM instances, 65 proxies.
+
 ### Added
 - **RM and proxy among the computed instances** (em_visual_rules 1.6.35,
   MICRO lo spazio 3D, E.D. 11 October 2026). New block `threed_instances`

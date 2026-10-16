@@ -3,8 +3,8 @@
 
 The proxy of a unit is drawn in the paradata group of its geometry property,
 beside the property; a representation model in the paradata group of every epoch
-that has it — directly or through an epoch property — with the number of its
-epochs. A view: the graph is only read. ``units_without_3d`` says which units a
+bound to it directly (1.6.36: not through an epoch property) — with the number of
+its epochs. A view: the graph is only read. ``units_without_3d`` says which units a
 proxy can be given to.
 """
 
@@ -47,19 +47,12 @@ def _templum() -> Graph:
     g.add_edge("s4", "P4", "S4", "has_semantic_shape")
     # US 5: no geometry
     g.add_node(StratigraphicUnit("US5", name="US 5"))
-    # RM_A in three epochs (E1 direct, E2 direct, E3 through a property);
-    # RM_B in one
+    # RM_A in three epochs, RM_B in one, all bound directly
     g.add_node(RepresentationModelNode("RM_A", name="cella"))
     g.add_node(RepresentationModelNode("RM_B", name="pronao"))
     g.add_edge("r1", "E1", "RM_A", "has_representation_model")
     g.add_edge("r2", "E2", "RM_A", "has_representation_model")
-    g.add_node(PropertyNode("PE3", name="modello", value="RM_A"))
-    g.add_edge("hpe3", "E3", "PE3", "has_property")
-    g.add_edge("r3", "PE3", "RM_A", "has_representation_model")
-    # the connections datamodel does not let a property be the source of
-    # has_representation_model (add_edge degrades it to generic_connection):
-    # the rule still reads the form, as an em.json written by hand carries it
-    g.find_edge_by_id("r3").edge_type = "has_representation_model"
+    g.add_edge("r3", "E3", "RM_A", "has_representation_model")
     g.add_edge("r4", "E3", "RM_B", "has_representation_model")
     return g
 
@@ -98,9 +91,22 @@ def test_a_model_in_three_epochs_says_x3_in_each():
     assert {r["count"] for r in a.values()} == {3}
     assert {r["count_label"] for r in a.values()} == {"×3"}
     assert a["E1"]["group"] == "PD_E1" and a["E1"]["id"] == "RM_A##PD_E1"
-    assert a["E3"]["via"] == "PE3" and a["E1"]["via"] is None
     (b,) = [r for r in rms if r["master"] == "RM_B"]
     assert b["count"] == 1 and b["count_label"] is None and b["owner"] == "E3"
+
+
+def test_a_model_through_an_epoch_property_is_not_an_instance():
+    # 1.6.36: the connections datamodel does not let a property be the source
+    # of has_representation_model; an em.json written by hand with that form
+    # gives no instance (and no «×N»)
+    g = Graph(graph_id="by-hand")
+    g.add_node(EpochNode("E1", "I d.C.", 1, 100))
+    g.add_node(RepresentationModelNode("RM_C", name="podio"))
+    g.add_node(PropertyNode("PE1", name="modello", value="RM_C"))
+    g.add_edge("hpe1", "E1", "PE1", "has_property")
+    g.add_edge("rc", "PE1", "RM_C", "has_representation_model")
+    g.find_edge_by_id("rc").edge_type = "has_representation_model"
+    assert [r for r in api.threed_instances(g) if r["kind"] == "rm"] == []
 
 
 def test_units_without_3d():
@@ -141,3 +147,4 @@ def test_the_rule_is_in_the_visual_rules():
     assert block["id"] == "{master}##{place}"
     assert block["proxy"]["shape_edge"] == "has_semantic_shape"
     assert block["representation_model"]["count_word"] == "×{n}"
+    assert "via_property" not in block["representation_model"]

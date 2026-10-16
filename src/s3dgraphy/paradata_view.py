@@ -372,17 +372,16 @@ def rm_instances(graph) -> List[Dict[str, Any]]:
     """The representation models of the epochs, as instances::
 
         {id, kind: "rm", master, node_type, name, owner, owner_kind: "epoch",
-         owner_name, via, group, place, epochs, count, count_label, removed}
+         owner_name, group, place, epochs, count, count_label, removed}
 
-    One per (model, epoch). ``via`` the epoch property the link passes
-    through (None when the epoch reaches the model directly); ``epochs`` every
+    One per (model, epoch), for a direct ``has_representation_model`` only
+    (1.6.36: the connections datamodel admits no other form); ``epochs`` every
     epoch the model is in, ``count`` how many, ``count_label`` the rule's word
     («×3») when there are more than one.
     """
     spec = dict(threed_rule().get("representation_model") or {})
     holders = spec.get("holders") or ["EpochNode"]
     edge = spec.get("edge") or "has_representation_model"
-    via_prop = spec.get("via_property") or "has_property"
     masters = spec.get("masters") or ["RepresentationModelNode", "RepresentationModelDocNode",
                                       "RepresentationModelSpecialFindNode"]
     word = spec.get("count_word") or "×{n}"
@@ -391,12 +390,7 @@ def rm_instances(graph) -> List[Dict[str, Any]]:
     for holder in graph.nodes:
         if _removed(holder) or _class_of(holder, holders) is None:
             continue
-        reached = [(rm, None) for rm in _out(graph, holder.node_id, edge)]
-        for pid in _out(graph, holder.node_id, via_prop):
-            prop = graph.find_node_by_id(pid)
-            if prop is not None and not _removed(prop):
-                reached += [(rm, pid) for rm in _out(graph, pid, edge)]
-        for rm_id, via in reached:
+        for rm_id in _out(graph, holder.node_id, edge):
             rm = graph.find_node_by_id(rm_id)
             if rm is None or _class_of(rm, masters) is None:
                 continue
@@ -405,7 +399,7 @@ def rm_instances(graph) -> List[Dict[str, Any]]:
                 continue
             if rm_id not in order:
                 order.append(rm_id)
-            mine.append({"owner": holder.node_id, "via": via})
+            mine.append({"owner": holder.node_id})
     out: List[Dict[str, Any]] = []
     for rm_id in order:
         rm = graph.find_node_by_id(rm_id)
@@ -413,7 +407,7 @@ def rm_instances(graph) -> List[Dict[str, Any]]:
         n = len(epochs)
         for x in links[rm_id]:
             epoch = graph.find_node_by_id(x["owner"])
-            group = _place(graph, x["owner"], x["via"], spec)
+            group = _place(graph, x["owner"], None, spec)
             place = group or x["owner"]
             out.append({
                 "id": threed_instance_id(rm_id, place), "kind": spec.get("kind") or "rm",
@@ -421,7 +415,7 @@ def rm_instances(graph) -> List[Dict[str, Any]]:
                 "name": getattr(rm, "name", rm_id),
                 "owner": x["owner"], "owner_kind": "epoch",
                 "owner_name": getattr(epoch, "name", x["owner"]),
-                "via": x["via"], "group": group, "place": place,
+                "group": group, "place": place,
                 "epochs": list(epochs), "count": n,
                 "count_label": word.format(n=n) if n > 1 else None,
                 "removed": _removed(rm)})
