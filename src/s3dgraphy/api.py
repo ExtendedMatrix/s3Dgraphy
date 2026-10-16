@@ -342,6 +342,24 @@ def view_instances(graph: Graph, group_id: str) -> List[Dict[str, Any]]:
     return _view(graph, group_id)
 
 
+def threed_instances(graph: Graph) -> List[Dict[str, Any]]:
+    """The proxies and the representation models as the view draws them
+    (em_visual_rules 1.6.35, ``threed_instances``): the proxy of a unit in the
+    paradata group of its geometry property, beside it; a model in the paradata
+    group of each epoch that has it, with the number of its epochs. Computed,
+    never stored; see :func:`s3dgraphy.paradata_view.threed_instances`."""
+    from .paradata_view import threed_instances as _view
+    return _view(graph)
+
+
+def units_without_3d(graph: Graph) -> Dict[str, List[str]]:
+    """``{with, empty, none, without}``: the units with a proxy, with an empty
+    geometry property, with none, and the last two together — see
+    :func:`s3dgraphy.paradata_view.units_without_3d`."""
+    from .paradata_view import units_without_3d as _units
+    return _units(graph)
+
+
 def dependents_of(graph: Graph, node_id: str) -> List[Dict[str, Any]]:
     """Who leans on a unit, a property or a document, in cascade: ``[{id,
     name, node_type, kind, via, depth, owner, owner_name}]`` — what an

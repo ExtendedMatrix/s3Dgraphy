@@ -5,6 +5,20 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
+- **RM and proxy among the computed instances** (em_visual_rules 1.6.35,
+  MICRO lo spazio 3D, E.D. 11 October 2026). New block `threed_instances`
+  and `paradata_view.threed_instances` / `api.threed_instances`: the proxy of
+  a unit (geometry property → `has_semantic_shape` → SemanticShape) is drawn
+  in the paradata group of its property, beside it (`beside`, `group`,
+  `place` = the unit when there is no group, `files`, `empty`); a
+  representation model is drawn in the paradata group of each epoch that has
+  it, by `has_representation_model` directly or through an epoch property,
+  and every instance carries the number of its epochs (`count`,
+  `count_label` «×3»). A view: nothing in em.json or RDF. Measured on Templu
+  Mare v2: 65 proxies (9 in a group, 56 beside their unit), 99 models, each in
+  one epoch, all linked directly. `api.units_without_3d` gives `with`,
+  `empty` (a geometry with nothing in it), `none` and `without`; on Templu
+  Mare v2 65 / 0 / 38.
 - **`s3dgraphy.room_import` — a study into a room, from a folder**
   (MICRO-ROOM-IMPORT, E.D. 15 October 2026: «un motore, tre porte»). One
   engine, pure Python and without Blender, for the gesture that existed twice
