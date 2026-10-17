@@ -3041,6 +3041,24 @@ def inherited_links(graph: Graph, res_id: str) -> Dict[str, Any]:
     return _links(graph, res_id)
 
 
+def alternative_sets(graph: Graph, *, bounds: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """The sets of alternatives (E.D. 17 Oct 2026, «lo stesso cappello»): for
+    every RM and RM container, the resources with that hat, the reason
+    (lod, fidelity, packaging), the members of a container under it, and the
+    diagnoses. See :mod:`s3dgraphy.resources.alternatives`."""
+    from .resources.alternatives import alternative_sets as _sets
+    return _sets(graph, bounds=bounds)
+
+
+def declare_alternative(graph: Graph, resource_or_rm_id: str, hat_id: str, *,
+                        drop_rm: bool = True) -> Dict[str, Any]:
+    """«Fa da alternativa a…»: ``hat_id`` (an RM or an RM container) becomes
+    the hat of the asset; the old hat loses it. See
+    :func:`s3dgraphy.resources.alternatives.declare_alternative`."""
+    from .resources.alternatives import declare_alternative as _declare
+    return _declare(graph, resource_or_rm_id, hat_id, drop_rm=drop_rm)
+
+
 # ── the 3D Tiles Archive (.3tz), recognised and read, never written here ──────
 # The writers are 3DSC and EMStudio (E.D. 2026-09-30); the canonical form and
 # the content digest belong to dtcstamp. See :mod:`s3dgraphy.resources.tiles3tz`.

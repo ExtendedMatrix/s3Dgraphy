@@ -6303,7 +6303,7 @@
       "fidelity",
       "packaging"
     ],
-    "choice": "Per set, the uses are tried IN ORDER. RM set: choose_version on its alternatives. Container set: for each use, the container's own alternative if one of its versions declares it (the members go off), else the members if one of their versions declares it (each member then chooses with the same uses); none → the members, each with its master. A hand choice (`container` | `members`) overrides the use."
+    "choice": "Per set, the uses are tried IN ORDER. RM set: choose_version on its alternatives. Container set: the container's own alternative when one of its versions declares ANY of the uses (the version chosen with the uses in order; the members go off), else the members, each choosing with the same uses (with its master when none declares any). A hand choice (`container` | `members`) overrides the use."
   },
   "dtc_kinds": {
     "_comment": "DATA-DRIVEN, EXPANDABLE per-kind vocabulary for the DTC substrate profile (ECHOES). Mirrors the Master-Document axis vocabularies above (document_roles/content_natures): the three base kinds (input/process/output) each list specific kinds seeded from the 2017 DTC palette. Adding a new kind (e.g. audio, spectroscopy) is a JSON entry here (+ a glyph) — NOT a code change; the DTC node classes validate against these keys via s3dgraphy.utils.get_dtc_kinds(). `glyph` names the 2017 DTC SVG (wired in the later glyph/visual-manager slice; recorded here as data only).",

@@ -493,7 +493,17 @@ def choose_version(entries: Sequence[Dict[str, Any]], use: Any,
     Returns ``{entry, reason, use, note}``: ``reason`` one of
     :data:`CHOICE_REASONS`, ``use`` the use that was served (None for the
     master), ``note`` a sentence for a log or ``""``. Pure: no graph, so the
-    same table of cases runs in Python and in JS."""
+    same table of cases runs in Python and in JS.
+
+    ``entries`` may also be a SET OF ALTERNATIVES (E.D. 17 Oct 2026, a set of
+    :func:`s3dgraphy.resources.alternatives.alternative_sets`): then the
+    choice is made at both levels — an RM's set as above, a container's
+    between its own alternative (a tileset of the whole) and its members — by
+    :func:`~s3dgraphy.resources.alternatives.choose_alternative`, whose answer
+    adds ``level`` and ``members``."""
+    if isinstance(entries, dict) and "alternatives" in entries:
+        from .alternatives import choose_alternative
+        return choose_alternative(entries, use, prefer_level)
     entries = [e for e in (entries or []) if e]
     if not entries:
         return None

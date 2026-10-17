@@ -1,0 +1,3196 @@
+{
+  "_version": "1.0.0",
+  "_note": "The alternatives of a 3D object (E.D., 17 Oct 2026, «lo stesso cappello»): two resources are alternatives if and only if they have the same hat (has_linked_resource from an RM or an RM container to their asset). ONE rule, s3dgraphy.resources.alternatives (alternative_sets, choose_alternative), described by em_visual_rules.json → alternatives and copied by the clients that cannot call Python (EMStudio, Heriverse); every copy passes these cases. graph: nodes and edges as an em.json graph section carries them. expect.sets: every set, containers before their members (hat, hat_kind, parent, alternatives as [id, reason], reasons, covers, coverage); expect.warnings: the codes; choices: use (tried in order), force (container | members), and the level, the id and the use chosen (members: the id each member lights). Written by scripts/make_alternative_cases.py.",
+  "cases": [
+    {
+      "name": "a container of 4 meshes and a tileset hatted by the container",
+      "graph": {
+        "nodes": [
+          {
+            "id": "ep",
+            "node_type": "EpochNode",
+            "name": "XX sec",
+            "data": {}
+          },
+          {
+            "id": "EST_0.master",
+            "node_type": "resource",
+            "name": "EST_0",
+            "data": {
+              "url": "EST_0.glb",
+              "url_type": "3d_model",
+              "tier": "master"
+            }
+          },
+          {
+            "id": "EST_0.lod0",
+            "node_type": "resource",
+            "name": "EST_0 lod0",
+            "data": {
+              "url": "lod0/EST_0.glb",
+              "url_type": "3d_model",
+              "tier": "distribution",
+              "use": [
+                "analysis"
+              ]
+            }
+          },
+          {
+            "id": "63da742b-2bb4-5555-b67c-416d4e54bdae",
+            "node_type": "dtc_process",
+            "name": "LOD generation lod0 of EST_0",
+            "data": {
+              "dtc_kind": "lod_generation",
+              "parameters": {
+                "level": "lod0"
+              }
+            }
+          },
+          {
+            "id": "EST_0.lod1",
+            "node_type": "resource",
+            "name": "EST_0 lod1",
+            "data": {
+              "url": "lod1/EST_0.glb",
+              "url_type": "3d_model",
+              "tier": "distribution",
+              "use": [
+                "aton",
+                "heriverse"
+              ]
+            }
+          },
+          {
+            "id": "4bb4260e-20b7-5b79-bed6-f70dfd40eadb",
+            "node_type": "dtc_process",
+            "name": "LOD generation lod1 of EST_0 lod0",
+            "data": {
+              "dtc_kind": "lod_generation",
+              "parameters": {
+                "level": "lod1"
+              }
+            }
+          },
+          {
+            "id": "EST_0_model",
+            "node_type": "representation_model",
+            "name": "EST_0",
+            "data": {}
+          },
+          {
+            "id": "EST_1.master",
+            "node_type": "resource",
+            "name": "EST_1",
+            "data": {
+              "url": "EST_1.glb",
+              "url_type": "3d_model",
+              "tier": "master"
+            }
+          },
+          {
+            "id": "EST_1.lod0",
+            "node_type": "resource",
+            "name": "EST_1 lod0",
+            "data": {
+              "url": "lod0/EST_1.glb",
+              "url_type": "3d_model",
+              "tier": "distribution",
+              "use": [
+                "analysis"
+              ]
+            }
+          },
+          {
+            "id": "119b5ac7-f5fd-5f5d-8921-74c2e22f1f8a",
+            "node_type": "dtc_process",
+            "name": "LOD generation lod0 of EST_1",
+            "data": {
+              "dtc_kind": "lod_generation",
+              "parameters": {
+                "level": "lod0"
+              }
+            }
+          },
+          {
+            "id": "EST_1.lod1",
+            "node_type": "resource",
+            "name": "EST_1 lod1",
+            "data": {
+              "url": "lod1/EST_1.glb",
+              "url_type": "3d_model",
+              "tier": "distribution",
+              "use": [
+                "aton",
+                "heriverse"
+              ]
+            }
+          },
+          {
+            "id": "5de4e1c6-3b00-5c15-b793-218db5d76df6",
+            "node_type": "dtc_process",
+            "name": "LOD generation lod1 of EST_1 lod0",
+            "data": {
+              "dtc_kind": "lod_generation",
+              "parameters": {
+                "level": "lod1"
+              }
+            }
+          },
+          {
+            "id": "EST_1_model",
+            "node_type": "representation_model",
+            "name": "EST_1",
+            "data": {}
+          },
+          {
+            "id": "EST_2.master",
+            "node_type": "resource",
+            "name": "EST_2",
+            "data": {
+              "url": "EST_2.glb",
+              "url_type": "3d_model",
+              "tier": "master"
+            }
+          },
+          {
+            "id": "EST_2.lod0",
+            "node_type": "resource",
+            "name": "EST_2 lod0",
+            "data": {
+              "url": "lod0/EST_2.glb",
+              "url_type": "3d_model",
+              "tier": "distribution",
+              "use": [
+                "analysis"
+              ]
+            }
+          },
+          {
+            "id": "c4475d76-18a5-598d-b7e8-948ddf58a62d",
+            "node_type": "dtc_process",
+            "name": "LOD generation lod0 of EST_2",
+            "data": {
+              "dtc_kind": "lod_generation",
+              "parameters": {
+                "level": "lod0"
+              }
+            }
+          },
+          {
+            "id": "EST_2.lod1",
+            "node_type": "resource",
+            "name": "EST_2 lod1",
+            "data": {
+              "url": "lod1/EST_2.glb",
+              "url_type": "3d_model",
+              "tier": "distribution",
+              "use": [
+                "aton",
+                "heriverse"
+              ]
+            }
+          },
+          {
+            "id": "f343c632-b661-59da-9ca1-2437dddc8e81",
+            "node_type": "dtc_process",
+            "name": "LOD generation lod1 of EST_2 lod0",
+            "data": {
+              "dtc_kind": "lod_generation",
+              "parameters": {
+                "level": "lod1"
+              }
+            }
+          },
+          {
+            "id": "EST_2_model",
+            "node_type": "representation_model",
+            "name": "EST_2",
+            "data": {}
+          },
+          {
+            "id": "EST_3.master",
+            "node_type": "resource",
+            "name": "EST_3",
+            "data": {
+              "url": "EST_3.glb",
+              "url_type": "3d_model",
+              "tier": "master"
+            }
+          },
+          {
+            "id": "EST_3.lod0",
+            "node_type": "resource",
+            "name": "EST_3 lod0",
+            "data": {
+              "url": "lod0/EST_3.glb",
+              "url_type": "3d_model",
+              "tier": "distribution",
+              "use": [
+                "analysis"
+              ]
+            }
+          },
+          {
+            "id": "575c78d4-471c-58ba-bc23-dd32679ca842",
+            "node_type": "dtc_process",
+            "name": "LOD generation lod0 of EST_3",
+            "data": {
+              "dtc_kind": "lod_generation",
+              "parameters": {
+                "level": "lod0"
+              }
+            }
+          },
+          {
+            "id": "EST_3.lod1",
+            "node_type": "resource",
+            "name": "EST_3 lod1",
+            "data": {
+              "url": "lod1/EST_3.glb",
+              "url_type": "3d_model",
+              "tier": "distribution",
+              "use": [
+                "aton",
+                "heriverse"
+              ]
+            }
+          },
+          {
+            "id": "61cafcb9-d4fe-5343-95a5-549c27cc4418",
+            "node_type": "dtc_process",
+            "name": "LOD generation lod1 of EST_3 lod0",
+            "data": {
+              "dtc_kind": "lod_generation",
+              "parameters": {
+                "level": "lod1"
+              }
+            }
+          },
+          {
+            "id": "EST_3_model",
+            "node_type": "representation_model",
+            "name": "EST_3",
+            "data": {}
+          },
+          {
+            "id": "survey_rmgroup",
+            "node_type": "RepresentationModelNodeGroup",
+            "name": "Survey 2015",
+            "data": {}
+          },
+          {
+            "id": "tiles.master",
+            "node_type": "resource",
+            "name": "Survey tileset",
+            "data": {
+              "url": "survey.zip",
+              "url_type": "3d_model",
+              "tier": "master",
+              "media_type": "application/zip"
+            }
+          },
+          {
+            "id": "tiles.lod0",
+            "node_type": "resource",
+            "name": "Survey tileset lod0",
+            "data": {
+              "url": "survey/tileset.json",
+              "url_type": "3d_model",
+              "tier": "distribution",
+              "media_type": "application/json",
+              "use": [
+                "web",
+                "realtime"
+              ],
+              "packaging": "directory",
+              "geometric_error_m": 6.144
+            }
+          },
+          {
+            "id": "4dc5fc59-dbc3-5bd3-be95-021f1a35c108",
+            "node_type": "dtc_process",
+            "name": "LOD generation lod0 of Survey tileset",
+            "data": {
+              "dtc_kind": "lod_generation",
+              "parameters": {
+                "level": "lod0"
+              }
+            }
+          }
+        ],
+        "edges": [
+          {
+            "id": "065751a1-9903-5261-a284-d73673a338b4",
+            "source": "63da742b-2bb4-5555-b67c-416d4e54bdae",
+            "target": "EST_0.lod0",
+            "edge_type": "dtc_had_output"
+          },
+          {
+            "id": "449059f8-a630-528d-84ce-5ce16ee8d3a5",
+            "source": "63da742b-2bb4-5555-b67c-416d4e54bdae",
+            "target": "EST_0.master",
+            "edge_type": "dtc_had_input"
+          },
+          {
+            "id": "93525570-aeed-5b4d-9297-d91def893a36",
+            "source": "EST_0.lod0",
+            "target": "EST_0.master",
+            "edge_type": "dtc_derived_from"
+          },
+          {
+            "id": "2a786d4d-091e-576e-a138-feeabb5071c0",
+            "source": "4bb4260e-20b7-5b79-bed6-f70dfd40eadb",
+            "target": "EST_0.lod1",
+            "edge_type": "dtc_had_output"
+          },
+          {
+            "id": "249ca1db-8827-5e1e-9c3f-f0e62a2bbf06",
+            "source": "4bb4260e-20b7-5b79-bed6-f70dfd40eadb",
+            "target": "EST_0.lod0",
+            "edge_type": "dtc_had_input"
+          },
+          {
+            "id": "f27bcfb4-e85f-5ef6-b6ee-06355af53f0a",
+            "source": "EST_0.lod1",
+            "target": "EST_0.lod0",
+            "edge_type": "dtc_derived_from"
+          },
+          {
+            "id": "EST_0_model_has_linked_resource_EST_0.master",
+            "source": "EST_0_model",
+            "target": "EST_0.master",
+            "edge_type": "has_linked_resource"
+          },
+          {
+            "id": "ep_has_representation_model_EST_0_model",
+            "source": "ep",
+            "target": "EST_0_model",
+            "edge_type": "has_representation_model"
+          },
+          {
+            "id": "5a72ae8d-d56b-51ae-a0c8-5e6a7e349128",
+            "source": "119b5ac7-f5fd-5f5d-8921-74c2e22f1f8a",
+            "target": "EST_1.lod0",
+            "edge_type": "dtc_had_output"
+          },
+          {
+            "id": "7874db8a-95a7-542f-84e5-960238481816",
+            "source": "119b5ac7-f5fd-5f5d-8921-74c2e22f1f8a",
+            "target": "EST_1.master",
+            "edge_type": "dtc_had_input"
+          },
+          {
+            "id": "5b50e4d9-7fbd-5585-9a64-a52a3defe716",
+            "source": "EST_1.lod0",
+            "target": "EST_1.master",
+            "edge_type": "dtc_derived_from"
+          },
+          {
+            "id": "1efa3562-0b4f-511a-96f8-7eb7a41bd5d9",
+            "source": "5de4e1c6-3b00-5c15-b793-218db5d76df6",
+            "target": "EST_1.lod1",
+            "edge_type": "dtc_had_output"
+          },
+          {
+            "id": "2018a2f3-94ad-5c65-8331-56bfa2684525",
+            "source": "5de4e1c6-3b00-5c15-b793-218db5d76df6",
+            "target": "EST_1.lod0",
+            "edge_type": "dtc_had_input"
+          },
+          {
+            "id": "2209403d-a2da-5406-93c9-b71a7aabdbe1",
+            "source": "EST_1.lod1",
+            "target": "EST_1.lod0",
+            "edge_type": "dtc_derived_from"
+          },
+          {
+            "id": "EST_1_model_has_linked_resource_EST_1.master",
+            "source": "EST_1_model",
+            "target": "EST_1.master",
+            "edge_type": "has_linked_resource"
+          },
+          {
+            "id": "ep_has_representation_model_EST_1_model",
+            "source": "ep",
+            "target": "EST_1_model",
+            "edge_type": "has_representation_model"
+          },
+          {
+            "id": "91fea8a6-3706-5ee1-b15b-696355e821ba",
+            "source": "c4475d76-18a5-598d-b7e8-948ddf58a62d",
+            "target": "EST_2.lod0",
+            "edge_type": "dtc_had_output"
+          },
+          {
+            "id": "a0272dd9-f7c1-5b50-8512-76175a2e3f5b",
+            "source": "c4475d76-18a5-598d-b7e8-948ddf58a62d",
+            "target": "EST_2.master",
+            "edge_type": "dtc_had_input"
+          },
+          {
+            "id": "26ce49ed-9a08-524b-9a9a-c0547f79959d",
+            "source": "EST_2.lod0",
+            "target": "EST_2.master",
+            "edge_type": "dtc_derived_from"
+          },
+          {
+            "id": "665db88d-a9ca-5d40-b239-04f03a0f5072",
+            "source": "f343c632-b661-59da-9ca1-2437dddc8e81",
+            "target": "EST_2.lod1",
+            "edge_type": "dtc_had_output"
+          },
+          {
+            "id": "404d69c0-589d-5835-b419-f17b09b8ace3",
+            "source": "f343c632-b661-59da-9ca1-2437dddc8e81",
+            "target": "EST_2.lod0",
+            "edge_type": "dtc_had_input"
+          },
+          {
+            "id": "3ace850d-5fc5-5d78-8bde-c58930a0461a",
+            "source": "EST_2.lod1",
+            "target": "EST_2.lod0",
+            "edge_type": "dtc_derived_from"
+          },
+          {
+            "id": "EST_2_model_has_linked_resource_EST_2.master",
+            "source": "EST_2_model",
+            "target": "EST_2.master",
+            "edge_type": "has_linked_resource"
+          },
+          {
+            "id": "ep_has_representation_model_EST_2_model",
+            "source": "ep",
+            "target": "EST_2_model",
+            "edge_type": "has_representation_model"
+          },
+          {
+            "id": "700913e8-f57a-55b7-84f3-5a7f1a3c39a3",
+            "source": "575c78d4-471c-58ba-bc23-dd32679ca842",
+            "target": "EST_3.lod0",
+            "edge_type": "dtc_had_output"
+          },
+          {
+            "id": "b60b0f5d-f69a-5d59-b7d3-d5f679d10393",
+            "source": "575c78d4-471c-58ba-bc23-dd32679ca842",
+            "target": "EST_3.master",
+            "edge_type": "dtc_had_input"
+          },
+          {
+            "id": "51c32b7f-599d-5304-94c1-9d19aca38b3f",
+            "source": "EST_3.lod0",
+            "target": "EST_3.master",
+            "edge_type": "dtc_derived_from"
+          },
+          {
+            "id": "09e690ef-ba08-580f-ab61-bdadd610218a",
+            "source": "61cafcb9-d4fe-5343-95a5-549c27cc4418",
+            "target": "EST_3.lod1",
+            "edge_type": "dtc_had_output"
+          },
+          {
+            "id": "fc159540-bf67-57b6-8d62-85711459f7e4",
+            "source": "61cafcb9-d4fe-5343-95a5-549c27cc4418",
+            "target": "EST_3.lod0",
+            "edge_type": "dtc_had_input"
+          },
+          {
+            "id": "51ac635d-27b0-5880-9150-465dd06131bb",
+            "source": "EST_3.lod1",
+            "target": "EST_3.lod0",
+            "edge_type": "dtc_derived_from"
+          },
+          {
+            "id": "EST_3_model_has_linked_resource_EST_3.master",
+            "source": "EST_3_model",
+            "target": "EST_3.master",
+            "edge_type": "has_linked_resource"
+          },
+          {
+            "id": "ep_has_representation_model_EST_3_model",
+            "source": "ep",
+            "target": "EST_3_model",
+            "edge_type": "has_representation_model"
+          },
+          {
+            "id": "EST_0_model_is_in_representation_model_group_survey_rmgroup",
+            "source": "EST_0_model",
+            "target": "survey_rmgroup",
+            "edge_type": "is_in_representation_model_group"
+          },
+          {
+            "id": "EST_1_model_is_in_representation_model_group_survey_rmgroup",
+            "source": "EST_1_model",
+            "target": "survey_rmgroup",
+            "edge_type": "is_in_representation_model_group"
+          },
+          {
+            "id": "EST_2_model_is_in_representation_model_group_survey_rmgroup",
+            "source": "EST_2_model",
+            "target": "survey_rmgroup",
+            "edge_type": "is_in_representation_model_group"
+          },
+          {
+            "id": "EST_3_model_is_in_representation_model_group_survey_rmgroup",
+            "source": "EST_3_model",
+            "target": "survey_rmgroup",
+            "edge_type": "is_in_representation_model_group"
+          },
+          {
+            "id": "5aaf36cd-a22f-5fd2-be50-8069fb3092f6",
+            "source": "4dc5fc59-dbc3-5bd3-be95-021f1a35c108",
+            "target": "tiles.lod0",
+            "edge_type": "dtc_had_output"
+          },
+          {
+            "id": "f20709a4-4ca6-5b2a-96c4-1c432c42ac7f",
+            "source": "4dc5fc59-dbc3-5bd3-be95-021f1a35c108",
+            "target": "tiles.master",
+            "edge_type": "dtc_had_input"
+          },
+          {
+            "id": "e20020b8-524c-5f92-baaf-afd302e729ce",
+            "source": "tiles.lod0",
+            "target": "tiles.master",
+            "edge_type": "dtc_derived_from"
+          },
+          {
+            "id": "survey_rmgroup_has_linked_resource_tiles.master",
+            "source": "survey_rmgroup",
+            "target": "tiles.master",
+            "edge_type": "has_linked_resource"
+          }
+        ]
+      },
+      "expect": {
+        "sets": [
+          {
+            "hat": "survey_rmgroup",
+            "hat_kind": "container",
+            "parent": null,
+            "alternatives": [
+              [
+                "tiles.master",
+                "packaging"
+              ],
+              [
+                "tiles.lod0",
+                "packaging"
+              ]
+            ],
+            "reasons": [
+              "fidelity",
+              "packaging"
+            ],
+            "covers": [
+              "EST_0_model",
+              "EST_1_model",
+              "EST_2_model",
+              "EST_3_model"
+            ],
+            "coverage": "unmeasured"
+          },
+          {
+            "hat": "EST_0_model",
+            "hat_kind": "rm",
+            "parent": "survey_rmgroup",
+            "alternatives": [
+              [
+                "EST_0.master",
+                "fidelity"
+              ],
+              [
+                "EST_0.lod0",
+                "lod"
+              ],
+              [
+                "EST_0.lod1",
+                "lod"
+              ]
+            ],
+            "reasons": [
+              "fidelity",
+              "lod"
+            ],
+            "covers": [
+              "EST_0_model"
+            ],
+            "coverage": null
+          },
+          {
+            "hat": "EST_1_model",
+            "hat_kind": "rm",
+            "parent": "survey_rmgroup",
+            "alternatives": [
+              [
+                "EST_1.master",
+                "fidelity"
+              ],
+              [
+                "EST_1.lod0",
+                "lod"
+              ],
+              [
+                "EST_1.lod1",
+                "lod"
+              ]
+            ],
+            "reasons": [
+              "fidelity",
+              "lod"
+            ],
+            "covers": [
+              "EST_1_model"
+            ],
+            "coverage": null
+          },
+          {
+            "hat": "EST_2_model",
+            "hat_kind": "rm",
+            "parent": "survey_rmgroup",
+            "alternatives": [
+              [
+                "EST_2.master",
+                "fidelity"
+              ],
+              [
+                "EST_2.lod0",
+                "lod"
+              ],
+              [
+                "EST_2.lod1",
+                "lod"
+              ]
+            ],
+            "reasons": [
+              "fidelity",
+              "lod"
+            ],
+            "covers": [
+              "EST_2_model"
+            ],
+            "coverage": null
+          },
+          {
+            "hat": "EST_3_model",
+            "hat_kind": "rm",
+            "parent": "survey_rmgroup",
+            "alternatives": [
+              [
+                "EST_3.master",
+                "fidelity"
+              ],
+              [
+                "EST_3.lod0",
+                "lod"
+              ],
+              [
+                "EST_3.lod1",
+                "lod"
+              ]
+            ],
+            "reasons": [
+              "fidelity",
+              "lod"
+            ],
+            "covers": [
+              "EST_3_model"
+            ],
+            "coverage": null
+          }
+        ],
+        "warnings": [],
+        "counts": {
+          "sets": 5,
+          "with_alternatives": 5,
+          "containers": 1,
+          "by_reason": {
+            "lod": 4,
+            "fidelity": 5,
+            "packaging": 1
+          },
+          "entries": 14
+        }
+      },
+      "choices": [
+        {
+          "hat": "survey_rmgroup",
+          "use": [
+            "heriverse",
+            "aton",
+            "web",
+            "realtime"
+          ],
+          "expect": {
+            "level": "container",
+            "id": "tiles.lod0",
+            "use": "web"
+          }
+        },
+        {
+          "hat": "survey_rmgroup",
+          "use": [
+            "web",
+            "realtime"
+          ],
+          "expect": {
+            "level": "container",
+            "id": "tiles.lod0",
+            "use": "web"
+          }
+        },
+        {
+          "hat": "survey_rmgroup",
+          "use": [
+            "web"
+          ],
+          "force": "members",
+          "expect": {
+            "level": "members",
+            "id": null,
+            "use": null,
+            "members": {
+              "EST_0_model": "EST_0.master",
+              "EST_1_model": "EST_1.master",
+              "EST_2_model": "EST_2.master",
+              "EST_3_model": "EST_3.master"
+            }
+          }
+        },
+        {
+          "hat": "survey_rmgroup",
+          "use": [
+            "analysis"
+          ],
+          "force": "container",
+          "expect": {
+            "level": "container",
+            "id": "tiles.master",
+            "use": null
+          }
+        },
+        {
+          "hat": "survey_rmgroup",
+          "use": [
+            "print"
+          ],
+          "expect": {
+            "level": "members",
+            "id": null,
+            "use": null,
+            "members": {
+              "EST_0_model": "EST_0.master",
+              "EST_1_model": "EST_1.master",
+              "EST_2_model": "EST_2.master",
+              "EST_3_model": "EST_3.master"
+            }
+          }
+        },
+        {
+          "hat": "survey_rmgroup",
+          "use": [
+            "analysis"
+          ],
+          "expect": {
+            "level": "members",
+            "id": null,
+            "use": "analysis",
+            "members": {
+              "EST_0_model": "EST_0.lod0",
+              "EST_1_model": "EST_1.lod0",
+              "EST_2_model": "EST_2.lod0",
+              "EST_3_model": "EST_3.lod0"
+            }
+          }
+        },
+        {
+          "hat": "EST_0_model",
+          "use": [
+            "heriverse",
+            "aton",
+            "web",
+            "realtime"
+          ],
+          "expect": {
+            "level": "rm",
+            "id": "EST_0.lod1",
+            "use": "heriverse"
+          }
+        }
+      ]
+    },
+    {
+      "name": "a tileset member of a container: an RM among the others",
+      "graph": {
+        "nodes": [
+          {
+            "id": "ep",
+            "node_type": "EpochNode",
+            "name": "XX sec",
+            "data": {}
+          },
+          {
+            "id": "EST_0.master",
+            "node_type": "resource",
+            "name": "EST_0",
+            "data": {
+              "url": "EST_0.glb",
+              "url_type": "3d_model",
+              "tier": "master"
+            }
+          },
+          {
+            "id": "EST_0.lod0",
+            "node_type": "resource",
+            "name": "EST_0 lod0",
+            "data": {
+              "url": "lod0/EST_0.glb",
+              "url_type": "3d_model",
+              "tier": "distribution",
+              "use": [
+                "analysis"
+              ]
+            }
+          },
+          {
+            "id": "63da742b-2bb4-5555-b67c-416d4e54bdae",
+            "node_type": "dtc_process",
+            "name": "LOD generation lod0 of EST_0",
+            "data": {
+              "dtc_kind": "lod_generation",
+              "parameters": {
+                "level": "lod0"
+              }
+            }
+          },
+          {
+            "id": "EST_0.lod1",
+            "node_type": "resource",
+            "name": "EST_0 lod1",
+            "data": {
+              "url": "lod1/EST_0.glb",
+              "url_type": "3d_model",
+              "tier": "distribution",
+              "use": [
+                "aton",
+                "heriverse"
+              ]
+            }
+          },
+          {
+            "id": "4bb4260e-20b7-5b79-bed6-f70dfd40eadb",
+            "node_type": "dtc_process",
+            "name": "LOD generation lod1 of EST_0 lod0",
+            "data": {
+              "dtc_kind": "lod_generation",
+              "parameters": {
+                "level": "lod1"
+              }
+            }
+          },
+          {
+            "id": "EST_0_model",
+            "node_type": "representation_model",
+            "name": "EST_0",
+            "data": {}
+          },
+          {
+            "id": "EST_1.master",
+            "node_type": "resource",
+            "name": "EST_1",
+            "data": {
+              "url": "EST_1.glb",
+              "url_type": "3d_model",
+              "tier": "master"
+            }
+          },
+          {
+            "id": "EST_1.lod0",
+            "node_type": "resource",
+            "name": "EST_1 lod0",
+            "data": {
+              "url": "lod0/EST_1.glb",
+              "url_type": "3d_model",
+              "tier": "distribution",
+              "use": [
+                "analysis"
+              ]
+            }
+          },
+          {
+            "id": "119b5ac7-f5fd-5f5d-8921-74c2e22f1f8a",
+            "node_type": "dtc_process",
+            "name": "LOD generation lod0 of EST_1",
+            "data": {
+              "dtc_kind": "lod_generation",
+              "parameters": {
+                "level": "lod0"
+              }
+            }
+          },
+          {
+            "id": "EST_1.lod1",
+            "node_type": "resource",
+            "name": "EST_1 lod1",
+            "data": {
+              "url": "lod1/EST_1.glb",
+              "url_type": "3d_model",
+              "tier": "distribution",
+              "use": [
+                "aton",
+                "heriverse"
+              ]
+            }
+          },
+          {
+            "id": "5de4e1c6-3b00-5c15-b793-218db5d76df6",
+            "node_type": "dtc_process",
+            "name": "LOD generation lod1 of EST_1 lod0",
+            "data": {
+              "dtc_kind": "lod_generation",
+              "parameters": {
+                "level": "lod1"
+              }
+            }
+          },
+          {
+            "id": "EST_1_model",
+            "node_type": "representation_model",
+            "name": "EST_1",
+            "data": {}
+          },
+          {
+            "id": "EST_2.master",
+            "node_type": "resource",
+            "name": "EST_2",
+            "data": {
+              "url": "EST_2.glb",
+              "url_type": "3d_model",
+              "tier": "master"
+            }
+          },
+          {
+            "id": "EST_2.lod0",
+            "node_type": "resource",
+            "name": "EST_2 lod0",
+            "data": {
+              "url": "lod0/EST_2.glb",
+              "url_type": "3d_model",
+              "tier": "distribution",
+              "use": [
+                "analysis"
+              ]
+            }
+          },
+          {
+            "id": "c4475d76-18a5-598d-b7e8-948ddf58a62d",
+            "node_type": "dtc_process",
+            "name": "LOD generation lod0 of EST_2",
+            "data": {
+              "dtc_kind": "lod_generation",
+              "parameters": {
+                "level": "lod0"
+              }
+            }
+          },
+          {
+            "id": "EST_2.lod1",
+            "node_type": "resource",
+            "name": "EST_2 lod1",
+            "data": {
+              "url": "lod1/EST_2.glb",
+              "url_type": "3d_model",
+              "tier": "distribution",
+              "use": [
+                "aton",
+                "heriverse"
+              ]
+            }
+          },
+          {
+            "id": "f343c632-b661-59da-9ca1-2437dddc8e81",
+            "node_type": "dtc_process",
+            "name": "LOD generation lod1 of EST_2 lod0",
+            "data": {
+              "dtc_kind": "lod_generation",
+              "parameters": {
+                "level": "lod1"
+              }
+            }
+          },
+          {
+            "id": "EST_2_model",
+            "node_type": "representation_model",
+            "name": "EST_2",
+            "data": {}
+          },
+          {
+            "id": "EST_3.master",
+            "node_type": "resource",
+            "name": "EST_3",
+            "data": {
+              "url": "EST_3.glb",
+              "url_type": "3d_model",
+              "tier": "master"
+            }
+          },
+          {
+            "id": "EST_3.lod0",
+            "node_type": "resource",
+            "name": "EST_3 lod0",
+            "data": {
+              "url": "lod0/EST_3.glb",
+              "url_type": "3d_model",
+              "tier": "distribution",
+              "use": [
+                "analysis"
+              ]
+            }
+          },
+          {
+            "id": "575c78d4-471c-58ba-bc23-dd32679ca842",
+            "node_type": "dtc_process",
+            "name": "LOD generation lod0 of EST_3",
+            "data": {
+              "dtc_kind": "lod_generation",
+              "parameters": {
+                "level": "lod0"
+              }
+            }
+          },
+          {
+            "id": "EST_3.lod1",
+            "node_type": "resource",
+            "name": "EST_3 lod1",
+            "data": {
+              "url": "lod1/EST_3.glb",
+              "url_type": "3d_model",
+              "tier": "distribution",
+              "use": [
+                "aton",
+                "heriverse"
+              ]
+            }
+          },
+          {
+            "id": "61cafcb9-d4fe-5343-95a5-549c27cc4418",
+            "node_type": "dtc_process",
+            "name": "LOD generation lod1 of EST_3 lod0",
+            "data": {
+              "dtc_kind": "lod_generation",
+              "parameters": {
+                "level": "lod1"
+              }
+            }
+          },
+          {
+            "id": "EST_3_model",
+            "node_type": "representation_model",
+            "name": "EST_3",
+            "data": {}
+          },
+          {
+            "id": "survey_rmgroup",
+            "node_type": "RepresentationModelNodeGroup",
+            "name": "Survey 2015",
+            "data": {}
+          },
+          {
+            "id": "XX_tileset_model",
+            "node_type": "representation_model",
+            "name": "XX_tileset",
+            "data": {}
+          },
+          {
+            "id": "tiles.master",
+            "node_type": "resource",
+            "name": "Survey tileset",
+            "data": {
+              "url": "survey.zip",
+              "url_type": "3d_model",
+              "tier": "master",
+              "media_type": "application/zip"
+            }
+          },
+          {
+            "id": "tiles.lod0",
+            "node_type": "resource",
+            "name": "Survey tileset lod0",
+            "data": {
+              "url": "survey/tileset.json",
+              "url_type": "3d_model",
+              "tier": "distribution",
+              "media_type": "application/json",
+              "use": [
+                "web",
+                "realtime"
+              ],
+              "packaging": "directory",
+              "geometric_error_m": 6.144
+            }
+          },
+          {
+            "id": "4dc5fc59-dbc3-5bd3-be95-021f1a35c108",
+            "node_type": "dtc_process",
+            "name": "LOD generation lod0 of Survey tileset",
+            "data": {
+              "dtc_kind": "lod_generation",
+              "parameters": {
+                "level": "lod0"
+              }
+            }
+          }
+        ],
+        "edges": [
+          {
+            "id": "065751a1-9903-5261-a284-d73673a338b4",
+            "source": "63da742b-2bb4-5555-b67c-416d4e54bdae",
+            "target": "EST_0.lod0",
+            "edge_type": "dtc_had_output"
+          },
+          {
+            "id": "449059f8-a630-528d-84ce-5ce16ee8d3a5",
+            "source": "63da742b-2bb4-5555-b67c-416d4e54bdae",
+            "target": "EST_0.master",
+            "edge_type": "dtc_had_input"
+          },
+          {
+            "id": "93525570-aeed-5b4d-9297-d91def893a36",
+            "source": "EST_0.lod0",
+            "target": "EST_0.master",
+            "edge_type": "dtc_derived_from"
+          },
+          {
+            "id": "2a786d4d-091e-576e-a138-feeabb5071c0",
+            "source": "4bb4260e-20b7-5b79-bed6-f70dfd40eadb",
+            "target": "EST_0.lod1",
+            "edge_type": "dtc_had_output"
+          },
+          {
+            "id": "249ca1db-8827-5e1e-9c3f-f0e62a2bbf06",
+            "source": "4bb4260e-20b7-5b79-bed6-f70dfd40eadb",
+            "target": "EST_0.lod0",
+            "edge_type": "dtc_had_input"
+          },
+          {
+            "id": "f27bcfb4-e85f-5ef6-b6ee-06355af53f0a",
+            "source": "EST_0.lod1",
+            "target": "EST_0.lod0",
+            "edge_type": "dtc_derived_from"
+          },
+          {
+            "id": "EST_0_model_has_linked_resource_EST_0.master",
+            "source": "EST_0_model",
+            "target": "EST_0.master",
+            "edge_type": "has_linked_resource"
+          },
+          {
+            "id": "ep_has_representation_model_EST_0_model",
+            "source": "ep",
+            "target": "EST_0_model",
+            "edge_type": "has_representation_model"
+          },
+          {
+            "id": "5a72ae8d-d56b-51ae-a0c8-5e6a7e349128",
+            "source": "119b5ac7-f5fd-5f5d-8921-74c2e22f1f8a",
+            "target": "EST_1.lod0",
+            "edge_type": "dtc_had_output"
+          },
+          {
+            "id": "7874db8a-95a7-542f-84e5-960238481816",
+            "source": "119b5ac7-f5fd-5f5d-8921-74c2e22f1f8a",
+            "target": "EST_1.master",
+            "edge_type": "dtc_had_input"
+          },
+          {
+            "id": "5b50e4d9-7fbd-5585-9a64-a52a3defe716",
+            "source": "EST_1.lod0",
+            "target": "EST_1.master",
+            "edge_type": "dtc_derived_from"
+          },
+          {
+            "id": "1efa3562-0b4f-511a-96f8-7eb7a41bd5d9",
+            "source": "5de4e1c6-3b00-5c15-b793-218db5d76df6",
+            "target": "EST_1.lod1",
+            "edge_type": "dtc_had_output"
+          },
+          {
+            "id": "2018a2f3-94ad-5c65-8331-56bfa2684525",
+            "source": "5de4e1c6-3b00-5c15-b793-218db5d76df6",
+            "target": "EST_1.lod0",
+            "edge_type": "dtc_had_input"
+          },
+          {
+            "id": "2209403d-a2da-5406-93c9-b71a7aabdbe1",
+            "source": "EST_1.lod1",
+            "target": "EST_1.lod0",
+            "edge_type": "dtc_derived_from"
+          },
+          {
+            "id": "EST_1_model_has_linked_resource_EST_1.master",
+            "source": "EST_1_model",
+            "target": "EST_1.master",
+            "edge_type": "has_linked_resource"
+          },
+          {
+            "id": "ep_has_representation_model_EST_1_model",
+            "source": "ep",
+            "target": "EST_1_model",
+            "edge_type": "has_representation_model"
+          },
+          {
+            "id": "91fea8a6-3706-5ee1-b15b-696355e821ba",
+            "source": "c4475d76-18a5-598d-b7e8-948ddf58a62d",
+            "target": "EST_2.lod0",
+            "edge_type": "dtc_had_output"
+          },
+          {
+            "id": "a0272dd9-f7c1-5b50-8512-76175a2e3f5b",
+            "source": "c4475d76-18a5-598d-b7e8-948ddf58a62d",
+            "target": "EST_2.master",
+            "edge_type": "dtc_had_input"
+          },
+          {
+            "id": "26ce49ed-9a08-524b-9a9a-c0547f79959d",
+            "source": "EST_2.lod0",
+            "target": "EST_2.master",
+            "edge_type": "dtc_derived_from"
+          },
+          {
+            "id": "665db88d-a9ca-5d40-b239-04f03a0f5072",
+            "source": "f343c632-b661-59da-9ca1-2437dddc8e81",
+            "target": "EST_2.lod1",
+            "edge_type": "dtc_had_output"
+          },
+          {
+            "id": "404d69c0-589d-5835-b419-f17b09b8ace3",
+            "source": "f343c632-b661-59da-9ca1-2437dddc8e81",
+            "target": "EST_2.lod0",
+            "edge_type": "dtc_had_input"
+          },
+          {
+            "id": "3ace850d-5fc5-5d78-8bde-c58930a0461a",
+            "source": "EST_2.lod1",
+            "target": "EST_2.lod0",
+            "edge_type": "dtc_derived_from"
+          },
+          {
+            "id": "EST_2_model_has_linked_resource_EST_2.master",
+            "source": "EST_2_model",
+            "target": "EST_2.master",
+            "edge_type": "has_linked_resource"
+          },
+          {
+            "id": "ep_has_representation_model_EST_2_model",
+            "source": "ep",
+            "target": "EST_2_model",
+            "edge_type": "has_representation_model"
+          },
+          {
+            "id": "700913e8-f57a-55b7-84f3-5a7f1a3c39a3",
+            "source": "575c78d4-471c-58ba-bc23-dd32679ca842",
+            "target": "EST_3.lod0",
+            "edge_type": "dtc_had_output"
+          },
+          {
+            "id": "b60b0f5d-f69a-5d59-b7d3-d5f679d10393",
+            "source": "575c78d4-471c-58ba-bc23-dd32679ca842",
+            "target": "EST_3.master",
+            "edge_type": "dtc_had_input"
+          },
+          {
+            "id": "51c32b7f-599d-5304-94c1-9d19aca38b3f",
+            "source": "EST_3.lod0",
+            "target": "EST_3.master",
+            "edge_type": "dtc_derived_from"
+          },
+          {
+            "id": "09e690ef-ba08-580f-ab61-bdadd610218a",
+            "source": "61cafcb9-d4fe-5343-95a5-549c27cc4418",
+            "target": "EST_3.lod1",
+            "edge_type": "dtc_had_output"
+          },
+          {
+            "id": "fc159540-bf67-57b6-8d62-85711459f7e4",
+            "source": "61cafcb9-d4fe-5343-95a5-549c27cc4418",
+            "target": "EST_3.lod0",
+            "edge_type": "dtc_had_input"
+          },
+          {
+            "id": "51ac635d-27b0-5880-9150-465dd06131bb",
+            "source": "EST_3.lod1",
+            "target": "EST_3.lod0",
+            "edge_type": "dtc_derived_from"
+          },
+          {
+            "id": "EST_3_model_has_linked_resource_EST_3.master",
+            "source": "EST_3_model",
+            "target": "EST_3.master",
+            "edge_type": "has_linked_resource"
+          },
+          {
+            "id": "ep_has_representation_model_EST_3_model",
+            "source": "ep",
+            "target": "EST_3_model",
+            "edge_type": "has_representation_model"
+          },
+          {
+            "id": "EST_0_model_is_in_representation_model_group_survey_rmgroup",
+            "source": "EST_0_model",
+            "target": "survey_rmgroup",
+            "edge_type": "is_in_representation_model_group"
+          },
+          {
+            "id": "EST_1_model_is_in_representation_model_group_survey_rmgroup",
+            "source": "EST_1_model",
+            "target": "survey_rmgroup",
+            "edge_type": "is_in_representation_model_group"
+          },
+          {
+            "id": "EST_2_model_is_in_representation_model_group_survey_rmgroup",
+            "source": "EST_2_model",
+            "target": "survey_rmgroup",
+            "edge_type": "is_in_representation_model_group"
+          },
+          {
+            "id": "EST_3_model_is_in_representation_model_group_survey_rmgroup",
+            "source": "EST_3_model",
+            "target": "survey_rmgroup",
+            "edge_type": "is_in_representation_model_group"
+          },
+          {
+            "id": "ep_has_representation_model_XX_tileset_model",
+            "source": "ep",
+            "target": "XX_tileset_model",
+            "edge_type": "has_representation_model"
+          },
+          {
+            "id": "5aaf36cd-a22f-5fd2-be50-8069fb3092f6",
+            "source": "4dc5fc59-dbc3-5bd3-be95-021f1a35c108",
+            "target": "tiles.lod0",
+            "edge_type": "dtc_had_output"
+          },
+          {
+            "id": "f20709a4-4ca6-5b2a-96c4-1c432c42ac7f",
+            "source": "4dc5fc59-dbc3-5bd3-be95-021f1a35c108",
+            "target": "tiles.master",
+            "edge_type": "dtc_had_input"
+          },
+          {
+            "id": "e20020b8-524c-5f92-baaf-afd302e729ce",
+            "source": "tiles.lod0",
+            "target": "tiles.master",
+            "edge_type": "dtc_derived_from"
+          },
+          {
+            "id": "XX_tileset_model_has_linked_resource_tiles.master",
+            "source": "XX_tileset_model",
+            "target": "tiles.master",
+            "edge_type": "has_linked_resource"
+          },
+          {
+            "id": "XX_tileset_model_is_in_representation_model_group_survey_rmgroup",
+            "source": "XX_tileset_model",
+            "target": "survey_rmgroup",
+            "edge_type": "is_in_representation_model_group"
+          }
+        ]
+      },
+      "expect": {
+        "sets": [
+          {
+            "hat": "survey_rmgroup",
+            "hat_kind": "container",
+            "parent": null,
+            "alternatives": [],
+            "reasons": [],
+            "covers": [
+              "EST_0_model",
+              "EST_1_model",
+              "EST_2_model",
+              "EST_3_model",
+              "XX_tileset_model"
+            ],
+            "coverage": null
+          },
+          {
+            "hat": "EST_0_model",
+            "hat_kind": "rm",
+            "parent": "survey_rmgroup",
+            "alternatives": [
+              [
+                "EST_0.master",
+                "fidelity"
+              ],
+              [
+                "EST_0.lod0",
+                "lod"
+              ],
+              [
+                "EST_0.lod1",
+                "lod"
+              ]
+            ],
+            "reasons": [
+              "fidelity",
+              "lod"
+            ],
+            "covers": [
+              "EST_0_model"
+            ],
+            "coverage": null
+          },
+          {
+            "hat": "EST_1_model",
+            "hat_kind": "rm",
+            "parent": "survey_rmgroup",
+            "alternatives": [
+              [
+                "EST_1.master",
+                "fidelity"
+              ],
+              [
+                "EST_1.lod0",
+                "lod"
+              ],
+              [
+                "EST_1.lod1",
+                "lod"
+              ]
+            ],
+            "reasons": [
+              "fidelity",
+              "lod"
+            ],
+            "covers": [
+              "EST_1_model"
+            ],
+            "coverage": null
+          },
+          {
+            "hat": "EST_2_model",
+            "hat_kind": "rm",
+            "parent": "survey_rmgroup",
+            "alternatives": [
+              [
+                "EST_2.master",
+                "fidelity"
+              ],
+              [
+                "EST_2.lod0",
+                "lod"
+              ],
+              [
+                "EST_2.lod1",
+                "lod"
+              ]
+            ],
+            "reasons": [
+              "fidelity",
+              "lod"
+            ],
+            "covers": [
+              "EST_2_model"
+            ],
+            "coverage": null
+          },
+          {
+            "hat": "EST_3_model",
+            "hat_kind": "rm",
+            "parent": "survey_rmgroup",
+            "alternatives": [
+              [
+                "EST_3.master",
+                "fidelity"
+              ],
+              [
+                "EST_3.lod0",
+                "lod"
+              ],
+              [
+                "EST_3.lod1",
+                "lod"
+              ]
+            ],
+            "reasons": [
+              "fidelity",
+              "lod"
+            ],
+            "covers": [
+              "EST_3_model"
+            ],
+            "coverage": null
+          },
+          {
+            "hat": "XX_tileset_model",
+            "hat_kind": "rm",
+            "parent": "survey_rmgroup",
+            "alternatives": [
+              [
+                "tiles.master",
+                "fidelity"
+              ],
+              [
+                "tiles.lod0",
+                "lod"
+              ]
+            ],
+            "reasons": [
+              "fidelity"
+            ],
+            "covers": [
+              "XX_tileset_model"
+            ],
+            "coverage": null
+          }
+        ],
+        "warnings": [],
+        "counts": {
+          "sets": 6,
+          "with_alternatives": 5,
+          "containers": 1,
+          "by_reason": {
+            "lod": 4,
+            "fidelity": 5,
+            "packaging": 0
+          },
+          "entries": 14
+        }
+      },
+      "choices": [
+        {
+          "hat": "survey_rmgroup",
+          "use": [
+            "heriverse",
+            "aton",
+            "web",
+            "realtime"
+          ],
+          "expect": {
+            "level": "members",
+            "id": null,
+            "use": "heriverse",
+            "members": {
+              "EST_0_model": "EST_0.lod1",
+              "EST_1_model": "EST_1.lod1",
+              "EST_2_model": "EST_2.lod1",
+              "EST_3_model": "EST_3.lod1",
+              "XX_tileset_model": "tiles.lod0"
+            }
+          }
+        },
+        {
+          "hat": "XX_tileset_model",
+          "use": [
+            "heriverse",
+            "aton",
+            "web",
+            "realtime"
+          ],
+          "expect": {
+            "level": "rm",
+            "id": "tiles.lod0",
+            "use": "web"
+          }
+        }
+      ]
+    },
+    {
+      "name": "a tileset with two hats, the container and an RM of its own: warning",
+      "graph": {
+        "nodes": [
+          {
+            "id": "ep",
+            "node_type": "EpochNode",
+            "name": "XX sec",
+            "data": {}
+          },
+          {
+            "id": "EST_0.master",
+            "node_type": "resource",
+            "name": "EST_0",
+            "data": {
+              "url": "EST_0.glb",
+              "url_type": "3d_model",
+              "tier": "master"
+            }
+          },
+          {
+            "id": "EST_0.lod0",
+            "node_type": "resource",
+            "name": "EST_0 lod0",
+            "data": {
+              "url": "lod0/EST_0.glb",
+              "url_type": "3d_model",
+              "tier": "distribution",
+              "use": [
+                "analysis"
+              ]
+            }
+          },
+          {
+            "id": "63da742b-2bb4-5555-b67c-416d4e54bdae",
+            "node_type": "dtc_process",
+            "name": "LOD generation lod0 of EST_0",
+            "data": {
+              "dtc_kind": "lod_generation",
+              "parameters": {
+                "level": "lod0"
+              }
+            }
+          },
+          {
+            "id": "EST_0.lod1",
+            "node_type": "resource",
+            "name": "EST_0 lod1",
+            "data": {
+              "url": "lod1/EST_0.glb",
+              "url_type": "3d_model",
+              "tier": "distribution",
+              "use": [
+                "aton",
+                "heriverse"
+              ]
+            }
+          },
+          {
+            "id": "4bb4260e-20b7-5b79-bed6-f70dfd40eadb",
+            "node_type": "dtc_process",
+            "name": "LOD generation lod1 of EST_0 lod0",
+            "data": {
+              "dtc_kind": "lod_generation",
+              "parameters": {
+                "level": "lod1"
+              }
+            }
+          },
+          {
+            "id": "EST_0_model",
+            "node_type": "representation_model",
+            "name": "EST_0",
+            "data": {}
+          },
+          {
+            "id": "EST_1.master",
+            "node_type": "resource",
+            "name": "EST_1",
+            "data": {
+              "url": "EST_1.glb",
+              "url_type": "3d_model",
+              "tier": "master"
+            }
+          },
+          {
+            "id": "EST_1.lod0",
+            "node_type": "resource",
+            "name": "EST_1 lod0",
+            "data": {
+              "url": "lod0/EST_1.glb",
+              "url_type": "3d_model",
+              "tier": "distribution",
+              "use": [
+                "analysis"
+              ]
+            }
+          },
+          {
+            "id": "119b5ac7-f5fd-5f5d-8921-74c2e22f1f8a",
+            "node_type": "dtc_process",
+            "name": "LOD generation lod0 of EST_1",
+            "data": {
+              "dtc_kind": "lod_generation",
+              "parameters": {
+                "level": "lod0"
+              }
+            }
+          },
+          {
+            "id": "EST_1.lod1",
+            "node_type": "resource",
+            "name": "EST_1 lod1",
+            "data": {
+              "url": "lod1/EST_1.glb",
+              "url_type": "3d_model",
+              "tier": "distribution",
+              "use": [
+                "aton",
+                "heriverse"
+              ]
+            }
+          },
+          {
+            "id": "5de4e1c6-3b00-5c15-b793-218db5d76df6",
+            "node_type": "dtc_process",
+            "name": "LOD generation lod1 of EST_1 lod0",
+            "data": {
+              "dtc_kind": "lod_generation",
+              "parameters": {
+                "level": "lod1"
+              }
+            }
+          },
+          {
+            "id": "EST_1_model",
+            "node_type": "representation_model",
+            "name": "EST_1",
+            "data": {}
+          },
+          {
+            "id": "EST_2.master",
+            "node_type": "resource",
+            "name": "EST_2",
+            "data": {
+              "url": "EST_2.glb",
+              "url_type": "3d_model",
+              "tier": "master"
+            }
+          },
+          {
+            "id": "EST_2.lod0",
+            "node_type": "resource",
+            "name": "EST_2 lod0",
+            "data": {
+              "url": "lod0/EST_2.glb",
+              "url_type": "3d_model",
+              "tier": "distribution",
+              "use": [
+                "analysis"
+              ]
+            }
+          },
+          {
+            "id": "c4475d76-18a5-598d-b7e8-948ddf58a62d",
+            "node_type": "dtc_process",
+            "name": "LOD generation lod0 of EST_2",
+            "data": {
+              "dtc_kind": "lod_generation",
+              "parameters": {
+                "level": "lod0"
+              }
+            }
+          },
+          {
+            "id": "EST_2.lod1",
+            "node_type": "resource",
+            "name": "EST_2 lod1",
+            "data": {
+              "url": "lod1/EST_2.glb",
+              "url_type": "3d_model",
+              "tier": "distribution",
+              "use": [
+                "aton",
+                "heriverse"
+              ]
+            }
+          },
+          {
+            "id": "f343c632-b661-59da-9ca1-2437dddc8e81",
+            "node_type": "dtc_process",
+            "name": "LOD generation lod1 of EST_2 lod0",
+            "data": {
+              "dtc_kind": "lod_generation",
+              "parameters": {
+                "level": "lod1"
+              }
+            }
+          },
+          {
+            "id": "EST_2_model",
+            "node_type": "representation_model",
+            "name": "EST_2",
+            "data": {}
+          },
+          {
+            "id": "EST_3.master",
+            "node_type": "resource",
+            "name": "EST_3",
+            "data": {
+              "url": "EST_3.glb",
+              "url_type": "3d_model",
+              "tier": "master"
+            }
+          },
+          {
+            "id": "EST_3.lod0",
+            "node_type": "resource",
+            "name": "EST_3 lod0",
+            "data": {
+              "url": "lod0/EST_3.glb",
+              "url_type": "3d_model",
+              "tier": "distribution",
+              "use": [
+                "analysis"
+              ]
+            }
+          },
+          {
+            "id": "575c78d4-471c-58ba-bc23-dd32679ca842",
+            "node_type": "dtc_process",
+            "name": "LOD generation lod0 of EST_3",
+            "data": {
+              "dtc_kind": "lod_generation",
+              "parameters": {
+                "level": "lod0"
+              }
+            }
+          },
+          {
+            "id": "EST_3.lod1",
+            "node_type": "resource",
+            "name": "EST_3 lod1",
+            "data": {
+              "url": "lod1/EST_3.glb",
+              "url_type": "3d_model",
+              "tier": "distribution",
+              "use": [
+                "aton",
+                "heriverse"
+              ]
+            }
+          },
+          {
+            "id": "61cafcb9-d4fe-5343-95a5-549c27cc4418",
+            "node_type": "dtc_process",
+            "name": "LOD generation lod1 of EST_3 lod0",
+            "data": {
+              "dtc_kind": "lod_generation",
+              "parameters": {
+                "level": "lod1"
+              }
+            }
+          },
+          {
+            "id": "EST_3_model",
+            "node_type": "representation_model",
+            "name": "EST_3",
+            "data": {}
+          },
+          {
+            "id": "survey_rmgroup",
+            "node_type": "RepresentationModelNodeGroup",
+            "name": "Survey 2015",
+            "data": {}
+          },
+          {
+            "id": "XX_tileset_model",
+            "node_type": "representation_model",
+            "name": "XX_tileset",
+            "data": {}
+          },
+          {
+            "id": "tiles.master",
+            "node_type": "resource",
+            "name": "Survey tileset",
+            "data": {
+              "url": "survey.zip",
+              "url_type": "3d_model",
+              "tier": "master",
+              "media_type": "application/zip"
+            }
+          },
+          {
+            "id": "tiles.lod0",
+            "node_type": "resource",
+            "name": "Survey tileset lod0",
+            "data": {
+              "url": "survey/tileset.json",
+              "url_type": "3d_model",
+              "tier": "distribution",
+              "media_type": "application/json",
+              "use": [
+                "web",
+                "realtime"
+              ],
+              "packaging": "directory",
+              "geometric_error_m": 6.144
+            }
+          },
+          {
+            "id": "4dc5fc59-dbc3-5bd3-be95-021f1a35c108",
+            "node_type": "dtc_process",
+            "name": "LOD generation lod0 of Survey tileset",
+            "data": {
+              "dtc_kind": "lod_generation",
+              "parameters": {
+                "level": "lod0"
+              }
+            }
+          }
+        ],
+        "edges": [
+          {
+            "id": "065751a1-9903-5261-a284-d73673a338b4",
+            "source": "63da742b-2bb4-5555-b67c-416d4e54bdae",
+            "target": "EST_0.lod0",
+            "edge_type": "dtc_had_output"
+          },
+          {
+            "id": "449059f8-a630-528d-84ce-5ce16ee8d3a5",
+            "source": "63da742b-2bb4-5555-b67c-416d4e54bdae",
+            "target": "EST_0.master",
+            "edge_type": "dtc_had_input"
+          },
+          {
+            "id": "93525570-aeed-5b4d-9297-d91def893a36",
+            "source": "EST_0.lod0",
+            "target": "EST_0.master",
+            "edge_type": "dtc_derived_from"
+          },
+          {
+            "id": "2a786d4d-091e-576e-a138-feeabb5071c0",
+            "source": "4bb4260e-20b7-5b79-bed6-f70dfd40eadb",
+            "target": "EST_0.lod1",
+            "edge_type": "dtc_had_output"
+          },
+          {
+            "id": "249ca1db-8827-5e1e-9c3f-f0e62a2bbf06",
+            "source": "4bb4260e-20b7-5b79-bed6-f70dfd40eadb",
+            "target": "EST_0.lod0",
+            "edge_type": "dtc_had_input"
+          },
+          {
+            "id": "f27bcfb4-e85f-5ef6-b6ee-06355af53f0a",
+            "source": "EST_0.lod1",
+            "target": "EST_0.lod0",
+            "edge_type": "dtc_derived_from"
+          },
+          {
+            "id": "EST_0_model_has_linked_resource_EST_0.master",
+            "source": "EST_0_model",
+            "target": "EST_0.master",
+            "edge_type": "has_linked_resource"
+          },
+          {
+            "id": "ep_has_representation_model_EST_0_model",
+            "source": "ep",
+            "target": "EST_0_model",
+            "edge_type": "has_representation_model"
+          },
+          {
+            "id": "5a72ae8d-d56b-51ae-a0c8-5e6a7e349128",
+            "source": "119b5ac7-f5fd-5f5d-8921-74c2e22f1f8a",
+            "target": "EST_1.lod0",
+            "edge_type": "dtc_had_output"
+          },
+          {
+            "id": "7874db8a-95a7-542f-84e5-960238481816",
+            "source": "119b5ac7-f5fd-5f5d-8921-74c2e22f1f8a",
+            "target": "EST_1.master",
+            "edge_type": "dtc_had_input"
+          },
+          {
+            "id": "5b50e4d9-7fbd-5585-9a64-a52a3defe716",
+            "source": "EST_1.lod0",
+            "target": "EST_1.master",
+            "edge_type": "dtc_derived_from"
+          },
+          {
+            "id": "1efa3562-0b4f-511a-96f8-7eb7a41bd5d9",
+            "source": "5de4e1c6-3b00-5c15-b793-218db5d76df6",
+            "target": "EST_1.lod1",
+            "edge_type": "dtc_had_output"
+          },
+          {
+            "id": "2018a2f3-94ad-5c65-8331-56bfa2684525",
+            "source": "5de4e1c6-3b00-5c15-b793-218db5d76df6",
+            "target": "EST_1.lod0",
+            "edge_type": "dtc_had_input"
+          },
+          {
+            "id": "2209403d-a2da-5406-93c9-b71a7aabdbe1",
+            "source": "EST_1.lod1",
+            "target": "EST_1.lod0",
+            "edge_type": "dtc_derived_from"
+          },
+          {
+            "id": "EST_1_model_has_linked_resource_EST_1.master",
+            "source": "EST_1_model",
+            "target": "EST_1.master",
+            "edge_type": "has_linked_resource"
+          },
+          {
+            "id": "ep_has_representation_model_EST_1_model",
+            "source": "ep",
+            "target": "EST_1_model",
+            "edge_type": "has_representation_model"
+          },
+          {
+            "id": "91fea8a6-3706-5ee1-b15b-696355e821ba",
+            "source": "c4475d76-18a5-598d-b7e8-948ddf58a62d",
+            "target": "EST_2.lod0",
+            "edge_type": "dtc_had_output"
+          },
+          {
+            "id": "a0272dd9-f7c1-5b50-8512-76175a2e3f5b",
+            "source": "c4475d76-18a5-598d-b7e8-948ddf58a62d",
+            "target": "EST_2.master",
+            "edge_type": "dtc_had_input"
+          },
+          {
+            "id": "26ce49ed-9a08-524b-9a9a-c0547f79959d",
+            "source": "EST_2.lod0",
+            "target": "EST_2.master",
+            "edge_type": "dtc_derived_from"
+          },
+          {
+            "id": "665db88d-a9ca-5d40-b239-04f03a0f5072",
+            "source": "f343c632-b661-59da-9ca1-2437dddc8e81",
+            "target": "EST_2.lod1",
+            "edge_type": "dtc_had_output"
+          },
+          {
+            "id": "404d69c0-589d-5835-b419-f17b09b8ace3",
+            "source": "f343c632-b661-59da-9ca1-2437dddc8e81",
+            "target": "EST_2.lod0",
+            "edge_type": "dtc_had_input"
+          },
+          {
+            "id": "3ace850d-5fc5-5d78-8bde-c58930a0461a",
+            "source": "EST_2.lod1",
+            "target": "EST_2.lod0",
+            "edge_type": "dtc_derived_from"
+          },
+          {
+            "id": "EST_2_model_has_linked_resource_EST_2.master",
+            "source": "EST_2_model",
+            "target": "EST_2.master",
+            "edge_type": "has_linked_resource"
+          },
+          {
+            "id": "ep_has_representation_model_EST_2_model",
+            "source": "ep",
+            "target": "EST_2_model",
+            "edge_type": "has_representation_model"
+          },
+          {
+            "id": "700913e8-f57a-55b7-84f3-5a7f1a3c39a3",
+            "source": "575c78d4-471c-58ba-bc23-dd32679ca842",
+            "target": "EST_3.lod0",
+            "edge_type": "dtc_had_output"
+          },
+          {
+            "id": "b60b0f5d-f69a-5d59-b7d3-d5f679d10393",
+            "source": "575c78d4-471c-58ba-bc23-dd32679ca842",
+            "target": "EST_3.master",
+            "edge_type": "dtc_had_input"
+          },
+          {
+            "id": "51c32b7f-599d-5304-94c1-9d19aca38b3f",
+            "source": "EST_3.lod0",
+            "target": "EST_3.master",
+            "edge_type": "dtc_derived_from"
+          },
+          {
+            "id": "09e690ef-ba08-580f-ab61-bdadd610218a",
+            "source": "61cafcb9-d4fe-5343-95a5-549c27cc4418",
+            "target": "EST_3.lod1",
+            "edge_type": "dtc_had_output"
+          },
+          {
+            "id": "fc159540-bf67-57b6-8d62-85711459f7e4",
+            "source": "61cafcb9-d4fe-5343-95a5-549c27cc4418",
+            "target": "EST_3.lod0",
+            "edge_type": "dtc_had_input"
+          },
+          {
+            "id": "51ac635d-27b0-5880-9150-465dd06131bb",
+            "source": "EST_3.lod1",
+            "target": "EST_3.lod0",
+            "edge_type": "dtc_derived_from"
+          },
+          {
+            "id": "EST_3_model_has_linked_resource_EST_3.master",
+            "source": "EST_3_model",
+            "target": "EST_3.master",
+            "edge_type": "has_linked_resource"
+          },
+          {
+            "id": "ep_has_representation_model_EST_3_model",
+            "source": "ep",
+            "target": "EST_3_model",
+            "edge_type": "has_representation_model"
+          },
+          {
+            "id": "EST_0_model_is_in_representation_model_group_survey_rmgroup",
+            "source": "EST_0_model",
+            "target": "survey_rmgroup",
+            "edge_type": "is_in_representation_model_group"
+          },
+          {
+            "id": "EST_1_model_is_in_representation_model_group_survey_rmgroup",
+            "source": "EST_1_model",
+            "target": "survey_rmgroup",
+            "edge_type": "is_in_representation_model_group"
+          },
+          {
+            "id": "EST_2_model_is_in_representation_model_group_survey_rmgroup",
+            "source": "EST_2_model",
+            "target": "survey_rmgroup",
+            "edge_type": "is_in_representation_model_group"
+          },
+          {
+            "id": "EST_3_model_is_in_representation_model_group_survey_rmgroup",
+            "source": "EST_3_model",
+            "target": "survey_rmgroup",
+            "edge_type": "is_in_representation_model_group"
+          },
+          {
+            "id": "ep_has_representation_model_XX_tileset_model",
+            "source": "ep",
+            "target": "XX_tileset_model",
+            "edge_type": "has_representation_model"
+          },
+          {
+            "id": "5aaf36cd-a22f-5fd2-be50-8069fb3092f6",
+            "source": "4dc5fc59-dbc3-5bd3-be95-021f1a35c108",
+            "target": "tiles.lod0",
+            "edge_type": "dtc_had_output"
+          },
+          {
+            "id": "f20709a4-4ca6-5b2a-96c4-1c432c42ac7f",
+            "source": "4dc5fc59-dbc3-5bd3-be95-021f1a35c108",
+            "target": "tiles.master",
+            "edge_type": "dtc_had_input"
+          },
+          {
+            "id": "e20020b8-524c-5f92-baaf-afd302e729ce",
+            "source": "tiles.lod0",
+            "target": "tiles.master",
+            "edge_type": "dtc_derived_from"
+          },
+          {
+            "id": "XX_tileset_model_has_linked_resource_tiles.master",
+            "source": "XX_tileset_model",
+            "target": "tiles.master",
+            "edge_type": "has_linked_resource"
+          },
+          {
+            "id": "survey_rmgroup_has_linked_resource_tiles.master",
+            "source": "survey_rmgroup",
+            "target": "tiles.master",
+            "edge_type": "has_linked_resource"
+          }
+        ]
+      },
+      "expect": {
+        "sets": [
+          {
+            "hat": "survey_rmgroup",
+            "hat_kind": "container",
+            "parent": null,
+            "alternatives": [
+              [
+                "tiles.master",
+                "packaging"
+              ],
+              [
+                "tiles.lod0",
+                "packaging"
+              ]
+            ],
+            "reasons": [
+              "fidelity",
+              "packaging"
+            ],
+            "covers": [
+              "EST_0_model",
+              "EST_1_model",
+              "EST_2_model",
+              "EST_3_model"
+            ],
+            "coverage": "unmeasured"
+          },
+          {
+            "hat": "EST_0_model",
+            "hat_kind": "rm",
+            "parent": "survey_rmgroup",
+            "alternatives": [
+              [
+                "EST_0.master",
+                "fidelity"
+              ],
+              [
+                "EST_0.lod0",
+                "lod"
+              ],
+              [
+                "EST_0.lod1",
+                "lod"
+              ]
+            ],
+            "reasons": [
+              "fidelity",
+              "lod"
+            ],
+            "covers": [
+              "EST_0_model"
+            ],
+            "coverage": null
+          },
+          {
+            "hat": "EST_1_model",
+            "hat_kind": "rm",
+            "parent": "survey_rmgroup",
+            "alternatives": [
+              [
+                "EST_1.master",
+                "fidelity"
+              ],
+              [
+                "EST_1.lod0",
+                "lod"
+              ],
+              [
+                "EST_1.lod1",
+                "lod"
+              ]
+            ],
+            "reasons": [
+              "fidelity",
+              "lod"
+            ],
+            "covers": [
+              "EST_1_model"
+            ],
+            "coverage": null
+          },
+          {
+            "hat": "EST_2_model",
+            "hat_kind": "rm",
+            "parent": "survey_rmgroup",
+            "alternatives": [
+              [
+                "EST_2.master",
+                "fidelity"
+              ],
+              [
+                "EST_2.lod0",
+                "lod"
+              ],
+              [
+                "EST_2.lod1",
+                "lod"
+              ]
+            ],
+            "reasons": [
+              "fidelity",
+              "lod"
+            ],
+            "covers": [
+              "EST_2_model"
+            ],
+            "coverage": null
+          },
+          {
+            "hat": "EST_3_model",
+            "hat_kind": "rm",
+            "parent": "survey_rmgroup",
+            "alternatives": [
+              [
+                "EST_3.master",
+                "fidelity"
+              ],
+              [
+                "EST_3.lod0",
+                "lod"
+              ],
+              [
+                "EST_3.lod1",
+                "lod"
+              ]
+            ],
+            "reasons": [
+              "fidelity",
+              "lod"
+            ],
+            "covers": [
+              "EST_3_model"
+            ],
+            "coverage": null
+          },
+          {
+            "hat": "XX_tileset_model",
+            "hat_kind": "rm",
+            "parent": null,
+            "alternatives": [
+              [
+                "tiles.master",
+                "fidelity"
+              ],
+              [
+                "tiles.lod0",
+                "lod"
+              ]
+            ],
+            "reasons": [
+              "fidelity"
+            ],
+            "covers": [
+              "XX_tileset_model"
+            ],
+            "coverage": null
+          }
+        ],
+        "warnings": [
+          "two_hats"
+        ],
+        "counts": {
+          "sets": 6,
+          "with_alternatives": 6,
+          "containers": 1,
+          "by_reason": {
+            "lod": 4,
+            "fidelity": 6,
+            "packaging": 1
+          },
+          "entries": 16
+        }
+      },
+      "choices": []
+    },
+    {
+      "name": "a version linked again in another epoch: two alternatives of one hat in two epochs",
+      "graph": {
+        "nodes": [
+          {
+            "id": "ep",
+            "node_type": "EpochNode",
+            "name": "XX sec",
+            "data": {}
+          },
+          {
+            "id": "EST_0.master",
+            "node_type": "resource",
+            "name": "EST_0",
+            "data": {
+              "url": "EST_0.glb",
+              "url_type": "3d_model",
+              "tier": "master"
+            }
+          },
+          {
+            "id": "EST_0.lod0",
+            "node_type": "resource",
+            "name": "EST_0 lod0",
+            "data": {
+              "url": "lod0/EST_0.glb",
+              "url_type": "3d_model",
+              "tier": "distribution",
+              "use": [
+                "analysis"
+              ]
+            }
+          },
+          {
+            "id": "63da742b-2bb4-5555-b67c-416d4e54bdae",
+            "node_type": "dtc_process",
+            "name": "LOD generation lod0 of EST_0",
+            "data": {
+              "dtc_kind": "lod_generation",
+              "parameters": {
+                "level": "lod0"
+              }
+            }
+          },
+          {
+            "id": "EST_0.lod1",
+            "node_type": "resource",
+            "name": "EST_0 lod1",
+            "data": {
+              "url": "lod1/EST_0.glb",
+              "url_type": "3d_model",
+              "tier": "distribution",
+              "use": [
+                "aton",
+                "heriverse"
+              ]
+            }
+          },
+          {
+            "id": "4bb4260e-20b7-5b79-bed6-f70dfd40eadb",
+            "node_type": "dtc_process",
+            "name": "LOD generation lod1 of EST_0 lod0",
+            "data": {
+              "dtc_kind": "lod_generation",
+              "parameters": {
+                "level": "lod1"
+              }
+            }
+          },
+          {
+            "id": "EST_0_model",
+            "node_type": "representation_model",
+            "name": "EST_0",
+            "data": {}
+          },
+          {
+            "id": "EST_1.master",
+            "node_type": "resource",
+            "name": "EST_1",
+            "data": {
+              "url": "EST_1.glb",
+              "url_type": "3d_model",
+              "tier": "master"
+            }
+          },
+          {
+            "id": "EST_1.lod0",
+            "node_type": "resource",
+            "name": "EST_1 lod0",
+            "data": {
+              "url": "lod0/EST_1.glb",
+              "url_type": "3d_model",
+              "tier": "distribution",
+              "use": [
+                "analysis"
+              ]
+            }
+          },
+          {
+            "id": "119b5ac7-f5fd-5f5d-8921-74c2e22f1f8a",
+            "node_type": "dtc_process",
+            "name": "LOD generation lod0 of EST_1",
+            "data": {
+              "dtc_kind": "lod_generation",
+              "parameters": {
+                "level": "lod0"
+              }
+            }
+          },
+          {
+            "id": "EST_1.lod1",
+            "node_type": "resource",
+            "name": "EST_1 lod1",
+            "data": {
+              "url": "lod1/EST_1.glb",
+              "url_type": "3d_model",
+              "tier": "distribution",
+              "use": [
+                "aton",
+                "heriverse"
+              ]
+            }
+          },
+          {
+            "id": "5de4e1c6-3b00-5c15-b793-218db5d76df6",
+            "node_type": "dtc_process",
+            "name": "LOD generation lod1 of EST_1 lod0",
+            "data": {
+              "dtc_kind": "lod_generation",
+              "parameters": {
+                "level": "lod1"
+              }
+            }
+          },
+          {
+            "id": "EST_1_model",
+            "node_type": "representation_model",
+            "name": "EST_1",
+            "data": {}
+          },
+          {
+            "id": "ep2",
+            "node_type": "EpochNode",
+            "name": "II AD",
+            "data": {}
+          },
+          {
+            "id": "copy_model",
+            "node_type": "representation_model",
+            "name": "EST_0 copy",
+            "data": {}
+          }
+        ],
+        "edges": [
+          {
+            "id": "065751a1-9903-5261-a284-d73673a338b4",
+            "source": "63da742b-2bb4-5555-b67c-416d4e54bdae",
+            "target": "EST_0.lod0",
+            "edge_type": "dtc_had_output"
+          },
+          {
+            "id": "449059f8-a630-528d-84ce-5ce16ee8d3a5",
+            "source": "63da742b-2bb4-5555-b67c-416d4e54bdae",
+            "target": "EST_0.master",
+            "edge_type": "dtc_had_input"
+          },
+          {
+            "id": "93525570-aeed-5b4d-9297-d91def893a36",
+            "source": "EST_0.lod0",
+            "target": "EST_0.master",
+            "edge_type": "dtc_derived_from"
+          },
+          {
+            "id": "2a786d4d-091e-576e-a138-feeabb5071c0",
+            "source": "4bb4260e-20b7-5b79-bed6-f70dfd40eadb",
+            "target": "EST_0.lod1",
+            "edge_type": "dtc_had_output"
+          },
+          {
+            "id": "249ca1db-8827-5e1e-9c3f-f0e62a2bbf06",
+            "source": "4bb4260e-20b7-5b79-bed6-f70dfd40eadb",
+            "target": "EST_0.lod0",
+            "edge_type": "dtc_had_input"
+          },
+          {
+            "id": "f27bcfb4-e85f-5ef6-b6ee-06355af53f0a",
+            "source": "EST_0.lod1",
+            "target": "EST_0.lod0",
+            "edge_type": "dtc_derived_from"
+          },
+          {
+            "id": "EST_0_model_has_linked_resource_EST_0.master",
+            "source": "EST_0_model",
+            "target": "EST_0.master",
+            "edge_type": "has_linked_resource"
+          },
+          {
+            "id": "ep_has_representation_model_EST_0_model",
+            "source": "ep",
+            "target": "EST_0_model",
+            "edge_type": "has_representation_model"
+          },
+          {
+            "id": "5a72ae8d-d56b-51ae-a0c8-5e6a7e349128",
+            "source": "119b5ac7-f5fd-5f5d-8921-74c2e22f1f8a",
+            "target": "EST_1.lod0",
+            "edge_type": "dtc_had_output"
+          },
+          {
+            "id": "7874db8a-95a7-542f-84e5-960238481816",
+            "source": "119b5ac7-f5fd-5f5d-8921-74c2e22f1f8a",
+            "target": "EST_1.master",
+            "edge_type": "dtc_had_input"
+          },
+          {
+            "id": "5b50e4d9-7fbd-5585-9a64-a52a3defe716",
+            "source": "EST_1.lod0",
+            "target": "EST_1.master",
+            "edge_type": "dtc_derived_from"
+          },
+          {
+            "id": "1efa3562-0b4f-511a-96f8-7eb7a41bd5d9",
+            "source": "5de4e1c6-3b00-5c15-b793-218db5d76df6",
+            "target": "EST_1.lod1",
+            "edge_type": "dtc_had_output"
+          },
+          {
+            "id": "2018a2f3-94ad-5c65-8331-56bfa2684525",
+            "source": "5de4e1c6-3b00-5c15-b793-218db5d76df6",
+            "target": "EST_1.lod0",
+            "edge_type": "dtc_had_input"
+          },
+          {
+            "id": "2209403d-a2da-5406-93c9-b71a7aabdbe1",
+            "source": "EST_1.lod1",
+            "target": "EST_1.lod0",
+            "edge_type": "dtc_derived_from"
+          },
+          {
+            "id": "EST_1_model_has_linked_resource_EST_1.master",
+            "source": "EST_1_model",
+            "target": "EST_1.master",
+            "edge_type": "has_linked_resource"
+          },
+          {
+            "id": "ep_has_representation_model_EST_1_model",
+            "source": "ep",
+            "target": "EST_1_model",
+            "edge_type": "has_representation_model"
+          },
+          {
+            "id": "copy_model_has_linked_resource_EST_0.lod1",
+            "source": "copy_model",
+            "target": "EST_0.lod1",
+            "edge_type": "has_linked_resource"
+          },
+          {
+            "id": "ep2_has_representation_model_copy_model",
+            "source": "ep2",
+            "target": "copy_model",
+            "edge_type": "has_representation_model"
+          }
+        ]
+      },
+      "expect": {
+        "sets": [
+          {
+            "hat": "EST_0_model",
+            "hat_kind": "rm",
+            "parent": null,
+            "alternatives": [
+              [
+                "EST_0.master",
+                "fidelity"
+              ],
+              [
+                "EST_0.lod0",
+                "lod"
+              ],
+              [
+                "EST_0.lod1",
+                "lod"
+              ]
+            ],
+            "reasons": [
+              "fidelity",
+              "lod"
+            ],
+            "covers": [
+              "EST_0_model"
+            ],
+            "coverage": null
+          },
+          {
+            "hat": "EST_1_model",
+            "hat_kind": "rm",
+            "parent": null,
+            "alternatives": [
+              [
+                "EST_1.master",
+                "fidelity"
+              ],
+              [
+                "EST_1.lod0",
+                "lod"
+              ],
+              [
+                "EST_1.lod1",
+                "lod"
+              ]
+            ],
+            "reasons": [
+              "fidelity",
+              "lod"
+            ],
+            "covers": [
+              "EST_1_model"
+            ],
+            "coverage": null
+          },
+          {
+            "hat": "copy_model",
+            "hat_kind": "rm",
+            "parent": null,
+            "alternatives": [
+              [
+                "EST_0.master",
+                "fidelity"
+              ],
+              [
+                "EST_0.lod0",
+                "lod"
+              ],
+              [
+                "EST_0.lod1",
+                "lod"
+              ]
+            ],
+            "reasons": [
+              "fidelity",
+              "lod"
+            ],
+            "covers": [
+              "copy_model"
+            ],
+            "coverage": null
+          }
+        ],
+        "warnings": [
+          "epochs",
+          "two_hats"
+        ],
+        "counts": {
+          "sets": 3,
+          "with_alternatives": 3,
+          "containers": 0,
+          "by_reason": {
+            "lod": 3,
+            "fidelity": 3,
+            "packaging": 0
+          },
+          "entries": 9
+        }
+      },
+      "choices": []
+    },
+    {
+      "name": "three RMs without a container: one set each, fidelity and lod",
+      "graph": {
+        "nodes": [
+          {
+            "id": "ep",
+            "node_type": "EpochNode",
+            "name": "XX sec",
+            "data": {}
+          },
+          {
+            "id": "EST_0.master",
+            "node_type": "resource",
+            "name": "EST_0",
+            "data": {
+              "url": "EST_0.glb",
+              "url_type": "3d_model",
+              "tier": "master"
+            }
+          },
+          {
+            "id": "EST_0.lod0",
+            "node_type": "resource",
+            "name": "EST_0 lod0",
+            "data": {
+              "url": "lod0/EST_0.glb",
+              "url_type": "3d_model",
+              "tier": "distribution",
+              "use": [
+                "analysis"
+              ]
+            }
+          },
+          {
+            "id": "63da742b-2bb4-5555-b67c-416d4e54bdae",
+            "node_type": "dtc_process",
+            "name": "LOD generation lod0 of EST_0",
+            "data": {
+              "dtc_kind": "lod_generation",
+              "parameters": {
+                "level": "lod0"
+              }
+            }
+          },
+          {
+            "id": "EST_0.lod1",
+            "node_type": "resource",
+            "name": "EST_0 lod1",
+            "data": {
+              "url": "lod1/EST_0.glb",
+              "url_type": "3d_model",
+              "tier": "distribution",
+              "use": [
+                "aton",
+                "heriverse"
+              ]
+            }
+          },
+          {
+            "id": "4bb4260e-20b7-5b79-bed6-f70dfd40eadb",
+            "node_type": "dtc_process",
+            "name": "LOD generation lod1 of EST_0 lod0",
+            "data": {
+              "dtc_kind": "lod_generation",
+              "parameters": {
+                "level": "lod1"
+              }
+            }
+          },
+          {
+            "id": "EST_0_model",
+            "node_type": "representation_model",
+            "name": "EST_0",
+            "data": {}
+          },
+          {
+            "id": "EST_1.master",
+            "node_type": "resource",
+            "name": "EST_1",
+            "data": {
+              "url": "EST_1.glb",
+              "url_type": "3d_model",
+              "tier": "master"
+            }
+          },
+          {
+            "id": "EST_1.lod0",
+            "node_type": "resource",
+            "name": "EST_1 lod0",
+            "data": {
+              "url": "lod0/EST_1.glb",
+              "url_type": "3d_model",
+              "tier": "distribution",
+              "use": [
+                "analysis"
+              ]
+            }
+          },
+          {
+            "id": "119b5ac7-f5fd-5f5d-8921-74c2e22f1f8a",
+            "node_type": "dtc_process",
+            "name": "LOD generation lod0 of EST_1",
+            "data": {
+              "dtc_kind": "lod_generation",
+              "parameters": {
+                "level": "lod0"
+              }
+            }
+          },
+          {
+            "id": "EST_1.lod1",
+            "node_type": "resource",
+            "name": "EST_1 lod1",
+            "data": {
+              "url": "lod1/EST_1.glb",
+              "url_type": "3d_model",
+              "tier": "distribution",
+              "use": [
+                "aton",
+                "heriverse"
+              ]
+            }
+          },
+          {
+            "id": "5de4e1c6-3b00-5c15-b793-218db5d76df6",
+            "node_type": "dtc_process",
+            "name": "LOD generation lod1 of EST_1 lod0",
+            "data": {
+              "dtc_kind": "lod_generation",
+              "parameters": {
+                "level": "lod1"
+              }
+            }
+          },
+          {
+            "id": "EST_1_model",
+            "node_type": "representation_model",
+            "name": "EST_1",
+            "data": {}
+          },
+          {
+            "id": "EST_2.master",
+            "node_type": "resource",
+            "name": "EST_2",
+            "data": {
+              "url": "EST_2.glb",
+              "url_type": "3d_model",
+              "tier": "master"
+            }
+          },
+          {
+            "id": "EST_2.lod0",
+            "node_type": "resource",
+            "name": "EST_2 lod0",
+            "data": {
+              "url": "lod0/EST_2.glb",
+              "url_type": "3d_model",
+              "tier": "distribution",
+              "use": [
+                "analysis"
+              ]
+            }
+          },
+          {
+            "id": "c4475d76-18a5-598d-b7e8-948ddf58a62d",
+            "node_type": "dtc_process",
+            "name": "LOD generation lod0 of EST_2",
+            "data": {
+              "dtc_kind": "lod_generation",
+              "parameters": {
+                "level": "lod0"
+              }
+            }
+          },
+          {
+            "id": "EST_2.lod1",
+            "node_type": "resource",
+            "name": "EST_2 lod1",
+            "data": {
+              "url": "lod1/EST_2.glb",
+              "url_type": "3d_model",
+              "tier": "distribution",
+              "use": [
+                "aton",
+                "heriverse"
+              ]
+            }
+          },
+          {
+            "id": "f343c632-b661-59da-9ca1-2437dddc8e81",
+            "node_type": "dtc_process",
+            "name": "LOD generation lod1 of EST_2 lod0",
+            "data": {
+              "dtc_kind": "lod_generation",
+              "parameters": {
+                "level": "lod1"
+              }
+            }
+          },
+          {
+            "id": "EST_2_model",
+            "node_type": "representation_model",
+            "name": "EST_2",
+            "data": {}
+          }
+        ],
+        "edges": [
+          {
+            "id": "065751a1-9903-5261-a284-d73673a338b4",
+            "source": "63da742b-2bb4-5555-b67c-416d4e54bdae",
+            "target": "EST_0.lod0",
+            "edge_type": "dtc_had_output"
+          },
+          {
+            "id": "449059f8-a630-528d-84ce-5ce16ee8d3a5",
+            "source": "63da742b-2bb4-5555-b67c-416d4e54bdae",
+            "target": "EST_0.master",
+            "edge_type": "dtc_had_input"
+          },
+          {
+            "id": "93525570-aeed-5b4d-9297-d91def893a36",
+            "source": "EST_0.lod0",
+            "target": "EST_0.master",
+            "edge_type": "dtc_derived_from"
+          },
+          {
+            "id": "2a786d4d-091e-576e-a138-feeabb5071c0",
+            "source": "4bb4260e-20b7-5b79-bed6-f70dfd40eadb",
+            "target": "EST_0.lod1",
+            "edge_type": "dtc_had_output"
+          },
+          {
+            "id": "249ca1db-8827-5e1e-9c3f-f0e62a2bbf06",
+            "source": "4bb4260e-20b7-5b79-bed6-f70dfd40eadb",
+            "target": "EST_0.lod0",
+            "edge_type": "dtc_had_input"
+          },
+          {
+            "id": "f27bcfb4-e85f-5ef6-b6ee-06355af53f0a",
+            "source": "EST_0.lod1",
+            "target": "EST_0.lod0",
+            "edge_type": "dtc_derived_from"
+          },
+          {
+            "id": "EST_0_model_has_linked_resource_EST_0.master",
+            "source": "EST_0_model",
+            "target": "EST_0.master",
+            "edge_type": "has_linked_resource"
+          },
+          {
+            "id": "ep_has_representation_model_EST_0_model",
+            "source": "ep",
+            "target": "EST_0_model",
+            "edge_type": "has_representation_model"
+          },
+          {
+            "id": "5a72ae8d-d56b-51ae-a0c8-5e6a7e349128",
+            "source": "119b5ac7-f5fd-5f5d-8921-74c2e22f1f8a",
+            "target": "EST_1.lod0",
+            "edge_type": "dtc_had_output"
+          },
+          {
+            "id": "7874db8a-95a7-542f-84e5-960238481816",
+            "source": "119b5ac7-f5fd-5f5d-8921-74c2e22f1f8a",
+            "target": "EST_1.master",
+            "edge_type": "dtc_had_input"
+          },
+          {
+            "id": "5b50e4d9-7fbd-5585-9a64-a52a3defe716",
+            "source": "EST_1.lod0",
+            "target": "EST_1.master",
+            "edge_type": "dtc_derived_from"
+          },
+          {
+            "id": "1efa3562-0b4f-511a-96f8-7eb7a41bd5d9",
+            "source": "5de4e1c6-3b00-5c15-b793-218db5d76df6",
+            "target": "EST_1.lod1",
+            "edge_type": "dtc_had_output"
+          },
+          {
+            "id": "2018a2f3-94ad-5c65-8331-56bfa2684525",
+            "source": "5de4e1c6-3b00-5c15-b793-218db5d76df6",
+            "target": "EST_1.lod0",
+            "edge_type": "dtc_had_input"
+          },
+          {
+            "id": "2209403d-a2da-5406-93c9-b71a7aabdbe1",
+            "source": "EST_1.lod1",
+            "target": "EST_1.lod0",
+            "edge_type": "dtc_derived_from"
+          },
+          {
+            "id": "EST_1_model_has_linked_resource_EST_1.master",
+            "source": "EST_1_model",
+            "target": "EST_1.master",
+            "edge_type": "has_linked_resource"
+          },
+          {
+            "id": "ep_has_representation_model_EST_1_model",
+            "source": "ep",
+            "target": "EST_1_model",
+            "edge_type": "has_representation_model"
+          },
+          {
+            "id": "91fea8a6-3706-5ee1-b15b-696355e821ba",
+            "source": "c4475d76-18a5-598d-b7e8-948ddf58a62d",
+            "target": "EST_2.lod0",
+            "edge_type": "dtc_had_output"
+          },
+          {
+            "id": "a0272dd9-f7c1-5b50-8512-76175a2e3f5b",
+            "source": "c4475d76-18a5-598d-b7e8-948ddf58a62d",
+            "target": "EST_2.master",
+            "edge_type": "dtc_had_input"
+          },
+          {
+            "id": "26ce49ed-9a08-524b-9a9a-c0547f79959d",
+            "source": "EST_2.lod0",
+            "target": "EST_2.master",
+            "edge_type": "dtc_derived_from"
+          },
+          {
+            "id": "665db88d-a9ca-5d40-b239-04f03a0f5072",
+            "source": "f343c632-b661-59da-9ca1-2437dddc8e81",
+            "target": "EST_2.lod1",
+            "edge_type": "dtc_had_output"
+          },
+          {
+            "id": "404d69c0-589d-5835-b419-f17b09b8ace3",
+            "source": "f343c632-b661-59da-9ca1-2437dddc8e81",
+            "target": "EST_2.lod0",
+            "edge_type": "dtc_had_input"
+          },
+          {
+            "id": "3ace850d-5fc5-5d78-8bde-c58930a0461a",
+            "source": "EST_2.lod1",
+            "target": "EST_2.lod0",
+            "edge_type": "dtc_derived_from"
+          },
+          {
+            "id": "EST_2_model_has_linked_resource_EST_2.master",
+            "source": "EST_2_model",
+            "target": "EST_2.master",
+            "edge_type": "has_linked_resource"
+          },
+          {
+            "id": "ep_has_representation_model_EST_2_model",
+            "source": "ep",
+            "target": "EST_2_model",
+            "edge_type": "has_representation_model"
+          }
+        ]
+      },
+      "expect": {
+        "sets": [
+          {
+            "hat": "EST_0_model",
+            "hat_kind": "rm",
+            "parent": null,
+            "alternatives": [
+              [
+                "EST_0.master",
+                "fidelity"
+              ],
+              [
+                "EST_0.lod0",
+                "lod"
+              ],
+              [
+                "EST_0.lod1",
+                "lod"
+              ]
+            ],
+            "reasons": [
+              "fidelity",
+              "lod"
+            ],
+            "covers": [
+              "EST_0_model"
+            ],
+            "coverage": null
+          },
+          {
+            "hat": "EST_1_model",
+            "hat_kind": "rm",
+            "parent": null,
+            "alternatives": [
+              [
+                "EST_1.master",
+                "fidelity"
+              ],
+              [
+                "EST_1.lod0",
+                "lod"
+              ],
+              [
+                "EST_1.lod1",
+                "lod"
+              ]
+            ],
+            "reasons": [
+              "fidelity",
+              "lod"
+            ],
+            "covers": [
+              "EST_1_model"
+            ],
+            "coverage": null
+          },
+          {
+            "hat": "EST_2_model",
+            "hat_kind": "rm",
+            "parent": null,
+            "alternatives": [
+              [
+                "EST_2.master",
+                "fidelity"
+              ],
+              [
+                "EST_2.lod0",
+                "lod"
+              ],
+              [
+                "EST_2.lod1",
+                "lod"
+              ]
+            ],
+            "reasons": [
+              "fidelity",
+              "lod"
+            ],
+            "covers": [
+              "EST_2_model"
+            ],
+            "coverage": null
+          }
+        ],
+        "warnings": [],
+        "counts": {
+          "sets": 3,
+          "with_alternatives": 3,
+          "containers": 0,
+          "by_reason": {
+            "lod": 3,
+            "fidelity": 3,
+            "packaging": 0
+          },
+          "entries": 9
+        }
+      },
+      "choices": [
+        {
+          "hat": "EST_1_model",
+          "use": [
+            "web",
+            "realtime"
+          ],
+          "expect": {
+            "level": "rm",
+            "id": "EST_1.master",
+            "use": null
+          }
+        },
+        {
+          "hat": "EST_1_model",
+          "use": [
+            "heriverse",
+            "aton",
+            "web",
+            "realtime"
+          ],
+          "expect": {
+            "level": "rm",
+            "id": "EST_1.lod1",
+            "use": "heriverse"
+          }
+        }
+      ]
+    }
+  ]
+}
