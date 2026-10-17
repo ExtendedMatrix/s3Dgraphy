@@ -1,6 +1,6 @@
 {
   "formal_language": "EM",
-  "version": "1.6.36",
+  "version": "1.6.37",
   "_note_material_vs_qualia_color": [
     "DUE COSE DIVERSE CHE SI CHIAMANO ENTRAMBE color. Non confonderle: e gia successo.",
     "1) QUI, in node_styles.<tipo>.style.material.rgba_color — il COLORE DEL MATERIALE BLENDER del proxy 3D, in float LINEARI. UNA sola chiave: `rgba_color`. Fino a S8 il file ne usava due (`color` sui 13 tipi stratigrafici, `rgba_color` sugli altri) e get_material_color() ne leggeva una sola, restituendo None per 21 tipi su 38; ora sono unificate e la vecchia `color` e letta solo come tolleranza verso file scritti prima. Un tipo che non diventa mai una mesh NON ha material affatto (i contenitori di gruppo, e da S7 i dieci nodi che rendono per icona): per loro get_material_color() torna None, ed e corretto.",
@@ -9,6 +9,7 @@
     "In breve: qui si decide di che colore DISEGNARE una US; li si registra di che colore ERA."
   ],
   "_changelog": {
+    "1.6.37": "THE ALTERNATIVES OF A 3D OBJECT: THE COMMON HAT (MICRO le alternative e la trasformazione, E.D. 17 Oct 2026). New block `alternatives`: a set of alternatives is the 3D resources with the same hat (the has_linked_resource from an RM, or from an RM container since connections 1.6.41, to their asset); reasons lod, fidelity, packaging computed; two nested levels, RM and container; the diagnoses two_hats, partial_coverage, epochs. Replaces the alternative of a container computed from the DTC (16 Oct). A view: nothing in em.json or RDF. Read by s3dgraphy.resources.alternatives.alternative_sets.",
     "1.6.36": "THE RM IS BOUND TO THE EPOCH ONLY DIRECTLY (MICRO lo spazio 3D 2, Parte 0, E.D. 16 Oct 2026). threed_instances.representation_model loses `via_property`: an epoch reaches its model only by a direct has_representation_model, the one form the connections datamodel admits (a property is not a source of has_representation_model) and the only one in the data (the 99 RMs of Templu Mare v2). «×N» counts the epochs bound directly.",
     "1.6.35": "RM AND PROXY AMONG THE COMPUTED INSTANCES (MICRO lo spazio 3D, E.D. 11 Oct 2026). New block threed_instances: the proxy of a unit (geometry property → has_semantic_shape → SemanticShape) is drawn in the paradata group of the property, beside it; a representation model is drawn in the paradata group of each epoch that has it (has_representation_model, directly or through an epoch property), with the number of its epochs («×N»). A view: nothing in em.json or RDF. Read by s3dgraphy.paradata_view.threed_instances and units_without_3d.",
     "1.6.34": "THE AUTHOR AS AN INSTANCE (MICRO le entità spaziotemporali, decided by E.D. 10 Oct 2026: documents, authors and units are spatiotemporal entities, and an author «si istanzia come avviene con i documenti»). paradata_instances gains `authorship`: the author of a reader of the group (the extractor, or the combiner and the extractors it combines) reached by has_author, when the author is not itself a member of the group, is drawn inside the group as an INSTANCE of kind `author`, with the badge of the epoch where the author begins (has_first_epoch). Still a view: nothing is written in em.json or RDF. s3dgraphy.paradata_view.view_instances reads it.",
@@ -6263,6 +6264,46 @@
       "count_word": "×{n}"
     },
     "id": "{master}##{place}"
+  },
+  "alternatives": {
+    "_comment": "1.6.37 (MICRO le alternative e la trasformazione, E.D. 17 Oct 2026, «lo stesso cappello»). A SET OF ALTERNATIVES is the group of 3D resources that represent the same thing, with the same coverage, in different forms; a viewer lights ONE alternative per set — by hand, by use, or by distance. The criterion is the HAT: the node that reaches a resource's asset (its master) with `hat_edge` — an RM (`hats.rm`) or an RM container (`hats.container`). Two resources are alternatives if and only if they have the same hat; versions inherit the hat of their asset (resources.versions.inherited_links), nothing is copied. Never deduced from the DTC. TWO NESTED LEVELS: the RM (master, LODs and other formats of one piece) and the CONTAINER (a tileset of the whole survey is hatted by the container, not by an RM of its own: choosing it switches the members off, choosing the members switches it off, and each member then chooses its LOD); a container's sets are its members' (by `member_edge`, transitively: a sub-container is a member too). REASONS, computed: `lod` (two levels of one chain), `fidelity` (the master and a version derived from it), `packaging` (a tileset beside meshes; at the container level, the container's own alternative against its members). A tileset is recognised by what it declares (`tileset`). DIAGNOSES (warnings, each with its cure): `two_hats` (an asset reached by two hats; a tileset reached by a container and by an RM of its own), `partial_coverage` (measured only on boxes a consumer passes: no box is written in the graph), `epochs` (two alternatives of one hat in different epochs — cannot happen, since the epoch is on the hat: if it does, the link was copied on a version — or a container with an alternative whose members lie in different epochs). A VIEW: nothing written. The reference implementation is s3dgraphy.resources.alternatives.alternative_sets; the cases both sides pass are JSON_config/alternative_cases.json.",
+    "hat_edge": "has_linked_resource",
+    "hats": {
+      "rm": [
+        "representation_model",
+        "representation_model_doc",
+        "representation_model_sf"
+      ],
+      "container": [
+        "RepresentationModelNodeGroup"
+      ]
+    },
+    "member_edge": "is_in_representation_model_group",
+    "epoch_edge": "has_representation_model",
+    "epoch_types": [
+      "EpochNode"
+    ],
+    "file_types": [
+      "3d_model"
+    ],
+    "tileset": {
+      "media_types": [
+        "application/vnd.maxar.archive.3tz+zip"
+      ],
+      "packaging": [
+        "directory"
+      ],
+      "url_patterns": [
+        "\\.3tz([?#]|$)",
+        "(^|/)tileset\\.json([?#]|$)"
+      ]
+    },
+    "reasons": [
+      "lod",
+      "fidelity",
+      "packaging"
+    ],
+    "choice": "Per set, the uses are tried IN ORDER. RM set: choose_version on its alternatives. Container set: for each use, the container's own alternative if one of its versions declares it (the members go off), else the members if one of their versions declares it (each member then chooses with the same uses); none → the members, each with its master. A hand choice (`container` | `members`) overrides the use."
   },
   "dtc_kinds": {
     "_comment": "DATA-DRIVEN, EXPANDABLE per-kind vocabulary for the DTC substrate profile (ECHOES). Mirrors the Master-Document axis vocabularies above (document_roles/content_natures): the three base kinds (input/process/output) each list specific kinds seeded from the 2017 DTC palette. Adding a new kind (e.g. audio, spectroscopy) is a JSON entry here (+ a glyph) — NOT a code change; the DTC node classes validate against these keys via s3dgraphy.utils.get_dtc_kinds(). `glyph` names the 2017 DTC SVG (wired in the later glyph/visual-manager slice; recorded here as data only).",
