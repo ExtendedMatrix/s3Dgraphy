@@ -94,6 +94,16 @@ def test_partial_coverage_is_measured_on_the_boxes_a_consumer_passes():
                                                            "EST_1_model", "EST_2_model"]
 
 
+def test_an_alternative_larger_than_its_container_covers_more():
+    g = _graph(CASES[0]["graph"])
+    boxes = {f"EST_{i}_model": [[i * 10, 0, 0], [i * 10 + 10, 10, 10]] for i in range(4)}
+    res = alternative_sets(g, bounds={**boxes, "tiles.lod0": [[-20, -10, -5], [60, 30, 20]]})
+    assert find_set(res, "survey_rmgroup")["coverage"] == "more"
+    (w,) = res["warnings"]
+    assert w["code"] == "partial_coverage" and "more than" in w["message"]
+    assert "every model the alternative covers" in w["cure"]
+
+
 def test_a_container_across_epochs_with_an_alternative_is_warned():
     g = _graph(CASES[0]["graph"])
     from s3dgraphy.nodes.epoch_node import EpochNode

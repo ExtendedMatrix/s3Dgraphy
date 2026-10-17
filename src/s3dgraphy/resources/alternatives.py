@@ -370,7 +370,10 @@ def alternative_sets(graph, *, bounds: Optional[Dict[str, Any]] = None,
         sub-containers, UNDER it — choosing one of the container's own
         alternatives switches all of them off; ``covers``: the models under it,
         sub-containers opened;
-      - ``coverage``: ``whole`` | ``partial`` | ``unmeasured`` — measured only
+      - ``coverage``: ``whole`` | ``partial`` (some models outside: the
+        covered ones make a sub-container) | ``more`` (every model inside and
+        the alternative much larger: the alternative of a larger container)
+        | ``unmeasured`` — measured only
         on ``bounds`` (``{node or resource id: [[x0,y0,z0],[x1,y1,z1]]}``, the
         boxes a consumer that loaded the files has: no box is written in the
         graph), ``None`` for an RM or a container without alternatives;
@@ -469,13 +472,24 @@ def alternative_sets(graph, *, bounds: Optional[Dict[str, Any]] = None,
                     union = _box_union(list(boxes.values()))
                     inter = _box_volume(_box_inter(alt_box, union))
                     iou = inter / max(1e-12, _box_volume(alt_box) + _box_volume(union) - inter)
+                    inside = [m for m, b in boxes.items()
+                              if all(alt_box[0][i] <= (b[0][i] + b[1][i]) / 2 <= alt_box[1][i]
+                                     for i in range(3))]
                     if iou >= SAME_COVERAGE_IOU:
                         coverage = "whole"
+                    elif len(inside) == len(covers):
+                        # every model inside, and the alternative much larger: it
+                        # covers MORE than the container — the alternative of a
+                        # larger one, never «more or less» (E.D. 17 Oct 2026)
+                        coverage = "more"
+                        warnings.append({
+                            "code": "partial_coverage", "hat": hat_id, "ids": sorted(inside),
+                            "message": f"the alternative of {name(hat_id)!r} covers more than "
+                                       f"its {len(covers)} models (boxes, IoU {iou:.2f})",
+                            "cure": "put in the container every model the alternative covers, "
+                                    "or declare it on the container that holds them"})
                     else:
                         coverage = "partial"
-                        inside = [m for m, b in boxes.items()
-                                  if all(alt_box[0][i] <= (b[0][i] + b[1][i]) / 2 <= alt_box[1][i]
-                                         for i in range(3))]
                         warnings.append({
                             "code": "partial_coverage", "hat": hat_id, "ids": sorted(inside),
                             "message": f"the alternative of {name(hat_id)!r} covers "
