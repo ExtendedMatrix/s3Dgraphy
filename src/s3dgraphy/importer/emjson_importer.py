@@ -442,6 +442,13 @@ def parse_emjson(doc: Dict[str, Any], *,
     except Exception as exc:  # noqa: BLE001 — never block a load on it
         warnings.append(f"lod_level check skipped: {exc}")
 
+    # MICRO le alternative e la trasformazione (E.D. 16-17 Oct 2026) · the
+    # data.transform of an RM or a shape in the old form (numbers as text,
+    # radians, no angle_unit) is read and converted in memory, ONE warning
+    # says how many: the next save writes the new form (geometry.transform).
+    from ..geometry.transform import migrate_graph_transforms
+    warnings.extend(migrate_graph_transforms(graph)["warnings"])
+
     return graph, warnings
 
 

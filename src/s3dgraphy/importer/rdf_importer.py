@@ -1224,6 +1224,29 @@ class RDFImporter:
         """The inverse of ``_serialize_type_specific``, per node type."""
         data: Dict[str, Any] = {}
 
+        from ..geometry.transform import TRANSFORM_NODE_TYPES, write_form
+        if node_type in TRANSFORM_NODE_TYPES:
+            # the transformation of a 3D object (em.ttl section 20): absent is
+            # the identity, which the node's own default already is
+            raw: Dict[str, Any] = {}
+            for key, local in (("position", "position"), ("rotation", "rotationDegrees"),
+                               ("scale", "scale"), ("pivot", "pivot")):
+                value = self._one_literal(store, ref, EM[local])
+                if value is not None:
+                    try:
+                        raw[key] = json.loads(value)
+                    except ValueError:
+                        self.warnings.append(f"node '{node_id}': {local} {value!r} is not JSON")
+            for key, local in (("rotation_order", "rotationOrder"), ("up_axis", "upAxis")):
+                value = self._one_literal(store, ref, EM[local])
+                if value:
+                    raw[key] = value
+            if raw:
+                try:
+                    data["transform"] = write_form(raw)
+                except ValueError as exc:
+                    self.warnings.append(f"node '{node_id}': transform not read: {exc}")
+
         if node_type == "property":
             ptype = qualia_type
             if ptype is None:

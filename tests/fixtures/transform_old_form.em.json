@@ -1,0 +1,65 @@
+{
+  "header": {
+    "format": "em.json",
+    "version": "1.0",
+    "schema_version": 2,
+    "_note": "MICRO le alternative e la trasformazione (17 Oct 2026): two nodes copied from Templu Mare v3.2 as EMStudio left it on 16 Oct — Podio1's RM turned 30° about Z from the Inspector (the old form EMStudio and EM Tools wrote: strings, radians, no axis) and a sketch's SemanticShape (strings, up_axis Z)."
+  },
+  "graph": {
+    "graph_id": "transform-old-form",
+    "nodes": [
+      {
+        "id": "Podio1_BAKE_SM_Podio1_BAKE_model",
+        "node_type": "representation_model",
+        "name": "Podio1_BAKE_SM_Podio1_BAKE",
+        "data": {
+          "transform": {
+            "position": [
+              "0.0",
+              "0.0",
+              "0.0"
+            ],
+            "rotation": [
+              "0",
+              "0",
+              "0.5235987755982988"
+            ],
+            "scale": [
+              "1.0",
+              "1.0",
+              "1.0"
+            ]
+          }
+        }
+      },
+      {
+        "id": "349f5cab-ac86-5e9e-a9b5-12f56190851a",
+        "node_type": "semantic_shape",
+        "name": "8443b5f5-c0c8-4915-8304-531f69c2752f geometry",
+        "data": {
+          "convexshapes": [],
+          "spheres": [],
+          "transform": {
+            "position": [
+              "-13.601854124487424",
+              "-14.260227018637243",
+              "491.18538331985474"
+            ],
+            "rotation": [
+              "0",
+              "0",
+              "0"
+            ],
+            "scale": [
+              "1",
+              "1",
+              "1"
+            ],
+            "up_axis": "Z"
+          }
+        }
+      }
+    ],
+    "edges": []
+  }
+}

@@ -11,7 +11,8 @@ class RepresentationNode(Node):
     Attributes:
         node_type (str): Type of node, set by child classes
         type (str): The type of representation (e.g. "RM", "spatialized_image", "generic")
-        transform (dict): Transformation data for positioning in 3D space
+        transform (dict): Transformation data for positioning in 3D space, in
+            the form of node datamodel 1.6.31 (geometry.transform)
     """
     
     # No node_type: this is the abstract family base, and the three concrete
@@ -27,7 +28,7 @@ class RepresentationNode(Node):
                  node_id: str,
                  name: str,
                  type: str = "generic",
-                 transform: Optional[Dict[str, List[str]]] = None,
+                 transform: Optional[Dict[str, Any]] = None,
                  description: str = ""):
         """
         Initialize a new RepresentationNode.
@@ -43,40 +44,41 @@ class RepresentationNode(Node):
         
         self.type = type
         
-        # Initialize transform with default values if not provided
-        if transform is None:
-            self.transform = {
-                "position": ["0.0", "0.0", "0.0"],
-                "rotation": ["0.0", "0.0", "0.0"],
-                "scale": ["1.0", "1.0", "1.0"]
-            }
-        else:
-            self.transform = transform
+        # The transformation in the form of node datamodel 1.6.31 (E.D. 16-17
+        # Oct 2026): numbers, degrees, rotation_order, up_axis. The identity
+        # by default (until then: strings, radians, no axis). A transform
+        # given is kept as given: the load of an em.json reads the old form
+        # and says so (geometry.transform.migrate_graph_transforms).
+        from ..geometry.transform import identity
+        self.transform = identity() if transform is None else transform
         
         # Structure data for serialization
         self.data = {
             "transform": self.transform
         }
     
-    def set_transform(self, 
-                     position: Optional[List[str]] = None, 
-                     rotation: Optional[List[str]] = None, 
-                     scale: Optional[List[str]] = None) -> None:
+    def set_transform(self,
+                      position: Optional[List[float]] = None,
+                      rotation: Optional[List[float]] = None,
+                      scale: Optional[List[float]] = None,
+                      pivot: Optional[List[float]] = None,
+                      rotation_order: Optional[str] = None,
+                      up_axis: Optional[str] = None) -> None:
         """
-        Set the transformation parameters.
-        
-        Args:
-            position (List[str], optional): Position [x, y, z] as strings
-            rotation (List[str], optional): Rotation [x, y, z] in radians as strings
-            scale (List[str], optional): Scale [x, y, z] as strings
+        Set the transformation parameters, in the form of node datamodel
+        1.6.31: numbers, the rotation in DEGREES (``rotation_order``, XYZ by
+        default), the position in metres in the frame of the study, ``pivot``
+        the point rotations and scales turn about (absent: the centre of the
+        object's box). See :mod:`s3dgraphy.geometry.transform`.
         """
-        if position:
-            self.transform["position"] = position
-        if rotation:
-            self.transform["rotation"] = rotation
-        if scale:
-            self.transform["scale"] = scale
-            
+        from ..geometry.transform import write_form
+        t = dict(self.transform or {})
+        for key, value in (("position", position), ("rotation", rotation),
+                           ("scale", scale), ("pivot", pivot),
+                           ("rotation_order", rotation_order), ("up_axis", up_axis)):
+            if value is not None:
+                t[key] = value
+        self.transform = write_form(t)
         self.data["transform"] = self.transform
     
     def to_dict(self) -> Dict[str, Any]:
@@ -119,7 +121,7 @@ class RepresentationModelNode(RepresentationNode):
                  node_id: str,
                  name: str,
                  type: str = "RM",
-                 transform: Optional[Dict[str, List[str]]] = None,
+                 transform: Optional[Dict[str, Any]] = None,
                  description: str = ""):
         """
         Initialize a new RepresentationModelNode.
@@ -194,7 +196,7 @@ class RepresentationModelDocNode(RepresentationNode):
                  node_id: str,
                  name: str,
                  type: str = "spatialized_image",
-                 transform: Optional[Dict[str, List[str]]] = None,
+                 transform: Optional[Dict[str, Any]] = None,
                  description: str = ""):
         """
         Initialize a new RepresentationModelDocNode.
@@ -246,7 +248,7 @@ class RepresentationModelSpecialFindNode(RepresentationNode):
                  node_id: str,
                  name: str,
                  type: str = "RM",
-                 transform: Optional[Dict[str, List[str]]] = None,
+                 transform: Optional[Dict[str, Any]] = None,
                  description: str = ""):
         """
         Initialize a new RepresentationModelSpecialFindNode.

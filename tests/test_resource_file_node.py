@@ -110,9 +110,9 @@ def test_le_versioni_del_datamodel_sono_salite():
     # (D1/D2), 1.6.36 dal 9 ott (la proprietà come fonte), 1.6.37 la sera
     # stessa (l'istanza è una vista); le voci 1.6.17 e 1.6.30 restano nella
     # storia
-    assert node["s3Dgraphy_data_model_version"] == "1.6.30"  # 1.6.30 dall'11 ott 2026 (il codice di studio stabile)
+    assert node["s3Dgraphy_data_model_version"] == "1.6.31"  # 1.6.31 dal 17 ott 2026 (la trasformazione dichiarata)
     assert "v1.6.17 (MICRO la risorsa e i suoi file" in node["description"]
-    assert conn["s3Dgraphy_connections_model_version"] == "1.6.40"  # 1.6.40 dall'11 ott 2026 (study_took_place_at verso il saggio)
+    assert conn["s3Dgraphy_connections_model_version"] == "1.6.41"  # 1.6.41 dal 17 ott 2026 (il cappello può essere il contenitore)
     assert "v1.6.30 (LA RISORSA E I SUOI FILE" in conn["description"]
     entry = node["reference_nodes"]["ResourceFileNode"]
     assert entry["mapping"]["cidoc"] == "crmdig:D1_Digital_Object"

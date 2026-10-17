@@ -1706,6 +1706,10 @@ class RDFExporter:
                                  graph_id: Optional[str] = None) -> None:
         data = getattr(node, "data", {}) or {}
 
+        from ..geometry.transform import TRANSFORM_NODE_TYPES
+        if node_type in TRANSFORM_NODE_TYPES and isinstance(data.get("transform"), dict):
+            self._emit_transform(node_iri, data["transform"], ctx)
+
         if node_type == "narrative":
             # EM Narrative (DP-79) — the PROJECTION side of the two-tier model.
             # Authoring happens on the property graph; here we only restate what
@@ -2087,6 +2091,30 @@ class RDFExporter:
                     is_uri = origin.startswith(("http://", "https://"))
                     ctx.add((node_iri, EM.retrievedFrom, Literal(
                         origin, datatype=XSD.anyURI if is_uri else None)))
+
+    #: The transformation of a 3D object and its predicates (em.ttl section 20,
+    #: E.D. 16-17 Oct 2026): the vectors as rdf:JSON arrays of three numbers,
+    #: the order and the axis as strings. The quaternion is computed, not sent.
+    TRANSFORM_VECTORS = (("position", "position"), ("rotation", "rotationDegrees"),
+                         ("scale", "scale"), ("pivot", "pivot"))
+
+    @classmethod
+    def _emit_transform(cls, node_iri: URIRef, raw: Dict[str, Any], ctx) -> None:
+        """The ``data.transform`` of an RM or a shape, in the new form (an old
+        one is read first): nothing is emitted for the identity without a
+        pivot — absent means «where the file puts it»."""
+        from ..geometry.transform import is_identity, read_transform
+        try:
+            t, _old = read_transform(raw)
+        except ValueError:
+            return
+        if is_identity(t) and "pivot" not in t:
+            return
+        for key, local in cls.TRANSFORM_VECTORS:
+            if key in t:
+                ctx.add((node_iri, EM[local], Literal(json.dumps(t[key]), datatype=RDF.JSON)))
+        ctx.add((node_iri, EM.rotationOrder, Literal(t["rotation_order"])))
+        ctx.add((node_iri, EM.upAxis, Literal(t["up_axis"])))
 
     #: D1 · the measures of a version and their predicates (em.ttl section 19)
     VERSION_MEASURES = (("tris_per_m2", "trisPerM2", "double"),
