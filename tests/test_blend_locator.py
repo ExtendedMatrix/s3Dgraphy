@@ -100,7 +100,7 @@ def test_effective_residency_di_una_risorsa_blend_e_resident():
 
 def test_la_residenza_dello_shelf_dice_disk():
     """`_residence` risponde nelle tre parole che usa una persona — disk ·
-    minio · uri — e un datablock dentro un .blend è su disco.
+    s3 · uri — e un datablock dentro un .blend è su disco.
 
     Una QUARTA parola sarebbe una scelta di modello, e la voce C delle
     questioni aperte la lascia a E.D.: qui c'è il minimo che non la
@@ -109,8 +109,9 @@ def test_la_residenza_dello_shelf_dice_disk():
     from s3dgraphy.shelf.core import _residence
 
     assert _residence(make_blend_locator("a.blend", "Object", "x"), {}) == "disk"
-    assert _residence("s3://b/k", {}) == "minio"
+    assert _residence("s3://b/k", {}) == "s3"
     assert _residence("https://x/y", {}) == "uri"
+    assert _residence("https://x/y", {"origin": {"repo": "s3"}}) == "s3"
     assert _residence("/dati/a.jpg", {}) == "disk"
 
 

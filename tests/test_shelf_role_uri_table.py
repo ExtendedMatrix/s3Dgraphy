@@ -37,7 +37,7 @@ def a_shelf_with_three():
         # MY OWN asset, held up as a comparandum. The cell the "derive it from
         # the scope" shortcut gets wrong.
         role="comparandum", media_type="model/gltf-binary", size=104857,
-        origin={"repo": "minio", "capabilities": []})
+        origin={"repo": "s3", "capabilities": []})
     theirs = api.add_to_shelf(
         shelf, URI, name="tempio (altrove)", scope="other-HDT",
         # somebody else's URI, used as a source INSIDE this study's reasoning
@@ -195,7 +195,7 @@ def test_a_uri_becomes_a_shelf_entry_with_no_bytes_anywhere():
 def test_a_uri_acquisition_never_fetches_anything(monkeypatch):
     """THE claim of this whole path, measured rather than asserted in prose: no
     request goes out and no object store is touched. Both doors are nailed shut
-    for the duration — urllib and the minio client — and the acquisition still
+    for the duration — urllib and the S3 client (boto3) — and the acquisition still
     completes, which is only possible if it never wanted them."""
     import urllib.request
 
@@ -210,7 +210,7 @@ def test_a_uri_acquisition_never_fetches_anything(monkeypatch):
     real_import = builtins.__import__
 
     def no_object_store(name, *args, **kwargs):
-        if name.split(".")[0] == "minio":            # pragma: no cover
+        if name.split(".")[0] in ("boto3", "botocore"):   # pragma: no cover
             raise AssertionError("the URI path reached for an object store")
         return real_import(name, *args, **kwargs)
 
@@ -399,7 +399,7 @@ def test_every_row_has_every_column_for_a_mixed_shelf():
 
     # …and the cells say what they should. THREE residences, three roles, both
     # modes — the matrix in one table.
-    assert rows["tempio (mio)"]["RESIDENCE"] == "minio"
+    assert rows["tempio (mio)"]["RESIDENCE"] == "s3"
     assert rows["tempio (mio)"]["ROLE"] == "comparandum"
     assert rows["tempio (mio)"]["MODE"] == "used_in_graph"
     assert rows["tempio (mio)"]["SIZE"] == 104857

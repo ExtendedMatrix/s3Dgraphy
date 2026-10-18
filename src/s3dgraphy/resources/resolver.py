@@ -4,7 +4,7 @@ Pure Python, no web framework, no network. The resolver maps a **stable
 resource ID** to a concrete :class:`Location`. Storage backends are pluggable
 via :class:`ResolverRegistry`; R0 ships exactly one — :class:`PassthroughBackend`
 — which classifies a resource's *current locator* (a ResourceNode ``url``) into a
-Location without touching bytes. R1 (FS-index) and R2 (MinIO) will register
+Location without touching bytes. R1 (FS-index) and R2 (S3) will register
 richer backends ahead of the passthrough fallback.
 """
 

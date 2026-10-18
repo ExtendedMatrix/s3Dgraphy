@@ -5,33 +5,34 @@ import hashlib
 from s3dgraphy import api
 from s3dgraphy.resources import locate
 from s3dgraphy.resources.alignment import bucket_alignment, free_local, free_plan, promote_verified
-from s3dgraphy.resources.minio_backend import MinioConfig
+from s3dgraphy.resources.s3_backend import S3Config
 from s3dgraphy.resources.object_store import S3Store, StoreError, register_store, open_store
 
 
 class _Absent(Exception):
-    code = "NoSuchKey"
+    """botocore's ClientError for a HEAD on a missing object: the bare status."""
+    response = {"Error": {"Code": "404"}}
 
 
-class _Resp:
-    def __init__(self, data): self._d = data
-    def stream(self, n): yield self._d
+class _Body:
+    def __init__(self, data): self._d, self._at = data, 0
+    def read(self, n=-1):
+        out = self._d[self._at:] if n < 0 else self._d[self._at:self._at + n]
+        self._at += len(out); return out
     def close(self): pass
-    def release_conn(self): pass
 
 
 class _Client:
-    """The five calls of the S3 API the store uses."""
+    """The calls of the S3 API (boto3 spelling) the store uses."""
     def __init__(self): self.objs = {}
-    def bucket_exists(self, b): return True
-    def make_bucket(self, b): pass
-    def fput_object(self, b, k, path): self.objs[(b, k)] = open(path, "rb").read()
-    def stat_object(self, b, k):
-        if (b, k) not in self.objs: raise _Absent()
-        class O: pass
-        o = O(); o.size = len(self.objs[(b, k)]); o.etag = "x"; return o
-    def get_object(self, b, k): return _Resp(self.objs[(b, k)])
-    def remove_object(self, b, k): self.objs.pop((b, k), None)
+    def head_bucket(self, Bucket): return {}
+    def create_bucket(self, Bucket, **kw): pass
+    def upload_file(self, Filename, Bucket, Key): self.objs[(Bucket, Key)] = open(Filename, "rb").read()
+    def head_object(self, Bucket, Key):
+        if (Bucket, Key) not in self.objs: raise _Absent()
+        return {"ContentLength": len(self.objs[(Bucket, Key)]), "ETag": '"x"'}
+    def get_object(self, Bucket, Key): return {"Body": _Body(self.objs[(Bucket, Key)])}
+    def delete_object(self, Bucket, Key): self.objs.pop((Bucket, Key), None)
 
 
 class _N:
@@ -46,7 +47,7 @@ class _G:
 
 
 def _store():
-    return S3Store(MinioConfig(bucket="em", prefix=""), client=_Client())
+    return S3Store(S3Config(bucket="em", prefix=""), client=_Client())
 
 
 def _res(rid, path):

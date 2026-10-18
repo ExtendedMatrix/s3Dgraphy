@@ -3150,7 +3150,7 @@ def find_moved_files(graph: Graph, results: Sequence[Dict[str, Any]],
 
 # ── B1 · disk ↔ bucket: the two copies, and what may be let go (E.D., 11 Oct 2026) ──
 def open_object_store(name: Optional[str] = None, config: Any = None):
-    """The object store of the Resource layer — any S3-compatible one (MinIO
+    """The object store of the Resource layer — any S3-compatible one (RustFS
     today). ``S3_*`` environment, ``EM_OBJECT_STORE`` to choose another
     implementation (:func:`s3dgraphy.resources.object_store.register_store`)."""
     from .resources.object_store import open_store
@@ -3345,7 +3345,7 @@ def register_resource(graph: Graph, locator: str, *, name: Optional[str] = None,
     Creates a ResourceNode carrying a new stable ID (a UUID unless ``resource_id`` is
     given) and the ``locator`` as its current ``url``, and adds it to the graph.
     This is the *identity + locator* half only — real ingest (copying bytes into
-    an FS-index or MinIO store) is R1/R2, which will resolve the same ID through
+    an FS-index or S3 store) is R1/R2, which will resolve the same ID through
     their backends. Returns ``{id, locator, kind}``."""
     import uuid
     from .resources import classify_locator
@@ -3371,37 +3371,38 @@ def scan_fs_resources(folder: str) -> List[Dict[str, Any]]:
     return [e.to_dict() for e in backend.entries()]
 
 
-def ingest_minio_resource(path: str, *, resource_id: Optional[str] = None,
-                          config: Any = None) -> Dict[str, Any]:
-    """Ingest a file into the SHARED MinIO/S3 store (R2) and return
+def ingest_s3_resource(path: str, *, resource_id: Optional[str] = None,
+                       config: Any = None) -> Dict[str, Any]:
+    """Ingest a file into the SHARED S3 store (R2) and return
     ``{id, object_key, s3_uri}``.
 
     ``resource_id`` (optional): reuse an EXISTING stable ID instead of minting a
-    fresh one — this is how "promote to MinIO" keeps a resource's identity (the
-    SAME id whether it lives on the file system or in MinIO — one ID space).
+    fresh one — this is how "promote to the S3 store" keeps a resource's identity
+    (the SAME id whether it lives on the file system or in the bucket — one ID
+    space).
 
     By default the connection is read from the ``S3_*`` environment (the SAME
     vars Heriverse-Server uses → one shared object store); pass an explicit
-    :class:`~s3dgraphy.resources.MinioConfig` to override. Needs the optional
-    ``minio`` SDK (``pip install s3dgraphy[minio]``) AND a reachable server —
+    :class:`~s3dgraphy.resources.S3Config` to override. Needs the optional
+    ``boto3`` SDK (``pip install s3dgraphy[s3]``) AND a reachable server —
     raises :class:`MissingDependency` if the SDK is absent."""
-    from .resources import MinioBackend, MinioConfig
-    cfg = config or MinioConfig.from_env()
-    backend = MinioBackend(cfg)
+    from .resources import S3Backend, S3Config
+    cfg = config or S3Config.from_env()
+    backend = S3Backend(cfg)
     rid, key = backend.ingest(path, resource_id=resource_id)
     return {"id": rid, "object_key": key, "s3_uri": f"s3://{cfg.bucket}/{key}"}
 
 
-def presign_minio_resource(object_key: str, *, config: Any = None,
-                           expires_seconds: int = 3600) -> Dict[str, Any]:
-    """Presign a shared-MinIO ``object_key`` (as returned by
-    :func:`ingest_minio_resource`) into a short-lived fetchable
+def presign_s3_resource(object_key: str, *, config: Any = None,
+                        expires_seconds: int = 3600) -> Dict[str, Any]:
+    """Presign a shared-S3 ``object_key`` (as returned by
+    :func:`ingest_s3_resource`) into a short-lived fetchable
     ``{object_key, http_url}``. Stateless (presign by key, no manifest). Connection
     from the ``S3_*`` env by default. Raises :class:`MissingDependency` without the
-    ``minio`` SDK."""
-    from .resources import MinioBackend, MinioConfig
-    cfg = config or MinioConfig.from_env()
-    loc = MinioBackend(cfg).presign_key(object_key, expires_seconds=expires_seconds)
+    ``boto3`` SDK."""
+    from .resources import S3Backend, S3Config
+    cfg = config or S3Config.from_env()
+    loc = S3Backend(cfg).presign_key(object_key, expires_seconds=expires_seconds)
     return {"object_key": object_key, "http_url": loc.value}
 
 

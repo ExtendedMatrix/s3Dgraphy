@@ -1519,7 +1519,7 @@ def node_health() -> dict:
 # of the container (never written here), the compose files are the ones it
 # was made with, and `--env-file .env.dev` is ALWAYS given — without it `up -d`
 # recreates the container with the shell's environment, which is how the
-# server lost MinIO's keys on 2 Oct 2026. It is believed when s3dgraphy INSIDE
+# server lost the object store's keys on 2 Oct 2026. It is believed when s3dgraphy INSIDE
 # the container says V and /chat/ answers.
 
 STRATIFIELD_CONTAINER = "em-dev-chatbot"
@@ -1663,7 +1663,7 @@ class DevNode(Step):
         where = Path(lab.get("dir") or r / "dev-stack")
         if not (where / ".env.dev").is_file():
             raise Stop(f"step 10: {where}/.env.dev is missing, and StratiField is never recreated without it "
-                       f"(the MinIO keys of 2 Oct 2026).\n"
+                       f"(the object-store keys of 2 Oct 2026).\n"
                        f"    In {where}:  cp .env.dev.example .env.dev    then:  {c.resume()}")
         files = [f for f in (lab.get("files") or "").split(",") if f] or ["docker-compose.dev.yml"]
         cmd = [*compose_cmd(), "--env-file", ".env.dev"]

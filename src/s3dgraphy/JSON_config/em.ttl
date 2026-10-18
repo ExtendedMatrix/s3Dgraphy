@@ -874,7 +874,7 @@ em:hasAddress
     a owl:ObjectProperty ;
     rdfs:label "has address"@en ;
     rdfs:domain crm:E73_Information_Object ;
-    rdfs:comment "One of the places where the SAME bytes of a resource can be fetched — the same digest on the disk, on MinIO, on Zenodo: identical copies are one resource with several addresses, and losing one address does not lose the resource. The object is a derived IRI <resource>/address/<i>, number 0 being the resource's url; every locator is also an rdfs:seeAlso of the resource, so a reader that knows nothing of EM finds every copy. Different manifestations are not addresses but sister resources. Maps to: node_datamodel ResourceNode.properties.addresses (data.addresses)."@en .
+    rdfs:comment "One of the places where the SAME bytes of a resource can be fetched — the same digest on the disk, in the S3 store, on Zenodo: identical copies are one resource with several addresses, and losing one address does not lose the resource. The object is a derived IRI <resource>/address/<i>, number 0 being the resource's url; every locator is also an rdfs:seeAlso of the resource, so a reader that knows nothing of EM finds every copy. Different manifestations are not addresses but sister resources. Maps to: node_datamodel ResourceNode.properties.addresses (data.addresses)."@en .
 
 em:locator
     a owl:DatatypeProperty ;

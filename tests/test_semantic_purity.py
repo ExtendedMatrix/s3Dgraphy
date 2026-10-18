@@ -8,7 +8,7 @@ moving to StratiGraph Server. The property is easy to lose again by accident, so
 it is a test rather than a note in a report.
 
 **What this does NOT forbid.** Optional backends that the library legitimately
-speaks to are declared exceptions, by module: the MinIO resource backend and the
+speaks to are declared exceptions, by module: the S3 resource backend and the
 authority resolvers reach the network *by design*, behind a guard, and they are
 the reason "no network anywhere" would be the wrong rule. The rule is narrower
 and truer: the modules that carry MEANING must not.
@@ -26,7 +26,7 @@ SRC = pathlib.Path(__file__).resolve().parent.parent / "src" / "s3dgraphy"
 #: Modules whose job IS to reach something. Each one is a deliberate exception
 #: with a reason, and the list being short is the point.
 NETWORK_ALLOWED = {
-    "resources/minio_backend.py",   # the object store, optional and guarded
+    "resources/s3_backend.py",      # the object store, optional and guarded
     "resources/resolver.py",        # resolves a locator, including remote ones
     "authorities",                  # an authority lives at a URL by definition
     "tools",                        # developer scripts, not the library surface

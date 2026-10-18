@@ -2,7 +2,7 @@
 la risorsa e la selezione*, «Più risorse per un documento»).
 
 * **The same bytes — the same digest — are ONE resource with several
-  addresses**: the same PDF on the disk, on MinIO, on Zenodo. It is redundancy:
+  addresses**: the same PDF on the disk, in the S3 store, on Zenodo. It is redundancy:
   if an address dies, the resource stays.
 * **Different manifestations** (the scan and the online transcription, two
   editions) are sister ResourceNodes, each with its digest — as before.

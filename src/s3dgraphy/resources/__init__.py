@@ -15,7 +15,7 @@ R0 establishes the SEAM only:
   * A pluggable **backend registry** (:class:`ResolverRegistry`) with ONE
     default backend, :class:`PassthroughBackend`, which resolves a resource to
     its stored locator (the ResourceNode ``url``) — so existing graphs resolve
-    unchanged. Real storage backends (R1 FS-index, R2 MinIO) plug in later by
+    unchanged. Real storage backends (R1 FS-index, R2 S3) plug in later by
     registering ahead of the passthrough fallback.
 
 No web framework, no network, no hardcoded EM vocab lists here. See
@@ -41,10 +41,10 @@ from .fs_backend import (
     classify_resource_type,
     em_id_of,
 )
-from .minio_backend import (
-    MinioBackend,
-    MinioConfig,
-    MinioEntry,
+from .s3_backend import (
+    S3Backend,
+    S3Config,
+    S3Entry,
 )
 
 __all__ = [
@@ -64,8 +64,8 @@ __all__ = [
     "classify_resource_type",
     "DOSCO_NODE_TYPES",
     "em_id_of",
-    # R2 — MinIO / S3 backend (optional 'minio' extra)
-    "MinioBackend",
-    "MinioConfig",
-    "MinioEntry",
+    # R2 — S3 backend (optional 's3' extra: boto3)
+    "S3Backend",
+    "S3Config",
+    "S3Entry",
 ]

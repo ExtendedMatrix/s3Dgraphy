@@ -185,7 +185,7 @@ to zero is the precondition for re-enabling the test workflow; until then, the
 honest statement is that the suite is a **regression detector run by hand
 against a known baseline**, not a gate.
 
-The 63 skips are mostly environmental — a PostgreSQL server, a MinIO endpoint or
+The 63 skips are mostly environmental — a PostgreSQL server, an S3 endpoint or
 an optional library not present — and are expected in a default checkout.
 
 
@@ -251,8 +251,9 @@ Optional dependency groups
      - Layout generation
    * - ``geo``
      - Coordinate handling and reprojection
-   * - ``minio``
-     - Object-store backend for the resource layer
+   * - ``s3``
+     - Object-store backend for the resource layer (``boto3``; any
+       S3-compatible endpoint, RustFS in the dev stack)
    * - ``pdf`` / ``docx``
      - Reading PDF text layers; narrative export to Word
    * - ``dev``

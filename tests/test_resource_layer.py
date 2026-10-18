@@ -115,7 +115,7 @@ def test_register_resource_honours_explicit_id():
 
 # ── pluggable registry (proves R1/R2 can plug in) ──────────────────────────────
 class _StubBackend(ResourceBackend):
-    """A stand-in for a future FS-index / MinIO backend that OWNS certain IDs."""
+    """A stand-in for a future FS-index / S3 backend that OWNS certain IDs."""
     name = "stub"
 
     def __init__(self, owned):

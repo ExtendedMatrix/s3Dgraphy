@@ -5,6 +5,20 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Changed
+- **The object store is plain S3 through `boto3`; MinIO is gone**
+  (E.D. 18 October 2026: the S3 server is RustFS, Apache-2.0, and the MinIO
+  community edition is no longer maintained). `s3dgraphy.resources.s3_backend`
+  replaces `minio_backend`: `S3Backend`, `S3Config`, `S3Entry` (same fields,
+  same manifest, `S3Config.from_env()` reads the same `S3_*` variables);
+  `api.ingest_s3_resource` / `api.presign_s3_resource` replace the
+  `*_minio_resource` ops with the same signatures and return shapes. The
+  client is `boto3`, path-style, SigV4, region `us-east-1` unless named,
+  checksums only when required, no proxy from the environment, bounded
+  timeouts and retries; a presigned GET is `generate_presigned_url` with the
+  same expiry. `object_store.S3Store` speaks the same client; its registry
+  name is only `s3`. The shelf table's RESIDENCE word for the bucket is `s3`
+  (was `minio`). The optional extra is `s3dgraphy[s3]` (`boto3>=1.34`),
+  replacing `[minio]`. No alias keeps the old names.
 - **The RM is bound to the epoch only directly** (em_visual_rules 1.6.36,
   MICRO lo spazio 3D 2, Parte 0, E.D. 16 October 2026).
   `threed_instances.representation_model` loses `via_property` and the RM

@@ -1,6 +1,6 @@
 """The object store the Resource layer keeps its bucket in — any S3-compatible one.
 
-MinIO today, tomorrow another (Ceph, Garage, SeaweedFS, AWS S3, a cloud
+RustFS today, tomorrow another (Ceph, Garage, SeaweedFS, AWS S3, a cloud
 provider's): what the rest of s3Dgraphy needs from a bucket is five small things,
 and nothing here names a vendor.
 
@@ -12,9 +12,10 @@ and nothing here names a vendor.
   multipart upload, not of the file);
 * ``put(path, key)`` and ``delete(key)``.
 
-:class:`S3Store` implements them over the S3 API through the ``minio`` SDK —
-which speaks to any S3-compatible endpoint, not only to MinIO. A store that
-needs another client (boto3, a provider's SDK) is one more class with the same
+:class:`S3Store` implements them over the S3 API through ``boto3`` — plain S3
+operations (HeadBucket, CreateBucket, HeadObject, GetObject, PutObject,
+DeleteObject), path-style, which any S3-compatible endpoint speaks. A store that
+needs another client (a provider's SDK) is one more class with the same
 five methods, registered with :func:`register_store`; the connection is read
 from the ``S3_*`` environment (the SAME variables Heriverse-Server uses), and
 ``EM_OBJECT_STORE`` names which implementation opens it (default ``s3``).
@@ -29,10 +30,7 @@ import hashlib
 import os
 from typing import Any, Callable, Dict, Optional
 
-from .minio_backend import MinioConfig
-
-#: the errors an S3 server answers for «no such object»
-_ABSENT = {"NoSuchKey", "NoSuchObject", "NotFound", "404"}
+from .s3_backend import S3Config, ensure_bucket, is_not_found, make_client
 
 
 class StoreError(RuntimeError):
@@ -56,7 +54,7 @@ class ObjectStore:
 
     def key_for(self, resource_id: str, filename: str) -> str:
         """The key a resource's file is kept under: ``<prefix>/<id>/<filename>``
-        (the same layout ``MinioBackend.ingest`` writes and Heriverse reads)."""
+        (the same layout ``S3Backend.ingest`` writes and Heriverse reads)."""
         raise NotImplementedError
 
     def stat(self, key: str) -> Optional[Dict[str, Any]]:
@@ -75,27 +73,24 @@ class ObjectStore:
 
 
 class S3Store(ObjectStore):
-    """Any S3-compatible endpoint, through the ``minio`` SDK (or an injected
-    client with the same ``stat_object`` / ``get_object`` / ``fput_object`` /
-    ``remove_object`` / ``bucket_exists`` / ``make_bucket`` methods)."""
+    """Any S3-compatible endpoint, through a ``boto3`` S3 client (or an injected
+    client with the same ``head_object`` / ``get_object`` / ``upload_file`` /
+    ``delete_object`` / ``head_bucket`` / ``create_bucket`` methods)."""
 
     name = "s3"
 
-    def __init__(self, config: Optional[MinioConfig] = None, client: Any = None):
-        self.config = config or MinioConfig.from_env()
+    def __init__(self, config: Optional[S3Config] = None, client: Any = None):
+        self.config = config or S3Config.from_env()
         self._client = client
 
     def _get_client(self):
         if self._client is None:
             try:
-                from minio import Minio  # type: ignore
+                self._client = make_client(self.config)
             except ImportError as exc:
                 raise StoreUnavailable(
-                    "the object store needs the 'minio' SDK (it speaks to any "
-                    f"S3-compatible server): pip install minio ({exc})") from exc
-            c = self.config
-            self._client = Minio(c.endpoint, access_key=c.access_key,
-                                 secret_key=c.secret_key, secure=c.secure, region=c.region)
+                    "the object store needs the 'boto3' SDK (it speaks to any "
+                    f"S3-compatible server): pip install s3dgraphy[s3] ({exc})") from exc
         return self._client
 
     def locator(self, key: str) -> str:
@@ -111,61 +106,56 @@ class S3Store(ObjectStore):
 
     def stat(self, key: str) -> Optional[Dict[str, Any]]:
         try:
-            obj = self._get_client().stat_object(self.config.bucket, key)
+            head = self._get_client().head_object(Bucket=self.config.bucket, Key=key)
         except StoreError:
             raise
-        except Exception as exc:  # noqa: BLE001 — the SDK's own error classes
-            if str(getattr(exc, "code", "")) in _ABSENT:
+        except Exception as exc:  # noqa: BLE001 — botocore's ClientError & co.
+            if is_not_found(exc):
                 return None
             raise StoreError(f"{self.locator(key)}: {exc}") from exc
-        return {"size": int(getattr(obj, "size", 0) or 0),
-                "etag": str(getattr(obj, "etag", "") or "").strip('"')}
+        return {"size": int(head.get("ContentLength") or 0),
+                "etag": str(head.get("ETag") or "").strip('"')}
 
     def sha256(self, key: str) -> str:
         client = self._get_client()
         try:
-            resp = client.get_object(self.config.bucket, key)
+            body = client.get_object(Bucket=self.config.bucket, Key=key)["Body"]
         except Exception as exc:  # noqa: BLE001
             raise StoreError(f"{self.locator(key)}: {exc}") from exc
         h = hashlib.sha256()
         try:
-            for chunk in resp.stream(1 << 20):
+            for chunk in iter(lambda: body.read(1 << 20), b""):
                 h.update(chunk)
         finally:
-            for closer in ("close", "release_conn"):
-                fn = getattr(resp, closer, None)
-                if fn:
-                    fn()
+            body.close()      # a stream left open is a connection the pool loses
         return h.hexdigest()
 
     def put(self, path: str, key: str) -> None:
         client = self._get_client()
         try:
-            if not client.bucket_exists(self.config.bucket):
-                client.make_bucket(self.config.bucket)
-            client.fput_object(self.config.bucket, key, path)
+            ensure_bucket(client, self.config.bucket)
+            client.upload_file(path, self.config.bucket, key)
         except Exception as exc:  # noqa: BLE001
             raise StoreError(f"{self.locator(key)}: {exc}") from exc
 
     def delete(self, key: str) -> None:
         try:
-            self._get_client().remove_object(self.config.bucket, key)
+            self._get_client().delete_object(Bucket=self.config.bucket, Key=key)
         except Exception as exc:  # noqa: BLE001
             raise StoreError(f"{self.locator(key)}: {exc}") from exc
 
 
-_FACTORIES: Dict[str, Callable[[Optional[MinioConfig]], ObjectStore]] = {
+_FACTORIES: Dict[str, Callable[[Optional[S3Config]], ObjectStore]] = {
     "s3": lambda cfg: S3Store(cfg),
-    "minio": lambda cfg: S3Store(cfg),       # the name it had
 }
 
 
-def register_store(name: str, factory: Callable[[Optional[MinioConfig]], ObjectStore]) -> None:
+def register_store(name: str, factory: Callable[[Optional[S3Config]], ObjectStore]) -> None:
     """Plug in another implementation: ``factory(config) -> ObjectStore``."""
     _FACTORIES[str(name).lower()] = factory
 
 
-def open_store(name: Optional[str] = None, config: Optional[MinioConfig] = None) -> ObjectStore:
+def open_store(name: Optional[str] = None, config: Optional[S3Config] = None) -> ObjectStore:
     """The store the environment names (``EM_OBJECT_STORE``, default ``s3``),
     connected as the ``S3_*`` variables say."""
     chosen = str(name or os.environ.get("EM_OBJECT_STORE") or "s3").lower()

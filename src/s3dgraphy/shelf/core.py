@@ -869,7 +869,7 @@ SHELF_COLUMNS = (
 
 def _residence(locator: str, entry: Dict[str, Any]) -> str:
     """WHERE THE BYTES ARE, in the three words a person uses: ``disk`` ·
-    ``minio`` · ``uri``.
+    ``s3`` · ``uri``.
 
     Read off the LOCATOR, because that is the only thing that knows. Note what
     this is not: it is not the recorded ``residency`` axis
@@ -891,14 +891,14 @@ def _residence(locator: str, entry: Dict[str, Any]) -> str:
         # dentro un progetto Metashape (`psx://`): il .psx è un file su disco.
         return "disk"
     if kind == "s3_uri":
-        return "minio"
+        return "s3"
     if kind == "http_url":
         # …unless the origin says the object store is where it came from: an
-        # asset promoted into MinIO and handed back as a presigned URL is in
-        # MinIO, whatever its link looks like.
+        # asset promoted into the S3 store and handed back as a presigned URL is
+        # in the S3 store, whatever its link looks like.
         repo = str(((entry.get("origin") or {}) if isinstance(entry.get("origin"), dict)
                     else {}).get("repo") or "").lower()
-        return "minio" if repo in ("minio", "s3", "em-server") else "uri"
+        return "s3" if repo in ("s3", "em-server") else "uri"
     return "disk"
 
 

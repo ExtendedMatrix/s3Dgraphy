@@ -349,7 +349,7 @@ class World:
         (self.state / "chatbot.version").write_text("1.6.0.dev27\n")
         (self.state / "chat.html").write_text("<title>StratiField</title>")
         (self.state / "dev-stack").mkdir()
-        (self.state / "dev-stack" / ".env.dev").write_text("MINIO_ROOT_USER=minioadmin\n")
+        (self.state / "dev-stack" / ".env.dev").write_text("RUSTFS_ACCESS_KEY=rustfsadmin\n")
         (self.state / "site.html").write_text(
             '<a href="https://github.com/zalmoxes-laran/EMStudio/releases/download/v1.6.0-dev.0/EMStudio.dmg">')
 

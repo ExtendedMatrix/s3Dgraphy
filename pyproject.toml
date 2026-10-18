@@ -113,12 +113,13 @@ postgres = [
     # the PG path of PyArchInitImporter when that lands.
     "psycopg2-binary>=2.9",
 ]
-minio = [
-    # MinIO / S3 object-storage backend for the Resource layer
-    # (s3dgraphy.resources.minio_backend, R2). Without this extra, constructing
+s3 = [
+    # S3 object-storage backend for the Resource layer, any S3-compatible
+    # endpoint (RustFS in the dev stack) through boto3
+    # (s3dgraphy.resources.s3_backend, R2). Without this extra, constructing
     # a client / ingesting raises MissingDependency (like rdflib for TTL);
     # resolve()/manifest work dep-free on an already-populated index.
-    "minio>=7.0",
+    "boto3>=1.34",
 ]
 geo = [
     # Coordinate reprojection for api.reproject / api.georeference_scene (G1).
@@ -178,7 +179,7 @@ docs = [
 # without the dev/docs tooling. The dev/docs/test stacks stay separate
 # so CI-style installs don't pull editor/QA deps.
 full = [
-    "s3dgraphy[rdf-embedded,visualization,sync,minio,geo]",
+    "s3dgraphy[rdf-embedded,visualization,sync,s3,geo]",
 ]
 all = [
     "s3dgraphy[full,dev,docs,postgres]",
