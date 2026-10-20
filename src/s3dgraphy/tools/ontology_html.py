@@ -96,11 +96,13 @@ def sections_of(ttl_text: str) -> dict:
     return out
 
 
-def git_commit(path: Path) -> str:
+def git_commit(ttl: Path) -> str:
+    """The commit the source comes from, flagged when em.ttl itself has uncommitted changes."""
+    path = ttl.parent
     try:
         head = subprocess.run(["git", "--no-optional-locks", "-C", str(path), "rev-parse", "--short", "HEAD"],
                               capture_output=True, text=True, check=True).stdout.strip()
-        dirty = subprocess.run(["git", "--no-optional-locks", "-C", str(path), "status", "--porcelain", "--", "."],
+        dirty = subprocess.run(["git", "--no-optional-locks", "-C", str(path), "status", "--porcelain", "--", ttl.name],
                                capture_output=True, text=True, check=True).stdout.strip()
         return head + (" + uncommitted changes: regenerate after the commit" if dirty else "")
     except Exception:
@@ -153,7 +155,7 @@ def build(out_dir: Path, ttl: Path = EM_TTL) -> Path:
     except Exception:
         pass
 
-    commit = git_commit(ttl.parent)
+    commit = git_commit(ttl)
     out_dir.mkdir(parents=True, exist_ok=True)
     stamp = (f"# Published copy of CRMem {meta['version']}.\n"
              f"# Source: {REPO}, src/s3dgraphy/JSON_config/em.ttl, commit {commit}.\n"
