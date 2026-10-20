@@ -107,13 +107,23 @@ chain works with them):
 - **P1-C**: **HC1 `HeritageEntityNode`** — completes the core chain
   **HC1 → (HP1) → HC2 → (HP33) → HC16**.
 - **HC9/HC13 session**: **HC9 `StudyNode`** and **HC13 `ProjectNode`** — the
-  research-context framing agreed with E.D.: a graph = a **Study** whose content
-  is a proposition set (HC16 = EMGraph), **about** an HC1, optionally under a
+  research-context framing agreed with E.D.: one graph corresponds one to one to
+  one **Study** — the study (HC9, an act) created it, and the graph is its content,
+  a proposition set (HC16 = EMGraph) — **about** an HC1, optionally under a
   **Project**:
   `Project ─includes(crm:P9)→ Study ─was_about(HP23)→ HeritageEntity`,
   `Study ─produced(HP25)→ GraphNode(HC16)`.
   Project→Study uses `crm:P9_consists_of` because D7.1 declares no direct
   HC13→HC9 property (documented in the edge + `hdto_extension.ttl`).
+
+  > **Reading note (20 Oct 2026).** StratiGraph D3.1 §3.3 and D3.2 §3.5 say «a
+  > graph is a study: its content is a proposition set». Read it as a one-to-one
+  > correspondence, not a class identity: `em:EMGraph ⊂ HC16` and `StudyNode → HC9`
+  > stay distinct because HC9 ⊂ `crm:E65` (E2 Temporal Entity) and HC16 ⊂
+  > `crminf:I4` (E77 Persistent Item) are disjoint in CIDOC CRM, and they are joined
+  > by HP25. Neither is the digital twin: HC2 gathers all the digital information
+  > on an asset at any scale and contains (HP33) the proposition sets of several
+  > studies. See `docs/crmem.rst`, «Graph, study and digital twin».
 - **HC1-part / Type-A session**:
   - **HC1 part-whole** edge `heritage_part_of` (HeritageEntityNode →
     HeritageEntityNode) — e.g. the porphyry Tetrarchs forms part of San Marco.

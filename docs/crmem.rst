@@ -12,6 +12,12 @@ This page states what CRMem contains, what it deliberately does not contain, and
 where its boundary with CRMinf runs. It is written for a reader who knows CIDOC
 CRM and does not know the Extended Matrix.
 
+Every class and property is listed, with its URI, its place in the hierarchy,
+its scope note and a graph of its neighbourhood, in the `CRMem declarations
+page <ontology/index.html>`_, regenerated from ``em.ttl`` at every build of this
+documentation together with the Turtle (`em.ttl <ontology/em.ttl>`_) and RDF/XML
+(`em.rdf <ontology/em.rdf>`_) serialisations.
+
 .. contents::
    :local:
    :depth: 2
@@ -378,6 +384,35 @@ different statement and remains true.
 Typing ``em:TimeBranch`` also as ``crminf:I4_Proposition_Set`` is the open
 modelling decision attached to it: what is incompatible are propositions, not
 periods.
+
+
+Graph, study and digital twin
+-----------------------------
+
+StratiGraph D3.1 §3.3 and D3.2 §3.5 say it in one sentence: *a graph is a
+study: its content is a proposition set*. The sentence is read as a
+correspondence, not as a shared class.
+
+An Extended Matrix graph corresponds one to one to the study that produced it.
+The study is ``hdto:HC9_Study`` (``StudyNode``): the investigation as an act. It
+is about a heritage entity (``hdto:HP23_was_about``), it may form part of a
+project (``hdto:HC13``, through ``crm:P9_consists_of``), and it created the graph
+(``hdto:HP25_has_created``). The graph, ``em:EMGraph``, is what the study
+asserts: an ``hdto:HC16_Heritage_Proposition_Set``, also a ``crm:E73`` and a
+``prov:Bundle``.
+
+``em:EMGraph`` is deliberately not a subclass of ``hdto:HC9``. HC9 descends from
+``crm:E65_Creation`` and so from ``E2 Temporal Entity``; HC16 descends from
+``crminf:I4_Proposition_Set`` and so from ``E77 Persistent Item``; CIDOC CRM
+declares the two disjoint. Saying that a graph *is* a study is therefore the
+practice of the method — one file, one study — expressed in the ontology as two
+classes joined by HP25.
+
+The graph is not the digital twin. An ``hdto:HC2_Heritage_Digital_Twin`` gathers
+all the digital information about a heritage asset, at any scale: a whole
+building, or one inscribed block that has a twin of its own. A twin can contain
+the proposition sets of several studies (``hdto:HP33_contains``); one twin is
+never one graph.
 
 
 Namespace

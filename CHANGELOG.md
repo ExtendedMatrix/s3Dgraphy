@@ -32,6 +32,21 @@ All notable changes to **s3dgraphy** are documented here.
   `glyphs_from_svg` reads `src/2D/hdto/` first for a type, so `src/2D/graph.svg`
   (the GRAPH style's declared file, unplated) is unchanged.
   `tests/test_hdto_glyphs.py`.
+- **«A graph is a study», said without ambiguity** (CRMem 1.6.18, hdto_extension
+  v0.5, node datamodel 1.6.32, E.D. 20 October 2026). No term, field or mapping
+  changes: the comments of `em:EMGraph`, `hdto:HC9_Study` and
+  `hdto:HP25_has_created`, the descriptions of `GraphNode` and `StudyNode` (en,
+  it) and `docs/hdto-coverage.md` now say how StratiGraph D3.1 §3.3 / D3.2 §3.5
+  is read — one Extended Matrix graph corresponds one to one to the study that
+  created it; the two classes stay distinct because E2 and E77 are disjoint; the
+  graph is not the digital twin (HC2). New section «Graph, study and digital
+  twin» in `docs/crmem.rst`. `hdto_extension.ttl` `owl:versionInfo`, left at 0.2
+  by the v0.3 and v0.4 passes, is realigned.
+- **CRMem as a browsable page**: `s3dgraphy.tools.ontology_html` renders em.ttl
+  as a declarations page in the layout of the CIDOC CRM and HDT-O pages (table
+  of contents, one entry per term, the graph of its neighbourhood) and writes the
+  published copy of em.ttl next to it, headed by the commit it comes from:
+  `python -m s3dgraphy.tools.ontology_html --out <dir>`.
 - **The object store is plain S3 through `boto3`; MinIO is gone**
   (E.D. 18 October 2026: the S3 server is RustFS, Apache-2.0, and the MinIO
   community edition is no longer maintained). `s3dgraphy.resources.s3_backend`

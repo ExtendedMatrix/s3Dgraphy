@@ -10,7 +10,7 @@
 @prefix dcterms:   <http://purl.org/dc/terms/> .
 
 # ============================================================================
-# HDT-O — Heritage Digital Twin Ontology — s3dgraphy alignment layer (v0.3)
+# HDT-O — Heritage Digital Twin Ontology — s3dgraphy alignment layer (v0.5)
 # ============================================================================
 #
 # Reconciled with ECHOES Deliverable D7.1 "The Digital Commons" (May 2024).
@@ -22,7 +22,7 @@
 #          Namespace placeholder (w3id.org/hdto/) — to be replaced when the
 #          official HDT-O resolvable IRI is published by the ECHOES consortium.
 # Author:  Emanuele Demetrescu (s3dgraphy v1.6.0 integration)
-# Date:    2026-09-30 (v0.3; v0.2 2026-05-23)
+# Date:    2026-10-20 (v0.5; v0.4 2026-10-10; v0.3 2026-09-30; v0.2 2026-05-23)
 #
 # v0.3 (2026-09-30): the two declarations this file carried against D7.1 final
 #          are corrected. HC9 Study becomes a subclass of crm:E65 Creation (was
@@ -34,6 +34,13 @@
 #          (was crm:E1 CRM Entity), as the official RDFS says
 #          (HDT_v2.0.1.rdf, ECHOES D7.1: HC1_Heritage_Entity rdfs:subClassOf
 #          crm:E70_Thing). Node datamodel 1.6.28.
+# v0.5 (2026-10-20, decided by E.D.): no new term. The comments of HC9 Study
+#          and HP25 has created say how «a graph is a study» (StratiGraph
+#          D3.1 §3.3, D3.2 §3.5) is read: one Extended Matrix graph
+#          corresponds one to one to the study that created it; the study
+#          (E65 Creation, an E2) and the graph (HC16, an E77) stay distinct
+#          classes; neither is the digital twin (HC2). owl:versionInfo,
+#          left at 0.2 by the v0.3 and v0.4 passes, is realigned. CRMem 1.6.18.
 # License: CC-BY-4.0
 #
 # What this file does:
@@ -63,7 +70,7 @@
     dcterms:source <https://www.echoes-eccch.eu/> ;
     dcterms:license <https://creativecommons.org/licenses/by/4.0/> ;
     dcterms:issued "2026-05-23"^^xsd:date ;
-    owl:versionInfo "0.2-aligned-with-D7.1" ;
+    owl:versionInfo "0.5-aligned-with-D7.1" ;
     rdfs:comment "Subset of HDT-O classes and properties (HC1, HC2, HC5, HC9, HC13, HC14, HC15, HC16, HC17; HP1, HP3, HP23, HP25, HP29, HP33) needed by s3dgraphy v1.6.0 to express granularity of heritage digital twins, the Project→Study→proposition-set framing, HC1 part-whole (crm:P46i), and Type-A annotations (HC5 on representations, HC17 on paradata). Aligned with ECHOES Deliverable D7.1 (May 2024). The namespace (w3id.org/hdto/) is a placeholder pending the official ECHOES publication."@en .
 
 
@@ -108,7 +115,7 @@ hdto:HC9_Study
     a owl:Class ;
     rdfs:label "Study"@en ;
     rdfs:subClassOf crm:E65_Creation ;
-    rdfs:comment "A scholarly activity (research, analysis or documentation, in any SSH / natural / exact-science domain) about a Heritage Entity (HC1), explicating a disciplinary focus and the part of the entity investigated. A study is about (HP23) one or more HC1 and has created (HP25) documentary outputs (crm:E31 Document) — in s3dgraphy the EM proposition set (HC16 / em:EMGraph). A subclass of crm:E65 Creation: the study is the scholarly act, and its documentary output is a separate thing joined to it by HP25, so a report, a field note or a metadata record is never an HC9. ECHOES D7.1 (final, V1.0)."@en .
+    rdfs:comment "A scholarly activity (research, analysis or documentation, in any SSH / natural / exact-science domain) about a Heritage Entity (HC1), explicating a disciplinary focus and the part of the entity investigated. A study is about (HP23) one or more HC1 and has created (HP25) documentary outputs (crm:E31 Document) — in s3dgraphy the EM proposition set (HC16 / em:EMGraph). A subclass of crm:E65 Creation: the study is the scholarly act, and its documentary output is a separate thing joined to it by HP25, so a report, a field note or a metadata record is never an HC9. In the Extended Matrix one study corresponds one to one to one graph: the study is the act, the em:EMGraph (HC16) what it asserts, joined by HP25. This is the sense of «a graph is a study» in StratiGraph D3.1 §3.3 and D3.2 §3.5: a correspondence between an E2 Temporal Entity and an E77 Persistent Item, which CIDOC CRM keeps disjoint, not a shared class. Neither is the digital twin (HC2), which gathers all the digital information about an asset at any scale. ECHOES D7.1 (final, V1.0)."@en .
 
 hdto:HC13_Project
     a owl:Class ;
@@ -200,7 +207,7 @@ hdto:HP25_has_created
     rdfs:domain hdto:HC9_Study ;
     rdfs:range crm:E31_Document ;
     rdfs:subPropertyOf crm:P94_has_created ;
-    rdfs:comment "Associates an HC9 Study with the persistent documentary output it created (crm:E31 Document). Per D7.1 (subproperty of crm:E65.P94 has created; one-to-many, necessary, dependent). In s3dgraphy the created output is the EM proposition set (HC16 / em:EMGraph, an E73 Information Object)."@en .
+    rdfs:comment "Associates an HC9 Study with the persistent documentary output it created (crm:E31 Document). Per D7.1 (subproperty of crm:E65.P94 has created; one-to-many, necessary, dependent). In s3dgraphy the created output is the EM proposition set (HC16 / em:EMGraph, an E73 Information Object): the graph the study writes, which is why an Extended Matrix graph and its study come one to one (StratiGraph D3.1 §3.3: «a graph is a study: its content is a proposition set»)."@en .
 
 # Project → Study containment: D7.1 declares no direct HC13→HC9 property.
 # s3dgraphy expresses "Project includes Study" with crm:P9_consists_of
