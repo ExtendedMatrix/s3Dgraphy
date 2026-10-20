@@ -159,6 +159,11 @@ _S3D_PHYSICAL_RELATIONS_ATTR_NAME = "_s3d_physical_relations"
 # qualia get re-imported as opaque label strings.
 _S3D_PROPERTY_METADATA_ATTR_NAME = "_s3d_property_metadata"
 
+#: The properties a document's `data` does NOT copy (1.6.38): its dating lives
+#: only in its PropertyNode. See GraphMLImporter._enrich_canonical_documents.
+_DATED_IN_THEIR_PROPERTY = frozenset({"absolute_time_start", "absolute_time_end"})
+
+
 class GraphMLImporter:
     """
     Classe per importare grafi da file GraphML.
@@ -2138,8 +2143,15 @@ class GraphMLImporter:
         """
         Dopo il parsing degli edge, copia i valori delle PropertyNode collegate
         ai canonical document nel loro dict 'data'.
-        Es: D.70 canonical connesso a PropertyNode 'absolute_time_start' con valore '1870'
-        -> document_node.data['absolute_time_start'] = '1870'
+
+        1.6.38 (E.D., 20 Oct 2026) · TRANNE la data: `absolute_time_start` /
+        `absolute_time_end` vivono solo nella loro proprietà. Fino a 1.6.37
+        D.70 canonical connesso a PropertyNode 'absolute_time_start' = '1870'
+        dava anche document_node.data['absolute_time_start'] = '1870', una
+        copia che nessuno teneva allineata (EMStudio, MICRO-PULIZIA p.7, ne
+        misurava 4 sul GT16 e le cura). Chi legge la data di un documento la
+        legge dalla proprietà: resolvers (`_node_temporal_property`),
+        `spatiotemporal.own_year`, em-core.
         """
         canonical_count = 0
         enriched_count = 0
@@ -2157,6 +2169,8 @@ class GraphMLImporter:
                     if isinstance(target, PropertyNode):
                         prop_name = target.name  # es: "absolute_time_start"
                         prop_value = target.description  # es: "1870"
+                        if prop_name in _DATED_IN_THEIR_PROPERTY:
+                            continue
                         if prop_name and prop_value:
                             node.data[prop_name] = prop_value
                             enriched_count += 1

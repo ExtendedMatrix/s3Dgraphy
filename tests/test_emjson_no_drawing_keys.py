@@ -37,12 +37,17 @@ def _quiet(fn, *a, **kw):
         return fn(*a, **kw)
 
 
-def _drawing_keys_in(obj) -> int:
+#: the two keys this file started from (10 Oct 2026); since 1.6.38
+#: GRAPHML_DRAWING_KEYS is the whole of yEd's drawing (test_import_without_residues)
+POSITION = ("y_pos", "x_pos")
+
+
+def _drawing_keys_in(obj, keys=GRAPHML_DRAWING_KEYS) -> int:
     if isinstance(obj, dict):
-        return (sum(k in GRAPHML_DRAWING_KEYS for k in obj)
-                + sum(_drawing_keys_in(v) for v in obj.values()))
+        return (sum(k in keys for k in obj)
+                + sum(_drawing_keys_in(v, keys) for v in obj.values()))
     if isinstance(obj, list):
-        return sum(_drawing_keys_in(v) for v in obj)
+        return sum(_drawing_keys_in(v, keys) for v in obj)
     return 0
 
 
@@ -65,7 +70,7 @@ def _chronology_by_name(graph):
 def test_the_old_fixture_carries_them():
     """The measure the decision started from: 145 in Templu Mare."""
     doc = json.loads(TEMPLU.read_text(encoding="utf-8"))
-    assert _drawing_keys_in(doc) == 145
+    assert _drawing_keys_in(doc, POSITION) == 145
 
 
 def test_a_graph_read_from_graphml_exports_no_drawing_keys(tmp_path):
@@ -96,7 +101,7 @@ def test_an_old_file_with_them_is_read_without_them_and_without_a_word():
         assert not isinstance(getattr(n, "data", None), dict) or (
             "y_pos" not in n.data and "x_pos" not in n.data)
     # the document handed in is not touched
-    assert _drawing_keys_in(doc) == 145
+    assert _drawing_keys_in(doc, POSITION) == 145
 
 
 def test_emjson_graph_emjson_is_identical():

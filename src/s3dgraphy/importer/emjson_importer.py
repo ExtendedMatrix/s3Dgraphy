@@ -110,12 +110,14 @@ def _instantiate(node_type: str, payload: Dict[str, Any],
     # somebody asserted and — sitting in node.data — win over the next
     # computation on re-export. It is recomputed from the relations on demand.
     from ..exporter.emjson_exporter import (
-        CALCULATED_KEYS, GRAPHML_DRAWING_KEYS, _without_drawing)
+        CALCULATED_KEYS, _without_drawing, drawing_keys)
     for k in CALCULATED_KEYS:
         data.pop(k, None)
     # The yEd coordinates an older writer copied from a GraphML: a fossil of
-    # the drawing (E.D., 10 Oct 2026), left behind without a word.
-    for k in GRAPHML_DRAWING_KEYS:
+    # the drawing (E.D., 10 Oct 2026), left behind without a word. 1.6.38 · the
+    # rest of yEd's drawing too, with the exceptions drawing_keys keeps (an
+    # epoch's colour, a document's border while it has no certainty_class).
+    for k in drawing_keys(node_type, data):
         data.pop(k, None)
     if "instances" in data:
         data["instances"] = _without_drawing(data["instances"])

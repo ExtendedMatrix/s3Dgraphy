@@ -61,7 +61,9 @@ _LIFTED_ATTRS = (
     "start_time", "end_time", "color",          # EpochNode
     "value", "property_type", "url",             # PropertyNode / ResourceNode
     "source",                                     # ExtractorNode
-    "symbol", "label",                            # class-level display metadata
+    "label",                                      # class-level display metadata
+    # ("symbol" was lifted here until 1.6.38: it is yEd's drawing described in
+    #  words, "white rectangle", and is in GRAPHML_DRAWING_KEYS)
     "definition",                                 # StratigraphicNode (a concept)
     "stratigraphic_kind",                         # StratigraphicUnit (masonry, coating)
     "source_code",                                # StratigraphicUnit (USS, WSU…)
@@ -101,10 +103,44 @@ CALCULATED_KEYS = ("CALCUL_START_T", "CALCUL_END_T")
 #: `instances` — and a file from an older writer that has them leaves them
 #: behind on import. Not CALCULATED_KEYS: those are computed from the graph;
 #: these belong to a drawing the em.json is not.
-GRAPHML_DRAWING_KEYS = ("y_pos", "x_pos")
+#:
+#: 1.6.38 (E.D., 20 Oct 2026: the glyph is fixed by the visual rules, so it is
+#: not a datum) · …and so does the rest of yEd's DRAWING — the same list as
+#: EMStudio's `model.ts` YED_DRAWING_KEYS. The GraphML importer still puts
+#: shape / fill_color / border_style on a unit's `attributes`, and border_color /
+#: border_width on a document's, because they are read IN MEMORY while the graph
+#: lives (the importer's certainty_class, the GraphML patcher's new nodes,
+#: EM-tools' material fallback in functions.py); `symbol` is a class attribute
+#: (StratigraphicNode: "white rectangle"…). None of them is drawn from an
+#: em.json, so the document leaves them out. Two exceptions, measured, are
+#: kept: see :func:`drawing_keys`.
+GRAPHML_DRAWING_KEYS = ("y_pos", "x_pos", "shape", "fill_color", "border_style",
+                        "border_color", "border_width", "symbol", "font_family",
+                        "font_size", "font_style", "text_color", "label_color",
+                        "yed_id", "graphml_id")
 
-#: Every key the document leaves out of a node's `data`.
-_NOT_IN_DATA = CALCULATED_KEYS + GRAPHML_DRAWING_KEYS
+
+def drawing_keys(node_type: Any, data: Optional[Dict[str, Any]] = None) -> tuple:
+    """The GRAPHML_DRAWING_KEYS a node of `node_type` with this `data` leaves out.
+
+    Two are not drawing for every node (measured by EMStudio, MICRO-PULIZIA p.7,
+    20 Oct 2026, and in s3Dgraphy): an EPOCH's `fill_color` is its colour (the
+    merger, the json and xlsx exporters read it); a DOCUMENT's `border_color` /
+    `border_width` are where its certainty comes from as long as no
+    `certainty_class` is written (the GraphML importer derives the class from
+    the colour). `geometry` (a document's geometry axis) and `width` / `height`
+    (a resource's own size) are not in the list at all."""
+    keep = set()
+    if node_type == "EpochNode":
+        keep.add("fill_color")
+    if node_type == "document" and (data or {}).get("certainty_class") is None:
+        keep.update(("border_color", "border_width"))
+    return tuple(k for k in GRAPHML_DRAWING_KEYS if k not in keep)
+
+
+#: Every key the document leaves out of a node's `data` (the drawing keys,
+#: with their exceptions, are dropped after the lift: :func:`drawing_keys`).
+_NOT_IN_DATA = CALCULATED_KEYS
 
 
 def _without_drawing(value: Any) -> Any:
@@ -134,7 +170,7 @@ def _node_payload(node: Any) -> Dict[str, Any]:
     if isinstance(node_attrs, dict):
         for k, v in node_attrs.items():
             if k in _NOT_IN_DATA:
-                continue  # see CALCULATED_KEYS and GRAPHML_DRAWING_KEYS
+                continue  # see CALCULATED_KEYS
             if k not in data and v not in (None, "") and _json_safe(v):
                 data[k] = v
     if "instances" in data:
@@ -147,6 +183,8 @@ def _node_payload(node: Any) -> Dict[str, Any]:
         if val is None or val == "" or not _json_safe(val):
             continue
         data[attr] = val
+    for k in drawing_keys(getattr(node, "node_type", None), data):
+        data.pop(k, None)               # see GRAPHML_DRAWING_KEYS
     payload: Dict[str, Any] = {
         "id": node.node_id,
         "node_type": getattr(node, "node_type", type(node).__name__),

@@ -5,6 +5,22 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Changed
+- **An import leaves no residue of yEd's drawing in the em.json, and a document's
+  date lives in its property** (MICRO glifi HDT-O p.2, 20 October 2026; E.D.:
+  the glyph is fixed by the visual rules, so it is not a datum).
+  `emjson_exporter.GRAPHML_DRAWING_KEYS` is now EMStudio's `YED_DRAWING_KEYS`
+  (y_pos, x_pos, shape, fill_color, border_style, border_color, border_width,
+  symbol, font_*, text_color, label_color, yed_id, graphml_id), and
+  `drawing_keys(node_type, data)` keeps the two measured exceptions: an epoch's
+  `fill_color`, a document's `border_color`/`border_width` while it has no
+  `certainty_class`. The exporter drops them after the lift (so `symbol`, a
+  class attribute, no longer leaves either); the em.json importer drops them
+  from an older file with the same rule. Templu Mare through GraphML: 100 of 208
+  nodes with residues → 0; the fixture re-saved: 134 → 0. The GraphML importer
+  still writes them on `attributes`, IN MEMORY — the GraphML patcher and EM-tools
+  read them there. `_enrich_canonical_documents` no longer copies
+  `absolute_time_start`/`absolute_time_end` into a document's `data` (the other
+  properties as before). `tests/test_import_without_residues.py`.
 - **The HDT-O layer has glyphs** (em_visual_rules 1.6.38, MICRO glifi HDT-O,
   20 October 2026). `graph` (HC16), `hdt` (HC2), `heritage_entity` (HC1),
   `study` (HC9) and `project` (HC13) join `2d_render_glyph_types.types`
