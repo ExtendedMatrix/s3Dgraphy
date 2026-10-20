@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><!-- EM · ProjectNode (project) · HC13 Project: a flag. HDT-O layer: the pictogram (#6E6E6E, ground) inside a SQUARE plate (white paper, #333333 ink, stroke 7) — the ornaments' grammar (author, licence, embargo) with a square frame, which says «a node of the cultural context». Drawn by EMStudio (MICRO-PULIZIA-INTERFACCIA p.3, 20 Oct 2026, hdto-glyphs.ts), adopted in s3Dgraphy 1.6.38. Same licence as the datamodel. -->
+<rect x="4" y="4" width="120" height="120" rx="14" fill="#FFFFFF" stroke="#333333" stroke-width="7"/>
+<path d="M38 24V106" fill="none" stroke="#6E6E6E" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M42 28H98L85 46L98 64H42Z" fill="#6E6E6E"/>
+</svg>

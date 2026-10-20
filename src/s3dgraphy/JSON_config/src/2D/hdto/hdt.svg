@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><!-- EM · HDTNode (hdt) · HC2 Heritage Digital Twin: the thing (a filled house) and its copy (an outlined house with two lines). HDT-O layer: the pictogram (#6E6E6E, ground) inside a SQUARE plate (white paper, #333333 ink, stroke 7) — the ornaments' grammar (author, licence, embargo) with a square frame, which says «a node of the cultural context». Drawn by EMStudio (MICRO-PULIZIA-INTERFACCIA p.3, 20 Oct 2026, hdto-glyphs.ts), adopted in s3Dgraphy 1.6.38. Same licence as the datamodel. -->
+<rect x="4" y="4" width="120" height="120" rx="14" fill="#FFFFFF" stroke="#333333" stroke-width="7"/>
+<path d="M20 62L41 42L62 62V96H20Z" fill="#6E6E6E"/>
+<path d="M68 62L89 42L110 62V96H68Z" fill="none" stroke="#6E6E6E" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M78 76H100M78 86H100" fill="none" stroke="#6E6E6E" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

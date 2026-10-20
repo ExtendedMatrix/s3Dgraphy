@@ -44,11 +44,17 @@ hand, and `tests/test_glyph_paths.py` fails the moment the two disagree.
 In this order, and the first that exists wins:
 
 1. `src/2D/bozze/<key>.svg` — a DRAFT (see below);
-2. the style's declared `2d_file_vect`, when it is an `.svg` and is not listed
+2. `src/2D/hdto/<node_type>.svg` (1.6.38) — the HDT-O layer (graph, hdt,
+   heritage_entity, study, project): the pictogram in a SQUARE plate. A folder
+   of its own because `src/2D/graph.svg` already exists and is the GRAPH style's
+   declared file, drawn without a plate by the consumers that read files; and
+   because a top-level `src/2D/*.svg` is vendored and drawn by EMStudio as an
+   icon of the same name;
+3. the style's declared `2d_file_vect`, when it is an `.svg` and is not listed
    in :data:`NOT_A_GLYPH`;
-3. `src/2D/<node_type>.svg`, the naming convention most files follow;
-4. for a DTC kind, `src/2D/dtc/<glyph>.svg`;
-5. for a data glyph (`2d_render_glyph_types.data_glyphs`, 1.6.32: the proxy, the
+4. `src/2D/<node_type>.svg`, the naming convention most files follow;
+5. for a DTC kind, `src/2D/dtc/<glyph>.svg`;
+6. for a data glyph (`2d_render_glyph_types.data_glyphs`, 1.6.32: the proxy, the
    tileset, the RM container, the versions `version:<kind>`), the `glyph` file
    the table names.
 
@@ -91,6 +97,7 @@ BLOCK = "2d_glyphs"
 DRAFT_MARKER = "BOZZA"
 DRAFTS_DIR = "src/2D/bozze"
 DTC_DIR = "src/2D/dtc"
+HDTO_DIR = "src/2D/hdto"
 DECIMALS = 2
 
 #: Fallback role vocabulary — used ONLY until the JSON holds `2d_glyphs._roles`,
@@ -693,7 +700,7 @@ def wanted(rules: Dict[str, object]) -> List[Tuple[str, Optional[Path]]]:
     styles = rules.get("node_styles") or {}
     out: List[Tuple[str, Optional[Path]]] = []
     for nt in glyph_node_types(rules):
-        cands = [CONFIG / DRAFTS_DIR / f"{nt}.svg"]
+        cands = [CONFIG / DRAFTS_DIR / f"{nt}.svg", CONFIG / HDTO_DIR / f"{nt}.svg"]
         vect = (styles.get(STYLE_KEY.get(nt, nt)) or {}).get("2d_file_vect")   # type: ignore[union-attr]
         if isinstance(vect, str) and vect.endswith(".svg") and vect not in NOT_A_GLYPH:
             cands.append(CONFIG / vect)

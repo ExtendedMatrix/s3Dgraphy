@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><!-- EM · HeritageEntityNode (heritage_entity) · HC1 Heritage Entity: a façade — pediment, architrave, three columns, step. HDT-O layer: the pictogram (#6E6E6E, ground) inside a SQUARE plate (white paper, #333333 ink, stroke 7) — the ornaments' grammar (author, licence, embargo) with a square frame, which says «a node of the cultural context». Drawn by EMStudio (MICRO-PULIZIA-INTERFACCIA p.3, 20 Oct 2026, hdto-glyphs.ts), adopted in s3Dgraphy 1.6.38. Same licence as the datamodel. -->
+<rect x="4" y="4" width="120" height="120" rx="14" fill="#FFFFFF" stroke="#333333" stroke-width="7"/>
+<path d="M22 48L64 24L106 48Z" fill="#6E6E6E"/>
+<path d="M26 52H102V58H26Z" fill="#6E6E6E"/>
+<path d="M33 62H43V90H33ZM59 62H69V90H59ZM85 62H95V90H85Z" fill="#6E6E6E"/>
+<path d="M24 94H104V104H24Z" fill="#6E6E6E"/>
+</svg>

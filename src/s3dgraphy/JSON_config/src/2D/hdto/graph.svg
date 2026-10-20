@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128"><!-- EM · GraphNode (graph) · HC16 Heritage Proposition Set (em:EMGraph): three nodes and their edges, the drawing of ../graph.svg on the 128 grid. HDT-O layer: the pictogram (#6E6E6E, ground) inside a SQUARE plate (white paper, #333333 ink, stroke 7) — the ornaments' grammar (author, licence, embargo) with a square frame, which says «a node of the cultural context». Drawn by EMStudio (MICRO-PULIZIA-INTERFACCIA p.3, 20 Oct 2026, hdto-glyphs.ts), adopted in s3Dgraphy 1.6.38. Same licence as the datamodel. -->
+<rect x="4" y="4" width="120" height="120" rx="14" fill="#FFFFFF" stroke="#333333" stroke-width="7"/>
+<path d="M64 46V64M64 64L42 86M64 64L86 86" fill="none" stroke="#6E6E6E" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M74 36A10 10 0 1 1 54 36A10 10 0 1 1 74 36ZM46 92A10 10 0 1 1 26 92A10 10 0 1 1 46 92ZM102 92A10 10 0 1 1 82 92A10 10 0 1 1 102 92Z" fill="#FFFFFF" stroke="#6E6E6E" stroke-width="6"/>
+</svg>
