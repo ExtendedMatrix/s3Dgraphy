@@ -695,6 +695,23 @@ def read_hdto(graph: Graph) -> Dict[str, Any]:
     return _read(graph)
 
 
+def read_part_twins(graph: Graph) -> List[Dict[str, Any]]:
+    """The twins of the graph's PARTS (1.6.38): every ``has_digital_twin`` from a
+    stratigraphic unit or an HC1 to an HDTNode without ``hdto_role``, with the
+    unit or entity it belongs to. Also ``read_hdto(graph)["parts"]``."""
+    from .hdto import read_part_twins as _read
+    return _read(graph)
+
+
+def declare_part_twin(graph: Graph, part, name: Optional[str] = None,
+                      key: Optional[str] = None,
+                      registry: Optional[Dict[str, Any]] = None):
+    """Give a stratigraphic unit or an HC1 of the graph a twin of its own
+    (an HDTNode, never marked ``hdto_role``); returns it."""
+    from .hdto import declare_part_twin as _declare
+    return _declare(graph, part, name=name, key=key, registry=registry)
+
+
 def graphs_at(container, place) -> List[str]:
     """The member graphs whose study took place at ``place`` or at a place
     inside it (up ``is_in_location``). pyArchInit's site filter."""

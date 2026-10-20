@@ -230,7 +230,14 @@ def _hdt_of(graph: Any) -> Dict[str, Optional[Dict[str, Optional[str]]]]:
     catalogue that only understood one of them would group half the studies.
     """
     hc2 = hc1 = None
-    for node in graph.nodes:
+    # 1.6.38 · the study's own pair first — the nodes marked hdto_role twin /
+    # about — then, for a graph nobody marked, the first of each type as before.
+    # A part of the graph may have a twin of its own (hdto.read_part_twins: an
+    # inscription, US 100) and it is not the study's.
+    def _role(node):
+        return (getattr(node, "data", None) or {}).get("hdto_role")
+    nodes = sorted(graph.nodes, key=lambda n: _role(n) not in ("twin", "about"))
+    for node in nodes:
         kind = getattr(node, "node_type", "")
         data = getattr(node, "data", None) or {}
         if kind == "hdt" and hc2 is None:

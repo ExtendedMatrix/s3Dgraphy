@@ -339,7 +339,11 @@ def declare_hdto(graph, *, study=None, place=None, about=None, parent=None,
 
 def read_twin(graph) -> Dict[str, Any]:
     """EMStudio's ``readTwin``: the key decides, not ``hdt_status``."""
-    hdt = _role_node(graph, "twin")
+    return _twin_view(_role_node(graph, "twin"))
+
+
+def _twin_view(hdt) -> Dict[str, Any]:
+    """One HDTNode as ``read_twin`` reads it: none / provisional / registered."""
     if hdt is None:
         return {"state": TWIN_NONE, "id": None, "name": None, "key": None,
                 "registry": None}
@@ -392,7 +396,8 @@ def read_hdto(graph) -> Dict[str, Any]:
     date, project_iri} | None, "place": {id, name, level, kind, within[]} |
     None, "about": {id, name, authority_refs} | None, "parent": … | None,
     "project": {id, name} | None, "proposition_set": {id, name} | None,
-    "twin": {state, id, name, key, registry}}``
+    "twin": {state, id, name, key, registry}, "parts": [...]}`` — ``parts``
+    (1.6.38) the twins of the graph's parts, :func:`read_part_twins`.
     """
     study = _role_node(graph, "study")
     places = _out(graph, study, "study_took_place_at")
@@ -416,7 +421,96 @@ def read_hdto(graph) -> Dict[str, Any]:
                             if pset is not None and _get(pset, "hdto_role")
                             == "proposition_set" else None),
         "twin": read_twin(graph),
+        "parts": read_part_twins(graph),
     }
+
+
+# ── the twins of a part (1.6.38) ────────────────────────────────────────────
+#
+# MICRO glifi HDT-O p.3 (20 Oct 2026). A twin is the twin of a heritage entity
+# at ANY scale — a site, a building, a single unit (an inscription, US 100) —
+# and the graph is one of the proposition sets it gathers, not the twin. The
+# role ``twin`` stays ONE per graph: the twin of the study's HC1, the chain
+# EMStudio's ``applyHdto`` writes. Beside it, a stratigraphic unit or an HC1
+# inside the graph may have twins of its own: ``has_digital_twin`` from it to
+# an HDTNode WITHOUT ``hdto_role``. Nothing is presumed about how they nest:
+# who is part of whom is said by the edges (``heritage_part_of`` between HC1s,
+# ``is_part_of`` between units), read back as they are, never inferred.
+
+#: the edges a part's ``part_of`` lists — said, not inferred
+PART_OF_EDGES = ("heritage_part_of", "is_part_of")
+
+
+def _is_part_source(node) -> bool:
+    from .nodes.heritage_entity_node import HeritageEntityNode
+    from .nodes.stratigraphic_node import StratigraphicNode
+    return isinstance(node, (HeritageEntityNode, StratigraphicNode))
+
+
+def read_part_twins(graph) -> List[Dict[str, Any]]:
+    """Every twin of a PART of the graph, in edge order: one entry per
+    ``has_digital_twin`` from a stratigraphic unit or an HC1 to an HDTNode that
+    has no ``hdto_role`` (the study's twin is :func:`read_twin`).
+
+    ``[{"edge": id, "of": {id, name, node_type, part_of: [{id, name,
+    node_type, edge_type}]}, "twin": {state, id, name, key, registry}}]``
+    """
+    out: List[Dict[str, Any]] = []
+    for e in graph.edges:
+        if e.edge_type != "has_digital_twin":
+            continue
+        hdt = graph.find_node_by_id(e.edge_target)
+        part = graph.find_node_by_id(e.edge_source)
+        if hdt is None or part is None or getattr(hdt, "node_type", None) != "hdt":
+            continue
+        if _get(hdt, "hdto_role") or not _is_part_source(part):
+            continue
+        whole = [{"id": w.node_id, "name": w.name or None,
+                  "node_type": getattr(w, "node_type", None), "edge_type": et}
+                 for et in PART_OF_EDGES for w in _out(graph, part, et)]
+        out.append({"edge": e.edge_id,
+                    "of": {"id": part.node_id, "name": part.name or None,
+                           "node_type": getattr(part, "node_type", None),
+                           "part_of": whole},
+                    "twin": _twin_view(hdt)})
+    return out
+
+
+def declare_part_twin(graph, part, name: Optional[str] = None,
+                      key: Optional[str] = None,
+                      registry: Optional[Dict[str, Any]] = None):
+    """Give ``part`` (a stratigraphic unit or an HC1 of the graph, or its id) a
+    twin of its own and return the HDTNode: made when ``part`` has no part twin
+    yet, else the first one, renamed by a non-empty ``name``. Never marked
+    ``hdto_role``: the role chain stays the study's (:func:`declare_hdto`).
+    ``key`` is the registry's key (``heritage_entity_iri``); with it the twin
+    is registered, without it provisional — EMStudio's rule."""
+    from .nodes.hdt_node import HDTNode
+    node = part if hasattr(part, "node_id") else graph.find_node_by_id(part)
+    if node is None or not _is_part_source(node):
+        raise ValueError(f"a part twin is the twin of a stratigraphic unit or an "
+                         f"HC1 of the graph, not of {part!r}")
+    hdt = next((t for t in _out(graph, node, "has_digital_twin")
+                if getattr(t, "node_type", None) == "hdt"
+                and not _get(t, "hdto_role")), None)
+    label = _text(name) or f"{_text(node.name) or 'Part'} HDT"
+    if hdt is None:
+        hid = f"{node.node_id}__hdt"
+        hdt = HDTNode(hid if graph.find_node_by_id(hid) is None else str(uuid.uuid4()),
+                      name=label)
+        graph.add_node(hdt)
+    elif _text(name) and name != hdt.name:
+        hdt.name = name
+    d = _data(hdt)
+    key = _text(key)
+    d["hdt_status"] = TWIN_REGISTERED if key else TWIN_PROVISIONAL
+    d["heritage_entity_iri"] = key or None
+    if key and isinstance(registry, dict) and registry.get("source"):
+        d["hdt_registry"] = registry
+    else:
+        d.pop("hdt_registry", None)
+    _ensure_edge(graph, node, hdt, "has_digital_twin")
+    return hdt
 
 
 # ── the code of the study ───────────────────────────────────────────────────

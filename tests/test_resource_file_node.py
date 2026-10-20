@@ -112,7 +112,7 @@ def test_le_versioni_del_datamodel_sono_salite():
     # storia
     assert node["s3Dgraphy_data_model_version"] == "1.6.32"  # 1.6.32 dal 20 ott 2026 (grafo e studio)
     assert "v1.6.17 (MICRO la risorsa e i suoi file" in node["description"]
-    assert conn["s3Dgraphy_connections_model_version"] == "1.6.41"  # 1.6.41 dal 17 ott 2026 (il cappello può essere il contenitore)
+    assert conn["s3Dgraphy_connections_model_version"] == "1.6.42"  # 1.6.42 dal 20 ott 2026 (i gemelli di parte)
     assert "v1.6.30 (LA RISORSA E I SUOI FILE" in conn["description"]
     entry = node["reference_nodes"]["ResourceFileNode"]
     assert entry["mapping"]["cidoc"] == "crmdig:D1_Digital_Object"

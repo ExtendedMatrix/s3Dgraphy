@@ -5,6 +5,23 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Changed
+- **The twins of a part** (connections 1.6.42, MICRO glifi HDT-O p.3,
+  20 October 2026). A twin is the twin of a heritage entity at any scale — a
+  site, a building, a single unit (an inscription, US 100) — and the graph is
+  one of the proposition sets it gathers. The role `twin` stays one per graph,
+  the study's; beside it a stratigraphic unit or an HC1 of the graph may have
+  twins of its own: `has_digital_twin` to an HDTNode without `hdto_role`.
+  `hdto.read_part_twins` (also `read_hdto(graph)["parts"]`, `api.read_part_twins`)
+  lists them, each with the unit or entity it belongs to and the `part_of` its
+  edges say (`heritage_part_of`, `is_part_of`) — no hierarchy presumed;
+  `hdto.declare_part_twin` / `api.declare_part_twin` writes one.
+  `has_digital_twin.source` is HeritageEntityNode + StratigraphicNode (was
+  StratigraphicNode + Node, any node), its description says the two uses, and it
+  has a `ui_phrase` (en/it and the other seven languages, to validate). RDF
+  unchanged: `hdto:HP1_has_digital_twin` from the unit as from the entity,
+  measured. `study._hdt_of` (the catalogue) takes the study's twin and HC1 —
+  the nodes marked `hdto_role` — before the first of each type, so a part's
+  twin is never taken for the study's. `tests/test_part_twins.py`.
 - **An import leaves no residue of yEd's drawing in the em.json, and a document's
   date lives in its property** (MICRO glifi HDT-O p.2, 20 October 2026; E.D.:
   the glyph is fixed by the visual rules, so it is not a datum).
