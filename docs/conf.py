@@ -323,7 +323,28 @@ def _regenerate_report(app=None):
               f'using the committed copy.')
 
 
+# The CRMem declarations page (classes and properties, with em.ttl and em.rdf
+# beside it) is generated into _ontology/ontology/ and copied as is into the
+# site, at <docs>/ontology/. Never committed: it is rebuilt from em.ttl on
+# every build, so it cannot drift from the ontology.
+_ONTOLOGY_EXTRA = os.path.join(os.path.dirname(os.path.abspath(__file__)), '_ontology')
+os.makedirs(_ONTOLOGY_EXTRA, exist_ok=True)
+html_extra_path = ['_ontology']
+
+
+def _regenerate_ontology_page(app=None):
+    """Write the CRMem declarations page before the build (best-effort)."""
+    try:
+        from pathlib import Path
+        from s3dgraphy.tools import ontology_html
+        ontology_html.build(Path(_ONTOLOGY_EXTRA) / 'ontology')
+        print('[s3dgraphy] CRMem declarations page regenerated from em.ttl.')
+    except Exception as exc:  # noqa: BLE001
+        print(f'[s3dgraphy] CRMem declarations page NOT regenerated ({exc}).')
+
+
 def setup(app):
     """Custom setup function for additional configuration."""
     app.add_css_file('custom.css')
     app.connect('builder-inited', _regenerate_report)
+    app.connect('builder-inited', _regenerate_ontology_page)
