@@ -53,10 +53,10 @@
     }
   ],
   "_validated_against": {
-    "s3dgraphy": "1.6.0.dev42",
+    "s3dgraphy": "1.6.0.dev61",
     "schema_version": "1",
-    "node_datamodel": "1.6.31",
-    "connections_datamodel": "1.6.41",
-    "on": "2026-10-10"
+    "node_datamodel": "1.6.34",
+    "connections_datamodel": "1.6.43",
+    "on": "2026-10-23"
   }
 }

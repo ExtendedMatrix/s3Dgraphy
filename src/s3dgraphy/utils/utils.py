@@ -133,9 +133,9 @@ def convert_shape2type(yedtype, border_style, border_type="line"):
     elif yedtype == "octagon" and border_style == "#B19F61":
         nodetype = ("VSF", "Virtual Special Find")
     elif yedtype == "octagon" and border_style == "#9B3333":
-        # Reused Special Find (spolia). Same red border as serSU but
-        # serSU is an ellipse, so the shape disambiguates the two.
-        nodetype = ("RSF", "Reused Special Find")
+        # Repositioned Special Find (spolia among them). Same red border as
+        # serSU but serSU is an ellipse, so the shape disambiguates the two.
+        nodetype = ("RSF", "Repositioned Special Find")
     elif yedtype == "roundrectangle" and border_type == "dashed":
         nodetype = ("TSU", "Transformation Stratigraphic Unit")
     elif yedtype == "roundrectangle":

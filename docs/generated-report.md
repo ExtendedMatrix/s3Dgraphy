@@ -10,10 +10,10 @@ Every figure on this page is read off the datamodels and the installed package a
 
 | Component | Version |
 | --- | --- |
-| s3dgraphy (library) | 1.6.0.dev27 |
-| nodes datamodel | 1.6.22 |
-| connections datamodel | 1.6.35 |
-| qualia datamodel | 1.6.6 |
+| s3dgraphy (library) | 1.6.0.dev61 |
+| nodes datamodel | 1.6.34 |
+| connections datamodel | 1.6.43 |
+| qualia datamodel | 1.6.9 |
 | CIDOC-CRM | 7.1.3 |
 | CRMarchaeo | 2.1.1 |
 | CRMsci | 3.2 |
@@ -22,7 +22,7 @@ Every figure on this page is read off the datamodels and the installed package a
 | CRMinf | 1.2.1 |
 | HDT-O | 1.0 |
 | PROV-O | W3C Recommendation 2013-04-30 |
-| CRMem | 1.6.12 |
+| CRMem | 1.6.18 |
 
 ## Node types
 
@@ -33,7 +33,7 @@ The three populations, named apart — see this module's docstring for why there
 | declared in the node datamodel | 57 |
 | — of which authorable types | 53 |
 | — of which abstract family bases | 4 |
-| field-level mapping blocks (not node types) | 3 |
+| field-level mapping blocks (not node types) | 7 |
 | entries with no mapping block | 0 |
 
 Abstract family bases: `GroupNode`, `Node`, `ParadataNode`, `StratigraphicNode`.
@@ -42,9 +42,9 @@ Abstract family bases: `GroupNode`, `Node`, `ParadataNode`, `StratigraphicNode`.
 
 | What | Count |
 | --- | --- |
-| declared in the connections datamodel | 59 |
-| — of which live (not deprecated) | 58 |
-| — declaring a named reverse direction | 52 |
+| declared in the connections datamodel | 60 |
+| — of which live (not deprecated) | 59 |
+| — declaring a named reverse direction | 53 |
 
 ## Python classes
 
@@ -62,9 +62,9 @@ Classes present in the registry with no entry in the node datamodel, and therefo
 
 | What | Count |
 | --- | --- |
-| public API callables | 215 |
-| test modules in tests/ | 144 |
-| test modules in tests/*/ | 66 |
+| public API callables | 275 |
+| test modules in tests/ | 189 |
+| test modules in tests/*/ | 77 |
 
 ## Alignment by ontology
 
@@ -84,7 +84,7 @@ Edge types, by the ontology of the CIDOC predicate they emit. An edge with no CI
 
 | Ontology | Edge types |
 | --- | --- |
-| crm | 33 |
+| crm | 34 |
 | (none declared) | 10 |
 | crmdig | 6 |
 | hdto | 6 |

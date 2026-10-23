@@ -254,7 +254,9 @@ class SpecialFindUnit(StratigraphicNode):
         super().__init__(node_id, name, description)
         self.symbol = "white octagon"
         self.label = "Special Find"
-        self.detailed_description = "Not in situ element that needs repositioning."
+        self.detailed_description = (
+            "Movable object found erratic or inside a layer and taken out "
+            "during the excavation, documented where it was found.")
 
 
 class VirtualSpecialFindUnit(StratigraphicNode):
@@ -263,12 +265,22 @@ class VirtualSpecialFindUnit(StratigraphicNode):
         super().__init__(node_id, name, description)
         self.symbol = "black octagon"
         self.label = "Virtual Special Find"
-        self.detailed_description = "Hypothetical reconstruction of a fragmented Special Find."
+        self.detailed_description = (
+            "The object as it was, a hypothesis: it holds the fragments (SF) "
+            "or completes what was restored.")
 
 
 class ReusedSpecialFind(StratigraphicNode):
-    """Reused Special Find (RSF) — re-used architectural / decorative
-    element (spolia) in archaeological reconstructions.
+    """Repositioned Special Find (RSF) — a physical object, fixed and
+    immovable, intentionally put back into a stable unit (a wall: spolia)
+    or into a new functional placement (a column drum as street
+    furniture); a historical physical anastylosis is one too. Reuse is a
+    case within the definition (E.D., 23 Oct 2026). Invariant against
+    :class:`SpecialFindUnit`: the SF is movable, the RSF is not.
+
+    The class name and the URI ``em:ReusedSpecialFind`` are historical
+    identifiers, kept so that every file and triple already written still
+    resolves; the label is «Repositioned Special Find».
 
     Typological cousin of :class:`SpecialFindUnit` (SF) and
     :class:`VirtualSpecialFindUnit` (VSF): all three render as octagons.
@@ -285,11 +297,10 @@ class ReusedSpecialFind(StratigraphicNode):
     def __init__(self, node_id, name, description=""):
         super().__init__(node_id, name, description)
         self.symbol = "white octagon red border"
-        self.label = "Reused Special Find"
+        self.label = "Repositioned Special Find"
         self.detailed_description = (
-            "Re-used architectural or decorative element (spolia) in "
-            "archaeological reconstructions. A physical find observed "
-            "in situ but originally produced for a different context.")
+            "Fixed, immovable object intentionally put back into a stable "
+            "unit (spolia in a wall) or a new functional placement.")
 
 
 class DocumentaryStratigraphicUnit(StratigraphicNode):

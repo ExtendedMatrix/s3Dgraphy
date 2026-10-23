@@ -5,6 +5,26 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Changed
+- **SF, RSF, VSF redefined** (node datamodel 1.6.34, em.ttl 1.6.19, MICRO
+  special find e fine dell'unità part 1, decided by E.D. 23 October 2026).
+  The SF is defined in positive: a movable object found erratic or in a layer,
+  taken out during the excavation and documented where it was found — no longer
+  «an object whose original position is unknown». How it lay (in situ,
+  redeposited, fallen in position) is an attribute, not a class: a collapse
+  found in position is an SF. The RSF is now the **Repositioned** Special Find
+  (label; it was «Reused»): fixed and immovable, intentionally put back into a
+  stable unit (a wall: spolia) or a new functional placement (a column drum as
+  street furniture), a historical physical anastylosis included; reuse is one
+  case of it. Invariant: movable (SF) / immovable (RSF). The VSF has two roles,
+  the VSF that holds the fragments and the VSF that completes what was
+  restored; restoring the block and remodelling the ancient version are both
+  correct, the difference SF/VSF by a boolean. An SF is drawn in an earlier
+  epoch only when the piece is estimated equal to the ancient one. The
+  identifiers do not change (class `ReusedSpecialFind`, URIs
+  `em:ReusedSpecialFind`, `em:DisplacedSpecialFind`). Descriptions in the
+  datamodel, `em.ttl`, the Python classes and `datamodel_translations.json`
+  1.12 (nine languages, to validate); shipped mappings re-stamped,
+  `docs/generated-report.md` regenerated. `tests/test_special_find_definitions.py`.
 - **A model may be in several RM containers** (connections 1.6.43, node
   datamodel 1.6.33, decided by E.D. 23 October 2026). A mesh of «Survey 2015»
   can also be in «Reconstruction, 2nd c. AD»: `is_in_representation_model_group`
