@@ -275,6 +275,107 @@ def end_of_unit(graph: Any, br_id: str) -> Optional[Dict[str, Any]]:
     }
 
 
+def _props_of(graph: Any, node_id: str, quale: str) -> List[Any]:
+    """The PropertyNodes ``node_id`` has (``has_property``) for ``quale``,
+    named by property_type or by name."""
+    out = []
+    for e in graph.edges:
+        if e.edge_source != node_id or e.edge_type != "has_property":
+            continue
+        p = graph.find_node_by_id(e.edge_target)
+        if p is not None and getattr(p, "node_type", None) == "property" and \
+                quale in (getattr(p, "property_type", None), getattr(p, "name", None)):
+            out.append(p)
+    return out
+
+
+#: the edges from a unit to the models that stand for it in 3D
+_RM_EDGES = ("has_representation_model", "has_representation_model_sf")
+
+
+def epoch_instances(graph: Any, node_id: str) -> List[Dict[str, Any]]:
+    """The INSTANCES of one object across the epochs (MICRO special find e fine
+    dell'unità, part 4, E.D. 23 Oct 2026: «lo stesso SF si istanzia più volte
+    nel tempo, con coordinate e stato di conservazione diversi per epoca»).
+
+    Measured: the graph already says it. The same object in several epochs is
+    an INSTANCE CHAIN — one unit per epoch (an SF today, a USD of the collapse,
+    a US or a VSF in its Roman place) linked by ``changed_from``, the dotted
+    line of the GraphML — and each instance is a unit with what a unit has: its
+    epochs, its representation models with their own ``transform`` (the
+    position for that epoch), its ``conservation_state`` property. A unit that
+    merely SURVIVES unchanged into later epochs is one node with
+    ``survive_in_epoch`` and has one position. This reader adds no data: it
+    walks the chain and puts each instance in one record, oldest first, so a
+    client (EMStudio, EM Tools, Heriverse) places the object epoch by epoch.
+
+    Each record: ``{id, name, node_type, first_epoch, epochs, conservation_state,
+    placements, geometry, geometry_from}`` — ``placements`` the instance's
+    models (``{model, node_type, transform}``, the transform as stored, None
+    when the model has none); ``geometry`` the id of its own ``geometry``
+    property (the proxy) or None; ``geometry_from`` the instance whose geometry
+    it is drawn with: its own, else the nearest in the chain that has one — the
+    proxy's geometry is ONE, the position is per instance.
+
+    ``[]`` for an unknown id; a unit outside any chain is a chain of one."""
+    if graph.find_node_by_id(node_id) is None:
+        return []
+    links: Dict[str, List[str]] = {}
+    for e in graph.edges:
+        if e.edge_type in ("changed_from", "changed_to"):
+            links.setdefault(e.edge_source, []).append(e.edge_target)
+            links.setdefault(e.edge_target, []).append(e.edge_source)
+    seen, todo = [], [node_id]
+    while todo:
+        cur = todo.pop()
+        if cur in seen:
+            continue
+        seen.append(cur)
+        todo.extend(x for x in links.get(cur, []) if x not in seen)
+
+    def lanes(nid: str) -> Tuple[Optional[str], List[str]]:
+        first = [e.edge_target for e in graph.edges
+                 if e.edge_source == nid and e.edge_type == "has_first_epoch"]
+        surv = [e.edge_target for e in graph.edges
+                if e.edge_source == nid and e.edge_type == "survive_in_epoch"]
+        return (first[0] if first else None), list(dict.fromkeys(first + surv))
+
+    records = []
+    for nid in seen:
+        node = graph.find_node_by_id(nid)
+        first, epochs = lanes(nid)
+        states = _props_of(graph, nid, "conservation_state")
+        geoms = _props_of(graph, nid, "geometry")
+        placements = []
+        for e in graph.edges:
+            if e.edge_source == nid and e.edge_type in _RM_EDGES:
+                rm = graph.find_node_by_id(e.edge_target)
+                raw = (getattr(rm, "data", None) or {}).get("transform") if rm is not None else None
+                placements.append({"model": e.edge_target,
+                                   "node_type": getattr(rm, "node_type", None),
+                                   "transform": raw if isinstance(raw, dict) else None})
+        records.append({
+            "id": nid,
+            "name": getattr(node, "name", nid),
+            "node_type": getattr(node, "node_type", None),
+            "first_epoch": first,
+            "epochs": epochs,
+            "conservation_state": (getattr(states[0], "value", None) if states else None),
+            "placements": placements,
+            "geometry": geoms[0].node_id if geoms else None,
+        })
+    # oldest first: by the start of the first epoch, units without one last
+    records.sort(key=lambda r: (_epoch_start(graph, r["first_epoch"])
+                                if r["first_epoch"] else float("inf")))
+    for i, r in enumerate(records):
+        if r["geometry"]:
+            r["geometry_from"] = r["id"]
+            continue
+        by_distance = sorted((abs(j - i), j) for j, o in enumerate(records) if o["geometry"])
+        r["geometry_from"] = records[by_distance[0][1]]["id"] if by_distance else None
+    return records
+
+
 def time_label(quale_id: str, owner: Any, lang: str = "en") -> Optional[str]:
     """The label of ``absolute_time_start`` / ``absolute_time_end`` (or any
     quale) on this owner: «Data di scomparsa» for an author's end, «Data di

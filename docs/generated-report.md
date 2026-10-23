@@ -12,7 +12,7 @@ Every figure on this page is read off the datamodels and the installed package a
 | --- | --- |
 | s3dgraphy (library) | 1.6.0.dev61 |
 | nodes datamodel | 1.6.36 |
-| connections datamodel | 1.6.45 |
+| connections datamodel | 1.6.46 |
 | qualia datamodel | 1.6.9 |
 | CIDOC-CRM | 7.1.3 |
 | CRMarchaeo | 2.1.1 |
@@ -62,8 +62,8 @@ Classes present in the registry with no entry in the node datamodel, and therefo
 
 | What | Count |
 | --- | --- |
-| public API callables | 275 |
-| test modules in tests/ | 192 |
+| public API callables | 278 |
+| test modules in tests/ | 193 |
 | test modules in tests/*/ | 77 |
 
 ## Alignment by ontology

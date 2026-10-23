@@ -5,6 +5,20 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
+- **The instances of one object across the epochs, read** (connections 1.6.46,
+  description only; MICRO special find e fine dell'unità part 4, 23 October
+  2026). Measured: the graph already holds what E.D. asked for — the same object
+  in several epochs is the INSTANCE CHAIN, one unit per epoch linked by
+  `changed_from` (the dotted line), and each instance carries its own position
+  (the `transform` of its representation model) and its own
+  `conservation_state` property; a unit that only survives unchanged is one
+  node with `survive_in_epoch`. Nothing is added to the data. New reader
+  `spatiotemporal.epoch_instances` / `api.epoch_instances`: the chain oldest
+  first, each instance with its epochs, conservation state, the placements of
+  its models, and `geometry_from` — the instance whose geometry it is drawn
+  with (its own, else the nearest that has one: one geometry for the proxy, a
+  placement per instance). The `changed_from` description says the rule.
+  `tests/test_epoch_instances.py`.
 - **The end of a unit, typed** (node datamodel 1.6.36, connections 1.6.45,
   em.ttl 1.6.21, translations 1.14, MICRO special find e fine dell'unità part 3,
   decided by E.D. 23 October 2026). The BR stays one class with a TYPE of the EM

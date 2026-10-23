@@ -341,6 +341,15 @@ def end_of_unit(graph: Graph, br_id: str) -> Optional[Dict[str, Any]]:
     return _end(graph, br_id)
 
 
+def epoch_instances(graph: Graph, node_id: str) -> List[Dict[str, Any]]:
+    """The instances of one object across the epochs — the ``changed_from``
+    chain — oldest first, each with its epochs, its conservation state, the
+    placements of its models and the instance whose geometry it is drawn with.
+    See :func:`s3dgraphy.spatiotemporal.epoch_instances`."""
+    from .spatiotemporal import epoch_instances as _instances
+    return _instances(graph, node_id)
+
+
 def end_reasons() -> tuple:
     """How a unit can end: destroyed, transformed, removed, relocated, unknown
     (the default) — ContinuityNode.properties.end_reason."""
