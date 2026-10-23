@@ -63,7 +63,7 @@ def _templu():
 
 def test_the_datamodel_names_the_three_classes():
     dm = load_json_mapping("s3Dgraphy_node_datamodel.json")
-    assert dm["s3Dgraphy_data_model_version"] == "1.6.32"  # 1.6.27 introduced them; 1.6.32 graph and study (20 Oct)
+    assert dm["s3Dgraphy_data_model_version"] == "1.6.33"  # 1.6.27 introduced them; 1.6.33 a model in several containers (23 Oct)
     assert spatiotemporal_classes() == ("StratigraphicNode", "DocumentNode", "AuthorNode")
 
 

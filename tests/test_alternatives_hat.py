@@ -16,7 +16,8 @@ from s3dgraphy.graph import Graph
 from s3dgraphy.nodes.epoch_node import EpochNode
 from s3dgraphy.nodes.group_node import RepresentationModelNodeGroup
 from s3dgraphy.nodes.representation_node import RepresentationModelNode
-from s3dgraphy.resources.alternatives import (container_of, declare_alternative,
+from s3dgraphy.resources.alternatives import (container_of, containers_of,
+                                              declare_alternative,
                                               hats_of, make_subcontainer,
                                               members_of)
 
@@ -126,3 +127,28 @@ def test_make_subcontainer_moves_the_covered_members_inside():
     assert all(container_of(g, m) == sub for m in models[:3])
     declare_alternative(g, "tiles_model", sub)
     assert hats_of(g, "tiles.master") == [sub]
+
+
+def test_a_model_in_two_containers_keeps_the_other_when_moved_into_a_subcontainer():
+    """m:n (E.D., 23 Oct 2026): a model of the survey also in the
+    reconstruction. containers_of names both, container_of the first; moving it
+    into a sub-container of the survey moves ONLY that membership."""
+    g, models = survey()
+    g.add_node(RepresentationModelNodeGroup("recon_rmgroup", "Reconstruction"))
+    g.add_edge(f"{models[0]}_in_recon", models[0], "recon_rmgroup",
+               "is_in_representation_model_group")
+    assert containers_of(g, models[0]) == ["survey_rmgroup", "recon_rmgroup"]
+    assert container_of(g, models[0]) == "survey_rmgroup"
+    assert containers_of(g, "nobody") == []
+    out = make_subcontainer(g, "survey_rmgroup", [models[0]], "Survey · front")
+    sub = out["group_id"]
+    assert out["moved"] == [models[0]] and out["refused"] == []
+    assert containers_of(g, models[0]) == ["recon_rmgroup", sub]
+    assert members_of(g, "recon_rmgroup") == [models[0]]
+    assert models[0] in members_of(g, "survey_rmgroup", deep=True)
+    #: a model only in the OTHER container is not a member of the survey: refused
+    g.add_node(RepresentationModelNode("only_recon", "only_recon"))
+    g.add_edge("only_recon_in", "only_recon", "recon_rmgroup",
+               "is_in_representation_model_group")
+    assert make_subcontainer(g, "survey_rmgroup", ["only_recon"],
+                             "Survey · front")["refused"] == ["only_recon"]

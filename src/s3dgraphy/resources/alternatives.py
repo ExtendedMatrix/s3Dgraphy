@@ -244,21 +244,33 @@ def members_of(graph, group_id: str, *, deep: bool = False) -> List[str]:
     return out
 
 
-def container_of(graph, node_id: str) -> Optional[str]:
-    """The container ``node_id`` (a model or a container) is in, or None —
-    one: membership is 1:1."""
+def containers_of(graph, node_id: str) -> List[str]:
+    """Every container ``node_id`` (a model or a container) is in, in graph
+    order. Membership is m:n (E.D., 23 Oct 2026): a model of «Survey 2015» can
+    also be in «Reconstruction, 2nd c. AD»."""
+    out: List[str] = []
     for e in graph.edges:
-        if e.edge_type == EDGE_MEMBER and e.edge_source == node_id:
-            return e.edge_target
-    return None
+        if e.edge_type == EDGE_MEMBER and e.edge_source == node_id \
+                and e.edge_target not in out:
+            out.append(e.edge_target)
+    return out
+
+
+def container_of(graph, node_id: str) -> Optional[str]:
+    """The FIRST container ``node_id`` is in, or None (see
+    :func:`containers_of` for all of them)."""
+    found = containers_of(graph, node_id)
+    return found[0] if found else None
 
 
 def make_subcontainer(graph, parent_id: str, member_ids: Sequence[str], label: str,
                       *, group_id: Optional[str] = None) -> Dict[str, Any]:
     """The covered part of a container as a container of its own, INSIDE it:
     a new ``RepresentationModelNodeGroup`` that is a member of ``parent_id``,
-    and the given members moved into it (1:1: they leave the parent, they are
-    still under it through the sub-container). A tileset covering only those
+    and the given members moved into it (they leave the parent, they are
+    still under it through the sub-container). Only the membership in
+    ``parent_id`` moves: a member that is also in other containers stays in
+    them (membership is m:n, E.D. 23 Oct 2026). A tileset covering only those
     members is then the alternative of the sub-container
     (:func:`declare_alternative`).
 
@@ -276,15 +288,16 @@ def make_subcontainer(graph, parent_id: str, member_ids: Sequence[str], label: s
                                                     description=""))
     elif getattr(node, "node_type", "") != GROUP_NODE_TYPE:
         raise ValueError(f"{gid!r} exists and is not an RM container")
-    if container_of(graph, gid) is None:
+    if parent_id not in containers_of(graph, gid):
         graph.add_edge(f"{gid}_{EDGE_MEMBER}_{parent_id}", gid, parent_id, EDGE_MEMBER)
     moved, refused = [], []
     for m in member_ids:
-        if container_of(graph, m) != parent_id or m == gid:
+        if parent_id not in containers_of(graph, m) or m == gid:
             refused.append(m)
             continue
         for e in list(graph.edges):
-            if e.edge_type == EDGE_MEMBER and e.edge_source == m:
+            if e.edge_type == EDGE_MEMBER and e.edge_source == m \
+                    and e.edge_target == parent_id:
                 graph.remove_edge(e.edge_id)
         graph.add_edge(f"{m}_{EDGE_MEMBER}_{gid}", m, gid, EDGE_MEMBER)
         moved.append(m)

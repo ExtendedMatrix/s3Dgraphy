@@ -5,6 +5,20 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Changed
+- **A model may be in several RM containers** (connections 1.6.43, node
+  datamodel 1.6.33, decided by E.D. 23 October 2026). A mesh of «Survey 2015»
+  can also be in «Reconstruction, 2nd c. AD»: `is_in_representation_model_group`
+  is m:n like `is_in_functional_unit` and `is_in_location` (1:1 until now). The
+  mapping (`P46i_forms_part_of`) is unchanged; the descriptions say the new rule
+  in the datamodels, in `datamodel_translations.json` (all nine languages), in
+  `em.ttl` and in `nodes/group_node.py`. The epochs stay on each model: the
+  default epochs an EM Tools container carries are written on its models by the
+  scene, never stated on the group. New `Graph.get_representation_model_groups_of`
+  and `resources.alternatives.containers_of` (lists); the singular
+  `get_representation_model_group_of` / `container_of` return the first.
+  `make_subcontainer` accepts a member when the parent is among its containers
+  and moves only that membership, keeping the others.
+  `tests/test_rm_container_node_group.py`, `tests/test_alternatives_hat.py`.
 - **The twins of a part** (connections 1.6.42, MICRO glifi HDT-O p.3,
   20 October 2026). A twin is the twin of a heritage entity at any scale — a
   site, a building, a single unit (an inscription, US 100) — and the graph is

@@ -693,7 +693,7 @@ em:RepresentationModelNodeGroup
     a owl:Class ;
     rdfs:label "Representation Model Container"@en ;
     rdfs:subClassOf em:NodeGroup , crm:E73_Information_Object ;
-    rdfs:comment "The representation models that form ONE named set published under a single Document — «Survey 2015» under D.01, «Reconstruction» under D.09 (EM16-RMNG, 2026-09-10). The one group subtype that does not override its parent class: a container of models is a conceptual set, not a physical thing and not an event. Membership is 1:1 — a mesh belongs to exactly one container — and the container sits BESIDE the direct Document→model edges, never in between. Maps to: Python RepresentationModelNodeGroup (node_type=\'RepresentationModelNodeGroup\')."@en .
+    rdfs:comment "The representation models that form ONE named set published under a single Document — «Survey 2015» under D.01, «Reconstruction» under D.09 (EM16-RMNG, 2026-09-10). The one group subtype that does not override its parent class: a container of models is a conceptual set, not a physical thing and not an event. Membership is m:n — a model may belong to several containers (E.D., 23 Oct 2026; 1:1 before) — and the container sits BESIDE the direct Document→model edges, never in between. Maps to: Python RepresentationModelNodeGroup (node_type=\'RepresentationModelNodeGroup\')."@en .
 
 em:GCPSet
     a owl:Class ;

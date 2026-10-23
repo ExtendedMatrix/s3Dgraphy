@@ -282,10 +282,11 @@ class RepresentationModelNodeGroup(GroupNode):
 
     Membership is a **tag**, on the same axis as ``is_in_functional_unit``
     (DP-72) and ``is_in_location``: the member carries the edge towards the
-    group, the group claims nothing of the member. Unlike those two, membership
-    here is **1:1** — a mesh belongs to exactly one container, which is the rule
-    already in force on the Blender side (``rm_manager/containers.py``) and is
-    what makes ``mesh_names`` authoritative there.
+    group, the group claims nothing of the member. Like those two, membership
+    is **m:n** (E.D., 23 Oct 2026; 1:1 until then): a model may belong to several
+    containers — a mesh of «Survey 2015» can also be in «Reconstruction, 2nd c.
+    AD». The epochs stay on each model: the default epochs an EM Tools container
+    carries are written on its models by the scene, never stated on the group.
 
     Legal states, both of which the UI already shows
     -----------------------------------------------

@@ -148,7 +148,7 @@ def test_l_arco_nel_datamodel():
     # 1.6.35 dal 31 ott 2026 (dev27, il riallineamento), 1.6.36 dal 9 ott
     # (la proprietà come fonte), 1.6.37 la sera stessa (l'istanza è una vista);
     # la voce 1.6.31 resta nella storia
-    assert raw["s3Dgraphy_connections_model_version"] == "1.6.42"  # 1.6.42 dal 20 ott 2026 (i gemelli di parte)
+    assert raw["s3Dgraphy_connections_model_version"] == "1.6.43"  # 1.6.43 dal 23 ott 2026 (un modello in più contenitori)
     assert "v1.6.31 (LA REVISIONE DELLA RISORSA" in raw["description"]
     entry = raw["edge_types"]["was_revision_of"]
     # dev27: a realigned translation is a revision too (realign_translation)

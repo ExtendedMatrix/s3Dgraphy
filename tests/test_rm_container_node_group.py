@@ -226,21 +226,23 @@ def test_OGNI_CLASSE_DELLA_FAMIGLIA_RM_puo_essere_membro(cls, nome):
     assert e.edge_type == MEMBERSHIP, f"{cls.__name__} rifiutato come membro"
 
 
-def test_UNA_MESH_STA_IN_UN_SOLO_GRUPPO():
-    """1:1 e non m:n — la regola già in vigore lato Blender, dove `mesh_names`
-    è autoritativo. L'accessore è SINGOLARE di proposito: restituire una lista
-    inviterebbe chi chiama a gestire un caso che il modello vieta."""
+def test_UNA_MESH_PUO_STARE_IN_PIU_GRUPPI():
+    """m:n (E.D., 23 ott 2026; 1:1 fino ad allora): un modello del «Rilievo
+    2015» può stare anche nella «Ricostruzione, II sec. d.C.». Il plurale
+    risponde con tutti i gruppi; il singolare resta e restituisce il primo."""
     g = Graph(graph_id="t")
     g.add_node(RepresentationModelNodeGroup("A", "Survey"))
     g.add_node(RepresentationModelNodeGroup("B", "Reconstruction"))
     g.add_node(RepresentationModelNode("rm1", "mesh_01"))
     g.add_edge("e1", "rm1", "A", MEMBERSHIP)
     assert g.get_representation_model_group_of("rm1").node_id == "A"
-    #: e l'accessore resta singolare anche in un grafo anomalo (file editato a
-    #: mano, merge): ritorna il primo e NON riconcilia in silenzio
-    g.add_edge("e2", "rm1", "B", MEMBERSHIP)
-    scelto = g.get_representation_model_group_of("rm1")
-    assert scelto is not None and scelto.node_id in ("A", "B")
+    assert [n.node_id for n in g.get_representation_model_groups_of("rm1")] == ["A"]
+    e2 = g.add_edge("e2", "rm1", "B", MEMBERSHIP)
+    assert e2.edge_type == MEMBERSHIP, "la seconda appartenenza è legale"
+    assert [n.node_id for n in g.get_representation_model_groups_of("rm1")] == ["A", "B"]
+    assert g.get_representation_model_group_of("rm1").node_id == "A"
+    assert [n.node_id for n in g.get_representation_model_group_members("B")] == ["rm1"]
+    assert g.get_representation_model_groups_of("nessuno") == []
 
 
 # ═══ 4 · GLI STATI LEGALI · VUOTO, E SENZA DOCUMENT ══════════════════════════

@@ -1361,13 +1361,11 @@ class Graph:
 
     # ── RM containers (EM16-RMNG) ────────────────────────────────────────
     #
-    # Mirrors the Functional-Unit accessors above, with ONE difference that is
-    # semantic and not stylistic: membership here is 1:1, not m:n. A mesh
-    # belongs to exactly one container — the rule already in force on the
-    # Blender side — so the question "which group is this model in?" has one
-    # answer, and the accessor says so by returning a node or None instead of a
-    # list. Returning a list would have invited callers to handle a case the
-    # model forbids.
+    # Mirrors the Functional-Unit accessors above. Membership is m:n (E.D.,
+    # 23 Oct 2026; 1:1 until then): a model may be in several containers, so
+    # the question "which groups is this model in?" is answered by a list
+    # (`get_representation_model_groups_of`); the singular accessor stays for
+    # the callers that want one and returns the first.
 
     def get_representation_model_groups(self):
         """Every RepresentationModelNodeGroup in the graph (EM16-RMNG)."""
@@ -1384,20 +1382,21 @@ class Graph:
                 out.append(node)
         return out
 
-    def get_representation_model_group_of(self, node_id):
-        """The container a model belongs to, or None.
-
-        Singular by design: one mesh, one container. When a graph somehow
-        carries more than one membership edge (a hand-edited file, a merge),
-        the FIRST is returned and the anomaly is left visible to the caller
-        rather than silently reconciled here — `sync_rm_containers` on the
-        Blender side is the place that reports divergences.
-        """
+    def get_representation_model_groups_of(self, node_id):
+        """Every container a model belongs to, in graph order (m:n since
+        E.D.'s decision of 23 Oct 2026)."""
+        out = []
         for edge in self._edges_by(node_id, self.RM_GROUP_EDGE, incoming=False):
             node = self.find_node_by_id(edge.edge_target)
-            if node is not None:
-                return node
-        return None
+            if node is not None and node not in out:
+                out.append(node)
+        return out
+
+    def get_representation_model_group_of(self, node_id):
+        """The FIRST container a model belongs to, or None. A model may be in
+        several (:meth:`get_representation_model_groups_of`)."""
+        groups = self.get_representation_model_groups_of(node_id)
+        return groups[0] if groups else None
 
     def get_functional_unit_epochs(self, fu_id):
         """The epochs a Functional Unit spans — DERIVED from its members, since a
