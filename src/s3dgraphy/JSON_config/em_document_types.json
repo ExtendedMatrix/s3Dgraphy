@@ -1,7 +1,10 @@
 {
   "metadata": {
-    "version": "2.0",
-    "last_updated": "2025-01-29",
+    "version": "2.1",
+    "last_updated": "2026-10-23",
+    "changelog": {
+      "2.1": "MICRO special find e fine dell'unità, part 5 (decided by E.D. 23 Oct 2026): the document type anastylosis — the dynamic document of the passage of each fragment from its findspot to its original position, in versions; the em_reading block says how EM reads it (argument: the paradata of the VSF; act: the activity group; backwards: the simulation of the collapse)."
+    },
     "maintainers": ["Emanuel Demetrescu"],
     "license": "CC-BY-SA-4.0",
     "license_note": "Share-alike per allinearsi agli strumenti terminologici da cui questo datamodel prende gli ancoraggi (ICCD CC BY-SA 3.0 IT) e perche' una derivazione resti aperta. Gli identificatori AAT/CIDOC citati nei `mappings` sono RIFERIMENTI, non contenuto incorporato: lo share-alike non si propaga ai vocabolari altrui, che mantengono i propri termini.",
@@ -305,6 +308,62 @@
               "preliminary_tests",
               "environmental_conditions",
               "post_treatment_monitoring"
+            ]
+          }
+        }
+      }
+    },
+    "anastylosis": {
+      "id": "anastylosis",
+      "name": "Anastylosis",
+      "description": "The DYNAMIC document of an anastylosis (E.D., 23 Oct 2026): for each fragment (SF), the passage from the position where it was found to its original position, in VERSIONS (a DTC chain: each version an output of the step that made it). A TYPE of document — vocabulary, not an extension: the node is a DocumentNode with this type. How EM reads it: the ARGUMENT is the paradata of the VSF — the extractors of the joins read on each SF (fractures, dowels, modules, measures) and the combiner that puts them together; the ACT is the activity group «Anastylosis» (who, when, which version); the same reading run BACKWARDS, from the original position to the findspot, is the simulation of the collapse (an SE).",
+      "vocabulary_mappings": {
+        "getty_aat": null,
+        "_getty_aat_note": "Not assigned: the AAT concept for anastylosis could not be verified (Getty SPARQL endpoint degraded, 23 Oct 2026). To be filled after a check, never from memory.",
+        "cidoc_crm": {
+          "class": "E31_Document",
+          "property": "P70_documents"
+        },
+        "dublin_core": {
+          "type": "dcterms:provenance"
+        }
+      },
+      "em_reading": {
+        "argument": "the paradata of the VSF: one extractor per join read on an SF (fracture surfaces, dowel holes, modules, measures), extracted_from this document or from the SF's own documents, and the combiner that puts them together into the VSF's position",
+        "act": "an ActivityNodeGroup «Anastylosis»: who did it, when, which version of the document",
+        "reverse": "the same trajectories read backwards — original position to findspot — are the simulation of the collapse, a StratigraphicEventNode (SE) whose 3D simulation is a paradata of its own",
+        "units": "the SF keeps its findspot and the VSF its original position: the document carries the passage between the two, it moves neither"
+      },
+      "subtypes": {
+        "anastylosis_trajectories": {
+          "id": "anastylosis_trajectories",
+          "name": "Anastylosis trajectories",
+          "formats": ["json", "csv", "glb", "blend"],
+          "possible_extractions": [
+            "findspot_position",
+            "original_position",
+            "transform_per_fragment",
+            "fracture_joins",
+            "dowel_holes",
+            "modules",
+            "measures"
+          ],
+          "supported_extractors": [
+            "join_analysis",
+            "geometric_analysis"
+          ],
+          "metadata_requirements": {
+            "mandatory": [
+              "version",
+              "author",
+              "date",
+              "fragments",
+              "reference_frame"
+            ],
+            "optional": [
+              "previous_version",
+              "software_used",
+              "collapse_simulation"
             ]
           }
         }

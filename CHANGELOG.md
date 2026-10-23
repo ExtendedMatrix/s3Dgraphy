@@ -5,6 +5,18 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
+- **The anastylosis as a document type** (`em_document_types.json` 2.1, MICRO
+  special find e fine dell'unità part 5, decided by E.D. 23 October 2026). A TYPE
+  of document — vocabulary, not an extension: `anastylosis`, the dynamic
+  document that carries, for each fragment, the passage from its findspot to
+  its original position, in versions (a DTC chain), with the subtype
+  `anastylosis_trajectories`. Its `em_reading` says how EM reads it: the
+  argument is the paradata of the VSF (the extractors of the joins read on each
+  SF — fractures, dowels, modules, measures — and the combiner), the act is the
+  activity group «Anastylosis» (who, when, which version), and the same reading
+  backwards is the simulation of the collapse (an SE). CIDOC: E31 Document /
+  P70 documents; the AAT id is left empty, unverified (Getty SPARQL degraded
+  that day). `tests/test_anastylosis_document_type.py`.
 - **The instances of one object across the epochs, read** (connections 1.6.46,
   description only; MICRO special find e fine dell'unità part 4, 23 October
   2026). Measured: the graph already holds what E.D. asked for — the same object
