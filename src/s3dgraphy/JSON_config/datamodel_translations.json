@@ -1,6 +1,6 @@
 {
  "schema": "s3Dgraphy_datamodel_translations",
- "version": "1.13",
+ "version": "1.14",
  "languages": [
   "en",
   "it",
@@ -215,7 +215,7 @@
   },
   "ContinuityNode": {
    "description": {
-    "en": "End of life of a SU/USV. Marks the point in time when a stratigraphic unit ceases to exist (destruction, dismantling, deep transformation that no longer preserves identity).",
+    "en": "The end of a unit (SU, USV, any stratigraphic unit). Marks the moment a unit ceases to be present here, as a whole: a cut that takes away only a part leaves no BR, the unit continues. HOW it ends is a type (`end_reason`: destroyed, transformed, removed, relocated, unknown — the default), and the type decides its CIDOC class. The BR is a spatiotemporal unit like the others: it has paradata, a start and an end of its own (absolute_time_start / absolute_time_end); its epoch is INHERITED — the last epoch the unit lives in — until it has a date of its own. When a cut takes the whole unit away, the BR and the USN are one act: the BR takes the date of the cut, and the cut is its observed trace.",
     "validated_it": false,
     "validated_el": false,
     "validated_he": false,
@@ -224,14 +224,14 @@
     "validated_ro": false,
     "validated_fr": false,
     "validated_de": false,
-    "it": "Fine della vita di una US/USV. Segna il momento in cui un'unità stratigrafica cessa di esistere (distruzione, smontaggio, trasformazione profonda che non ne conserva più l'identità).",
-    "el": "Τέλος ζωής μιας SU/USV. Σημειώνει τη χρονική στιγμή κατά την οποία μια στρωματογραφική μονάδα παύει να υπάρχει (καταστροφή, αποσυναρμολόγηση, βαθύς μετασχηματισμός που δεν διατηρεί πλέον την ταυτότητά της).",
-    "he": "סוף חייה של SU/USV. מסמן את נקודת הזמן שבה יחידה סטרטיגרפית חדלה להתקיים (הרס, פירוק, שינוי עמוק שאינו משמר עוד את זהותה).",
-    "es": "Fin de la vida de una SU/USV. Marca el momento en que una unidad estratigráfica deja de existir (destrucción, desmontaje, transformación profunda que ya no preserva su identidad).",
-    "pl": "Koniec istnienia SU/USV. Oznacza moment w czasie, w którym jednostka stratygraficzna przestaje istnieć (zniszczenie, rozbiórka, głębokie przekształcenie, które nie zachowuje już jej tożsamości).",
-    "ro": "Sfârșitul existenței unei US/USV. Marchează momentul în care o unitate stratigrafică încetează să existe (distrugere, demontare, transformare profundă care nu îi mai păstrează identitatea).",
-    "fr": "Fin de vie d'une SU/USV. Marque le moment où une unité stratigraphique cesse d'exister (destruction, démontage, transformation profonde qui n'en préserve plus l'identité).",
-    "de": "Ende der Lebensdauer einer SU/USV. Markiert den Zeitpunkt, an dem eine stratigraphische Einheit zu existieren aufhört (Zerstörung, Abbau, tiefgreifende Umgestaltung, die ihre Identität nicht mehr bewahrt)."
+    "it": "La fine di un'unità (US, USV, qualunque unità stratigrafica). Segna il momento in cui un'unità cessa di essere presente qui, tutta intera: un taglio che ne toglie solo una parte non lascia BR, l'unità continua. COME finisce è un tipo (`end_reason`: distrutta, trasformata, rimossa, delocalizzata, ignota — il default), e il tipo decide la sua classe CIDOC. Il BR è un'unità spaziotemporale come le altre: ha paradati, un inizio e una fine propri (absolute_time_start / absolute_time_end); la sua epoca è EREDITATA — l'ultima in cui l'unità vive — finché non ha una data sua. Quando un taglio toglie l'unità tutta, BR e USN sono lo stesso atto: il BR prende la data del taglio, e il taglio ne è la traccia osservata.",
+    "el": "Το τέλος μιας μονάδας (SU, USV, οποιασδήποτε στρωματογραφικής μονάδας). Σημειώνει τη στιγμή που μια μονάδα παύει να είναι παρούσα εδώ, ολόκληρη: μια τομή που αφαιρεί μόνο ένα μέρος δεν αφήνει BR, η μονάδα συνεχίζει. ΤΟ ΠΩΣ τελειώνει είναι ένας τύπος (`end_reason`: καταστράφηκε, μετασχηματίστηκε, αφαιρέθηκε, μετακινήθηκε, άγνωστο — η προεπιλογή), και ο τύπος αποφασίζει την κλάση CIDOC. Το BR είναι μια χωροχρονική μονάδα όπως οι άλλες: έχει παραδεδομένα, δική του αρχή και τέλος (absolute_time_start / absolute_time_end)· η εποχή του ΚΛΗΡΟΝΟΜΕΙΤΑΙ — η τελευταία στην οποία ζει η μονάδα — έως ότου αποκτήσει δική του χρονολογία. Όταν μια τομή αφαιρεί ολόκληρη τη μονάδα, το BR και η USN είναι η ίδια πράξη: το BR παίρνει τη χρονολογία της τομής, και η τομή είναι το παρατηρημένο ίχνος του.",
+    "he": "סופה של יחידה (SU, USV, כל יחידה סטרטיגרפית). מסמן את הרגע שבו יחידה חדלה להיות נוכחת כאן, כולה: חיתוך שמסיר רק חלק ממנה אינו משאיר BR, היחידה ממשיכה. האופן שבו היא מסתיימת הוא סוג (`end_reason`: נהרסה, עברה טרנספורמציה, הוסרה, הועתקה, לא ידוע — ברירת המחדל), והסוג קובע את מחלקת ה־CIDOC שלה. ה־BR הוא יחידה מרחבית־זמנית כמו האחרות: יש לו פרה־נתונים, התחלה וסוף משלו (absolute_time_start / absolute_time_end); התקופה שלו עוברת בירושה — האחרונה שבה היחידה חיה — עד שיש לו תאריך משלו. כאשר חיתוך מסיר את היחידה כולה, ה־BR וה־USN הם אותו מעשה: ה־BR מקבל את תאריך החיתוך, והחיתוך הוא העקבה הנצפית שלו.",
+    "es": "El fin de una unidad (UE, USV, cualquier unidad estratigráfica). Marca el momento en que una unidad deja de estar presente aquí, entera: un corte que quita solo una parte no deja BR, la unidad continúa. CÓMO termina es un tipo (`end_reason`: destruida, transformada, retirada, trasladada, desconocida — el valor por defecto), y el tipo decide su clase CIDOC. El BR es una unidad espaciotemporal como las demás: tiene paradatos, un inicio y un fin propios (absolute_time_start / absolute_time_end); su época se HEREDA — la última en que vive la unidad — hasta que tenga una fecha propia. Cuando un corte quita la unidad entera, BR y USN son el mismo acto: el BR toma la fecha del corte, y el corte es su huella observada.",
+    "pl": "Koniec jednostki (SU, USV, dowolnej jednostki stratygraficznej). Oznacza chwilę, w której jednostka przestaje być tu obecna, w całości: wkop, który usuwa tylko część, nie pozostawia BR, jednostka trwa dalej. TO, JAK się kończy, jest typem (`end_reason`: zniszczona, przekształcona, usunięta, przeniesiona, nieznany — domyślnie), a typ decyduje o jej klasie CIDOC. BR jest jednostką czasoprzestrzenną jak inne: ma paradane, własny początek i koniec (absolute_time_start / absolute_time_end); jego epoka jest DZIEDZICZONA — ostatnia, w której jednostka żyje — dopóki nie ma własnej daty. Gdy wkop usuwa całą jednostkę, BR i USN są tym samym aktem: BR przyjmuje datę wkopu, a wkop jest jego zaobserwowanym śladem.",
+    "ro": "Sfârșitul unei unități (US, USV, orice unitate stratigrafică). Marchează momentul în care o unitate încetează să fie prezentă aici, în întregime: o tăiere care îndepărtează doar o parte nu lasă BR, unitatea continuă. CUM se sfârșește este un tip (`end_reason`: distrusă, transformată, îndepărtată, mutată, necunoscut — implicit), iar tipul decide clasa sa CIDOC. BR este o unitate spațio-temporală ca celelalte: are paradate, un început și un sfârșit proprii (absolute_time_start / absolute_time_end); epoca sa este MOȘTENITĂ — ultima în care unitatea trăiește — până când are o dată proprie. Când o tăiere îndepărtează unitatea întreagă, BR și USN sunt același act: BR preia data tăierii, iar tăierea este urma sa observată.",
+    "fr": "La fin d'une unité (US, USV, toute unité stratigraphique). Marque le moment où une unité cesse d'être présente ici, tout entière : un creusement qui n'en enlève qu'une partie ne laisse pas de BR, l'unité continue. COMMENT elle finit est un type (`end_reason` : détruite, transformée, enlevée, déplacée, inconnue — la valeur par défaut), et le type décide de sa classe CIDOC. Le BR est une unité spatio-temporelle comme les autres : il a des paradonnées, un début et une fin propres (absolute_time_start / absolute_time_end) ; son époque est HÉRITÉE — la dernière où l'unité vit — tant qu'il n'a pas de date à lui. Quand un creusement enlève l'unité tout entière, BR et USN sont un même acte : le BR prend la date du creusement, et le creusement en est la trace observée.",
+    "de": "Das Ende einer Einheit (SE, USV, jeder stratigraphischen Einheit). Markiert den Moment, in dem eine Einheit aufhört, hier als Ganzes vorhanden zu sein: ein Eingriff, der nur einen Teil entfernt, hinterlässt keinen BR, die Einheit besteht weiter. WIE sie endet, ist ein Typ (`end_reason`: zerstört, umgewandelt, entnommen, verlagert, unbekannt — der Standard), und der Typ entscheidet über ihre CIDOC-Klasse. Der BR ist eine raumzeitliche Einheit wie die anderen: Er hat Paradaten, einen eigenen Anfang und ein eigenes Ende (absolute_time_start / absolute_time_end); seine Epoche wird GEERBT — die letzte, in der die Einheit lebt —, solange er kein eigenes Datum hat. Wenn ein Eingriff die ganze Einheit entfernt, sind BR und USN ein und derselbe Akt: Der BR übernimmt das Datum des Eingriffs, und der Eingriff ist seine beobachtete Spur."
    },
    "label": {
     "en": "continuity node",
@@ -8916,6 +8916,113 @@
     "pl": "Materiał",
     "ro": "Material",
     "fr": "Matériau"
+   }
+  }
+ },
+ "end_reasons": {
+  "destroyed": {
+   "label": {
+    "en": "destroyed",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "distrutta",
+    "el": "καταστράφηκε",
+    "he": "נהרסה",
+    "es": "destruida",
+    "pl": "zniszczona",
+    "ro": "distrusă",
+    "fr": "détruite",
+    "de": "zerstört"
+   }
+  },
+  "transformed": {
+   "label": {
+    "en": "transformed",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "trasformata",
+    "el": "μετασχηματίστηκε",
+    "he": "עברה טרנספורמציה",
+    "es": "transformada",
+    "pl": "przekształcona",
+    "ro": "transformată",
+    "fr": "transformée",
+    "de": "umgewandelt"
+   }
+  },
+  "removed": {
+   "label": {
+    "en": "removed",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "rimossa",
+    "el": "αφαιρέθηκε",
+    "he": "הוסרה",
+    "es": "retirada",
+    "pl": "usunięta",
+    "ro": "îndepărtată",
+    "fr": "enlevée",
+    "de": "entnommen"
+   }
+  },
+  "relocated": {
+   "label": {
+    "en": "relocated",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "delocalizzata",
+    "el": "μετακινήθηκε",
+    "he": "הועתקה",
+    "es": "trasladada",
+    "pl": "przeniesiona",
+    "ro": "mutată",
+    "fr": "déplacée",
+    "de": "verlagert"
+   }
+  },
+  "unknown": {
+   "label": {
+    "en": "unknown",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "ignota",
+    "el": "άγνωστο",
+    "he": "לא ידוע",
+    "es": "desconocida",
+    "pl": "nieznany",
+    "ro": "necunoscut",
+    "fr": "inconnue",
+    "de": "unbekannt"
    }
   }
  }

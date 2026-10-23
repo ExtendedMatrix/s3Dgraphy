@@ -431,12 +431,22 @@ class NeutralStratigraphicUnit(StratigraphicNode):
 
 
 class ContinuityNode(StratigraphicNode):
+    """The end of a unit (``BR``). HOW it ends is a type,
+    ``data.end_reason`` — destroyed, transformed, removed, relocated, unknown
+    (the default) — declared in the node datamodel
+    (``ContinuityNode.properties.end_reason``, 1.6.36) with the CIDOC class
+    each type gives it and the property it reaches its unit by in RDF. In the
+    graph the edge stays ``is_after`` BR → unit. A BR has paradata and dates of
+    its own; its epoch is inherited from the last its unit lives in until it
+    has one (:func:`s3dgraphy.spatiotemporal.end_of_unit`)."""
     node_type = "BR"
     def __init__(self, node_id, name, description=""):
         super().__init__(node_id, name, description)
         self.symbol = "black rhombus"
         self.label = "continuity node"
-        self.detailed_description = "End of life of a US/USV."
+        self.detailed_description = (
+            "End of a unit: destroyed, transformed, removed, relocated or "
+            "unknown (data.end_reason).")
 
 
 class StratigraphicEventNode(StratigraphicNode):

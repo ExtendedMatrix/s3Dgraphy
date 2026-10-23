@@ -444,6 +444,20 @@ class _Datamodel:
             return CRMARCHAEO.AP11_has_physical_relation_to, None, type_tag, deprecated
         return _resolve_prefixed(cidoc), ext_iri, None, deprecated
 
+    def get_projection_rule(self, edge_type: str
+                            ) -> Tuple[Optional[Dict[str, Any]], bool]:
+        """``(mapping.projection_when, drawn_reversed)`` of an edge: the rule
+        that replaces the edge's predicate when its RECENT end is of a given
+        class (is_after from a BR, connections 1.6.45), and whether the edge
+        was drawn with the reverse name (``is_before``: the recent end is then
+        its target). ``(None, …)`` when the edge declares none."""
+        canon = self._reverse_of.get(edge_type)
+        drawn_reversed = canon is not None
+        entry = (self.connections_datamodel.get("edge_types") or {}).get(
+            canon if drawn_reversed else edge_type) or {}
+        rule = (entry.get("mapping") or {}).get("projection_when")
+        return (rule if isinstance(rule, dict) else None), drawn_reversed
+
     def get_extension_guard(self, edge_type: str) -> Optional[List[str]]:
         """Target node classes the declared extension predicate is valid for.
 
@@ -542,6 +556,24 @@ class _Datamodel:
             if isinstance(rule, dict):
                 return rule
         return None
+
+    def typed_element_rules(self, node: Any) -> Dict[str, Dict[str, Any]]:
+        """The node elements of ``node`` (a node or a node class) whose value is
+        a TYPE of the EM vocabulary — those declaring ``rdf.concepts`` — keyed
+        by the field they are stored in (``em_json: data.<field>``), the first
+        class in the MRO declaring one answering. ContinuityNode.end_reason
+        (node datamodel 1.6.36) is the first."""
+        klass = node if isinstance(node, type) else type(node)
+        out: Dict[str, Dict[str, Any]] = {}
+        for klass in klass.__mro__:
+            entry = self._node_class_index.get(klass.__name__) or {}
+            for name, rule in (entry.get("properties") or {}).items():
+                rdf = rule.get("rdf") if isinstance(rule, dict) else None
+                if not isinstance(rdf, dict) or not rdf.get("concepts"):
+                    continue
+                field = str(rule.get("em_json") or name).split(".", 1)[-1]
+                out.setdefault(field, rule)
+        return out
 
     def is_natural_language(self, node: Any, prop: str) -> bool:
         """Is this property of this node TEXT IN A NATURAL LANGUAGE? THE one
@@ -1310,6 +1342,10 @@ class RDFExporter:
         # projection with it) in the node datamodel.
         self._serialize_definition(node, node_iri, ctx)
 
+        # A node element whose value is a TYPE (the end of a unit): its concept,
+        # and the class the type decides.
+        self._serialize_typed_elements(node, node_iri, ctx)
+
         # Type-specific (node_type already computed above for primary IRI logic)
         self._serialize_type_specific(node, node_type, node_iri, ctx,
                                       graph_id=g.graph_id)
@@ -1479,6 +1515,46 @@ class RDFExporter:
             predicate = _resolve_prefixed(rdf.get("label_only"))
             if predicate is not None:
                 ctx.add((node_iri, predicate, Literal(label)))
+
+    @staticmethod
+    def typed_value(node: Any, field: str, rule: Dict[str, Any]) -> Optional[str]:
+        """The value of a typed node element on ``node`` (``data.<field>``,
+        else the rule's ``default``), or None when it is not one of the
+        rule's ``values``."""
+        data = getattr(node, "data", None)
+        value = data.get(field) if isinstance(data, dict) else None
+        if not value:
+            value = rule.get("default")
+        return value if value in (rule.get("values") or {}) else None
+
+    def _serialize_typed_elements(self, node: Any, node_iri: URIRef, ctx) -> None:
+        """Project a node element whose value is a TYPE of the EM vocabulary
+        (node datamodel 1.6.36, ContinuityNode.properties.end_reason). What is
+        emitted is read from the rule's ``rdf``:
+
+        * ``<node> <with_concept> <concepts[value]>`` (crm:P2_has_type) and
+          ``<concept> rdf:type <concept_class>`` (crm:E55_Type) — always, the
+          default value included: «ignota» is a type too;
+        * ``<node> rdf:type <class_when[value]>`` — the CIDOC class the type
+          decides (E6, E81, E80, E9, E64 for the end of a unit).
+
+        The property by which the node reaches its unit is the edge's business
+        (``_serialize_edge``, is_after ``projection_when``)."""
+        for field, rule in self.datamodel.typed_element_rules(node).items():
+            value = self.typed_value(node, field, rule)
+            if value is None:
+                continue
+            rdf = rule.get("rdf") or {}
+            concept = _resolve_prefixed(rdf["concepts"].get(value))
+            predicate = _resolve_prefixed(rdf.get("with_concept"))
+            if concept is not None and predicate is not None:
+                ctx.add((node_iri, predicate, concept))
+                concept_class = _resolve_prefixed(rdf.get("concept_class"))
+                if concept_class is not None:
+                    ctx.add((concept, RDF.type, concept_class))
+            klass = _resolve_prefixed((rdf.get("class_when") or {}).get(value))
+            if klass is not None:
+                ctx.add((node_iri, RDF.type, klass))
 
     def _serialize_authority_refs(self, node: Any, node_iri: URIRef, ctx) -> None:
         """Emit `data.authority_refs` as SKOS/OWL alignment triples.
@@ -2338,12 +2414,60 @@ class RDFExporter:
             return False
         return True
 
+    def _serialize_projection(self, g: S3DGraph, edge: Any, ctx) -> bool:
+        """``mapping.projection_when`` (connections 1.6.45): when the RECENT end
+        of the edge — its source as drawn, the target of a reverse-named edge —
+        is of ``recent_node_class``, write ``<recent> <predicate> <other>`` with
+        the predicate the recent node's typed element declares
+        (``node_element``: ContinuityNode.end_reason →
+        ``rdf.unit_predicate_when[value]``), plus the ``also_when`` triple the
+        value declares, walked from the other end through the graph. True when
+        the edge was projected so (the caller then writes nothing else)."""
+        rule, drawn_reversed = self.datamodel.get_projection_rule(edge.edge_type)
+        if rule is None:
+            return False
+        recent_id = edge.edge_target if drawn_reversed else edge.edge_source
+        other_id = edge.edge_source if drawn_reversed else edge.edge_target
+        recent = g.find_node_by_id(recent_id)
+        if recent is None or type(recent).__name__ not in (rule.get("recent_node_class") or []):
+            return False
+        field = rule.get("node_element")
+        el_rule = self.datamodel.typed_element_rules(recent).get(field)
+        if el_rule is None:
+            return False
+        value = self.typed_value(recent, field, el_rule)
+        rdf = el_rule.get("rdf") or {}
+        predicate = _resolve_prefixed((rdf.get("unit_predicate_when") or {}).get(value))
+        if predicate is None:
+            return False
+        recent_iri = self._node_iri(g.graph_id, recent_id)
+        ctx.add((recent_iri, predicate, self._node_iri(g.graph_id, other_id)))
+        also = (rdf.get("also_when") or {}).get(value) or {}
+        also_pred = _resolve_prefixed(also.get("predicate"))
+        if also_pred is not None and also.get("edge"):
+            for e in g.edges:
+                if e.edge_type != also["edge"]:
+                    continue
+                if also.get("from_unit") == "in" and e.edge_target == other_id:
+                    ctx.add((recent_iri, also_pred, self._node_iri(g.graph_id, e.edge_source)))
+                elif also.get("from_unit") == "out" and e.edge_source == other_id:
+                    ctx.add((recent_iri, also_pred, self._node_iri(g.graph_id, e.edge_target)))
+        self.stats["edges_emitted"] += 1
+        self.stats["edges_projected"] = self.stats.get("edges_projected", 0) + 1
+        return True
+
     def _serialize_edge(self, g: S3DGraph, edge: Any, ctx) -> None:
         edge_type = edge.edge_type
         predicate, ext_iri, type_tag, deprecated = self.datamodel.get_edge_mapping(edge_type)
 
         if deprecated:
             self.stats["edges_skipped_deprecated"] += 1
+            return
+
+        # The END of a unit (connections 1.6.45): an is_after whose recent end
+        # is a BR is not a temporal relation, it is the event ending the unit,
+        # and leaves with the property its end_reason declares.
+        if self._serialize_projection(g, edge, ctx):
             return
 
         # A reverse edge carries the same fact as its canonical, written the

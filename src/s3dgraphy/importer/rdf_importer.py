@@ -375,6 +375,47 @@ class _InverseDatamodel:
         self.inverse_extension_predicates: Set[str] = {
             str(p) for p in self.dm.inverse_extension_predicates()}
 
+        #: `mapping.projection_when` (connections 1.6.45, the end of a unit):
+        #: predicate IRI → (edge_type, recent classes). <BR> P13_destroyed <unit>
+        #: comes back as `is_after` BR → unit, subject first. The `also_when`
+        #: predicates (P123, P112, P27) are derived from other edges and are
+        #: skipped, from a node of a recent class only.
+        self.projection_predicates: Dict[str, Tuple[str, Set[str]]] = {}
+        self.projection_also: Dict[str, Set[str]] = {}
+        for edge_type, entry in edges.items():
+            rule = (entry.get("mapping") or {}).get("projection_when")
+            if not isinstance(rule, dict):
+                continue
+            recent = set(rule.get("recent_node_class") or [])
+            field = rule.get("node_element")
+            for cls_name in recent:
+                el = self.dm.typed_element_rules(self.class_by_name[cls_name]).get(field) \
+                    if cls_name in self.class_by_name else None
+                rdf = (el or {}).get("rdf") or {}
+                for pred in (rdf.get("unit_predicate_when") or {}).values():
+                    iri = _resolve_prefixed_name(pred)
+                    if iri is not None:
+                        self.projection_predicates[str(iri)] = (edge_type, recent)
+                for also in (rdf.get("also_when") or {}).values():
+                    iri = _resolve_prefixed_name((also or {}).get("predicate"))
+                    if iri is not None:
+                        self.projection_also.setdefault(str(iri), set()).update(recent)
+
+    def typed_concepts(self, class_name: Optional[str]) -> Dict[str, Tuple[str, str]]:
+        """concept IRI → (field, value) for the typed node elements of a class
+        (ContinuityNode.end_reason: em:EndOfUnitDestroyed → ("end_reason",
+        "destroyed")). Empty for a class that declares none."""
+        klass = self.class_by_name.get(class_name or "")
+        if klass is None:
+            return {}
+        out: Dict[str, Tuple[str, str]] = {}
+        for field, rule in self.dm.typed_element_rules(klass).items():
+            for value, concept in ((rule.get("rdf") or {}).get("concepts") or {}).items():
+                iri = _resolve_prefixed_name(concept)
+                if iri is not None:
+                    out[str(iri)] = (field, value)
+        return out
+
     # ── node class ──────────────────────────────────────────────────────────
 
     def resolve_node_class(self, type_iris: Sequence[str],
@@ -933,6 +974,7 @@ class RDFImporter:
         data.update(self._editorial_data(store, ref))
         data.update(self._ai_data(store, ref))
         data.update(self._definition_data(store, ref, class_name, node_id))
+        data.update(self._typed_element_data(store, ref, class_name))
         data.update(self._language_data(store, ref, class_name, qualia_type))
         if data:
             payload["data"] = data
@@ -1046,9 +1088,13 @@ class RDFImporter:
             return {}
         rdf = rule.get("rdf") or {}
         predicate = _resolve_prefixed_name(rdf.get("with_concept"))
+        # the concepts of a TYPED element (the end of a unit) share P2_has_type
+        # with the definition and are not one
+        typed = self.inverse.typed_concepts(class_name)
         if predicate is not None:
             concepts = sorted(str(o) for o in store.objects(ref, predicate)
                               if isinstance(o, URIRef)
+                              and str(o) not in typed
                               and (o, DCTERMS.identifier, None) not in store)
             if len(concepts) > 1:
                 self.warnings.append(
@@ -1062,6 +1108,26 @@ class RDFImporter:
             if label:
                 return {"definition": {"label": label}}
         return {}
+
+    def _typed_element_data(self, store: ConjunctiveGraph, ref: URIRef,
+                            class_name: Optional[str]) -> Dict[str, Any]:
+        """The inverse of ``RDFExporter._serialize_typed_elements``: the EM
+        concept on ``crm:P2_has_type`` gives the value back (``data.end_reason``).
+        The rule's DEFAULT does not come back as data: the exporter writes it
+        for every node (an untyped BR is «unknown» in RDF too), and an absent
+        value already reads as the default — so a BR without one stays without
+        one through the round trip."""
+        typed = self.inverse.typed_concepts(class_name)
+        if not typed:
+            return {}
+        klass = self.inverse.class_by_name.get(class_name or "")
+        rules = self.inverse.dm.typed_element_rules(klass) if klass else {}
+        out: Dict[str, Any] = {}
+        for o in store.objects(ref, CRM.P2_has_type):
+            hit = typed.get(str(o)) if isinstance(o, URIRef) else None
+            if hit is not None and hit[1] != (rules.get(hit[0]) or {}).get("default"):
+                out[hit[0]] = hit[1]
+        return out
 
     def _instantiate(self, node_type: Optional[str], class_name: str,
                      payload: Dict[str, Any]) -> Optional[Node]:
@@ -1653,6 +1719,25 @@ class RDFImporter:
                 preds = {p for p in preds if p != str(CRM.P67_refers_to)}
                 if not preds:
                     self.stats["artefacts_skipped"] += 1
+                    continue
+
+            # 0) the end of a unit (connections 1.6.45): <BR> P13 | P124 | P113
+            #    | P25 | P93 <unit> is the is_after BR → unit, subject first;
+            #    the also_when triples (P123, P112, P27) are derived, skipped
+            projected = {p for p in preds
+                         if p in self.inverse.projection_predicates
+                         and src_class in self.inverse.projection_predicates[p][1]}
+            derived = {p for p in preds
+                       if src_class in self.inverse.projection_also.get(p, ())}
+            if projected or derived:
+                for p in sorted(projected):
+                    counter += 1
+                    g.add_edge(f"rdf_e{counter}", src_id, tgt_id,
+                               self.inverse.projection_predicates[p][0])
+                    self.stats["edges"] += 1
+                self.stats["artefacts_skipped"] += len(derived - projected)
+                preds = preds - projected - derived
+                if not preds:
                     continue
 
             resolved: List[str] = []

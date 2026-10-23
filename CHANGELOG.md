@@ -5,6 +5,30 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
+- **The end of a unit, typed** (node datamodel 1.6.36, connections 1.6.45,
+  em.ttl 1.6.21, translations 1.14, MICRO special find e fine dell'unità part 3,
+  decided by E.D. 23 October 2026). The BR stays one class with a TYPE of the EM
+  vocabulary, `ContinuityNode.properties.end_reason` (`data.end_reason`):
+  destroyed, transformed, removed, relocated, unknown (the default) — the first
+  three are the tokens EMStudio already wrote. The type decides the CIDOC class
+  and the property the BR reaches its unit by, always with `crm:P2_has_type` to
+  the concept `em:EndOfUnit…` (five `crm:E55_Type` individuals in em.ttl):
+  destroyed → E6 Destruction / P13 · transformed → E81 Transformation / P124
+  (+ P123 to the units that `changed_from` it) · removed → E80 Part Removal /
+  P113 (+ P112 to the unit it was `is_part_of`) · relocated → E9 Move / P25
+  (+ P27 to its `is_in_location` place) · unknown → E64 End of Existence / P93.
+  Every IRI checked on the official CIDOC CRM 7.1.3 RDFS. `em:ContinuityNode` is
+  now a subclass of `crm:E5_Event` (was E64): E80 and E9 are not ends of
+  existence. In the graph the BR → unit edge stays `is_after`; the exporter
+  projects it with the type's property (`is_after.mapping.projection_when`,
+  declarative, the table on the node element) and the importer reads it back
+  as `is_after` — round trip measured lossless for the five types. The BR is a
+  spatiotemporal unit like the others: `spatiotemporal.end_of_unit` /
+  `api.end_of_unit` give its unit, type, class, own start and end, and its epoch
+  (its own date, else inherited from the last epoch the unit lives in, else its
+  declared `has_first_epoch`); `api.end_reasons()`;
+  `datamodel_i18n.end_reason_label` (section `end_reasons`, nine languages, to
+  validate). `docs/crmem.rst` counts re-measured. `tests/test_end_of_unit.py`.
 - **The series of Virtual Special Finds, `serVSF`** (node datamodel 1.6.35,
   connections 1.6.44, visual rules 1.6.39, em.ttl 1.6.20, MICRO special find e
   fine dell'unità part 2, decided by E.D. 23 October 2026). The repetition of one

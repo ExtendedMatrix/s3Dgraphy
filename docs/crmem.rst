@@ -55,7 +55,7 @@ term of its own. See :doc:`dtc-profile`.
 The classes
 -----------
 
-CRMem declares **45 classes and 41 properties** (26 object, 15 datatype),
+CRMem declares **47 classes and 90 properties** (34 object, 56 datatype),
 measured by parsing ``em.ttl``. The classes are the constructs of the Extended
 Matrix itself — what a stratigraphic record made in this language *contains* —
 and they are the larger half of the extension. The properties, four of them, are
@@ -148,8 +148,8 @@ The rest, briefly
      - ``crm:E25_Human-Made_Feature``
      - an operational unit of the excavation
    * - ``em:ContinuityNode``
-     - ``crm:E64_End_of_Existence``
-     - how the model says something stops
+     - ``crm:E5_Event`` (and, by its ``end_reason``, ``E6``, ``E81``, ``E80``, ``E9`` or ``E64``)
+     - how the model says a unit ends — a type, not a class
    * - ``em:Paradata``, ``em:Extractor``, ``em:Combiner``
      - ``crminf:I1_Argumentation``, ``I7_Belief_Adoption``, ``I5_Inference_Making``
      - the argumentation triad, adding nothing to CRMinf
@@ -170,7 +170,7 @@ The paradata triad is why **CRMinf is a formal dependency of CRMem** and not
 merely a neighbour: three CRMem classes are declared directly beneath three
 CRMinf classes and add nothing to them.
 
-Forty-two of the forty-five classes are cited by the node datamodel shipped with
+Forty-four of the forty-seven classes are cited by the node datamodel shipped with
 the library, in the ``em_extension`` block of the node type that instantiates
 them; the remaining three (``em:Author``, ``em:VirtualSU``,
 ``em:RepresentationModel``) are abstract parents that no concrete type

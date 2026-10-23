@@ -331,6 +331,23 @@ def entity_epoch(graph: Graph, node_id: str) -> Optional[str]:
     return _epoch(graph, node_id)
 
 
+def end_of_unit(graph: Graph, br_id: str) -> Optional[Dict[str, Any]]:
+    """The end of a unit (a BR): the unit, how it ends (``end_reason`` and the
+    CIDOC class it decides), its own start and end, and its epoch with the rule
+    that gives it — its own date, else inherited from the last epoch its unit
+    lives in (node datamodel 1.6.36). See
+    :func:`s3dgraphy.spatiotemporal.end_of_unit`."""
+    from .spatiotemporal import end_of_unit as _end
+    return _end(graph, br_id)
+
+
+def end_reasons() -> tuple:
+    """How a unit can end: destroyed, transformed, removed, relocated, unknown
+    (the default) — ContinuityNode.properties.end_reason."""
+    from .spatiotemporal import end_reasons as _reasons
+    return _reasons()
+
+
 def view_instances(graph: Graph, group_id: str) -> List[Dict[str, Any]]:
     """The instances a client draws inside the paradata group ``group_id``:
     every master (document or property) outside the group that a reader of the

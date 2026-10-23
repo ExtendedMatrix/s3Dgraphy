@@ -116,9 +116,20 @@ def own_year(graph: Any, node: Any) -> Tuple[Optional[float], Optional[str]]:
     ``absolute_time_start`` (the property — value, else description — else the
     node's own ``absolute_time_start`` field), else its ``absolute_time_end``
     the same way. ``(None, None)`` when it has no date of its own."""
+    for quale in ("absolute_time_start", "absolute_time_end"):
+        y = own_time(graph, node, quale)
+        if y is not None:
+            return y, quale
+    return None, None
+
+
+def own_time(graph: Any, node: Any, quale: str) -> Optional[float]:
+    """The year ONE of an entity's own dates says (``absolute_time_start`` or
+    ``absolute_time_end``): the property — value, else description — else the
+    node's own field. ``None`` when it does not say it."""
     attrs = getattr(node, "attributes", None) or {}
     data = getattr(node, "data", None) or {}
-    for quale in ("absolute_time_start", "absolute_time_end"):
+    for quale in (quale,):
         for e in graph.edges:
             if e.edge_source != node.node_id or e.edge_type != "has_property":
                 continue
@@ -133,15 +144,15 @@ def own_year(graph: Any, node: Any) -> Tuple[Optional[float], Optional[str]]:
             if y is None:
                 y = _year((getattr(p, "attributes", None) or {}).get("value"))
             if y is not None:
-                return y, quale
+                return y
         for holder in (attrs, data):
             y = _year(holder.get(quale)) if isinstance(holder, dict) else None
             if y is not None:
-                return y, quale
+                return y
         y = _year(getattr(node, quale, None))
         if y is not None:
-            return y, quale
-    return None, None
+            return y
+    return None
 
 
 def entity_epoch(graph: Any, node_id: str) -> Optional[str]:
@@ -179,6 +190,89 @@ def entity_epoch(graph: Any, node_id: str) -> Optional[str]:
     if year is not None and bounds:
         return min(bounds, key=lambda b: (min(abs(year - b[1]), abs(year - b[2])), b[2] - b[1]))[0]
     return None
+
+
+@lru_cache(maxsize=1)
+def _end_reason_rule() -> Dict[str, Any]:
+    from .nodes.base_node import load_json_mapping
+    dm = load_json_mapping("s3Dgraphy_node_datamodel.json") or {}
+    sub = (((dm.get("stratigraphic_nodes") or {}).get("StratigraphicNode") or {})
+           .get("subtypes") or {})
+    return ((sub.get("BR") or {}).get("properties") or {}).get("end_reason") or {}
+
+
+def end_reasons() -> Tuple[str, ...]:
+    """The types of the end of a unit, as the node datamodel declares them
+    (ContinuityNode.properties.end_reason, 1.6.36): destroyed, transformed,
+    removed, relocated, unknown."""
+    return tuple((_end_reason_rule().get("values") or {}).keys())
+
+
+def _epoch_start(graph: Any, epoch_id: str) -> float:
+    ep = graph.find_node_by_id(epoch_id)
+    y = _year(getattr(ep, "start_time", None)) if ep is not None else None
+    return y if y is not None else float("-inf")
+
+
+def end_of_unit(graph: Any, br_id: str) -> Optional[Dict[str, Any]]:
+    """Everything the graph says about the END of a unit — a BR (MICRO special
+    find e fine dell'unità, part 3, E.D. 23 Oct 2026).
+
+    ``{id, unit, units, end_reason, cidoc_class, epoch, epoch_rule, start, end}``:
+
+    * ``unit`` the unit the BR ends (``is_after`` BR → unit, or ``is_before``
+      unit → BR), ``units`` all of them when more than one;
+    * ``end_reason`` its type (``data.end_reason``, else the datamodel's
+      default «unknown») and ``cidoc_class`` the class that type decides;
+    * ``start`` / ``end`` its OWN dates (``absolute_time_start`` /
+      ``absolute_time_end``, with their paradata like any unit's);
+    * ``epoch`` and ``epoch_rule``: a BR with a date of its own stands in the
+      epoch of its date (``own_date``, :func:`entity_epoch`); without one it
+      INHERITS the last epoch its unit lives in (``inherited``: the latest of
+      the unit's ``has_first_epoch`` / ``survive_in_epoch``); only when the unit
+      has none, its own ``has_first_epoch`` (``declared``).
+
+    ``None`` for an unknown id or a node that is not a BR."""
+    br = graph.find_node_by_id(br_id)
+    if br is None or getattr(br, "node_type", None) != "BR":
+        return None
+    units: List[str] = []
+    for e in graph.edges:
+        if e.edge_type == "is_after" and e.edge_source == br_id:
+            units.append(e.edge_target)
+        elif e.edge_type == "is_before" and e.edge_target == br_id:
+            units.append(e.edge_source)
+    units = list(dict.fromkeys(units))
+    rule = _end_reason_rule()
+    data = getattr(br, "data", None) or {}
+    reason = data.get("end_reason") if data.get("end_reason") in (rule.get("values") or {}) \
+        else rule.get("default")
+    start, end = own_time(graph, br, "absolute_time_start"), own_time(graph, br, "absolute_time_end")
+    epoch, epoch_rule = None, None
+    if start is not None or end is not None:
+        epoch, epoch_rule = entity_epoch(graph, br_id), "own_date"
+    if epoch is None and units:
+        lanes = [e.edge_target for e in graph.edges
+                 if e.edge_source == units[0]
+                 and e.edge_type in ("has_first_epoch", "survive_in_epoch")]
+        if lanes:
+            epoch, epoch_rule = max(lanes, key=lambda x: _epoch_start(graph, x)), "inherited"
+    if epoch is None:
+        for e in graph.edges:
+            if e.edge_source == br_id and e.edge_type == "has_first_epoch":
+                epoch, epoch_rule = e.edge_target, "declared"
+                break
+    return {
+        "id": br_id,
+        "unit": units[0] if units else None,
+        "units": units,
+        "end_reason": reason,
+        "cidoc_class": ((rule.get("rdf") or {}).get("class_when") or {}).get(reason),
+        "epoch": epoch,
+        "epoch_rule": epoch_rule,
+        "start": start,
+        "end": end,
+    }
 
 
 def time_label(quale_id: str, owner: Any, lang: str = "en") -> Optional[str]:
