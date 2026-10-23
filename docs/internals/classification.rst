@@ -39,7 +39,7 @@ JSON datamodel:
 
 ``is_series``
     True iff the abbreviation starts with ``ser`` (``serSU``,
-    ``serUSD``, ``serUSVs``, ``serUSVn``). A *series* groups multiple
+    ``serUSD``, ``serUSVs``, ``serUSVn``, ``serVSF``). A *series* groups multiple
     stratigraphic units with the same archaeological semantics into a
     single conceptual entity.
 
@@ -145,7 +145,7 @@ Abbreviation       family      series     Class
 ``US``             real        no         ``StratigraphicUnit``
 ``USD``            real        no         ``DocumentaryStratigraphicUnit``
 ``SF``             real        no         ``SpecialFindUnit``
-``RSF``            real        no         ``ReusedSpecialFind``
+``RSF``            real        no         ``ReusedSpecialFind`` (Repositioned)
 ``TSU``            real        no         ``TransformationStratigraphicUnit``
 ``USN``            real        no         ``NegativeStratigraphicUnit``
 ``UL``             real        no         ``WorkingUnit``
@@ -156,6 +156,7 @@ Abbreviation       family      series     Class
 ``serUSD``         real        yes        ``SeriesOfDocumentaryStratigraphicUnit``
 ``serUSVs``        virtual     yes        ``SeriesOfStructuralVirtualStratigraphicUnit``
 ``serUSVn``        virtual     yes        ``SeriesOfNonStructuralVirtualStratigraphicUnit``
+``serVSF``         virtual     yes        ``SeriesOfVirtualSpecialFindUnit``
 ``BR``             (none)      –          ``ContinuityNode``
 ``SE``             (none)      –          ``StratigraphicEventNode``
 ================  ==========  =========  ==================================

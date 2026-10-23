@@ -19,6 +19,7 @@ from .stratigraphic_node import (
     SeriesOfStratigraphicUnit, SeriesOfDocumentaryStratigraphicUnit,
     SeriesOfStructuralVirtualStratigraphicUnit,
     SeriesOfNonStructuralVirtualStratigraphicUnit,
+    SeriesOfVirtualSpecialFindUnit,
     ContinuityNode, StratigraphicEventNode, UnknownNode,
 )
 from .epoch_node import EpochNode
@@ -113,6 +114,7 @@ __all__ = [
     "SeriesOfDocumentaryStratigraphicUnit",
     "SeriesOfStructuralVirtualStratigraphicUnit",
     "SeriesOfNonStructuralVirtualStratigraphicUnit",
+    "SeriesOfVirtualSpecialFindUnit",
     "ContinuityNode",
     "StratigraphicEventNode",
     "UnknownNode",

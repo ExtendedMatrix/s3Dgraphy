@@ -55,7 +55,7 @@ CORPUS_TYPES = ("dtc_acquisition", "dtc_process", "resource",
 #: What a stratigraphic matrix is made of. If these turn up in a corpus,
 #: something has written a study graph into the wrong member.
 _EM_TYPES = ("EpochNode", "epoch", "US", "USVs", "USVn", "USD", "SF", "VSF",
-             "serSU", "serUSVs", "serUSVn", "serUSD", "TSU", "UL", "USN",
+             "serSU", "serUSVs", "serUSVn", "serUSD", "serVSF", "TSU", "UL", "USN",
              "USNt", "BR", "SE", "ActivityNodeGroup", "ParadataNodeGroup")
 
 EDGE_HAD_INPUT = "dtc_had_input"

@@ -1,6 +1,6 @@
 {
   "formal_language": "EM",
-  "version": "1.6.38",
+  "version": "1.6.39",
   "_note_material_vs_qualia_color": [
     "DUE COSE DIVERSE CHE SI CHIAMANO ENTRAMBE color. Non confonderle: e gia successo.",
     "1) QUI, in node_styles.<tipo>.style.material.rgba_color — il COLORE DEL MATERIALE BLENDER del proxy 3D, in float LINEARI. UNA sola chiave: `rgba_color`. Fino a S8 il file ne usava due (`color` sui 13 tipi stratigrafici, `rgba_color` sugli altri) e get_material_color() ne leggeva una sola, restituendo None per 21 tipi su 38; ora sono unificate e la vecchia `color` e letta solo come tolleranza verso file scritti prima. Un tipo che non diventa mai una mesh NON ha material affatto (i contenitori di gruppo, e da S7 i dieci nodi che rendono per icona): per loro get_material_color() torna None, ed e corretto.",
@@ -9,6 +9,7 @@
     "In breve: qui si decide di che colore DISEGNARE una US; li si registra di che colore ERA."
   ],
   "_changelog": {
+    "1.6.39": "THE SERIES OF VIRTUAL SPECIAL FINDS (MICRO special find e fine dell'unità, part 2, 23 Oct 2026). node_styles.serVSF: the series rule (an ellipse) with the colours of the VSF (border #B19F61, fill #CCCCCC, its material), and the VSF's own drawings (src/2D/VSF.svg, src/2D/VSF.png, src/3D/VSF.glb) until E.D. approves a glyph of its own — a proposal for EMStudio is in the report. The RSF comment says «Repositioned Special Find» (node datamodel 1.6.34).",
     "1.6.38": "THE HDT-O GLYPHS (MICRO glifi HDT-O, 20 Oct 2026). graph (HC16), hdt (HC2), heritage_entity (HC1), study (HC9), project (HC13) join 2d_render_glyph_types.types (aspect 1.0) and get their 2d_glyphs entries, generated from src/2D/hdto/*.svg: the ornaments' grammar in a square plate, as EMStudio drew them in its pending hdto-glyphs.ts (which can now go: the datamodel wins). New table 2d_render_glyph_types.hdto_glyphs: class, HDT-O class and what each pictogram shows, en/it. src/2D/graph.svg, the GRAPH style's declared file, is unchanged.",
     "1.6.37": "THE ALTERNATIVES OF A 3D OBJECT: THE COMMON HAT (MICRO le alternative e la trasformazione, E.D. 17 Oct 2026). New block `alternatives`: a set of alternatives is the 3D resources with the same hat (the has_linked_resource from an RM, or from an RM container since connections 1.6.41, to their asset); reasons lod, fidelity, packaging computed; two nested levels, RM and container; the diagnoses two_hats, partial_coverage, epochs. Replaces the alternative of a container computed from the DTC (16 Oct). A view: nothing in em.json or RDF. Read by s3dgraphy.resources.alternatives.alternative_sets.",
     "1.6.36": "THE RM IS BOUND TO THE EPOCH ONLY DIRECTLY (MICRO lo spazio 3D 2, Parte 0, E.D. 16 Oct 2026). threed_instances.representation_model loses `via_property`: an epoch reaches its model only by a direct has_representation_model, the one form the connections datamodel admits (a property is not a source of has_representation_model) and the only one in the data (the 99 RMs of Templu Mare v2). «×N» counts the epochs bound directly.",
@@ -5751,7 +5752,7 @@
     "RSF": {
       "3d_file": "src/3D/RSF.glb",
       "2d_file_rast": "src/2D/RSF.png",
-      "_comment": "Reused Special Find (RSF / spolia): a physical object observed in situ but originally produced for a different context. Octagon (sibling of SF/VSF) with the EM red border (#9B3333). Originating DP: DP-26.",
+      "_comment": "Repositioned Special Find (RSF; spolia among them): a physical object observed in situ but originally produced for a different context. Octagon (sibling of SF/VSF) with the EM red border (#9B3333). Originating DP: DP-26.",
       "style": {
         "material": {
           "rgba_color": {
@@ -5871,6 +5872,28 @@
         "border_width": 4
       },
       "label_position": "over"
+    },
+    "serVSF": {
+      "3d_file": "src/3D/VSF.glb",
+      "2d_file_rast": "src/2D/VSF.png",
+      "2d_file_vect": "src/2D/VSF.svg",
+      "style": {
+        "material": {
+          "rgba_color": {
+            "r": 0.439,
+            "g": 0.346,
+            "b": 0.119,
+            "a": 1.0
+          }
+        },
+        "border_color": "#B19F61",
+        "fill_color": "#CCCCCC",
+        "border_style": "solid",
+        "shape": "ellipse",
+        "border_width": 4
+      },
+      "label_position": "over",
+      "_comment": "Series of Virtual Special Finds (node datamodel 1.6.35): the series ellipse with the VSF colours; the drawings are the VSF's until a glyph of its own is approved."
     },
     "TSU": {
       "3d_file": "src/3D/TSU.glb",

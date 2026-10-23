@@ -238,6 +238,22 @@ class NodeRegistry:
                     text_color='#FFFFFF'
                 )
 
+            # serVSF has no template stencil either: the series rule (an
+            # ellipse) with the VSF's colours, cloned from the VSF stencil.
+            if (
+                'serVSF' not in self.visual_properties
+                and 'VSF' in self.visual_properties
+            ):
+                vsf = self.visual_properties['VSF']
+                self.visual_properties['serVSF'] = NodeVisualProperties(
+                    shape='ellipse',
+                    fill_color=vsf.fill_color,
+                    border_color='#B19F61',
+                    border_type='line',
+                    border_width=4.0,
+                    text_color=vsf.text_color,
+                )
+
             # Sanity-check the canonical stratigraphic types are all present.
             # Caller paths (NodeGenerator, GraphmlPatcher) already fall back to
             # the 'US' stencil — or to inline defaults — when a single type is

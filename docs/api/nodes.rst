@@ -71,6 +71,9 @@ Node type reference
    * - ``SeriesOfNonStructuralVirtualStratigraphicUnit``
      - ``serUSVn``
      - Series of non-structural Virtual units.
+   * - ``SeriesOfVirtualSpecialFindUnit``
+     - ``serVSF``
+     - Series of Virtual Special Finds: one equal object repeated (not pieces all different).
    * - ``ContinuityNode``
      - ``BR``
      - End-of-life ("continuity"/break) marker for a US/USV.

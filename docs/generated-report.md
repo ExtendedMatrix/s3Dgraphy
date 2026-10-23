@@ -11,8 +11,8 @@ Every figure on this page is read off the datamodels and the installed package a
 | Component | Version |
 | --- | --- |
 | s3dgraphy (library) | 1.6.0.dev61 |
-| nodes datamodel | 1.6.34 |
-| connections datamodel | 1.6.43 |
+| nodes datamodel | 1.6.35 |
+| connections datamodel | 1.6.44 |
 | qualia datamodel | 1.6.9 |
 | CIDOC-CRM | 7.1.3 |
 | CRMarchaeo | 2.1.1 |
@@ -30,8 +30,8 @@ The three populations, named apart — see this module's docstring for why there
 
 | What | Count |
 | --- | --- |
-| declared in the node datamodel | 57 |
-| — of which authorable types | 53 |
+| declared in the node datamodel | 58 |
+| — of which authorable types | 54 |
 | — of which abstract family bases | 4 |
 | field-level mapping blocks (not node types) | 7 |
 | entries with no mapping block | 0 |
@@ -50,7 +50,7 @@ Abstract family bases: `GroupNode`, `Node`, `ParadataNode`, `StratigraphicNode`.
 
 | What | Count |
 | --- | --- |
-| Python node classes in the generated registry | 60 |
+| Python node classes in the generated registry | 61 |
 | — of which abstract (no own node_type) | 3 |
 | present in the registry, absent from the datamodel | 3 |
 
@@ -63,18 +63,18 @@ Classes present in the registry with no entry in the node datamodel, and therefo
 | What | Count |
 | --- | --- |
 | public API callables | 275 |
-| test modules in tests/ | 189 |
+| test modules in tests/ | 191 |
 | test modules in tests/*/ | 77 |
 
 ## Alignment by ontology
 
-Of the 57 node types declared, **14 reuse a class from an existing ontology unchanged** and **43 declare a class in the Extended Matrix namespace**. Every one of the latter keeps a CIDOC anchor, so the table below covers all of them.
+Of the 58 node types declared, **14 reuse a class from an existing ontology unchanged** and **44 declare a class in the Extended Matrix namespace**. Every one of the latter keeps a CIDOC anchor, so the table below covers all of them.
 
 Node types, by the ontology of the CIDOC class they are anchored to:
 
 | Ontology | Node types |
 | --- | --- |
-| crm | 30 |
+| crm | 31 |
 | crmarchaeo | 13 |
 | crmdig | 7 |
 | hdto | 4 |

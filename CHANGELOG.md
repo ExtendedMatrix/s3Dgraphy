@@ -4,6 +4,23 @@ All notable changes to **s3dgraphy** are documented here.
 
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
+### Added
+- **The series of Virtual Special Finds, `serVSF`** (node datamodel 1.6.35,
+  connections 1.6.44, visual rules 1.6.39, em.ttl 1.6.20, MICRO special find e
+  fine dell'unità part 2, decided by E.D. 23 October 2026). The repetition of one
+  and the same object: a broken tile repaired with a VSF and then instanced over
+  the whole roof. `SeriesOfVirtualSpecialFindUnit`, `em:SeriesOfVirtualSpecialFind`
+  (subclass of `em:VirtualSpecialFind`, typed E89 + E19 like the VSF), on the
+  pattern of serSU / serUSD / serUSVn / serUSVs. Rule of use, in the datamodel:
+  not for pieces that are all different (the drums of a tapering column). Edges
+  of the VSF: `is_part_of` as source and target (the VSF it repeats is part of
+  it — P46i only, no `em:reconstructsFrom`: a repetition is not a reassembly),
+  `is_in_functional_unit` as source. Style: the series ellipse with the VSF
+  colours and the VSF's drawings until a glyph of its own is approved; yEd reads
+  an ellipse with the VSF border (`#B19F61`) as a serVSF, and the GraphML
+  palette synthesises its stencil from the VSF one. Translations 1.13.
+  `tests/test_series_vsf.py`.
+
 ### Changed
 - **SF, RSF, VSF redefined** (node datamodel 1.6.34, em.ttl 1.6.19, MICRO
   special find e fine dell'unità part 1, decided by E.D. 23 October 2026).

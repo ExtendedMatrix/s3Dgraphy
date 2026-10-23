@@ -1150,7 +1150,7 @@ class RDFExporter:
           via the qualia catalogue), the belief links J5 to it.
         """
         VIRTUAL_TYPES = {"USVs", "USVn", "USD", "VSF",
-                         "serUSVs", "serUSVn", "serUSD"}
+                         "serUSVs", "serUSVn", "serUSD", "serVSF"}
         ARG_TYPES = {"extractor", "combiner"}
 
         node_by_id = {n.node_id: n for n in g.nodes}

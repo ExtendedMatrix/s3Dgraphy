@@ -24,6 +24,7 @@ from ..nodes.stratigraphic_node import (
     SeriesOfNonStructuralVirtualStratigraphicUnit,
     SeriesOfStructuralVirtualStratigraphicUnit,
     SeriesOfDocumentaryStratigraphicUnit,
+    SeriesOfVirtualSpecialFindUnit,
     NonStructuralVirtualStratigraphicUnit,
     StructuralVirtualStratigraphicUnit,
     SpecialFindUnit,
@@ -126,6 +127,9 @@ def convert_shape2type(yedtype, border_style, border_type="line"):
         nodetype = ("serUSVs", "Series of USVs")
     elif yedtype == "ellipse" and border_style == "#9B3333":
         nodetype = ("serSU", "Series of SU")
+    elif yedtype == "ellipse" and border_style == "#B19F61":
+        # the series rule (an ellipse) with the VSF border
+        nodetype = ("serVSF", "Series of VSF")
     elif yedtype == "hexagon":
         nodetype = ("USVn", "Non-Structural Virtual Stratigraphic Units")
     elif yedtype == "octagon" and border_style == "#D8BD30":
@@ -182,6 +186,7 @@ STRATIGRAPHIC_CLASS_MAP = {
     "serUSVn": SeriesOfNonStructuralVirtualStratigraphicUnit,
     "serUSVs": SeriesOfStructuralVirtualStratigraphicUnit,
     "serUSD":  SeriesOfDocumentaryStratigraphicUnit,
+    "serVSF":  SeriesOfVirtualSpecialFindUnit,
     "SE":      StratigraphicEventNode,
     "BR":      ContinuityNode,
 }

@@ -117,6 +117,7 @@ def _is_stratigraphic(node):
         "StructuralVirtualStratigraphicUnit",
         "SeriesOfStratigraphicUnit", "SeriesOfNonStructuralVirtualStratigraphicUnit",
         "SeriesOfStructuralVirtualStratigraphicUnit",
+        "SeriesOfVirtualSpecialFindUnit",
         "TransformationStratigraphicUnit", "ContinuityNode",
     }
     for base in type(node).__mro__:

@@ -230,6 +230,25 @@ class SeriesOfStructuralVirtualStratigraphicUnit(StratigraphicNode):
         self.detailed_description = "Series of Structural Virtual Stratigraphic Units."
 
 
+class SeriesOfVirtualSpecialFindUnit(StratigraphicNode):
+    """Series of Virtual Special Finds (``serVSF``) — the REPETITION of one
+    and the same object (E.D., 23 Oct 2026): the tile repaired with a VSF and
+    instanced over the whole roof. The series is itself a unit, as for the
+    other series; the VSF it repeats is part of it (``is_part_of``).
+
+    Not for pieces that are all different — the drums of a tapering column:
+    each is a VSF of its own, held by the column's VSF.
+    """
+    node_type = "serVSF"
+    def __init__(self, node_id, name, description=""):
+        super().__init__(node_id, name, description)
+        self.symbol = "black ellipse gold border"
+        self.label = "VSF series"
+        self.detailed_description = (
+            "Series of Virtual Special Finds: one equal object repeated "
+            "(a repaired tile over the whole roof).")
+
+
 class SeriesOfDocumentaryStratigraphicUnit(StratigraphicNode):
     node_type = "serUSD"
     def __init__(self, node_id, name, description=""):

@@ -380,7 +380,7 @@ class Graph:
         
         # Definisci i tipi di unità stratigrafiche riconosciuti
         stratigraphic_types = ['US', 'USVs', 'SF', 'USVn', 'USD', 'VSF', 'serSU',
-                            'serUSVn', 'serUSVs', 'TSU', 'UL', 'SE', 'BR', 'unknown']
+                            'serUSVn', 'serUSVs', 'serVSF', 'TSU', 'UL', 'SE', 'BR', 'unknown']
         
         # Identifica tutti i nodi ParadataNodeGroup
         paradata_groups = [node for node in self.nodes
@@ -738,7 +738,7 @@ class Graph:
     #: dated by the same rules — a written start/end, their epochs, tpq/taq
     #: along is_after / has_same_time (connections 1.6.38 admits them there).
     CHRONOLOGY_TYPES = ('US', 'USVs', 'USVn', 'VSF', 'SF', 'USD',
-                        'serSU', 'serUSD', 'serUSVn', 'serUSVs', 'USM',
+                        'serSU', 'serUSD', 'serUSVn', 'serUSVs', 'serVSF', 'USM',
                         'RSF', 'TSU', 'UL', 'USN', 'USNt',
                         'document', 'author', 'author_ai')
 
@@ -1692,7 +1692,7 @@ class Graph:
 
         # Stratigraphic node types
         stratigraphic_types = ['US', 'USVs', 'USVn', 'VSF', 'SF', 'USD', 'serSU',
-                              'serUSVn', 'serUSVs', 'TSU', 'UL', 'SE', 'BR', 'unknown']
+                              'serUSVn', 'serUSVs', 'serVSF', 'TSU', 'UL', 'SE', 'BR', 'unknown']
 
         refined_count = 0
 

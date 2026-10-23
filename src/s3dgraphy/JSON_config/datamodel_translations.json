@@ -1,6 +1,6 @@
 {
  "schema": "s3Dgraphy_datamodel_translations",
- "version": "1.12",
+ "version": "1.13",
  "languages": [
   "en",
   "it",
@@ -2215,6 +2215,46 @@
     "ro": "UL",
     "fr": "UL",
     "de": "UL"
+   }
+  },
+  "SeriesOfVirtualSpecialFindUnit": {
+   "label": {
+    "en": "VSF series",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Serie di VSF",
+    "el": "Σειρά VSF",
+    "he": "סדרת VSF",
+    "es": "Serie de VSF",
+    "pl": "Seria VSF",
+    "ro": "Serie de VSF",
+    "fr": "Série de VSF",
+    "de": "VSF-Serie"
+   },
+   "description": {
+    "en": "Series of Virtual Special Finds: the REPETITION of one and the same object. The series IS itself a unit, as for serSU, serUSD, serUSVn and serUSVs. Use: a broken tile repaired with a VSF and then instanced over the whole roof with a serVSF. NOT for pieces that are all different — the drums of a column that tapers: each is its own VSF (or SF) inside the column's VSF.",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Serie di Reperti Speciali Virtuali: la RIPETIZIONE di uno stesso oggetto. La serie è essa stessa un'unità, come per serSU, serUSD, serUSVn e serUSVs. Uso: una tegola rotta riparata con una VSF e poi istanziata su tutto il tetto con una serVSF. NON per pezzi tutti diversi — i rocchi di una colonna che si restringe: ciascuno è una sua VSF (o un suo SF) dentro la VSF della colonna.",
+    "el": "Σειρά Εικονικών Ειδικών Ευρημάτων: η ΕΠΑΝΑΛΗΨΗ ενός και του αυτού αντικειμένου. Η σειρά είναι η ίδια μια μονάδα, όπως για τα serSU, serUSD, serUSVn και serUSVs. Χρήση: ένα σπασμένο κεραμίδι που επισκευάστηκε με ένα VSF και στη συνέχεια επαναλήφθηκε σε όλη τη στέγη με ένα serVSF. ΟΧΙ για κομμάτια που διαφέρουν όλα μεταξύ τους — οι σπόνδυλοι ενός κίονα που λεπταίνει: ο καθένας είναι ένα δικό του VSF (ή SF) μέσα στο VSF του κίονα.",
+    "he": "סדרת ממצאים מיוחדים וירטואליים: החזרה על אותו אובייקט עצמו. הסדרה היא בעצמה יחידה, כמו serSU, serUSD, serUSVn ו־serUSVs. שימוש: רעף שבור שתוקן ב־VSF ולאחר מכן שוכפל על כל הגג ב־serVSF. לא לחלקים שכולם שונים — תופי עמוד המצטמצם: כל אחד הוא VSF משלו (או SF) בתוך ה־VSF של העמוד.",
+    "es": "Serie de Hallazgos Singulares Virtuales: la REPETICIÓN de un mismo objeto. La serie es ella misma una unidad, como serSU, serUSD, serUSVn y serUSVs. Uso: una teja rota reparada con una VSF y luego instanciada en todo el tejado con una serVSF. NO para piezas todas distintas — los tambores de una columna que se estrecha: cada uno es su propia VSF (o SF) dentro de la VSF de la columna.",
+    "pl": "Seria Wirtualnych Zabytków Wydzielonych: POWTÓRZENIE jednego i tego samego obiektu. Seria sama jest jednostką, jak serSU, serUSD, serUSVn i serUSVs. Zastosowanie: pęknięta dachówka uzupełniona VSF, a następnie powielona na całym dachu za pomocą serVSF. NIE dla elementów, z których każdy jest inny — bębny zwężającej się kolumny: każdy jest osobnym VSF (lub SF) wewnątrz VSF kolumny.",
+    "ro": "Serie de Descoperiri Speciale Virtuale: REPETAREA unuia și aceluiași obiect. Seria este ea însăși o unitate, ca pentru serSU, serUSD, serUSVn și serUSVs. Utilizare: o țiglă spartă reparată cu o VSF și apoi instanțiată pe tot acoperișul cu o serVSF. NU pentru piese toate diferite — tamburii unei coloane care se îngustează: fiecare este o VSF proprie (sau un SF) în interiorul VSF a coloanei.",
+    "fr": "Série d'Objets Remarquables Virtuels : la RÉPÉTITION d'un seul et même objet. La série est elle-même une unité, comme pour serSU, serUSD, serUSVn et serUSVs. Usage : une tuile cassée réparée avec une VSF puis instanciée sur tout le toit avec une serVSF. PAS pour des pièces toutes différentes — les tambours d'une colonne qui s'amincit : chacun est sa propre VSF (ou un SF) dans la VSF de la colonne.",
+    "de": "Serie virtueller Einzelfunde: die WIEDERHOLUNG ein und desselben Objekts. Die Serie ist selbst eine Einheit, wie bei serSU, serUSD, serUSVn und serUSVs. Verwendung: ein zerbrochener Ziegel, mit einem VSF ergänzt und dann mit einem serVSF über das ganze Dach instanziiert. NICHT für Stücke, die alle verschieden sind — die Trommeln einer sich verjüngenden Säule: jede ist ein eigener VSF (oder SF) im VSF der Säule."
    }
   }
  },
