@@ -63,7 +63,7 @@ def _templu():
 
 def test_the_datamodel_names_the_three_classes():
     dm = load_json_mapping("s3Dgraphy_node_datamodel.json")
-    assert dm["s3Dgraphy_data_model_version"] == "1.6.33"  # 1.6.27 introduced them; 1.6.33 a model in several containers (23 Oct)
+    assert dm["s3Dgraphy_data_model_version"] == "1.6.36"  # 1.6.27 introduced them; 1.6.36 the end of a unit typed (23 Oct)
     assert spatiotemporal_classes() == ("StratigraphicNode", "DocumentNode", "AuthorNode")
 
 
@@ -175,7 +175,7 @@ def test_the_owner_names_come_from_the_qualia_file():
     q = load_json_mapping("em_qualia_types.json")
     assert q["metadata"]["version"] == "1.6.9"
     t = load_json_mapping("datamodel_translations.json")
-    assert t["version"] == "1.11"  # 1.10 introduced them; 1.11 study_took_place_at
+    assert t["version"] == "1.14"  # 1.10 introduced them; 1.11 study_took_place_at; 1.14 end_reasons
     assert t["qualia"]["absolute_time_end"]["label_author"]["en"] == "Date of death"
 
 
