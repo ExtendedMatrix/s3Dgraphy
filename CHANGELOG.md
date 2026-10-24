@@ -5,6 +5,19 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
+- **The em.json schemas have one home, `spec/em-json/`** (MICRO specifica
+  em.json, part 2, 24 October 2026). `em.v1.1.schema.json` describes the
+  CONTAINER really written since 13 August 2026 — header, `graphs` with the
+  special members (shelf, DTC corpus, periodizations) marked by
+  `data.em_collection`, per-graph `layout`, `links`, edge `attributes`, the
+  project `version`, the header keys the tools write (`last_editor`,
+  `visibility`, `title`, `owner`, `embargo`, `room`, `composition`) — with the
+  rule «readers ignore unknown keys» and `x-` reserved to extensions.
+  `em.v1.schema.json` (the flat form, frozen 11 July 2026) is kept intact for the
+  old files. 1.1 and not 2: the form a reader of 1.x reads did not break (every
+  reader in circulation gates on the major or does not check), so the minor.
+  The writer stamps `header.version` **"1.1"** (`FORMAT_VERSION`);
+  `SCHEMA_VERSION` stays 2. EMStudio receives the schemas with `./em.sh sync`.
 - **abuts, bonded_to, equals imply contemporaneity** (connections 1.6.48;
   MICRO specifica em.json, part 0, decided by E.D. 24 October 2026). The three
   physical relations and their other names (`is_abutted_by`, `is_bonded_to`,

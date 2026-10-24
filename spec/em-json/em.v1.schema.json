@@ -1,0 +1,257 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/em/schemas/em.v1.schema.json",
+  "title": ".em.json v1 (FROZEN 2026-07-11)",
+  "description": "Extended Matrix native document: header + FLAT graph (nodes[]/edges[]) + optional layout. Reference implementation: s3Dgraphy emjson_exporter/emjson_importer. Consumers MUST ignore unknown top-level keys.",
+  "type": "object",
+  "required": [
+    "header",
+    "graph"
+  ],
+  "properties": {
+    "header": {
+      "type": "object",
+      "required": [
+        "format",
+        "version"
+      ],
+      "properties": {
+        "format": {
+          "const": "em.json"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^1\\."
+        },
+        "generator": {
+          "type": "object",
+          "properties": {
+            "tool": {
+              "type": "string"
+            },
+            "version": {
+              "type": "string"
+            }
+          }
+        },
+        "datamodel_versions": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "ontology_versions": {
+          "type": "object"
+        }
+      }
+    },
+    "graph": {
+      "type": "object",
+      "required": [
+        "graph_id",
+        "nodes",
+        "edges"
+      ],
+      "properties": {
+        "graph_id": {
+          "type": "string"
+        },
+        "code": {
+          "type": "string",
+          "description": "The study's code (GT16), a mirror of StudyNode.data.code written at every save; the study wins on read."
+        },
+        "code_proposed": {
+          "type": "boolean",
+          "description": "Present (true) while the code is a proposal nobody confirmed."
+        },
+        "name": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "data": {
+          "type": "object"
+        },
+        "nodes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "node_type"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "node_type": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "data": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "edge_type",
+              "source",
+              "target"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "edge_type": {
+                "type": "string"
+              },
+              "source": {
+                "type": "string"
+              },
+              "target": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    },
+    "layout": {
+      "type": "object",
+      "properties": {
+        "canvas": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "type": "string"
+            },
+            "width": {
+              "type": "number"
+            },
+            "height": {
+              "type": "number"
+            }
+          }
+        },
+        "swimlanes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "epoch_id",
+              "order"
+            ],
+            "properties": {
+              "epoch_id": {
+                "type": "string"
+              },
+              "order": {
+                "type": "integer"
+              },
+              "y": {
+                "type": "number"
+              },
+              "height": {
+                "type": "number"
+              }
+            }
+          }
+        },
+        "sectors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "order"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "order": {
+                "type": "integer"
+              },
+              "x": {
+                "type": "number"
+              },
+              "width": {
+                "type": "number"
+              }
+            }
+          }
+        },
+        "positions": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "required": [
+              "x",
+              "y"
+            ],
+            "properties": {
+              "x": {
+                "type": "number"
+              },
+              "y": {
+                "type": "number"
+              },
+              "w": {
+                "type": "number"
+              },
+              "h": {
+                "type": "number"
+              }
+            }
+          }
+        },
+        "folded_groups": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "group_spaces": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "positions": {
+                "$ref": "#/properties/layout/properties/positions"
+              }
+            }
+          }
+        },
+        "edge_routes": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            }
+          }
+        }
+      }
+    }
+  }
+}

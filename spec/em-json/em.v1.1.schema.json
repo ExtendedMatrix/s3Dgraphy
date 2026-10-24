@@ -1,0 +1,602 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/extendedmatrix/schemas/em.v1.1.schema.json",
+  "title": "em.json 1.1 — the Extended Matrix container",
+  "description": "An em.json document is a CONTAINER: a header and one or more graphs, each with its nodes, edges and, optionally, its layout. Special members (the shelf, the DTC corpus, the periodizations) are graphs marked by data.em_collection. Readers MUST ignore keys they do not know; writers of the official tools never write keys prefixed 'x-', which are reserved to third-party extensions. The flat single-graph form of 1.0 ({header, graph}) is described by em.v1.schema.json and is still read by every conforming reader. Specification: https://w3id.org/extendedmatrix/spec/em-json/ — editor Emanuel Demetrescu (CNR-ISPC). This schema is dedicated to the public domain (CC0 1.0).",
+  "type": "object",
+  "required": [
+    "header",
+    "graphs"
+  ],
+  "properties": {
+    "header": {
+      "$ref": "#/$defs/header"
+    },
+    "graphs": {
+      "type": "object",
+      "description": "The members of the container, keyed by member id. A study graph's member id is its graph_id; the special members use conventional ids (shelf, dtc, periodizations) but are recognised by data.em_collection, never by the id.",
+      "minProperties": 1,
+      "additionalProperties": {
+        "$ref": "#/$defs/member"
+      }
+    },
+    "active_graph_id": {
+      "type": "string",
+      "description": "The study graph that was in front when the file was saved. A reader that finds no such member falls back to the first study graph."
+    },
+    "layout": {
+      "$ref": "#/$defs/layout",
+      "description": "A COPY of the active graph's layout, for readers that know only one layout per file (files before 2 Oct 2026, Heriverse). The member's own layout wins."
+    },
+    "version": {
+      "$ref": "#/$defs/project_version"
+    }
+  },
+  "$defs": {
+    "text": {
+      "description": "A text. Writers omit an empty value; readers treat null as absent.",
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "header": {
+      "type": "object",
+      "required": [
+        "format",
+        "version"
+      ],
+      "properties": {
+        "format": {
+          "const": "em.json"
+        },
+        "version": {
+          "type": "string",
+          "pattern": "^1\\.[0-9]+(\\.[0-9]+)?$",
+          "description": "The version of the FORM (semver): a reader refuses a MAJOR it does not know and reads every minor of its major. 1.0 = the flat form and the container written before this specification; 1.1 = the container as specified here."
+        },
+        "schema_version": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "The version of the CONTENT within the form, an integer that grows when a migration may need to key off it (absent = 0, a file older than the field). Never a reason to refuse a file."
+        },
+        "generator": {
+          "type": "object",
+          "properties": {
+            "tool": {
+              "type": "string"
+            },
+            "version": {
+              "type": "string"
+            }
+          }
+        },
+        "last_editor": {
+          "type": "string",
+          "description": "The application that last saved the file, when it is not the generator (e.g. 'EMStudio 1.6.0-dev.58')."
+        },
+        "datamodel_versions": {
+          "type": "object",
+          "description": "The versions of the EM datamodels the content follows: nodes, connections, qualia.",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "ontology_versions": {
+          "type": "object",
+          "description": "The versions of the ontologies the datamodels map to (CIDOC-CRM, CRMarchaeo, CRMem…).",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "title": {
+          "$ref": "#/$defs/text"
+        },
+        "name": {
+          "$ref": "#/$defs/text"
+        },
+        "description": {
+          "$ref": "#/$defs/text"
+        },
+        "visibility": {
+          "type": "string",
+          "description": "Who may read the study without a token: public, restricted (the default when absent), private."
+        },
+        "kind": {
+          "type": "string",
+          "description": "What the study is about: site (the default) or landscape."
+        },
+        "composition": {
+          "type": "array",
+          "description": "A landscape cites the studies it is made of: references, never copies. Each item is a string or {id, code, title}. 'part_studies' is an older name, read only.",
+          "items": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "object",
+                "properties": {
+                  "id": {
+                    "type": "string"
+                  },
+                  "code": {
+                    "type": "string"
+                  },
+                  "em_id": {
+                    "type": "string"
+                  },
+                  "title": {
+                    "type": "string"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "owner": {
+          "type": "string",
+          "description": "The account that owns the study on a StratiGraph node (written by the server)."
+        },
+        "embargo": {
+          "description": "An embargo set on a StratiGraph node: a date (ISO 8601) or an object the server defines. Licence and embargo of the CONTENT are nodes of the graph, not header keys.",
+          "type": [
+            "string",
+            "object",
+            "null"
+          ]
+        },
+        "room": {
+          "type": "object",
+          "description": "Where the study is shared: {node, room_id} (written by EM Tools).",
+          "properties": {
+            "node": {
+              "type": "string"
+            },
+            "room_id": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "member": {
+      "type": "object",
+      "description": "One graph of the container.",
+      "required": [
+        "nodes",
+        "edges"
+      ],
+      "properties": {
+        "graph_id": {
+          "type": "string",
+          "description": "The graph's id; when absent the member id is used."
+        },
+        "code": {
+          "type": "string",
+          "description": "The study's code (GT16), a mirror of StudyNode.data.code written at every save; the study node wins on read."
+        },
+        "code_proposed": {
+          "type": "boolean",
+          "description": "Present (true) while the code is a proposal nobody confirmed."
+        },
+        "name": {
+          "$ref": "#/$defs/text"
+        },
+        "description": {
+          "$ref": "#/$defs/text"
+        },
+        "data": {
+          "type": "object",
+          "description": "Graph-level data. data.em_collection marks a special member.",
+          "properties": {
+            "em_collection": {
+              "type": "string",
+              "description": "ShelfGraph (the project shelf: authors, licences, shared documents), DTCCorpus (the documentation: acquisitions, transformations, the resources they are about), Periodizations (the shared measures of time: periodizations and their horizons). A reader that does not know a value treats the member as an ordinary graph."
+            },
+            "active_periodization": {
+              "type": "string",
+              "description": "In the Periodizations member: the id of the periodization in use."
+            }
+          }
+        },
+        "nodes": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/node"
+          }
+        },
+        "edges": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/edge"
+          }
+        },
+        "links": {
+          "type": "array",
+          "description": "Relations from a node of this graph to a node of ANOTHER graph of the same container (the address graph → node). A broken link is reported, never a reason to refuse the file.",
+          "items": {
+            "$ref": "#/$defs/link"
+          }
+        },
+        "layout": {
+          "$ref": "#/$defs/layout"
+        }
+      }
+    },
+    "node": {
+      "type": "object",
+      "required": [
+        "id",
+        "node_type"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Stable identifier (a UUID for nodes born in the official tools)."
+        },
+        "node_type": {
+          "type": "string",
+          "description": "The type, as named by the EM node datamodel (US, USVs, EpochNode, property, document, geo_position, periodization, horizon…). A reader that does not know a type keeps the node as a generic one."
+        },
+        "name": {
+          "$ref": "#/$defs/text"
+        },
+        "description": {
+          "$ref": "#/$defs/text"
+        },
+        "data": {
+          "type": "object",
+          "description": "The node's fields, as declared by the node datamodel for its type."
+        }
+      }
+    },
+    "edge": {
+      "type": "object",
+      "required": [
+        "id",
+        "edge_type",
+        "source",
+        "target"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "edge_type": {
+          "type": "string",
+          "description": "The relation, as named by the EM connections datamodel (is_after, has_same_time, abuts, has_property, extracted_from…)."
+        },
+        "source": {
+          "type": "string",
+          "description": "The id of a node of the same graph."
+        },
+        "target": {
+          "type": "string",
+          "description": "The id of a node of the same graph."
+        },
+        "attributes": {
+          "$ref": "#/$defs/edge_attributes"
+        }
+      }
+    },
+    "edge_attributes": {
+      "type": "object",
+      "description": "Optional facts about the edge itself (since schema_version 1).",
+      "properties": {
+        "origin": {
+          "enum": [
+            "derived",
+            "user",
+            "imported"
+          ],
+          "description": "On a relative-chronology edge (is_after, has_same_time, changed_from): computed from the physical relations, written by a person, or read from another software's file."
+        },
+        "derived": {
+          "type": "boolean",
+          "description": "The edge was computed by a propagation, not drawn."
+        },
+        "derived_from": {
+          "description": "What a derived edge stands for: the id of the edge it was propagated from, or the ids of the physical relations it was derived from.",
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          ]
+        },
+        "inherited": {
+          "type": "boolean"
+        },
+        "compacted": {
+          "type": "boolean"
+        },
+        "injected_by": {
+          "type": "string"
+        },
+        "role": {
+          "type": "string"
+        },
+        "path": {
+          "type": "string"
+        },
+        "original_edge_id": {
+          "type": "string"
+        },
+        "original_source_id": {
+          "type": "string"
+        },
+        "original_target_id": {
+          "type": "string"
+        },
+        "created_by": {
+          "type": "string",
+          "description": "Editorial stamp: who drew the edge (as on nodes, in data)."
+        },
+        "created_at": {
+          "type": "string",
+          "description": "Editorial stamp: when (ISO 8601)."
+        },
+        "modified_by": {
+          "type": "string"
+        },
+        "modified_at": {
+          "type": "string"
+        },
+        "removed": {
+          "description": "Tombstone of a removed edge (collaborative editing): the edge stays in the file, marked, so that a merge does not bring it back.",
+          "type": [
+            "object",
+            "boolean"
+          ]
+        }
+      }
+    },
+    "link": {
+      "type": "object",
+      "required": [
+        "id",
+        "edge_type",
+        "source",
+        "target"
+      ],
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "edge_type": {
+          "type": "string"
+        },
+        "source": {
+          "type": "string",
+          "description": "The id of a node of THIS graph."
+        },
+        "target": {
+          "type": "object",
+          "required": [
+            "graph_id",
+            "node_id"
+          ],
+          "properties": {
+            "graph_id": {
+              "type": "string"
+            },
+            "node_id": {
+              "type": "string"
+            }
+          }
+        },
+        "attributes": {
+          "$ref": "#/$defs/edge_attributes"
+        }
+      }
+    },
+    "position": {
+      "type": "object",
+      "required": [
+        "x",
+        "y"
+      ],
+      "properties": {
+        "x": {
+          "type": "number"
+        },
+        "y": {
+          "type": "number"
+        },
+        "w": {
+          "type": "number"
+        },
+        "h": {
+          "type": "number"
+        }
+      }
+    },
+    "layout": {
+      "type": "object",
+      "description": "How a graph is drawn. Optional and reconstructable: a reader may lay the graph out afresh.",
+      "properties": {
+        "canvas": {
+          "type": "object",
+          "properties": {
+            "title": {
+              "$ref": "#/$defs/text"
+            },
+            "width": {
+              "type": "number"
+            },
+            "height": {
+              "type": "number"
+            }
+          }
+        },
+        "swimlanes": {
+          "type": "array",
+          "description": "The rows of the matrix, one per epoch.",
+          "items": {
+            "type": "object",
+            "required": [
+              "epoch_id",
+              "order"
+            ],
+            "properties": {
+              "epoch_id": {
+                "type": "string"
+              },
+              "order": {
+                "type": "integer"
+              },
+              "y": {
+                "type": "number"
+              },
+              "height": {
+                "type": "number"
+              }
+            }
+          }
+        },
+        "sectors": {
+          "type": "array",
+          "description": "The columns of the matrix.",
+          "items": {
+            "type": "object",
+            "required": [
+              "id",
+              "order"
+            ],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "order": {
+                "type": "integer"
+              },
+              "x": {
+                "type": "number"
+              },
+              "width": {
+                "type": "number"
+              }
+            }
+          }
+        },
+        "positions": {
+          "type": "object",
+          "description": "Node id → its box.",
+          "additionalProperties": {
+            "$ref": "#/$defs/position"
+          }
+        },
+        "folded_groups": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "group_spaces": {
+          "type": "object",
+          "description": "Group id → the positions inside the group's own space.",
+          "additionalProperties": {
+            "type": "object",
+            "properties": {
+              "positions": {
+                "type": "object",
+                "additionalProperties": {
+                  "$ref": "#/$defs/position"
+                }
+              }
+            }
+          }
+        },
+        "edge_routes": {
+          "type": "object",
+          "description": "Edge id → the bends of its line, [x, y] points.",
+          "additionalProperties": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "prefixItems": [
+                {
+                  "type": "number"
+                },
+                {
+                  "type": "number"
+                }
+              ]
+            }
+          }
+        },
+        "pinned": {
+          "type": "array",
+          "description": "Node ids that keep their exact box through a re-layout.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "anchors": {
+          "type": "array",
+          "description": "A node drawn next to another one (a date beside its unit): the corner of 'to' it sits at and the offset.",
+          "items": {
+            "type": "object",
+            "required": [
+              "node",
+              "to"
+            ],
+            "properties": {
+              "node": {
+                "type": "string"
+              },
+              "to": {
+                "type": "string"
+              },
+              "corner": {
+                "type": "string"
+              },
+              "dx": {
+                "type": "number"
+              },
+              "dy": {
+                "type": "number"
+              }
+            }
+          }
+        },
+        "sketches": {
+          "type": "array",
+          "description": "Shapes placed in the 3D space and not yet proxies of a unit (EMStudio): the person's work, saved with the view.",
+          "items": {
+            "type": "object"
+          }
+        }
+      }
+    },
+    "project_version": {
+      "type": "object",
+      "description": "Which revision of the WORK this file is (not of the format).",
+      "required": [
+        "number"
+      ],
+      "properties": {
+        "number": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "id": {
+          "type": "string",
+          "description": "Content digest of this version, 'sha256:<12 hex>'."
+        },
+        "was_revision_of": {
+          "type": "string"
+        },
+        "modified_at": {
+          "type": "string"
+        }
+      }
+    }
+  }
+}

@@ -1,8 +1,11 @@
 """
-.em.json v1 exporter — the native Extended Matrix document format.
+.em.json exporter — the native Extended Matrix document format.
 
-Frozen 2026-07-11 (format decision record in the EMStudio repository,
-docs/emjson-v1-draft.md). Structure:
+The format is specified in ``spec/em-json/SPEC.md`` (em.json 1.1, editor E.D.,
+https://w3id.org/extendedmatrix/spec/em-json/); the file is always a container
+(:mod:`s3dgraphy.container`), and this module builds the document of ONE graph,
+the section each member goes through. The 1.0 shape, frozen 2026-07-11 (format
+decision record in the EMStudio repository, docs/emjson-v1-draft.md):
 
     header  — format name, semver, generator, datamodel_versions,
               ontology_versions (mirrors referenced_ontology_versions).
@@ -33,7 +36,14 @@ from typing import Any, Dict, List, Optional
 from ..graph import Graph
 
 FORMAT_NAME = "em.json"
-FORMAT_VERSION = "1.0"
+#: The version of the FORM, as the specification says (spec/em-json/SPEC.md,
+#: https://w3id.org/extendedmatrix/spec/em-json/): semver, a reader refuses only
+#: a major it does not know. "1.1" (24 Oct 2026) = the CONTAINER as specified,
+#: schema spec/em-json/em.v1.1.schema.json; "1.0" = the flat form and the
+#: container written before the specification, both still read. Every reader
+#: in circulation gates on the major or does not check (census, MICRO specifica
+#: em.json), so the minor costs nobody a file.
+FORMAT_VERSION = "1.1"
 
 #: **Single source of truth for the em.json SCHEMA version.**
 #:
