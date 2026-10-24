@@ -11,7 +11,8 @@ from .relative_chronology import (
     derive_relative_chronology,
     mark_origin,
     origin_of,
+    same_time_pairs,
 )
 
 __all__ = ['TemporalInferenceEngine', 'derive_relative_chronology',
-           'mark_origin', 'origin_of', 'ORIGINS', 'RELATIVE_CHRONOLOGY_EDGES']
+           'mark_origin', 'origin_of', 'same_time_pairs', 'ORIGINS', 'RELATIVE_CHRONOLOGY_EDGES']

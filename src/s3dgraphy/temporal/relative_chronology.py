@@ -20,9 +20,12 @@ The ORIGIN of a relative-chronology edge (connections 1.6.47) travels in
 
 An edge without it is valid: every file before 1.6.47 simply does not say.
 
-``abuts``, ``bonded_to``, ``equals`` imply nothing here: the GraphML exporter
-writes them as ``has_same_time`` and :meth:`Graph.chronology` gives them no
-effect; the decision is open (E.D.) and the datamodel says ``implies: null``.
+``abuts``, ``bonded_to``, ``equals`` (and their other names) imply
+CONTEMPORANEITY — decided by E.D. on 24 Oct 2026, connections 1.6.48,
+``implies: {edge: "has_same_time"}``: the derivation adds a ``has_same_time``
+for each pair no ``has_same_time`` already joins, in either direction.
+:func:`same_time_pairs` is the rule, read by the GraphML exporter too.
+:meth:`Graph.chronology` is unchanged: a ``has_same_time`` orders nothing.
 """
 from __future__ import annotations
 
@@ -72,9 +75,48 @@ def mark_origin(graph, origin: str, *, edges: Optional[Iterable] = None) -> int:
     return count
 
 
+def same_time_pairs(graph) -> dict:
+    """The CONTEMPORARY pairs the physical relations imply (connections 1.6.48).
+
+    ``{(a, b): [edges]}`` with ``a < b`` (the pair has no direction, so it is
+    written sorted, as the GraphML exporter has always written it), the edges
+    being those of a type the datamodel declares ``implies: {edge:
+    "has_same_time"}`` — abuts, bonded_to, equals and their other names. A
+    loop (a unit with itself) is skipped.
+    """
+    names = get_connections_datamodel().same_time_edges()
+    out: dict = {}
+    for edge in graph.edges:
+        if edge.edge_type not in names or edge.edge_source == edge.edge_target:
+            continue
+        pair = tuple(sorted((edge.edge_source, edge.edge_target)))
+        out.setdefault(pair, []).append(edge)
+    return out
+
+
+def _derive_same_time(graph) -> list:
+    """The ``has_same_time`` edges :func:`same_time_pairs` implies and the graph
+    does not already hold (in either direction)."""
+    from ..edges.edge import Edge
+    existing = {tuple(sorted((e.edge_source, e.edge_target)))
+                for e in graph.edges if e.edge_type == "has_same_time"}
+    out = []
+    for (a, b), carriers in sorted(same_time_pairs(graph).items()):
+        if (a, b) in existing:
+            continue
+        edge = Edge(f"{a}_has_same_time_{b}", a, b, "has_same_time")
+        edge.attributes = {
+            "origin": "derived",
+            "derived_from": sorted(e.edge_id for e in carriers),
+        }
+        out.append(edge)
+    return out
+
+
 def derive_relative_chronology(graph, *, reduce: bool = True, write: bool = False,
                                warnings: Optional[List[str]] = None) -> list:
-    """The ``is_after`` edges the physical relations imply, not redundant.
+    """The relative chronology the physical relations imply: the ``is_after``
+    edges, not redundant, then the ``has_same_time`` edges (1.6.48).
 
     Every edge whose type the connections datamodel declares with a temporal
     direction (cuts, fills, overlies and their reverses; is_after / is_before
@@ -83,10 +125,17 @@ def derive_relative_chronology(graph, *, reduce: bool = True, write: bool = Fals
     implies (the Harris principle, as the GraphML exporter does). A cycle is
     reported in ``warnings`` and the unreduced set is used, as the exporter does.
 
-    Returns the NEW ``is_after`` edges — pairs not already joined by an
-    ``is_after`` in the graph — each with ``attributes = {"origin": "derived",
-    "derived_from": [ids of the physical edges between the two]}``. With
-    ``write`` they are added to the graph; without, nothing is touched.
+    The physical relations that imply contemporaneity (abuts, bonded_to,
+    equals: ``implies: {edge: "has_same_time"}``) give one ``has_same_time``
+    per pair, sorted (:func:`same_time_pairs`); no reduction, the relation is
+    symmetric. A pair both ordered and contemporary is a contradiction of the
+    data: it is reported in ``warnings``, and both edges are derived.
+
+    Returns the NEW edges — pairs not already joined by an ``is_after`` (or by
+    a ``has_same_time``, in either direction) in the graph — each with
+    ``attributes = {"origin": "derived", "derived_from": [ids of the physical
+    edges between the two]}``, the ``is_after`` first. With ``write`` they are
+    added to the graph; without, nothing is touched.
     """
     sink = warnings if warnings is not None else []
     dm = get_connections_datamodel()
@@ -102,8 +151,12 @@ def derive_relative_chronology(graph, *, reduce: bool = True, write: bool = Fals
             continue
         pairs.append(pair)
         carriers.setdefault(pair, []).append(edge)
+    same = _derive_same_time(graph)
     if not pairs:
-        return []
+        out = same
+        if write:
+            _write(graph, out, sink)
+        return out
     dag = nx.DiGraph()
     dag.add_edges_from(pairs)
     minimal = list(dag.edges())
@@ -130,17 +183,28 @@ def derive_relative_chronology(graph, *, reduce: bool = True, write: bool = Fals
             "derived_from": sorted(e.edge_id for e in carriers.get((src, tgt), [])),
         }
         out.append(edge)
+    ordered = {tuple(sorted(p)) for p in pairs}
+    for edge in same:
+        if (edge.edge_source, edge.edge_target) in ordered:
+            sink.append(f"[relative chronology] {edge.edge_source} and "
+                        f"{edge.edge_target} are both ordered and contemporary "
+                        f"({', '.join(edge.attributes['derived_from'])})")
+    out.extend(same)
     if write:
-        for edge in out:
-            if graph.find_edge_by_id(edge.edge_id):
-                continue
-            try:
-                added = graph.add_edge(edge.edge_id, edge.edge_source,
-                                       edge.edge_target, "is_after")
-            except ValueError as exc:
-                sink.append(f"[relative chronology] {exc}")
-                continue
-            if added is not None:
-                added.attributes = dict(edge.attributes)
-        logger.debug("relative chronology: %d is_after derived", len(out))
+        _write(graph, out, sink)
     return out
+
+
+def _write(graph, edges, sink) -> None:
+    for edge in edges:
+        if graph.find_edge_by_id(edge.edge_id):
+            continue
+        try:
+            added = graph.add_edge(edge.edge_id, edge.edge_source,
+                                   edge.edge_target, edge.edge_type)
+        except ValueError as exc:
+            sink.append(f"[relative chronology] {exc}")
+            continue
+        if added is not None:
+            added.attributes = dict(edge.attributes)
+    logger.debug("relative chronology: %d edges derived", len(edges))

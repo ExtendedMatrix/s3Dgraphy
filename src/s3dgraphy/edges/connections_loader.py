@@ -126,6 +126,9 @@ class ConnectionsDatamodel:
                     if implied is not ...:
                         self._expanded_edges[reverse_name]['implies'] = (
                             None if implied is None else
+                            # 1.6.48 · has_same_time has no direction: the
+                            # reverse (is_abutted_by) reads it as it is
+                            dict(implied) if implied.get('edge') != 'is_after' else
                             {**implied, 'source_is_more_recent':
                              not implied.get('source_is_more_recent', True)})
 
@@ -161,8 +164,9 @@ class ConnectionsDatamodel:
         ``True``: the source is more recent (cuts, overlies, fills, is_after);
         ``False``: the target is (is_cut_by, is_overlain_by, is_filled_by,
         is_before); ``None``: the edge implies no order — a physical relation
-        whose implication is still open (abuts, bonded_to, equals and their
-        older spellings), or not a physical/temporal relation at all.
+        that implies contemporaneity (abuts, bonded_to, equals and their
+        older spellings, 1.6.48: see :meth:`same_time_edges`) or none, or not a
+        physical/temporal relation at all.
 
         1.6.47 · one source for the rule «this physical relation implies that
         temporal one», read by Graph.chronology, diagnostics and the temporal
@@ -185,6 +189,19 @@ class ConnectionsDatamodel:
             if direction is not None:
                 out[name] = direction
         return out
+
+    def same_time_edges(self) -> frozenset:
+        """Every edge name (canonical, reverse, older spelling) whose two
+        units are CONTEMPORARY, as the datamodel says (``implies: {edge:
+        "has_same_time"}``): abuts, bonded_to, equals and their other names.
+
+        1.6.48 · decided by E.D. (24 Oct 2026): read by
+        :func:`s3dgraphy.temporal.derive_relative_chronology` and, through
+        it, by the GraphML exporter.
+        """
+        return frozenset(
+            n for n, e in self._expanded_edges.items()
+            if (e.get('implies') or {}).get('edge') == 'has_same_time')
 
     def physical_relations(self) -> frozenset:
         """The names that are PHYSICAL relations between units (those whose

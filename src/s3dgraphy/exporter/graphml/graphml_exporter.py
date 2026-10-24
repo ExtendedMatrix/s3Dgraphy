@@ -240,8 +240,11 @@ class GraphMLExporter:
 
             engine.print_inference_report(temporal_edges, minimal_edges)
 
-        # 3c. Get ambiguous relations (bonded_to, equals) → has_same_time edges
-        ambiguous_edges = engine.get_ambiguous_relations(self.graph)
+        # 3c. The contemporary pairs (abuts, bonded_to, equals → has_same_time):
+        # the connections datamodel's rule (`implies`, 1.6.48), read through
+        # the same function the importers derive with — no list of our own.
+        from ...temporal import same_time_pairs
+        contemporary = same_time_pairs(self.graph)
 
         # 3d. Build final edge list for export.
         # Topological *and* direct temporal relations are filtered here:
@@ -296,10 +299,12 @@ class GraphMLExporter:
             temporal_edge = EdgeObj(edge_id, source_id, target_id, 'is_after')
             export_edges.append(temporal_edge)
 
-        # Add has_same_time for ambiguous relations (bonded_to, equals)
-        seen_pairs = set()
-        for edge in ambiguous_edges:
-            pair = tuple(sorted([edge.edge_source, edge.edge_target]))
+        # Add has_same_time for the contemporary pairs — once per pair: a
+        # has_same_time already in the graph (written, or derived at import)
+        # is not doubled.
+        seen_pairs = {tuple(sorted([e.edge_source, e.edge_target]))
+                      for e in export_edges if e.edge_type == 'has_same_time'}
+        for pair in sorted(contemporary):
             if pair not in seen_pairs:
                 seen_pairs.add(pair)
                 edge_id = f"{pair[0]}_has_same_time_{pair[1]}"

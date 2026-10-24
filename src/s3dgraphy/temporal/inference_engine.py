@@ -39,7 +39,7 @@ class TemporalInferenceEngine:
 
         # The PHYSICAL relations and the temporal direction each implies,
         # True = source is more recent, False = target is more recent, None =
-        # no implication declared (abuts, bonded_to, equals: open). READ FROM
+        # no order (abuts, bonded_to, equals: contemporary, 1.6.48). READ FROM
         # THE CONNECTIONS DATAMODEL (`implies`, 1.6.47), every name included —
         # reverses (is_cut_by) and older spellings (is_bonded_to) alike. Until
         # 1.6.46 this table was written here by hand, a third copy of the rule.
@@ -189,26 +189,25 @@ class TemporalInferenceEngine:
             cycles = list(nx.simple_cycles(G))
             return (False, cycles)
 
+    def get_same_time_relations(self, graph) -> List[Edge]:
+        """The edges whose two units are CONTEMPORARY by the connections
+        datamodel (``implies: {edge: "has_same_time"}``, 1.6.48): abuts,
+        bonded_to, equals and their other names.
+
+        Until 1.6.47 these were «ambiguous» — physical with no implication
+        declared — and the GraphML exporter turned them into has_same_time by a
+        rule of its own; E.D. decided the implication on 24 Oct 2026.
+        """
+        names = self.connections_dm.same_time_edges() if hasattr(
+            self.connections_dm, 'same_time_edges') else \
+            get_connections_datamodel().same_time_edges()
+        return [edge for edge in graph.edges if edge.edge_type in names]
+
     def get_ambiguous_relations(self, graph) -> List[Edge]:
-        """
-        Get edges with ambiguous temporal direction.
-
-        Args:
-            graph: s3dgraphy Graph object
-
-        Returns:
-            List[Edge]: Edges that don't have clear temporal direction
-        """
-        ambiguous = []
-
-        for edge in graph.edges:
-            temporal_dir = self.TOPOLOGICAL_TO_TEMPORAL.get(edge.edge_type)
-            if temporal_dir is None and edge.edge_type not in ['is_after', 'is_before']:
-                # Check if it's a topological relation
-                if edge.edge_type in self.TOPOLOGICAL_TO_TEMPORAL:
-                    ambiguous.append(edge)
-
-        return ambiguous
+        """Kept for the callers that knew the old name (until 1.6.47 the
+        relations without a declared direction): today the same edges as
+        :meth:`get_same_time_relations`."""
+        return self.get_same_time_relations(graph)
 
     def print_inference_report(
         self,

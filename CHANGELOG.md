@@ -5,6 +5,19 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
+- **abuts, bonded_to, equals imply contemporaneity** (connections 1.6.48;
+  MICRO specifica em.json, part 0, decided by E.D. 24 October 2026). The three
+  physical relations and their other names (`is_abutted_by`, `is_bonded_to`,
+  `is_physically_equal_to`) declare `implies: {edge: "has_same_time"}`
+  (`ConnectionsDatamodel.same_time_edges()`). `derive_relative_chronology` —
+  and so the table importers — adds one `has_same_time` per pair, sorted, with
+  `origin: derived` and `derived_from`, never doubling one already written in
+  either direction; a pair both ordered and contemporary is reported. The
+  GraphML exporter reads the same rule (`s3dgraphy.temporal.same_time_pairs`)
+  instead of its list of «ambiguous» relations, and no longer doubles a
+  `has_same_time` already in the graph. `Graph.chronology` is unchanged. An
+  older file stays valid: nothing is derived at read time.
+  `tests/test_contemporaneity.py`.
 - **LAB (embargo) · Horizons and periodizations, nodes of the multigraph**
   (node datamodel 1.6.37, connections 1.6.47, translations 1.15; MICRO-LAB
   orizzonti, decided by E.D. 24 October 2026). `PeriodizationNode` (E32

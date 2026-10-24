@@ -208,11 +208,13 @@ def test_the_rule_is_read_from_the_datamodel_and_says_what_the_copies_said():
     assert diagnostics._TARGET_IS_MORE_RECENT == Graph._TARGET_IS_MORE_RECENT
     engine = TemporalInferenceEngine()
     assert engine.TOPOLOGICAL_TO_TEMPORAL["is_cut_by"] is False
-    for open_one in ("abuts", "is_abutted_by", "bonded_to", "is_bonded_to",
-                     "equals", "is_physically_equal_to"):
-        assert open_one in engine.TOPOLOGICAL_TO_TEMPORAL
-        assert engine.TOPOLOGICAL_TO_TEMPORAL[open_one] is None
-        assert dm.get_edge_definition(open_one if open_one != "is_abutted_by" else "abuts")["implies"] is None
+    # 1.6.48 (E.D., 24 Oct 2026): no order, but contemporaneity —
+    # tests/test_contemporaneity.py
+    for same in ("abuts", "is_abutted_by", "bonded_to", "is_bonded_to",
+                 "equals", "is_physically_equal_to"):
+        assert same in engine.TOPOLOGICAL_TO_TEMPORAL
+        assert engine.TOPOLOGICAL_TO_TEMPORAL[same] is None
+        assert dm.get_edge_definition(same)["implies"] == {"edge": "has_same_time"}
 
 
 # ── origin and derivation ───────────────────────────────────────────────────
@@ -224,7 +226,6 @@ def _physical():
     g.add_edge("p1", "A", "B", "overlies")
     g.add_edge("p2", "B", "C", "cuts")
     g.add_edge("p3", "A", "C", "overlies")          # redundant
-    g.add_edge("p4", "A", "B", "abuts")             # implies nothing
     return g
 
 
