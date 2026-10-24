@@ -1,0 +1,144 @@
+{
+  "header": {
+    "format": "em.json",
+    "version": "1.1",
+    "schema_version": 2,
+    "generator": {
+      "tool": "em-json conformance suite",
+      "version": "1.1"
+    },
+    "datamodel_versions": {
+      "nodes": "1.6.37",
+      "connections": "1.6.48"
+    },
+    "title": "Two trenches and their shelf"
+  },
+  "graphs": {
+    "trench-A": {
+      "graph_id": "trench-A",
+      "name": "Trench A",
+      "nodes": [
+        {
+          "id": "a-us1",
+          "node_type": "US",
+          "name": "US1"
+        },
+        {
+          "id": "a-us2",
+          "node_type": "US",
+          "name": "US2"
+        },
+        {
+          "id": "ep-roman",
+          "node_type": "EpochNode",
+          "name": "Roman",
+          "data": {
+            "start_time": -27,
+            "end_time": 476,
+            "color": "#c0504d"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "a-e1",
+          "edge_type": "overlies",
+          "source": "a-us1",
+          "target": "a-us2"
+        },
+        {
+          "id": "a-e2",
+          "edge_type": "has_first_epoch",
+          "source": "a-us2",
+          "target": "ep-roman"
+        }
+      ],
+      "links": [
+        {
+          "id": "l1",
+          "edge_type": "is_after",
+          "source": "a-us2",
+          "target": {
+            "graph_id": "trench-B",
+            "node_id": "b-us10"
+          }
+        }
+      ],
+      "layout": {
+        "positions": {
+          "a-us1": {
+            "x": 0,
+            "y": 0,
+            "w": 80,
+            "h": 30
+          },
+          "a-us2": {
+            "x": 0,
+            "y": 60,
+            "w": 80,
+            "h": 30
+          }
+        }
+      }
+    },
+    "trench-B": {
+      "graph_id": "trench-B",
+      "name": "Trench B",
+      "nodes": [
+        {
+          "id": "b-us10",
+          "node_type": "US",
+          "name": "US10"
+        }
+      ],
+      "edges": [],
+      "layout": {
+        "positions": {
+          "b-us10": {
+            "x": 0,
+            "y": 0,
+            "w": 80,
+            "h": 30
+          }
+        }
+      }
+    },
+    "shelf": {
+      "graph_id": "shelf",
+      "name": "Project shelf",
+      "data": {
+        "em_collection": "ShelfGraph"
+      },
+      "nodes": [
+        {
+          "id": "auth-1",
+          "node_type": "author",
+          "name": "Jane Roe"
+        },
+        {
+          "id": "lic-1",
+          "node_type": "license",
+          "name": "CC-BY-4.0"
+        }
+      ],
+      "edges": []
+    }
+  },
+  "active_graph_id": "trench-A",
+  "layout": {
+    "positions": {
+      "a-us1": {
+        "x": 0,
+        "y": 0,
+        "w": 80,
+        "h": 30
+      },
+      "a-us2": {
+        "x": 0,
+        "y": 60,
+        "w": 80,
+        "h": 30
+      }
+    }
+  }
+}

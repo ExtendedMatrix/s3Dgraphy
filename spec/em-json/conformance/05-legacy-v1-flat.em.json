@@ -1,0 +1,47 @@
+{
+  "header": {
+    "format": "em.json",
+    "version": "1.0",
+    "generator": {
+      "tool": "s3dgraphy",
+      "version": "1.6.0.dev5"
+    }
+  },
+  "graph": {
+    "graph_id": "old-study",
+    "name": "A file of July 2026",
+    "nodes": [
+      {
+        "id": "us1",
+        "node_type": "US",
+        "name": "US1"
+      },
+      {
+        "id": "us2",
+        "node_type": "USVs",
+        "name": "USV2",
+        "description": "Reconstructed wall"
+      }
+    ],
+    "edges": [
+      {
+        "id": "e1",
+        "edge_type": "is_after",
+        "source": "us2",
+        "target": "us1"
+      }
+    ]
+  },
+  "layout": {
+    "positions": {
+      "us1": {
+        "x": 0,
+        "y": 100
+      },
+      "us2": {
+        "x": 0,
+        "y": 0
+      }
+    }
+  }
+}

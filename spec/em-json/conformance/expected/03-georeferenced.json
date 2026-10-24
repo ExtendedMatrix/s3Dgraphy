@@ -1,0 +1,24 @@
+{
+  "form": "container",
+  "active_graph_id": "TM",
+  "graphs": {
+    "TM": {
+      "role": "study",
+      "nodes": {
+        "geo_TM": "geo_position",
+        "su1": "US",
+        "model-1": "resource"
+      },
+      "edges": {
+        "g1": [
+          "has_linked_resource",
+          "su1",
+          "model-1"
+        ]
+      },
+      "links": {}
+    }
+  },
+  "schema": "em.v1.1.schema.json",
+  "must_survive_round_trip": []
+}

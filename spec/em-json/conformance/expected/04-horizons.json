@@ -1,0 +1,55 @@
+{
+  "form": "container",
+  "active_graph_id": "GT16",
+  "graphs": {
+    "GT16": {
+      "role": "study",
+      "nodes": {
+        "ep-imp": "EpochNode",
+        "us1": "US",
+        "us2": "US"
+      },
+      "edges": {
+        "e1": [
+          "cuts",
+          "us1",
+          "us2"
+        ],
+        "e2": [
+          "has_first_epoch",
+          "us2",
+          "ep-imp"
+        ],
+        "us1_is_after_us2": [
+          "is_after",
+          "us1",
+          "us2"
+        ]
+      },
+      "links": {}
+    },
+    "periodizations": {
+      "role": "periodizations",
+      "nodes": {
+        "per-centuries": "periodization",
+        "h-2c": "horizon",
+        "h-3c": "horizon"
+      },
+      "edges": {
+        "h-2c_in": [
+          "is_in_periodization",
+          "h-2c",
+          "per-centuries"
+        ],
+        "h-3c_in": [
+          "is_in_periodization",
+          "h-3c",
+          "per-centuries"
+        ]
+      },
+      "links": {}
+    }
+  },
+  "schema": "em.v1.1.schema.json",
+  "must_survive_round_trip": []
+}

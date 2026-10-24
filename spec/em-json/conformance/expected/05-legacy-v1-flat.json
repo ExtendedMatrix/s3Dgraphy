@@ -1,0 +1,23 @@
+{
+  "form": "flat",
+  "active_graph_id": "old-study",
+  "graphs": {
+    "old-study": {
+      "role": "study",
+      "nodes": {
+        "us1": "US",
+        "us2": "USVs"
+      },
+      "edges": {
+        "e1": [
+          "is_after",
+          "us2",
+          "us1"
+        ]
+      },
+      "links": {}
+    }
+  },
+  "schema": "em.v1.schema.json",
+  "must_survive_round_trip": []
+}

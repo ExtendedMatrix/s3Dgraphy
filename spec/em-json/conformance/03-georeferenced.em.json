@@ -1,0 +1,59 @@
+{
+  "header": {
+    "format": "em.json",
+    "version": "1.1",
+    "schema_version": 2,
+    "generator": {
+      "tool": "em-json conformance suite",
+      "version": "1.1"
+    },
+    "datamodel_versions": {
+      "nodes": "1.6.37",
+      "connections": "1.6.48"
+    }
+  },
+  "graphs": {
+    "TM": {
+      "graph_id": "TM",
+      "name": "Templu Mare (excerpt)",
+      "nodes": [
+        {
+          "id": "geo_TM",
+          "node_type": "geo_position",
+          "data": {
+            "epsg": 3844,
+            "shift_x": 327372.56,
+            "shift_y": 448682.65,
+            "shift_z": 0,
+            "rotation": 0,
+            "rotation_reference": "grid"
+          }
+        },
+        {
+          "id": "su1",
+          "node_type": "US",
+          "name": "SU001",
+          "description": "Podium foundation"
+        },
+        {
+          "id": "model-1",
+          "node_type": "resource",
+          "name": "SU001 model",
+          "data": {
+            "url": "models/SU001.glb",
+            "url_type": "3d_model"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "g1",
+          "edge_type": "has_linked_resource",
+          "source": "su1",
+          "target": "model-1"
+        }
+      ]
+    }
+  },
+  "active_graph_id": "TM"
+}

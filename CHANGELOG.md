@@ -5,6 +5,21 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
+- **The em.json conformance suite** (MICRO specifica em.json, part 4, 24
+  October 2026). `spec/em-json/conformance/`: six samples (minimal; multigraph
+  with shelf, links and per-graph layouts; georeferenced; periodizations and
+  horizons; legacy 1.0 flat; unknown keys and types) with their expected reading,
+  written by `reference_reading.py` (standard library only).
+  `tests/test_emjson_conformance.py` holds s3Dgraphy to it: every sample
+  validates; s3Dgraphy reads each to the expected result; read → write → read
+  loses no node, type, name, description, data, edge attribute, link, layout or
+  header key it does not own; every export validates against em.v1.1.
+  **Fixed on the way** (the suite found them): a node of a type the datamodel
+  does not know was written back as `Node`, and an edge touching it, or of an
+  unknown relation, as `generic_connection` — a file from a newer tool lost them
+  on the first save. The reader now keeps the type and the edge as written
+  (`Graph.add_edge(validate=False)`, used only for what this datamodel cannot
+  judge), and says so in its warnings.
 - **The em.json specification, edited by E.D.** (MICRO specifica em.json,
   part 3, 24 October 2026). `spec/em-json/SPEC.md`, version 1.1, Editor's
   Draft, editor Emanuel Demetrescu (CNR-ISPC, ORCID 0000-0002-5065-7970):

@@ -1,0 +1,122 @@
+{
+  "header": {
+    "format": "em.json",
+    "version": "1.1",
+    "schema_version": 2,
+    "generator": {
+      "tool": "em-json conformance suite",
+      "version": "1.1"
+    },
+    "datamodel_versions": {
+      "nodes": "1.6.37",
+      "connections": "1.6.48"
+    }
+  },
+  "graphs": {
+    "GT16": {
+      "graph_id": "GT16",
+      "name": "Study with horizons",
+      "nodes": [
+        {
+          "id": "ep-imp",
+          "node_type": "EpochNode",
+          "name": "Imperial",
+          "data": {
+            "start_time": 100,
+            "end_time": 300
+          }
+        },
+        {
+          "id": "us1",
+          "node_type": "US",
+          "name": "US1"
+        },
+        {
+          "id": "us2",
+          "node_type": "US",
+          "name": "US2"
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "edge_type": "cuts",
+          "source": "us1",
+          "target": "us2"
+        },
+        {
+          "id": "e2",
+          "edge_type": "has_first_epoch",
+          "source": "us2",
+          "target": "ep-imp"
+        },
+        {
+          "id": "us1_is_after_us2",
+          "edge_type": "is_after",
+          "source": "us1",
+          "target": "us2",
+          "attributes": {
+            "origin": "derived",
+            "derived_from": [
+              "e1"
+            ]
+          }
+        }
+      ]
+    },
+    "periodizations": {
+      "graph_id": "periodizations",
+      "name": "Periodizations",
+      "data": {
+        "em_collection": "Periodizations",
+        "active_periodization": "per-centuries"
+      },
+      "nodes": [
+        {
+          "id": "per-centuries",
+          "node_type": "periodization",
+          "name": "Centuries"
+        },
+        {
+          "id": "h-2c",
+          "node_type": "horizon",
+          "name": "2nd century AD",
+          "data": {
+            "start_time": 100,
+            "end_time": 200,
+            "color": "#c0504d",
+            "order": 1,
+            "enabled": true
+          }
+        },
+        {
+          "id": "h-3c",
+          "node_type": "horizon",
+          "name": "3rd century AD",
+          "data": {
+            "start_time": 200,
+            "end_time": 300,
+            "color": "#4f81bd",
+            "order": 2,
+            "enabled": true
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "h-2c_in",
+          "edge_type": "is_in_periodization",
+          "source": "h-2c",
+          "target": "per-centuries"
+        },
+        {
+          "id": "h-3c_in",
+          "edge_type": "is_in_periodization",
+          "source": "h-3c",
+          "target": "per-centuries"
+        }
+      ]
+    }
+  },
+  "active_graph_id": "GT16"
+}

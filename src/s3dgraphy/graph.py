@@ -298,7 +298,8 @@ class Graph:
                 self._property_stale = True
         return node
 
-    def add_edge(self, edge_id: str, edge_source: str, edge_target: str, edge_type: str) -> Edge:
+    def add_edge(self, edge_id: str, edge_source: str, edge_target: str, edge_type: str,
+                 *, validate: bool = True) -> Edge:
         """
         Adds an edge to the graph with connection validation.
 
@@ -307,6 +308,10 @@ class Graph:
             edge_source (str): Source node ID.
             edge_target (str): Target node ID.
             edge_type (str): Type of edge, must be defined in the connection rules.
+            validate (bool): False keeps the edge AS WRITTEN, without asking the
+                connection rules — only for a reader that meets a type this
+                datamodel does not know and so cannot judge (em.json 1.1, §3:
+                an edge of an unknown type is kept as it is).
 
         Returns:
             Edge: The added edge.
@@ -321,7 +326,7 @@ class Graph:
             raise ValueError(f"Both nodes with IDs '{edge_source}' and '{edge_target}' must exist.")
 
         # Validate connection using connection rules
-        if not self.validate_connection(source_node.node_type, target_node.node_type, edge_type):
+        if validate and not self.validate_connection(source_node.node_type, target_node.node_type, edge_type):
             self.add_warning(f"Connection '{edge_type}' not allowed between '{source_node.node_type}' (name:{source_node.name}) and '{target_node.node_type}' (name:'{target_node.name}'). Using 'generic_connection' instead.")
             edge_type = "generic_connection"
 

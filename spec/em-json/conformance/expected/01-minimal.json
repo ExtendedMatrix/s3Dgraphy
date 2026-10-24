@@ -1,0 +1,23 @@
+{
+  "form": "container",
+  "active_graph_id": "GT16",
+  "graphs": {
+    "GT16": {
+      "role": "study",
+      "nodes": {
+        "us1": "US",
+        "us2": "US"
+      },
+      "edges": {
+        "e1": [
+          "abuts",
+          "us1",
+          "us2"
+        ]
+      },
+      "links": {}
+    }
+  },
+  "schema": "em.v1.1.schema.json",
+  "must_survive_round_trip": []
+}

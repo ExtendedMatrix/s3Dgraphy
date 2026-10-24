@@ -1,0 +1,44 @@
+{
+  "header": {
+    "format": "em.json",
+    "version": "1.1",
+    "schema_version": 2,
+    "generator": {
+      "tool": "em-json conformance suite",
+      "version": "1.1"
+    },
+    "datamodel_versions": {
+      "nodes": "1.6.37",
+      "connections": "1.6.48"
+    }
+  },
+  "graphs": {
+    "GT16": {
+      "graph_id": "GT16",
+      "name": "Minimal study",
+      "nodes": [
+        {
+          "id": "us1",
+          "node_type": "US",
+          "name": "US1",
+          "description": "Floor"
+        },
+        {
+          "id": "us2",
+          "node_type": "US",
+          "name": "US2",
+          "description": "Wall"
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "edge_type": "abuts",
+          "source": "us1",
+          "target": "us2"
+        }
+      ]
+    }
+  },
+  "active_graph_id": "GT16"
+}

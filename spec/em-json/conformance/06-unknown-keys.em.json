@@ -1,0 +1,80 @@
+{
+  "header": {
+    "format": "em.json",
+    "version": "1.1",
+    "schema_version": 2,
+    "generator": {
+      "tool": "em-json conformance suite",
+      "version": "1.1"
+    },
+    "datamodel_versions": {
+      "nodes": "1.6.37",
+      "connections": "1.6.48"
+    },
+    "x-lab": {
+      "note": "an extension in the header"
+    }
+  },
+  "graphs": {
+    "GT16": {
+      "graph_id": "GT16",
+      "name": "Study with extensions",
+      "x-member-note": "an unknown key on a member",
+      "nodes": [
+        {
+          "id": "us1",
+          "node_type": "US",
+          "name": "US1",
+          "x-flag": true,
+          "data": {
+            "x-field": "an unknown field inside data"
+          }
+        },
+        {
+          "id": "sd1",
+          "node_type": "x-sundial",
+          "name": "A node of a type nobody knows"
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "edge_type": "has_same_time",
+          "source": "us1",
+          "target": "sd1",
+          "x-weight": 0.5,
+          "attributes": {
+            "origin": "user",
+            "x-certainty": "high"
+          }
+        }
+      ],
+      "layout": {
+        "positions": {
+          "us1": {
+            "x": 0,
+            "y": 0
+          }
+        },
+        "x-zoom": 1.5
+      }
+    },
+    "notes": {
+      "graph_id": "notes",
+      "name": "A member with an unknown marker",
+      "data": {
+        "em_collection": "x-Annotations"
+      },
+      "nodes": [
+        {
+          "id": "n1",
+          "node_type": "US",
+          "name": "US99"
+        }
+      ],
+      "edges": []
+    }
+  },
+  "active_graph_id": "GT16",
+  "x-lab-notes": "an unknown top-level key"
+}

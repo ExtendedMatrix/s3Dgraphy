@@ -45,6 +45,26 @@ class EmJsonImportError(ValueError):
     pass
 
 
+def _judgeable(graph: Graph, e: Dict[str, Any], warnings: List[str]) -> bool:
+    """Can this datamodel judge the edge? Not when its relation, or the type of
+    one of its ends, is one it does not know (a file from a newer tool): then
+    the edge is kept AS WRITTEN — em.json 1.1, §3 — instead of being rewritten
+    to ``generic_connection``, which lost the relation on the next save."""
+    from ..edges import get_connections_datamodel
+    known_edge = get_connections_datamodel().get_edge_definition(
+        str(e.get("edge_type"))) is not None
+    ends = [graph.find_node_by_id(e.get("source")),
+            graph.find_node_by_id(e.get("target"))]
+    known_ends = all(n is None or n.node_type in Node.node_type_map
+                     or n.node_type == "Node" for n in ends)
+    if known_edge and known_ends:
+        return True
+    warnings.append(f"edge {e.get('id')!r} ({e.get('edge_type')}) kept as written: "
+                    f"{'its relation' if not known_edge else 'the type of one end'} "
+                    f"is not in this datamodel")
+    return False
+
+
 def schema_version_of(doc: Dict[str, Any]) -> int:
     """The em.json SCHEMA version of a document, tolerantly.
 
@@ -154,6 +174,12 @@ def _instantiate(node_type: str, payload: Dict[str, Any],
         )
         node = Node(payload["id"], payload.get("name", payload["id"]),
                     payload.get("description", ""))
+    if cls is Node and node_type and node_type != "Node":
+        # em.json 1.1, §3 (MICRO specifica em.json, 24 Oct 2026): a node of a
+        # type this datamodel does not know is kept as a generic node AND keeps
+        # its type, so that writing the file back does not turn a newer tool's
+        # node into an untyped one.
+        node.node_type = node_type
 
     # Aux-lifecycle bookkeeping keys live in node.attributes (where
     # is_injected / bake_injector / the volatile-save policy read them), not in
@@ -339,6 +365,7 @@ def parse_emjson(doc: Dict[str, Any], *,
             edge = graph.add_edge(
                 e.get("id") or f"{e['source']}__{e['edge_type']}__{e['target']}",
                 e["source"], e["target"], e["edge_type"],
+                validate=_judgeable(graph, e, warnings),
             )
         except Exception as exc:
             warnings.append(f"skipped edge {e.get('id')!r}: {exc}")

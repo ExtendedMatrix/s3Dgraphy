@@ -1,0 +1,52 @@
+{
+  "form": "container",
+  "active_graph_id": "GT16",
+  "graphs": {
+    "GT16": {
+      "role": "study",
+      "nodes": {
+        "us1": "US",
+        "sd1": "x-sundial"
+      },
+      "edges": {
+        "e1": [
+          "has_same_time",
+          "us1",
+          "sd1"
+        ]
+      },
+      "links": {}
+    },
+    "notes": {
+      "role": "study",
+      "nodes": {
+        "n1": "US"
+      },
+      "edges": {},
+      "links": {}
+    }
+  },
+  "schema": "em.v1.1.schema.json",
+  "must_survive_round_trip": [
+    [
+      "header",
+      "x-lab"
+    ],
+    [
+      "graphs",
+      "GT16",
+      "nodes",
+      "us1",
+      "data",
+      "x-field"
+    ],
+    [
+      "graphs",
+      "GT16",
+      "edges",
+      "e1",
+      "attributes",
+      "x-certainty"
+    ]
+  ]
+}

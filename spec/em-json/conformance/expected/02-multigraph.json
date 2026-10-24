@@ -1,0 +1,53 @@
+{
+  "form": "container",
+  "active_graph_id": "trench-A",
+  "graphs": {
+    "trench-A": {
+      "role": "study",
+      "nodes": {
+        "a-us1": "US",
+        "a-us2": "US",
+        "ep-roman": "EpochNode"
+      },
+      "edges": {
+        "a-e1": [
+          "overlies",
+          "a-us1",
+          "a-us2"
+        ],
+        "a-e2": [
+          "has_first_epoch",
+          "a-us2",
+          "ep-roman"
+        ]
+      },
+      "links": {
+        "l1": [
+          "is_after",
+          "a-us2",
+          "trench-B",
+          "b-us10"
+        ]
+      }
+    },
+    "trench-B": {
+      "role": "study",
+      "nodes": {
+        "b-us10": "US"
+      },
+      "edges": {},
+      "links": {}
+    },
+    "shelf": {
+      "role": "shelf",
+      "nodes": {
+        "auth-1": "author",
+        "lic-1": "license"
+      },
+      "edges": {},
+      "links": {}
+    }
+  },
+  "schema": "em.v1.1.schema.json",
+  "must_survive_round_trip": []
+}
