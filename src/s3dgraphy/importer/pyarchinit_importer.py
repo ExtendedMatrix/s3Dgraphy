@@ -997,7 +997,8 @@ class PyArchInitImporter(BaseImporter):
                 self.warnings.append(f"Skipped rows (not in graph): {skipped_rows}")
             if error_rows > 0:
                 self.warnings.append(f"Errors: {error_rows}")
-            
+
+            self._finish_relative_chronology("imported")
             return self.graph
             
         except Exception as e:

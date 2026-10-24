@@ -124,6 +124,7 @@ class CSVImporter(BaseImporter):
                     f"{ {k: v for k, v in list(row.items())[:3]} }")
         self._process_stratigraphic_relations()
         self._process_epochs()
+        self._finish_relative_chronology("imported")
         return self.graph
 
     def _passes_filters(self, row: Dict[str, Any]) -> bool:

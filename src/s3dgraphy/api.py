@@ -119,7 +119,11 @@ def chronology(graph: Graph) -> Dict[str, Any]:
     untouched."""
     warnings: List[str] = []
     chron = graph.chronology(warnings=warnings)
-    return {"chronology": chron, "warnings": warnings}
+    # MICRO-LAB orizzonti · the epochs' effective intervals beside it (a
+    # sub-epoch restricted by its parent), so an interface compares epochs with
+    # horizons by the same numbers the chronology used
+    return {"chronology": chron, "warnings": warnings,
+            "epochs": graph.epoch_intervals()}
 
 
 # ── validate ────────────────────────────────────────────────────────────────

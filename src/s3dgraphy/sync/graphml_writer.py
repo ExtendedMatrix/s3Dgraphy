@@ -247,16 +247,16 @@ _EPOCH_ROW_PALETTE = (
 )
 
 
-# Topological edge types that map onto temporal `is_after` precedence
-# (i.e. those for which the inference engine has a non-None entry in
-# TOPOLOGICAL_TO_TEMPORAL). Mirrored here to compute the pre-export
-# temporal-edge count without re-running the engine.
-_TEMPORAL_INPUT_EDGE_TYPES = frozenset({
-    "cuts", "is_cut_by",
-    "overlies", "is_overlain_by",
-    "fills", "is_filled_by",
-    "is_after", "is_before",
-})
+# Edge types that map onto temporal `is_after` precedence: those the
+# connections datamodel declares with a direction (`implies`, 1.6.47) — the
+# physical relations the inference engine turns into `is_after`, plus is_after /
+# is_before themselves. Read, not mirrored.
+def _temporal_input_edge_types():
+    from ..edges import get_connections_datamodel
+    return frozenset(get_connections_datamodel().ordering_edges())
+
+
+_TEMPORAL_INPUT_EDGE_TYPES = _temporal_input_edge_types()
 
 
 def _count_temporal_input_edges(graph) -> int:

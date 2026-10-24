@@ -46,11 +46,17 @@ detection pass before propagation and reports the cycles under the
 from typing import List, Optional, Tuple
 
 
-# Edge families used for stratigraphic order. Must stay in sync with
-# Graph._SOURCE_IS_MORE_RECENT / _TARGET_IS_MORE_RECENT.
-_SOURCE_IS_MORE_RECENT = frozenset({'cuts', 'overlies', 'fills', 'is_after'})
-_TARGET_IS_MORE_RECENT = frozenset({'is_cut_by', 'is_overlain_by',
-                                    'is_filled_by', 'is_before'})
+# Edge families used for stratigraphic order: the connections datamodel's
+# (`implies`, 1.6.47), the same sets Graph reads — no longer a copy to keep in
+# sync by hand.
+def _ordering_sets():
+    from .edges import get_connections_datamodel
+    ordering = get_connections_datamodel().ordering_edges()
+    return (frozenset(n for n, d in ordering.items() if d),
+            frozenset(n for n, d in ordering.items() if not d))
+
+
+_SOURCE_IS_MORE_RECENT, _TARGET_IS_MORE_RECENT = _ordering_sets()
 
 
 # ---------------------------------------------------------------------------

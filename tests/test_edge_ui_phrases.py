@@ -227,7 +227,7 @@ def test_the_version_went_up():
     # badge's {owner}, no refresh_instance — the instance is a view
     # 1.9 (2026-10-09, night): the `property_names` section — see
     # test_datamodel_i18n.test_property_names_are_labelled_and_are_not_qualia
-    assert _translations()["version"] == "1.14"  # 1.14 dal 23 ott 2026 (end_reasons; 1.12-1.13 SF/RSF/VSF, serVSF; 1.11 study_took_place_at; 1.10 label_author / label_author_ai)
+    assert _translations()["version"] == "1.15"  # 1.15 dal 24 ott 2026 (orizzonti e periodizzazioni); 1.14 dal 23 ott 2026 (end_reasons; 1.12-1.13 SF/RSF/VSF, serVSF; 1.11 study_took_place_at; 1.10 label_author / label_author_ai)
 
 
 def test_combines_reads_of_in_english():

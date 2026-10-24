@@ -208,6 +208,12 @@ class Container:
     #: provenance forest rendered as a stratigraphic matrix. See
     #: :mod:`s3dgraphy.dtc.corpus`.
     corpus: Optional[Graph] = None
+    #: The SHARED MEASURES OF TIME (E.D., 24 Oct 2026): periodizations and their
+    #: horizons, nodes of the multigraph at the level of the container
+    #: (`em_collection: "Periodizations"`). Kept out of `graphs` like the shelf
+    #: and the corpus; None = the project has none, and nothing is written.
+    #: See :mod:`s3dgraphy.periodization`.
+    periodizations: Optional[Graph] = None
     active_graph_id: Optional[str] = None
     header: Dict[str, Any] = field(default_factory=dict)
     #: The ACTIVE graph's layout, for a caller that has one graph and one
@@ -267,6 +273,13 @@ def is_shelf_member(graph_section: Any) -> bool:
     # a Graph object rather than a section
     data = getattr(graph_section, "data", None)
     return isinstance(data, dict) and data.get("em_collection") == "ShelfGraph"
+
+
+def is_periodizations_member(graph_section: Any) -> bool:
+    """Is this member the periodizations (the horizons)? The MARKER, like the
+    shelf and the corpus — :func:`s3dgraphy.periodization.is_periodizations`."""
+    from .periodization import is_periodizations
+    return is_periodizations(graph_section)
 
 
 def is_dtc_corpus_member(graph_section: Any) -> bool:
@@ -397,6 +410,9 @@ def parse_container(doc: Dict[str, Any], *,
         warnings.extend(member_warnings)
         if is_shelf_member(section):
             container.shelf = graph
+        elif is_periodizations_member(section):
+            # the horizons: shared by every graph, a matrix of none
+            container.periodizations = graph
         elif is_dtc_corpus_member(section):
             # the DOCUMENTATION member: a forest of provenance, not a matrix.
             # Routed like the shelf so `container.graphs` stays "the study's
@@ -467,6 +483,14 @@ def build_container(container: Container) -> Dict[str, Any]:
         from .dtc.corpus import DTC_CORPUS_MEMBER_ID
         corpus_id = container.corpus.graph_id or DTC_CORPUS_MEMBER_ID
         graphs[corpus_id] = _member_section(container.corpus)
+    if container.periodizations is not None and any(
+            getattr(n, "node_type", None) == "periodization"
+            for n in container.periodizations.nodes):
+        # written only when there is something to measure with: an em.json
+        # without horizons stays exactly what it was
+        from .periodization import PERIODIZATIONS_MEMBER_ID
+        pid = container.periodizations.graph_id or PERIODIZATIONS_MEMBER_ID
+        graphs[pid] = _member_section(container.periodizations)
 
     # The header comes from the single-graph builder, so the format/version/
     # datamodel stamps are written in exactly ONE place.
@@ -1021,6 +1045,18 @@ def merge_into_container(container: Container, other: Container) -> MergeReport:
             report.corpus_merged = corpus_report.merged_nodes
             report.conflicts.extend(corpus_report.conflicts)
             report.warnings.extend(corpus_report.warnings)
+
+    # …and the HORIZONS (24 Oct 2026): the same additive per-UUID merge — two
+    # people's periodizations become the project's set of periodizations.
+    if other.periodizations is not None:
+        if container.periodizations is None:
+            container.periodizations = other.periodizations
+        else:
+            per_report = MergeReport()
+            _merge_graph_into(container.periodizations, other.periodizations,
+                              per_report)
+            report.conflicts.extend(per_report.conflicts)
+            report.warnings.extend(per_report.warnings)
 
     if container.active_graph_id not in container.graphs:
         container.active_graph_id = next(iter(container.graphs), None)

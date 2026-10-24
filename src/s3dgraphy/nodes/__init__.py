@@ -79,6 +79,10 @@ from .dtc_acquisition_node import DTCAcquisitionNode
 # two: a DTC node is a STEP and a device is a thing in the world. It hangs off
 # the event by dtc_happened_on_device (L12), never off the input or the output.
 from .dtc_device_node import DTCDeviceNode
+# The shared measures of time (E.D., 24 Oct 2026): a periodization (E32) lists
+# its horizons (crmgeo:SP10). They live at the level of the CONTAINER, in the
+# member `graphs.periodizations` — see s3dgraphy.periodization.
+from .periodization_node import PeriodizationNode, HorizonNode
 # EM Narrative (DP-79): the story told over the graph. Chapters and blocks are
 # ordered STRUCTURES carried by the node, not nodes themselves — see the module
 # docstring for why.
@@ -157,4 +161,6 @@ __all__ = [
     "DTCProcessNode",
     "DTCAcquisitionNode",
     "DTCDeviceNode",
+    "PeriodizationNode",
+    "HorizonNode",
 ]

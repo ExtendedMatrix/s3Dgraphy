@@ -137,6 +137,7 @@ class XMLImporter(BaseImporter):
                     f"record skipped ({exc}): "
                     f"{ {k: v for k, v in list(row.items())[:3]} }")
         self._apply_relations(records)
+        self._finish_relative_chronology("imported")
         return self.graph
 
     def _passes_filters(self, row: Dict[str, Any]) -> bool:

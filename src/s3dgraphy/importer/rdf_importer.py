@@ -2019,7 +2019,14 @@ def import_rdf(source: Any,
                into_graph: Optional[S3DGraph] = None) -> Tuple[List[S3DGraph], List[str]]:
     """One-call helper: (graphs, warnings)."""
     importer = RDFImporter(base_uri=base_uri)
+    before = ({e.edge_id for e in into_graph.edges}
+              if into_graph is not None else set())
     graphs = importer.parse(source, fmt=fmt, into_graph=into_graph)
+    # connections 1.6.47 · the relative chronology read from RDF is imported
+    from ..temporal import mark_origin
+    for g in graphs:
+        mark_origin(g, "imported",
+                    edges=[e for e in g.edges if e.edge_id not in before])
     # D1 · the level a file carries is compared with the chain, then forgotten
     from ..resources.versions import check_lod_levels
     for g in graphs:

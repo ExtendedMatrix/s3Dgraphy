@@ -722,10 +722,14 @@ class Graph:
     # CHRONOLOGY CALCULATION & TEMPORAL PROPAGATION (TPQ/TAQ)
     # =========================================================================
 
-    # Relations where source is MORE RECENT than target
-    _SOURCE_IS_MORE_RECENT = {'cuts', 'overlies', 'fills', 'is_after'}
-    # Relations where target is MORE RECENT than source
-    _TARGET_IS_MORE_RECENT = {'is_cut_by', 'is_overlain_by', 'is_filled_by', 'is_before'}
+    # Relations where source / target is MORE RECENT than the other end. Read
+    # from the connections datamodel (`implies`, 1.6.47: «this physical
+    # relation implies that temporal one», one source for the whole library):
+    # cuts, overlies, fills, is_after and their reverses today.
+    _ORDERING = get_connections_datamodel().ordering_edges()
+    _SOURCE_IS_MORE_RECENT = frozenset(n for n, d in _ORDERING.items() if d)
+    _TARGET_IS_MORE_RECENT = frozenset(n for n, d in _ORDERING.items() if not d)
+    del _ORDERING
 
     #: Every stratigraphic type the chronology dates: the datamodel's proper
     #: units (``family`` real or virtual in s3Dgraphy_node_datamodel.json) plus
@@ -743,7 +747,7 @@ class Graph:
                         'document', 'author', 'author_ai')
 
     #: Where a bound can come from, in :meth:`chronology`'s ``rule`` field.
-    CHRONOLOGY_RULES = ('written', 'epoch', 'contained', 'tpq', 'taq')
+    CHRONOLOGY_RULES = ('written', 'epoch', 'sub_epoch', 'contained', 'tpq', 'taq')
 
     def _chronology_nodes(self):
         nodes = []
@@ -782,6 +786,12 @@ class Graph:
         ``epoch``      the node's epochs (min start / max end over
                        ``has_first_epoch`` + ``survive_in_epoch``); the source is
                        the epoch that gives the bound.
+        ``sub_epoch``  the same, when the node's epoch is a SUB-EPOCH whose bound
+                       comes from its parent (``has_sub_epoch``, 1.6.47: the
+                       sub-epoch restricts its parent's interval — a bound it
+                       lacks, or one outside the parent, is the parent's); the
+                       source is the parent epoch that gives the bound and the
+                       relation ``has_sub_epoch``. See :meth:`epoch_intervals`.
         ``contained``  the latest start among what the node contains
                        (``is_part_of``, recursive; a member without a date of its
                        own is read on its original through ``changed_from``); the
@@ -806,6 +816,8 @@ class Graph:
 
         sink = warnings if warnings is not None else []
         strat_nodes = self._chronology_nodes()
+        # the epochs' effective intervals, sub-epochs restricted by their parent
+        self._epoch_iv = self.epoch_intervals(warnings=sink)
 
         # Pass 0: stratigraphic cycles (AI-extracted graphs can close loops).
         self._warn_on_stratigraphic_cycles(sink)
@@ -822,6 +834,7 @@ class Graph:
                 self._set_bound(st, side, *found)
                 if found[1] == "written":
                     written[node.node_id] = found[0]
+        self._epoch_iv = None
 
         # Pass 2: what the node contains (a container is not older than its
         # contents). Beside a written start, never over it.
@@ -926,20 +939,115 @@ class Graph:
         if found is not None:
             return found[0], "written", found[1].node_id, "has_property"
         rule = get_rule(prop_type)
+        intervals = getattr(self, "_epoch_iv", None)
+        if intervals is None:
+            intervals = self.epoch_intervals()
         values, seen = [], set()
         for edge_type in ("has_first_epoch", "survive_in_epoch"):
             for epoch in self.get_connected_epoch_nodes_list_by_edge_type(node, edge_type):
                 if epoch.node_id in seen:
                     continue
                 seen.add(epoch.node_id)
-                v = rule.swimlane_getter(self, epoch)
+                iv = intervals.get(epoch.node_id) or {}
+                v = iv.get(side)
                 if v is not None:
                     values.append((float(v), epoch, edge_type))
         if not values:
             return None
         best = rule.swimlane_aggregate([v for v, _, _ in values])
         _, epoch, edge_type = next(x for x in values if x[0] == best)
+        iv = intervals.get(epoch.node_id) or {}
+        if iv.get(side + "_rule") == "sub_epoch":
+            return best, "sub_epoch", iv[side + "_source"], "has_sub_epoch"
         return best, "epoch", epoch.node_id, edge_type
+
+    def epoch_intervals(self, warnings=None):
+        """The EFFECTIVE interval of every epoch, sub-epochs included.
+
+        Returns ``{epoch_id: {"start", "end", "start_rule", "end_rule",
+        "start_source", "end_source", "parent"}}``. An epoch's own bounds are
+        :func:`resolvers.builtin_rules._epoch_start` / ``_epoch_end`` (a
+        PropertyNode on the epoch wins over its header), rule ``epoch``, source
+        itself.
+
+        A SUB-EPOCH (target of ``has_sub_epoch``, whose source is the parent —
+        verified in connections 1.6.47; the reverse spelling ``is_in_epoch``,
+        sub-epoch → parent, is read too) RESTRICTS its parent's interval
+        (MICRO-LAB orizzonti, 24 Oct 2026): its effective interval is the
+        intersection of its own with the parent's effective one. A bound it
+        does not declare is the parent's; a bound outside the parent is brought
+        back to the parent's, and ``warnings`` says so. Either way the rule is
+        ``sub_epoch`` and the source is the epoch that gives the value (the
+        nearest ancestor that declares it). Recursive: a phase of a phase reads
+        its grandparent through its parent. A cycle of has_sub_epoch is
+        reported and cut. Nothing is written.
+        """
+        from .resolvers.builtin_rules import _epoch_start, _epoch_end
+        sink = warnings if warnings is not None else []
+        epochs = {n.node_id: n for n in self.nodes
+                  if getattr(n, "node_type", None) == "EpochNode"}
+        parent = {}
+        for e in self.edges:
+            if e.edge_type == "has_sub_epoch":
+                child, par = e.edge_target, e.edge_source
+            elif e.edge_type == "is_in_epoch":
+                child, par = e.edge_source, e.edge_target
+            else:
+                continue
+            if child in epochs and par in epochs and child != par:
+                parent.setdefault(child, par)
+        out, active = {}, set()
+
+        def own(epoch, side):
+            v = (_epoch_start if side == "start" else _epoch_end)(self, epoch)
+            return float(v) if v is not None else None
+
+        def resolve(eid):
+            if eid in out:
+                return out[eid]
+            epoch = epochs[eid]
+            entry = {"parent": None}
+            for side in ("start", "end"):
+                v = own(epoch, side)
+                entry[side] = v
+                entry[side + "_rule"] = "epoch" if v is not None else None
+                entry[side + "_source"] = eid if v is not None else None
+            par = parent.get(eid)
+            if par is not None and par in active:
+                sink.append(f"[chronology sub-epoch] has_sub_epoch cycle through "
+                            f"'{getattr(epoch, 'name', eid)}'; its parent is ignored")
+                par = None
+            if par is not None:
+                active.add(eid)
+                p = resolve(par)
+                active.discard(eid)
+                entry["parent"] = par
+                for side, outside in (("start", lambda mine, theirs: mine < theirs),
+                                      ("end", lambda mine, theirs: mine > theirs)):
+                    pv = p.get(side)
+                    if pv is None:
+                        continue
+                    mine = entry[side]
+                    src = (p[side + "_source"] if p.get(side + "_rule") == "sub_epoch"
+                           else par)
+                    if mine is None:
+                        entry[side], entry[side + "_rule"], entry[side + "_source"] = (
+                            pv, "sub_epoch", src)
+                    elif outside(mine, pv):
+                        sink.append(
+                            f"[chronology sub-epoch] sub-epoch "
+                            f"'{getattr(epoch, 'name', eid)}' declares {side}_time="
+                            f"{mine} outside its parent "
+                            f"'{getattr(epochs[par], 'name', par)}' ({side} {pv}); "
+                            f"restricted to the parent's.")
+                        entry[side], entry[side + "_rule"], entry[side + "_source"] = (
+                            pv, "sub_epoch", src)
+            out[eid] = entry
+            return entry
+
+        for eid in epochs:
+            resolve(eid)
+        return out
 
     def _warn_on_stratigraphic_cycles(self, sink=None):
         """Detect cycles in the stratigraphic ``is_after`` / ``cuts`` /

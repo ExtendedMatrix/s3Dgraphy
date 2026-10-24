@@ -176,6 +176,8 @@ class GraphMLImporter:
     def __init__(self, filepath, graph=None):
         self.filepath = filepath
         self.graph = graph if graph is not None else Graph(graph_id="imported_graph")
+        #: edges already there: the origin is written only on what is read here
+        self._edges_before = {e.edge_id for e in self.graph.edges}
         # Dizionario per la deduplicazione dei nodi documento
         self.document_nodes_map = {}  # nome documento -> node_id
         self.duplicate_id_map = {}    # id originale -> id deduplicated
@@ -613,6 +615,12 @@ class GraphMLImporter:
             from ..hdto import propose_study_code
             propose_study_code(self.graph)
 
+        # connections 1.6.47 · what a GraphML says of the relative chronology
+        # is another file's: imported (the edge keeps original_edge_id too)
+        from ..temporal import mark_origin
+        mark_origin(self.graph, "imported", edges=[
+            e for e in self.graph.edges
+            if e.edge_id not in getattr(self, "_edges_before", set())])
         return self.graph
 
     def slipback_uuids_to_graphml(self):

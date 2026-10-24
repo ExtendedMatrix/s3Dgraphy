@@ -232,6 +232,9 @@ class BaseImporter(ABC):
         # but this was left commented ("initialized by the child class") and the
         # XLSX importer never did, so parse() raised `no attribute 'graph'`.
         self.graph = graph if graph is not None else Graph(graph_id="imported_graph")
+        #: the edges the graph had before this import: the origin of the
+        #: relative chronology is written only on what the import adds
+        self._edges_before = {e.edge_id for e in self.graph.edges}
         self.warnings = []
         #: The key values of the rows that matched NO node in the host graph,
         #: in the order they were read, each once.
@@ -918,6 +921,25 @@ class BaseImporter(ABC):
                         )
 
         logger.info(f"Stratigraphic relations: {edges_created} topological edges created")
+
+    def _finish_relative_chronology(self, origin: str = "imported",
+                                    derive: bool = True) -> None:
+        """Close an import: the ORIGIN on the relative-chronology edges it
+        added, then the derived relative chronology (connections 1.6.47).
+
+        A table read from another software is ``imported``; the relation a
+        table NAMES (is_after, has_same_time, changed_from) is the source's.
+        Then, as E.D. asks for imported tables («si ricava»), the ``is_after``
+        the physical relations imply and no chain already gives are added,
+        marked ``derived`` — :func:`s3dgraphy.temporal.derive_relative_chronology`.
+        """
+        from ..temporal import derive_relative_chronology, mark_origin
+        before = getattr(self, "_edges_before", set())
+        mark_origin(self.graph, origin,
+                    edges=[e for e in self.graph.edges if e.edge_id not in before])
+        if derive:
+            derive_relative_chronology(self.graph, write=True,
+                                       warnings=self.warnings)
 
     def _process_epochs(self):
         """Second pass: create EpochNode objects from PERIOD/PHASE/SUBPHASE columns.

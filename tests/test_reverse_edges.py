@@ -100,11 +100,17 @@ def edges_of(*, canonicalize: bool, columns: tuple) -> dict:
         names = {n.node_id: n.name for n in graph.nodes}
         out = {}
         for edge in graph.edges:
+            # connections 1.6.47 · the is_after a table import now DERIVES from
+            # the physical relations is not what this parity is about
+            if (getattr(edge, "attributes", None) or {}).get("origin") == "derived":
+                continue
             source = names.get(edge.edge_source)
             target = names.get(edge.edge_target)
             out[f"{source}_{edge.edge_type}_{target}"] = (
                 f"{source}-{edge.edge_type}->{target}")
-        assert len(out) == len(graph.edges), "two edges collapsed in the KEY"
+        assert len(out) == len([e for e in graph.edges
+                                if (getattr(e, "attributes", None) or {}).get("origin") != "derived"]), \
+            "two edges collapsed in the KEY"
         return out
 
 

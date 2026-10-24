@@ -88,7 +88,8 @@ def test_direction_resolution_is_reported_and_bounded():
     # 51 since connections 1.6.31: was_revision_of declares had_revision
     # 52 since connections 1.6.34: has_translation declares is_translation_of
     # 53 since connections 1.6.39: study_took_place_at declares was_place_of_study
-    assert len(dm._reverse_of) == 53
+    # 54 since connections 1.6.47: is_in_periodization declares lists_horizon
+    assert len(dm._reverse_of) == 54
     assert not (set(dm._reverse_of) & canonicals)
 
 
@@ -213,10 +214,12 @@ def test_the_inversion_is_declared_in_the_datamodel_not_in_the_code():
     dm = _Datamodel()
     edges = dm.connections_datamodel["edge_types"]
     assert edges["is_after"]["mapping"]["rdf_subject"] == "target"
-    # and it is the exception, not the rule
+    # and it is the exception, not the rule: is_after, and since connections
+    # 1.6.47 is_in_periodization (horizon → periodization, written as
+    # <periodization> P71_lists <horizon>) — the next one was a JSON change
     inverting = [name for name, e in edges.items()
                  if (e.get("mapping") or {}).get("rdf_subject") == "target"]
-    assert inverting == ["is_after"]
+    assert inverting == ["is_after", "is_in_periodization"]
     # the two inversions compose: drawn-reversed XOR mapping-inverts
     assert dm.resolve_edge_direction("is_after") == ("is_after", True)
     assert dm.resolve_edge_direction("is_before") == ("is_after", False)

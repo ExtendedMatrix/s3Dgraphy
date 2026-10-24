@@ -37,32 +37,18 @@ class TemporalInferenceEngine:
         """
         self.connections_dm = connections_datamodel or get_connections_datamodel()
 
-        # Mapping of topological relations to temporal directions
-        # True = source is more recent, False = target is more recent
-        self.TOPOLOGICAL_TO_TEMPORAL = {
-            'cuts': True,           # Cutter is more recent
-            'is_cut_by': False,     # Cut unit is older
-            'overlies': True,       # Covering unit is more recent
-            'is_overlain_by': False,  # Covered unit is older
-            'fills': True,          # Fill is more recent
-            'is_filled_by': False,  # Cut is older
-            # Ambiguous relations (no clear temporal direction)
-            'abuts': None,
-            'is_abutted_by': None,
-            'bonded_to': None,
-            'equals': None,
-        }
-        # Every OLDER SPELLING of a relation above (`is_bonded_to` for
-        # `bonded_to`, `is_physically_equal_to` for `equals` — the datamodel's
-        # `spelling_of`) reads the same way. Asked of the datamodel, not listed:
-        # until 2026-09-27 the table named only the older spelling and a
-        # `bonded_to` edge was not seen as a physical relation at all.
+        # The PHYSICAL relations and the temporal direction each implies,
+        # True = source is more recent, False = target is more recent, None =
+        # no implication declared (abuts, bonded_to, equals: open). READ FROM
+        # THE CONNECTIONS DATAMODEL (`implies`, 1.6.47), every name included —
+        # reverses (is_cut_by) and older spellings (is_bonded_to) alike. Until
+        # 1.6.46 this table was written here by hand, a third copy of the rule.
         loader = (self.connections_dm
-                  if hasattr(self.connections_dm, 'spellings')
+                  if hasattr(self.connections_dm, 'physical_relations')
                   else get_connections_datamodel())
-        for name, direction in list(self.TOPOLOGICAL_TO_TEMPORAL.items()):
-            for spelling in loader.spellings(name):
-                self.TOPOLOGICAL_TO_TEMPORAL.setdefault(spelling, direction)
+        self.TOPOLOGICAL_TO_TEMPORAL = {
+            name: loader.temporal_direction(name)
+            for name in sorted(loader.physical_relations())}
 
     def extract_temporal_from_graph(self, graph) -> List[Tuple[str, str]]:
         """

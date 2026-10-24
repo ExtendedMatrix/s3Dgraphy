@@ -5,6 +5,37 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
+- **LAB (embargo) · Horizons and periodizations, nodes of the multigraph**
+  (node datamodel 1.6.37, connections 1.6.47, translations 1.15; MICRO-LAB
+  orizzonti, decided by E.D. 24 October 2026). `PeriodizationNode` (E32
+  Authority Document) lists its `HorizonNode`s (crmgeo:SP10 Declarative
+  Time-Span: label, start_time, end_time, color, order, enabled) through the new
+  edge `is_in_periodization` (P71 lists, written target-first). They live at the
+  level of the CONTAINER, in the member `graphs.periodizations`
+  (`em_collection: "Periodizations"`), routed like the shelf and the DTC corpus
+  (`Container.periodizations`), merged per UUID; an em.json without horizons is
+  unchanged. `s3dgraphy.periodization`: `list_periodizations`,
+  `active_periodization`, `horizons_of(container, graph, node_id)` (unit, epoch
+  or whole graph) and `horizons_by_node`, by the OVERLAP rule on the intervals
+  `Graph.chronology()` computes; `import_cronofilter` takes EM Tools'
+  CronoFilter horizons (.cf.json, the old Heriverse patch, the scene's
+  PropertyGroup) as one periodization.
+- **Sub-epochs in the chronology.** `Graph.epoch_intervals()`: a sub-epoch
+  (`has_sub_epoch`, parent → sub-epoch) RESTRICTS its parent's interval; a unit
+  dated through it reports rule `sub_epoch`, source the parent, relation
+  `has_sub_epoch`.
+- **One source for «this physical relation implies that temporal one»**:
+  `implies` on cuts / fills / overlies / is_after (`implies: null` on abuts,
+  bonded_to, equals — decision open), read by
+  `ConnectionsDatamodel.temporal_direction / ordering_edges /
+  physical_relations`; Graph, diagnostics, the inference engine and the GraphML
+  writer read it instead of four hand copies.
+- **The origin of relative chronology**: `edge.attributes.origin` ∈ {derived,
+  user, imported} written by the importers (GraphML, RDF, mapped tables:
+  imported; the EM unified template: user) and by the new public
+  `s3dgraphy.temporal.derive_relative_chronology(graph, reduce=True,
+  write=False)`, which the table importers now call. Files without the mark stay
+  valid. `tests/test_lab_orizzonti.py`.
 - **The anastylosis as a document type** (`em_document_types.json` 2.1, MICRO
   special find e fine dell'unità part 5, decided by E.D. 23 October 2026). A TYPE
   of document — vocabulary, not an extension: `anastylosis`, the dynamic

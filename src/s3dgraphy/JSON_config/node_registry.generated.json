@@ -1,6 +1,6 @@
 {
  "_generated": "by `python -m s3dgraphy.tools.sync_node_datamodel` — DO NOT hand-edit. The flat class hierarchy (parent/node_type/description) is derived from the Python Node subclasses; hand-authored semantics and CIDOC mappings live in s3Dgraphy_node_datamodel.json.",
- "s3Dgraphy_data_model_version": "1.6.36",
+ "s3Dgraphy_data_model_version": "1.6.37",
  "node_types": {
   "ActivityNodeGroup": {
    "parent": "GroupNode",
@@ -112,6 +112,11 @@
    "node_type": "heritage_entity",
    "description": "HC1 Heritage Entity (HDT-O / ECHOES D7.1)."
   },
+  "HorizonNode": {
+   "parent": "Node",
+   "node_type": "horizon",
+   "description": "One span of a periodization: label, start, end, colour, order."
+  },
   "LicenseNode": {
    "parent": "Node",
    "node_type": "license",
@@ -156,6 +161,11 @@
    "parent": "GroupNode",
    "node_type": "ParadataNodeGroup",
    "description": "Nodo gruppo per paradata. Questo gruppo tiene insieme tutti i paradati relativi ad una unità stratigrafica: normalmente si chiama \"[nome_US]_PD\" (ParaData)"
+  },
+  "PeriodizationNode": {
+   "parent": "Node",
+   "node_type": "periodization",
+   "description": "A set of horizons — one way of cutting time into named spans."
   },
   "ProjectNode": {
    "parent": "Node",

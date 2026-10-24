@@ -468,6 +468,7 @@ class MappedXLSXImporter(BaseImporter):
             # These require all nodes to exist first (two-pass approach)
             self._process_epochs()
             self._process_stratigraphic_relations()
+            self._finish_relative_chronology("imported")
 
             # The language the nodes this import made are born in: the
             # source's, else the study's (dev27, rule A1: always written)

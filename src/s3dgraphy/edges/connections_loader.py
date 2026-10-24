@@ -92,6 +92,11 @@ class ConnectionsDatamodel:
                     'is_symmetric': edge_def.get('reverse') is None,
                     'reverse_name': edge_def.get('reverse', {}).get('name') if edge_def.get('reverse') else None
                 }
+                # 1.6.47 · the temporal implication of a physical relation
+                # (`implies`), kept as it is written: absent = not physical,
+                # None = physical with no implication declared.
+                if 'implies' in edge_def:
+                    self._expanded_edges[edge_name]['implies'] = edge_def['implies']
                 if spelling_of:
                     self._expanded_edges[edge_name]['canonical_name'] = spelling_of
                     self._expanded_edges[edge_name]['spelling_of'] = spelling_of
@@ -116,6 +121,13 @@ class ConnectionsDatamodel:
                         'canonical_name': edge_name,
                         'reverse_name': None  # Reverse doesn't have its own reverse
                     }
+                    # the reverse name reads the implication the other way
+                    implied = edge_def.get('implies', ...)
+                    if implied is not ...:
+                        self._expanded_edges[reverse_name]['implies'] = (
+                            None if implied is None else
+                            {**implied, 'source_is_more_recent':
+                             not implied.get('source_is_more_recent', True)})
 
             for edge_name, edge_def in edge_types.items():
                 target = edge_def.get('spelling_of')
@@ -142,6 +154,45 @@ class ConnectionsDatamodel:
             raise ValueError(
                 f"Invalid JSON in connections datamodel: {e}"
             )
+
+    def temporal_direction(self, edge_name: str) -> Optional[bool]:
+        """Which end of ``edge_name`` is MORE RECENT, as the datamodel says.
+
+        ``True``: the source is more recent (cuts, overlies, fills, is_after);
+        ``False``: the target is (is_cut_by, is_overlain_by, is_filled_by,
+        is_before); ``None``: the edge implies no order — a physical relation
+        whose implication is still open (abuts, bonded_to, equals and their
+        older spellings), or not a physical/temporal relation at all.
+
+        1.6.47 · one source for the rule «this physical relation implies that
+        temporal one», read by Graph.chronology, diagnostics and the temporal
+        inference engine (until then copied by hand in the three).
+        """
+        edge_def = self._expanded_edges.get(edge_name)
+        if not edge_def:
+            return None
+        implied = edge_def.get('implies')
+        if not implied or implied.get('edge') != 'is_after':
+            return None
+        return bool(implied.get('source_is_more_recent', True))
+
+    def ordering_edges(self) -> Dict[str, bool]:
+        """Every edge name (canonical, reverse, older spelling) that orders
+        two units in time, with :meth:`temporal_direction` as value."""
+        out: Dict[str, bool] = {}
+        for name in self._expanded_edges:
+            direction = self.temporal_direction(name)
+            if direction is not None:
+                out[name] = direction
+        return out
+
+    def physical_relations(self) -> frozenset:
+        """The names that are PHYSICAL relations between units (those whose
+        entry declares ``implies``, with or without an implication), is_after
+        and is_before excluded."""
+        return frozenset(
+            n for n, e in self._expanded_edges.items()
+            if 'implies' in e and n not in ('is_after', 'is_before'))
 
     def get_version(self) -> str:
         """Get the connections datamodel version."""

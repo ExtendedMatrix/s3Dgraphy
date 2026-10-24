@@ -313,6 +313,12 @@ class UnifiedXLSXImporter:
         self._parse_units(sheets["Units"])
         self._parse_claims(sheets["Claims"])
 
+        # connections 1.6.47 · the relations a person wrote in the EM template
+        # are the user's; then the is_after the physical ones imply, derived
+        from ..temporal import derive_relative_chronology, mark_origin
+        mark_origin(self.graph, "user")
+        derive_relative_chronology(self.graph, write=True, warnings=self.warnings)
+
         self.stats["nodes_total"] = len(self.graph.nodes)
         self.stats["edges_total"] = len(self.graph.edges)
 
