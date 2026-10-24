@@ -63,7 +63,13 @@ from ..multigraph.multigraph import get_all_graph_ids, get_graph
 # ─────────────────────────────────────────────────────────────────────────────
 
 EM         = Namespace("https://w3id.org/em/ontology#")
-S3D        = Namespace("https://w3id.org/em/s3dgraphy#")
+# The library's own minted terms (qualia, units) — under the REGISTERED space
+# w3id.org/extendedmatrix (MICRO specifica em.json, 24 Oct 2026). Until then
+# they were minted under w3id.org/em/s3dgraphy#, which w3id never registered:
+# the readers accept that one as an alias (S3D_LEGACY), and the /em alias PR
+# prepared in spec/em-json/w3id-alias-em/ makes the old IRIs resolve too.
+S3D        = Namespace("https://w3id.org/extendedmatrix/s3dgraphy#")
+S3D_LEGACY = (Namespace("https://w3id.org/em/s3dgraphy#"),)
 CRM        = Namespace("http://www.cidoc-crm.org/cidoc-crm/")
 CRMINF     = Namespace("http://www.cidoc-crm.org/extensions/crminf/")
 CRMARCHAEO = Namespace("http://www.cidoc-crm.org/extensions/crmarchaeo/")

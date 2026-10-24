@@ -81,6 +81,7 @@ from ..exporter.rdf_exporter import (
     MEASURE_UNIT_IRI,
     OA,
     S3D,
+    S3D_LEGACY,
     _Datamodel,
 )
 
@@ -1957,8 +1958,11 @@ class RDFImporter:
             if unit:
                 if unit in unit_of:
                     unit = unit_of[unit]
-                elif unit.startswith(str(S3D) + "unit_"):
-                    unit = unit[len(str(S3D) + "unit_"):]
+                else:
+                    for ns in (S3D, *S3D_LEGACY):   # the old space read as an alias
+                        if unit.startswith(str(ns) + "unit_"):
+                            unit = unit[len(str(ns) + "unit_"):]
+                            break
                 out["unit"] = unit
             crs = self._one_literal(store, dim, EM.crs)
             if crs:

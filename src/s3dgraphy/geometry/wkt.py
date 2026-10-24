@@ -32,7 +32,11 @@ from typing import List, Optional, Tuple
 GEO = "http://www.opengis.net/ont/geosparql#"
 EPSG_PREFIX = "http://www.opengis.net/def/crs/EPSG/0/"
 LOCAL_FRAME = "https://w3id.org/em/ontology#LocalSceneFrame"
-MINTED_PREFIX = "https://w3id.org/em/s3dgraphy#crs_"
+#: a CRS that is neither EPSG nor the local frame gets an IRI of the library,
+#: under the registered space w3id.org/extendedmatrix (24 Oct 2026); the one
+#: minted before, under the unregistered w3id.org/em/s3dgraphy#, is still read
+MINTED_PREFIX = "https://w3id.org/extendedmatrix/s3dgraphy#crs_"
+LEGACY_MINTED_PREFIXES = ("https://w3id.org/em/s3dgraphy#crs_",)
 
 _WKT_RE = re.compile(r"^\s*(?:<([^>]*)>\s*)?([A-Za-z]+)\s*(Z)?\s*\((.*)\)\s*$", re.S)
 
@@ -56,8 +60,9 @@ def crs_of_iri(iri: Optional[str]) -> str:
         return "local"
     if iri.startswith(EPSG_PREFIX):
         return "EPSG:" + iri[len(EPSG_PREFIX):]
-    if iri.startswith(MINTED_PREFIX):
-        return iri[len(MINTED_PREFIX):]
+    for prefix in (MINTED_PREFIX, *LEGACY_MINTED_PREFIXES):
+        if iri.startswith(prefix):
+            return iri[len(prefix):]
     return iri
 
 
