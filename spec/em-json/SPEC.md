@@ -1,0 +1,283 @@
+# em.json — the Extended Matrix document format
+
+**Version 1.1 · Editor's Draft · 24 October 2026**
+
+| | |
+|---|---|
+| This version | <https://w3id.org/extendedmatrix/spec/em-json/> |
+| Schema | <https://w3id.org/extendedmatrix/schemas/em.v1.1.schema.json> |
+| Previous schema (1.0, flat form) | <https://w3id.org/extendedmatrix/schemas/em.v1.schema.json> |
+| Editor | Emanuel Demetrescu (CNR-ISPC), ORCID [0000-0002-5065-7970](https://orcid.org/0000-0002-5065-7970) |
+| Source | `spec/em-json/` in the [s3Dgraphy](https://github.com/ExtendedMatrix/s3Dgraphy) repository |
+| Licence | Text: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Schemas and examples: [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) |
+| Status | **Editor's Draft.** Stable enough to implement; it becomes a Release when the editor has reread it and it is deposited with a DOI. |
+
+## 1. What it is for
+
+An em.json file holds the work of an Extended Matrix study: the stratigraphic
+units and their relations in time, the sources and the reasoning behind every
+reconstruction (the *paradata*), the 3D models and documents they refer to, and
+how the whole is drawn. It is the file that EMStudio saves, that EM Tools for
+Blender writes, that Heriverse and the StratiGraph server read.
+
+It is the point where these tools meet. That is why it is specified here, in a
+document separate from any one program: whoever reads and writes em.json can
+work with all of them.
+
+The file is JSON (RFC 8259), UTF-8. The extension is `.em.json`; `.emj` is
+read as the same thing.
+
+## 2. The model
+
+### 2.1 A container of graphs
+
+An em.json file is always a **container**: a header and one or more **graphs**.
+
+- A **study graph** is one Extended Matrix: the units of a site, a trench, a
+  building, with their epochs and their paradata. A project with several
+  saggi, or several readings of the same site, has several study graphs.
+- Three **special members** are graphs too, recognised by a marker in their
+  data (`data.em_collection`), never by their name:
+  - the **shelf** (`ShelfGraph`): what the study shares — authors, licences,
+    documents used by more than one graph;
+  - the **documentation** (`DTCCorpus`): how the digital objects were made —
+    acquisitions, transformations and the resources they are about;
+  - the **periodizations** (`Periodizations`): the shared measures of time —
+    each periodization with its horizons (a label, a start, an end, a colour).
+    A unit is «inside» a horizon when their intervals overlap.
+
+A node that belongs to several graphs keeps one identifier everywhere, so two
+containers can be merged by identifier, without a server.
+
+A relation between a unit of one graph and a unit of another is a **link**,
+kept in the graph of its source and addressed as «graph → node».
+
+### 2.2 Nodes
+
+A node has an **identifier**, a **type** and, optionally, a **name**, a
+**description** and its **data** (the fields its type declares).
+
+The types and their fields are not listed in this specification. They belong to
+the **EM datamodel** — the node datamodel, the connections datamodel and the
+qualia vocabulary — which evolves on its own rhythm and is mapped to CIDOC CRM
+and its extensions. Every file says which versions of the datamodel it follows.
+This keeps the format stable while the vocabulary grows.
+
+### 2.3 Edges
+
+An edge has an **identifier**, a **type** (the relation, as the connections
+datamodel names it), a **source** and a **target** (two nodes of the same
+graph), and optionally **attributes**: facts about the edge itself. The one
+every reader should know is `origin` on the edges of relative chronology —
+`derived` (computed from the physical relations), `user` (written by a person),
+`imported` (read from another software's file).
+
+The physical relations carry their meaning in time, declared in the
+connections datamodel: *cuts*, *fills*, *overlies* say that one unit is later
+than the other; *abuts*, *is bonded to*, *equals* say that the two are
+contemporary.
+
+### 2.4 Paradata
+
+The reasoning is part of the graph, not a note beside it. A property of a unit
+(its height, its function, its date) is a node; the extractor that read it from
+a source, the combiner that put several extractors together, the document it
+comes from are nodes too, joined by edges. A reader that understands the
+datamodel can follow any reconstruction back to its sources; a reader that does
+not still has every node and edge.
+
+### 2.5 Georeferencing
+
+A graph is placed in the world by its **geo-position** node: the coordinate
+reference system (an EPSG code) and the shift that brings the local coordinates
+of the 3D scene to it. How a single model was registered (control points, the
+transform) is carried by nodes of the datamodel as well. External 3D models,
+images and documents are **resources**, referenced by address and digest, never
+embedded.
+
+### 2.6 Layout
+
+How a graph is drawn — the position of each node, the rows of the epochs, the
+folded groups, the bends of the lines — is optional and can always be computed
+again. Each graph keeps its own layout. The file also carries a copy of the
+active graph's layout at the top level, for readers that know only one.
+
+### 2.7 Header and version of the work
+
+The header says what the file is (`format`, `version`, `schema_version`), who
+wrote it (`generator`, `last_editor`), which datamodel and ontology versions it
+follows, and may carry the study's `title`, `description`, `visibility` and,
+for a landscape, the `composition` (the studies it cites). A separate top-level
+`version` counts the revisions of the *work* (not of the format).
+
+## 3. Reading
+
+A conforming reader:
+
+1. **Ignores what it does not know.** A key it does not know, at any level, is
+   skipped without error. A node of an unknown type is kept as a generic node
+   that keeps its type, so that writing the file back does not erase it; an edge
+   of an unknown type, or touching a node of an unknown type, is kept as it is;
+   a special member with an unknown marker is read as an ordinary graph.
+2. **Refuses only an unknown major version.** `header.version` is read as
+   `major.minor`; a reader refuses a major it does not know and reads every minor
+   of its own. `schema_version` is never a reason to refuse a file.
+3. **Reads the flat form of 1.0.** A file with a single `graph` instead of
+   `graphs` is a container of one graph.
+4. **Treats `null` as absent**, and an empty text as no text.
+5. **Recognises a special member by its marker**, never by its member id.
+6. **Uses the member's own layout** when there is one; otherwise the top-level
+   layout goes to the graph whose nodes it positions, else to the active graph.
+7. **Reports a broken reference** (a link to a missing graph, an
+   `active_graph_id` that is not a member) and goes on reading.
+
+## 4. Writing
+
+A conforming writer:
+
+1. Writes the **container** form, even for one graph.
+2. Writes `header.format` (`"em.json"`), `header.version` (`"1.1"` for this
+   specification), `header.schema_version`, `header.generator` and
+   `header.datamodel_versions`.
+3. Writes only edges whose source and target are nodes of the same graph;
+   relations across graphs are links.
+4. Omits empty values rather than writing `null`.
+5. Keeps, when it rewrites a file, the header keys it does not own (a title,
+   a visibility set by another tool), the nodes' data and the edges'
+   attributes, known or not.
+6. Writes keys in a stable order, so that the same content gives the same bytes.
+7. Never writes keys beginning with `x-` (see §6).
+
+A writer MAY drop, when it rewrites a file, keys it does not know outside the
+header and outside the nodes' data. An extension that must survive a round
+trip through the official tools is a candidate for this specification.
+
+## 5. Versions
+
+Two numbers, two questions.
+
+- **`header.version` — the form.** Semantic versioning: a new **major** means
+  that a reader of the previous major cannot read the file, and is avoided; a new
+  **minor** adds to the form without breaking any reader. `1.0` is the flat form
+  and the container as written before this specification (August–October 2026);
+  `1.1` is the container as specified here. Readers of 1.0 already read 1.1.
+- **`header.schema_version` — the content.** An integer that grows when the
+  content within the form changes in a way a migration may key off (absent = 0).
+  History: 1 — edges may carry `attributes`; 2 — the canonical-document flags are
+  spelled `is_canonical` / `em_canonical_document`.
+
+The datamodel versions (`header.datamodel_versions`) are a third, independent
+axis: they say which vocabulary the content uses.
+
+## 6. Extensions
+
+Anyone may add keys for their own needs. They must begin with **`x-`**
+(`x-myproject-notes`), so that they never collide with a future key of this
+specification. Readers ignore them (§3.1). The official tools (s3Dgraphy,
+EMStudio, EM Tools, Heriverse, the StratiGraph server) never write them.
+
+## 7. Conformance
+
+- A **document** conforms when it validates against the schema of its version
+  (`em.v1.1.schema.json` for the container; `em.v1.schema.json` for the flat 1.0
+  form) and its edges join nodes of their own graph.
+- A **reader** conforms when it reads every file of the conformance suite
+  (`conformance/` beside this document) and obtains the expected result. It may
+  add, for each graph, the default geo-position node its datamodel creates, and
+  nothing else.
+- A **writer** conforms when what it writes validates, and when reading and
+  writing back each file of the suite loses nothing the specification describes.
+
+The suite holds: a minimal file with one graph; a multigraph with shelf and
+links; a georeferenced graph; a project with periodizations and horizons; a
+legacy 1.0 flat file; a file with keys nobody knows.
+
+## 8. Identifiers
+
+The specification and its schemas are identified by persistent IRIs under
+`https://w3id.org/extendedmatrix/`, which resolve to the Extended Matrix site.
+In files and in prose the short prefix **`em:`** stands for the Extended
+Matrix ontology, `https://w3id.org/em/ontology#` (CRMem): `em:hasSubEpoch` is
+`https://w3id.org/em/ontology#hasSubEpoch`. Short in the files, long and
+canonical in the world.
+
+## 9. Examples
+
+The smallest document — one graph, two units, one relation:
+
+```json
+{
+  "header": {
+    "format": "em.json",
+    "version": "1.1",
+    "schema_version": 2,
+    "generator": {"tool": "s3dgraphy", "version": "1.6.0"},
+    "datamodel_versions": {"nodes": "1.6.37", "connections": "1.6.48"}
+  },
+  "graphs": {
+    "GT16": {
+      "graph_id": "GT16",
+      "nodes": [
+        {"id": "us1", "node_type": "US", "name": "US1", "description": "Floor"},
+        {"id": "us2", "node_type": "US", "name": "US2", "description": "Wall"}
+      ],
+      "edges": [
+        {"id": "e1", "edge_type": "abuts", "source": "us1", "target": "us2"}
+      ]
+    }
+  },
+  "active_graph_id": "GT16"
+}
+```
+
+The same relation with the contemporaneity it implies, derived by a tool:
+
+```json
+{"id": "us1_has_same_time_us2", "edge_type": "has_same_time",
+ "source": "us1", "target": "us2",
+ "attributes": {"origin": "derived", "derived_from": ["e1"]}}
+```
+
+A special member — the periodizations, with one horizon:
+
+```json
+"periodizations": {
+  "graph_id": "periodizations",
+  "data": {"em_collection": "Periodizations", "active_periodization": "per1"},
+  "nodes": [
+    {"id": "per1", "node_type": "periodization", "name": "Centuries"},
+    {"id": "h1", "node_type": "horizon", "name": "2nd century AD",
+     "data": {"start_time": 100, "end_time": 200, "color": "#c0504d", "order": 1}}
+  ],
+  "edges": [
+    {"id": "h1_in_per1", "edge_type": "is_in_periodization", "source": "h1", "target": "per1"}
+  ]
+}
+```
+
+Complete files are in `conformance/`.
+
+## 10. How to propose a change
+
+Open an issue on the s3Dgraphy repository with the label `em-json`, or write to
+the editor. Say what you need to carry and show a file. The editor decides;
+an accepted change enters the Editor's Draft, is listed below, and is
+published with the next release. A change that a reader of the current major
+could not read is not accepted without a new major, and a new major is the
+last resort.
+
+## 11. Changes
+
+- **1.1 — 24 October 2026 (Editor's Draft).** First written specification. The
+  container (in use since 13 August 2026) becomes the form of the file; the flat
+  form of 1.0 stays readable. Optional blocks described: per-graph layout,
+  shelf, DTC corpus, periodizations and horizons, links between graphs, the
+  version of the work, landscape composition. Rule «readers ignore unknown keys»
+  and the `x-` prefix for extensions. Policy of the two version numbers.
+- **1.0 — 11 July 2026.** Schema of the flat form (`header` + `graph` +
+  `layout`), frozen with EMStudio's first save format.
+
+## 12. How to cite
+
+Demetrescu, E. (ed.) (2026). *em.json — the Extended Matrix document format*,
+version 1.1. CNR-ISPC. https://w3id.org/extendedmatrix/spec/em-json/

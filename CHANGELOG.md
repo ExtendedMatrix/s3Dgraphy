@@ -5,6 +5,19 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
+- **The em.json specification, edited by E.D.** (MICRO specifica em.json,
+  part 3, 24 October 2026). `spec/em-json/SPEC.md`, version 1.1, Editor's
+  Draft, editor Emanuel Demetrescu (CNR-ISPC, ORCID 0000-0002-5065-7970):
+  purpose, model (container, graphs, nodes, edges, paradata, georeferencing,
+  layout), reading and writing rules, versions, extensions, conformance,
+  identifiers, examples, changes, how to propose a change. Text CC BY 4.0;
+  schemas, examples and the conformance suite CC0 1.0 (`spec/em-json/README.md`).
+  `CITATION.cff` ready for Zenodo; the manual includes it (`docs/em-json-spec.md`).
+  Canonical IRIs `https://w3id.org/extendedmatrix/spec/em-json/` and
+  `…/schemas/em.v1.1.schema.json`, published on the site by
+  `spec/em-json/tools/publish_site.py` (each copy names its source and commit).
+  `spec/em-json/w3id-alias-em/`: `.htaccess` and README for the pull request
+  that would register `/em` as a legacy alias of `/extendedmatrix` — not opened.
 - **The em.json schemas have one home, `spec/em-json/`** (MICRO specifica
   em.json, part 2, 24 October 2026). `em.v1.1.schema.json` describes the
   CONTAINER really written since 13 August 2026 — header, `graphs` with the

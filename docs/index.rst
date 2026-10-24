@@ -485,6 +485,7 @@ Table of Contents
    :caption: User Guide
 
    s3dgraphy_import_export
+   em-json-spec
    s3dgraphy_mapping_system
    importers/mapping_schema
    importers/unified_xlsx_importer

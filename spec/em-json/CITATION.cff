@@ -1,0 +1,29 @@
+cff-version: 1.2.0
+message: "If you use or implement the em.json format, please cite this specification."
+type: standard
+title: "em.json — the Extended Matrix document format"
+abstract: >-
+  Specification of em.json, the document format of the Extended Matrix: a
+  container of graphs (stratigraphic units, their relations in time, the
+  paradata of reconstructions, 3D resources, layout), with its JSON Schemas and
+  a conformance suite. Editor's Draft.
+version: "1.1"
+date-released: "2026-10-24"
+authors:
+  - family-names: Demetrescu
+    given-names: Emanuel
+    orcid: "https://orcid.org/0000-0002-5065-7970"
+    affiliation: "CNR-ISPC, Istituto di Scienze del Patrimonio Culturale"
+    email: emanuel.demetrescu@cnr.it
+url: "https://w3id.org/extendedmatrix/spec/em-json/"
+repository-code: "https://github.com/ExtendedMatrix/s3Dgraphy"
+license: CC-BY-4.0
+keywords:
+  - Extended Matrix
+  - em.json
+  - stratigraphy
+  - paradata
+  - virtual reconstruction
+  - CIDOC CRM
+  - JSON Schema
+  - digital heritage
