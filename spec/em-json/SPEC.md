@@ -10,6 +10,7 @@
 | Editor | Emanuel Demetrescu (CNR-ISPC), ORCID [0000-0002-5065-7970](https://orcid.org/0000-0002-5065-7970) |
 | Source | `spec/em-json/` in the [s3Dgraphy](https://github.com/ExtendedMatrix/s3Dgraphy) repository |
 | Licence | Text: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Schemas and examples: [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) |
+| DOI | This version: [10.5281/zenodo.23642465](https://doi.org/10.5281/zenodo.23642465) · all versions: [10.5281/zenodo.23642464](https://doi.org/10.5281/zenodo.23642464) |
 | Status | **Release.** Reread by the editor and deposited with a DOI on Zenodo. Later changes enter the Editor's Draft (§10). |
 
 ## 1. What it is for
@@ -324,4 +325,4 @@ last resort.
 ## 12. How to cite
 
 Demetrescu, E. (ed.) (2026). *em.json — the Extended Matrix document format*,
-version 1.1. CNR-ISPC. https://w3id.org/extendedmatrix/spec/em-json/
+version 1.1. CNR-ISPC. https://doi.org/10.5281/zenodo.23642465
