@@ -110,6 +110,23 @@ follows, and may carry the study's `title`, `description`, `visibility` and,
 for a landscape, the `composition` (the studies it cites). A separate top-level
 `version` counts the revisions of the *work* (not of the format).
 
+**Profiles (optional).** A file whose content uses the types or the
+vocabularies of a community profile declares it in `header.profiles`, a list
+of `{"iri": …, "version": …}` — the identity of each profile and the version
+the file was written with:
+
+```json
+"profiles": [{"iri": "https://example.org/em-profiles/example-toolmarks", "version": "0.1.0"}]
+```
+
+The key is additive: a reader that does not know it ignores it (§3.1), a
+reader that knows it may say which profiles it lacks, and a missing profile
+is never a reason to refuse a file. A profile has its own version, independent
+of `header.version` and of the datamodel versions (§5). What a profile
+contains, and how a node or an edge of a profile type carries what a reader
+without the profile needs to draw it as the core type it specialises, is in
+the [EM Profiles specification](https://github.com/ExtendedMatrix/vocabularies/blob/main/profiles/SPEC.md).
+
 ## 3. Reading
 
 A conforming reader:
@@ -274,6 +291,8 @@ last resort.
   shelf, DTC corpus, periodizations and horizons, links between graphs, the
   version of the work, landscape composition. Rule «readers ignore unknown keys»
   and the `x-` prefix for extensions. Policy of the two version numbers.
+  Added on 25 October 2026, optional and additive: `header.profiles`, the
+  community profiles a file uses (§2.7).
 - **1.0 — 11 July 2026.** Schema of the flat form (`header` + `graph` +
   `layout`), frozen with EMStudio's first save format.
 
