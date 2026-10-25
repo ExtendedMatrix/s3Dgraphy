@@ -48,7 +48,7 @@
       "source": "https://www.w3.org/TR/prov-o/"
     },
     "CRMem": {
-      "version": "1.6.21",
+      "version": "1.6.22",
       "source": "internal em.ttl / hdto_extension.ttl companion ontologies"
     }
   },

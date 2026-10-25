@@ -157,6 +157,20 @@ All notable changes to **s3dgraphy** are documented here.
   `tests/test_series_vsf.py`.
 
 ### Changed
+- **The direction of `has_sub_epoch` in the RDF** (connections 1.6.49, em.ttl
+  1.6.22, MICRO sub-epoch RDF, decided by E.D. 25 October 2026).
+  `crm:P10_falls_within` runs from the part to the whole, so the sub-epoch is
+  its subject: `<sub-epoch> crm:P10_falls_within <parent>`. The exporter wrote
+  `<parent> P10 <sub-epoch>` and the importer read it back with the same error,
+  so the round trip hid it. The mapping gains `rdf_subject: "target"`, which
+  from now on turns only the CORE triple round: `<parent> em:hasSubEpoch
+  <sub-epoch>` keeps the edge's direction, and `em:hasSubEpoch` becomes
+  `rdfs:subPropertyOf crm:P10i_contains`. A file written before reads right:
+  P10 beside `em:hasSubEpoch` on the same pair is the old direction; P10 alone
+  between two epochs is the old direction when the subject's dates strictly
+  contain the object's. The reader says so in its warnings
+  (`stats["edges_legacy_direction"]`). An RDF edge written twice (core one way,
+  extension the other) comes back once. `tests/test_rdf_sub_epoch_direction.py`.
 - **SF, RSF, VSF redefined** (node datamodel 1.6.34, em.ttl 1.6.19, MICRO
   special find e fine dell'unità part 1, decided by E.D. 23 October 2026).
   The SF is defined in positive: a movable object found erratic or in a layer,

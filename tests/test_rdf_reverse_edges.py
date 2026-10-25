@@ -216,10 +216,11 @@ def test_the_inversion_is_declared_in_the_datamodel_not_in_the_code():
     assert edges["is_after"]["mapping"]["rdf_subject"] == "target"
     # and it is the exception, not the rule: is_after, and since connections
     # 1.6.47 is_in_periodization (horizon → periodization, written as
-    # <periodization> P71_lists <horizon>) — the next one was a JSON change
+    # <periodization> P71_lists <horizon>), and since 1.6.49 has_sub_epoch
+    # (<sub-epoch> P10_falls_within <parent>) — each one a JSON change
     inverting = [name for name, e in edges.items()
                  if (e.get("mapping") or {}).get("rdf_subject") == "target"]
-    assert inverting == ["is_after", "is_in_periodization"]
+    assert inverting == ["is_after", "has_sub_epoch", "is_in_periodization"]
     # the two inversions compose: drawn-reversed XOR mapping-inverts
     assert dm.resolve_edge_direction("is_after") == ("is_after", True)
     assert dm.resolve_edge_direction("is_before") == ("is_after", False)

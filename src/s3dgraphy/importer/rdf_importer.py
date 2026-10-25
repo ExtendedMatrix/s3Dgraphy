@@ -1701,6 +1701,7 @@ class RDFImporter:
             pairs.setdefault((s_text, o_text), set()).add(str(p))
 
         counter = 0
+        added: Set[Tuple[str, str, str]] = set()
         for (s_text, o_text), preds in sorted(pairs.items()):
             src_class = class_of.get(s_text)
             tgt_class = class_of.get(o_text)
@@ -1741,7 +1742,10 @@ class RDFImporter:
                 if not preds:
                     continue
 
-            resolved: List[str] = []
+            # (edge_type, read from its core predicate?) — only a core triple
+            # can have been written target-first (`rdf_subject`): the em:
+            # extension keeps the edge's own direction (connections 1.6.49)
+            resolved: List[Tuple[str, bool]] = []
             covered_cores: Set[str] = set()
 
             # 1) the specific predicates name the edge almost by themselves
@@ -1753,8 +1757,13 @@ class RDFImporter:
                                   src_id, tgt_id, strict=True)
                 if pick is None:
                     continue
-                resolved.append(pick)
                 core = self.inverse.core_of_edge.get(pick)
+                resolved.append((pick, pred == core))
+                if (core and pred != core and core in preds
+                        and self.inverse.emits_inverted(pick)):
+                    # the core triple on the SAME pair as the extension: written
+                    # source-first, the direction before it was inverted
+                    self._legacy_direction(pick, src_id, tgt_id, core)
                 if core:
                     covered_cores.add(core)
                 # the AP11 family also emits the generic AP11 triple; a
@@ -1769,7 +1778,7 @@ class RDFImporter:
             informed = str(PROV.wasInformedBy)
             if informed in preds and _is_dtc_class(src_class) \
                     and _is_dtc_class(tgt_class):
-                resolved.append("dtc_had_input")
+                resolved.append(("dtc_had_input", False))
                 covered_cores.add(informed)
 
             # 2) leftover core predicates — a triple the specific pass did not
@@ -1788,17 +1797,46 @@ class RDFImporter:
                     continue
                 pick = self._pick(cands, src_class, tgt_class, pred,
                                   src_id, tgt_id)
-                if pick is not None:
-                    resolved.append(pick)
+                if pick is None:
+                    continue
+                if self.inverse.emits_inverted(pick):
+                    # a target-first core whose extension sits on the REVERSE
+                    # pair is the companion of an edge read there: skip it
+                    ext = self.inverse.dm.get_edge_mapping(pick)[1]
+                    if ext is not None and str(ext) in pairs.get((o_text, s_text), ()):
+                        continue
+                    legacy = _LEGACY_SOURCE_FIRST.get(pick)
+                    if legacy is not None and legacy(g, src_id, tgt_id):
+                        self._legacy_direction(pick, src_id, tgt_id, pred)
+                        resolved.append((pick, False))
+                        continue
+                resolved.append((pick, True))
 
-            for edge_type in dict.fromkeys(resolved):
-                counter += 1
-                if self.inverse.emits_inverted(edge_type):
+            for edge_type, via_core in dict.fromkeys(resolved):
+                if via_core and self.inverse.emits_inverted(edge_type):
                     a, b = tgt_id, src_id
                 else:
                     a, b = src_id, tgt_id
+                if (a, b, edge_type) in added:
+                    continue
+                added.add((a, b, edge_type))
+                counter += 1
                 g.add_edge(f"rdf_e{counter}", a, b, edge_type)
                 self.stats["edges"] += 1
+
+    def _legacy_direction(self, edge_type: str, parent: str, sub: str,
+                          pred: str) -> None:
+        """Say that an older writer's core triple was read the right way round.
+
+        Only ``has_sub_epoch`` has a legacy direction today: until connections
+        1.6.48 its ``crm:P10_falls_within`` went out source-first, <parent> P10
+        <sub-epoch>. Read as the edge parent → sub-epoch all the same."""
+        self.stats["edges_legacy_direction"] = (
+            self.stats.get("edges_legacy_direction", 0) + 1)
+        self.warnings.append(
+            f"{edge_type} '{parent}' → '{sub}': {pred.rsplit('/', 1)[-1]} "
+            f"written <parent> → <sub-epoch>, as by writers before 1.6.49; "
+            f"read the right way round (<sub-epoch> P10_falls_within <parent>)")
 
     def _rebuild_has_property_from_i17(self, store: ConjunctiveGraph,
                                        node_prefix: str,
@@ -1991,6 +2029,40 @@ def _is_dtc_class(class_name: Optional[str]) -> bool:
     """A DTC event class (process, acquisition, or the DTCNode parent)."""
     return bool(class_name) and class_name in ("DTCProcessNode",
                                                "DTCAcquisitionNode", "DTCNode")
+
+
+def _epoch_bounds(g: S3DGraph, node_id: str) -> Optional[Tuple[float, float]]:
+    node = g.find_node_by_id(node_id)
+    data = getattr(node, "data", None) or {}
+    bounds = []
+    for key in ("start_time", "end_time"):
+        value = getattr(node, key, None)
+        if value is None:
+            value = data.get(key)
+        try:
+            bounds.append(float(value))
+        except (TypeError, ValueError):
+            return None
+    return bounds[0], bounds[1]
+
+
+def _strictly_contains(g: S3DGraph, subject: str, obj: str) -> bool:
+    """Do the subject's dates strictly contain the object's?
+
+    The mark of an RDF written before connections 1.6.49, <parent> P10
+    <sub-epoch>: a sub-epoch lies within its parent, so a subject that
+    contains its object is the parent. Equal, missing or crossing dates
+    say nothing, and the triple is read as written today."""
+    a, b = _epoch_bounds(g, subject), _epoch_bounds(g, obj)
+    if a is None or b is None:
+        return False
+    return a[0] <= b[0] and b[1] <= a[1] and a != b
+
+
+#: edges whose core predicate went out source-first before it was inverted,
+#: with the test that recognises a triple of that time when the extension
+#: that would settle it is absent (MICRO sub-epoch RDF, 25 Oct 2026)
+_LEGACY_SOURCE_FIRST = {"has_sub_epoch": _strictly_contains}
 
 
 def _as_number(text: Any) -> Any:

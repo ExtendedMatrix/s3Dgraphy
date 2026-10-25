@@ -406,13 +406,22 @@ class _Datamodel:
         # `mapping.rdf_subject: "target"` rather than the exporter knowing it
         # about one edge by name, because the next mapping with the same shape
         # should be a data change, not a code change.
-        entry = (self.connections_datamodel.get("edge_types") or {}).get(canonical) or {}
-        mapping_inverts = ((entry.get("mapping") or {}).get("rdf_subject") == "target")
+        mapping_inverts = self.mapping_inverts(canonical)
 
         # The two inversions compose: an edge drawn the reverse way, under a
         # mapping that itself inverts, comes out the right way round. So
         # `A is_after B` and `B is_before A` land on the same correct triple.
         return canonical, (drawn_reversed != mapping_inverts)
+
+    def mapping_inverts(self, canonical: str) -> bool:
+        """Does the CORE predicate of this canonical edge put its target first?
+
+        Only the core (`mapping.cidoc`). An extension predicate is declared in
+        em.ttl with the edge's own direction, so it never inverts: has_sub_epoch
+        (connections 1.6.49) goes out as <sub> crm:P10_falls_within <parent>
+        beside <parent> em:hasSubEpoch <sub>."""
+        entry = (self.connections_datamodel.get("edge_types") or {}).get(canonical) or {}
+        return (entry.get("mapping") or {}).get("rdf_subject") == "target"
 
     def get_edge_mapping(self, edge_type: str) -> Tuple[Optional[URIRef], Optional[URIRef], Optional[str], bool]:
         """
@@ -2489,6 +2498,12 @@ class RDFExporter:
 
         source_iri = self._node_iri(g.graph_id, edge.edge_target if inverted else edge.edge_source)
         target_iri = self._node_iri(g.graph_id, edge.edge_source if inverted else edge.edge_target)
+        # The extension predicates keep the edge's own direction: `rdf_subject`
+        # turns the CORE triple round, never the em: one beside it (has_sub_epoch,
+        # connections 1.6.49: <sub> P10 <parent>, <parent> em:hasSubEpoch <sub>).
+        ext_inverted = inverted != self.datamodel.mapping_inverts(edge_type)
+        ext_source = self._node_iri(g.graph_id, edge.edge_target if ext_inverted else edge.edge_source)
+        ext_target = self._node_iri(g.graph_id, edge.edge_source if ext_inverted else edge.edge_target)
 
         if type_tag and type_tag in AP11_SUBPROPS:
             specific = AP11_SUBPROPS[type_tag]
@@ -2534,17 +2549,17 @@ class RDFExporter:
             # resolvable, so expressive SPARQL works without inference
             # while CRM-only readers still see the core predicate.
             if ext_iri is not None and ext_iri != predicate:
-                if self._condition_holds(g, edge, inverted,
+                if self._condition_holds(g, edge, ext_inverted,
                                          self.datamodel.get_extension_condition(edge_type)):
-                    ctx.add((source_iri, ext_iri, target_iri))
+                    ctx.add((ext_source, ext_iri, ext_target))
                 else:
                     self.stats["edges_extension_skipped_guard"] = (
                         self.stats.get("edges_extension_skipped_guard", 0) + 1)
             # The same edge read from the other side, where the datamodel
             # declares it (is_part_of → <VSF> em:reconstructsFrom <SF>).
             inverse = self.datamodel.get_inverse_extension(edge_type)
-            if inverse is not None and self._condition_holds(g, edge, inverted, inverse[1]):
-                ctx.add((target_iri, inverse[0], source_iri))
+            if inverse is not None and self._condition_holds(g, edge, ext_inverted, inverse[1]):
+                ctx.add((ext_target, inverse[0], ext_source))
                 self.stats["edges_inverse_extension"] = (
                     self.stats.get("edges_inverse_extension", 0) + 1)
             self.stats["edges_emitted"] += 1
@@ -2563,7 +2578,7 @@ class RDFExporter:
                 # states it precisely. Emitting the extension alone is not a
                 # weaker dual emission, it is the whole claim — a CRM-only
                 # reader correctly sees nothing rather than something false.
-                ctx.add((source_iri, ext_iri, target_iri))
+                ctx.add((ext_source, ext_iri, ext_target))
                 self.stats["edges_emitted_extension_only"] = (
                     self.stats.get("edges_emitted_extension_only", 0) + 1)
             else:
