@@ -493,6 +493,7 @@ Table of Contents
    exporters/unified_xlsx_exporter
    s3dgraphy_json_config
    drawing-a-glyph
+   file-frame
    s3dgraphy_integration_emtools
 
 .. toctree::

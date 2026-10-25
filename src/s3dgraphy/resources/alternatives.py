@@ -304,12 +304,7 @@ def make_subcontainer(graph, parent_id: str, member_ids: Sequence[str], label: s
     return {"group_id": gid, "created": created, "moved": moved, "refused": refused}
 
 
-def _epochs(graph, hat_id: str, rule: Dict[str, Any]) -> List[str]:
-    """The epochs of a hat: those reaching it with the rule's ``epoch_edge``;
-    for a container, its members' (it has no epoch of its own)."""
-    node = _node(graph, hat_id)
-    ids = members_of(graph, hat_id, deep=True) \
-        if getattr(node, "node_type", "") == GROUP_NODE_TYPE else [hat_id]
+def _epochs_reaching(graph, ids, rule: Dict[str, Any]) -> List[str]:
     want = set(ids)
     types = set(rule.get("epoch_types") or ())
     out = []
@@ -320,6 +315,42 @@ def _epochs(graph, hat_id: str, rule: Dict[str, Any]) -> List[str]:
                     and e.edge_source not in out:
                 out.append(e.edge_source)
     return sorted(out)
+
+
+def container_own_epochs(graph, group_id: str,
+                         rule: Optional[Dict[str, Any]] = None) -> List[str]:
+    """The epochs a container states of ITSELF (the rule's ``container_epochs``,
+    em_visual_rules 1.6.40): an epoch reaching it with ``epoch_edge``, and the
+    epochs of the Document that wraps it (``wrapper_edge`` from a
+    ``wrapper_types`` node — ``has_first_epoch`` / ``survive_in_epoch`` from
+    the Document to the epoch), as EM Tools shows «Epochs of this set»."""
+    r = _rule(rule)
+    ce = r.get("container_epochs") or {}
+    out = set(_epochs_reaching(graph, [group_id], r))
+    types = set(r.get("epoch_types") or ())
+    wtypes = set(ce.get("wrapper_types") or ())
+    wrappers = {e.edge_source for e in graph.edges
+                if e.edge_type == ce.get("wrapper_edge") and e.edge_target == group_id
+                and str(getattr(_node(graph, e.edge_source), "node_type", "")) in wtypes}
+    for e in graph.edges:
+        if e.edge_source in wrappers and e.edge_type in (ce.get("epoch_edges") or ()):
+            tgt = _node(graph, e.edge_target)
+            if tgt is not None and str(getattr(tgt, "node_type", "")) in types:
+                out.add(e.edge_target)
+    return sorted(out)
+
+
+def _epochs(graph, hat_id: str, rule: Dict[str, Any]) -> List[str]:
+    """The epochs of a hat: those reaching it with the rule's ``epoch_edge``;
+    for a container, its members'. A container whose members have no epoch
+    (or that has no member yet: a tileset of the whole survey and no mesh)
+    takes its OWN (:func:`container_own_epochs`, E.D. 25 Oct 2026): without
+    them its alternative would lie in no epoch and be seen nowhere."""
+    node = _node(graph, hat_id)
+    if getattr(node, "node_type", "") != GROUP_NODE_TYPE:
+        return _epochs_reaching(graph, [hat_id], rule)
+    out = _epochs_reaching(graph, members_of(graph, hat_id, deep=True), rule)
+    return out or container_own_epochs(graph, hat_id, rule)
 
 
 # ── the sets of alternatives ─────────────────────────────────────────────────
@@ -626,7 +657,9 @@ def choose_alternative(aset: Dict[str, Any], use: Any,
       master when none declares any. ``force``
       (``"container"`` | ``"members"``) is the hand choice and overrides the
       use. With ``level: "members"`` the answer has ``members: {hat: choice}``,
-      each member choosing with the same uses.
+      each member choosing with the same uses. A container with an
+      alternative and NO member lights the alternative whatever the uses
+      (E.D. 25 Oct 2026), unless ``force="members"``.
 
     Returns ``{entry, reason, use, note, level, hat, members}``."""
     from .versions import choose_version
@@ -645,6 +678,13 @@ def choose_alternative(aset: Dict[str, Any], use: Any,
                 "level": "members", "hat": hat, "members": out}
 
     own = aset.get("alternatives") or []
+    if own and not aset.get("members") and force != "members":
+        # E.D. 25 Oct 2026 · a container with an alternative and no member: the
+        # alternative is all there is to light, whatever the uses declare
+        ch = choose_version(own, uses, prefer_level)
+        note = "" if force == "container" else "no members: the container's alternative"
+        return {**ch, "note": ch.get("note") or note,
+                "level": "container", "hat": hat, "members": None}
     if force == "container" and own:
         ch = choose_version(own, uses, prefer_level)
         return {**ch, "level": "container", "hat": hat, "members": None}

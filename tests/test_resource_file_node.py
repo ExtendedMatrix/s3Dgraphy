@@ -110,7 +110,7 @@ def test_le_versioni_del_datamodel_sono_salite():
     # (D1/D2), 1.6.36 dal 9 ott (la proprietà come fonte), 1.6.37 la sera
     # stessa (l'istanza è una vista); le voci 1.6.17 e 1.6.30 restano nella
     # storia
-    assert node["s3Dgraphy_data_model_version"] == "1.6.37"  # 1.6.37 dal 24 ott 2026 (orizzonti); 1.6.36 dal 23 ott 2026 (la fine dell'unità tipizzata)
+    assert node["s3Dgraphy_data_model_version"] == "1.6.38"  # 1.6.38 dal 25 ott 2026 (il frame di un file); 1.6.37 dal 24 ott 2026 (orizzonti); 1.6.36 dal 23 ott 2026 (la fine dell'unità tipizzata)
     assert "v1.6.17 (MICRO la risorsa e i suoi file" in node["description"]
     assert conn["s3Dgraphy_connections_model_version"] == "1.6.49"  # 1.6.49 dal 25 ott 2026 (il verso di has_sub_epoch in RDF); 1.6.48 dal 24 ott 2026 (contemporaneità); 1.6.47 dal 24 ott 2026 (orizzonti); 1.6.46 dal 23 ott 2026 (le istanze nelle epoche)
     assert "v1.6.30 (LA RISORSA E I SUOI FILE" in conn["description"]

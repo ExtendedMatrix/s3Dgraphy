@@ -1,6 +1,6 @@
 {
-  "_version": "1.0.0",
-  "_note": "The alternatives of a 3D object (E.D., 17 Oct 2026, «lo stesso cappello»): two resources are alternatives if and only if they have the same hat (has_linked_resource from an RM or an RM container to their asset). ONE rule, s3dgraphy.resources.alternatives (alternative_sets, choose_alternative), described by em_visual_rules.json → alternatives and copied by the clients that cannot call Python (EMStudio, Heriverse); every copy passes these cases. graph: nodes and edges as an em.json graph section carries them. expect.sets: every set, containers before their members (hat, hat_kind, parent, alternatives as [id, reason], reasons, covers, coverage); expect.warnings: the codes; choices: use (tried in order), force (container | members), and the level, the id and the use chosen (members: the id each member lights). Written by scripts/make_alternative_cases.py.",
+  "_version": "1.1.0",
+  "_note": "The alternatives of a 3D object (E.D., 17 Oct 2026, «lo stesso cappello»): two resources are alternatives if and only if they have the same hat (has_linked_resource from an RM or an RM container to their asset). ONE rule, s3dgraphy.resources.alternatives (alternative_sets, choose_alternative), described by em_visual_rules.json → alternatives and copied by the clients that cannot call Python (EMStudio, Heriverse); every copy passes these cases. graph: nodes and edges as an em.json graph section carries them. expect.sets: every set, containers before their members (hat, hat_kind, parent, alternatives as [id, reason], reasons, covers, coverage); expect.warnings: the codes; choices: use (tried in order), force (container | members), and the level, the id and the use chosen (members: the id each member lights). Written by scripts/make_alternative_cases.py. 1.1.0 (25 Oct 2026): a case may carry expect.epochs ({hat: [epoch ids]}), compared by both runners; the new case is a container with no member, whose epochs are its own (em_visual_rules 1.6.40, alternatives.container_epochs) and whose alternative is lit whatever the uses.",
   "cases": [
     {
       "name": "a container of 4 meshes and a tileset hatted by the container",
@@ -3189,6 +3189,194 @@
             "id": "EST_1.lod1",
             "use": "heriverse"
           }
+        }
+      ]
+    },
+    {
+      "name": "a container with no mesh and a tileset hatted by it: the container's own epoch (its Document's)",
+      "graph": {
+        "nodes": [
+          {
+            "id": "ep1",
+            "node_type": "EpochNode",
+            "name": "Epoch 1",
+            "data": {}
+          },
+          {
+            "id": "D.1",
+            "node_type": "document",
+            "name": "D.1",
+            "data": {
+              "em_canonical_document": true
+            }
+          },
+          {
+            "id": "rmgroup_tls",
+            "node_type": "RepresentationModelNodeGroup",
+            "name": "tls",
+            "data": {}
+          },
+          {
+            "id": "tiles.master",
+            "node_type": "resource",
+            "name": "tileset_Basilica",
+            "data": {
+              "url": "tilesets/tileset_Basilica.3tz",
+              "url_type": "3d_model",
+              "tier": "master",
+              "media_type": "application/vnd.maxar.archive.3tz+zip",
+              "packaging": "archive"
+            }
+          },
+          {
+            "id": "tiles.lod0",
+            "node_type": "resource",
+            "name": "tileset_Basilica lod0",
+            "data": {
+              "url": "tilesets/tileset_Basilica.3tz",
+              "url_type": "3d_model",
+              "tier": "distribution",
+              "lod_level": "lod0",
+              "media_type": "application/vnd.maxar.archive.3tz+zip",
+              "packaging": "archive",
+              "use": [
+                "web",
+                "realtime"
+              ]
+            }
+          },
+          {
+            "id": "lodgen",
+            "node_type": "dtc_process",
+            "name": "LOD generation lod0 of tileset_Basilica",
+            "data": {
+              "dtc_kind": "lod_generation",
+              "parameters": {
+                "level": "lod0"
+              }
+            }
+          }
+        ],
+        "edges": [
+          {
+            "id": "e1",
+            "source": "lodgen",
+            "target": "tiles.lod0",
+            "edge_type": "dtc_had_output"
+          },
+          {
+            "id": "e2",
+            "source": "lodgen",
+            "target": "tiles.master",
+            "edge_type": "dtc_had_input"
+          },
+          {
+            "id": "e3",
+            "source": "tiles.lod0",
+            "target": "tiles.master",
+            "edge_type": "dtc_derived_from"
+          },
+          {
+            "id": "e4",
+            "source": "rmgroup_tls",
+            "target": "tiles.master",
+            "edge_type": "has_linked_resource"
+          },
+          {
+            "id": "e5",
+            "source": "D.1",
+            "target": "ep1",
+            "edge_type": "has_first_epoch"
+          },
+          {
+            "id": "e6",
+            "source": "D.1",
+            "target": "rmgroup_tls",
+            "edge_type": "has_representation_model"
+          }
+        ]
+      },
+      "expect": {
+        "sets": [
+          {
+            "hat": "rmgroup_tls",
+            "hat_kind": "container",
+            "parent": null,
+            "alternatives": [
+              [
+                "tiles.master",
+                "packaging"
+              ],
+              [
+                "tiles.lod0",
+                "packaging"
+              ]
+            ],
+            "reasons": [
+              "fidelity",
+              "packaging"
+            ],
+            "covers": [],
+            "coverage": "unmeasured"
+          }
+        ],
+        "warnings": [],
+        "counts": {
+          "sets": 1,
+          "with_alternatives": 1,
+          "containers": 1,
+          "by_reason": {
+            "lod": 0,
+            "fidelity": 1,
+            "packaging": 1
+          },
+          "entries": 2
+        },
+        "epochs": {
+          "rmgroup_tls": [
+            "ep1"
+          ]
+        }
+      },
+      "choices": [
+        {
+          "hat": "rmgroup_tls",
+          "use": [
+            "heriverse",
+            "aton",
+            "web",
+            "realtime"
+          ],
+          "expect": {
+            "level": "container",
+            "id": "tiles.lod0",
+            "use": "web"
+          }
+        },
+        {
+          "hat": "rmgroup_tls",
+          "use": [
+            "heriverse",
+            "aton"
+          ],
+          "expect": {
+            "level": "container",
+            "id": "tiles.master",
+            "use": null
+          }
+        },
+        {
+          "hat": "rmgroup_tls",
+          "use": [
+            "web"
+          ],
+          "expect": {
+            "level": "members",
+            "id": null,
+            "use": null,
+            "members": {}
+          },
+          "force": "members"
         }
       ]
     }

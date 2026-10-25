@@ -47,6 +47,8 @@ def test_the_cases_of_the_rule(case):
     assert got == case["expect"]["sets"]
     assert sorted(w["code"] for w in res["warnings"]) == case["expect"]["warnings"]
     assert res["counts"] == case["expect"]["counts"]
+    for hat, eps in (case["expect"].get("epochs") or {}).items():
+        assert find_set(res, hat)["epochs"] == eps
     for c in case["choices"]:
         ch = choose_alternative(find_set(res, c["hat"]), c["use"], force=c.get("force"))
         want = c["expect"]
@@ -134,3 +136,60 @@ def test_templu_mare(name):
     assert [x["tileset"] for x in tiles["alternatives"]] == [True, True]
     assert [x["lod_level"] for x in tiles["alternatives"]] == [None, "lod0"]
     assert tiles["alternatives"][1]["measures"] == {"geometric_error_m": 6.144}
+
+
+# ── a container with no mesh lies in its own epoch (E.D. 25 Oct 2026) ───────
+
+def _container_case(members_epoch=None, with_member=False, direct=False):
+    nodes = [{"id": "ep1", "node_type": "EpochNode", "name": "Epoch 1", "data": {}},
+             {"id": "ep2", "node_type": "EpochNode", "name": "Epoch 2", "data": {}},
+             {"id": "D.1", "node_type": "document", "name": "D.1", "data": {}},
+             {"id": "grp", "node_type": "RepresentationModelNodeGroup", "name": "tls", "data": {}},
+             {"id": "tiles", "node_type": "resource", "name": "tiles",
+              "data": {"url": "t.3tz", "url_type": "3d_model", "tier": "master"}}]
+    edges = [{"id": "h", "source": "grp", "target": "tiles", "edge_type": "has_linked_resource"}]
+    if direct:
+        edges.append({"id": "d", "source": "ep2", "target": "grp",
+                      "edge_type": "has_representation_model"})
+    else:
+        edges += [{"id": "w", "source": "D.1", "target": "grp", "edge_type": "has_representation_model"},
+                  {"id": "f", "source": "D.1", "target": "ep1", "edge_type": "has_first_epoch"},
+                  {"id": "s", "source": "D.1", "target": "ep2", "edge_type": "survive_in_epoch"}]
+    if with_member:
+        nodes += [{"id": "m", "node_type": "representation_model", "name": "m", "data": {}},
+                  {"id": "mr", "node_type": "resource", "name": "mr",
+                   "data": {"url": "m.glb", "url_type": "3d_model", "tier": "master"}}]
+        edges += [{"id": "mm", "source": "m", "target": "grp",
+                   "edge_type": "is_in_representation_model_group"},
+                  {"id": "ml", "source": "m", "target": "mr", "edge_type": "has_linked_resource"}]
+        if members_epoch:
+            edges.append({"id": "me", "source": members_epoch, "target": "m",
+                          "edge_type": "has_representation_model"})
+    return _graph({"nodes": nodes, "edges": edges})
+
+
+def test_a_container_without_members_takes_its_documents_epochs():
+    from s3dgraphy.resources.alternatives import container_own_epochs
+    g = _container_case()
+    assert container_own_epochs(g, "grp") == ["ep1", "ep2"]
+    s = find_set(alternative_sets(g), "grp")
+    assert s["covers"] == [] and s["epochs"] == ["ep1", "ep2"]
+
+
+def test_an_epoch_reaching_the_container_itself_counts():
+    s = find_set(alternative_sets(_container_case(direct=True)), "grp")
+    assert s["epochs"] == ["ep2"]
+
+
+def test_members_without_epochs_fall_back_to_the_container_members_with_win():
+    assert find_set(alternative_sets(_container_case(with_member=True)), "grp")["epochs"] \
+        == ["ep1", "ep2"]
+    assert find_set(alternative_sets(_container_case(with_member=True, members_epoch="ep2")),
+                    "grp")["epochs"] == ["ep2"]
+
+
+def test_no_members_lights_the_alternative_whatever_the_uses():
+    s = find_set(alternative_sets(_container_case()), "grp")
+    ch = choose_alternative(s, ["heriverse"])
+    assert ch["level"] == "container" and ch["entry"]["id"] == "tiles"
+    assert choose_alternative(s, ["heriverse"], force="members")["level"] == "members"

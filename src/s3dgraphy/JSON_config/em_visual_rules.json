@@ -1,6 +1,6 @@
 {
   "formal_language": "EM",
-  "version": "1.6.39",
+  "version": "1.6.40",
   "_note_material_vs_qualia_color": [
     "DUE COSE DIVERSE CHE SI CHIAMANO ENTRAMBE color. Non confonderle: e gia successo.",
     "1) QUI, in node_styles.<tipo>.style.material.rgba_color — il COLORE DEL MATERIALE BLENDER del proxy 3D, in float LINEARI. UNA sola chiave: `rgba_color`. Fino a S8 il file ne usava due (`color` sui 13 tipi stratigrafici, `rgba_color` sugli altri) e get_material_color() ne leggeva una sola, restituendo None per 21 tipi su 38; ora sono unificate e la vecchia `color` e letta solo come tolleranza verso file scritti prima. Un tipo che non diventa mai una mesh NON ha material affatto (i contenitori di gruppo, e da S7 i dieci nodi che rendono per icona): per loro get_material_color() torna None, ed e corretto.",
@@ -9,6 +9,7 @@
     "In breve: qui si decide di che colore DISEGNARE una US; li si registra di che colore ERA."
   ],
   "_changelog": {
+    "1.6.40": "A CONTAINER WITHOUT MESHES LIES IN ITS OWN EPOCH (MICRO tileset, shift e epoche, 25 Oct 2026). alternatives.container_epochs: when a container has no member, or its members have no epoch, its epochs are its own — an epoch reaching it, or the epochs of the Document that wraps it (has_first_epoch / survive_in_epoch), as EM Tools' «Epochs of this set»; its alternative (a tileset of the whole survey) is then seen in that epoch. alternatives.choice: with an alternative and no member, the alternative is lit whatever the uses. Reference: s3dgraphy.resources.alternatives (container_own_epochs, choose_alternative); case in alternative_cases.json 1.1.0.",
     "1.6.39": "THE SERIES OF VIRTUAL SPECIAL FINDS (MICRO special find e fine dell'unità, part 2, 23 Oct 2026). node_styles.serVSF: the series rule (an ellipse) with the colours of the VSF (border #B19F61, fill #CCCCCC, its material), and the VSF's own drawings (src/2D/VSF.svg, src/2D/VSF.png, src/3D/VSF.glb) until E.D. approves a glyph of its own — a proposal for EMStudio is in the report. The RSF comment says «Repositioned Special Find» (node datamodel 1.6.34).",
     "1.6.38": "THE HDT-O GLYPHS (MICRO glifi HDT-O, 20 Oct 2026). graph (HC16), hdt (HC2), heritage_entity (HC1), study (HC9), project (HC13) join 2d_render_glyph_types.types (aspect 1.0) and get their 2d_glyphs entries, generated from src/2D/hdto/*.svg: the ornaments' grammar in a square plate, as EMStudio drew them in its pending hdto-glyphs.ts (which can now go: the datamodel wins). New table 2d_render_glyph_types.hdto_glyphs: class, HDT-O class and what each pictogram shows, en/it. src/2D/graph.svg, the GRAPH style's declared file, is unchanged.",
     "1.6.37": "THE ALTERNATIVES OF A 3D OBJECT: THE COMMON HAT (MICRO le alternative e la trasformazione, E.D. 17 Oct 2026). New block `alternatives`: a set of alternatives is the 3D resources with the same hat (the has_linked_resource from an RM, or from an RM container since connections 1.6.41, to their asset); reasons lod, fidelity, packaging computed; two nested levels, RM and container; the diagnoses two_hats, partial_coverage, epochs. Replaces the alternative of a container computed from the DTC (16 Oct). A view: nothing in em.json or RDF. Read by s3dgraphy.resources.alternatives.alternative_sets.",
@@ -6570,6 +6571,17 @@
     "epoch_types": [
       "EpochNode"
     ],
+    "container_epochs": {
+      "_comment": "1.6.40 (MICRO tileset, shift e epoche, E.D. 25 Oct 2026). A container's epochs are its members'; when it has no member, or its members have no epoch, it takes its OWN: an epoch reaching it with `epoch_edge`, and the epochs of the Document that wraps it (`wrapper_edge` from a `wrapper_types` node; `epoch_edges` from that Document to the epoch) — what EM Tools shows as «Epochs of this set». Without them a tileset of the whole survey, with no mesh yet in its container, lay in no epoch and was seen nowhere. Choice: a container with an alternative and no member lights the alternative whatever the uses (unless the members are chosen by hand).",
+      "wrapper_edge": "has_representation_model",
+      "wrapper_types": [
+        "document"
+      ],
+      "epoch_edges": [
+        "has_first_epoch",
+        "survive_in_epoch"
+      ]
+    },
     "file_types": [
       "3d_model"
     ],
@@ -6590,7 +6602,7 @@
       "fidelity",
       "packaging"
     ],
-    "choice": "Per set, the uses are tried IN ORDER. RM set: choose_version on its alternatives. Container set: the container's own alternative when one of its versions declares ANY of the uses (the version chosen with the uses in order; the members go off), else the members, each choosing with the same uses (with its master when none declares any). A hand choice (`container` | `members`) overrides the use."
+    "choice": "Per set, the uses are tried IN ORDER. RM set: choose_version on its alternatives. Container set: the container's own alternative when one of its versions declares ANY of the uses (the version chosen with the uses in order; the members go off), else the members, each choosing with the same uses (with its master when none declares any). A container with an alternative and NO member lights the alternative whatever the uses (1.6.40). A hand choice (`container` | `members`) overrides the use."
   },
   "dtc_kinds": {
     "_comment": "DATA-DRIVEN, EXPANDABLE per-kind vocabulary for the DTC substrate profile (ECHOES). Mirrors the Master-Document axis vocabularies above (document_roles/content_natures): the three base kinds (input/process/output) each list specific kinds seeded from the 2017 DTC palette. Adding a new kind (e.g. audio, spectroscopy) is a JSON entry here (+ a glyph) — NOT a code change; the DTC node classes validate against these keys via s3dgraphy.utils.get_dtc_kinds(). `glyph` names the 2017 DTC SVG (wired in the later glyph/visual-manager slice; recorded here as data only).",
