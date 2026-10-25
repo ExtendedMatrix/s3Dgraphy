@@ -1,6 +1,6 @@
 # em.json — the Extended Matrix document format
 
-**Version 1.1 · Editor's Draft · 24 October 2026**
+**Version 1.1 · Release · 25 October 2026**
 
 | | |
 |---|---|
@@ -10,15 +10,33 @@
 | Editor | Emanuel Demetrescu (CNR-ISPC), ORCID [0000-0002-5065-7970](https://orcid.org/0000-0002-5065-7970) |
 | Source | `spec/em-json/` in the [s3Dgraphy](https://github.com/ExtendedMatrix/s3Dgraphy) repository |
 | Licence | Text: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Schemas and examples: [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) |
-| Status | **Editor's Draft.** Stable enough to implement; it becomes a Release when the editor has reread it and it is deposited with a DOI. |
+| Status | **Release.** Reread by the editor and deposited with a DOI on Zenodo. Later changes enter the Editor's Draft (§10). |
 
 ## 1. What it is for
 
 An em.json file holds the work of an Extended Matrix study: the stratigraphic
 units and their relations in time, the sources and the reasoning behind every
 reconstruction (the *paradata*), the 3D models and documents they refer to, and
-how the whole is drawn. It is the file that EMStudio saves, that EM Tools for
-Blender writes, that Heriverse and the StratiGraph server read.
+how the whole is drawn.
+
+Four things are distinct, and the rest of this document depends on keeping
+them apart:
+
+- **Extended Matrix** is a formal language. It represents the concepts of a
+  stratigraphic and reconstructive reading with a layout, a logic of the flow
+  of time and graphic elements of its own, and it rests on precise algorithms
+  that propagate information between portions of the graph, following the
+  principles of virtual historical reconstruction.
+- **The content of a Matrix** is formalized as a **property graph**, mapped
+  deterministically onto a triplestore.
+- **em.json** is the **container** of that property graph. This document
+  specifies it.
+- **s3Dgraphy** is the library through which the tools read and write it.
+
+The tools read and write the same file, each with its own metaphor for the
+content: EM Tools for Blender, EMStudio, Heriverse, StratiField and its field
+chatbot, and the StratiGraph server, where several people work on it together
+in shared rooms.
 
 It is the point where these tools meet. That is why it is specified here, in a
 document separate from any one program: whoever reads and writes em.json can
@@ -60,7 +78,9 @@ A node has an **identifier**, a **type** and, optionally, a **name**, a
 The types and their fields are not listed in this specification. They belong to
 the **EM datamodel** — the node datamodel, the connections datamodel and the
 qualia vocabulary — which evolves on its own rhythm and is mapped to CIDOC CRM
-and its extensions. Every file says which versions of the datamodel it follows.
+and its extensions. Among them is CRMem, the extension of the CIDOC family that
+declares the concepts of argued reconstruction absent from the other models: in
+this chain it is a target of the mapping, not the datamodel itself. Every file says which versions of the datamodel it follows.
 This keeps the format stable while the vocabulary grows.
 
 ### 2.3 Edges
@@ -213,9 +233,12 @@ legacy 1.0 flat file; a file with keys nobody knows.
 
 The specification and its schemas are identified by persistent IRIs under
 `https://w3id.org/extendedmatrix/`, which resolve to the Extended Matrix site.
-In files and in prose the short prefix **`em:`** stands for the Extended
-Matrix ontology, `https://w3id.org/em/ontology#` (CRMem): `em:hasSubEpoch` is
-`https://w3id.org/em/ontology#hasSubEpoch`. Short in the files, long and
+In files and in prose the short prefix **`em:`** stands for the namespace of the
+EM terms, `https://w3id.org/em/ontology#`: `em:hasSubEpoch` is
+`https://w3id.org/em/ontology#hasSubEpoch`. The EM datamodel — nodes,
+connections, qualia — is the formal language of Extended Matrix. Its terms map
+to CIDOC CRM and its extensions, among them CRMem, the extension that declares
+the concepts of argued reconstruction absent from the CIDOC family. Short in the files, long and
 canonical in the world.
 
 ## 9. Examples
@@ -285,14 +308,16 @@ last resort.
 
 ## 11. Changes
 
-- **1.1 — 24 October 2026 (Editor's Draft).** First written specification. The
+- **1.1 — 25 October 2026 (Release; Editor's Draft from 24 October).** First written specification. The
   container (in use since 13 August 2026) becomes the form of the file; the flat
   form of 1.0 stays readable. Optional blocks described: per-graph layout,
   shelf, DTC corpus, periodizations and horizons, links between graphs, the
   version of the work, landscape composition. Rule «readers ignore unknown keys»
   and the `x-` prefix for extensions. Policy of the two version numbers.
   Added on 25 October 2026, optional and additive: `header.profiles`, the
-  community profiles a file uses (§2.7).
+  community profiles a file uses (§2.7). At release: §1 distinguishes the
+  language, the property graph, the container and the library; §2.2 and §8 place
+  CRMem among the targets of the mapping.
 - **1.0 — 11 July 2026.** Schema of the flat form (`header` + `graph` +
   `layout`), frozen with EMStudio's first save format.
 

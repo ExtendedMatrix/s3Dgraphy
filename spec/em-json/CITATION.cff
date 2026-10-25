@@ -6,9 +6,9 @@ abstract: >-
   Specification of em.json, the document format of the Extended Matrix: a
   container of graphs (stratigraphic units, their relations in time, the
   paradata of reconstructions, 3D resources, layout), with its JSON Schemas and
-  a conformance suite. Editor's Draft.
+  a conformance suite.
 version: "1.1"
-date-released: "2026-10-24"
+date-released: "2026-10-25"
 authors:
   - family-names: Demetrescu
     given-names: Emanuel
