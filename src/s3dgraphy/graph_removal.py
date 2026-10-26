@@ -127,7 +127,7 @@ def remove_graph(container: Any, graph_id: str, *, links: str = LINKS_KEEP,
                      target, target_name}],
          links_action, shelf_only_here: [{id, name, locator}], shelf_action,
          resources_alone: [{id, name, locator}], files_alone: [locator],
-         active_graph_id, active_changed}
+         active_graph_id, active_graph_name, active_changed}
     """
     if links not in (LINKS_KEEP, LINKS_DROP):
         raise ValueError(f"links must be 'keep' or 'drop', not {links!r}")
@@ -220,6 +220,8 @@ def remove_graph(container: Any, graph_id: str, *, links: str = LINKS_KEEP,
         "resources_alone": alone,
         "files_alone": files,
         "active_graph_id": new_active,
+        "active_graph_name": (_text(getattr(others[new_active], "name", None))
+                              or new_active) if new_active else None,
         "active_changed": new_active != active,
     }
     if dry_run:
@@ -281,7 +283,8 @@ def removal_summary(report: Dict[str, Any]) -> List[str]:
         out.append(f"{len(report['files_alone'])} files no other member uses: "
                    f"they stay on disk (never deleted)")
     if report["active_changed"]:
-        out.append(f"the graph in front becomes '{report['active_graph_id']}'")
+        out.append(f"the graph in front becomes "
+                   f"'{report.get('active_graph_name') or report['active_graph_id']}'")
     return out
 
 

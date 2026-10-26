@@ -349,6 +349,7 @@
      "rilievi/pianta.dxf"
     ],
     "active_graph_id": "b",
+    "active_graph_name": "Saggio B",
     "active_changed": true
    },
    "after": {
@@ -435,6 +436,7 @@
      "rilievi/pianta.dxf"
     ],
     "active_graph_id": "b",
+    "active_graph_name": "Saggio B",
     "active_changed": true
    },
    "after": {
@@ -475,6 +477,7 @@
     "resources_alone": [],
     "files_alone": [],
     "active_graph_id": "a",
+    "active_graph_name": "Saggio A",
     "active_changed": false
    },
    "after": {
@@ -536,6 +539,7 @@
     "resources_alone": [],
     "files_alone": [],
     "active_graph_id": "a",
+    "active_graph_name": "Saggio A",
     "active_changed": false
    },
    "after": {
