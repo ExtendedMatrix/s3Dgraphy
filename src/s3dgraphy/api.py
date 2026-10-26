@@ -694,6 +694,17 @@ def merge_containers(container, other):
     return merge_into_container(container, other)
 
 
+def remove_graph(container, graph_id: str, *, links: str = "keep",
+                 shelf: str = "keep", dry_run: bool = False) -> Dict[str, Any]:
+    """Take one study graph out of ``container``, returning what went with it
+    (nodes, edges, the links of the other graphs that hung on it, the shelf
+    entries only it used, the files nobody else names — never deleted).
+    ``dry_run=True`` is the report alone. See :mod:`s3dgraphy.graph_removal`."""
+    from .graph_removal import remove_graph as _remove
+    return _remove(container, graph_id, links=links, shelf=shelf,
+                   dry_run=dry_run)
+
+
 def merge_graphs(container, graph_ids: Optional[List[str]] = None):
     """One graph for the overall view of the graphs of ``container`` (all,
     or ``graph_ids``): nodes united by id, edges deduplicated by

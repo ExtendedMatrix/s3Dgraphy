@@ -1,0 +1,569 @@
+{
+ "doc": {
+  "header": {
+   "format": "em.json",
+   "version": "1.1",
+   "schema_version": 2,
+   "generator": {
+    "tool": "s3dgraphy",
+    "version": "1.6.0.dev65"
+   },
+   "datamodel_versions": {
+    "nodes": "1.6.38",
+    "connections": "1.6.49",
+    "qualia": "1.6.9"
+   },
+   "ontology_versions": {
+    "CIDOC-CRM": "7.1.3",
+    "CRMarchaeo": "2.1.1",
+    "CRMsci": "3.2",
+    "CRMdig": "5.0",
+    "CRMgeo": "1.2",
+    "CRMinf": "1.2.1",
+    "HDT-O": "1.0",
+    "PROV-O": "W3C Recommendation 2013-04-30",
+    "CRMem": "1.6.22"
+   }
+  },
+  "graphs": {
+   "a": {
+    "graph_id": "a",
+    "nodes": [
+     {
+      "id": "geo_a",
+      "node_type": "geo_position",
+      "name": "geo_position",
+      "data": {
+       "shift_x": 0.0,
+       "shift_y": 0.0,
+       "shift_z": 0.0,
+       "rotation": 0.0,
+       "rotation_reference": "grid"
+      }
+     },
+     {
+      "id": "US1",
+      "node_type": "US",
+      "name": "US1",
+      "data": {
+       "label": "US (or SU)"
+      }
+     },
+     {
+      "id": "US2",
+      "node_type": "US",
+      "name": "US2",
+      "data": {
+       "label": "US (or SU)"
+      }
+     },
+     {
+      "id": "res0",
+      "node_type": "resource",
+      "name": "foto/a.jpg",
+      "data": {
+       "url": "foto/a.jpg",
+       "url_type": "image",
+       "description": ""
+      }
+     },
+     {
+      "id": "doc_res0",
+      "node_type": "document",
+      "name": "foto/a.jpg",
+      "data": {
+       "em_canonical_document": true
+      }
+     },
+     {
+      "id": "res1",
+      "node_type": "resource",
+      "name": "foto/ab.jpg",
+      "data": {
+       "url": "foto/ab.jpg",
+       "url_type": "image",
+       "description": ""
+      }
+     },
+     {
+      "id": "doc_res1",
+      "node_type": "document",
+      "name": "foto/ab.jpg",
+      "data": {
+       "em_canonical_document": true
+      }
+     },
+     {
+      "id": "own",
+      "node_type": "resource",
+      "name": "pianta",
+      "data": {
+       "url": "rilievi/pianta.dxf",
+       "url_type": "External link",
+       "description": ""
+      }
+     }
+    ],
+    "edges": [
+     {
+      "id": "e1",
+      "edge_type": "is_after",
+      "source": "US1",
+      "target": "US2"
+     },
+     {
+      "id": "doc_res0__has_linked_resource__res0",
+      "edge_type": "has_linked_resource",
+      "source": "doc_res0",
+      "target": "res0"
+     },
+     {
+      "id": "US1__has_documentation__doc_res0",
+      "edge_type": "has_documentation",
+      "source": "US1",
+      "target": "doc_res0"
+     },
+     {
+      "id": "doc_res1__has_linked_resource__res1",
+      "edge_type": "has_linked_resource",
+      "source": "doc_res1",
+      "target": "res1"
+     },
+     {
+      "id": "US2__has_documentation__doc_res1",
+      "edge_type": "has_documentation",
+      "source": "US2",
+      "target": "doc_res1"
+     }
+    ],
+    "links": [
+     {
+      "id": "US2__is_after__c::US4",
+      "edge_type": "is_after",
+      "source": "US2",
+      "target": {
+       "graph_id": "c",
+       "node_id": "US4"
+      }
+     }
+    ],
+    "name": "Saggio A"
+   },
+   "b": {
+    "graph_id": "b",
+    "nodes": [
+     {
+      "id": "geo_b",
+      "node_type": "geo_position",
+      "name": "geo_position",
+      "data": {
+       "shift_x": 0.0,
+       "shift_y": 0.0,
+       "shift_z": 0.0,
+       "rotation": 0.0,
+       "rotation_reference": "grid"
+      }
+     },
+     {
+      "id": "US3",
+      "node_type": "US",
+      "name": "US3",
+      "data": {
+       "label": "US (or SU)"
+      }
+     },
+     {
+      "id": "res1",
+      "node_type": "resource",
+      "name": "foto/ab.jpg",
+      "data": {
+       "url": "foto/ab.jpg",
+       "url_type": "image",
+       "description": ""
+      }
+     },
+     {
+      "id": "doc_res1",
+      "node_type": "document",
+      "name": "foto/ab.jpg",
+      "data": {
+       "em_canonical_document": true
+      }
+     }
+    ],
+    "edges": [
+     {
+      "id": "doc_res1__has_linked_resource__res1",
+      "edge_type": "has_linked_resource",
+      "source": "doc_res1",
+      "target": "res1"
+     },
+     {
+      "id": "US3__has_documentation__doc_res1",
+      "edge_type": "has_documentation",
+      "source": "US3",
+      "target": "doc_res1"
+     }
+    ],
+    "links": [
+     {
+      "id": "US3__is_after__a::US1",
+      "edge_type": "is_after",
+      "source": "US3",
+      "target": {
+       "graph_id": "a",
+       "node_id": "US1"
+      }
+     }
+    ],
+    "name": "Saggio B"
+   },
+   "c": {
+    "graph_id": "c",
+    "nodes": [
+     {
+      "id": "geo_c",
+      "node_type": "geo_position",
+      "name": "geo_position",
+      "data": {
+       "shift_x": 0.0,
+       "shift_y": 0.0,
+       "shift_z": 0.0,
+       "rotation": 0.0,
+       "rotation_reference": "grid"
+      }
+     },
+     {
+      "id": "US4",
+      "node_type": "US",
+      "name": "US4",
+      "data": {
+       "label": "US (or SU)"
+      }
+     }
+    ],
+    "edges": [],
+    "name": "Saggio C"
+   },
+   "shelf": {
+    "graph_id": "shelf",
+    "nodes": [
+     {
+      "id": "geo_shelf",
+      "node_type": "geo_position",
+      "name": "geo_position",
+      "data": {
+       "shift_x": 0.0,
+       "shift_y": 0.0,
+       "shift_z": 0.0,
+       "rotation": 0.0,
+       "rotation_reference": "grid"
+      }
+     },
+     {
+      "id": "res0",
+      "node_type": "resource",
+      "name": "foto/a.jpg",
+      "data": {
+       "url": "foto/a.jpg",
+       "url_type": "image",
+       "description": ""
+      }
+     },
+     {
+      "id": "res1",
+      "node_type": "resource",
+      "name": "foto/ab.jpg",
+      "data": {
+       "url": "foto/ab.jpg",
+       "url_type": "image",
+       "description": ""
+      }
+     },
+     {
+      "id": "res2",
+      "node_type": "resource",
+      "name": "foto/nessuno.jpg",
+      "data": {
+       "url": "foto/nessuno.jpg",
+       "url_type": "image",
+       "description": ""
+      }
+     }
+    ],
+    "edges": [],
+    "name": "Shelf",
+    "data": {
+     "em_collection": "ShelfGraph"
+    }
+   }
+  },
+  "active_graph_id": "a"
+ },
+ "cases": [
+  {
+   "graph_id": "a",
+   "links": "keep",
+   "shelf": "keep",
+   "report": {
+    "graph_id": "a",
+    "name": "Saggio A",
+    "applied": true,
+    "nodes": 8,
+    "edges": 5,
+    "nodes_by_type": {
+     "US": 2,
+     "document": 2,
+     "geo_position": 1,
+     "resource": 3
+    },
+    "links_out": 1,
+    "links_in": [
+     {
+      "graph_id": "b",
+      "link_id": "US3__is_after__a::US1",
+      "edge_type": "is_after",
+      "source": "US3",
+      "source_name": "US3",
+      "target": "US1",
+      "target_name": "US1"
+     }
+    ],
+    "links_action": "keep",
+    "shelf_only_here": [
+     {
+      "id": "res0",
+      "name": "foto/a.jpg",
+      "locator": "foto/a.jpg"
+     }
+    ],
+    "shelf_action": "keep",
+    "resources_alone": [
+     {
+      "id": "own",
+      "name": "pianta",
+      "locator": "rilievi/pianta.dxf"
+     }
+    ],
+    "files_alone": [
+     "rilievi/pianta.dxf"
+    ],
+    "active_graph_id": "b",
+    "active_changed": true
+   },
+   "after": {
+    "graphs": [
+     "b",
+     "c",
+     "shelf"
+    ],
+    "active_graph_id": "b",
+    "links": {
+     "b": [
+      {
+       "id": "US3__is_after__a::US1",
+       "edge_type": "is_after",
+       "source": "US3",
+       "target": {
+        "graph_id": "a",
+        "node_id": "US1"
+       },
+       "attributes": {
+        "target_graph_removed": "a"
+       }
+      }
+     ]
+    },
+    "shelf": [
+     "res0",
+     "res1",
+     "res2"
+    ]
+   }
+  },
+  {
+   "graph_id": "a",
+   "links": "drop",
+   "shelf": "drop",
+   "report": {
+    "graph_id": "a",
+    "name": "Saggio A",
+    "applied": true,
+    "nodes": 8,
+    "edges": 5,
+    "nodes_by_type": {
+     "US": 2,
+     "document": 2,
+     "geo_position": 1,
+     "resource": 3
+    },
+    "links_out": 1,
+    "links_in": [
+     {
+      "graph_id": "b",
+      "link_id": "US3__is_after__a::US1",
+      "edge_type": "is_after",
+      "source": "US3",
+      "source_name": "US3",
+      "target": "US1",
+      "target_name": "US1"
+     }
+    ],
+    "links_action": "drop",
+    "shelf_only_here": [
+     {
+      "id": "res0",
+      "name": "foto/a.jpg",
+      "locator": "foto/a.jpg"
+     }
+    ],
+    "shelf_action": "drop",
+    "resources_alone": [
+     {
+      "id": "res0",
+      "name": "foto/a.jpg",
+      "locator": "foto/a.jpg"
+     },
+     {
+      "id": "own",
+      "name": "pianta",
+      "locator": "rilievi/pianta.dxf"
+     }
+    ],
+    "files_alone": [
+     "foto/a.jpg",
+     "rilievi/pianta.dxf"
+    ],
+    "active_graph_id": "b",
+    "active_changed": true
+   },
+   "after": {
+    "graphs": [
+     "b",
+     "c",
+     "shelf"
+    ],
+    "active_graph_id": "b",
+    "links": {},
+    "shelf": [
+     "res1",
+     "res2"
+    ]
+   }
+  },
+  {
+   "graph_id": "b",
+   "links": "keep",
+   "shelf": "drop",
+   "report": {
+    "graph_id": "b",
+    "name": "Saggio B",
+    "applied": true,
+    "nodes": 4,
+    "edges": 2,
+    "nodes_by_type": {
+     "US": 1,
+     "document": 1,
+     "geo_position": 1,
+     "resource": 1
+    },
+    "links_out": 1,
+    "links_in": [],
+    "links_action": "keep",
+    "shelf_only_here": [],
+    "shelf_action": "drop",
+    "resources_alone": [],
+    "files_alone": [],
+    "active_graph_id": "a",
+    "active_changed": false
+   },
+   "after": {
+    "graphs": [
+     "a",
+     "c",
+     "shelf"
+    ],
+    "active_graph_id": "a",
+    "links": {
+     "a": [
+      {
+       "id": "US2__is_after__c::US4",
+       "edge_type": "is_after",
+       "source": "US2",
+       "target": {
+        "graph_id": "c",
+        "node_id": "US4"
+       }
+      }
+     ]
+    },
+    "shelf": [
+     "res0",
+     "res1",
+     "res2"
+    ]
+   }
+  },
+  {
+   "graph_id": "c",
+   "links": "drop",
+   "shelf": "keep",
+   "report": {
+    "graph_id": "c",
+    "name": "Saggio C",
+    "applied": true,
+    "nodes": 2,
+    "edges": 0,
+    "nodes_by_type": {
+     "US": 1,
+     "geo_position": 1
+    },
+    "links_out": 0,
+    "links_in": [
+     {
+      "graph_id": "a",
+      "link_id": "US2__is_after__c::US4",
+      "edge_type": "is_after",
+      "source": "US2",
+      "source_name": "US2",
+      "target": "US4",
+      "target_name": "US4"
+     }
+    ],
+    "links_action": "drop",
+    "shelf_only_here": [],
+    "shelf_action": "keep",
+    "resources_alone": [],
+    "files_alone": [],
+    "active_graph_id": "a",
+    "active_changed": false
+   },
+   "after": {
+    "graphs": [
+     "a",
+     "b",
+     "shelf"
+    ],
+    "active_graph_id": "a",
+    "links": {
+     "b": [
+      {
+       "id": "US3__is_after__a::US1",
+       "edge_type": "is_after",
+       "source": "US3",
+       "target": {
+        "graph_id": "a",
+        "node_id": "US1"
+       }
+      }
+     ]
+    },
+    "shelf": [
+     "res0",
+     "res1",
+     "res2"
+    ]
+   }
+  }
+ ]
+}
