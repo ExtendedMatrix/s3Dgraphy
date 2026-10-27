@@ -7709,7 +7709,7 @@
   "download": {
    "label": {
     "en": "Download",
-    "validated_it": false,
+    "validated_it": true,
     "validated_el": false,
     "validated_he": false,
     "validated_es": false,
@@ -7717,7 +7717,7 @@
     "validated_ro": false,
     "validated_fr": false,
     "validated_de": false,
-    "it": "Download",
+    "it": "Scaricato dal web",
     "de": "Download",
     "fr": "Téléchargement",
     "es": "Descarga",
@@ -7940,7 +7940,7 @@
   "ingest": {
    "label": {
     "en": "Ingest",
-    "validated_it": false,
+    "validated_it": true,
     "validated_el": false,
     "validated_he": false,
     "validated_es": false,
@@ -7948,7 +7948,7 @@
     "validated_ro": false,
     "validated_fr": false,
     "validated_de": false,
-    "it": "Ingest",
+    "it": "Copiato da un archivio",
     "de": "Ingest",
     "fr": "Ingestion",
     "es": "Ingesta",
@@ -8003,7 +8003,7 @@
   "local_import": {
    "label": {
     "en": "Local import",
-    "validated_it": false,
+    "validated_it": true,
     "validated_el": false,
     "validated_he": false,
     "validated_es": false,
@@ -8011,7 +8011,7 @@
     "validated_ro": false,
     "validated_fr": false,
     "validated_de": false,
-    "it": "Import locale",
+    "it": "Importato da questo computer",
     "de": "Lokaler Import",
     "fr": "Import local",
     "es": "Importación local",
@@ -8381,7 +8381,7 @@
   "uri_reference": {
    "label": {
     "en": "URI reference",
-    "validated_it": false,
+    "validated_it": true,
     "validated_el": false,
     "validated_he": false,
     "validated_es": false,
@@ -8389,7 +8389,7 @@
     "validated_ro": false,
     "validated_fr": false,
     "validated_de": false,
-    "it": "Riferimento URI",
+    "it": "Indirizzo web citato",
     "de": "URI-Verweis",
     "fr": "Référence URI",
     "es": "Referencia URI",
