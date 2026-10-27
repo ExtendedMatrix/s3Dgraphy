@@ -34,7 +34,7 @@ EM_TTL = HERE / "em.ttl"
 NODE_DM = HERE / "s3Dgraphy_node_datamodel.json"
 EM = "https://w3id.org/em/ontology#"
 CANONICAL = "https://w3id.org/extendedmatrix/ontology"
-DOCS = "https://docs.extendedmatrix.org/projects/s3dgraphy/en/latest/crmem.html"
+DOCS = "https://docs.extendedmatrix.org/projects/s3dgraphy/en/v1.6/crmem.html"
 REPO = "https://github.com/ExtendedMatrix/s3Dgraphy"
 
 # Where a reader finds the official declaration of a term of the family.
