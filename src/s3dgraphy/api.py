@@ -3249,7 +3249,7 @@ def promote_to_bucket(graph: Graph, resource_id: str, path: str, store: Any = No
 
 # ── C1 · the standard tree of an EM project (E.D., 4 Oct 2026) ─────────────────
 def create_em_project(parent: str, name: str, **kwargs) -> Dict[str, Any]:
-    """«New EM project…»: EM/ (DosCo/, proxies/), RB/, SB/, RM/, README.md,
+    """«New EM project…»: EM/ (DosCo/, proxies/), RB/, SB/, RM/, GIS/, README.md,
     LICENCE.md under ``parent/name``. See :mod:`s3dgraphy.project_tree`."""
     from .project_tree import create_project
     return create_project(parent, name, **kwargs)
@@ -3259,6 +3259,13 @@ def em_project_reorder_plan(root: str) -> List[Dict[str, str]]:
     """«Reorder by the EM standard…»: the preview, never applied here."""
     from .project_tree import reorder_plan
     return reorder_plan(root)
+
+
+def em_project_tree(root: str) -> Dict[str, Any]:
+    """V4 · the project's standard tree, folder by folder, with what is there
+    and what is to be made (:func:`s3dgraphy.project_tree.describe_tree`)."""
+    from .project_tree import describe_tree
+    return describe_tree(root)
 
 
 # ── resource layer (R0: stable-ID resolver seam) ──────────────────────────────

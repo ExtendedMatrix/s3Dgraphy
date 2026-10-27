@@ -5,6 +5,21 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
+- **V4 · `GIS/` in the standard tree, and the variants' `versions/`**
+  (MICRO-ARCHIVIO-2, 27 October 2026, E.D.'s V4). `project_tree.STANDARD_DIRS`
+  gains `GIS/` — the external layers of the em.json — so a new project has it
+  and «Reorder by the EM standard…» moves `.shp` (with `.shx .dbf .prj .cpg`),
+  `.gpkg`, `.geojson`, `.kml` there. A `.tif` goes to `GIS/` when it is
+  georeferenced (a GeoTIFF tag in its first IFD, or a world file beside it,
+  `geotiff_state`) and to `EM/DosCo/` when it is a plain TIFF; one the plan
+  cannot read is ASKED (`{"action": "ask", "choices": [GIS/…, EM/DosCo/…]}`),
+  and `apply_plan` leaves it until an answer turns it into a move (a move whose
+  ends leave the project is refused). The optimised variants follow Templu
+  Mare's practice: `variant_name` → `<model>@<lod>-<destination>.glb`,
+  `versions_dir_for` / `variant_path` → `RB/versions/`, `RM/versions/` (and
+  `SB/versions/`), `parse_variant_name`. `describe_tree` / `api.em_project_tree`
+  give the tree folder by folder (there or to be made, files at its first
+  level), as EMStudio's File window shows it in «Progetto». No `OUT/`.
 - **The em.json conformance suite** (MICRO specifica em.json, part 4, 24
   October 2026). `spec/em-json/conformance/`: six samples (minimal; multigraph
   with shelf, links and per-graph layouts; georeferenced; periodizations and

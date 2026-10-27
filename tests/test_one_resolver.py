@@ -176,3 +176,96 @@ def test_r1_a_datablock_is_where_its_blend_is(tmp_path):
     gone = make_blend_locator("../SB/none.blend", "Mesh", "ME")
     assert L.resolve({"id": "n", "locator": gone}, project_root=str(root),
                      base_dirs=[str(root / "EM")])["state"] == "missing"
+
+
+# ── V4 (MICRO-ARCHIVIO-2, 27 Oct 2026) · GIS/ and the variants' versions/ ──
+
+def _tiff(path, tags):
+    """a minimal little-endian TIFF whose first IFD carries ``tags``"""
+    import struct
+    entries = b"".join(struct.pack("<HHII", t, 3, 1, 0) for t in sorted(tags))
+    path.write_bytes(b"II" + struct.pack("<HI", 42, 8) + struct.pack("<H", len(tags))
+                     + entries + struct.pack("<I", 0))
+
+
+def test_v4_a_new_project_has_gis(tmp_path):
+    root = pathlib.Path(api.create_em_project(str(tmp_path), "Ulpia")["root"])
+    assert (root / "GIS").is_dir()
+    assert "GIS" in [rel for rel, _ in T.STANDARD_DIRS]
+    assert "`GIS/`" in (root / "README.md").read_text()
+    assert not (root / "RB" / "versions").exists()       # made when a variant is written
+
+
+def test_v4_the_plan_tells_a_layer_from_a_document(tmp_path):
+    root = tmp_path / "sarmi"
+    root.mkdir()
+    for n in ("forum.shp", "forum.dbf", "forum.shx", "forum.prj", "scavi.gpkg", "mura.geojson"):
+        (root / n).write_bytes(b"x")
+    _tiff(root / "orto.tif", {256, 257, 33550, 33922, 34735})      # a GeoTIFF
+    _tiff(root / "scheda.tif", {256, 257, 259})                     # a scanned page
+    _tiff(root / "pianta.tif", {256, 257})
+    (root / "pianta.tfw").write_text("0.1\n0\n0\n-0.1\n100\n200\n")  # georeferenced by its world file
+    (root / "rotto.tif").write_bytes(b"not a tiff")                 # cannot be read: asked
+    plan = T.reorder_plan(str(root))
+    moves = {p["from"]: p["to"] for p in plan if p["action"] == "move"}
+    for n in ("forum.shp", "forum.dbf", "forum.shx", "forum.prj", "scavi.gpkg", "mura.geojson",
+              "orto.tif", "pianta.tif", "pianta.tfw"):
+        assert moves[n] == f"GIS/{n}", n
+    assert moves["scheda.tif"] == "EM/DosCo/scheda.tif"
+    ask = [p for p in plan if p["action"] == "ask"]
+    assert ask == [{"action": "ask", "from": "rotto.tif", "why": "unreadable_raster",
+                    "choices": ["GIS/rotto.tif", "EM/DosCo/rotto.tif"]}]
+    assert {"action": "mkdir", "to": "GIS"} in plan
+    # an unanswered ask stays; the answered one moves; nothing leaves the project
+    done = T.apply_plan(str(root), plan + [{"action": "move", "from": "scheda.tif", "to": "../fuori.tif"}],
+                        confirmed=True)
+    assert (root / "rotto.tif").is_file() and any("not answered" in d for d in done)
+    assert (root / "GIS" / "orto.tif").is_file() and (root / "EM" / "DosCo" / "scheda.tif").is_file()
+    assert not (tmp_path / "fuori.tif").exists()
+    answered = [{"action": "move", "from": "rotto.tif", "to": "EM/DosCo/rotto.tif"}]
+    T.apply_plan(str(root), answered, confirmed=True)
+    assert (root / "EM" / "DosCo" / "rotto.tif").is_file()
+
+
+def test_v4_geotiff_state(tmp_path):
+    _tiff(tmp_path / "a.tif", {256, 34735})
+    _tiff(tmp_path / "b.tif", {256})
+    (tmp_path / "c.tif").write_bytes(b"")
+    assert T.geotiff_state(str(tmp_path / "a.tif")) is True
+    assert T.geotiff_state(str(tmp_path / "b.tif")) is False
+    assert T.geotiff_state(str(tmp_path / "c.tif")) is None
+
+
+def test_v4_the_variants_go_in_the_versions_of_their_part(tmp_path):
+    root = pathlib.Path(api.create_em_project(str(tmp_path), "TM")["root"])
+    (root / "EM" / "x.em.json").write_text("{}")
+    src = root / "RB" / "LOD1" / "SM_OB_PODIO_LOD1.glb"
+    src.parent.mkdir(parents=True)
+    src.write_bytes(b"glTF")
+    assert T.variant_name("SM_OB_PODIO_LOD1.glb", "lod4", "web") == "SM_OB_PODIO_LOD1@lod4-web.glb"
+    assert T.variant_name("SM_OB_PODIO_LOD1.obj", 3, "aton-heriverse") == "SM_OB_PODIO_LOD1@lod3-aton-heriverse.glb"
+    assert T.variant_path(str(src), "lod4", "web") == str(root / "RB" / "versions" / "SM_OB_PODIO_LOD1@lod4-web.glb")
+    rm = root / "RM" / "US12" / "US12.glb"
+    rm.parent.mkdir(parents=True)
+    rm.write_bytes(b"glTF")
+    assert T.versions_dir_for(str(rm)) == str(root / "RM" / "versions")
+    loose = tmp_path / "altro" / "m.glb"
+    loose.parent.mkdir()
+    loose.write_bytes(b"glTF")
+    assert T.versions_dir_for(str(loose)) == str(tmp_path / "altro" / "versions")
+    assert T.parse_variant_name("SM_OB_EST_L_LOD1@lod3-aton-heriverse.glb") == {
+        "model": "SM_OB_EST_L_LOD1", "lod": "lod3", "destination": "aton-heriverse", "ext": ".glb"}
+    assert T.parse_variant_name("plain.glb") is None
+
+
+def test_v4_the_tree_described(tmp_path):
+    root = pathlib.Path(api.create_em_project(str(tmp_path), "TM")["root"])
+    (root / "GIS").rmdir()
+    (root / "RB" / "versions").mkdir()
+    (root / "EM" / "DosCo" / "D.01.pdf").write_bytes(b"%PDF")
+    tree = api.em_project_tree(str(root))
+    by = {d["rel"]: d for d in tree["dirs"]}
+    assert [d["rel"] for d in tree["dirs"]] == [rel for rel, _ in T.STANDARD_DIRS]
+    assert by["GIS"]["exists"] is False and by["EM/DosCo"]["files"] == 1 and by["EM/DosCo"]["depth"] == 1
+    assert tree["versions"] == ["RB/versions"]
+    assert {f["name"] for f in tree["files"] if f["exists"]} == {"README.md", "LICENCE.md"}
