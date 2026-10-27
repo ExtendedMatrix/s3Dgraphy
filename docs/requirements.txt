@@ -20,3 +20,7 @@ numpy>=1.21.0
 
 # Optional dependencies that might be imported
 networkx>=3.0                 # For layout generation
+
+# The CRMem declarations page (docs/conf.py, s3dgraphy.tools.ontology_html)
+# reads em.ttl with rdflib: without it the page is silently not built.
+rdflib>=7.0
