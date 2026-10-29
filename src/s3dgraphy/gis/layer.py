@@ -81,6 +81,9 @@ def inspect_shapefile(shp_path: str, *, z_field: Optional[str] = None,
                                          for x in feats)]
         if len(nums) >= 3:
             guess_z = nums[-1]
+    if guess_z and not z_field and info["z_range"] is None:
+        # the heights the guessed field would give, so a dialog can say them
+        info["z_range"] = read_shapefile(shp_path, z_field=guess_z)["z_range"]
     return {
         "path": shp_path,
         "crs": crs_of_shapefile(shp_path),

@@ -167,6 +167,9 @@ def test_read_a_point_shapefile_with_heights_in_an_attribute(tmp_path):
     assert r["features"][2]["coords"] == [327340.405, 448689.677, 493.014]
     assert r["z_range"] == [491.5, 493.014]
     assert r["bbox"] == [327340.405, 448660.0, 327360.0, 448689.677]
+    from s3dgraphy.gis.layer import inspect_shapefile
+    ins = inspect_shapefile(str(shp))
+    assert ins["z_field"] == "field_4" and ins["z_range"] == [491.5, 493.014]   # the guess, with its heights
 
 
 def test_the_layer_is_a_resource_of_its_files(tmp_path):
