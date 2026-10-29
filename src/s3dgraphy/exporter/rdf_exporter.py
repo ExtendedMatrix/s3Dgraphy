@@ -1887,6 +1887,17 @@ class RDFExporter:
                 ptype = getattr(node, "name", None)
             if ptype:
                 ctx.add((node_iri, EM.hasQualiaType, Literal(ptype)))
+            # 1.6.39 · a footprint (qualia 1.6.10) is a WKT literal with its CRS
+            # inside: it leaves also as GeoSPARQL geometry, the form a triplestore
+            # with a spatial index reads — the region's 3D reading does the same.
+            if (ptype or "").lower() == "footprint" and isinstance(raw_value, str):
+                from ..geometry.wkt import is_polygon_wkt
+                if is_polygon_wkt(raw_value):
+                    geom = URIRef(str(node_iri) + "/geometry")
+                    ctx.add((node_iri, GEO.hasGeometry, geom))
+                    ctx.add((geom, RDF.type, GEO.Geometry))
+                    ctx.add((geom, GEO.asWKT, Literal(raw_value.strip(),
+                                                      datatype=GEO.wktLiteral)))
 
         # BUGFIX (2026-08-11, found by the RDF round-trip): the branch tested for
         # "epoch", but EpochNode.node_type is "EpochNode" — so it NEVER fired and
@@ -2033,6 +2044,12 @@ class RDFExporter:
             propagation = getattr(node, "propagation", None) or data.get("propagation")
             if propagation and propagation != "additive":
                 ctx.add((node_iri, EM.propagation, Literal(propagation)))
+            # 1.6.39 · D-LG5: a virtual site (level sito, data.virtual) is also an
+            # em:VirtualSite (E89 + E27), the only CRMem term the LG asks.
+            attrs = getattr(node, "attributes", None) or {}
+            level = attrs.get("level") or data.get("level")
+            if level == "sito" and (attrs.get("virtual") or data.get("virtual")):
+                ctx.add((node_iri, RDF.type, EM.VirtualSite))
 
         elif node_type == "geo_position":
             epsg = data.get("epsg")

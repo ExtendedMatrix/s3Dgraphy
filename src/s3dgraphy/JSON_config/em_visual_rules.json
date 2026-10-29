@@ -1,6 +1,6 @@
 {
   "formal_language": "EM",
-  "version": "1.6.40",
+  "version": "1.6.41",
   "_note_material_vs_qualia_color": [
     "DUE COSE DIVERSE CHE SI CHIAMANO ENTRAMBE color. Non confonderle: e gia successo.",
     "1) QUI, in node_styles.<tipo>.style.material.rgba_color — il COLORE DEL MATERIALE BLENDER del proxy 3D, in float LINEARI. UNA sola chiave: `rgba_color`. Fino a S8 il file ne usava due (`color` sui 13 tipi stratigrafici, `rgba_color` sugli altri) e get_material_color() ne leggeva una sola, restituendo None per 21 tipi su 38; ora sono unificate e la vecchia `color` e letta solo come tolleranza verso file scritti prima. Un tipo che non diventa mai una mesh NON ha material affatto (i contenitori di gruppo, e da S7 i dieci nodi che rendono per icona): per loro get_material_color() torna None, ed e corretto.",
@@ -9,6 +9,7 @@
     "In breve: qui si decide di che colore DISEGNARE una US; li si registra di che colore ERA."
   ],
   "_changelog": {
+    "1.6.41": "THE SITE HAS A GLYPH, AS A DRAFT (MICRO lab sito Sarmizegetusa, 30 Oct 2026). 2d_render_glyph_types.data_glyphs += site: a LocationNodeGroup of level sito (the site of D-LG4, node datamodel 1.6.39) is drawn with src/2D/bozze/site.svg — a footprint in plan (a closed outline on a ground hatch) with a survey point inside, in the square plate of the HDT-O layer (a node of the cultural context; the site is the place the studies took place at). Drawn by Claude and marked BOZZA, so its 2d_glyphs entry carries draft: true: the mark is E.D.'s to approve (move it to src/2D/site.svg, drop the marker, rerun glyphs_from_svg --write). A virtual site (data.virtual) uses the same glyph for now. node_styles.LocationNodeGroup gains level_modifiers.sito: the toponym grey border, thicker (2.0), so a site reads as the strongest place of its chain where it is drawn as a folder. ADDITIVE.",
     "1.6.40": "A CONTAINER WITHOUT MESHES LIES IN ITS OWN EPOCH (MICRO tileset, shift e epoche, 25 Oct 2026). alternatives.container_epochs: when a container has no member, or its members have no epoch, its epochs are its own — an epoch reaching it, or the epochs of the Document that wraps it (has_first_epoch / survive_in_epoch), as EM Tools' «Epochs of this set»; its alternative (a tileset of the whole survey) is then seen in that epoch. alternatives.choice: with an alternative and no member, the alternative is lit whatever the uses. Reference: s3dgraphy.resources.alternatives (container_own_epochs, choose_alternative); case in alternative_cases.json 1.1.0.",
     "1.6.39": "THE SERIES OF VIRTUAL SPECIAL FINDS (MICRO special find e fine dell'unità, part 2, 23 Oct 2026). node_styles.serVSF: the series rule (an ellipse) with the colours of the VSF (border #B19F61, fill #CCCCCC, its material), and the VSF's own drawings (src/2D/VSF.svg, src/2D/VSF.png, src/3D/VSF.glb) until E.D. approves a glyph of its own — a proposal for EMStudio is in the report. The RSF comment says «Repositioned Special Find» (node datamodel 1.6.34).",
     "1.6.38": "THE HDT-O GLYPHS (MICRO glifi HDT-O, 20 Oct 2026). graph (HC16), hdt (HC2), heritage_entity (HC1), study (HC9), project (HC13) join 2d_render_glyph_types.types (aspect 1.0) and get their 2d_glyphs entries, generated from src/2D/hdto/*.svg: the ornaments' grammar in a square plate, as EMStudio drew them in its pending hdto-glyphs.ts (which can now go: the datamodel wins). New table 2d_render_glyph_types.hdto_glyphs: class, HDT-O class and what each pictogram shows, en/it. src/2D/graph.svg, the GRAPH style's declared file, is unchanged.",
@@ -387,6 +388,20 @@
             ]
           }
         ]
+      },
+      "site": {
+        "glyph": "src/2D/bozze/site.svg",
+        "label": "Site",
+        "when": [
+          {
+            "node_type": [
+              "LocationNodeGroup"
+            ],
+            "data.level": [
+              "sito"
+            ]
+          }
+        ]
       }
     },
     "_aspect_comment": "EM3 - width of a glyph box = its HEIGHT x this aspect (natural width / natural height of the drawing). The height is the engine's node height, so every glyph keeps the same height and only the width differs (E.D.'s rule). Default 1.0 (square) when a type or kind is absent, which is what the eleven DTC glyphs are after the POL4 autocrop and what extractor/combiner are by construction. STATIC ON PURPOSE: these numbers are measured from the assets ONCE, here, and never read from the loaded image at runtime. An aspect taken from naturalWidth would make the layout depend on when a bitmap finishes decoding - the box would jump under the user and two runs of the same document could differ, which is the determinism contract (EMStudio invariant 7). The cost of a static number is that it can go stale if an asset is redrawn: frontend/scripts/sync-datamodels.sh re-measures every vendored file and WARNS when a declaration is more than 2% off, so the staleness is caught where the assets are copied. Values below measured 2026-08-05 from the files each type actually renders (SVG viewBox, PNG header; narrative uses EMNarrative.png because of its 2d_icon_prefer raster).",
@@ -414,7 +429,8 @@
       "hdt": 1.0,
       "heritage_entity": 1.0,
       "study": 1.0,
-      "project": 1.0
+      "project": 1.0,
+      "site": 1.0
     },
     "_aspect_correction_1_6_18": "author 0.875 → 0.984 (2026-09-30). 0.875 was measured from src/2D/author.svg (448×512), a Font Awesome silhouette that is NOT the palette pictogram; the pictogram (author.png, 126×128, redrawn as src/2D/bozze/author.svg) is 0.984, the same as author_ai. The drawing wins (2d_glyphs rule), and the layout reads this number. Until EMStudio draws 2d_glyphs, sync-datamodels.sh will WARN on author, because icons.ts still resolves the FA author.svg.",
     "_aspect_correction_1_6_21": "document declared for the first time: 0.636, from src/2D/document.svg (16.11 x 25.34) — the drawing wins (2d_glyphs rule). It agrees with the yEd palette's document node (35 x 55 = 0.636) and with document.png (128 x 199 = 0.643, within the 2% sync-datamodels.sh tolerates). EMStudio's 0.78 (em-core geometry.rs SHEET_TYPES_PENDING, shape-geom.ts DOC_SHEET_ASPECT) measured the sheet its renderer drew by hand, 23.4 x 30, which is not the manual's: both read this key when it exists, so the sheet narrows from 24.96 to 20.35 units at the 32-unit node height."
@@ -5643,6 +5659,55 @@
         44.76,
         50.9
       ]
+    },
+    "site": {
+      "viewBox": [
+        0,
+        0,
+        87.12,
+        87.12
+      ],
+      "aspect": 1.0,
+      "layers": [
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.42 66.28 2.42 43.56C2.42 20.84 20.84 2.42 43.56 2.42C66.28 2.42 84.7 20.84 84.7 43.56Z",
+          "role": "paper",
+          "fill": "#FFFFFF",
+          "frame": true
+        },
+        {
+          "d": "M84.7 43.56C84.7 66.28 66.28 84.7 43.56 84.7C20.84 84.7 2.42 66.28 2.42 43.56C2.42 20.84 20.84 2.42 43.56 2.42C66.28 2.42 84.7 20.84 84.7 43.56Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 1.5,
+          "frame": true
+        },
+        {
+          "d": "M27 22L64 27L59 66L22 61Z",
+          "role": "ink",
+          "stroke": "#000000",
+          "stroke_width": 3.0,
+          "line_join": "round"
+        },
+        {
+          "d": "M33 32L54 35L53 44L32 41Z",
+          "role": "ground",
+          "fill": "#6E6E6E"
+        },
+        {
+          "d": "M48.2 53C48.2 55.32 46.32 57.2 44 57.2C41.68 57.2 39.8 55.32 39.8 53C39.8 50.68 41.68 48.8 44 48.8C46.32 48.8 48.2 50.68 48.2 53Z",
+          "role": "accent",
+          "fill": "#E53935"
+        }
+      ],
+      "source": "src/2D/bozze/site.svg",
+      "frameless_box": [
+        20.5,
+        20.5,
+        45.0,
+        47.0
+      ],
+      "draft": true
     }
   },
   "node_styles": {
@@ -6406,6 +6471,15 @@
         "functional": {
           "border_color": "#000000",
           "description": "Interpretive / semantic identity (basilica, room A, courtyard)."
+        }
+      },
+      "level_modifiers": {
+        "_comment": "1.6.41 · Overrides keyed on data.level, applied after kind_modifiers. Only the site (level sito, D-LG4) for now.",
+        "sito": {
+          "border_color": "#888888",
+          "border_width": 2.0,
+          "glyph": "site",
+          "description": "The site: the place the studies took place at (study_took_place_at), with its footprint."
         }
       }
     },

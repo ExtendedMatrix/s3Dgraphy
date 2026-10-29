@@ -5,6 +5,25 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
+- **The site, its footprint, a GIS layer as a resource** (MICRO lab sito
+  Sarmizegetusa, 30 October 2026, on D-LG4/D-LG5 and the proposal «Il GIS
+  dentro l'em.json»). Nodes datamodel 1.6.39: `LocationNodeGroup.fields.level`
+  (`sito` is THE site, as `hdto.make_site_place` writes it) and `virtual`
+  (`em:VirtualSite`, E89 + E27, em.ttl 1.6.23); `ResourceNode` url_type
+  `gis_layer` with `gis_format`, `crs`, `bbox`, `feature_key`, `z_field`,
+  `geometry_type`, `feature_count`, `z_range`. Connections 1.6.50:
+  `has_property` and `has_linked_resource` admit a `LocationNodeGroup` source
+  (both degraded to `generic_connection` on load before). Qualia 1.6.10:
+  `footprint`, a GeoSPARQL WKT with its CRS inside the value, inline up to 500
+  vertices; the RDF exporter writes it also as `geo:hasGeometry/geo:asWKT`.
+  `geometry.wkt`: `polygon_to_wkt` / `wkt_to_polygons` (POLYGON, MULTIPOLYGON,
+  2D and Z). New package `s3dgraphy.gis`: `same_grid` (EPSG:31700 ↔ 3844),
+  `crs_of_prj`, a shapefile reader without GDAL, `add_gis_layer` (a `file_set`
+  of the companions, the frame when the grid is the graph's, the site's
+  `has_linked_resource`, the DTC capture), `add_site`, `set_footprint` (with its
+  chain), `footprint_from_glbs` (the convex hull in plan of the proxies). Visual
+  rules 1.6.41: the `site` data glyph, a DRAFT (`src/2D/bozze/site.svg`).
+  `spec/em-json/SPEC-1.2-ED.md`: the Editor's Draft of em.json 1.2, additive.
 - **V4 · `GIS/` in the standard tree, and the variants' `versions/`**
   (MICRO-ARCHIVIO-2, 27 October 2026, E.D.'s V4). `project_tree.STANDARD_DIRS`
   gains `GIS/` — the external layers of the em.json — so a new project has it

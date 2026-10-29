@@ -21,7 +21,10 @@ class ResourceNode(Node):
         "document": ["pdf", "doc", "docx", "txt"],
         "web_page": ["http", "https"],
         "video": ["mp4", "avi", "mov"],
-        "point_cloud": ["e57", "pts", "las", "laz"]
+        "point_cloud": ["e57", "pts", "las", "laz"],
+        # 1.6.39 · a GIS layer (s3dgraphy.gis): a shapefile with its companions
+        # (packaging file_set), a GeoPackage, a GeoJSON
+        "gis_layer": ["shp", "gpkg", "geojson"],
     }
 
     #: Where a resource comes from, in order of distance (the shelf's THREE

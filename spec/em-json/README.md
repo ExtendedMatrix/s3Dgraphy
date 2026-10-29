@@ -6,6 +6,7 @@ schemas from here (`./em.sh sync` in EMStudio), and the site publishes them.
 | File | What |
 |---|---|
 | `SPEC.md` | The specification, version 1.1 (Release, 25 October 2026). Editor: Emanuel Demetrescu (CNR-ISPC). |
+| `SPEC-1.2-ED.md` | The Editor's Draft of 1.2 (30 October 2026, additive: the site, its footprint, the GIS layers). Not published; the Release is the editor's. |
 | `em.v1.1.schema.json` | JSON Schema of the container (em.json 1.1). |
 | `em.v1.schema.json` | JSON Schema of the flat form (em.json 1.0), frozen 11 July 2026 — kept intact for the old files. |
 | `conformance/` | Sample files, their expected reading, and `reference_reading.py`. |

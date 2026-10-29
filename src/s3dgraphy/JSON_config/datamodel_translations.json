@@ -3255,6 +3255,27 @@
     "de": "Oberflächenbeschaffenheit"
    }
   },
+  "footprint": {
+   "label": {
+    "en": "Footprint",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Impronta",
+    "el": "Αποτύπωμα",
+    "he": "טביעת שטח",
+    "es": "Huella",
+    "pl": "Obrys",
+    "ro": "Amprentă",
+    "fr": "Emprise",
+    "de": "Grundriss"
+   }
+  },
   "footprint_area": {
    "label": {
     "en": "Footprint Area",

@@ -1623,6 +1623,10 @@ class RDFImporter:
             propagation = self._one_literal(store, ref, EM.propagation)
             if propagation:
                 data["propagation"] = propagation
+            # 1.6.39 · an em:VirtualSite is a virtual site (D-LG5): level sito
+            if (ref, RDF.type, EM.VirtualSite) in store:
+                data["level"] = "sito"
+                data["virtual"] = True
             return data
 
         if node_type == "extractor":
