@@ -135,7 +135,9 @@ def validate(graph: Graph) -> Dict[str, Any]:
     ``has_property``; see :func:`diagnostics.paradata_group_incoherences`).
     ``info`` holds suggestions that are not problems and do not touch ``ok``:
     an extractor reading from a unit that has no property of the name it
-    feeds (connections 1.6.24, :func:`diagnostics.extraction_source_hints`).
+    feeds (connections 1.6.24, :func:`diagnostics.extraction_source_hints`);
+    a property documented without an extractor (connections 1.6.51,
+    :func:`diagnostics.read_only_edge_hints`).
     Minimal and extensible; adds no side effects."""
     nodes = list(getattr(graph, "nodes", []) or [])
     edges = list(getattr(graph, "edges", []) or [])
@@ -159,6 +161,14 @@ def validate(graph: Graph) -> Dict[str, Any]:
             f"extractor '{r['extractor_name']}' reads '{r['property_name']}' "
             f"from '{r['unit_name']}', which has no '{r['property_name']}' "
             f"property of its own")
+    # connections 1.6.51: property → document is read, never created; the
+    # chain goes through the extractor
+    from .diagnostics import read_only_edge_hints
+    for r in read_only_edge_hints(graph):
+        info.append(
+            f"property '{r['source_name']}' ({r['source']}) is documented in "
+            f"'{r['target_name']}' ({r['target']}) without an extractor "
+            f"({r['edge_type']}): insert the extractor?")
     warnings = list(getattr(graph, "warnings", []) or [])
     # a property as a source (connections 1.6.36): the source changed, was
     # removed, the reasoning comes back to itself, two owners nobody declared

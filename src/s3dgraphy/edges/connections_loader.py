@@ -114,7 +114,10 @@ class ConnectionsDatamodel:
                         'mapping': edge_def.get('mapping', {}),  # Same mapping as canonical
                         'allowed_connections': {
                             'source': edge_def['allowed_connections']['target'],  # Inverted
-                            'target': edge_def['allowed_connections']['source']   # Inverted
+                            'target': edge_def['allowed_connections']['source'],  # Inverted
+                            # 1.6.51 · read-only sources read as read-only targets
+                            **({'read_only_targets': edge_def['allowed_connections']['read_only_sources']}
+                               if edge_def['allowed_connections'].get('read_only_sources') else {}),
                         },
                         'is_canonical': False,
                         'is_symmetric': False,

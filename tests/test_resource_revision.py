@@ -148,7 +148,7 @@ def test_l_arco_nel_datamodel():
     # 1.6.35 dal 31 ott 2026 (dev27, il riallineamento), 1.6.36 dal 9 ott
     # (la proprietà come fonte), 1.6.37 la sera stessa (l'istanza è una vista);
     # la voce 1.6.31 resta nella storia
-    assert raw["s3Dgraphy_connections_model_version"] == "1.6.50"  # 1.6.50 dal 30 ott 2026 (il sito porta impronta e layer); 1.6.49 dal 25 ott 2026 (il verso di has_sub_epoch in RDF); 1.6.48 dal 24 ott 2026 (abuts, bonded_to, equals → contemporaneità); 1.6.47 dal 24 ott 2026 (orizzonti, implies, origin); 1.6.46 dal 23 ott 2026 (le istanze nelle epoche)
+    assert raw["s3Dgraphy_connections_model_version"] == "1.6.51"  # 1.6.51 dal 28 ott 2026 (proprietà → documento in sola lettura); 1.6.50 dal 30 ott 2026 (il sito porta impronta e layer); 1.6.49 dal 25 ott 2026 (il verso di has_sub_epoch in RDF); 1.6.48 dal 24 ott 2026 (abuts, bonded_to, equals → contemporaneità); 1.6.47 dal 24 ott 2026 (orizzonti, implies, origin); 1.6.46 dal 23 ott 2026 (le istanze nelle epoche)
     assert "v1.6.31 (LA REVISIONE DELLA RISORSA" in raw["description"]
     entry = raw["edge_types"]["was_revision_of"]
     # dev27: a realigned translation is a revision too (realign_translation)

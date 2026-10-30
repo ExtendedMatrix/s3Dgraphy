@@ -111,7 +111,11 @@ These are the core archaeological units:
 Paradata Nodes
 ~~~~~~~~~~~~~~
 
-Documentation and data provenance nodes forming the paradata chain:
+Documentation and data provenance nodes forming the paradata chain. The chain is
+always explicit: property → extractor (``has_data_provenance``) → document
+(``extracted_from``). A property → document ``has_documentation`` is read from old
+files but no tool creates it (connections 1.6.51, ``read_only_sources``);
+``api.validate`` suggests inserting the extractor, as ``info``.
 
 **DocumentNode (DOC)**
    Source materials -- photos, drawings, reports, 3D scans, historical texts.
@@ -124,6 +128,10 @@ Documentation and data provenance nodes forming the paradata chain:
 
 **PropertyNode (PROP)**
    Properties associated with stratigraphic nodes -- material, colour, dating, etc.
+   The value is written in both ``description`` (EM's historical place) and
+   ``value`` (``data.value`` in em.json): setting either sets the other, and a file
+   with only one is completed on reading. Exceptions: the ``geometry`` property
+   (its value is the shape's id) and a value that is a bare uuid (a pointer).
 
 **AuthorNode (AUTH)**
    Persons responsible for documentation or interpretation.

@@ -112,7 +112,7 @@ def test_le_versioni_del_datamodel_sono_salite():
     # storia
     assert node["s3Dgraphy_data_model_version"] == "1.6.39"  # 1.6.39 dal 30 ott 2026 (il sito, il layer GIS); 1.6.38 dal 25 ott 2026 (il frame di un file); 1.6.37 dal 24 ott 2026 (orizzonti); 1.6.36 dal 23 ott 2026 (la fine dell'unità tipizzata)
     assert "v1.6.17 (MICRO la risorsa e i suoi file" in node["description"]
-    assert conn["s3Dgraphy_connections_model_version"] == "1.6.50"  # 1.6.50 dal 30 ott 2026 (il sito porta impronta e layer); 1.6.49 dal 25 ott 2026 (il verso di has_sub_epoch in RDF); 1.6.48 dal 24 ott 2026 (contemporaneità); 1.6.47 dal 24 ott 2026 (orizzonti); 1.6.46 dal 23 ott 2026 (le istanze nelle epoche)
+    assert conn["s3Dgraphy_connections_model_version"] == "1.6.51"  # 1.6.51 dal 28 ott 2026 (proprietà → documento in sola lettura); 1.6.50 dal 30 ott 2026 (il sito porta impronta e layer); 1.6.49 dal 25 ott 2026 (il verso di has_sub_epoch in RDF); 1.6.48 dal 24 ott 2026 (contemporaneità); 1.6.47 dal 24 ott 2026 (orizzonti); 1.6.46 dal 23 ott 2026 (le istanze nelle epoche)
     assert "v1.6.30 (LA RISORSA E I SUOI FILE" in conn["description"]
     entry = node["reference_nodes"]["ResourceFileNode"]
     assert entry["mapping"]["cidoc"] == "crmdig:D1_Digital_Object"

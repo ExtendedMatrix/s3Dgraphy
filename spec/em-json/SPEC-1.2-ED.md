@@ -76,6 +76,11 @@ kept in the graph of its source and addressed as «graph → node».
 A node has an **identifier**, a **type** and, optionally, a **name**, a
 **description** and its **data** (the fields its type declares).
 
+A property writes its value in both places: `description` (where EM has always
+kept it, and where older readers look) and `data.value`, which mirrors it. Two
+exceptions: the `geometry` property, whose `data.value` is the identifier of its
+shape, and any `data.value` that is a bare identifier pointing at a node.
+
 The types and their fields are not listed in this specification. They belong to
 the **EM datamodel** — the node datamodel, the connections datamodel and the
 qualia vocabulary — which evolves on its own rhythm and is mapped to CIDOC CRM
@@ -106,6 +111,10 @@ a source, the combiner that put several extractors together, the document it
 comes from are nodes too, joined by edges. A reader that understands the
 datamodel can follow any reconstruction back to its sources; a reader that does
 not still has every node and edge.
+
+The chain is always explicit: property → extractor (`has_data_provenance`) →
+document (`extracted_from`). A property linked straight to a document
+(`has_documentation`, from older files) is read and kept, but no tool writes it.
 
 ### 2.5 Georeferencing
 
@@ -359,7 +368,10 @@ last resort.
   resource (`gis_layer`, `gis_format`, `crs`, `bbox`, `feature_key`,
   `z_field`, a shapefile as a `file_set`), with the frame of a file and the
   rule «same grid, different code». No key of the container changes; the 1.1
-  schema validates the files.
+  schema validates the files. Added on 28 October 2026 (decided by E.D.): §2.2,
+  a property's value is written in `description` and mirrored in `data.value`;
+  §2.4, a property is documented through its extractor, never straight to a
+  document (connections datamodel 1.6.51, `read_only_sources`).
 - **1.1 — 25 October 2026 (Release; Editor's Draft from 24 October).** First written specification. The
   container (in use since 13 August 2026) becomes the form of the file; the flat
   form of 1.0 stays readable. Optional blocks described: per-graph layout,

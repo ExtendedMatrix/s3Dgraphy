@@ -134,10 +134,12 @@ def import_from_pg(
             prop_node = PropertyNode(
                 node_id=prop_id,
                 name=prop_name,
-                description=spec.get("description", ""),
+                # description mirrors the value (PropertyNode); the mapping's
+                # note on the column is not a value and goes into data
                 value=str(value) if value is not None else "",
                 property_type=prop_name,
-                data={},
+                data=({"column_description": spec["description"]}
+                      if spec.get("description") else {}),
             )
             try:
                 graph.add_node(prop_node, overwrite=True)

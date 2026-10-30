@@ -1622,7 +1622,11 @@ class GraphMLImporter:
                 node_id=uuid_id,
                 name=nodename,
                 description=nodedescription,
-                value=nodeurl,
+                # The value of an EM property is its description (yEd's
+                # convention); PropertyNode mirrors it into ``value``. The URL
+                # was passed as the value until 1.6.0.dev71 and, now that the
+                # two places are kept equal, would have overwritten the value.
+                value=None,
                 data={},  # Popola 'data' se necessario
                 url=nodeurl
             )

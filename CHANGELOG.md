@@ -5,6 +5,25 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
+- **The value of a property in two places; property → document read-only**
+  (MICRO valore-proprietà, decided by E.D. on 28 October 2026). `PropertyNode`
+  keeps `description` (EM's historical place of the value) and `value`
+  (`data.value` in em.json) equal: at birth the missing one copies the other
+  (two different → `value` wins), every later assignment of either rewrites
+  the other, emptying one empties the other when they were aligned, and a
+  `data["value"]` already present follows `value`. Exceptions: the `geometry`
+  property and a value that is a bare uuid (`is_uuid_pointer`). So every
+  importer completes the missing field in memory and both exporters write the
+  two aligned. GraphML import no longer passes yEd's URL as the value; the
+  GraphML export appends the units when the description is the bare value and
+  no longer writes the relations of `stratigraphic_definition` into the
+  graph's node (they piled up at every export); the pyArchInit-PG importer's
+  column note goes to `data.column_description`. Connections 1.6.51:
+  `has_documentation.allowed_connections.read_only_sources: ["PropertyNode"]`
+  (the reverse reads it as `read_only_targets`), `connection_read_only`,
+  `diagnostics.read_only_edge_hints`; `api.validate` gives an `info`
+  «… documented in … without an extractor: insert the extractor?»; the
+  `document` facet of `attach_candidates` no longer offers a property.
 - **The site, its footprint, a GIS layer as a resource** (MICRO lab sito
   Sarmizegetusa, 30 October 2026, on D-LG4/D-LG5 and the proposal «Il GIS
   dentro l'em.json»). Nodes datamodel 1.6.39: `LocationNodeGroup.fields.level`

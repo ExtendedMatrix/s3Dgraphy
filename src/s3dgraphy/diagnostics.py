@@ -506,3 +506,35 @@ def extraction_source_hints(graph) -> List[dict]:
                 "property_name": key,
             })
     return out
+
+
+def read_only_edge_hints(graph) -> List[dict]:
+    """Edges a file carries that the datamodel reads but no tool creates.
+
+    Connections 1.6.51 (E.D., 28 Oct 2026): ``has_documentation`` from a
+    PropertyNode to a DocumentNode is read from old files (BUGFIX-CONN3) and
+    created by no tool — in EM the chain is explicit, property → extractor
+    (``has_data_provenance``) → document (``extracted_from``). A SUGGESTION,
+    never an issue: ``api.validate`` lists it under ``info``. The file is not
+    touched. One record per edge:
+    ``{edge, edge_type, source, source_name, target, target_name}``.
+    Read-only.
+    """
+    from .edges.connection_resolver import connection_read_only
+    by_id = {n.node_id: n for n in graph.nodes}
+    out: List[dict] = []
+    for e in graph.edges:
+        src, tgt = by_id.get(e.edge_source), by_id.get(e.edge_target)
+        if src is None or tgt is None:
+            continue
+        try:
+            read_only = connection_read_only(src, tgt, e.edge_type)
+        except Exception:  # pragma: no cover — an edge type the datamodel lacks
+            read_only = False
+        if read_only:
+            out.append({"edge": e.edge_id, "edge_type": e.edge_type,
+                        "source": src.node_id,
+                        "source_name": getattr(src, "name", "") or src.node_id,
+                        "target": tgt.node_id,
+                        "target_name": getattr(tgt, "name", "") or tgt.node_id})
+    return out

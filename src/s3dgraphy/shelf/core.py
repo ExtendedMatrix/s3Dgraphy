@@ -379,6 +379,7 @@ from ..edges.connection_resolver import (  # noqa: E402
     allowed_endpoints as _allowed_endpoints,
     connection_allowed as _connection_allowed,
     endpoint_matches as _endpoint_ok,
+    connection_read_only as _connection_read_only,
     resolve_node_class as _resolve_node_class,
 )
 
@@ -456,7 +457,8 @@ def attach_candidates(facet: str, graph: Any) -> List[Dict[str, Any]]:
     ``has_first_epoch``); ``rmsf`` yields Special Finds, ``rmdoc`` the nodes a
     RMDoc can be instantiated from (Document / Extractor / Combiner), and
     ``document`` the nodes that can point at a Document (Extractor → the
-    paradata chain, stratigraphic node or PropertyNode → documentation). A
+    paradata chain, stratigraphic node → documentation; a PropertyNode no
+    longer: connections 1.6.51, it is documented through its extractor). A
     visual reference is NOT a Document attach (CONN2/CONN3): it targets a
     ResourceNode image, see :func:`hat_as_visual_resource`."""
     facet = (facet or "").lower()
@@ -473,6 +475,10 @@ def attach_candidates(facet: str, graph: Any) -> List[Dict[str, Any]]:
                 ok = _endpoint_ok(probe, ends[0]) and _endpoint_ok(node, ends[1])
             else:              # the node is the edge SOURCE, the facet the target
                 ok = _endpoint_ok(node, ends[0]) and _endpoint_ok(probe, ends[1])
+                # connections 1.6.51: a property is documented through its
+                # extractor; property → document is read, never attached
+                if ok and _connection_read_only(node, probe, edge_type):
+                    ok = False
             if ok:
                 out.append({"id": node.node_id,
                             "name": str(getattr(node, "name", "") or node.node_id),

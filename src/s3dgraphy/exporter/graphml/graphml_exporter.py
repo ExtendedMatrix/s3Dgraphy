@@ -1246,12 +1246,20 @@ class GraphMLExporter:
                 seen_combiners = set()
 
                 for prop in paradata_props:
-                    # Augment stratigraphic_definition with relations from graph edges
+                    # Augment stratigraphic_definition with relations from graph edges.
+                    # On a COPY: the relations are what yEd shows, not the value —
+                    # written on the graph's node they went into its value too
+                    # (description and value are one, E.D. 28 Oct 2026) and piled
+                    # up at every export.
                     if prop.name == 'stratigraphic_definition':
                         rel_str = self._compute_relations_string(us_node)
                         if rel_str:
+                            import copy as _copy
                             existing = prop.description or ""
-                            prop.description = f"{existing}\n---\n{rel_str}" if existing else rel_str
+                            prop = _copy.copy(prop)
+                            object.__setattr__(
+                                prop, 'description',
+                                f"{existing}\n---\n{rel_str}" if existing else rel_str)
 
                     chain = {
                         'property': prop,

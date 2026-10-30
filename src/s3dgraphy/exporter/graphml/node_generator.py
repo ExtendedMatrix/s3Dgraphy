@@ -275,13 +275,15 @@ class NodeGenerator:
         # ``description`` empty. Fall back to ``value`` (+ units) so the
         # node ships its distilled content instead of appearing empty in
         # yEd.
+        # The description now mirrors the value (E.D., 28 Oct 2026), so the
+        # units are appended whenever the description IS the bare value.
         description = getattr(node, 'description', '') or ''
-        if not description:
-            value = getattr(node, 'value', '') or ''
-            units = ''
-            attrs = getattr(node, 'attributes', None) or {}
-            if isinstance(attrs, dict):
-                units = attrs.get('units', '') or ''
+        value = getattr(node, 'value', '') or ''
+        units = ''
+        attrs = getattr(node, 'attributes', None) or {}
+        if isinstance(attrs, dict):
+            units = attrs.get('units', '') or ''
+        if not description or (value and description == str(value)):
             if value and units:
                 description = f"{value} {units}"
             elif value:

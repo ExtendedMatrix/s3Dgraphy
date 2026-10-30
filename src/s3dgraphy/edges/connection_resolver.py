@@ -83,6 +83,38 @@ def allowed_endpoints(edge_type: str) -> Optional[Tuple[List[str], List[str]]]:
     return (allowed.get("source") or [], allowed.get("target") or [])
 
 
+def read_only_endpoints(edge_type: str) -> Tuple[List[str], List[str]]:
+    """``(read_only_sources, read_only_targets)`` for ``edge_type``: the
+    endpoint classes the edge is READ from (an old file) but that no tool
+    creates (connections 1.6.51, ``has_documentation`` from a PropertyNode).
+    A reverse entry carries the canonical's sources as its targets."""
+    from . import get_connections_datamodel
+    edge_def = get_connections_datamodel().get_edge_definition(edge_type)
+    if edge_def is None:
+        return ([], [])
+    allowed = edge_def.get("allowed_connections") or {}
+    return (list(allowed.get("read_only_sources") or []),
+            list(allowed.get("read_only_targets") or []))
+
+
+def _strict_match(node_or_class: Any, class_names: List[str]) -> bool:
+    classes = [c for c in (resolve_node_class(n) for n in class_names)
+               if c is not None]
+    if not classes:
+        return False
+    cls = node_or_class if isinstance(node_or_class, type) else type(node_or_class)
+    return issubclass(cls, tuple(classes))
+
+
+def connection_read_only(src: Any, tgt: Any, edge_type: str) -> bool:
+    """True when ``src ─edge_type→ tgt`` is allowed but READ-ONLY: it is
+    accepted from a file and created by no tool (connections 1.6.51)."""
+    if not connection_allowed(src, tgt, edge_type):
+        return False
+    ro_src, ro_tgt = read_only_endpoints(edge_type)
+    return _strict_match(src, ro_src) or _strict_match(tgt, ro_tgt)
+
+
 def connection_allowed(src: Any, tgt: Any, edge_type: str) -> bool:
     """Datamodel check for ``src ─edge_type→ tgt``, resolving class names
     correctly. ``src``/``tgt`` are node instances or node classes."""
