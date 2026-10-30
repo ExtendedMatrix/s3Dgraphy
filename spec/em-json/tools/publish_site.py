@@ -57,23 +57,31 @@ def _schema_copy(name: str, commit: str) -> str:
 
 
 STYLE = """
-:root{--bg:#fdfcfa;--fg:#1c1a17;--muted:#6b645c;--line:#e2ddd5;--accent:#8a5a2b;--code:#f3efe9}
-@media (prefers-color-scheme:dark){:root{--bg:#16150f;--fg:#ece7de;--muted:#9c948a;--line:#332f28;--accent:#d7a76a;--code:#221f19}}
+@font-face{font-family:Sora;font-weight:100 800;font-display:swap;src:url(/fonts/sora/sora-latin.woff2) format('woff2')}
+@font-face{font-family:Comfortaa;font-weight:300 700;font-display:swap;src:url(/fonts/comfortaa/comfortaa-latin.woff2) format('woff2')}
+:root{--bg:#fcfcfc;--fg:#0e1d2e;--muted:#485666;--line:#dde4ec;--accent:#073763;--ochre:#bf9000;--code:#eef3f9;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0b1420;--fg:#e8eef5;--muted:#aebbcb;--line:#24344a;--accent:#bcd2ec;--ochre:#e3b43a;--code:#142030;color-scheme:dark}}
+:root[data-theme=dark]{--bg:#0b1420;--fg:#e8eef5;--muted:#aebbcb;--line:#24344a;--accent:#bcd2ec;--ochre:#e3b43a;--code:#142030;color-scheme:dark}
 *{box-sizing:border-box}
-body{background:var(--bg);color:var(--fg);margin:0;padding:0 16px;font:16px/1.65 Georgia,'Iowan Old Style',serif}
+body{background:var(--bg);color:var(--fg);margin:0;padding:0 16px;font:16px/1.7 Sora,system-ui,sans-serif}
 main{max-width:46rem;margin:0 auto;padding:3rem 0 5rem}
-h1{font-size:1.9rem;line-height:1.2;margin:0 0 .6rem}
-h2{font-size:1.2rem;margin:2.4rem 0 .7rem;padding-bottom:.3rem;border-bottom:1px solid var(--line)}
-h3{font-size:1.03rem;margin:1.6rem 0 .4rem}
-a{color:var(--accent)}
-code{background:var(--code);padding:.1rem .3rem;border-radius:3px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85em}
-pre{background:var(--code);padding:.8rem 1rem;border-radius:6px;overflow:auto;font-size:.82rem;line-height:1.45}
+h1,h2,h3{font-family:Comfortaa,Sora,sans-serif;color:var(--accent);font-weight:700}
+h1{font-size:2rem;line-height:1.2;margin:0 0 .6rem}
+h2{font-size:1.25rem;margin:2.6rem 0 .7rem;padding-bottom:.35rem;border-bottom:2px solid var(--ochre)}
+h3{font-size:1.05rem;margin:1.7rem 0 .4rem}
+a{color:var(--accent);text-underline-offset:2px}
+code{background:var(--code);padding:.1rem .3rem;border-radius:4px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85em}
+pre{background:var(--code);padding:.8rem 1rem;border-radius:8px;overflow:auto;font-size:.82rem;line-height:1.45;border:1px solid var(--line)}
 pre code{background:none;padding:0}
-table{border-collapse:collapse;margin:1rem 0;font-size:.92rem}
-td,th{border-bottom:1px solid var(--line);padding:.3rem .8rem .3rem 0;vertical-align:top;text-align:left}
-.source{color:var(--muted);font-size:.82rem;border-left:3px solid var(--line);padding:.2rem 0 .2rem .8rem;margin:0 0 2rem}
+table{border-collapse:collapse;margin:1rem 0;font-size:.9rem}
+td,th{border-bottom:1px solid var(--line);padding:.35rem .8rem .35rem 0;vertical-align:top;text-align:left}
+th{font-weight:600}
+.source{color:var(--muted);font-size:.8rem;border-left:3px solid var(--ochre);padding:.2rem 0 .2rem .8rem;margin:0 0 2rem}
 footer{margin-top:3rem;padding-top:1rem;border-top:1px solid var(--line);color:var(--muted);font-size:.86rem}
 """
+
+# the reader's light/dark choice on extendedmatrix.org (same origin) applies here too
+THEME = "<script>try{var t=localStorage.getItem('em-theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>"
 
 
 def _page(title: str, body: str, source: str, alternates: str = "") -> str:
@@ -83,7 +91,7 @@ def _page(title: str, body: str, source: str, alternates: str = "") -> str:
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>{html.escape(title)}</title>
-{alternates}<style>{STYLE}</style>
+{alternates}<style>{STYLE}</style>{THEME}
 </head>
 <body>
 <!-- {html.escape(source)} -->
