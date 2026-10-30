@@ -23,7 +23,7 @@
 # the s3dgraphy v1.6.0 JSON datamodels (s3Dgraphy_node_datamodel.json,
 # s3Dgraphy_connections_datamodel.json, em_qualia_types.json).
 #
-# Author:  Emanuele Demetrescu
+# Author:  Emanuel Demetrescu
 # Date:    2026-05-23
 # License: CC-BY-4.0
 # Status:  DRAFT — first formal release of em: namespace.
@@ -44,7 +44,7 @@
     a owl:Ontology ;
     rdfs:label "Extended Matrix Ontology"@en ;
     dcterms:title "Extended Matrix Ontology"@en ;
-    dcterms:creator "Emanuele Demetrescu" ;
+    dcterms:creator "Emanuel Demetrescu" ;
     dcterms:license <https://creativecommons.org/licenses/by/4.0/> ;
     dcterms:issued "2026-05-23"^^xsd:date ;
     owl:versionInfo "1.6.22" ;

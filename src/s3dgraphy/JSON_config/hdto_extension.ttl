@@ -21,7 +21,7 @@
 # Status:  ALIGNED with D7.1 declarations (was: speculative DRAFT v0.1).
 #          Namespace placeholder (w3id.org/hdto/) — to be replaced when the
 #          official HDT-O resolvable IRI is published by the ECHOES consortium.
-# Author:  Emanuele Demetrescu (s3dgraphy v1.6.0 integration)
+# Author:  Emanuel Demetrescu (s3dgraphy v1.6.0 integration)
 # Date:    2026-10-20 (v0.5; v0.4 2026-10-10; v0.3 2026-09-30; v0.2 2026-05-23)
 #
 # v0.3 (2026-09-30): the two declarations this file carried against D7.1 final
@@ -66,7 +66,7 @@
     a owl:Ontology ;
     rdfs:label "HDT-O — s3dgraphy alignment layer"@en ;
     dcterms:title "Heritage Digital Twin Ontology — minimal subset for s3dgraphy v1.6.0"@en ;
-    dcterms:creator "Emanuele Demetrescu (s3dgraphy)" ;
+    dcterms:creator "Emanuel Demetrescu (s3dgraphy)" ;
     dcterms:source <https://www.echoes-eccch.eu/> ;
     dcterms:license <https://creativecommons.org/licenses/by/4.0/> ;
     dcterms:issued "2026-05-23"^^xsd:date ;

@@ -49,7 +49,7 @@ becomes one s3Dgraphy ``Graph``. The graph id is recovered from that IRI rather
 than from the RDF context, because a Turtle document has no contexts — so the
 same reader handles TTL and TriG without a second code path.
 
-Author:  Emanuele Demetrescu
+Author:  Emanuel Demetrescu
 Version: 1.6.0 — initial RDF import pipeline
 """
 

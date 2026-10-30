@@ -34,7 +34,7 @@ Named-graph wrapping:
   form <base>/graph/<graph_id>, anchored by an em:EMGraph triple plus the
   graph-level metadata (default author, license).
 
-Author:  Emanuele Demetrescu
+Author:  Emanuel Demetrescu
 Version: 1.6.0 — initial RDF export pipeline
 """
 
