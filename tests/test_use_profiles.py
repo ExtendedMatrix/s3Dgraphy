@@ -30,20 +30,37 @@ def scene():
 # ── the table ──
 
 def test_every_profile_has_its_fields_and_its_uses_are_uses():
-    keys = {"label", "uses", "destination", "max_triangles", "max_triangles_object",
-            "max_textures", "max_texture_side", "texture_formats",
-            "geometry_compression", "instancing", "packaging", "max_download_mb", "max_gpu_mb"}
+    keys = {"label", "label_it", "purpose", "purpose_it", "uses", "destination", "max_triangles",
+            "max_triangles_object", "max_textures", "max_texture_side", "texture_formats",
+            "geometry_compression", "instancing", "packaging", "tileset", "max_download_mb",
+            "max_gpu_mb"}
     for pid, p in UP.PROFILES.items():
         assert keys <= set(p), pid
         assert set(p["uses"]) <= set(USES) | {"analysis", "print"}, pid
-        assert p["packaging"] in ("glb", "gltf_separate")
+        assert p["packaging"] in ("glb", "gltf_separate", "stl")
 
 
-def test_heriverse_and_aton_are_one_profile_without_geometry_compression():
-    assert UP.profile("aton")["id"] == UP.profile("heriverse")["id"] == "heriverse"
-    assert UP.profile("aton-heriverse")["id"] == "heriverse"
-    assert UP.profile("heriverse")["geometry_compression"] == ()      # Q5
-    assert UP.profile("print")["id"] == "archive"
+def test_the_profiles_are_eds_names_in_eds_order():
+    # MICRO-PREPARA-RITOCCHI: desktop realtime, webXR, mobile webXR, archive,
+    # preview/catalogue, offline rendering, 3D printing
+    assert list(UP.PROFILES) == ["desktop_realtime", "webxr", "mobile_webxr", "archive",
+                                 "preview", "render_offline", "print_3d"]
+    assert UP.PROFILES["webxr"]["hint"] == "ATON / Heriverse"
+    assert UP.PROFILES["render_offline"]["max_triangles"] is None
+    pr = UP.PROFILES["print_3d"]
+    assert pr["single_mesh"] and pr["closed"] and pr["max_textures"] == 0 and pr["packaging"] == "stl"
+    # a tileset is a packaging for two of them, not a profile
+    assert [k for k, v in UP.PROFILES.items() if v["tileset"]] == ["desktop_realtime", "webxr"]
+
+
+def test_the_names_of_before_are_read_never_broken():
+    for old, new in (("web", "webxr"), ("heriverse", "webxr"), ("aton", "webxr"),
+                     ("aton-heriverse", "webxr"), ("realtime", "desktop_realtime"),
+                     ("mobile_ar", "mobile_webxr"), ("mobile", "mobile_webxr"),
+                     ("analysis", "archive"), ("archive", "archive"), ("print", "print_3d"),
+                     ("render", "render_offline"), ("preview", "preview")):
+        assert UP.profile(old)["id"] == new, old
+    assert UP.profile("webxr")["geometry_compression"] == ()      # Q5
     with pytest.raises(ValueError):
         UP.profile("cinema")
 
@@ -55,39 +72,39 @@ def test_profiles_are_json():
 
 
 def test_engine_takes_the_first_preference_it_can_write():
-    web = UP.profile("web")
+    web = UP.profile("mobile_webxr")
     assert UP.chosen_formats(web, "blender") == {"texture_format": "jpeg",
                                                  "geometry_compression": "draco"}
     assert UP.chosen_formats(web, "gltfpack") == {"texture_format": "ktx2",
                                                   "geometry_compression": "meshopt"}
-    assert UP.chosen_formats(UP.profile("heriverse"), "blender")["geometry_compression"] is None
+    assert UP.chosen_formats(UP.profile("webxr"), "blender")["geometry_compression"] is None
 
 
 # ── the diagnosis ──
 
 def test_diagnosis_counts_finds_copies_and_peaks():
-    d = UP.diagnose(scene(), TEX, "web")
+    d = UP.diagnose(scene(), TEX, "preview")
     t = d["totals"]
     assert t["objects"] == 13 and t["triangles"] == 12 * 53364 + 20000
     assert t["materials"] == 14 and t["draw_calls"] == 14 and t["meshes"] == 13
     assert t["textures"] == 2
     assert d["duplicates"][0]["copies"] == 12 and d["duplicates"][0]["meshes"] == 12
-    assert len(d["peaks"]) == 12                       # 53 k is over the web's 25 k
-    assert UP.diagnose(scene(), TEX, "heriverse")["peaks"] == []
-    m = UP.diagnose(scene(), TEX, "mobile_ar")
+    assert len(d["peaks"]) == 13                       # 53 k and 20 k are over 15 k
+    assert UP.diagnose(scene(), TEX, "webxr")["peaks"] == []
+    m = UP.diagnose(scene(), TEX, "mobile_webxr")
     assert [p["name"] for p in m["peaks"]][:2] == ["Column_0", "Column_1"]
     assert len(m["peaks"]) == 13                       # the wall too (20 k > 10 k)
-    assert d["budget"]["texture_side"] == {"value": 4096, "limit": 1024, "ok": False}
+    assert d["budget"]["texture_side"] == {"value": 4096, "limit": 512, "ok": False}
 
 
 def test_diagnosis_is_deterministic():
-    a = UP.diagnose(scene(), TEX, "heriverse")
-    b = UP.diagnose(list(reversed(scene())), dict(reversed(list(TEX.items()))), "heriverse")
+    a = UP.diagnose(scene(), TEX, "webxr")
+    b = UP.diagnose(list(reversed(scene())), dict(reversed(list(TEX.items()))), "webxr")
     assert json.dumps(a, sort_keys=True) == json.dumps(b, sort_keys=True)
 
 
 def test_instances_store_the_mesh_once_and_draw_once():
-    d = UP.diagnose(scene(), TEX, "heriverse")
+    d = UP.diagnose(scene(), TEX, "webxr")
     row = next(r for r in d["improvements"] if r["kind"] == "instances")
     assert row["checked"] and row["targets"][0] == "Column_0"
     eff = row["effect"]
@@ -100,13 +117,13 @@ def test_instances_store_the_mesh_once_and_draw_once():
 def test_instances_share_their_prototypes_textures():
     objs = [column(f"C{i}", tex=(f"t{i}",)) for i in range(4)]
     tex = {f"t{i}": {"width": 1024, "height": 1024, "bytes": 1000, "format": "jpeg"} for i in range(4)}
-    d = UP.diagnose_keep(objs, tex, "heriverse")
+    d = UP.diagnose_keep(objs, tex, "webxr")
     assert d["before"]["textures"] == 4 and d["after"]["textures"] == 1
 
 
 def test_linked_duplicates_already_share_their_mesh():
     objs = [column(f"C{i}", mesh="shared") for i in range(5)]
-    d = UP.diagnose(objs, TEX, "heriverse")
+    d = UP.diagnose(objs, TEX, "webxr")
     assert d["totals"]["meshes"] == 1
     assert d["duplicates"][0]["meshes"] == 1
     row = next(r for r in d["improvements"] if r["kind"] == "instances")
@@ -114,33 +131,69 @@ def test_linked_duplicates_already_share_their_mesh():
 
 
 def test_decimation_row_per_geometry_with_its_normal_map():
-    assert not [r for r in UP.diagnose(scene(), TEX, "heriverse")["improvements"]
+    assert not [r for r in UP.diagnose(scene(), TEX, "webxr")["improvements"]
                 if r["kind"] == "decimate"]
-    d2 = UP.diagnose(scene(), TEX, "web")
+    d2 = UP.diagnose(scene(), TEX, "mobile_webxr")
     dec = next(r for r in d2["improvements"] if r["kind"] == "decimate")
-    assert dec["triangles_to"] == 25_000 and len(dec["targets"]) == 12
-    assert "normal map" in dec["action"]
-    assert dec["effect"]["triangles"] == -12 * (53364 - 25000)
-    # decimated and instanced: one mesh of 25 k stored, twelve drawn
-    both = UP.estimate(UP.diagnose_keep(scene(), TEX, "web"),
-                       [dec["id"], next(r["id"] for r in d2["improvements"] if r["kind"] == "instances")])
-    assert both["triangles_stored"] == 25_000 + 20000 and both["triangles"] == 12 * 25_000 + 20000
+    assert dec["triangles_to"] == 10_000 and len(dec["targets"]) == 12
+    assert dec["params"] == {"triangles_to": 10_000} and dec["group"] == "decimate"
+    assert "normal map" in dec["action"] and "LOD generator" in dec["action"]
+    assert not dec["checked"]                          # the shape changes: you choose
+    assert dec["effect"]["triangles"] == -12 * (53364 - 10_000)
+    # decimated and instanced: one mesh of 10 k stored, twelve drawn
+    inst = next(r["id"] for r in d2["improvements"] if r["kind"] == "instances")
+    both = UP.estimate(UP.diagnose_keep(scene(), TEX, "mobile_webxr"), [dec["id"], inst])
+    assert both["triangles_stored"] == 10_000 + 20000 and both["triangles"] == 12 * 10_000 + 20000
+    # the target changed by the person
+    mine = UP.estimate(UP.diagnose_keep(scene(), TEX, "mobile_webxr"), [dec["id"], inst],
+                       params={dec["id"]: {"triangles_to": 5000}})
+    assert mine["triangles_stored"] == 5000 + 20000 and mine["params"][dec["id"]] == {"triangles_to": 5000}
 
 
-def test_texture_rows_and_unavailable_preferences_say_why():
-    d = UP.diagnose(scene(), TEX, "web", engine="blender")
+def test_texture_rows_model_by_model_with_their_params():
+    d = UP.diagnose(scene(), TEX, "preview", engine="blender")
     ids = {r["id"]: r for r in d["improvements"]}
-    assert ids["textures:side"]["side"] == 1024 and ids["textures:side"]["checked"]
-    assert ids["textures:format"]["format"] == "jpeg"         # the PNG wall
+    col, wall = ids["textures:col"], ids["textures:wall"]
+    assert col["group"] == "textures" and col["checked"]
+    assert col["params"] == {"side": 512, "format": "jpeg"} and col["objects"][0] == "Column_0"
+    assert "(12 objects)" in col["problem"]
+    assert wall["format"] == "jpeg" and "png" in wall["problem"]
     assert not ids["textures:ktx2"]["available"] and "gltfpack" in ids["textures:ktx2"]["why"]
     assert ids["geometry:draco"]["checked"] and not ids["geometry:meshopt"]["available"]
-    g = UP.diagnose(scene(), TEX, "web", engine="gltfpack")
+    g = UP.diagnose(scene(), TEX, "preview", engine="gltfpack")
     gids = {r["id"] for r in g["improvements"]}
-    assert "geometry:meshopt" in gids and "textures:format" in gids
+    assert "geometry:meshopt" in gids and "textures:col" in gids
+    # another side for the columns: the estimate follows
+    dk = UP.diagnose_keep(scene(), TEX, "preview")
+    a = UP.estimate(dk, ["textures:col"], params={"textures:col": {"side": 1024}})
+    b = UP.estimate(dk, ["textures:col"])
+    assert a["texture_gpu_bytes"] > b["texture_gpu_bytes"]
+    c = UP.choices(dk, ["textures:col", "textures:wall"], {"textures:wall": {"side": 256}})
+    assert c["tex_sides"] == {"t_col": 512, "t_wall": 256} and c["tex_side"] == 512
+
+
+def test_a_shared_texture_keeps_the_largest_side_ticked():
+    objs = [column("A", key="a", tex=("shared",)), column("B", key="b", tex=("shared",))]
+    tex = {"shared": {"width": 4096, "height": 4096, "bytes": 1, "format": "jpeg"}}
+    d = UP.diagnose_keep(objs, tex, "preview")
+    c = UP.choices(d, ["textures:a", "textures:b"], {"textures:a": {"side": 1024}})
+    assert c["tex_sides"] == {"shared": 1024}
+
+
+def test_the_groups_of_the_grid_with_their_rationale_and_tick():
+    d = UP.diagnose(scene(), TEX, "mobile_webxr")
+    gs = {g["id"]: g for g in d["groups"]}
+    assert [g["id"] for g in d["groups"]] == ["instances", "textures", "decimate", "compression"]
+    assert gs["instances"]["checked"] and gs["textures"]["checked"] and gs["compression"]["checked"]
+    assert not gs["decimate"]["checked"] and not gs["decimate"]["safe"]
+    assert "make_lod_set" in gs["decimate"]["rationale"]
+    assert all(g["rationale"] for g in d["groups"])
+    every = [r["id"] for r in d["improvements"]]
+    assert all(g["checked"] for g in UP.groups(d, every) if g["available"])
 
 
 def test_estimate_before_after_and_a_choice_of_rows():
-    d = UP.diagnose_keep(scene(), TEX, "web")
+    d = UP.diagnose_keep(scene(), TEX, "preview")
     b, a = d["before"], d["after"]
     assert a["download_bytes"] < b["download_bytes"] and a["gpu_bytes"] < b["gpu_bytes"]
     # the GPU holds RGBA8 with mipmaps: 4096² × 4 × 4/3 for the column texture
@@ -152,7 +205,7 @@ def test_estimate_before_after_and_a_choice_of_rows():
 
 
 def test_lines_say_it():
-    d = UP.diagnose(scene(), TEX, "web")
+    d = UP.diagnose(scene(), TEX, "preview")
     text = "\n".join(d["lines"])
     assert "12 objects are copies of 1 meshes" in text and "download" in text
 
@@ -193,7 +246,8 @@ def write_glb(path, *, copies=3, shared=False, draco=False, instancing=0):
     img = add(_jpeg(4096, 2048))
     for c in range(1 if shared else copies):
         pos = struct.pack("<12f", *[v + c * 10 for v in (0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0)])
-        accessors.append({"bufferView": add(pos), "componentType": 5126, "count": 4, "type": "VEC3"})
+        accessors.append({"bufferView": add(pos), "componentType": 5126, "count": 4, "type": "VEC3",
+                          "min": [c * 10, c * 10, 0], "max": [c * 10 + 1, c * 10 + 1, 0]})
         p = len(accessors) - 1
         accessors.append({"bufferView": add(uv), "componentType": 5126, "count": 4, "type": "VEC2"})
         u = len(accessors) - 1
@@ -284,13 +338,16 @@ def test_diagnose_files_keys_by_file(tmp_path):
 # ── the versions on disk ──
 
 def test_names_of_the_versions():
-    assert UP.version_file_name("Colonnato", "lod1", "web") == "Colonnato@lod1-web.glb"
+    assert UP.version_file_name("Colonnato", "lod1", "mobile_webxr") == "Colonnato@lod1-mobile.glb"
     assert UP.version_file_name("Col onna", "lod0", "aton") == "Col_onna@lod0-aton-heriverse.gltf"
+    assert UP.version_file_name("Col", "lod0", "print_3d") == "Col@lod0-print.stl"
     p = UP.parse_version_name("Column_light1@lod1-realtime-web.glb")
     assert p == {"model": "Column_light1", "level": "lod1", "destination": "realtime-web",
-                 "profile": "realtime", "ext": "glb"}
+                 "profile": "desktop_realtime", "ext": "glb"}
     assert UP.parse_version_name("PODIO@lod0-heriverse-1a2b3c4d")["destination"] == "heriverse"
-    assert UP.parse_version_name("PODIO@lod0-aton-heriverse.glb")["profile"] == "heriverse"
+    assert UP.parse_version_name("PODIO@lod0-aton-heriverse.glb")["profile"] == "webxr"
+    assert UP.parse_version_name("PODIO@lod1-web.glb")["profile"] == "webxr"
+    assert UP.parse_version_name("PODIO@lod0-print.stl")["profile"] == "print_3d"
     assert UP.parse_version_name("readme.txt") is None
 
 
@@ -322,3 +379,68 @@ def test_list_versions_in_a_fake_folder(tmp_path):
     assert {os.path.basename(f) for f in other["files"]} == {
         "Other@lod1-web.glb", "Other_lod1-web.glb.stamp.json", "Other_lod1-web.glb.hints.json"}
     assert UP.versions_folder(str(tmp_path / "SB" / "x.blend")) == str(folder)
+
+
+# ── MICRO-PREPARA-RITOCCHI: the tileset suggested, the print, the render ──
+
+def test_a_tileset_is_suggested_with_its_reasons_where_it_suits():
+    big = [{"name": "Survey", "triangles": 6_000_000, "vertices": 3_000_000, "materials": 1,
+            "textures": [], "bbox": [[0, 0, 0], [250, 120, 30]]}]
+    d = UP.diagnose(big, {}, "webxr")
+    row = next(r for r in d["improvements"] if r["kind"] == "tileset")
+    assert row["group"] == "tileset" and not row["checked"] and row["available"]
+    assert row["engines"] == ["obj2tiles", "3dsc"] and row["separate"]
+    assert len(d["tileset"]["reasons"]) == 3              # over the ceiling, wide, a survey
+    assert any("250 m" in x for x in d["tileset"]["reasons"])
+    assert "a tileset suits it" in "\n".join(d["lines"])
+    assert UP.diagnose(big, {}, "desktop_realtime")["tileset"]
+    # not for a profile a tileset does not serve, nor for a small model
+    assert UP.diagnose(big, {}, "mobile_webxr")["tileset"] is None
+    assert UP.diagnose(scene(), TEX, "webxr")["tileset"] is None
+    # ticking it changes nothing in the version: it is another action
+    c = UP.choices(d, ["tileset"])
+    assert c["tileset"] and not c["instanced"] and not c["tex_sides"]
+
+
+def test_print_joins_drops_textures_scales_and_says_the_holes():
+    objs = scene()
+    objs[0]["open_edges"] = 14
+    d = UP.diagnose_keep(objs, TEX, "print_3d")
+    kinds = {r["kind"]: r for r in d["improvements"]}
+    assert {"single_mesh", "drop_textures", "scale", "closed", "packaging"} <= set(kinds)
+    assert "instances" not in kinds and "textures" not in kinds
+    assert not kinds["closed"]["available"] and "Make Manifold" in kinds["closed"]["why"]
+    assert kinds["scale"]["params"] == {"scale": 1000.0}
+    assert kinds["packaging"]["packaging"] == "stl"
+    a = d["after"]
+    assert a["draw_calls"] == 1 and a["textures"] == 0 and a["meshes"] == 1
+    assert a["triangles_stored"] == a["triangles"] == 12 * 53364 + 20000
+    c = UP.choices(d)
+    assert c["single_mesh"] and c["drop_textures"] and c["scale"] == 1000.0 and c["packaging"] == "stl"
+    assert [g["id"] for g in d["groups"]] == ["print"]
+
+
+def test_offline_rendering_has_no_ceiling_and_keeps_its_textures():
+    d = UP.diagnose(scene(), TEX, "render_offline")
+    kinds = [r["kind"] for r in d["improvements"]]
+    assert kinds.count("decimate") == 0 and "textures" not in kinds
+    assert "instances" in kinds and all(v["ok"] for v in d["budget"].values())
+
+
+def test_stl_versions_are_listed_with_their_triangles(tmp_path):
+    folder = tmp_path / "versions"
+    folder.mkdir()
+    stl = folder / "Col@lod0-print.stl"
+    stl.write_bytes(b"\0" * 80 + struct.pack("<I", 2) + b"\0" * 100)
+    (row,) = UP.list_versions(str(folder))
+    assert row["profile"] == "print_3d" and row["triangles"] == 2 and row["ext"] == "stl"
+
+
+def test_measure_gltf_gives_each_node_its_box(tmp_path):
+    p = write_glb(str(tmp_path / "a.glb"), copies=2)
+    m = UP.measure_gltf(p)
+    boxes = [o["bbox"] for o in m["objects"]]
+    # glTF y-up → the ground is x and -z; the second quad stands 10 m along x
+    assert boxes[0] == [[0, 0, 0], [1, 0, 1]] and boxes[1][0][0] == 10
+    d = UP.diagnose(m["objects"], m["textures"], "webxr")
+    assert d["totals"]["extent_m"] == 11.0
