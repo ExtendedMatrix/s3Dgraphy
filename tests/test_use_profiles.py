@@ -261,6 +261,8 @@ def test_measure_gltf_shared_mesh_and_gpu_instancing(tmp_path):
     assert inst["instances"] == 40
     d = UP.diagnose(m["objects"], m["textures"], "web")
     assert d["totals"]["triangles"] == 2 * 42 and d["before"]["meshes"] == 1
+    # forty instances in one node: one draw call (the two plain nodes: one each)
+    assert d["before"]["draw_calls"] == 3
 
 
 def test_measure_gltf_draco_counts_the_compression(tmp_path):
@@ -303,6 +305,9 @@ def test_list_versions_in_a_fake_folder(tmp_path):
                                                     "images": [{"uri": "t.png"}]}))
     (sep / "t.png").write_bytes(_png(64, 64))
     write_glb(str(folder / "Other@lod1-web.glb"))
+    # dtcstamp's names: «@» made safe, a hints file beside the stamp
+    (folder / "Other_lod1-web.glb.stamp.json").write_text("{}")
+    (folder / "Other_lod1-web.glb.hints.json").write_text("{}")
     (folder / "notes.txt").write_text("x")
     rows = UP.list_versions(str(folder), "Colonnato")
     assert [r["destination"] for r in rows] == ["aton-heriverse", "web"]
@@ -312,4 +317,8 @@ def test_list_versions_in_a_fake_folder(tmp_path):
     gl = rows[0]
     assert {os.path.basename(f) for f in gl["files"]} == {"Colonnato.gltf", "t.png"}
     assert len(UP.list_versions(str(folder))) == 3
+    (other,) = UP.list_versions(str(folder), "Other")
+    assert other["stamp"].endswith("Other_lod1-web.glb.stamp.json")
+    assert {os.path.basename(f) for f in other["files"]} == {
+        "Other@lod1-web.glb", "Other_lod1-web.glb.stamp.json", "Other_lod1-web.glb.hints.json"}
     assert UP.versions_folder(str(tmp_path / "SB" / "x.blend")) == str(folder)

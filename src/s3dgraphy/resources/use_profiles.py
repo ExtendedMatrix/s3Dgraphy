@@ -251,12 +251,14 @@ def _simulate(objs: List[Dict[str, Any]], textures: Dict[str, Dict[str, Any]], *
         if mesh not in meshes or key not in instanced:
             # an instance draws its prototype's material: its own textures go
             used_tex.update(t for t in o["textures"] if t in textures)
+        # an object drawn several times by EXT_mesh_gpu_instancing is ONE
+        # draw call per material, as the copies made instances are
         if mesh not in meshes:
             meshes[mesh] = {"triangles": tris, "vertices": verts, "normal_map": nm,
                             "materials": o["materials"], "users": 0}
-            draw_calls += o["materials"] * (1 if key in instanced else o["instances"])
+            draw_calls += o["materials"]
         elif key not in instanced:
-            draw_calls += o["materials"] * o["instances"]
+            draw_calls += o["materials"]
         meshes[mesh]["users"] += o["instances"]
         tris_shown += tris * o["instances"]
     geo = sum(_geometry_bytes(m["triangles"], m["vertices"], m["normal_map"])
@@ -317,7 +319,7 @@ def diagnose(objects: Iterable[Dict[str, Any]], textures: Optional[Dict[str, Dic
     for o in objs:
         tx = [textures[t] for t in o["textures"] if t in textures]
         rows.append({"name": o["name"], "triangles": o["triangles"], "vertices": o["vertices"],
-                     "materials": o["materials"], "draw_calls": o["materials"] * o["instances"],
+                     "materials": o["materials"], "draw_calls": o["materials"],
                      "instances": o["instances"],
                      "textures": len(tx),
                      "texture_side_max": max([max(int(t.get("width") or 0), int(t.get("height") or 0))
@@ -855,9 +857,30 @@ def parse_version_name(name: str) -> Optional[Dict[str, str]]:
             "profile": prof, "ext": (m.group("ext") or "").lstrip(".")}
 
 
+HINTS_SUFFIX = ".hints.json"
+
+
+def _safe_name(base: str) -> str:
+    """dtcstamp's file-name rule for a stamp beside ``base`` (``@`` → ``_``:
+    ``Model@lod1-web.glb`` → ``Model_lod1-web.glb.stamp.json``)."""
+    return "".join(c if c.isalnum() or c in "-_." else "_" for c in str(base))
+
+
+def sidecars(path: str) -> Dict[str, Optional[str]]:
+    """The stamp and the hints beside ``path`` (a file or a folder), under the
+    name as it is or as dtcstamp makes it safe: ``{stamp, hints}``."""
+    folder, base = os.path.split(os.path.abspath(path.rstrip("/\\")))
+    out: Dict[str, Optional[str]] = {"stamp": None, "hints": None}
+    for name in dict.fromkeys((base, _safe_name(base))):
+        for key, suffix in (("stamp", STAMP_SUFFIX), ("hints", HINTS_SUFFIX)):
+            p = os.path.join(folder, name + suffix)
+            if out[key] is None and os.path.isfile(p):
+                out[key] = p
+    return out
+
+
 def _stamp_of(path: str) -> Optional[str]:
-    s = path + STAMP_SUFFIX
-    return s if os.path.isfile(s) else None
+    return sidecars(path)["stamp"]
 
 
 def list_versions(folder: str, model: Optional[str] = None, *, measure: bool = True
@@ -875,7 +898,7 @@ def list_versions(folder: str, model: Optional[str] = None, *, measure: bool = T
     except OSError:
         return out
     for name in names:
-        if name.startswith(".") or name.endswith(STAMP_SUFFIX):
+        if name.startswith(".") or name.endswith((STAMP_SUFFIX, HINTS_SUFFIX)):
             continue
         info = parse_version_name(name)
         if info is None or (model is not None and info["model"] != model):
@@ -909,9 +932,12 @@ def list_versions(folder: str, model: Optional[str] = None, *, measure: bool = T
         if os.path.isdir(path):
             for root, _dirs, fs in os.walk(path):
                 files += [os.path.join(root, f) for f in fs]
-        stamp = _stamp_of(entry) or _stamp_of(path)
-        if stamp:
-            files.append(stamp)
+        side = sidecars(entry)
+        if os.path.isdir(path):
+            outer = sidecars(path)
+            side = {k: side[k] or outer[k] for k in side}
+        stamp = side["stamp"]
+        files += [f for f in side.values() if f]
         files = sorted(set(os.path.abspath(f) for f in files))
         row.update(files=files, bytes=sum(os.path.getsize(f) for f in files if os.path.isfile(f)),
                    stamp=stamp, triangles=tris, textures=textures)
