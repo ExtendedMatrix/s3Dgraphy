@@ -1641,6 +1641,22 @@ def registration_transform(node_id: str = "registration", *,
                                      crs=crs, rms=rms, residuals=residuals)
 
 
+def fit_registration(local, world, *, scale: bool = False, ids=None, use=None) -> Dict[str, Any]:
+    """MICRO-INGRESSO-ASSET-1 · the rototranslation (the scale only when asked)
+    that carries points on a model onto the same points in the world: the
+    rotation, translation, scale, each point's residual, the mean error and
+    the RMS. See :mod:`s3dgraphy.geometry.registration`."""
+    from .geometry.registration import fit_points
+    return fit_points(local, world, scale=scale, ids=ids, use=use)
+
+
+def parse_control_points(text: str) -> Dict[str, Any]:
+    """The points of a total station's or a CSV file (``id x y z``, a header
+    followed when there is one). See :func:`s3dgraphy.geometry.registration.parse_points`."""
+    from .geometry.registration import parse_points
+    return parse_points(text)
+
+
 # ── IIIF: the image layer, as a projection ────────────────────────────────────
 def iiif_manifest(graph: Graph, target_id: str, *, image_base: str,
                   manifest_id: Optional[str] = None,

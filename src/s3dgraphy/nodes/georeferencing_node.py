@@ -150,6 +150,22 @@ class GCPSetNode(Node):
             if str(raw.get("image") or "").strip():
                 # a camera position: the photograph it is the position OF
                 entry["image"] = str(raw["image"]).strip()
+            # MICRO-INGRESSO-ASSET-1 · a point placed ON THE MODEL (clicked in
+            # a 3D view, or a marker a photogrammetry program exported): where
+            # it is in the model's own frame. With ``world`` it is a PAIR, and
+            # a rototranslation is solved from pairs
+            # (s3dgraphy.geometry.registration.fit_points)
+            local = raw.get("local")
+            if local is not None:
+                if (not isinstance(local, (list, tuple)) or len(local) != 3
+                        or not all(isinstance(c, (int, float)) for c in local)):
+                    raise GeoreferencingError(
+                        f"control point {pid!r}: its place on the model is "
+                        f"[x, y, z], not {local!r}")
+                entry["local"] = [float(c) for c in local]
+            if raw.get("excluded"):
+                # kept in the set, left out of the fit (its residual still said)
+                entry["excluded"] = True
             clean.append(entry)
         return clean
 
@@ -165,7 +181,8 @@ class GCPSetNode(Node):
             # each camera is its own observation: where the photograph was
             # taken from
             return len(self.points) >= self.MINIMUM_POINTS
-        seen = [p for p in self.points if p.get("observations")]
+        seen = [p for p in self.points if p.get("observations")
+                or (p.get("local") and not p.get("excluded"))]
         return len(seen) >= self.MINIMUM_POINTS
 
     def gcp_list(self, *, crs: Optional[str] = None) -> str:
