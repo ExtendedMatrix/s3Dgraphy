@@ -93,7 +93,7 @@ PROFILES: Dict[str, Dict[str, Any]] = {
         "instancing": True, "packaging": "glb", "tileset": True,
         "max_download_mb": None, "max_gpu_mb": 4096},
     "webxr": {
-        "label": "webXR", "label_it": "webXR", "hint": "ATON / Heriverse",
+        "label": "webXR", "label_it": "webXR", "hint": "ATON / Heriverse", "hint_it": "ATON / Heriverse",
         "purpose": "the browser and its headsets (ATON, Heriverse): the model as it is, "
                    "a glTF with its textures beside it",
         "purpose_it": "il browser e i suoi visori (ATON, Heriverse): il modello com'è, "
@@ -106,6 +106,7 @@ PROFILES: Dict[str, Dict[str, Any]] = {
         "max_download_mb": 250, "max_gpu_mb": 2048},
     "mobile_webxr": {
         "label": "Mobile webXR", "label_it": "mobile webXR", "hint": "phones and headsets",
+        "hint_it": "telefoni e caschi",
         "purpose": "phones and stand-alone headsets in the browser: light, compressed",
         "purpose_it": "telefoni e visori autonomi nel browser: leggera, compressa",
         "uses": ("mobile_ar",), "destination": "mobile",
