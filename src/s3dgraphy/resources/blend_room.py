@@ -203,10 +203,11 @@ def may_write(lease: Optional[Dict[str, Any]], *, person: str, host: str = "",
 
 def may_release(lease: Optional[Dict[str, Any]], *, person: str, role: str = "") -> bool:
     """Who may release a lease by hand (with a confirmation, D8): the holder,
-    or whoever manages the room (``owner``)."""
+    or whoever manages the room (``owner`` or ``admin``: the server's «can
+    manage the room», stratigraph-server app/holds.py)."""
     if not lease:
         return False
-    return lease.get("person") == person or str(role) in ("owner", "manager")
+    return lease.get("person") == person or str(role) in ("owner", "admin", "manager")
 
 
 def readonly_save_name(blend: str, *, person: str, existing: Iterable[str] = (),

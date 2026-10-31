@@ -49,13 +49,21 @@ from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tupl
 
 # ── the costs (estimates; their sources beside them) ─────────────────────────
 
-#: bytes of Blender's RAM per triangle of an imported mesh (the mesh — positions,
-#: corners, edges, faces, one UV layer — plus the viewport's batches). Measured
-#: on Blender 5.2 with Templu Mare's tiles and RB OBJs (MICRO-BLEND-OFFICINA-2,
-#: see the report): the constant is the measure, rounded up.
-RAM_BYTES_PER_TRIANGLE = 220
-#: bytes per texture pixel in Blender: the 8-bit RGBA buffer plus the GPU
-#: texture with its mipmaps (4 + 4·4/3)
+#: bytes of Blender's RAM per triangle of an imported glTF tile or crop (the
+#: mesh — positions, corners, edges, faces, one UV layer — and what the
+#: importer keeps). MEASURED on Blender 5.2 headless (RSS before/after the
+#: import, MICRO-BLEND-OFFICINA-2, 31 Oct 2026) on Templu Mare's tiles: 220–340
+#: B per triangle with the textures taken out (level 4: 107 k triangles 68 MB;
+#: level 5: 405 k, 303 MB; a 4 m column at the densest: 46 k, 62 MB, textures
+#: included) — the upper end, rounded up.
+RAM_BYTES_PER_TRIANGLE = 350
+#: an OBJ imported whole costs far more (≈ 920 B per triangle measured: a
+#: Templu Mare LOD0 OBJ, 511 k triangles, 704 MB): why the detail of a master
+#: that is not tiled is a CROP exported as glTF, not the OBJ
+RAM_BYTES_PER_TRIANGLE_OBJ = 920
+#: bytes per texture pixel in Blender: the 8-bit RGBA buffer (4 B, measured
+#: headless) plus the GPU texture with its mipmaps (4·4/3, NOT measurable
+#: headless: an estimate on the safe side)
 RAM_BYTES_PER_PIXEL = 4 + 4 * 4.0 / 3.0
 MB = 1024 * 1024
 

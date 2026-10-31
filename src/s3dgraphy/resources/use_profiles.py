@@ -1184,6 +1184,10 @@ def diagnose_files(paths: Iterable[str], prof: Any = "webxr", *, engine: str = "
 #: ``<model>@<level>-<destination>`` (+ ``-<hex8>`` for a glTF folder)
 VERSION_NAME = re.compile(r"^(?P<model>.+)@(?P<level>lod\d+|[^-@]+?)-(?P<rest>.+?)"
                           r"(?P<ext>\.glb|\.gltf|\.stl)?$")
+#: a version saved by hand (MICRO-BLEND-OFFICINA-2, D6): ``<model>@manual-
+#: YYYY-MM-DD[-n]`` with or without a destination after it
+MANUAL_VERSION_NAME = re.compile(r"^(?P<model>.+)@(?P<level>manual-\d{4}-\d{2}-\d{2}(?:-\d+)?)"
+                                 r"(?:-(?P<rest>[^\d].*?))?(?P<ext>\.glb|\.gltf|\.stl)?$")
 STAMP_SUFFIX = ".stamp.json"
 DESTINATIONS = tuple(sorted({v["destination"] for v in PROFILES.values()}, key=len,
                             reverse=True))
@@ -1203,10 +1207,11 @@ def parse_version_name(name: str) -> Optional[Dict[str, str]]:
     """``Column_light1@lod1-realtime-web.glb`` → ``{model, level, destination,
     profile, ext}`` (``profile`` the first destination tag that names one,
     ``""`` when none); None when the name is not a version's."""
-    m = VERSION_NAME.match(os.path.basename(str(name)))
+    base = os.path.basename(str(name))
+    m = MANUAL_VERSION_NAME.match(base) or VERSION_NAME.match(base)
     if not m:
         return None
-    rest = m.group("rest")
+    rest = m.group("rest") or ""
     hexpart = re.search(r"-([0-9a-f]{8})$", rest)
     if hexpart and not m.group("ext"):
         rest = rest[: hexpart.start()]

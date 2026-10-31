@@ -47,6 +47,7 @@ def test_the_lease_alive_label_modes_release():
     assert R.lease_for([ls], key, 1100) is ls and R.lease_for([ls], key, 99999) is None
     assert R.may_release(ls, person="orcid:ED") and not R.may_release(ls, person="orcid:EL")
     assert R.may_release(ls, person="orcid:EL", role="owner")
+    assert R.may_release(ls, person="orcid:EL", role="admin")
 
 
 def test_a_readonly_save_is_a_new_version_with_the_name():

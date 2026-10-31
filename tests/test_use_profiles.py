@@ -348,6 +348,9 @@ def test_names_of_the_versions():
     assert UP.parse_version_name("PODIO@lod0-aton-heriverse.glb")["profile"] == "webxr"
     assert UP.parse_version_name("PODIO@lod1-web.glb")["profile"] == "webxr"
     assert UP.parse_version_name("PODIO@lod0-print.stl")["profile"] == "print_3d"
+    # D6 (MICRO-BLEND-OFFICINA-2): a version saved by hand, with or without a destination
+    assert UP.parse_version_name("X@manual-2026-10-31.glb")["level"] == "manual-2026-10-31"
+    assert UP.parse_version_name("X@manual-2026-10-31-2-realtime.glb")["level"] == "manual-2026-10-31-2"
     assert UP.parse_version_name("readme.txt") is None
 
 
