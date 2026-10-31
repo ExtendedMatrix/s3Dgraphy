@@ -6,12 +6,12 @@
    "schema_version": 2,
    "generator": {
     "tool": "s3dgraphy",
-    "version": "1.6.0.dev65"
+    "version": "1.6.0.dev79"
    },
    "datamodel_versions": {
-    "nodes": "1.6.38",
-    "connections": "1.6.49",
-    "qualia": "1.6.9"
+    "nodes": "1.6.39",
+    "connections": "1.6.51",
+    "qualia": "1.6.10"
    },
    "ontology_versions": {
     "CIDOC-CRM": "7.1.3",
@@ -22,7 +22,7 @@
     "CRMinf": "1.2.1",
     "HDT-O": "1.0",
     "PROV-O": "W3C Recommendation 2013-04-30",
-    "CRMem": "1.6.22"
+    "CRMem": "1.6.23"
    }
   },
   "graphs": {
