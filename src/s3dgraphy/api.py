@@ -1657,6 +1657,43 @@ def parse_control_points(text: str) -> Dict[str, Any]:
     return parse_points(text)
 
 
+# ── MICRO-BLEND-OFFICINA-3: «Consolida per…» and «Componi un .blend dal grafo» ──
+def consolidate(graph: Graph, platform: str = "heriverse", *, models=None, states=None,
+                in_room: bool = False) -> Dict[str, Any]:
+    """«Consolida per…» Heriverse / ATON / web: one row per published model —
+    the floor mobile webXR (necessary), the best for the platform
+    (recommended), the opportune, the sufficient (the scene's totals), the
+    presence in the room's bucket. Writes nothing. See
+    :mod:`s3dgraphy.resources.consolidate`."""
+    from .resources.consolidate import consolidate as _c
+    return _c(graph, platform, models=models, states=states, in_room=in_room)
+
+
+def compose_from_graph(graph: Graph, profile: str, *, em_folder: str, **kw) -> Dict[str, Any]:
+    """The plan of a working .blend composed from the graph (no .blend to
+    start from), from the disk or the room, each object with the graph's
+    tags. See :func:`s3dgraphy.resources.graph_compose.compose_from_graph`."""
+    from .resources.graph_compose import compose_from_graph as _c
+    return _c(graph, profile, em_folder=em_folder, **kw)
+
+
+def update_status(graph: Graph, tags: Dict[str, Any]) -> Dict[str, Any]:
+    """The version an object shows (its graph tags) against the last one
+    registered, with who made it and when: «Aggiorna». See
+    :func:`s3dgraphy.resources.graph_compose.update_status`."""
+    from .resources.graph_compose import update_status as _u
+    return _u(graph, tags)
+
+
+def register_tileset_whole(graph: Graph, tileset_id: str, container_id: str, *,
+                           document_id: Optional[str] = None) -> Dict[str, Any]:
+    """A tileset as the level «Intero» of a container, under the document of
+    its meshes (several documents → ``ask``). See
+    :func:`s3dgraphy.resources.graph_compose.register_tileset_whole`."""
+    from .resources.graph_compose import register_tileset_whole as _r
+    return _r(graph, tileset_id, container_id, document_id=document_id)
+
+
 # ── IIIF: the image layer, as a projection ────────────────────────────────────
 def iiif_manifest(graph: Graph, target_id: str, *, image_base: str,
                   manifest_id: Optional[str] = None,
