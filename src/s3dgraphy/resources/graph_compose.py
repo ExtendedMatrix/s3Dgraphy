@@ -835,6 +835,9 @@ def declare_tileset_master(graph, tileset_id: str, sources: Sequence[str] = (), 
     step = declare_derivation(graph, output=asset, inputs=srcs, dtc_kind=TILING,
                               process_id=pid, name=f"Tiling of {getattr(_node(graph, asset), 'name', asset)}",
                               technique="3D Tiles", author=author, at=at)
-    _data(_node(graph, asset)).pop("master_unavailable", None)
+    ad = _data(_node(graph, asset))
+    if ad.get("master_unavailable"):
+        # emptied, not dropped: a delta that merges data (EMStudio) clears it too
+        ad["master_unavailable"] = ""
     return {"declared": True, "process_id": step["process_id"], "unavailable": "",
             "say_it": tileset_master(graph, tileset_id)["say_it"]}

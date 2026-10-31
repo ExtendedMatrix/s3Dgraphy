@@ -276,6 +276,11 @@ def test_the_master_not_available_is_a_note_that_stays():
     row = C.consolidate(g, "heriverse", models=["grp"])["rows"][0]
     assert not any(x["code"] == "tileset_master" for x in row["findings"])
     assert row["tileset_master"]["say_it"] == "master non disponibile: le mesh 2015 sono perdute"
+    # declared later: the note is emptied
+    g3, t3 = _tileset_study()
+    G.declare_tileset_master(g3, t3["version_id"], unavailable="perdute")
+    G.declare_tileset_master(g3, t3["version_id"], ["rb1"])
+    assert G.tileset_master(g3, t3["version_id"])["unavailable"] == ""
     # the note is in the graph: it survives the em.json
     doc = api.graph_to_emjson(g)
     g2, _ = api.load_emjson(doc)
