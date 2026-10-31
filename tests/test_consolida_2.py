@@ -197,6 +197,8 @@ def test_a_file_modified_after_its_stamp_is_said_and_registered_anew(tmp_path):
     tags = G.graph_tags(g, "rm_muro", {**api.versions_of(g, "muro")[1], "asset_id": "muro"})
     st = G.update_status(g, tags, file_sha256=now)
     assert st["state"] == "modified" and st["action"]["kind"] == "register_new_version"
+    ba = G.before_after(g, [{"name": "Muro", "props": tags}], files_now=changed)
+    assert ba[0]["state"] == "modified" and "modificata dopo il timbro" in ba[0]["say_it"]
     # «Registra come nuova versione»: a revision at the same level, the same use
     got = G.register_new_version(g, v0["version_id"], checksum=now, at="2026-10-31T15:00:00Z")
     assert got["revises"] == v0["version_id"]

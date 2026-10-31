@@ -611,17 +611,24 @@ def register_new_version(graph, res_id: str, *, checksum: str, size_bytes: Optio
                        size_bytes=size_bytes, author=author, at=at, revise=True)
 
 
-def before_after(graph, objects: Iterable[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def before_after(graph, objects: Iterable[Dict[str, Any]], *,
+                 files_now: Optional[Dict[str, str]] = None) -> List[Dict[str, Any]]:
     """For «Controlla col grafo»: each object that carries graph tags
     (``{name, props}`` as :func:`.blend_folder.normalize` gives them, or
     ``{name, tags}``) with its :func:`update_status` — the version in the
-    scene, the last in the graph, who made it and when, the action."""
+    scene, the last in the graph, who made it and when, the action.
+    ``files_now``: ``{resource_id: sha256 today}`` of the versions' files
+    (the resolver's ``changed``, :func:`.consolidate.changed_from`) — a
+    version modified after its stamp is said ``modified``."""
     out = []
+    files_now = files_now or {}
     for o in objects or []:
         props = o.get("tags") or o.get("props") or {}
         if not any(props.get(k) for k in ("em_version_id", "em_resource_id", "em_asset_id", "em_rm_node_id")):
             continue
-        st = update_status(graph, props)
+        rid = next((str(props.get(k)) for k in ("em_version_id", "em_resource_id")
+                    if props.get(k) and str(props.get(k)) in files_now), "")
+        st = update_status(graph, props, file_sha256=files_now.get(rid) if rid else None)
         out.append({"name": o.get("name") or "", **st})
     return out
 
