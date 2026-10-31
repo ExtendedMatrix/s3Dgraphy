@@ -168,3 +168,11 @@ def test_the_tileset_is_the_whole_of_its_container_under_the_document():
     # the tileset is an item of a modelling composition
     plan = G.compose_from_graph(g, "modelling", em_folder="/nowhere/EM")
     assert any(m["model_id"] == "grp" for m in plan["missing"] + plan["items"])
+
+
+def test_another_rung_of_the_lod_chain_is_not_newer():
+    g, v0, v1, m0 = _study()
+    tags = G.graph_tags(g, "rm_podio", {**api.versions_of(g, "podio")[1], "asset_id": "podio"})
+    assert tags["em_version_id"] == v0["version_id"]
+    # the lod1 (mobile) was born a day after the lod0 shown: lighter, not newer
+    assert G.update_status(g, tags)["state"] == "aligned"

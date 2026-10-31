@@ -433,13 +433,21 @@ def _born(graph, entry: Dict[str, Any]) -> str:
     return made_by(graph, entry["id"]).get("at") or ""
 
 
+def _is_rung(level: Any) -> bool:
+    import re
+    from .versions import LOD_LEVEL_PATTERN
+    return bool(re.match(LOD_LEVEL_PATTERN, str(level or "").strip().lower()))
+
+
 def update_status(graph, tags: Dict[str, Any]) -> Dict[str, Any]:
     """The version an object shows (its tags) against the LAST version
     registered for its asset.
 
     «Last» is the latest born (the time of the step that made it, else its
-    stamp) among the asset's versions — the current revision of each — and
-    the master; a version with no time is older than one with a time; ties
+    stamp) among the version shown and the asset's versions that are the
+    same object made again — made by hand (``manual-…``) or named, not the
+    master and not another rung of the LOD chain (``lodN``: lighter, not
+    newer); the current revision of each; a version with no time is older than one with a time; ties
     go to the newer revision. → ``{state, here, latest, action, say_it}``:
     ``state`` ``aligned`` / ``newer`` (the graph has a later one) /
     ``revised`` (the version shown has a newer revision) / ``unknown`` (the
@@ -475,7 +483,14 @@ def update_status(graph, tags: Dict[str, Any]) -> Dict[str, Any]:
     if here is None:
         return {"state": "unknown", "here": None, "latest": None, "action": {},
                 "say_it": "la versione in scena non è più fra quelle dell'asset"}
-    ordered = sorted(entries, key=lambda e: (_born(graph, e), len(e.get("revisions") or [])))
+    # «newer» is the same object made again: a version made by hand
+    # (``manual-…``) or with a name of its own, born later — never the master
+    # (versions are made FROM it) nor another rung of the LOD chain (a lod1
+    # born after the lod0 shown is lighter, not newer); a newer revision of
+    # the version shown is said below
+    cands = [here] + [e for e in entries if e is not here and not e.get("master")
+                      and not _is_rung(e.get("level") or e.get("lod_level"))]
+    ordered = sorted(cands, key=lambda e: (_born(graph, e), len(e.get("revisions") or [])))
     latest = ordered[-1]
     here_v = view(here, rid)
     if rid != here["id"]:
