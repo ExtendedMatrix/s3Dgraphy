@@ -1659,14 +1659,17 @@ def parse_control_points(text: str) -> Dict[str, Any]:
 
 # ── MICRO-BLEND-OFFICINA-3: «Consolida per…» and «Componi un .blend dal grafo» ──
 def consolidate(graph: Graph, platform: str = "heriverse", *, models=None, states=None,
-                in_room: bool = False) -> Dict[str, Any]:
+                in_room: bool = False, measure=None, changed=None) -> Dict[str, Any]:
     """«Consolida per…» Heriverse / ATON / web: one row per published model —
-    the floor mobile webXR (necessary), the best for the platform
-    (recommended), the opportune, the sufficient (the scene's totals), the
-    presence in the room's bucket. Writes nothing. See
+    the floor mobile webXR (necessary), what the web loads (light by
+    default: :func:`s3dgraphy.resources.consolidate.web_choice`), the
+    opportune (too heavy, a file modified after its stamp, a tileset's
+    master), the sufficient (the scene's totals, measured when ``measure``
+    reads the files), the presence in the room's bucket. Writes nothing. See
     :mod:`s3dgraphy.resources.consolidate`."""
     from .resources.consolidate import consolidate as _c
-    return _c(graph, platform, models=models, states=states, in_room=in_room)
+    return _c(graph, platform, models=models, states=states, in_room=in_room,
+              measure=measure, changed=changed)
 
 
 def compose_from_graph(graph: Graph, profile: str, *, em_folder: str, **kw) -> Dict[str, Any]:
@@ -1677,12 +1680,35 @@ def compose_from_graph(graph: Graph, profile: str, *, em_folder: str, **kw) -> D
     return _c(graph, profile, em_folder=em_folder, **kw)
 
 
-def update_status(graph: Graph, tags: Dict[str, Any]) -> Dict[str, Any]:
-    """The version an object shows (its graph tags) against the last one
-    registered, with who made it and when: «Aggiorna». See
+def update_status(graph: Graph, tags: Dict[str, Any], *,
+                  file_sha256: Optional[str] = None) -> Dict[str, Any]:
+    """The version an object shows (its graph tags) against the versions of
+    the same model at the same level, with who made them and when:
+    «Aggiorna»; ``file_sha256`` (the file today) says a version modified
+    after its stamp. See
     :func:`s3dgraphy.resources.graph_compose.update_status`."""
     from .resources.graph_compose import update_status as _u
-    return _u(graph, tags)
+    return _u(graph, tags, file_sha256=file_sha256)
+
+
+def register_new_version(graph: Graph, res_id: str, *, checksum: str,
+                         size_bytes: Optional[int] = None, author: Optional[str] = None,
+                         at: Optional[str] = None) -> Dict[str, Any]:
+    """«Registra come nuova versione»: a version whose file was modified
+    after its stamp, registered again (a revision at the same level). See
+    :func:`s3dgraphy.resources.graph_compose.register_new_version`."""
+    from .resources.graph_compose import register_new_version as _r
+    return _r(graph, res_id, checksum=checksum, size_bytes=size_bytes, author=author, at=at)
+
+
+def declare_tileset_master(graph: Graph, tileset_id: str, sources: Sequence[str] = (), *,
+                           unavailable: Optional[str] = None, author: Optional[str] = None,
+                           at: Optional[str] = None) -> Dict[str, Any]:
+    """«Dichiara il master…» of a tileset: the meshes it was tiled from (a
+    ``tiling`` step), or «non disponibile» with a note kept in the graph. See
+    :func:`s3dgraphy.resources.graph_compose.declare_tileset_master`."""
+    from .resources.graph_compose import declare_tileset_master as _d
+    return _d(graph, tileset_id, sources, unavailable=unavailable, author=author, at=at)
 
 
 def register_tileset_whole(graph: Graph, tileset_id: str, container_id: str, *,
@@ -3208,15 +3234,18 @@ def is_canonical_3tz(path: str) -> Dict[str, Any]:
 def resolve_files(graph: Graph, *, project_root: Optional[str] = None,
                   base_dirs: Sequence[str] = (), cache_dirs: Sequence[str] = (),
                   on_node: Optional[Callable[[str], bool]] = None,
-                  hasher: Optional[Callable[[str], str]] = None) -> List[Dict[str, Any]]:
+                  hasher: Optional[Callable[[str], str]] = None,
+                  verify: bool = False) -> List[Dict[str, Any]]:
     """The STATE of every resource of ``graph`` — ``on_disk``, ``on_node``,
     ``both``, ``reference_only``, ``missing``, ``empty_copy`` — trying cache →
     known paths (the EM standard tree of ``project_root`` first) → node
-    (``on_node(hex)``) → reference. The one resolver every tool calls. See
+    (``on_node(hex)``) → reference. The one resolver every tool calls.
+    ``verify`` (with a ``hasher``): a file here whose bytes are not the
+    registered ones is said ``changed`` (modified after its stamp). See
     :mod:`s3dgraphy.resources.locate`."""
     from .resources.locate import resolve_graph
     return resolve_graph(graph, project_root=project_root, base_dirs=base_dirs,
-                         cache_dirs=cache_dirs, on_node=on_node, hasher=hasher)
+                         cache_dirs=cache_dirs, on_node=on_node, hasher=hasher, verify=verify)
 
 
 def resolve_file(entry: Dict[str, Any], **kwargs) -> Dict[str, Any]:

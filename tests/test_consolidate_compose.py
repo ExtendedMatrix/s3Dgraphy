@@ -61,7 +61,7 @@ def test_the_floor_the_best_the_opportune_and_out_of_the_room():
     assert muro["status"] == "necessary" and codes[0] == "no_base"
     assert muro["findings"][0]["action"] == {"kind": "prepare", "profile": "mobile_webxr",
                                              "model": "rm_muro", "asset_id": "muro"}
-    assert "over_band" in codes          # 400 k triangles > 150 k per object of webXR
+    assert "over_band" in codes          # 400 k triangles > 50 k per object of webXR (LIGHT_WEB)
     assert nulla["status"] == "necessary" and nulla["findings"][0]["code"] == "nothing"
     # out of a room: on the disk is the road on disk
     assert all(p["ok"] and p["action"] == "disk" for p in podio["presence"])
@@ -76,7 +76,7 @@ def test_in_the_room_what_is_only_here_is_to_upload():
     row = out["rows"][0]
     assert row["status"] == "presence"
     by = {p["which"]: p for p in row["presence"]}
-    assert by["best"]["ok"] and by["base"]["action"] == "upload"
+    assert by["loaded"]["ok"] and by["base"]["action"] == "upload"
     assert out["counts"]["to_upload"] == 1
     # the master loaded in place of a version
     g2 = Graph("m")
@@ -120,14 +120,27 @@ def test_compose_from_the_graph_disk_room_and_publication_profiles(tmp_path):
 
 
 def test_update_to_the_last_registered_with_who_and_when():
+    """MICRO-CONSOLIDA-2: the same model at the same level, a later date →
+    «Aggiorna»; another level → «un'altra versione», not an update."""
     g, v0, v1, m0 = _study()
     tags = G.graph_tags(g, "rm_muro", {**api.versions_of(g, "muro")[1], "asset_id": "muro"})
     assert G.update_status(g, tags)["state"] == "aligned"
+    by_hand = api.add_version(g, "muro", level="manual-2026-10-30", use=["realtime"],
+                              files=[{"path": "../SB/versions/muro@manual-2026-10-30.glb",
+                                      "checksum": SHA("5")}], at="2026-10-30T09:00:00Z")
+    st = G.update_status(g, tags)
+    # a version by hand for desktop realtime is ANOTHER version of the lod0 for webXR
+    assert st["state"] == "aligned" and st["action"] == {}
+    assert [o["level"] for o in st["others"]] == ["manual-2026-10-30"]
+    assert "un'altra versione, non un aggiornamento" in st["say_it"]
+    # shown the version by hand: a later one by hand for the same use is newer
+    tags2 = G.graph_tags(g, "rm_muro", {**next(e for e in api.versions_of(g, "muro")
+                                                if e["id"] == by_hand["version_id"]), "asset_id": "muro"})
     newer = api.add_version(g, "muro", level="manual-2026-10-31", use=["realtime"],
                             files=[{"path": "../SB/versions/muro@manual-2026-10-31.glb",
-                                    "checksum": SHA("5")}], at="2026-10-31T09:00:00Z",
+                                    "checksum": SHA("a")}], at="2026-10-31T09:00:00Z",
                             author="0000-0002-1825-0097")
-    st = G.update_status(g, tags)
+    st = G.update_status(g, tags2)
     assert st["state"] == "newer" and st["action"] == {"kind": "update", "resource_id": newer["version_id"]}
     assert st["latest"]["level"] == "manual-2026-10-31" and "2026-10-31 09:00" in st["latest"]["made_say"]
     ba = G.before_after(g, [{"name": "Muro", "props": tags}, {"name": "Luce", "props": {}}])

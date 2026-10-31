@@ -438,26 +438,66 @@ def _born(graph, entry: Dict[str, Any]) -> str:
     return made_by(graph, entry["id"]).get("at") or ""
 
 
-def _is_rung(level: Any) -> bool:
+def level_key(entry: Dict[str, Any]) -> tuple:
+    """The LEVEL of a version, as «Aggiorna» compares them (E.D. 31 Oct 2026):
+    its level's name — ``lodN`` as it is, a version made by hand
+    (``manual-<date>[-n]``) is ``manual``, the master ``master`` — and the
+    profile its first use serves (mobile webXR, webXR, desktop realtime…).
+    Two versions with the same key are the same model at the same level:
+    the later one is an update; another key is another version."""
     import re
-    from .versions import LOD_LEVEL_PATTERN
-    return bool(re.match(LOD_LEVEL_PATTERN, str(level or "").strip().lower()))
+    if entry.get("master"):
+        return ("master", "")
+    lvl = str(entry.get("level") or entry.get("lod_level") or "").strip().lower()
+    if re.match(r"^manual-\d{4}-\d{2}-\d{2}(?:-\d+)?$", lvl):
+        lvl = "manual"
+    uses = list(entry.get("use") or [])
+    prof = ""
+    if uses:
+        from .use_profiles import USE_TO_PROFILE
+        prof = USE_TO_PROFILE.get(str(uses[0]), str(uses[0]))
+    return (lvl, prof)
 
 
-def update_status(graph, tags: Dict[str, Any]) -> Dict[str, Any]:
-    """The version an object shows (its tags) against the LAST version
-    registered for its asset.
+def level_say(entry: Dict[str, Any]) -> str:
+    """«lod1 · webXR», «master», «manual-2026-10-31 · desktop realtime»."""
+    if entry.get("master"):
+        return "master"
+    lvl = str(entry.get("level") or entry.get("lod_level") or "") or "?"
+    prof = level_key(entry)[1]
+    if prof:
+        try:
+            from .use_profiles import profile
+            prof = profile(prof)["label_it"]
+        except ValueError:
+            pass
+    return f"{lvl} · {prof}" if prof else lvl
 
-    «Last» is the latest born (the time of the step that made it, else its
-    stamp) among the version shown and the asset's versions that are the
-    same object made again — made by hand (``manual-…``) or named, not the
-    master and not another rung of the LOD chain (``lodN``: lighter, not
-    newer); the current revision of each; a version with no time is older than one with a time; ties
-    go to the newer revision. → ``{state, here, latest, action, say_it}``:
-    ``state`` ``aligned`` / ``newer`` (the graph has a later one) /
-    ``revised`` (the version shown has a newer revision) / ``unknown`` (the
-    tags name nothing of the graph); ``here`` and ``latest`` are ``{id, name,
-    level, checksum, made, made_say}``; ``action`` ``{kind: update,
+
+#: «Aggiorna» in one sentence (MICRO-CONSOLIDA-2), for the reports and the UI.
+UPDATE_RULE = ("«Aggiorna» propone una versione solo quando il grafo ha, per lo stesso "
+               "modello e lo stesso livello (lodN, a mano, mobile/webXR/realtime…), una "
+               "versione con la data del timbro più recente o una revisione più nuova di "
+               "quella in scena; un livello diverso — il master, la base mobile, un altro "
+               "gradino LOD — è un'altra versione, e lo si dice così.")
+
+
+def update_status(graph, tags: Dict[str, Any], *, file_sha256: Optional[str] = None) -> Dict[str, Any]:
+    """The version an object shows (its tags: sha256 and the version's id)
+    against the versions registered for its model (:data:`UPDATE_RULE`).
+
+    «Newer» is the same model at the SAME level (:func:`level_key`) born
+    later — the date of the step that made it, else of its stamp; the current
+    revision of each; a version with no time is older than one with a time.
+    A later version at ANOTHER level (the master, the mobile base, another
+    LOD rung) is not an update: it is listed in ``others`` and said as
+    «un'altra versione». ``file_sha256``: the sha256 the version's file has
+    TODAY (the caller reads the disk) — another than the registered one says
+    ``modified`` («modificata dopo il timbro», action ``register_new_version``).
+    → ``{state, here, latest, others, action, say_it}``: ``state``
+    ``aligned`` / ``newer`` / ``revised`` / ``modified`` / ``unknown``;
+    ``here`` and ``latest`` are ``{id, name, level, level_say, checksum,
+    made, made_say}``; ``action`` ``{kind: update | register_new_version,
     resource_id}`` or empty."""
     rid = next((str(tags.get(k)) for k in ("em_version_id", "em_resource_id", "em_asset_id")
                 if tags.get(k) and _node(graph, str(tags.get(k))) is not None
@@ -470,7 +510,7 @@ def update_status(graph, tags: Dict[str, Any]) -> Dict[str, Any]:
             hit = next((e for e in ents if here_sha and e.get("checksum") == here_sha), None)
             rid = hit["id"] if hit else ""
         if not rid:
-            return {"state": "unknown", "here": None, "latest": None, "action": {},
+            return {"state": "unknown", "here": None, "latest": None, "others": [], "action": {},
                     "say_it": "i tag non nominano una risorsa del grafo"}
     asset = asset_of(graph, rid)
     entries = versions_of(graph, asset)
@@ -482,39 +522,93 @@ def update_status(graph, tags: Dict[str, Any]) -> Dict[str, Any]:
         i = res_id or e["id"]
         m = made_by(graph, i)
         return {"id": i, "name": e.get("name") or "", "level": e.get("level") or e.get("lod_level") or
-                ("master" if e.get("master") else ""), "checksum": e.get("checksum") or "",
-                "made": m, "made_say": made_by_say(m)}
+                ("master" if e.get("master") else ""), "level_say": level_say(e),
+                "checksum": e.get("checksum") or "", "made": m, "made_say": made_by_say(m)}
 
     if here is None:
-        return {"state": "unknown", "here": None, "latest": None, "action": {},
+        return {"state": "unknown", "here": None, "latest": None, "others": [], "action": {},
                 "say_it": "la versione in scena non è più fra quelle dell'asset"}
-    # «newer» is the same object made again: a version made by hand
-    # (``manual-…``) or with a name of its own, born later — never the master
-    # (versions are made FROM it) nor another rung of the LOD chain (a lod1
-    # born after the lod0 shown is lighter, not newer); a newer revision of
-    # the version shown is said below
-    cands = [here] + [e for e in entries if e is not here and not e.get("master")
-                      and not _is_rung(e.get("level") or e.get("lod_level"))]
-    ordered = sorted(cands, key=lambda e: (_born(graph, e), len(e.get("revisions") or [])))
+    key = level_key(here)
+    born_here = _born(graph, here)
+    same = [here] + [e for e in entries if e is not here and level_key(e) == key]
+    ordered = sorted(same, key=lambda e: (_born(graph, e), len(e.get("revisions") or [])))
     latest = ordered[-1]
+    others = [view(e) for e in entries
+              if e is not here and level_key(e) != key and not e.get("master")
+              and _born(graph, e) > born_here]
     here_v = view(here, rid)
+    base = {"here": here_v, "others": others}
     if rid != here["id"]:
         lat = view(here)
-        return {"state": "revised", "here": here_v, "latest": lat,
+        return {**base, "state": "revised", "latest": lat,
                 "action": {"kind": "update", "resource_id": here["id"]},
                 "say_it": f"la versione in scena ha una revisione più nuova ({lat['made_say']})"}
-    if latest["id"] != here["id"] and _born(graph, latest) > _born(graph, here):
+    if latest["id"] != here["id"] and _born(graph, latest) > born_here:
         lat = view(latest)
-        return {"state": "newer", "here": here_v, "latest": lat,
+        return {**base, "state": "newer", "latest": lat,
                 "action": {"kind": "update", "resource_id": latest["id"]},
-                "say_it": f"nel grafo c'è {lat['level'] or lat['name']} più nuova ({lat['made_say']})"}
+                "say_it": f"nel grafo c'è {lat['level_say']} più nuova ({lat['made_say']})"}
+    now = str(file_sha256 or "")
+    if now and here.get("checksum") and _hex(now) and _hex(now) != _hex(here["checksum"]):
+        return {**base, "state": "modified", "latest": here_v,
+                "action": {"kind": "register_new_version", "resource_id": here["id"],
+                           "checksum_now": f"sha256:{_hex(now)}"},
+                "say_it": "modificata dopo il timbro (il file oggi ha un altro sha256): "
+                          "«Registra come nuova versione»"}
     shown = str(tags.get("em_asset_sha256") or "")
     if shown and here.get("checksum") and shown != here["checksum"]:
-        return {"state": "revised", "here": here_v, "latest": view(here),
+        return {**base, "state": "revised", "latest": view(here),
                 "action": {"kind": "update", "resource_id": here["id"]},
                 "say_it": "i byte in scena non sono quelli registrati"}
-    return {"state": "aligned", "here": here_v, "latest": here_v, "action": {},
-            "say_it": "ultima versione registrata"}
+    say = "ultima versione registrata per questo livello"
+    if others:
+        say += ("; nel grafo c'è anche " + ", ".join(o["level_say"] for o in others[:3])
+                + " — un'altra versione, non un aggiornamento")
+    return {**base, "state": "aligned", "latest": here_v, "action": {}, "say_it": say}
+
+
+def register_new_version(graph, res_id: str, *, checksum: str, size_bytes: Optional[int] = None,
+                         author: Optional[str] = None, at: Optional[str] = None) -> Dict[str, Any]:
+    """«Registra come nuova versione»: the file of the version ``res_id`` was
+    modified after its stamp (today it has ``checksum``). A REVISION of that
+    version is registered at the same level, with the same uses and the same
+    file, carrying the new sha256 (:func:`.versions.add_version` with
+    ``revise``) — the old node keeps the bytes it was stamped with as history.
+    → :func:`~.versions.add_version`'s answer."""
+    from .versions import add_version
+    node = _node(graph, res_id)
+    if node is None or not _is_resource(node):
+        raise ValueError(f"{res_id!r} is not a resource of this graph")
+    asset = asset_of(graph, res_id)
+    entry = next((e for e in versions_of(graph, asset)
+                  if res_id == e["id"] or res_id in (e.get("revisions") or [])), None)
+    if entry is None or entry.get("master"):
+        raise ValueError(f"{res_id!r} is not a version: a master is not re-registered here")
+    hexd = _hex(checksum)
+    if not hexd:
+        raise ValueError("the sha256 of the file today is wanted")
+    d = _data(_node(graph, entry["id"]))
+    spec = {"url": entry.get("url") or d.get("url") or "", "checksum": f"sha256:{hexd}"}
+    if entry.get("media_type"):
+        spec["media_type"] = entry["media_type"]
+    if size_bytes is not None:
+        spec["size_bytes"] = int(size_bytes)
+    proc = _node(graph, entry.get("process_id")) if entry.get("process_id") else None
+    params = dict(_data(proc).get("parameters") or {}) if proc is not None else {}
+    master = asset
+    for e in graph.edges:
+        if e.edge_type == "dtc_had_input" and proc is not None and e.edge_source == proc.node_id:
+            n = _node(graph, e.edge_target)
+            if n is not None and _is_resource(n):
+                master = e.edge_target
+                break
+    return add_version(graph, master, level=entry.get("level") or entry.get("lod_level"),
+                       purpose=params.get("purpose") or entry.get("purpose") or "",
+                       use=list(entry.get("use") or []) or None, files=[spec],
+                       technique="modified after the stamp",
+                       parameters={k: v for k, v in params.items()
+                                   if k not in ("level", "purpose")},
+                       size_bytes=size_bytes, author=author, at=at, revise=True)
 
 
 def before_after(graph, objects: Iterable[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -636,3 +730,104 @@ def register_tileset_whole(graph, tileset_id: str, container_id: str, *,
             "said": (f"tileset = livello «Intero» di "
                      f"{getattr(_node(graph, container_id), 'name', container_id)}"
                      + (f", sotto {name}" if name else ", senza documento"))}
+
+
+
+# ── the master of a tileset (MICRO-CONSOLIDA-2) ──────────────────────────────
+
+#: The DTC kind of the step that tiles meshes into a 3D Tiles tree.
+TILING = "tiling"
+
+
+def _tileset_asset(graph, tileset_id: str) -> str:
+    node = _node(graph, tileset_id)
+    if node is None or not _is_resource(node):
+        raise ValueError(f"{tileset_id!r} is not a resource of this graph")
+    return asset_of(graph, tileset_id)
+
+
+def tileset_master(graph, tileset_id: str) -> Dict[str, Any]:
+    """Whether the MASTER of a tileset is declared: the meshes it was tiled
+    from, inputs of a ``tiling`` step whose output is the tileset (its asset
+    or the version itself), or a note «non disponibile» kept on the asset
+    (``data.master_unavailable``). → ``{declared, sources: [{id, name}],
+    unavailable: note or "", say_it}``."""
+    asset = _tileset_asset(graph, tileset_id)
+    targets = {asset, tileset_id}
+    sources: List[str] = []
+    for e in graph.edges:
+        if e.edge_type != EDGE_HAD_OUTPUT or e.edge_target not in targets:
+            continue
+        proc = _node(graph, e.edge_source)
+        if proc is None or _data(proc).get("dtc_kind") != TILING:
+            continue
+        for x in graph.edges:
+            if x.edge_type == "dtc_had_input" and x.edge_source == proc.node_id \
+                    and x.edge_target not in sources:
+                sources.append(x.edge_target)
+    note = str(_data(_node(graph, asset)).get("master_unavailable") or "")
+    rows = [{"id": i, "name": str(getattr(_node(graph, i), "name", "") or i)} for i in sources]
+    say = (f"master dichiarato: {', '.join(r['name'] for r in rows[:3])}"
+           + (f" e altri {len(rows) - 3}" if len(rows) > 3 else "") if rows else
+           f"master non disponibile: {note}" if note else
+           "opportuno: dichiara il master (le mesh da cui viene il tileset)")
+    return {"declared": bool(rows), "sources": rows, "unavailable": note, "say_it": say}
+
+
+def master_candidates(graph, tileset_id: str, container_id: Optional[str] = None
+                      ) -> List[Dict[str, str]]:
+    """What «Dichiara il master…» offers: the 3D resources hung on the
+    container's members (the meshes of the survey the tileset was made
+    from), the tileset's own excluded — ``[{id, name, model}]``."""
+    from .alternatives import members_of
+    asset = _tileset_asset(graph, tileset_id)
+    out, seen = [], set()
+    members = members_of(graph, container_id, deep=True) if container_id else []
+    for m in members:
+        for e in graph.edges:
+            if e.edge_type == EDGE_HAS_LINKED and e.edge_source == m:
+                r = _node(graph, e.edge_target)
+                if r is None or not _is_resource(r) or e.edge_target in seen:
+                    continue
+                if asset_of(graph, e.edge_target) == asset:
+                    continue
+                seen.add(e.edge_target)
+                out.append({"id": e.edge_target, "name": str(getattr(r, "name", "") or e.edge_target),
+                            "model": str(getattr(_node(graph, m), "name", "") or m)})
+    return out
+
+
+def declare_tileset_master(graph, tileset_id: str, sources: Sequence[str] = (), *,
+                           unavailable: Optional[str] = None, author: Optional[str] = None,
+                           at: Optional[str] = None) -> Dict[str, Any]:
+    """«Dichiara il master…»: the tileset was tiled from ``sources`` (existing
+    resources: the meshes, a file) — a ``tiling`` step from them to the
+    tileset's asset (:func:`~s3dgraphy.dtc.ingest.declare_derivation`); or
+    ``unavailable``: the master is not available, and the note says why — it
+    stays in the graph (``data.master_unavailable`` of the asset). Not
+    blocking: a container made of a tileset alone works without it.
+    → ``{declared, process_id, unavailable, say_it}``."""
+    asset = _tileset_asset(graph, tileset_id)
+    srcs = [str(x) for x in sources or () if str(x)]
+    if not srcs:
+        note = str(unavailable or "").strip()
+        if not note:
+            raise ValueError("the master's resources, or a note that says it is not available")
+        _data(_node(graph, asset))["master_unavailable"] = note
+        return {"declared": False, "process_id": None, "unavailable": note,
+                "say_it": f"master non disponibile: {note}"}
+    for x in srcs:
+        n = _node(graph, x)
+        if n is None or not _is_resource(n):
+            raise ValueError(f"{x!r} is not a resource of this graph")
+        if asset_of(graph, x) == asset:
+            raise ValueError(f"{x!r} is the tileset itself")
+    from ..dtc.ingest import declare_derivation
+    import uuid
+    pid = str(uuid.uuid5(uuid.NAMESPACE_URL, "tiling|" + asset + "|" + "|".join(sorted(srcs))))
+    step = declare_derivation(graph, output=asset, inputs=srcs, dtc_kind=TILING,
+                              process_id=pid, name=f"Tiling of {getattr(_node(graph, asset), 'name', asset)}",
+                              technique="3D Tiles", author=author, at=at)
+    _data(_node(graph, asset)).pop("master_unavailable", None)
+    return {"declared": True, "process_id": step["process_id"], "unavailable": "",
+            "say_it": tileset_master(graph, tileset_id)["say_it"]}

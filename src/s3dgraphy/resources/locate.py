@@ -135,11 +135,16 @@ def in_cache(cache_dirs: Iterable[str], hexd: str) -> Optional[str]:
 def resolve(entry: Dict[str, Any], *, project_root: Optional[str] = None,
             base_dirs: Iterable[str] = (), cache_dirs: Iterable[str] = (),
             on_node: Optional[Callable[[str], bool]] = None,
-            hasher: Optional[Callable[[str], str]] = None) -> Dict[str, Any]:
+            hasher: Optional[Callable[[str], str]] = None,
+            verify: bool = False) -> Dict[str, Any]:
     """The state of ONE resource. ``entry`` is ``{id, locator, checksum}`` (what
     :func:`entries_of` gives for a graph). The project's standard tree is tried
     before ``base_dirs`` (C1). ``hasher(path) -> hex`` lets a file found on the
-    disk be asked about on the node when the graph recorded no digest.
+    disk be asked about on the node when the graph recorded no digest;
+    with ``verify`` it also hashes a file found here whose digest the graph
+    DID record, and a different one is said ``changed`` (``sha256_now``):
+    the file was modified after its stamp (MICRO-CONSOLIDA-2) — the state
+    stays where the bytes are.
 
     → ``{id, sha256, state, path, positions: [{kind, where, ok}], note}``."""
     from ..project_tree import search_bases
@@ -192,6 +197,14 @@ def resolve(entry: Dict[str, Any], *, project_root: Optional[str] = None,
                           "ok": bool(path)})
     elif locator.startswith(("blend://", "psx://")) and not look:
         positions.append({"kind": "path", "where": locator, "ok": None})
+    changed, now = False, ""
+    if verify and path and hexd and hasher is not None and os.path.isfile(path) \
+            and not path.startswith(tuple(d for d in (cache_dirs or ()) if d)):
+        try:
+            now = sha256_hex(hasher(path))
+        except Exception:  # noqa: BLE001 — unreadable: not said changed
+            now = ""
+        changed = bool(now) and now != hexd
     if path and not hexd and hasher is not None and os.path.isfile(path):
         try:
             hexd = sha256_hex(hasher(path))
@@ -228,8 +241,13 @@ def resolve(entry: Dict[str, Any], *, project_root: Optional[str] = None,
         state = "missing"
         note = (f"not on this computer: {locator}" if locator
                 else "the graph does not say where the file is")
-    return {"id": rid, "sha256": f"sha256:{hexd}" if hexd else "", "state": state,
-            "path": path or "", "positions": positions, "note": note}
+    out = {"id": rid, "sha256": f"sha256:{hexd}" if hexd else "", "state": state,
+           "path": path or "", "positions": positions, "note": note}
+    if changed:
+        out["changed"] = True
+        out["sha256_now"] = f"sha256:{now}"
+        out["note"] = (note + "; " if note else "") + "modificata dopo il timbro: il file oggi ha un altro sha256"
+    return out
 
 
 def entries_of(graph: Any) -> List[Dict[str, Any]]:
@@ -271,6 +289,14 @@ def resolve_graph(graph: Any, **kwargs) -> List[Dict[str, Any]]:
     for edge in getattr(graph, "edges", []) or []:
         if getattr(edge, "edge_type", "") == "has_file":
             files_of.setdefault(edge.edge_source, []).append(edge.edge_target)
+    for rid in files_of:
+        # a resource of several files records the digest of its members, not
+        # of its entry point: each file is verified on its own node
+        r = by_id.get(rid)
+        if r is not None and r.pop("changed", None):
+            r.pop("sha256_now", None)
+            r["note"] = r["note"].replace("; modificata dopo il timbro: il file oggi ha un altro sha256", "") \
+                .replace("modificata dopo il timbro: il file oggi ha un altro sha256", "")
     for rid, fids in files_of.items():
         r = by_id.get(rid)
         if r is None or r["path"] or r["state"] not in ("missing",) or \

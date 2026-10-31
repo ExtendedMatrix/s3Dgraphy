@@ -90,7 +90,9 @@ def test_diagnosis_counts_finds_copies_and_peaks():
     assert t["textures"] == 2
     assert d["duplicates"][0]["copies"] == 12 and d["duplicates"][0]["meshes"] == 12
     assert len(d["peaks"]) == 13                       # 53 k and 20 k are over 15 k
-    assert UP.diagnose(scene(), TEX, "webxr")["peaks"] == []
+    # webXR's object band is LIGHT_WEB's 50 k (MICRO-CONSOLIDA-2): the 12 columns
+    # of 53 k are over it, the wall of 20 k is not
+    assert len(UP.diagnose(scene(), TEX, "webxr")["peaks"]) == 12
     m = UP.diagnose(scene(), TEX, "mobile_webxr")
     assert [p["name"] for p in m["peaks"]][:2] == ["Column_0", "Column_1"]
     assert len(m["peaks"]) == 13                       # the wall too (20 k > 10 k)
@@ -131,8 +133,10 @@ def test_linked_duplicates_already_share_their_mesh():
 
 
 def test_decimation_row_per_geometry_with_its_normal_map():
-    assert not [r for r in UP.diagnose(scene(), TEX, "webxr")["improvements"]
+    assert not [r for r in UP.diagnose(scene(), TEX, "desktop_realtime")["improvements"]
                 if r["kind"] == "decimate"]
+    web = next(r for r in UP.diagnose(scene(), TEX, "webxr")["improvements"] if r["kind"] == "decimate")
+    assert web["triangles_to"] == 50_000 and len(web["targets"]) == 12
     d2 = UP.diagnose(scene(), TEX, "mobile_webxr")
     dec = next(r for r in d2["improvements"] if r["kind"] == "decimate")
     assert dec["triangles_to"] == 10_000 and len(dec["targets"]) == 12

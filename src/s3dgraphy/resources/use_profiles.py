@@ -71,14 +71,36 @@ from typing import Any, Dict, Iterable, List, Optional, Sequence
 #:
 #: The numbers. webXR: the model as it is for ATON / Heriverse, no compression
 #: of the geometry (Q5, 5 Oct 2026), a glTF with its textures beside it (the
-#: old exporter's), instances (the old «GPU instancing»); 150 k triangles per
-#: object (no Templu Mare object is over it). mobile webXR: KTX2 and meshopt of
+#: old exporter's), instances (the old «GPU instancing»); its bands are
+#: :data:`LIGHT_WEB`'s (E.D. 31 Oct: lightness by default). mobile webXR: KTX2 and meshopt of
 #: EMStudio's Ottimizza presets (512 px), 10 k per object. desktop realtime:
 #: no compression (the engine imports it), 4096 px. preview/catalogue: the
 #: lightest — the catalogue's globe, thumbnails, the first load. offline
 #: rendering: no ceiling of triangles, full textures, ready to render (not to
 #: keep). 3D printing: one closed mesh, no textures, in millimetres. archive:
 #: everything as it is.
+#: LIGHTNESS BY DEFAULT (MICRO-CONSOLIDA-2, E.D. 31 Oct 2026): the web's
+#: bands, in ONE place. The web (webXR: Heriverse, ATON) loads by default the
+#: light version of each model (its mobile webXR base) and a heavier one only
+#: when the model is simple (``object_*``) or the whole scene stays light
+#: anyway (``scene_*``) — :func:`s3dgraphy.resources.consolidate.web_choice`.
+#: Why these numbers: an object of 50 k triangles with one 2048 px texture is
+#: a column or a wall of Templu Mare well made for the web (≈ 22 MB of GPU);
+#: a scene of 1 M triangles is what a Quest 2 / a mid laptop's browser draws
+#: at 72 fps with room for the viewer; 60 MB is ten seconds on a 50 Mbit
+#: line; 1 GB of GPU is half of what a browser tab of an integrated GPU gets
+#: before it is lost (Safari, Chrome on 8 GB machines). The mobile floor:
+#: 10 k triangles and 512 px per object, 300 k / 20 MB / 256 MB for the
+#: scene (a phone's tab is killed around 400–500 MB of WebGL memory).
+LIGHT_WEB: Dict[str, Any] = {
+    "object_triangles": 50_000, "object_texture_side": 2048,
+    "scene_triangles": 1_000_000, "scene_download_mb": 60, "scene_gpu_mb": 1024,
+}
+LIGHT_MOBILE: Dict[str, Any] = {
+    "object_triangles": 10_000, "object_texture_side": 512,
+    "scene_triangles": 300_000, "scene_download_mb": 20, "scene_gpu_mb": 256,
+}
+
 PROFILES: Dict[str, Dict[str, Any]] = {
     "desktop_realtime": {
         "label": "Desktop realtime", "label_it": "desktop realtime",
@@ -99,22 +121,24 @@ PROFILES: Dict[str, Dict[str, Any]] = {
         "purpose_it": "il browser e i suoi visori (ATON, Heriverse): il modello com'è, "
                       "un glTF con le sue texture accanto",
         "uses": ("heriverse", "aton", "web"), "destination": "aton-heriverse",
-        "max_triangles": 3_000_000, "max_triangles_object": 150_000,
-        "max_textures": 128, "max_texture_side": 4096,
+        "max_triangles": LIGHT_WEB["scene_triangles"],
+        "max_triangles_object": LIGHT_WEB["object_triangles"],
+        "max_textures": 128, "max_texture_side": LIGHT_WEB["object_texture_side"],
         "texture_formats": ("jpeg", "png"), "geometry_compression": (),
         "instancing": True, "packaging": "gltf_separate", "tileset": True,
-        "max_download_mb": 250, "max_gpu_mb": 2048},
+        "max_download_mb": LIGHT_WEB["scene_download_mb"], "max_gpu_mb": LIGHT_WEB["scene_gpu_mb"]},
     "mobile_webxr": {
         "label": "Mobile webXR", "label_it": "mobile webXR", "hint": "phones and headsets",
         "hint_it": "telefoni e caschi",
         "purpose": "phones and stand-alone headsets in the browser: light, compressed",
         "purpose_it": "telefoni e visori autonomi nel browser: leggera, compressa",
         "uses": ("mobile_ar",), "destination": "mobile",
-        "max_triangles": 500_000, "max_triangles_object": 10_000,
-        "max_textures": 16, "max_texture_side": 512,
+        "max_triangles": LIGHT_MOBILE["scene_triangles"],
+        "max_triangles_object": LIGHT_MOBILE["object_triangles"],
+        "max_textures": 16, "max_texture_side": LIGHT_MOBILE["object_texture_side"],
         "texture_formats": ("ktx2", "jpeg"), "geometry_compression": ("meshopt", "draco"),
         "instancing": True, "packaging": "glb", "tileset": False,
-        "max_download_mb": 25, "max_gpu_mb": 256},
+        "max_download_mb": LIGHT_MOBILE["scene_download_mb"], "max_gpu_mb": LIGHT_MOBILE["scene_gpu_mb"]},
     "archive": {
         "label": "Archive", "label_it": "archivio",
         "purpose": "kept for study and for tomorrow: everything as it is",
@@ -1022,21 +1046,25 @@ def measure_gltf(path: str) -> Dict[str, Any]:
     tex_of_image: Dict[str, Dict[str, Any]] = {}
     for i, im in enumerate(images):
         key = f"image:{i}:{im.get('name') or im.get('uri') or ''}"
-        head, size = b"", 0
+        head, size, digest = b"", 0, ""
         if im.get("bufferView") is not None:
             raw = view_bytes(im["bufferView"])
             head, size = raw[:65536], len(raw)
+            digest = hashlib.sha256(raw).hexdigest() if raw else ""
         elif im.get("uri") and not str(im["uri"]).startswith("data:"):
             p = os.path.join(folder, str(im["uri"]).replace("/", os.sep))
             try:
                 with open(p, "rb") as f:
-                    head = f.read(65536)
-                size = os.path.getsize(p)
+                    raw = f.read()
+                head, size = raw[:65536], len(raw)
+                digest = hashlib.sha256(raw).hexdigest() if raw else ""
                 files.append(os.path.abspath(p))
             except OSError:
                 pass
         w, h, fmt = image_size(head)
-        tex_of_image[key] = {"width": w, "height": h, "bytes": size,
+        # ``sha256``: the same image in several files is the same texture —
+        # a scene counts it once (MICRO-CONSOLIDA-2)
+        tex_of_image[key] = {"width": w, "height": h, "bytes": size, "sha256": digest,
                              "format": fmt or str(im.get("mimeType") or "").split("/")[-1]}
     image_keys = list(tex_of_image)
     gtex = doc.get("textures") or []
