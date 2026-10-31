@@ -1672,6 +1672,17 @@ def consolidate(graph: Graph, platform: str = "heriverse", *, models=None, state
               measure=measure, changed=changed)
 
 
+def asset_list(graph: Graph, *, models=None, states=None, in_room: bool = False,
+               measure=None, changed=None) -> Dict[str, Any]:
+    """Archive › Asset: each asset with its versions and their textures, the
+    state and the proposal per target (mobile webXR, Heriverse / web, desktop
+    realtime, archive), the study's textures once with where they are used,
+    the totals against the bands. Consolida 2's rules, laid out per asset.
+    Writes nothing. See :mod:`s3dgraphy.resources.asset_list`."""
+    from .resources.asset_list import asset_list as _a
+    return _a(graph, models=models, states=states, in_room=in_room, measure=measure, changed=changed)
+
+
 def compose_from_graph(graph: Graph, profile: str, *, em_folder: str, **kw) -> Dict[str, Any]:
     """The plan of a working .blend composed from the graph (no .blend to
     start from), from the disk or the room, each object with the graph's
