@@ -279,6 +279,22 @@ def resolve_graph(graph: Any, **kwargs) -> List[Dict[str, Any]]:
     file is», which was true of the node and false of the resource."""
     out = []
     by_id: Dict[str, Dict[str, Any]] = {}
+    hasher = kwargs.get("hasher")
+    if hasher is not None:
+        # the same file named by many resources (97 masters in one .blend,
+        # Templu Mare) is hashed once: by path, size and time
+        memo: Dict[Any, str] = {}
+
+        def once(path: str) -> str:
+            try:
+                st = os.stat(path)
+                key = (os.path.realpath(path), st.st_size, st.st_mtime_ns)
+            except OSError:
+                return hasher(path)
+            if key not in memo:
+                memo[key] = hasher(path)
+            return memo[key]
+        kwargs = dict(kwargs, hasher=once)
     for e in entries_of(graph):
         r = resolve(e, **kwargs)
         r["name"] = e["name"]

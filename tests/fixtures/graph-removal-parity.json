@@ -6,7 +6,7 @@
    "schema_version": 2,
    "generator": {
     "tool": "s3dgraphy",
-    "version": "1.6.0.dev79"
+    "version": "1.6.0.dev80"
    },
    "datamodel_versions": {
     "nodes": "1.6.39",
