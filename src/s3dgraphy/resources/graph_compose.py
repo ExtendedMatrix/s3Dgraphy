@@ -406,6 +406,9 @@ def compose_from_graph(graph, profile: str, *, em_folder: str, project_folder: s
         item = {"model_id": mid, "name": str(getattr(node, "name", "") or mid),
                 "kind": "tileset" if tileset else "model",
                 "container": mid if is_group else next(iter(_containers(graph, mid)), ""),
+                # the composed file gathers each container's objects in a
+                # collection named as the container
+                "container_name": "",
                 "epochs": [e["name"] for e in epochs_of(graph, mid)],
                 "entry": {k: entry.get(k) for k in ("id", "asset_id", "name", "level", "lod_level",
                                                     "use", "master", "url", "checksum", "size_bytes")},
@@ -413,6 +416,8 @@ def compose_from_graph(graph, profile: str, *, em_folder: str, project_folder: s
                 "source": src,
                 "tags": graph_tags(graph, mid, entry, container_id=mid if is_group else None),
                 "made": made_by(graph, entry["id"])}
+        cnode = _node(graph, item["container"]) if item["container"] else None
+        item["container_name"] = str(getattr(cnode, "name", "") or item["container"]) if cnode is not None else ""
         if src["how"] == "missing":
             out["missing"].append({"model_id": mid, "name": item["name"], "say_it": src["say_it"],
                                    "url": entry.get("url") or ""})

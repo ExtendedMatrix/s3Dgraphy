@@ -176,3 +176,12 @@ def test_another_rung_of_the_lod_chain_is_not_newer():
     assert tags["em_version_id"] == v0["version_id"]
     # the lod1 (mobile) was born a day after the lod0 shown: lighter, not newer
     assert G.update_status(g, tags)["state"] == "aligned"
+
+
+def test_each_item_says_its_container_by_name():
+    from s3dgraphy.nodes.group_node import RepresentationModelNodeGroup
+    g, *_ = _study()
+    g.add_node(RepresentationModelNodeGroup(node_id="grp", name="Survey"))
+    g.add_edge("in", "rm_podio", "grp", "is_in_representation_model_group")
+    plan = G.compose_from_graph(g, "archive", em_folder="/nowhere/EM", in_room=True, models=["rm_podio"])
+    assert plan["items"][0]["container"] == "grp" and plan["items"][0]["container_name"] == "Survey"
