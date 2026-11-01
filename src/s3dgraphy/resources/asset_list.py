@@ -140,7 +140,7 @@ def _state_of(graph, entry: Dict[str, Any], states: Dict[str, str]) -> str:
     known = [states[i] for i in ids if i in states]
     if not known:
         return ""
-    for worst in ("missing", "empty_copy", "reference_only"):
+    for worst in ("missing", "empty_copy", "reference_only", "in_cloud"):
         if worst in known:
             return worst
     return known[0]
@@ -158,6 +158,7 @@ def _version(graph, entry: Dict[str, Any], summary: Dict[str, Any], *, states, m
     made = made_by(graph, entry["id"])
     ids = [entry["id"]] + [f["id"] for f in C._files(graph, entry) if f.get("id") != entry["id"]]
     now = next((changed[i] for i in ids if changed and i in changed), "")
+    state = _state_of(graph, entry, states)
     return {"id": entry["id"], "name": summary.get("name") or entry.get("name") or "",
             "asset_id": entry.get("asset_id"), "master": bool(entry.get("master")),
             "level": summary.get("level") or "", "lod_level": summary.get("lod_level") or "",
@@ -176,7 +177,10 @@ def _version(graph, entry: Dict[str, Any], summary: Dict[str, Any], *, states, m
             "compression": (raw.get("compression") or "") if isinstance(raw, dict) else "",
             "texture_count": len(raw.get("textures") or {}) if isinstance(raw, dict) else
             _data(_node(graph, entry["id"])).get("texture_count"),
-            "state": _state_of(graph, entry, states),
+            "state": state,
+            # MICRO-TESTATA-CLOUD · its bytes only in a cloud (not downloaded):
+            # never measured here, its numbers are the graph's estimate
+            "in_cloud": state == "in_cloud",
             "made": made, "made_say": made_by_say(made),
             "modified_after_stamp": bool(now) and not entry.get("master"), "sha256_now": now or "",
             "loaded_by": []}
@@ -304,6 +308,8 @@ def _targets(graph, row: Dict[str, Any], cand: Dict[str, Any], versions: List[Di
         st_a, why_a = "todo", "master senza sha256: timbralo"
     elif m["state"] in ("missing", "empty_copy", "reference_only"):
         st_a, why_a = "todo", f"il file del master non c'è ({m['state'].replace('_', ' ')})"
+    elif m["state"] == "in_cloud" and "tileset_master" not in codes:
+        st_a, why_a = "ok", "master timbrato, il file è nel cloud (non scaricato: non verificato)"
     elif "tileset_master" in codes:
         st_a, why_a = "todo", "dichiara il master del tileset (le mesh da cui viene)"
     elif not m["state"]:
@@ -364,6 +370,7 @@ def asset_list(graph, *, states: Optional[Dict[str, str]] = None, measure=None,
         br = branch_of(master["url"] if master else (versions[0]["url"] if versions else ""))
         modified = [v["id"] for v in versions if v["modified_after_stamp"]]
         missing_files = [v["id"] for v in versions if v["state"] in ("missing", "empty_copy")]
+        cloud_files = [v["id"] for v in versions if v["state"] == "in_cloud"]
         a = {"id": row["id"], "name": row["name"], "kind": row["kind"],
              "description": str(getattr(node, "description", "") or ""),
              "containers": conts, "branch": br, "epochs": [x["name"] for x in epochs_of(graph, row["id"])],
@@ -372,7 +379,7 @@ def asset_list(graph, *, states: Optional[Dict[str, str]] = None, measure=None,
              "loaded_why": row.get("loaded_why") or "", "loaded_say": row.get("loaded_say") or "",
              "tileset_master": row.get("tileset_master"),
              "audit": {"versions": len(versions), "stamped": sum(1 for v in versions if v["stamped"]),
-                       "files_missing": missing_files, "unchecked": sum(1 for v in versions if not v["state"]),
+                       "files_missing": missing_files, "files_in_cloud": cloud_files, "unchecked": sum(1 for v in versions if not v["state"]),
                        "modified_after_stamp": modified,
                        "master_declared": (row.get("tileset_master") or {}).get("declared")}}
         assets.append(a)
@@ -396,6 +403,7 @@ def asset_list(graph, *, states: Optional[Dict[str, str]] = None, measure=None,
               "versions": sum(len(a["versions"]) for a in assets),
               "textures": len(textures), "shared_textures": sum(1 for t in textures if t["count"] > 1),
               "measured": n_meas, "estimated": n_est,
+              "in_cloud": sum(1 for a in assets for v in a["versions"] if v["in_cloud"]),
               "by_target": {k: {s: sum(1 for a in assets if a["targets"][k]["state"] == s) for s in STATES}
                             for k in TARGETS}}
     say = (f"{counts['assets']} asset ({counts['rms']} modelli, {counts['containers']} contenitori), "
@@ -403,6 +411,8 @@ def asset_list(graph, *, states: Optional[Dict[str, str]] = None, measure=None,
            f"({counts['shared_textures']} condivise)")
     say += (f"; {n_meas} versioni misurate dai file, {n_est} stimate dal grafo" if n_est
             else f"; {n_meas} versioni misurate dai file")
+    if counts["in_cloud"]:
+        say += f"; {counts['in_cloud']} nel cloud (non scaricate: stimate dal grafo)"
     return {"targets": {k: {**{x: v for x, v in TARGETS[k].items() if x != "uses"},
                             "uses": list(TARGETS[k]["uses"]), "bands": bands(k)} for k in TARGETS},
             "tools": list(TOOLS), "assets": assets, "textures": textures, "totals": totals,

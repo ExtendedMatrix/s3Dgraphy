@@ -35,7 +35,7 @@ import re
 import urllib.parse
 from typing import Any, Callable, Dict, Iterable, List, Optional
 
-STATES = ("on_disk", "on_node", "both", "reference_only", "missing", "empty_copy")
+STATES = ("on_disk", "on_node", "both", "reference_only", "missing", "empty_copy", "in_cloud")
 
 #: the order the positions are tried in
 ORDER = ("cache", "path", "node", "reference")
@@ -136,7 +136,8 @@ def resolve(entry: Dict[str, Any], *, project_root: Optional[str] = None,
             base_dirs: Iterable[str] = (), cache_dirs: Iterable[str] = (),
             on_node: Optional[Callable[[str], bool]] = None,
             hasher: Optional[Callable[[str], str]] = None,
-            verify: bool = False) -> Dict[str, Any]:
+            verify: bool = False,
+            cloud: Optional[Callable[[str], bool]] = None) -> Dict[str, Any]:
     """The state of ONE resource. ``entry`` is ``{id, locator, checksum}`` (what
     :func:`entries_of` gives for a graph). The project's standard tree is tried
     before ``base_dirs`` (C1). ``hasher(path) -> hex`` lets a file found on the
@@ -146,7 +147,16 @@ def resolve(entry: Dict[str, Any], *, project_root: Optional[str] = None,
     the file was modified after its stamp (MICRO-CONSOLIDA-2) — the state
     stays where the bytes are.
 
-    → ``{id, sha256, state, path, positions: [{kind, where, ok}], note}``."""
+    ``cloud(path) -> bool`` (MICRO-TESTATA-CLOUD): a file whose bytes are
+    only in a cloud (OneDrive, iCloud, Dropbox «online only»: the caller
+    asks the system, by metadata). Such a file is NEVER read here — not
+    hashed, not probed for zeros — since reading it would download it: it is
+    said ``in_cloud`` with its place in ``cloud_path``, and ``path`` stays
+    empty, so nothing downstream measures it by accident. Another candidate
+    that is here wins over it.
+
+    → ``{id, sha256, state, path, positions: [{kind, where, ok}], note,
+    cloud_path?}``."""
     from ..project_tree import search_bases
 
     rid = str(entry.get("id") or "")
@@ -158,10 +168,20 @@ def resolve(entry: Dict[str, Any], *, project_root: Optional[str] = None,
     bases = (search_bases(project_root) if project_root else []) + \
         [b for b in (base_dirs or ()) if b]
     positions: List[Dict[str, Any]] = []
-    path, empty = None, None
+    path, empty, cloud_at = None, None, None
+
+    def in_cloud(p: str) -> bool:
+        if cloud is None:
+            return False
+        try:
+            return bool(cloud(p))
+        except Exception:  # noqa: BLE001 — a system that cannot say: not in the cloud
+            return False
 
     # 1 · cache
     hit = in_cache(cache_dirs, hexd)
+    if hit and in_cloud(hit):
+        cloud_at, hit = hit, None
     positions.append({"kind": "cache", "where": hit or "", "ok": bool(hit)})
     if hit:
         path = hit
@@ -188,13 +208,17 @@ def resolve(entry: Dict[str, Any], *, project_root: Optional[str] = None,
     if not path and cand_look and not cand_look.startswith(("blend://", "psx://")):
         for cand in local_candidates(cand_look, bases):
             if os.path.isfile(cand) or os.path.isdir(cand):
+                # in the cloud: never opened (a read would download it)
+                if os.path.isfile(cand) and in_cloud(cand):
+                    cloud_at = cloud_at or cand
+                    continue
                 if os.path.isfile(cand) and is_empty_copy(cand):
                     empty = empty or cand
                     continue
                 path = cand
                 break
-        positions.append({"kind": "path", "where": path or empty or cand_look,
-                          "ok": bool(path)})
+        positions.append({"kind": "path", "where": path or cloud_at or empty or cand_look,
+                          "ok": bool(path), **({"cloud": True} if cloud_at and not path else {})})
     elif locator.startswith(("blend://", "psx://")) and not look:
         positions.append({"kind": "path", "where": locator, "ok": None})
     changed, now = False, ""
@@ -229,8 +253,14 @@ def resolve(entry: Dict[str, Any], *, project_root: Optional[str] = None,
         state = "on_disk"
     elif node_has:
         state = "on_node"
-        if empty:
+        if cloud_at:
+            note = f"the copy here is in the cloud, not downloaded: {cloud_at}"
+        elif empty:
             note = f"the copy here is empty: {empty}"
+    elif cloud_at:
+        state = "in_cloud"
+        note = (f"in the cloud, not downloaded: {os.path.basename(cloud_at)} — "
+                f"download it to measure or verify it")
     elif empty:
         state = "empty_copy"
         note = (f"the bytes of {os.path.basename(empty)} are zeros: an incomplete copy "
@@ -243,6 +273,8 @@ def resolve(entry: Dict[str, Any], *, project_root: Optional[str] = None,
                 else "the graph does not say where the file is")
     out = {"id": rid, "sha256": f"sha256:{hexd}" if hexd else "", "state": state,
            "path": path or "", "positions": positions, "note": note}
+    if cloud_at and not path:
+        out["cloud_path"] = cloud_at
     if changed:
         out["changed"] = True
         out["sha256_now"] = f"sha256:{now}"
@@ -322,7 +354,7 @@ def resolve_graph(graph: Any, **kwargs) -> List[Dict[str, Any]]:
         if not states:
             continue
         rank = {s: i for i, s in enumerate(("missing", "empty_copy", "reference_only",
-                                             "on_node", "both", "on_disk"))}
+                                             "in_cloud", "on_node", "both", "on_disk"))}
         worst = min(states, key=lambda s: rank.get(s, 0))
         if all(s in ("on_disk", "both") for s in states):
             worst = "both" if all(s == "both" for s in states) else "on_disk"

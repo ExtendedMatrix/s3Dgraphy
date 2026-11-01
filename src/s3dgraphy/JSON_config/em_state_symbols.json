@@ -82,6 +82,18 @@
         "en": "A file is here but its bytes are zeros: an incomplete copy, to be made again."
       }
     },
+    "file.in_cloud": {
+      "family": "file",
+      "glyph": "⤓",
+      "label": {
+        "it": "nel cloud",
+        "en": "in the cloud"
+      },
+      "meaning": {
+        "it": "Il file è qui come segnaposto: i suoi byte sono nel cloud (OneDrive, iCloud, Dropbox «solo online»). Non si legge finché non lo scarichi.",
+        "en": "The file is here as a placeholder: its bytes are in the cloud (OneDrive, iCloud, Dropbox «online only»). It is not read until you download it."
+      }
+    },
     "node.reachable": {
       "family": "node",
       "glyph": "⬢",

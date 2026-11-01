@@ -52,7 +52,7 @@ import json
 import os
 import re
 import struct
-from typing import Any, Dict, Iterable, List, Optional, Sequence
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence
 
 # ── the table ───────────────────────────────────────────────────────────────
 
@@ -1281,15 +1281,17 @@ def _stamp_of(path: str) -> Optional[str]:
     return sidecars(path)["stamp"]
 
 
-def list_versions(folder: str, model: Optional[str] = None, *, measure: bool = True
-                  ) -> List[Dict[str, Any]]:
+def list_versions(folder: str, model: Optional[str] = None, *, measure: bool = True,
+                  cloud: Optional[Callable[[str], bool]] = None) -> List[Dict[str, Any]]:
     """The versions in ``folder`` (``RB|SB/versions``), of ``model`` only when
     given: a ``.glb``/``.gltf`` named ``<model>@<level>-<destination>``, or a
     folder so named holding a ``.gltf`` (a glTF separate). Each →
     ``{name, model, level, destination, profile, entry, files, bytes,
     modified, stamp, triangles, textures}`` (the numbers read from the bytes
     when ``measure``); ``files`` are every file that goes with it (its .bin,
-    textures, its stamp) — what a removal deletes."""
+    textures, its stamp) — what a removal deletes. ``cloud(path) -> bool``
+    (MICRO-TESTATA-CLOUD): a file whose bytes are only in a cloud is not
+    measured (reading it would download it) — ``in_cloud`` on its row."""
     out = []
     try:
         names = sorted(os.listdir(folder))
@@ -1315,7 +1317,14 @@ def list_versions(folder: str, model: Optional[str] = None, *, measure: bool = T
                    modified=os.path.getmtime(entry))
         files: List[str] = []
         tris = textures = None
-        if measure and entry.endswith(".stl"):
+        try:
+            remote = bool(cloud(entry)) if cloud is not None else False
+        except Exception:  # noqa: BLE001 — a system that cannot say: not in the cloud
+            remote = False
+        if remote:
+            row["in_cloud"] = True
+            files = [entry]
+        elif measure and entry.endswith(".stl"):
             files = [entry]
             tris = stl_triangles(entry)
             textures = 0

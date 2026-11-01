@@ -357,7 +357,7 @@ def presence(graph, entry: Dict[str, Any], *, states: Optional[Dict[str, str]] =
     known = [states[i] for i in ids if i in states]
     state = known[0] if known else ""
     if len(known) > 1:
-        worst = next((s for s in ("missing", "empty_copy", "reference_only", "on_disk", "on_node")
+        worst = next((s for s in ("missing", "empty_copy", "reference_only", "in_cloud", "on_disk", "on_node")
                       if s in known), known[0])
         state = worst if not all(k == "both" for k in known) else "both"
     if not state:

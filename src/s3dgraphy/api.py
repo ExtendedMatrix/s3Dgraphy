@@ -3246,9 +3246,11 @@ def resolve_files(graph: Graph, *, project_root: Optional[str] = None,
                   base_dirs: Sequence[str] = (), cache_dirs: Sequence[str] = (),
                   on_node: Optional[Callable[[str], bool]] = None,
                   hasher: Optional[Callable[[str], str]] = None,
-                  verify: bool = False) -> List[Dict[str, Any]]:
+                  verify: bool = False,
+                  cloud: Optional[Callable[[str], bool]] = None) -> List[Dict[str, Any]]:
     """The STATE of every resource of ``graph`` — ``on_disk``, ``on_node``,
-    ``both``, ``reference_only``, ``missing``, ``empty_copy`` — trying cache →
+    ``both``, ``reference_only``, ``missing``, ``empty_copy``, ``in_cloud``
+    (``cloud(path)``: bytes only in a cloud, never read) — trying cache →
     known paths (the EM standard tree of ``project_root`` first) → node
     (``on_node(hex)``) → reference. The one resolver every tool calls.
     ``verify`` (with a ``hasher``): a file here whose bytes are not the
@@ -3256,7 +3258,8 @@ def resolve_files(graph: Graph, *, project_root: Optional[str] = None,
     :mod:`s3dgraphy.resources.locate`."""
     from .resources.locate import resolve_graph
     return resolve_graph(graph, project_root=project_root, base_dirs=base_dirs,
-                         cache_dirs=cache_dirs, on_node=on_node, hasher=hasher, verify=verify)
+                         cache_dirs=cache_dirs, on_node=on_node, hasher=hasher, verify=verify,
+                         cloud=cloud)
 
 
 def resolve_file(entry: Dict[str, Any], **kwargs) -> Dict[str, Any]:
