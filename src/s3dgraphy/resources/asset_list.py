@@ -124,6 +124,17 @@ def _texture_rows(raw: Optional[Dict[str, Any]]) -> List[Dict[str, Any]]:
     return out
 
 
+def geometry_keys(raw: Optional[Dict[str, Any]]) -> List[str]:
+    """The ``geometry_key`` of each mesh of a measured file
+    (:func:`~.use_profiles.measure_gltf`), sorted, each once: two files with
+    the same keys hold the same geometry (the same topology and UVs), placed
+    anywhere. Empty when the file was not measured."""
+    if not raw or not isinstance(raw, dict):
+        return []
+    return sorted({str(o.get("geometry_key")) for o in raw.get("objects") or []
+                   if isinstance(o, dict) and o.get("geometry_key") and int(o.get("triangles") or 0) > 0})
+
+
 def _state_of(graph, entry: Dict[str, Any], states: Dict[str, str]) -> str:
     ids = [entry.get("id")] + [f["id"] for f in C._files(graph, entry) if f.get("id") != entry.get("id")]
     known = [states[i] for i in ids if i in states]
@@ -158,6 +169,11 @@ def _version(graph, entry: Dict[str, Any], summary: Dict[str, Any], *, states, m
             "texture_side": summary.get("texture_side"), "ktx2": summary.get("ktx2"),
             "tileset": bool(summary.get("tileset")),
             "textures": _texture_rows(raw),
+            # MICRO-ARCHIVE-ASSET-2 · the shape of the file: its meshes' geometry
+            # keys (indices and UVs, wherever placed — Draco/meshopt bytes when
+            # compressed) and its compression, for the forms repeated
+            "geometry_keys": geometry_keys(raw),
+            "compression": (raw.get("compression") or "") if isinstance(raw, dict) else "",
             "texture_count": len(raw.get("textures") or {}) if isinstance(raw, dict) else
             _data(_node(graph, entry["id"])).get("texture_count"),
             "state": _state_of(graph, entry, states),

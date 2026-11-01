@@ -98,3 +98,15 @@ def test_the_audit_says_an_unstamped_master_and_a_file_modified_after_its_stamp(
     assert a["rm_lastra"]["targets"]["arch"]["why"].startswith("master senza sha256")
     assert a["rm_lastra"]["targets"]["web"]["state"] == "missing"
     assert api.asset_list(g)["counts"]["assets"] == 2
+
+
+def test_a_version_says_the_geometry_keys_of_its_file():
+    """MICRO-ARCHIVE-ASSET-2: the same geometry placed elsewhere keeps its
+    keys — the page gathers the forms repeated (a mesh shared + instances)."""
+    raw = {"objects": [{"name": "a", "triangles": 10, "geometry_key": "g:2"},
+                       {"name": "b", "triangles": 10, "geometry_key": "g:1"},
+                       {"name": "c", "triangles": 10, "geometry_key": "g:2"},
+                       {"name": "empty", "triangles": 0, "geometry_key": "g:0"}],
+           "compression": "draco"}
+    assert AL.geometry_keys(raw) == ["g:1", "g:2"]
+    assert AL.geometry_keys(None) == []
