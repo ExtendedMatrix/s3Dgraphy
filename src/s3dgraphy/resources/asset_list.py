@@ -65,6 +65,12 @@ TOOLS = ("decimate_bake", "gltfpack", "ktx2", "tileset", "instance", "keep")
 #: The states of an asset for a target.
 STATES = ("ok", "todo", "missing", "na")
 
+#: What a tileset's row says in the place of its level (MICRO-ARCHIVE-ASSET-3).
+TILESET_SAY = "tileset · in streaming"
+
+#: The targets a tileset streams to (the archive keeps its master).
+STREAMED = ("mobile", "web", "desk")
+
 #: A file this many triangles or more is a tileset's job, not a decimation's.
 TILESET_FROM = 2_000_000
 
@@ -147,7 +153,7 @@ def _state_of(graph, entry: Dict[str, Any], states: Dict[str, str]) -> str:
 
 
 def _version(graph, entry: Dict[str, Any], summary: Dict[str, Any], *, states, measure,
-             changed) -> Dict[str, Any]:
+             changed, tiles=None) -> Dict[str, Any]:
     from .graph_compose import level_say, made_by, made_by_say
     raw = None
     if measure is not None and not summary.get("tileset"):
@@ -159,10 +165,19 @@ def _version(graph, entry: Dict[str, Any], summary: Dict[str, Any], *, states, m
     ids = [entry["id"]] + [f["id"] for f in C._files(graph, entry) if f.get("id") != entry["id"]]
     now = next((changed[i] for i in ids if changed and i in changed), "")
     state = _state_of(graph, entry, states)
+    # MICRO-ARCHIVE-ASSET-3 · a tileset's tiles, each by its head (the caller
+    # reads them: ``tiles(entry)``); its row says «tileset · in streaming»
+    tstats = None
+    if summary.get("tileset") and tiles is not None and state != "in_cloud":
+        try:
+            tstats = tiles(entry)
+        except Exception:  # noqa: BLE001 — unreadable: not known
+            tstats = None
     return {"id": entry["id"], "name": summary.get("name") or entry.get("name") or "",
             "asset_id": entry.get("asset_id"), "master": bool(entry.get("master")),
             "level": summary.get("level") or "", "lod_level": summary.get("lod_level") or "",
-            "level_say": level_say(entry), "use": list(entry.get("use") or []),
+            "level_say": TILESET_SAY if summary.get("tileset") else level_say(entry),
+            "use": list(entry.get("use") or []),
             "url": summary.get("url") or "", "checksum": summary.get("checksum") or "",
             "stamped": bool(summary.get("checksum")),
             "size_bytes": summary.get("size_bytes"), "triangles": summary.get("triangles"),
@@ -183,7 +198,9 @@ def _version(graph, entry: Dict[str, Any], summary: Dict[str, Any], *, states, m
             "in_cloud": state == "in_cloud",
             "made": made, "made_say": made_by_say(made),
             "modified_after_stamp": bool(now) and not entry.get("master"), "sha256_now": now or "",
-            "loaded_by": []}
+            "loaded_by": [],
+            **({"tiles": {k: tstats.get(k) for k in ("tiles", "read", "max_triangles", "max_texture_side")},
+                "_tile_stats": tstats} if tstats else {})}
 
 
 # ── a target's state and proposal ───────────────────────────────────────────
@@ -318,21 +335,125 @@ def _targets(graph, row: Dict[str, Any], cand: Dict[str, Any], versions: List[Di
         st_a, why_a = "ok", "master timbrato e presente"
     out["arch"] = _target_cell("arch", state=st_a, loads=m["id"] if m else None, why=why_a,
                                source=src, kind=kind)
+
+    # MICRO-ARCHIVE-ASSET-3 · a tileset is «ok» for a target only if its
+    # tiles respect the target's band (per tile: triangles, texture side)
+    if tileset and lo:
+        from .tileset_fit import fit
+        tv = by.get(lo["id"]) or {}
+        for k in STREAMED:
+            f = fit(tv.get("_tile_stats"), bands(k))
+            if f["ok"]:
+                cell = _target_cell(k, state="ok", loads=lo["id"], why=f"in streaming: {f['why']}",
+                                    source=src, kind=kind)
+            elif f["known"]:
+                b = bands(k)
+                cell = _target_cell(k, state="todo", loads=lo["id"], why=f"le tile non rispettano la fascia: {f['why']}",
+                                    source=src, kind=kind)
+                cell["proposal"] = {"tool": "tileset", "triangles": b["object_triangles"],
+                                    "texture": b["object_texture_side"], "ktx2": k != "desk",
+                                    "why": (f"rifai le tile nella fascia ({b['object_triangles']:,} triangoli, "
+                                            f"{b['object_texture_side']} px per tile)").replace(",", ".")}
+            else:
+                cell = _target_cell(k, state="todo", loads=lo["id"], why=f["why"], source=src, kind=kind)
+                cell["proposal"] = {"tool": "keep", "triangles": None, "texture": None, "ktx2": False,
+                                    "why": "leggi le tile prima (il file del tileset su questo computer)"}
+            cell["tiles"] = {x: f[x] for x in ("ok", "known", "tiles", "read", "over_triangles", "over_texture",
+                                                "max_triangles", "max_texture_side")}
+            out[k] = cell
     return out
+
+
+# ── MICRO-ARCHIVE-ASSET-3 · the tileset covers its meshes ───────────────────
+
+def _cited_alone(graph) -> Dict[str, str]:
+    """The nodes a narrative cites (an embed or a mention) → the narrative's
+    name: a mesh shown alone in a narrative is wanted one by one."""
+    try:
+        from ..narrative.query import citations
+        rows = citations(graph)
+    except Exception:  # noqa: BLE001 — no narrative layer: none cited
+        return {}
+    out: Dict[str, str] = {}
+    for r in rows:
+        out.setdefault(str(r.get("ref") or ""), str(r.get("narrative_name") or r.get("narrative_id") or ""))
+    return out
+
+
+def cover_by_tilesets(graph, assets: List[Dict[str, Any]]) -> Dict[str, int]:
+    """A container whose tileset fits a target covers its meshes for it: each
+    says «coperta dal tileset di <contenitore>», has no proposal and is out
+    of the count (state ``na``, ``covered_by``). The exceptions, said and
+    left with their proposal: the container's meshes are of different epochs
+    («serve per epoca: il tileset non si divide»), or a mesh is cited alone in
+    a narrative. Where the tileset does not fit, the meshes keep their
+    proposal and say why the tileset does not cover them yet. → the meshes
+    covered per target."""
+    cited = None
+    n = {k: 0 for k in STREAMED}
+    for c in assets:
+        if c["kind"] != "container":
+            continue
+        tv = next((v for v in c["versions"] if v["tileset"] and v["id"] in
+                   {c["targets"][k]["loads"] for k in STREAMED}), None)
+        if tv is None:
+            continue
+        members = [a for a in assets if a is not c and a["kind"] == "rm"
+                   and any(x["id"] == c["id"] for x in a["containers"])]
+        if not members:
+            continue
+        if cited is None:
+            cited = _cited_alone(graph)
+        epochs = {tuple(sorted(a["epochs"])) for a in members}
+        by_epoch = len(epochs) > 1
+        for a in members:
+            alone = ("serve per epoca: il tileset non si divide" if by_epoch else
+                     f"usata da sola nella narrazione «{cited[a['id']]}»: il tileset non si divide"
+                     if a["id"] in cited else "")
+            for k in STREAMED:
+                tc, cell = c["targets"][k], a["targets"][k]
+                if cell["state"] == "na":
+                    continue
+                cell["tileset_of"] = {"id": c["id"], "name": c["name"], "state": tc["state"]}
+                if tc["state"] != "ok":
+                    cell["why"] = f"{cell['why']} (il tileset di {c['name']} non la copre: {tc['why']})"
+                    continue
+                if alone:
+                    cell["single"] = alone
+                    cell["why"] = f"{alone} — {cell['why']}"
+                    cell["proposal"] = {**cell["proposal"], "why": f"{alone} — {cell['proposal']['why']}"}
+                    continue
+                say = f"coperta dal tileset di {c['name']}"
+                for v in a["versions"]:
+                    if k in v["loaded_by"]:
+                        v["loaded_by"].remove(k)
+                a["targets"][k] = {"state": "na", "loads": cell["loads"], "why": say,
+                                   "covered_by": {"id": c["id"], "name": c["name"], "version": tv["id"]},
+                                   "tileset_of": cell["tileset_of"],
+                                   "proposal": {"tool": "keep", "triangles": None, "texture": None, "ktx2": False,
+                                                "why": say}}
+                n[k] += 1
+    return n
 
 
 # ── the list ─────────────────────────────────────────────────────────────────
 
 def asset_list(graph, *, states: Optional[Dict[str, str]] = None, measure=None,
                changed: Optional[Dict[str, str]] = None, in_room: bool = False,
-               models: Optional[Iterable[str]] = None, platform: str = "heriverse") -> Dict[str, Any]:
+               models: Optional[Iterable[str]] = None, platform: str = "heriverse",
+               tiles=None) -> Dict[str, Any]:
     """The assets of the study (``models``, default the published ones —
     representation models and the containers with a whole of their own),
     each with its versions (master first), their textures, its state and
     proposal per target (:data:`TARGETS`), the groups it belongs to
     (container, branch, epochs, family); the textures of the whole study once;
     the totals per target against the bands. → ``{targets, tools, assets,
-    textures, totals, counts, measured, estimated, say_it}``."""
+    textures, totals, counts, measured, estimated, say_it}``.
+
+    ``tiles(entry)`` (MICRO-ARCHIVE-ASSET-3, the caller's reader): a
+    tileset's tiles measured by their heads (:func:`.tileset_fit.measure_tiles`)
+    — the tileset is «ok» for a target only if they fit its band, and then it
+    covers its container's meshes (:func:`cover_by_tilesets`)."""
     from .alternatives import containers_of
     from .graph_compose import epochs_of
     states = dict(states or {})
@@ -349,7 +470,7 @@ def asset_list(graph, *, states: Optional[Dict[str, str]] = None, measure=None,
         versions = []
         for e in entries:
             s = C._summary(graph, e, measure)
-            v = _version(graph, e, s, states=states, measure=measure, changed=changed)
+            v = _version(graph, e, s, states=states, measure=measure, changed=changed, tiles=tiles)
             cache[e["id"]] = v
             versions.append(v)
             if not v["master"] and not v["tileset"]:
@@ -393,6 +514,10 @@ def asset_list(graph, *, states: Optional[Dict[str, str]] = None, measure=None,
                                    "level": v["level"] or ("master" if v["master"] else "")})
                 if t["name"] not in ti["names"]:
                     ti["names"].append(t["name"])
+    covered = cover_by_tilesets(graph, assets)
+    for a in assets:
+        for v in a["versions"]:
+            v.pop("_tile_stats", None)
     textures = sorted(tex_index.values(), key=lambda t: (-len(t["uses"]), -t["gpu_bytes"], t["name"]))
     for t in textures:
         t["count"] = len(t["uses"])
@@ -404,6 +529,7 @@ def asset_list(graph, *, states: Optional[Dict[str, str]] = None, measure=None,
               "textures": len(textures), "shared_textures": sum(1 for t in textures if t["count"] > 1),
               "measured": n_meas, "estimated": n_est,
               "in_cloud": sum(1 for a in assets for v in a["versions"] if v["in_cloud"]),
+              "covered_by_tileset": covered,
               "by_target": {k: {s: sum(1 for a in assets if a["targets"][k]["state"] == s) for s in STATES}
                             for k in TARGETS}}
     say = (f"{counts['assets']} asset ({counts['rms']} modelli, {counts['containers']} contenitori), "
@@ -432,6 +558,8 @@ def scene_totals(assets: Sequence[Dict[str, Any]], target: str) -> Dict[str, Any
     streamed = estimated = 0
     for a in assets:
         cell = a["targets"].get(target) or {}
+        if cell.get("covered_by"):
+            continue
         v = next((x for x in a["versions"] if x["id"] == cell.get("loads")), None)
         if v is None:
             continue
