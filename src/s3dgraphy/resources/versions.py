@@ -257,6 +257,18 @@ def _entry(graph, res_id: str, *, level, purpose, process_id, master: bool,
             "revisions": chain}
 
 
+def _use_fields(entry: Dict[str, Any], params: Dict[str, Any], pdata: Dict[str, Any]) -> None:
+    """MICRO-VERSIONI-PER-USO · ``profile``, ``use_params``, ``by_use`` (made
+    for a use: said by its use, not by a level) and ``made_at`` (its step's
+    date) on an entry of :func:`versions_of`."""
+    entry["profile"] = str(params.get("profile") or "")
+    entry["use_params"] = dict(params.get("use_params") or {})
+    entry["profile"] = entry_profile(entry)
+    entry["by_use"] = bool(entry["profile"])
+    entry["made_at"] = str(pdata.get("modified_at") or pdata.get("created_at")
+                           or pdata.get("at") or "")
+
+
 def _current(graph, res_id: str) -> str:
     try:
         return revisions_of(graph, res_id)[-1]
@@ -269,7 +281,9 @@ def versions_of(graph, asset_id: str) -> List[Dict[str, Any]]:
 
     Each entry: ``{id, name, level, lod_level, use, measures, primitives,
     purpose, master, process_id, checksum, url, residency, media_type,
-    size_bytes, revisions}``. ``id`` is the CURRENT revision of the version; ``revisions``
+    size_bytes, revisions, profile, use_params, by_use, made_at}`` (the last
+    four: MICRO-VERSIONI-PER-USO — the profile it was made for, ``""`` for a
+    rung of a LOD chain; :func:`use_versions` groups them by use). ``id`` is the CURRENT revision of the version; ``revisions``
     its chain, oldest first. ``level`` is the name given; ``lod_level`` the
     COMPUTED level (None for the master, D1). The versions of a version (a LOD1
     made from LOD0) are listed too. The master's ``level`` is the
@@ -299,6 +313,7 @@ def versions_of(graph, asset_id: str) -> List[Dict[str, Any]]:
                            process_id=proc.node_id, master=False,
                            origin=out.node_id)
             entry["use"] = _uses_of(params, _data(_node(graph, entry["id"])))
+            _use_fields(entry, params, _data(proc))
             kids.append(entry)
             # a version of a version: its own versions are the asset's too
             kids.extend(_descendants(graph, out.node_id))
@@ -306,6 +321,7 @@ def versions_of(graph, asset_id: str) -> List[Dict[str, Any]]:
     out = [_entry(graph, _current(graph, asset), level=master_level, purpose="",
                   process_id=None, master=True, origin=asset)]
     out[0]["use"] = []
+    out[0].update(profile="", use_params={}, by_use=False, made_at="")
     seen = set()
     unique = []
     for k in kids:
@@ -340,6 +356,7 @@ def _descendants(graph, res_id: str) -> List[Dict[str, Any]]:
                                process_id=proc.node_id, master=False,
                                origin=child.node_id)
                 entry["use"] = _uses_of(params, _data(_node(graph, entry["id"])))
+                _use_fields(entry, params, _data(proc))
                 out.append(entry)
                 out.extend(_descendants(graph, child.node_id))
     return out
@@ -638,8 +655,23 @@ def add_version(graph, master_id: str, *, level: Optional[str] = None, purpose: 
                 version_id: Optional[str] = None,
                 author: Optional[str] = None,
                 at: Optional[str] = None,
-                revise: bool = False) -> Dict[str, Any]:
+                revise: bool = False,
+                profile: Optional[str] = None,
+                use_params: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """A new version of the asset ``master_id`` at ``level``, for ``purpose``.
+
+    MICRO-VERSIONI-PER-USO (E.D., 2 Nov 2026) · a version made FOR A USE is
+    named by its use, not by a level: ``profile`` (a profile of
+    :mod:`.use_profiles`, or a use or destination that names one) and its
+    ``use_params`` (``triangles``, ``texture_side_px``, ``texture_format``…).
+    Its ``level`` — the name and the key of its id — is then the use's name
+    (:func:`.use_profiles.use_tag`: ``mobile-webxr-2k``) unless one is given,
+    so a mobile version beside a web one is ANOTHER version, never a revision
+    of it; the same use with the same numbers and other bytes is revised as
+    before. Both go in the step's ``parameters`` (``profile``,
+    ``use_params``), beside ``level`` and ``purpose``: nothing new on the
+    resource, its ``use`` list (what Heriverse reads) as before. ``lodN``
+    stays for the rungs of a LOD chain.
 
     Writes the version resource (kind of the master, ``tier: distribution``,
     ``files`` as :func:`add_resource` takes them) and the ``lod_generation``
@@ -667,6 +699,10 @@ def add_version(graph, master_id: str, *, level: Optional[str] = None, purpose: 
     master = _node(graph, master_id)
     if master is None or not _is_resource(master):
         raise ValueError(f"{master_id!r} is not a resource of this graph")
+    prof_id, uparams = _use_of(profile, use_params)
+    if prof_id and not level:
+        from .use_profiles import use_tag
+        level = use_tag(prof_id, uparams.get("triangles"))
     uses = check_use(use if use is not None else ([purpose] if purpose in USES else None))
     measured = check_measures(measures)
     # D1 · the level, when nobody names it, is the computed one: a version of
@@ -724,6 +760,10 @@ def add_version(graph, master_id: str, *, level: Optional[str] = None, purpose: 
         params["purpose"] = str(purpose)
     if master_level:
         params["source_level"] = str(master_level).strip()
+    if prof_id:
+        params["profile"] = prof_id
+        if uparams:
+            params["use_params"] = uparams
     step = declare_derivation(
         graph, output=vid, inputs=[master_id], dtc_kind=DTC_KIND,
         process_id=str(uuid.uuid5(_NS, f"lod_generation|{vid}")),
@@ -734,7 +774,79 @@ def add_version(graph, master_id: str, *, level: Optional[str] = None, purpose: 
             "created": created, "asset_id": asset, "level": lvl,
             "lod_level": lod_level_of(graph, vid), "use": uses,
             "measures": measured, "revises": revises,
-            "purpose": str(purpose or ""), "warnings": step["warnings"]}
+            "purpose": str(purpose or ""), "profile": prof_id or "",
+            "use_params": uparams, "warnings": step["warnings"]}
+
+
+def _use_of(profile: Optional[str], use_params: Optional[Dict[str, Any]]):
+    """``(profile id, use_params)`` checked: the profile one of
+    :data:`.use_profiles.PROFILES` (a use or destination naming one is
+    taken), the numbers non-negative (``texture_format`` a word)."""
+    if not profile:
+        return "", dict(use_params or {})
+    from .use_profiles import profile as _profile
+    pid = _profile(str(profile))["id"]
+    out: Dict[str, Any] = {}
+    for k, v in (use_params or {}).items():
+        if v is None or v == "":
+            continue
+        if k in ("texture_format", "compression", "packaging"):
+            out[k] = str(v)
+            continue
+        if isinstance(v, bool) or not isinstance(v, (int, float)) or v < 0:
+            raise ValueError(f"use_params.{k} must be a non-negative number, got {v!r}")
+        out[k] = int(v) if float(v).is_integer() else v
+    return pid, out
+
+
+def entry_profile(entry: Dict[str, Any]) -> str:
+    """The profile a version was made for: its step's ``profile``, else the
+    one its level's name says (``mobile-webxr-2k``); for a version of before
+    (``lod1`` for ``mobile``, by EMStudio's «Ottimizza» or «Prepara per un
+    uso») the profile whose DESTINATION its ``purpose`` is (``mobile``,
+    ``aton-heriverse``, ``realtime``…). ``""`` for the master and for a rung of
+    a LOD chain made as such (no profile; a purpose that is only a use, as
+    ``web``, does not make one)."""
+    if entry.get("master"):
+        return ""
+    if entry.get("profile"):
+        return str(entry["profile"])
+    from .use_profiles import PROFILES, parse_use_tag
+    tag = parse_use_tag(entry.get("level"))
+    if tag:
+        return tag["profile"]
+    purpose = str(entry.get("purpose") or "")
+    pid = next((k for k, v in PROFILES.items() if purpose and v["destination"] == purpose), "")
+    if pid:
+        return pid
+    # its file named by EMStudio or EM Tools: ``podio@lod1-mobile.glb``
+    from .use_profiles import parse_version_name
+    url = str(entry.get("url") or "").replace("\\", "/").rstrip("/")
+    name = url.rsplit("/", 1)[-1]
+    parsed = parse_version_name(name) if "@" in name else None
+    if parsed is None and "@" in url:
+        # a glTF in a folder of its own: ``podio@lod0-aton-heriverse/podio.gltf``
+        parsed = parse_version_name(url.rsplit("/", 2)[-2]) if url.count("/") else None
+    return (parsed or {}).get("profile") or ""
+
+
+def use_versions(entries: Sequence[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
+    """The versions of an asset BY USE (MICRO-VERSIONI-PER-USO): ``{profile:
+    {latest, others}}`` — for «Aggiorna», the coverage and «the last version»
+    the identity is the asset and the use; with several of one use (other
+    numbers) the most recent wins (its step's date, else the later in the
+    list) and the others stay listed."""
+    out: Dict[str, Dict[str, Any]] = {}
+    for i, e in enumerate(entries):
+        pid = entry_profile(e)
+        if not pid:
+            continue
+        out.setdefault(pid, {"all": []})["all"].append((str(e.get("made_at") or ""), i, e))
+    for pid, g in out.items():
+        ranked = sorted(g.pop("all"), key=lambda x: (x[0], x[1]))
+        g["latest"] = ranked[-1][2]
+        g["others"] = [x[2] for x in ranked[:-1]]
+    return out
 
 
 def planned_version(graph, master_id: str, *, level: Optional[str] = None,

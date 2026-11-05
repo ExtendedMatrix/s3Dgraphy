@@ -1221,21 +1221,145 @@ DESTINATIONS = tuple(sorted({v["destination"] for v in PROFILES.values()}, key=l
                             reverse=True))
 
 
-def version_file_name(model: str, level: str, prof: Any, packaging: Optional[str] = None) -> str:
-    """The canonical name: ``<model>@<level>-<destination>.glb`` (or ``.gltf``,
-    or ``.stl`` for a print)."""
+# ── MICRO-VERSIONI-PER-USO (E.D., 2 Nov 2026) ─────────────────────────────
+#
+# «lod0 / lod1» on a version made FOR A USE misleads: a LOD is a rung of a
+# chain made as such (3DSC's LOD generator, «catena LOD»). A version made for
+# a use is named BY ITS USE and its numbers — ``<model>@<use>[-<tri>k].glb``
+# (``Column_light1@mobile-webxr-2k.glb``) — and there may be several of one
+# use (one for the web on a desktop between the full one and the mobile one).
+# The names of before (``<model>@lod1-mobile.glb``) are still read, and said
+# by their use (:func:`parse_version_name` gives ``use`` for both).
+
+#: The USE of a profile in a file name: its id with hyphens.
+USE_SLUGS: Dict[str, str] = {k.replace("_", "-"): k for k in PROFILES}
+_SLUG_ALT = "|".join(re.escape(s) for s in sorted(USE_SLUGS, key=len, reverse=True))
+#: ``<model>@<use>[-<n>k][-<k>]`` (+ ``-<hex8>`` for a glTF folder)
+USE_VERSION_NAME = re.compile(rf"^(?P<model>.+)@(?P<use>{_SLUG_ALT})(?:-(?P<kilo>\d+(?:\.\d+)?)k)?"
+                              r"(?:-(?P<n>\d{1,3}))?(?:-(?P<hex>[0-9a-f]{8}))?"
+                              r"(?P<ext>\.glb|\.gltf|\.stl)?$")
+#: What a row says of a profile (E.D.'s words: «webXR / Heriverse»).
+USE_SAY_IT = {"desktop_realtime": "desktop realtime", "webxr": "webXR / Heriverse",
+              "mobile_webxr": "mobile webXR", "archive": "archivio",
+              "preview": "anteprima", "render_offline": "rendering offline",
+              "print_3d": "stampa 3D"}
+
+
+def use_slug(prof: Any) -> str:
+    """``mobile_webxr`` (or a use, a destination, a profile dict) → ``mobile-webxr``."""
+    p = prof if isinstance(prof, dict) else profile(prof)
+    return str(p["id"] if "id" in p else next(k for k, v in PROFILES.items() if v is p or v == p)
+               ).replace("_", "-")
+
+
+def kilo(triangles: Optional[float]) -> str:
+    """Triangles in a name: ``2000`` → ``2k``, ``53_412`` → ``53k``, ``1500`` →
+    ``1.5k`` (one decimal below 10 k), ``""`` when not given."""
+    if triangles in (None, "") or float(triangles) <= 0:
+        return ""
+    k = float(triangles) / 1000.0
+    if k < 10 and round(k, 1) != round(k):
+        return f"{round(k, 1):g}k"
+    return f"{max(1, int(round(k)))}k"
+
+
+def use_tag(prof: Any, triangles: Optional[float] = None, n: Optional[int] = None) -> str:
+    """The name of a version made for a use: ``mobile-webxr`` ``-2k`` (its
+    triangles, when the use asks a number) ``-2`` (a second one beside the
+    first with the same name: «Nuova accanto»). It is also its LEVEL in the
+    graph (:func:`s3dgraphy.resources.versions.add_version`: the level is the
+    version's name and the key of its id) — never ``lodN``."""
+    out = use_slug(prof)
+    k = kilo(triangles)
+    if k:
+        out += f"-{k}"
+    if n and int(n) > 1:
+        out += f"-{int(n)}"
+    return out
+
+
+def parse_use_tag(tag: Any) -> Optional[Dict[str, Any]]:
+    """``mobile-webxr-2k`` → ``{use, profile, triangles, n}``; None when the
+    text is not a use's name (``lod1``, ``manual-…``)."""
+    m = re.match(rf"^(?P<use>{_SLUG_ALT})(?:-(?P<kilo>\d+(?:\.\d+)?)k)?(?:-(?P<n>\d{{1,3}}))?$",
+                 str(tag or "").strip().lower())
+    if not m:
+        return None
+    return {"use": m.group("use"), "profile": USE_SLUGS[m.group("use")],
+            "triangles": int(round(float(m.group("kilo")) * 1000)) if m.group("kilo") else None,
+            "n": int(m.group("n")) if m.group("n") else 1}
+
+
+def is_chain_level(level: Any) -> bool:
+    """``lod0``… — a rung of a LOD chain (the only place «LOD n» is said)."""
+    return bool(re.match(r"^lod\d+$", str(level or "").strip().lower()))
+
+
+def use_say(prof: Any, triangles: Optional[float] = None, texture_side: Optional[int] = None) -> str:
+    """«mobile webXR · 10k tri · 512 px», «webXR / Heriverse · 53k tri»."""
+    try:
+        p = profile(prof) if not isinstance(prof, dict) else prof
+        pid = p.get("id") or ""
+        out = USE_SAY_IT.get(pid) or p.get("label_it") or pid
+    except ValueError:
+        out = str(prof)
+    if triangles and float(triangles) > 0:
+        out += f" · {int(triangles) if float(triangles) < 1000 else kilo(triangles)} tri"
+    if texture_side:
+        out += f" · {int(texture_side)} px"
+    return out
+
+
+def chain_say(level: Any) -> str:
+    """``lod3`` → «catena LOD 3»."""
+    m = re.match(r"^lod(\d+)$", str(level or "").strip().lower())
+    return f"catena LOD {m.group(1)}" if m else str(level or "")
+
+
+def use_version_name(model: str, prof: Any, triangles: Optional[float] = None,
+                     packaging: Optional[str] = None, n: Optional[int] = None) -> str:
+    """``<model>@<use>[-<tri>k][-<n>].glb`` (``.gltf``, ``.stl``)."""
+    return version_file_name(model, use_tag(prof, triangles, n), prof, packaging)
+
+
+def version_file_name(model: str, level: Optional[str], prof: Any, packaging: Optional[str] = None,
+                      *, triangles: Optional[float] = None) -> str:
+    """The canonical name. A version for a use (``level`` empty, or a use's
+    name from :func:`use_tag`): ``<model>@<use>[-<tri>k].glb``; a rung of a
+    LOD chain (``lodN``) or a name given by hand: ``<model>@<level>-<destination>.glb``
+    as before (or ``.gltf``, or ``.stl`` for a print)."""
     p = prof if isinstance(prof, dict) else profile(prof)
     pk = packaging or p.get("packaging") or "glb"
     safe = re.sub(r"[^\w.\-]+", "_", str(model)).strip("_") or "model"
     ext = {"gltf_separate": "gltf", "stl": "stl"}.get(pk, "glb")
+    if not level:
+        level = use_tag(p if "id" in p else prof, triangles)
+    if parse_use_tag(level):
+        return f"{safe}@{level}.{ext}"
     return f"{safe}@{level}-{p['destination']}.{ext}"
 
 
 def parse_version_name(name: str) -> Optional[Dict[str, str]]:
-    """``Column_light1@lod1-realtime-web.glb`` → ``{model, level, destination,
-    profile, ext}`` (``profile`` the first destination tag that names one,
-    ``""`` when none); None when the name is not a version's."""
+    """``Column_light1@mobile-webxr-2k.glb`` → ``{model, level: "mobile-webxr-2k",
+    destination, profile: "mobile_webxr", ext, use: "mobile-webxr", triangles:
+    2000, n: 1, by_use: True}``; a name of before, ``Column_light1@lod1-realtime-
+    web.glb`` → the same keys, ``level`` ``lod1``, ``by_use`` False, ``use`` its
+    profile's (``profile`` the first destination tag that names one, ``""``
+    when none); None when the name is not a version's."""
     base = os.path.basename(str(name))
+    u = USE_VERSION_NAME.match(base) if not MANUAL_VERSION_NAME.match(base) else None
+    if u and not (u.group("hex") and u.group("ext")):
+        # MICRO-VERSIONI-PER-USO · named by its use
+        pid = USE_SLUGS[u.group("use")]
+        tag = base[len(u.group("model")) + 1:]
+        if u.group("ext"):
+            tag = tag[: -len(u.group("ext"))]
+        if u.group("hex"):
+            tag = tag[: -9]
+        return {"model": u.group("model"), "level": tag, "destination": PROFILES[pid]["destination"],
+                "profile": pid, "ext": (u.group("ext") or "").lstrip("."), "use": u.group("use"),
+                "triangles": int(round(float(u.group("kilo")) * 1000)) if u.group("kilo") else None,
+                "n": int(u.group("n")) if u.group("n") else 1, "by_use": True}
     m = MANUAL_VERSION_NAME.match(base) or VERSION_NAME.match(base)
     if not m:
         return None
@@ -1251,8 +1375,12 @@ def parse_version_name(name: str) -> Optional[Dict[str, str]]:
     for d in DESTINATIONS:
         if rest == d or rest.startswith(d + "-") or rest.endswith("-" + d):
             prof = prof or USE_TO_PROFILE.get(d, "")
+    # a name of before (``lod1-mobile``) is said by its use too: ``use`` is
+    # its profile's, ``by_use`` False (its level stays what the name says)
     return {"model": m.group("model"), "level": m.group("level"), "destination": rest,
-            "profile": prof, "ext": (m.group("ext") or "").lstrip(".")}
+            "profile": prof, "ext": (m.group("ext") or "").lstrip("."),
+            "use": prof.replace("_", "-") if prof else "", "triangles": None, "n": 1,
+            "by_use": False}
 
 
 HINTS_SUFFIX = ".hints.json"

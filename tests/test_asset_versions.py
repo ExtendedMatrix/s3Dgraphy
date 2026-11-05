@@ -239,3 +239,77 @@ def test_a_version_made_again_with_another_recipe_is_its_revision():
     again = api.add_version(g, "podio", use=["aton", "heriverse"], packaging="file_set",
                             files=_gltf_set(), revise=True)
     assert again["version_id"] == out["version_id"] and len(g.nodes) == n
+
+
+# ── MICRO-VERSIONI-PER-USO (E.D., 2 Nov 2026): a version for a use is the
+#    asset AND the use, never a level ──
+
+def _glb(c):
+    return [{"path": f"versions/x{c}.glb", "checksum": "sha256:" + c * 64,
+             "media_type": "model/gltf-binary"}]
+
+
+def test_a_mobile_version_beside_a_web_one_is_another_version_not_a_revision():
+    """Templu Mare, 1 Nov: Column_entrance1's lod1-mobile became a REVISION of
+    its lod1 for the web («manca la base mobile»). By use, it is a version."""
+    g = _podio()
+    web = api.add_version(g, "podio", level="lod1", purpose="aton-heriverse", use=["heriverse"],
+                          files=_glb("a"))
+    mob = api.add_version(g, "podio", profile="mobile_webxr", use_params={"triangles": 10_000},
+                          use=["mobile_ar"], purpose="mobile", files=_glb("b"))
+    assert mob["level"] == "mobile-webxr-10k" and mob["revises"] is None and mob["created"]
+    assert mob["version_id"] != web["version_id"] and mob["profile"] == "mobile_webxr"
+    proc = g.find_node_by_id(mob["process_id"])
+    assert proc.data["parameters"]["profile"] == "mobile_webxr"
+    assert proc.data["parameters"]["use_params"] == {"triangles": 10_000}
+    # Heriverse reads `use`, as before
+    assert g.find_node_by_id(mob["version_id"]).data["use"] == ["mobile_ar"]
+    rows = {r["id"]: r for r in api.versions_of(g, "podio")}
+    assert rows[mob["version_id"]]["by_use"] and rows[mob["version_id"]]["use_params"] == {"triangles": 10_000}
+    # the one of before (lod1 for aton-heriverse) is said by its use too
+    assert rows[web["version_id"]]["profile"] == "webxr" and rows[web["version_id"]]["by_use"]
+
+
+def test_several_of_one_use_the_latest_wins_the_others_stay_listed():
+    from s3dgraphy.resources.versions import use_versions
+    g = _podio()
+    ten = api.add_version(g, "podio", profile="mobile_webxr", use_params={"triangles": 10_000},
+                          files=_glb("c"), at="2026-11-01T10:00:00Z")
+    two = api.add_version(g, "podio", profile="mobile_webxr", use_params={"triangles": 2_000},
+                          files=_glb("d"), at="2026-11-02T07:00:00Z")
+    assert ten["version_id"] != two["version_id"]
+    by = use_versions(api.versions_of(g, "podio"))
+    assert by["mobile_webxr"]["latest"]["id"] == two["version_id"]
+    assert [e["id"] for e in by["mobile_webxr"]["others"]] == [ten["version_id"]]
+    # «Aggiorna»: the same asset and use is the same version made again
+    from s3dgraphy.resources.graph_compose import level_key, level_say
+    rows = {r["id"]: r for r in api.versions_of(g, "podio")}
+    assert level_key(rows[ten["version_id"]]) == level_key(rows[two["version_id"]]) == ("use", "mobile_webxr")
+    assert level_say(rows[two["version_id"]]) == "mobile webXR · 2k tri"
+    assert level_say(rows[two["version_id"]], 1980, 512) == "mobile webXR · 2k tri · 512 px"
+
+
+def test_the_same_use_and_numbers_with_other_bytes_is_revised():
+    g = _podio()
+    one = api.add_version(g, "podio", profile="mobile_webxr", use_params={"triangles": 2_000}, files=_glb("e"))
+    with pytest.raises(ValueError, match="replace its file"):
+        api.add_version(g, "podio", profile="mobile_webxr", use_params={"triangles": 2_000}, files=_glb("f"))
+    again = api.add_version(g, "podio", profile="mobile_webxr", use_params={"triangles": 2_000},
+                            files=_glb("f"), revise=True)
+    assert again["revises"] == one["version_id"]
+    # «Nuova accanto»: a second one with the same numbers, named -2
+    beside = api.add_version(g, "podio", profile="mobile_webxr", level="mobile-webxr-2k-2", files=_glb("9"))
+    assert beside["revises"] is None and beside["level"] == "mobile-webxr-2k-2"
+
+
+def test_a_lod_chain_is_said_as_a_chain_and_a_bad_profile_refused():
+    from s3dgraphy.resources.graph_compose import level_say
+    g = _podio()
+    _three(g)   # LOD1 for «web», LOD2 for «preview»: hand-made, no profile
+    rows = [r for r in api.versions_of(g, "podio") if not r["master"]]
+    assert rows[0]["profile"] == "" and not rows[0]["by_use"]
+    chain = api.add_version(g, "podio", level="lod3", files=_glb("7"))
+    r = next(x for x in api.versions_of(g, "podio") if x["id"] == chain["version_id"])
+    assert level_say(r) == "catena LOD 3"
+    with pytest.raises(ValueError, match="not a profile"):
+        api.add_version(g, "podio", profile="hologram", files=_glb("8"))

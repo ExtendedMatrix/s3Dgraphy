@@ -5,6 +5,27 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
+- **Versions named by their use, not by a level** (MICRO-VERSIONI-PER-USO,
+  decided by E.D. on 2 November 2026). A version made FOR A USE is named by
+  its use and its numbers — `<asset>@<use>[-<tri>k][-n].glb`
+  (`Column_light1@mobile-webxr-2k.glb`; `use_profiles.use_tag`,
+  `use_version_name`, `parse_use_tag`, `kilo`, `use_say`, `chain_say`,
+  `USE_SLUGS`) — and one use may have several. `version_file_name` and
+  `project_tree.variant_name` give that form when the level is empty or a
+  use's name; `lodN` stays for the rungs of a LOD chain («catena LOD n»).
+  `parse_version_name` reads both forms and adds `use`, `triangles`, `n`,
+  `by_use` (a name of before, `…@lod1-mobile.glb`, is said by its use).
+  `versions.add_version(profile=, use_params=)`: the level (the name and the
+  key of the id) becomes the use's name, so a mobile version beside a web
+  one is ANOTHER version, never a revision of it; `profile` and `use_params`
+  go in the `lod_generation` step's `parameters` (no datamodel change; the
+  resource's `use` list, which Heriverse reads, as before).
+  `versions_of` entries add `profile`, `use_params`, `by_use`, `made_at`;
+  `entry_profile`, `use_versions` (by use: the latest wins, the others stay
+  listed). `graph_compose.level_key` is `("use", profile)` for a version made
+  for a use — «Aggiorna» compares asset + use; `level_say` says «mobile webXR ·
+  10k tri · 512 px» or «catena LOD 2»; `asset_list` rows carry `profile`,
+  `by_use`, `use_params`.
 - **The value of a property in two places; property → document read-only**
   (MICRO valore-proprietà, decided by E.D. on 28 October 2026). `PropertyNode`
   keeps `description` (EM's historical place of the value) and `value`

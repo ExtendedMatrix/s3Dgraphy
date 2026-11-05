@@ -220,7 +220,8 @@ def test_the_mobile_base_is_another_level_not_an_update():
                     at="2026-10-30T10:00:00Z")
     tags = G.graph_tags(g, "rm_podio", {**api.versions_of(g, "podio")[1], "asset_id": "podio"})
     st = G.update_status(g, tags)
-    assert st["state"] == "aligned" and st["others"][0]["level_say"] == "lod1 · mobile webXR"
+    # MICRO-VERSIONI-PER-USO: a version for a use is said by its use, not by a level
+    assert st["state"] == "aligned" and st["others"][0]["level_say"] == "mobile webXR"
     assert G.level_key({"level": "manual-2026-10-31-2", "use": ["realtime"]}) == ("manual", "desktop_realtime")
 
 

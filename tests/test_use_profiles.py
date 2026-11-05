@@ -347,7 +347,9 @@ def test_names_of_the_versions():
     assert UP.version_file_name("Col", "lod0", "print_3d") == "Col@lod0-print.stl"
     p = UP.parse_version_name("Column_light1@lod1-realtime-web.glb")
     assert p == {"model": "Column_light1", "level": "lod1", "destination": "realtime-web",
-                 "profile": "desktop_realtime", "ext": "glb"}
+                 "profile": "desktop_realtime", "ext": "glb",
+                 # MICRO-VERSIONI-PER-USO: a name of before is said by its use
+                 "use": "desktop-realtime", "triangles": None, "n": 1, "by_use": False}
     assert UP.parse_version_name("PODIO@lod0-heriverse-1a2b3c4d")["destination"] == "heriverse"
     assert UP.parse_version_name("PODIO@lod0-aton-heriverse.glb")["profile"] == "webxr"
     assert UP.parse_version_name("PODIO@lod1-web.glb")["profile"] == "webxr"
@@ -451,3 +453,54 @@ def test_measure_gltf_gives_each_node_its_box(tmp_path):
     assert boxes[0] == [[0, 0, 0], [1, 0, 1]] and boxes[1][0][0] == 10
     d = UP.diagnose(m["objects"], m["textures"], "webxr")
     assert d["totals"]["extent_m"] == 11.0
+
+
+# ── MICRO-VERSIONI-PER-USO (E.D., 2 Nov 2026): versions named by their use ──
+
+def test_a_version_for_a_use_is_named_by_its_use():
+    assert UP.use_version_name("Column_light1", "mobile_webxr", 2000) == "Column_light1@mobile-webxr-2k.glb"
+    assert UP.use_version_name("Column_light1", "webxr", 53_412) == "Column_light1@webxr-53k.gltf"
+    assert UP.use_version_name("C", "mobile_webxr", 1500) == "C@mobile-webxr-1.5k.glb"
+    assert UP.use_version_name("C", "desktop_realtime") == "C@desktop-realtime.glb"
+    assert UP.use_version_name("C", "mobile", 2000, n=2) == "C@mobile-webxr-2k-2.glb"
+    # version_file_name: an empty level or a use's name → the use's form
+    assert UP.version_file_name("C", None, "mobile_webxr", triangles=10_000) == "C@mobile-webxr-10k.glb"
+    assert UP.version_file_name("C", "mobile-webxr-10k", "mobile_webxr") == "C@mobile-webxr-10k.glb"
+    # a rung of a LOD chain keeps its form
+    assert UP.version_file_name("C", "lod3", "webxr") == "C@lod3-aton-heriverse.gltf"
+
+
+def test_names_by_use_are_read_back():
+    p = UP.parse_version_name("Column_light1@mobile-webxr-2k.glb")
+    assert p == {"model": "Column_light1", "level": "mobile-webxr-2k", "destination": "mobile",
+                 "profile": "mobile_webxr", "ext": "glb", "use": "mobile-webxr",
+                 "triangles": 2000, "n": 1, "by_use": True}
+    assert UP.parse_version_name("C@mobile-webxr-2k-2.glb")["n"] == 2
+    g = UP.parse_version_name("C@webxr-53k-0a1b2c3d")
+    assert (g["level"], g["profile"], g["ext"]) == ("webxr-53k", "webxr", "")
+    assert UP.parse_version_name("C@print-3d.stl")["profile"] == "print_3d"
+    # the names of before: said by their use, not by their level
+    old = UP.parse_version_name("Column_entrance1@lod1-mobile.glb")
+    assert (old["use"], old["profile"], old["by_use"], old["level"]) == ("mobile-webxr", "mobile_webxr", False, "lod1")
+    assert UP.parse_use_tag("lod1") is None and UP.parse_use_tag("mobile-webxr-2k")["triangles"] == 2000
+
+
+def test_what_a_row_says():
+    assert UP.use_say("mobile_webxr", 10_000, 512) == "mobile webXR · 10k tri · 512 px"
+    assert UP.use_say("webxr", 53_000) == "webXR / Heriverse · 53k tri"
+    assert UP.chain_say("lod4") == "catena LOD 4"
+    assert UP.kilo(None) == "" and UP.kilo(999) == "1k" and UP.kilo(2400) == "2.4k" and UP.kilo(694_000) == "694k"
+
+
+def test_versions_listed_by_use(tmp_path):
+    for n in ("A@mobile-webxr-2k.glb", "A@lod1-aton-heriverse.glb"):
+        (tmp_path / n).write_bytes(b"x")
+    rows = {r["name"]: r for r in UP.list_versions(str(tmp_path), measure=False)}
+    assert rows["A@mobile-webxr-2k.glb"]["by_use"] and rows["A@mobile-webxr-2k.glb"]["profile"] == "mobile_webxr"
+    assert rows["A@lod1-aton-heriverse.glb"]["use"] == "webxr"
+
+
+def test_a_gltfpack_variant_for_a_use_is_named_by_it():
+    from s3dgraphy.project_tree import variant_name
+    assert variant_name("SM_X.glb", "mobile-webxr-2k", "mobile") == "SM_X@mobile-webxr-2k.glb"
+    assert variant_name("SM_X.glb", "lod4", "web") == "SM_X@lod4-web.glb"   # a LOD chain's rung, as before

@@ -176,8 +176,13 @@ def _version(graph, entry: Dict[str, Any], summary: Dict[str, Any], *, states, m
     return {"id": entry["id"], "name": summary.get("name") or entry.get("name") or "",
             "asset_id": entry.get("asset_id"), "master": bool(entry.get("master")),
             "level": summary.get("level") or "", "lod_level": summary.get("lod_level") or "",
-            "level_say": TILESET_SAY if summary.get("tileset") else level_say(entry),
+            "level_say": TILESET_SAY if summary.get("tileset") else level_say(
+                entry, summary.get("triangles"), summary.get("texture_side")),
             "use": list(entry.get("use") or []),
+            # MICRO-VERSIONI-PER-USO · the profile it was made for («» for a
+            # rung of a LOD chain) and its numbers: the row says it by its use
+            "profile": str(entry.get("profile") or ""), "by_use": bool(entry.get("by_use")),
+            "use_params": dict(entry.get("use_params") or {}),
             "url": summary.get("url") or "", "checksum": summary.get("checksum") or "",
             "stamped": bool(summary.get("checksum")),
             "size_bytes": summary.get("size_bytes"), "triangles": summary.get("triangles"),

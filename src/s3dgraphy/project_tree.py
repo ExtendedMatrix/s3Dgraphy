@@ -240,6 +240,12 @@ def variant_name(model: str, lod: str, destination: str, ext: str = ".glb") -> s
             stem = stem[: -len(known)]
             break
     lod = str(lod).strip().lower()
+    # MICRO-VERSIONI-PER-USO (E.D., 2 Nov 2026) · a variant made for a use is
+    # named by it: ``lod`` a use's name (``mobile-webxr-2k``) →
+    # ``<model>@mobile-webxr-2k.glb``, the destination already in it
+    from .resources.use_profiles import parse_use_tag
+    if parse_use_tag(lod):
+        return f"{stem}{VARIANT_SEP}{lod}{ext}"
     if lod and not lod.startswith("lod"):
         lod = f"lod{lod}"
     dest = str(destination).strip().lower().replace(" ", "-")

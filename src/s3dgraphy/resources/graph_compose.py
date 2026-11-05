@@ -448,6 +448,13 @@ def level_key(entry: Dict[str, Any]) -> tuple:
     import re
     if entry.get("master"):
         return ("master", "")
+    # MICRO-VERSIONI-PER-USO · a version made for a use is the asset AND the
+    # use: another number of the same use (mobile 2k after mobile 10k, or the
+    # «lod1-mobile» of before) is the same version made again — the later wins
+    from .versions import entry_profile
+    pid = entry_profile(entry)
+    if pid:
+        return ("use", pid)
     lvl = str(entry.get("level") or entry.get("lod_level") or "").strip().lower()
     if re.match(r"^manual-\d{4}-\d{2}-\d{2}(?:-\d+)?$", lvl):
         lvl = "manual"
@@ -459,11 +466,27 @@ def level_key(entry: Dict[str, Any]) -> tuple:
     return (lvl, prof)
 
 
-def level_say(entry: Dict[str, Any]) -> str:
-    """«lod1 · webXR», «master», «manual-2026-10-31 · desktop realtime»."""
+def level_say(entry: Dict[str, Any], triangles: Optional[float] = None,
+              texture_side: Optional[int] = None) -> str:
+    """«mobile webXR · 10k tri · 512 px» (a version made for a use, also one
+    of before named ``lod1-mobile``: MICRO-VERSIONI-PER-USO, E.D. 2 Nov 2026),
+    «catena LOD 2» (a rung of a LOD chain), «master», «manual-2026-10-31 ·
+    desktop realtime». The numbers: ``triangles`` and ``texture_side`` when the
+    caller measured them, else the use's own (``use_params``) or its name's."""
     if entry.get("master"):
         return "master"
+    from .use_profiles import chain_say, is_chain_level, parse_use_tag, use_say
+    from .versions import entry_profile
+    pid = entry_profile(entry)
+    if pid:
+        up = entry.get("use_params") or {}
+        tag = parse_use_tag(entry.get("level")) or {}
+        tri = triangles if triangles is not None else up.get("triangles", tag.get("triangles"))
+        side = texture_side or up.get("texture_side_px") or up.get("texture_side")
+        return use_say(pid, tri, side)
     lvl = str(entry.get("level") or entry.get("lod_level") or "") or "?"
+    if is_chain_level(lvl):
+        return chain_say(lvl)
     prof = level_key(entry)[1]
     if prof:
         try:

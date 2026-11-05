@@ -3159,8 +3159,10 @@ def add_version(graph: Graph, master_id: str, *, level: Optional[str] = None,
     from a ``lodK``); ``use`` a list of :data:`resources.versions.USES`;
     ``measures`` the numbers of :data:`resources.versions.LOD_MEASURES` (D1).
     Idempotent per (asset, level); other bytes at a level are refused (revise
-    the version instead). Returns ``{version_id, process_id, created, asset_id,
-    level, lod_level, use, measures, purpose, warnings}``."""
+    the version instead). ``profile`` and ``use_params`` (MICRO-VERSIONI-PER-
+    USO): a version made for a use, named by it (``mobile-webxr-2k``), never a
+    level. Returns ``{version_id, process_id, created, asset_id, level,
+    lod_level, use, measures, purpose, profile, use_params, warnings}``."""
     from .resources.versions import add_version as _add
     before = _ids(graph)
     out = _add(graph, master_id, level=level, purpose=purpose, **kwargs)
