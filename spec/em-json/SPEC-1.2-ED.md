@@ -164,8 +164,27 @@ graph represents it.
   Stereo 70 grid), overlays the scene directly; a layer in another grid needs a
   reprojection, which a reader does not assume.
 
+- **The four base formats are read without GDAL** (6 November 2026): a
+  shapefile (the `.prj`/`.qpj`), a GeoPackage (`gpkg_spatial_ref_sys` of the
+  layer named by `layer`), a GeoJSON (the 2008 `crs` member when it carries
+  one — a file outside RFC 7946, said so — else WGS 84 as the RFC says) and a
+  GeoTIFF, a Cloud Optimized one too (the GeoKeys). The CRS is the one the file
+  declares; `bbox` is in it and `bbox_wgs84` in degrees. A GeoTIFF layer adds
+  `raster`: its size, `kind` (`dem`, one band of heights, or `image`), the pixel
+  size, `nodata`, whether it is a COG.
+- **The ground of the landscape** is a node of its own, a *landscape surface*
+  (`landscape_surface`): a DEM layer drawn as a mesh and, draped on it, an image
+  layer — both reached with `has_linked_resource` — and the site it is the
+  ground of with `is_in_location`. A geometry of the place, not the place
+  itself and not the representation of a unit. Its layers keep their own CRS:
+  a reader reprojects them into the scene, never rewrites them.
+- **Contour lines** of a DEM are a derived layer: a GeoJSON in the DEM's CRS,
+  a `gis_layer` resource made by one digital-twin step of kind `vectorization`
+  (`dtc_had_input` the DEM, `dtc_had_output` the contours,
+  `dtc_derived_from`), its interval in the step's `parameters`.
+
 All of this is content of nodes and edges described by the datamodel (nodes
-1.6.39, connections 1.6.50, qualia 1.6.10): a reader that does not know these
+1.6.40, connections 1.6.52, qualia 1.6.10): a reader that does not know these
 types or keys keeps them (§3.1).
 
 ### 2.6 Layout
@@ -367,7 +386,10 @@ last resort.
   `MULTIPOLYGON`, 2D or Z, at most 500 vertices inline) and the GIS layer as a
   resource (`gis_layer`, `gis_format`, `crs`, `bbox`, `feature_key`,
   `z_field`, a shapefile as a `file_set`), with the frame of a file and the
-  rule «same grid, different code». No key of the container changes; the 1.1
+  rule «same grid, different code». Added on 6 November 2026: the four base
+  formats read with their CRS and `bbox_wgs84`, `raster` for a GeoTIFF, the
+  landscape surface node, contour lines as a derived layer (nodes 1.6.40,
+  connections 1.6.52). No key of the container changes; the 1.1
   schema validates the files. Added on 28 October 2026 (decided by E.D.): §2.2,
   a property's value is written in `description` and mirrored in `data.value`;
   §2.4, a property is documented through its extractor, never straight to a

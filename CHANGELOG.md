@@ -5,6 +5,28 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
+- **The four base GIS formats, the ground of the landscape, the version for
+  the hardware** (MICRO-GIS-BASE, 6 November 2026). `s3dgraphy.gis` reads,
+  without GDAL, a GeoPackage (`geopackage`: its layers, the srs of each, the
+  geometry blobs through `wkb`), a GeoJSON (`geojson`: the 2008 `crs` member
+  declared, else WGS 84 by RFC 7946) and a GeoTIFF / COG (`geotiff`: classic
+  and BigTIFF, the GeoKeys, the affine from tiepoint + scale, a transformation
+  or a world file, nodata, overviews; the pixels of the plain encodings —
+  none, Deflate, LZW, PackBits, the horizontal predictor), beside the
+  shapefile. `inspect_layer` / `read_features` / `bbox_wgs84` for the four;
+  `add_gis_layer` takes any of them (`layer` for a GeoPackage, `data.raster`
+  for a GeoTIFF). `contours` (marching squares on the pixels' centres, a hole
+  draws nothing) and `add_contours`: the contour lines written as a GeoJSON in
+  the DEM's CRS and registered as a derived layer with its `vectorization`
+  step. `LandscapeSurfaceNode` (`landscape_surface`, nodes datamodel 1.6.40,
+  visual rules 1.6.42 `LSF`, em.ttl 1.6.24 `em:LandscapeSurface`) and
+  `add_landscape_surface` / `landscape_surfaces`; connections 1.6.52 admit it
+  as a source of `has_linked_resource` and `is_in_location`.
+  `resources.versions.choose_for_hardware` and `HARDWARE_PROFILES` (E.D.,
+  2 November 2026): the version a viewer loads on a desktop, web or mobile
+  profile — the heaviest made for it within its band of triangles, the
+  lightest only when nothing is made for it; its cases in
+  `JSON_config/version_for_hardware_cases.json`. `tests/test_gis_base.py`.
 - **Versions named by their use, not by a level** (MICRO-VERSIONI-PER-USO,
   decided by E.D. on 2 November 2026). A version made FOR A USE is named by
   its use and its numbers — `<asset>@<use>[-<tri>k][-n].glb`

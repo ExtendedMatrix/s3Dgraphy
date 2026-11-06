@@ -67,6 +67,9 @@ from .annotation_region_node import AnnotationRegionNode, AnnotationRegionError
 # family changed.
 from .georeferencing_node import (GCPSetNode, RegistrationTransformNode,
                                   GeoreferencingError)
+# MICRO-GIS-BASE (6 Nov 2026): the ground surface of a landscape (a DEM and its
+# image, two gis_layer resources) — a geometry of the place, not its identity.
+from .landscape_surface_node import LandscapeSurfaceNode
 # DTC substrate profile (ECHOES). Two event classes: DTCProcessNode (genesis /
 # transformation, crmdig:D7) and DTCAcquisitionNode (acquisition / ingestion,
 # crmdig:D12 ⊂ D7). Both the INPUT and the OUTPUT are Resources (ResourceNode, E73/D1)
@@ -155,6 +158,7 @@ __all__ = [
     "AnnotationRegionNode",
     "GCPSetNode",
     "RegistrationTransformNode",
+    "LandscapeSurfaceNode",
     "GeoreferencingError",
     "AnnotationRegionError",
     "DTCNode",

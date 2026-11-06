@@ -881,3 +881,97 @@ def planned_version(graph, master_id: str, *, level: Optional[str] = None,
         rid = str(uuid.uuid5(_NS, f"revision|{entry['id']}|{new_sum}"))
         return {"version_id": rid, "level": lvl, "revises": entry["id"]}
     return {"version_id": vid, "level": lvl, "revises": None}
+
+
+# ── the version for the HARDWARE (E.D., 2 Nov 2026) ─────────────────────────
+
+#: The hardware profiles of a viewer and the use profile each loads
+#: (:data:`.use_profiles.PROFILES`): a robust desktop the realtime version, a
+#: browser the webXR one, a phone or a stand-alone headset the mobile one.
+HARDWARE_PROFILES = {"desktop": "desktop_realtime", "web": "webxr", "mobile": "mobile_webxr"}
+
+HARDWARE_REASONS = ("profile", "lightest", "master", "none")
+
+
+def _tris_of(entry: Dict[str, Any]) -> Optional[int]:
+    prim = entry.get("primitives") or {}
+    for v in (prim.get("triangles"), prim.get("faces"), (entry.get("use_params") or {}).get("triangles")):
+        if isinstance(v, (int, float)) and not isinstance(v, bool) and v > 0:
+            return int(v)
+    return None
+
+
+def _size_key(e: Dict[str, Any]):
+    size = e.get("size_bytes")
+    known = isinstance(size, (int, float)) and not isinstance(size, bool)
+    return (0 if known else 1, size if known else 0, -_lod_ordinal(e), str(e.get("id")))
+
+
+def choose_for_hardware(entries: Sequence[Dict[str, Any]], hardware: str) -> Optional[Dict[str, Any]]:
+    """The version a viewer loads on ``hardware`` (``desktop`` | ``web`` |
+    ``mobile``, :data:`HARDWARE_PROFILES`) — E.D., 2 Nov 2026: «la versione
+    indicata per il profilo hardware attuale, non sempre la più leggera; la
+    più leggera SOLO quando per quel profilo c'è soltanto un master ad alta
+    risoluzione o non ottimizzato». The rule, in words:
+
+    1. the versions MADE FOR the profile: made for it (:func:`entry_profile`)
+       or declaring one of its uses (a ``lod1-realtime-web`` serves the
+       desktop AND the web);
+    2. among them, the HEAVIEST that stays in the profile's band of
+       triangles per object (``max_triangles_object``; none: no limit) —
+       the most the profile was made to carry, never more;
+    3. none in the band, their triangles known: the lightest of them, said in
+       the note; triangles unknown: the one made for the profile by name (the
+       most recent), else the lightest by bytes;
+    4. no version made for the profile → the LIGHTEST version there is
+       (bytes, then the highest level, then the id), said: what is there for
+       this profile is a master or something not optimised for it;
+    5. no version at all → the master; nothing → None.
+
+    Returns ``{entry, reason, profile, note}`` (``reason`` one of
+    :data:`HARDWARE_REASONS`). Pure, like :func:`choose_version`: its cases
+    (``JSON_config/version_for_hardware_cases.json``) run in JS too."""
+    from .use_profiles import PROFILES
+    if hardware not in HARDWARE_PROFILES:
+        raise ValueError(f"hardware must be one of {list(HARDWARE_PROFILES)}, got {hardware!r}")
+    pid = HARDWARE_PROFILES[hardware]
+    prof = PROFILES[pid]
+    entries = [e for e in (entries or []) if e]
+    if not entries:
+        return None
+    versions = [e for e in entries if not e.get("master")]
+    uses = set(prof.get("uses") or ())
+
+    def made_for(e):
+        p = e.get("profile")
+        if p is None:
+            p = entry_profile(e)
+        return p == pid or bool(uses & set(e.get("use") or []))
+
+    mine = [e for e in versions if made_for(e)]
+    if mine:
+        band = prof.get("max_triangles_object")
+        known = [(e, _tris_of(e)) for e in mine]
+        if all(t is not None for _, t in known):
+            fit = [(e, t) for e, t in known if band is None or t <= band]
+            if fit:
+                best = sorted(fit, key=lambda x: (-x[1], _size_key(x[0])))[0][0]
+                return {"entry": best, "reason": "profile", "profile": pid, "note": ""}
+            best = sorted(known, key=lambda x: (x[1], _size_key(x[0])))[0][0]
+            return {"entry": best, "reason": "profile", "profile": pid,
+                    "note": f"no {pid} version within {band} triangles per object: the lightest of them"}
+        named = [e for e in mine if (e.get("profile") if e.get("profile") is not None else entry_profile(e)) == pid]
+        if named:
+            best = sorted(named, key=lambda e: (str(e.get("made_at") or ""), str(e.get("id"))))[-1]
+            return {"entry": best, "reason": "profile", "profile": pid, "note": ""}
+        best = sorted(mine, key=_size_key)[0]
+        return {"entry": best, "reason": "profile", "profile": pid, "note": ""}
+    if versions:
+        best = sorted(versions, key=_size_key)[0]
+        return {"entry": best, "reason": "lightest", "profile": pid,
+                "note": f"no version made for {pid}: the lightest version instead"}
+    master = next((e for e in entries if e.get("master")), None)
+    if master is None:
+        return {"entry": None, "reason": "none", "profile": pid, "note": "nothing to load"}
+    return {"entry": master, "reason": "master", "profile": pid,
+            "note": f"no version for {pid}: the master is loaded"}

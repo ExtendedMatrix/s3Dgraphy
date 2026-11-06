@@ -1236,6 +1236,46 @@
     "de": "Eigenschaft"
    }
   },
+  "LandscapeSurfaceNode": {
+   "description": {
+    "en": "The ground surface of a landscape: a DEM (a gis_layer GeoTIFF of raster.kind dem) drawn as a mesh, and optionally an image (an orthophoto, raster.kind image) draped on it — the two layers reached by has_linked_resource, the site it is the ground of by is_in_location. A GEOMETRY of the place, not its identity (the LocationNodeGroup) and not a representation of a stratigraphic node (the RepresentationModelNode).",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "La superficie del suolo di un paesaggio: un DEM (un gis_layer GeoTIFF di raster.kind dem) disegnato come mesh e, se c'è, un'immagine (un'ortofoto, raster.kind image) drappeggiata sopra — i due layer raggiunti con has_linked_resource, il sito di cui è il suolo con is_in_location. Una GEOMETRIA del luogo, non la sua identità (il LocationNodeGroup) né la rappresentazione di un nodo stratigrafico (il RepresentationModelNode).",
+    "el": "Η επιφάνεια του εδάφους ενός τοπίου: ένα DEM (gis_layer GeoTIFF, raster.kind dem) σχεδιασμένο ως πλέγμα και, αν υπάρχει, μια εικόνα (ορθοφωτογραφία, raster.kind image) πάνω του — τα δύο επίπεδα μέσω has_linked_resource, ο χώρος του οποίου είναι το έδαφος μέσω is_in_location. Μια ΓΕΩΜΕΤΡΙΑ του τόπου, όχι η ταυτότητά του (LocationNodeGroup) ούτε αναπαράσταση στρωματογραφικού κόμβου (RepresentationModelNode).",
+    "he": "פני הקרקע של נוף: DEM (שכבת gis_layer מסוג GeoTIFF, raster.kind dem) המצויר כרשת, ואם יש — תמונה (אורתופוטו, raster.kind image) הנפרשת עליו; שתי השכבות דרך has_linked_resource, והאתר שזו קרקעו דרך is_in_location. גאומטריה של המקום, לא זהותו (LocationNodeGroup) ולא ייצוג של צומת סטרטיגרפי (RepresentationModelNode).",
+    "es": "La superficie del suelo de un paisaje: un DEM (un gis_layer GeoTIFF de raster.kind dem) dibujado como malla y, si existe, una imagen (una ortofoto, raster.kind image) extendida sobre él — las dos capas alcanzadas con has_linked_resource, el sitio del que es el suelo con is_in_location. Una GEOMETRÍA del lugar, no su identidad (el LocationNodeGroup) ni la representación de un nodo estratigráfico (el RepresentationModelNode).",
+    "pl": "Powierzchnia gruntu krajobrazu: DEM (gis_layer GeoTIFF, raster.kind dem) narysowany jako siatka i, jeśli jest, obraz (ortofotomapa, raster.kind image) nałożony na niego — obie warstwy przez has_linked_resource, stanowisko, którego jest gruntem, przez is_in_location. GEOMETRIA miejsca, nie jego tożsamość (LocationNodeGroup) ani reprezentacja węzła stratygraficznego (RepresentationModelNode).",
+    "ro": "Suprafața solului unui peisaj: un DEM (un gis_layer GeoTIFF de raster.kind dem) desenat ca rețea și, dacă există, o imagine (o ortofotografie, raster.kind image) așternută peste el — cele două straturi prin has_linked_resource, situl al cărui sol este prin is_in_location. O GEOMETRIE a locului, nu identitatea lui (LocationNodeGroup) și nici reprezentarea unui nod stratigrafic (RepresentationModelNode).",
+    "fr": "La surface du sol d'un paysage : un MNT (un gis_layer GeoTIFF de raster.kind dem) dessiné comme maillage et, s'il y en a une, une image (une orthophoto, raster.kind image) drapée dessus — les deux couches atteintes par has_linked_resource, le site dont c'est le sol par is_in_location. Une GÉOMÉTRIE du lieu, non son identité (le LocationNodeGroup) ni la représentation d'un nœud stratigraphique (le RepresentationModelNode).",
+    "de": "Die Bodenoberfläche einer Landschaft: ein DGM (ein gis_layer GeoTIFF mit raster.kind dem), als Netz gezeichnet, und gegebenenfalls ein darübergelegtes Bild (ein Orthofoto, raster.kind image) — die beiden Ebenen über has_linked_resource, der Fundort, dessen Boden sie ist, über is_in_location. Eine GEOMETRIE des Ortes, nicht seine Identität (LocationNodeGroup) und nicht die Repräsentation eines stratigraphischen Knotens (RepresentationModelNode)."
+   },
+   "label": {
+    "en": "Landscape surface",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Superficie del paesaggio",
+    "el": "Επιφάνεια τοπίου",
+    "he": "פני הנוף",
+    "es": "Superficie del paisaje",
+    "pl": "Powierzchnia krajobrazu",
+    "ro": "Suprafața peisajului",
+    "fr": "Surface du paysage",
+    "de": "Landschaftsoberfläche"
+   }
+  },
   "RegistrationTransformNode": {
    "description": {
     "en": "The 7-parameter similarity (rotation 3x3 row-major, translation [x,y,z], positive scale) that places a produced model, with data.rms and data.residuals — the error bar, stored beside the claim rather than in a log nobody keeps. data.crs is the frame the model lands IN; null means a site-local frame (mode 'local'), which is NOT the same sentence as an absent transform. Re-registration is a NEW node produced by a NEW crmdig:D7; the superseded one is never edited.",
