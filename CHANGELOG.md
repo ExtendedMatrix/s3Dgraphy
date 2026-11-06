@@ -5,6 +5,31 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
+- **The ontology of the Landscape Graph** (MICRO-LANDSCAPE-ONTOLOGIA,
+  6 November 2026, on the proposals D-LG1..9 of 24 October). Three node
+  classes under one abstract Python parent, `LandscapeUnitNode`
+  (`nodes/landscape_unit_node.py`, nodes datamodel 1.6.41, section
+  `landscape_nodes`): `TopographicUnitNode` (`UT`, observed, `E26 Physical
+  Feature`), `NegativeTopographicUnitNode` (`UT0`, shown «−UT», an absence
+  observed, `crmsci:S4_Observation`) and `DistrictNode` (`district`, declared,
+  `crmgeo:SP6_Declarative_Place`, `district_kind` urban | rural →
+  `em:DistrictUrban` / `em:DistrictRural`, two E55 concepts in em.ttl 1.6.25:
+  no new CRMem class, `em:VirtualSite` stays the only one). The site and the
+  virtual site are unchanged (a `LocationNodeGroup` of level `sito`).
+  Connections 1.6.53: `is_in_district` (pertinence, P53) and the sequence,
+  the instance chain, the lanes, properties, layers and readings widened to
+  the units of the landscape — `is_after`, `has_same_time`, `changed_from`
+  also to the site. `Graph.chronology(cited=)` and the rule `cited`: the life
+  of a site from the studies cited that took place there. `s3dgraphy.landscape`:
+  `cited_lives`, `landscape_chronology`, `district_members`,
+  `membership_validity`, `landscape_warnings`, `layer_of` (canvas / painting)
+  and `landscape_matrix` — the Landscape Graph and the graphs it cites, from
+  the same em.json and from other files, read on the horizons of a
+  periodization, optionally for one district. `study.KIND_ELEMENT` (D-LG8).
+  The RDF exporter knows the `crmsci:` prefix. Visual rules 1.6.43 (UT, UT0,
+  district and `is_in_district` as drafts), translations in nine languages (not
+  validated). Fixture `tests/fixtures/landscape/` (synthetic, written by
+  `scripts/make_landscape_fixture.py`), `tests/test_landscape_ontology.py`.
 - **The four base GIS formats, the ground of the landscape, the version for
   the hardware** (MICRO-GIS-BASE, 6 November 2026). `s3dgraphy.gis` reads,
   without GDAL, a GeoPackage (`geopackage`: its layers, the srs of each, the

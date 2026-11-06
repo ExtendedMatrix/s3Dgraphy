@@ -6,11 +6,11 @@
    "schema_version": 2,
    "generator": {
     "tool": "s3dgraphy",
-    "version": "1.6.0.dev90"
+    "version": "1.6.0.dev92"
    },
    "datamodel_versions": {
-    "nodes": "1.6.39",
-    "connections": "1.6.51",
+    "nodes": "1.6.41",
+    "connections": "1.6.53",
     "qualia": "1.6.10"
    },
    "ontology_versions": {
@@ -22,7 +22,7 @@
     "CRMinf": "1.2.1",
     "HDT-O": "1.0",
     "PROV-O": "W3C Recommendation 2013-04-30",
-    "CRMem": "1.6.23"
+    "CRMem": "1.6.25"
    }
   },
   "graphs": {

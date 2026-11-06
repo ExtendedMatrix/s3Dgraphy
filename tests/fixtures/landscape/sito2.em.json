@@ -1,0 +1,121 @@
+{
+  "active_graph_id": "SCAVO2",
+  "graphs": {
+    "SCAVO2": {
+      "edges": [
+        {
+          "edge_type": "study_produced_proposition_set",
+          "id": "451baf47-af03-4db6-b5c8-12aa84aa47cf__study_produced_proposition_set__07107a82-8f6e-4d59-831c-42d296637663",
+          "source": "451baf47-af03-4db6-b5c8-12aa84aa47cf",
+          "target": "07107a82-8f6e-4d59-831c-42d296637663"
+        },
+        {
+          "edge_type": "study_took_place_at",
+          "id": "451baf47-af03-4db6-b5c8-12aa84aa47cf__study_took_place_at__0a47ad71966ce9a6028e3de966efe21c",
+          "source": "451baf47-af03-4db6-b5c8-12aa84aa47cf",
+          "target": "0a47ad71966ce9a6028e3de966efe21c"
+        },
+        {
+          "edge_type": "has_first_epoch",
+          "id": "US10_has_first_epoch_EPA",
+          "source": "US10",
+          "target": "EPA"
+        }
+      ],
+      "graph_id": "SCAVO2",
+      "name": "Scavo della Fattoria del Guado",
+      "nodes": [
+        {
+          "data": {
+            "rotation": 0.0,
+            "rotation_reference": "grid",
+            "shift_x": 0.0,
+            "shift_y": 0.0,
+            "shift_z": 0.0
+          },
+          "id": "geo_SCAVO2",
+          "name": "geo_position",
+          "node_type": "geo_position"
+        },
+        {
+          "data": {
+            "hdto_role": "proposition_set"
+          },
+          "id": "07107a82-8f6e-4d59-831c-42d296637663",
+          "name": "Scavo della Fattoria del Guado",
+          "node_type": "graph"
+        },
+        {
+          "data": {
+            "disciplinary_focus": null,
+            "hdto_role": "study",
+            "project_iri": null,
+            "study_kind": "stratigraphic_excavation"
+          },
+          "id": "451baf47-af03-4db6-b5c8-12aa84aa47cf",
+          "name": "Scavo della Fattoria del Guado",
+          "node_type": "study"
+        },
+        {
+          "data": {
+            "group_kind": "toponym",
+            "group_uuid": "0a47ad71966ce9a6028e3de966efe21c",
+            "kind": "toponym",
+            "level": "sito",
+            "name": "Fattoria del Guado",
+            "propagation": "additive"
+          },
+          "description": "Site",
+          "id": "0a47ad71966ce9a6028e3de966efe21c",
+          "name": "Fattoria del Guado",
+          "node_type": "LocationNodeGroup"
+        },
+        {
+          "data": {
+            "color": "#FFFFFF",
+            "end_time": 400,
+            "start_time": 0
+          },
+          "id": "EPA",
+          "name": "Periodo A",
+          "node_type": "EpochNode"
+        },
+        {
+          "data": {
+            "label": "US (or SU)"
+          },
+          "id": "US10",
+          "name": "US10",
+          "node_type": "US"
+        }
+      ]
+    }
+  },
+  "header": {
+    "datamodel_versions": {
+      "connections": "1.6.53",
+      "nodes": "1.6.41",
+      "qualia": "1.6.10"
+    },
+    "format": "em.json",
+    "generator": {
+      "tool": "s3dgraphy",
+      "version": "1.6.0.dev92"
+    },
+    "kind": "site",
+    "ontology_versions": {
+      "CIDOC-CRM": "7.1.3",
+      "CRMarchaeo": "2.1.1",
+      "CRMdig": "5.0",
+      "CRMem": "1.6.25",
+      "CRMgeo": "1.2",
+      "CRMinf": "1.2.1",
+      "CRMsci": "3.2",
+      "HDT-O": "1.0",
+      "PROV-O": "W3C Recommendation 2013-04-30"
+    },
+    "schema_version": 2,
+    "title": "Fattoria del Guado (sintetico)",
+    "version": "1.1"
+  }
+}

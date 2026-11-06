@@ -166,6 +166,29 @@ The rest, briefly
      - ``crm:E24_Physical_Human-Made_Thing``
      - a cut and its fill, a wall and its foundation
 
+The Landscape Graph, by the same criterion
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The scale of the landscape (CRMem 1.6.25, node datamodel 1.6.41) is the test of
+the criterion, and it adds **one class only**: ``em:VirtualSite``
+(``crm:E89_Propositional_Object`` + ``crm:E27_Site``), the site supposed from
+topographic units, traces and sources and never excavated — asserted of the
+non-observed, as a virtual unit is. Everything else stays outside:
+
+* the **topographic unit** (UT) is observed: ``crm:E26_Physical_Feature``, whose
+  scope note already comprises «a landscape»;
+* the **negative topographic unit** (UT0, «−UT», an area surveyed where nothing
+  was found) is an observation too: ``crmsci:S4_Observation``;
+* the **district** is a declared place: ``crmgeo:SP6_Declarative_Place``, which
+  is already ``E53`` and ``E89``. Whether it is urban or rural is a descriptive
+  scale, so a vocabulary: ``em:DistrictUrban`` and ``em:DistrictRural`` are two
+  ``crm:E55_Type`` instances reached by ``P2_has_type``, as the five ends of a
+  unit are, not classes;
+* membership of a district (``is_in_district``) leaves as
+  ``crm:P53_has_former_or_current_location``; the horizon is a
+  ``crmgeo:SP10_Declarative_Time-Span`` and a periodization an
+  ``E32_Authority_Document``.
+
 The paradata triad is why **CRMinf is a formal dependency of CRMem** and not
 merely a neighbour: three CRMem classes are declared directly beneath three
 CRMinf classes and add nothing to them.

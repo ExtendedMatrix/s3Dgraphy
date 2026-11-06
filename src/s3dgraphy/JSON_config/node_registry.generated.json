@@ -1,6 +1,6 @@
 {
  "_generated": "by `python -m s3dgraphy.tools.sync_node_datamodel` — DO NOT hand-edit. The flat class hierarchy (parent/node_type/description) is derived from the Python Node subclasses; hand-authored semantics and CIDOC mappings live in s3Dgraphy_node_datamodel.json.",
- "s3Dgraphy_data_model_version": "1.6.40",
+ "s3Dgraphy_data_model_version": "1.6.41",
  "node_types": {
   "ActivityNodeGroup": {
    "parent": "GroupNode",
@@ -51,6 +51,11 @@
    "parent": "DTCNode",
    "node_type": "dtc_process",
    "description": "DTC processing step (ECHOES DTC profile). ``dtc_kind`` ∈ the ``process``"
+  },
+  "DistrictNode": {
+   "parent": "LandscapeUnitNode",
+   "node_type": "district",
+   "description": "A district — the declared portion of territory that holds sites,"
   },
   "DocumentNode": {
    "parent": "ParadataNode",
@@ -122,6 +127,11 @@
    "node_type": "landscape_surface",
    "description": ""
   },
+  "LandscapeUnitNode": {
+   "parent": "Node",
+   "node_type": null,
+   "description": "The common parent of the units of the Landscape Graph — what an edge"
+  },
   "LicenseNode": {
    "parent": "Node",
    "node_type": "license",
@@ -141,6 +151,11 @@
    "parent": "StratigraphicNode",
    "node_type": "USN",
    "description": "Negative Stratigraphic Unit, displayed ``US-`` (US negativa)."
+  },
+  "NegativeTopographicUnitNode": {
+   "parent": "LandscapeUnitNode",
+   "node_type": "UT0",
+   "description": "UT0 (−UT) — an area surveyed where nothing was found. The conclusion"
   },
   "NeutralStratigraphicUnit": {
    "parent": "StratigraphicNode",
@@ -291,6 +306,11 @@
    "parent": "GroupNode",
    "node_type": "TimeBranchNodeGroup",
    "description": "Group node to aggregate all elements belonging to a time branch. Two TB can be connected by a \"contrasts_with\" edge."
+  },
+  "TopographicUnitNode": {
+   "parent": "LandscapeUnitNode",
+   "node_type": "UT",
+   "description": "UT — a topographic unit: what a survey observes on the ground."
   },
   "TransformationStratigraphicUnit": {
    "parent": "StratigraphicNode",

@@ -183,8 +183,20 @@ graph represents it.
   (`dtc_had_input` the DEM, `dtc_had_output` the contours,
   `dtc_derived_from`), its interval in the step's `parameters`.
 
+- **The units of the landscape** (6 November 2026): a *topographic unit*
+  (`UT`, what a survey observed on the ground), its negative (`UT0`, shown
+  «−UT»: an area surveyed where nothing was found) and a *district*
+  (`district`, a declared portion of territory, `district_kind` `urban` or
+  `rural`). They have time, lanes and paradata like a unit and no physical
+  relation. A site, a unit or a district belongs to a district with
+  `is_in_district`; the sequence between sites and units of the landscape is
+  `is_after` / `has_same_time`, the same thing across epochs `changed_from`.
+  The life of a site is not written: it is computed from the studies that took
+  place there. A study whose subject is a movable thing with a history across
+  contexts declares `header.kind` `element`.
+
 All of this is content of nodes and edges described by the datamodel (nodes
-1.6.40, connections 1.6.52, qualia 1.6.10): a reader that does not know these
+1.6.41, connections 1.6.53, qualia 1.6.10): a reader that does not know these
 types or keys keeps them (§3.1).
 
 ### 2.6 Layout
@@ -389,7 +401,9 @@ last resort.
   rule «same grid, different code». Added on 6 November 2026: the four base
   formats read with their CRS and `bbox_wgs84`, `raster` for a GeoTIFF, the
   landscape surface node, contour lines as a derived layer (nodes 1.6.40,
-  connections 1.6.52). No key of the container changes; the 1.1
+  connections 1.6.52); the units of the landscape (`UT`, `UT0`, `district`),
+  `is_in_district` and `header.kind` `element` (nodes 1.6.41, connections
+  1.6.53). No key of the container changes; the 1.1
   schema validates the files. Added on 28 October 2026 (decided by E.D.): §2.2,
   a property's value is written in `description` and mirrored in `data.value`;
   §2.4, a property is documented through its extractor, never straight to a

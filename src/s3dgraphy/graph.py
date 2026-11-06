@@ -749,10 +749,12 @@ class Graph:
     CHRONOLOGY_TYPES = ('US', 'USVs', 'USVn', 'VSF', 'SF', 'USD',
                         'serSU', 'serUSD', 'serUSVn', 'serUSVs', 'serVSF', 'USM',
                         'RSF', 'TSU', 'UL', 'USN', 'USNt',
-                        'document', 'author', 'author_ai')
+                        'document', 'author', 'author_ai',
+                        # the units of the Landscape Graph (nodes 1.6.41)
+                        'UT', 'UT0', 'district')
 
     #: Where a bound can come from, in :meth:`chronology`'s ``rule`` field.
-    CHRONOLOGY_RULES = ('written', 'epoch', 'sub_epoch', 'contained', 'tpq', 'taq')
+    CHRONOLOGY_RULES = ('written', 'cited', 'epoch', 'sub_epoch', 'contained', 'tpq', 'taq')
 
     def _chronology_nodes(self):
         nodes = []
@@ -760,7 +762,7 @@ class Graph:
             nodes.extend(self.get_nodes_by_type(t))
         return nodes
 
-    def chronology(self, warnings=None):
+    def chronology(self, warnings=None, cited=None):
         """The propagated chronology, COMPUTED IN MEMORY — nothing is written.
 
         Returns ``{node_id: entry}`` for every node that ends up with a bound::
@@ -805,6 +807,19 @@ class Graph:
         ``tpq`` / ``taq``  pushed along the stratigraphic sequence; the source is
                        the NEIGHBOUR it came from and the relation is the edge
                        between them, so a chain reads back step by step.
+        ``cited``      the life of a SITE in a landscape (D-LG7, MICRO-LANDSCAPE-
+                       ONTOLOGIA, 6 Nov 2026): computed from the studies cited
+                       that took place there, never written. The studies live
+                       in OTHER graphs, so the caller passes them: ``cited`` is
+                       ``{node_id: {"start", "end", "start_source",
+                       "end_source"}}`` as :func:`s3dgraphy.landscape.
+                       cited_lives` gives it; the source is the study that
+                       gives the bound and the relation ``study_took_place_at``.
+                       A node named there joins the dated nodes (a site is a
+                       LocationNodeGroup, which the chronology does not date
+                       otherwise), so the sequence between sites (``is_after``)
+                       propagates TPQ/TAQ like between units. Precedence:
+                       written, then cited, then the epochs.
 
         A WRITTEN bound is never moved. When what the node contains says it is
         younger than it declares, ``contained`` is still reported beside it and a
@@ -821,6 +836,14 @@ class Graph:
 
         sink = warnings if warnings is not None else []
         strat_nodes = self._chronology_nodes()
+        cited = dict(cited or {})
+        if cited:
+            known = {n.node_id for n in strat_nodes}
+            for nid in cited:
+                node = self.find_node_by_id(nid)
+                if node is not None and nid not in known:
+                    strat_nodes.append(node)
+                    known.add(nid)
         # the epochs' effective intervals, sub-epochs restricted by their parent
         self._epoch_iv = self.epoch_intervals(warnings=sink)
 
@@ -834,6 +857,11 @@ class Graph:
             st = state.setdefault(node.node_id, self._blank_bounds())
             for side, written in (("start", written_start), ("end", written_end)):
                 found = self._base_bound(node, side)
+                life = cited.get(node.node_id)
+                if (life and life.get(side) is not None
+                        and (found is None or found[1] != "written")):
+                    found = (float(life[side]), "cited",
+                             life.get(side + "_source"), "study_took_place_at")
                 if found is None:
                     continue
                 self._set_bound(st, side, *found)

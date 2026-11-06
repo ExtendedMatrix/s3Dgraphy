@@ -89,10 +89,17 @@ DEFAULT_LICENSE = "CC-BY-SA-4.0"
 #: one from the other would be a rule nobody asked for.
 KIND_SITE = "site"
 KIND_LANDSCAPE = "landscape"
+#: D-LG8 (MICRO-LANDSCAPE-ONTOLOGIA, 6 Nov 2026): an ELEMENT is a study whose
+#: subject is a MOVABLE thing with its own history across contexts — a capital
+#: carried away, the Tetrarchs of porphyry, a character — «an EM that moves».
+#: Not a node class: its instances in the host graphs are the SF / RSF / VSF /
+#: serVSF that already exist, tied to it by changed_from and equals across
+#: graphs. Declared only, never derived.
+KIND_ELEMENT = "element"
 
 
 def normalise_kind(raw: Any) -> Optional[str]:
-    """`site` / `landscape` from what the container says, or None."""
+    """`site` / `landscape` / `element` from what the container says, or None."""
     if not isinstance(raw, str):
         return None
     value = raw.strip().lower()
@@ -100,6 +107,8 @@ def normalise_kind(raw: Any) -> Optional[str]:
         return KIND_SITE
     if value in {KIND_LANDSCAPE, "paesaggio", "landscape_study"}:
         return KIND_LANDSCAPE
+    if value in {KIND_ELEMENT, "elemento"}:
+        return KIND_ELEMENT
     return None
 
 

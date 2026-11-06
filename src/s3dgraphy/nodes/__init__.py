@@ -70,6 +70,10 @@ from .georeferencing_node import (GCPSetNode, RegistrationTransformNode,
 # MICRO-GIS-BASE (6 Nov 2026): the ground surface of a landscape (a DEM and its
 # image, two gis_layer resources) — a geometry of the place, not its identity.
 from .landscape_surface_node import LandscapeSurfaceNode
+# MICRO-LANDSCAPE-ONTOLOGIA (6 Nov 2026): the units of the Landscape Graph —
+# the topographic unit, its negative, the district (D-LG4).
+from .landscape_unit_node import (LandscapeUnitNode, TopographicUnitNode,
+                                  NegativeTopographicUnitNode, DistrictNode)
 # DTC substrate profile (ECHOES). Two event classes: DTCProcessNode (genesis /
 # transformation, crmdig:D7) and DTCAcquisitionNode (acquisition / ingestion,
 # crmdig:D12 ⊂ D7). Both the INPUT and the OUTPUT are Resources (ResourceNode, E73/D1)
@@ -159,6 +163,10 @@ __all__ = [
     "GCPSetNode",
     "RegistrationTransformNode",
     "LandscapeSurfaceNode",
+    "LandscapeUnitNode",
+    "TopographicUnitNode",
+    "NegativeTopographicUnitNode",
+    "DistrictNode",
     "GeoreferencingError",
     "AnnotationRegionError",
     "DTCNode",

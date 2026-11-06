@@ -348,14 +348,17 @@ def test_the_edges_group_with_the_datamodels_real_counts():
     # 24 ott 2026, gli orizzonti (LAB): is_in_periodization (crm:P71_lists)
     # entra nel bucket CIDOC-CRM, col suo inverso lists_horizon.
     # CIDOC-CRM 32 -> 33, totale 58 -> 59.
-    assert canonical == {"CIDOC-CRM": 33, "CRMarchaeo": 8, "CRMdig": 6,
+    # 6 nov 2026, l'ontologia del Landscape Graph: is_in_district
+    # (crm:P53_has_former_or_current_location) entra nel bucket CIDOC-CRM, col
+    # suo inverso includes_in_district. CIDOC-CRM 33 -> 34, totale 59 -> 60.
+    assert canonical == {"CIDOC-CRM": 34, "CRMarchaeo": 8, "CRMdig": 6,
                          "HDT-O": 6, "PROV-O": 2, "unmapped": 4}, canonical
-    assert sum(canonical.values()) == 59, "the datamodel's own relation count"
+    assert sum(canonical.values()) == 60, "the datamodel's own relation count"
     listed = {g["ontology"]: g["count"] for g in groups}
-    assert listed == {"CIDOC-CRM": 65, "CRMarchaeo": 15, "CRMdig": 12,
+    assert listed == {"CIDOC-CRM": 67, "CRMarchaeo": 15, "CRMdig": 12,
                       "HDT-O": 12, "PROV-O": 4, "unmapped": 7}, listed
-    assert sum(listed.values()) == 115, "59 canonical + 2 older spellings + "\
-                                        "54 reverses (7 are symmetric and "\
+    assert sum(listed.values()) == 117, "60 canonical + 2 older spellings + "\
+                                        "55 reverses (7 are symmetric and "\
                                         "have none)"
     filtered = {g["ontology"]: [e["edge_type"] for e in g["edges"]]
                 for g in api.mapping_edge_groups("US", "US")}

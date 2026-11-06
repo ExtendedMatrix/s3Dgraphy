@@ -1,0 +1,393 @@
+{
+  "active_graph_id": "LG",
+  "graphs": {
+    "LG": {
+      "edges": [
+        {
+          "edge_type": "has_property",
+          "id": "DIS1_has_property_DIS1.tstart",
+          "source": "DIS1",
+          "target": "DIS1.tstart"
+        },
+        {
+          "edge_type": "has_property",
+          "id": "DIS1_has_property_DIS1.tend",
+          "source": "DIS1",
+          "target": "DIS1.tend"
+        },
+        {
+          "edge_type": "has_property",
+          "id": "UT1_has_property_UT1.tstart",
+          "source": "UT1",
+          "target": "UT1.tstart"
+        },
+        {
+          "edge_type": "has_property",
+          "id": "UT1_has_property_UT1.tend",
+          "source": "UT1",
+          "target": "UT1.tend"
+        },
+        {
+          "edge_type": "is_in_district",
+          "id": "UT1_is_in_district_DIS1",
+          "source": "UT1",
+          "target": "DIS1"
+        },
+        {
+          "edge_type": "is_in_district",
+          "id": "UT0_1_is_in_district_DIS1",
+          "source": "UT0_1",
+          "target": "DIS1"
+        },
+        {
+          "edge_type": "is_in_district",
+          "id": "3cb2d880e22f3214ef54a562b252ee7d_is_in_district_DIS1",
+          "source": "3cb2d880e22f3214ef54a562b252ee7d",
+          "target": "DIS1"
+        },
+        {
+          "edge_type": "is_in_district",
+          "id": "0a47ad71966ce9a6028e3de966efe21c_is_in_district_DIS1",
+          "source": "0a47ad71966ce9a6028e3de966efe21c",
+          "target": "DIS1"
+        }
+      ],
+      "graph_id": "LG",
+      "name": "Paesaggio del Colle",
+      "nodes": [
+        {
+          "data": {
+            "rotation": 0.0,
+            "rotation_reference": "grid",
+            "shift_x": 0.0,
+            "shift_y": 0.0,
+            "shift_z": 0.0
+          },
+          "id": "geo_LG",
+          "name": "geo_position",
+          "node_type": "geo_position"
+        },
+        {
+          "data": {
+            "district_kind": "rural"
+          },
+          "description": "La porzione di campagna che si attribuisce alla villa.",
+          "id": "DIS1",
+          "name": "Fundus della villa",
+          "node_type": "district"
+        },
+        {
+          "data": {
+            "property_type": "absolute_time_start",
+            "value": -50
+          },
+          "description": "-50",
+          "id": "DIS1.tstart",
+          "name": "absolute_time_start",
+          "node_type": "property"
+        },
+        {
+          "data": {
+            "property_type": "absolute_time_end",
+            "value": 400
+          },
+          "description": "400",
+          "id": "DIS1.tend",
+          "name": "absolute_time_end",
+          "node_type": "property"
+        },
+        {
+          "description": "Spargimento di laterizi e ceramica comune.",
+          "id": "UT1",
+          "name": "UT1",
+          "node_type": "UT"
+        },
+        {
+          "data": {
+            "property_type": "absolute_time_start",
+            "value": -30
+          },
+          "description": "-30",
+          "id": "UT1.tstart",
+          "name": "absolute_time_start",
+          "node_type": "property"
+        },
+        {
+          "data": {
+            "property_type": "absolute_time_end",
+            "value": 200
+          },
+          "description": "200",
+          "id": "UT1.tend",
+          "name": "absolute_time_end",
+          "node_type": "property"
+        },
+        {
+          "description": "Campo arato battuto in autunno, visibilità buona: nulla.",
+          "id": "UT0_1",
+          "name": "UT0-1",
+          "node_type": "UT0"
+        },
+        {
+          "data": {
+            "group_kind": "toponym",
+            "group_uuid": "3cb2d880e22f3214ef54a562b252ee7d",
+            "kind": "toponym",
+            "level": "sito",
+            "name": "Villa del Colle",
+            "propagation": "additive"
+          },
+          "description": "Site",
+          "id": "3cb2d880e22f3214ef54a562b252ee7d",
+          "name": "Villa del Colle",
+          "node_type": "LocationNodeGroup"
+        },
+        {
+          "data": {
+            "group_kind": "toponym",
+            "group_uuid": "0a47ad71966ce9a6028e3de966efe21c",
+            "kind": "toponym",
+            "level": "sito",
+            "name": "Fattoria del Guado",
+            "propagation": "additive"
+          },
+          "description": "Site",
+          "id": "0a47ad71966ce9a6028e3de966efe21c",
+          "name": "Fattoria del Guado",
+          "node_type": "LocationNodeGroup"
+        }
+      ]
+    },
+    "SCAVO1": {
+      "edges": [
+        {
+          "edge_type": "study_produced_proposition_set",
+          "id": "abb01d43-cffe-49f2-98de-09e28cc8b97c__study_produced_proposition_set__e140c129-717a-4c70-b9fb-14cadd783dea",
+          "source": "abb01d43-cffe-49f2-98de-09e28cc8b97c",
+          "target": "e140c129-717a-4c70-b9fb-14cadd783dea"
+        },
+        {
+          "edge_type": "study_took_place_at",
+          "id": "abb01d43-cffe-49f2-98de-09e28cc8b97c__study_took_place_at__3cb2d880e22f3214ef54a562b252ee7d",
+          "source": "abb01d43-cffe-49f2-98de-09e28cc8b97c",
+          "target": "3cb2d880e22f3214ef54a562b252ee7d"
+        },
+        {
+          "edge_type": "has_first_epoch",
+          "id": "US1_has_first_epoch_EP1",
+          "source": "US1",
+          "target": "EP1"
+        },
+        {
+          "edge_type": "has_first_epoch",
+          "id": "US2_has_first_epoch_EP2",
+          "source": "US2",
+          "target": "EP2"
+        }
+      ],
+      "graph_id": "SCAVO1",
+      "name": "Scavo della Villa del Colle",
+      "nodes": [
+        {
+          "data": {
+            "rotation": 0.0,
+            "rotation_reference": "grid",
+            "shift_x": 0.0,
+            "shift_y": 0.0,
+            "shift_z": 0.0
+          },
+          "id": "geo_SCAVO1",
+          "name": "geo_position",
+          "node_type": "geo_position"
+        },
+        {
+          "data": {
+            "hdto_role": "proposition_set"
+          },
+          "id": "e140c129-717a-4c70-b9fb-14cadd783dea",
+          "name": "Scavo della Villa del Colle",
+          "node_type": "graph"
+        },
+        {
+          "data": {
+            "disciplinary_focus": null,
+            "hdto_role": "study",
+            "project_iri": null,
+            "study_kind": "stratigraphic_excavation"
+          },
+          "id": "abb01d43-cffe-49f2-98de-09e28cc8b97c",
+          "name": "Scavo della Villa del Colle",
+          "node_type": "study"
+        },
+        {
+          "data": {
+            "group_kind": "toponym",
+            "group_uuid": "3cb2d880e22f3214ef54a562b252ee7d",
+            "kind": "toponym",
+            "level": "sito",
+            "name": "Villa del Colle",
+            "propagation": "additive"
+          },
+          "description": "Site",
+          "id": "3cb2d880e22f3214ef54a562b252ee7d",
+          "name": "Villa del Colle",
+          "node_type": "LocationNodeGroup"
+        },
+        {
+          "data": {
+            "color": "#FFFFFF",
+            "end_time": 50,
+            "start_time": -100
+          },
+          "id": "EP1",
+          "name": "Fase I",
+          "node_type": "EpochNode"
+        },
+        {
+          "data": {
+            "color": "#FFFFFF",
+            "end_time": 300,
+            "start_time": 50
+          },
+          "id": "EP2",
+          "name": "Fase II",
+          "node_type": "EpochNode"
+        },
+        {
+          "data": {
+            "label": "US (or SU)"
+          },
+          "id": "US1",
+          "name": "US1",
+          "node_type": "US"
+        },
+        {
+          "data": {
+            "label": "US (or SU)"
+          },
+          "id": "US2",
+          "name": "US2",
+          "node_type": "US"
+        }
+      ]
+    },
+    "periodizations": {
+      "data": {
+        "active_periodization": "PER1",
+        "em_collection": "Periodizations"
+      },
+      "edges": [
+        {
+          "edge_type": "is_in_periodization",
+          "id": "H1_is_in_periodization_PER1",
+          "source": "H1",
+          "target": "PER1"
+        },
+        {
+          "edge_type": "is_in_periodization",
+          "id": "H2_is_in_periodization_PER1",
+          "source": "H2",
+          "target": "PER1"
+        },
+        {
+          "edge_type": "is_in_periodization",
+          "id": "H3_is_in_periodization_PER1",
+          "source": "H3",
+          "target": "PER1"
+        }
+      ],
+      "graph_id": "periodizations",
+      "name": "Periodizations",
+      "nodes": [
+        {
+          "data": {
+            "rotation": 0.0,
+            "rotation_reference": "grid",
+            "shift_x": 0.0,
+            "shift_y": 0.0,
+            "shift_z": 0.0
+          },
+          "id": "geo_periodizations",
+          "name": "geo_position",
+          "node_type": "geo_position"
+        },
+        {
+          "id": "PER1",
+          "name": "Orizzonti del paesaggio",
+          "node_type": "periodization"
+        },
+        {
+          "data": {
+            "color": "#c0392b",
+            "enabled": true,
+            "end_time": -27.0,
+            "order": 0,
+            "start_time": -150.0
+          },
+          "id": "H1",
+          "name": "Tarda repubblica",
+          "node_type": "horizon"
+        },
+        {
+          "data": {
+            "color": "#e67e22",
+            "enabled": true,
+            "end_time": 235.0,
+            "order": 1,
+            "start_time": -27.0
+          },
+          "id": "H2",
+          "name": "Alto impero",
+          "node_type": "horizon"
+        },
+        {
+          "data": {
+            "color": "#27ae60",
+            "enabled": true,
+            "end_time": 568.0,
+            "order": 2,
+            "start_time": 235.0
+          },
+          "id": "H3",
+          "name": "Tardo antico",
+          "node_type": "horizon"
+        }
+      ]
+    }
+  },
+  "header": {
+    "composition": [
+      {
+        "id": "SCAVO1"
+      },
+      {
+        "id": "SCAVO2"
+      }
+    ],
+    "datamodel_versions": {
+      "connections": "1.6.53",
+      "nodes": "1.6.41",
+      "qualia": "1.6.10"
+    },
+    "format": "em.json",
+    "generator": {
+      "tool": "s3dgraphy",
+      "version": "1.6.0.dev92"
+    },
+    "kind": "landscape",
+    "ontology_versions": {
+      "CIDOC-CRM": "7.1.3",
+      "CRMarchaeo": "2.1.1",
+      "CRMdig": "5.0",
+      "CRMem": "1.6.25",
+      "CRMgeo": "1.2",
+      "CRMinf": "1.2.1",
+      "CRMsci": "3.2",
+      "HDT-O": "1.0",
+      "PROV-O": "W3C Recommendation 2013-04-30"
+    },
+    "schema_version": 2,
+    "title": "Paesaggio del Colle (sintetico)",
+    "version": "1.1"
+  }
+}

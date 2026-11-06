@@ -91,10 +91,10 @@
     }
   ],
   "_validated_against": {
-    "s3dgraphy": "1.6.0.dev91",
+    "s3dgraphy": "1.6.0.dev92",
     "schema_version": "1",
-    "node_datamodel": "1.6.40",
-    "connections_datamodel": "1.6.52",
+    "node_datamodel": "1.6.41",
+    "connections_datamodel": "1.6.53",
     "on": "2026-11-06"
   }
 }

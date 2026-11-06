@@ -75,6 +75,9 @@ CRMINF     = Namespace("http://www.cidoc-crm.org/extensions/crminf/")
 CRMARCHAEO = Namespace("http://www.cidoc-crm.org/extensions/crmarchaeo/")
 CRMDIG     = Namespace("http://www.cidoc-crm.org/extensions/crmdig/")
 CRMGEO     = Namespace("http://www.cidoc-crm.org/extensions/crmgeo/")
+# CRMsci: the observation with a negative outcome, the −UT of the Landscape
+# Graph (node datamodel 1.6.41, NegativeTopographicUnitNode → S4 Observation).
+CRMSCI     = Namespace("http://www.cidoc-crm.org/extensions/crmsci/")
 HDTO       = Namespace("https://w3id.org/hdto/ontology#")
 # W3C Web Annotation: only the quote of a passage uses it (oa:TextQuoteSelector
 # + oa:exact) — the one piece of a reading's place with no fragment-string form.
@@ -104,6 +107,7 @@ PREFIX_MAP: Dict[str, Namespace] = {
     "crmarchaeo": CRMARCHAEO,
     "crmdig":     CRMDIG,
     "crmgeo":     CRMGEO,
+    "crmsci":     CRMSCI,
     "hdto":       HDTO,
     "oa":         OA,
     "geo":        GEO,

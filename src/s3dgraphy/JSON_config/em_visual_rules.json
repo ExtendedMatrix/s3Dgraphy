@@ -1,6 +1,6 @@
 {
   "formal_language": "EM",
-  "version": "1.6.42",
+  "version": "1.6.43",
   "_note_material_vs_qualia_color": [
     "DUE COSE DIVERSE CHE SI CHIAMANO ENTRAMBE color. Non confonderle: e gia successo.",
     "1) QUI, in node_styles.<tipo>.style.material.rgba_color — il COLORE DEL MATERIALE BLENDER del proxy 3D, in float LINEARI. UNA sola chiave: `rgba_color`. Fino a S8 il file ne usava due (`color` sui 13 tipi stratigrafici, `rgba_color` sugli altri) e get_material_color() ne leggeva una sola, restituendo None per 21 tipi su 38; ora sono unificate e la vecchia `color` e letta solo come tolleranza verso file scritti prima. Un tipo che non diventa mai una mesh NON ha material affatto (i contenitori di gruppo, e da S7 i dieci nodi che rendono per icona): per loro get_material_color() torna None, ed e corretto.",
@@ -9,6 +9,7 @@
     "In breve: qui si decide di che colore DISEGNARE una US; li si registra di che colore ERA."
   ],
   "_changelog": {
+    "1.6.43": "THE UNITS OF THE LANDSCAPE GRAPH, AS A DRAFT (MICRO-LANDSCAPE-ONTOLOGIA, 6 Nov 2026). node_styles.UT, UT0, district (keyed by node_type, so a client finds them without an alias): the TopographicUnitNode, NegativeTopographicUnitNode and DistrictNode of nodes 1.6.41, in an earth brown #8B5A2B of their own (the scale of distance, not the red of the contact scale). The observed UT is a hexagon with the thick solid frame of an observed unit; the UT0 (−UT, an absence observed) the same hexagon with a dashed frame and a white fill; the declared district a dotted rounded rectangle, the tray; edge_style.is_in_district dotted in the same brown. Their icons are drafts in src/2D/bozze (UT.svg, UT0.svg, district.svg, marked BOZZA); no 2d_glyphs entry and no material yet: the colours of the Landscape Matrix are E.D.'s (decisioni/landscape-graph-semantica §10, «i colori»), these are placeholders marked draft.",
     "1.6.42": "THE GROUND OF THE LANDSCAPE (MICRO-GIS-BASE, 6 Nov 2026). node_styles.LSF: the LandscapeSurfaceNode (nodes 1.6.40), in the #FF6600 reference family of GEO, GCP and RGT — a geometry placed in the world — with its own glyph src/2D/landscape_surface.svg (a ground as a mesh, two contour lines).",
     "1.6.41": "THE SITE HAS A GLYPH, AS A DRAFT (MICRO lab sito Sarmizegetusa, 30 Oct 2026). 2d_render_glyph_types.data_glyphs += site: a LocationNodeGroup of level sito (the site of D-LG4, node datamodel 1.6.39) is drawn with src/2D/bozze/site.svg — a footprint in plan (a closed outline on a ground hatch) with a survey point inside, in the square plate of the HDT-O layer (a node of the cultural context; the site is the place the studies took place at). Drawn by Claude and marked BOZZA, so its 2d_glyphs entry carries draft: true: the mark is E.D.'s to approve (move it to src/2D/site.svg, drop the marker, rerun glyphs_from_svg --write). A virtual site (data.virtual) uses the same glyph for now. node_styles.LocationNodeGroup gains level_modifiers.sito: the toponym grey border, thicker (2.0), so a site reads as the strongest place of its chain where it is drawn as a folder. ADDITIVE.",
     "1.6.40": "A CONTAINER WITHOUT MESHES LIES IN ITS OWN EPOCH (MICRO tileset, shift e epoche, 25 Oct 2026). alternatives.container_epochs: when a container has no member, or its members have no epoch, its epochs are its own — an epoch reaching it, or the epochs of the Document that wraps it (has_first_epoch / survive_in_epoch), as EM Tools' «Epochs of this set»; its alternative (a tileset of the whole survey) is then seen in that epoch. alternatives.choice: with an alternative and no member, the alternative is lit whatever the uses. Reference: s3dgraphy.resources.alternatives (container_own_epochs, choose_alternative); case in alternative_cases.json 1.1.0.",
@@ -6270,6 +6271,45 @@
       },
       "label_position": "over"
     },
+    "UT": {
+      "_comment": "BOZZA (MICRO-LANDSCAPE-ONTOLOGIA): the topographic unit, observed — a hexagon with the thick solid frame of an observed unit, in the earth brown of the scale of distance. Colours to be decided by E.D.",
+      "draft": true,
+      "2d_file_vect": "src/2D/bozze/UT.svg",
+      "style": {
+        "border_color": "#8B5A2B",
+        "fill_color": "#F0F0F0",
+        "border_style": "solid",
+        "shape": "hexagon",
+        "border_width": 4
+      },
+      "label_position": "over"
+    },
+    "UT0": {
+      "_comment": "BOZZA (MICRO-LANDSCAPE-ONTOLOGIA): −UT, the area surveyed with nothing found — the UT's hexagon, dashed and white: an observed absence. Colours to be decided by E.D.",
+      "draft": true,
+      "2d_file_vect": "src/2D/bozze/UT0.svg",
+      "style": {
+        "border_color": "#8B5A2B",
+        "fill_color": "#FFFFFF",
+        "border_style": "dashed",
+        "shape": "hexagon",
+        "border_width": 3
+      },
+      "label_position": "over"
+    },
+    "district": {
+      "_comment": "BOZZA (MICRO-LANDSCAPE-ONTOLOGIA): the district, declared — a dotted rounded rectangle, the tray that holds sites and units. A unit, not a group folder. Colours to be decided by E.D.",
+      "draft": true,
+      "2d_file_vect": "src/2D/bozze/district.svg",
+      "style": {
+        "border_color": "#8B5A2B",
+        "fill_color": "#FAF6F0",
+        "border_style": "dotted",
+        "shape": "rounded_rectangle",
+        "border_width": 3
+      },
+      "label_position": "over"
+    },
     "GEO": {
       "file_3d": "src/3D/geo.glb",
       "2d_file_vect": "src/2D/geo_position.svg",
@@ -7143,6 +7183,15 @@
         "width": 1.5
       },
       "label": "Included in Timebranch"
+    },
+    "is_in_district": {
+      "_comment": "BOZZA (MICRO-LANDSCAPE-ONTOLOGIA, 1.6.43): a site or a unit of the landscape in its district — pertinence by interpretation, in the earth brown of the district, dotted like the district's frame.",
+      "style": {
+        "color": "#8B5A2B",
+        "line_style": "dotted",
+        "width": 2
+      },
+      "label": "Is in district"
     },
     "is_in_representation_model_group": {
       "_comment": "Membership of a representation model in an RM container (EM16-RMNG). Dashed like the other membership edges that are TAGS rather than structure (has_representation_model, has_property), and carrying the RM family's #FF6600 so the line reads as part of the same family as the group's title-tab. NOTE: is_in_functional_unit has no entry in this block — a pre-existing gap, reported and not fixed here.",
