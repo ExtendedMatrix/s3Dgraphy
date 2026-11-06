@@ -1,6 +1,6 @@
 {
  "schema": "s3Dgraphy_datamodel_translations",
- "version": "1.15",
+ "version": "1.16",
  "languages": [
   "en",
   "it",
@@ -8809,6 +8809,50 @@
     "ro": "Set de fișiere",
     "fr": "Ensemble de fichiers",
     "de": "Dateigruppe"
+   }
+  }
+ },
+ "master_kinds": {
+  "complete": {
+   "label": {
+    "en": "Complete (textured)",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Completo (con texture)",
+    "el": "Πλήρες (με υφή)",
+    "he": "מלא (עם טקסטורה)",
+    "es": "Completo (con textura)",
+    "pl": "Pełny (z teksturą)",
+    "ro": "Complet (cu textură)",
+    "fr": "Complet (texturé)",
+    "de": "Vollständig (texturiert)"
+   }
+  },
+  "very_high_resolution": {
+   "label": {
+    "en": "Very high resolution",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Altissima risoluzione",
+    "el": "Πολύ υψηλή ανάλυση",
+    "he": "רזולוציה גבוהה מאוד",
+    "es": "Muy alta resolución",
+    "pl": "Bardzo wysoka rozdzielczość",
+    "ro": "Rezoluție foarte înaltă",
+    "fr": "Très haute résolution",
+    "de": "Sehr hohe Auflösung"
    }
   }
  },

@@ -2256,7 +2256,8 @@ class RDFExporter:
     @staticmethod
     def _emit_resource_packing(node_iri: URIRef, data: Dict[str, Any],
                                ctx) -> None:
-        for key, pred in (("packaging", EM.packaging), ("tier", EM.tier)):
+        for key, pred in (("packaging", EM.packaging), ("tier", EM.tier),
+                          ("master_kind", EM.masterKind)):
             value = data.get(key)
             if value:
                 ctx.add((node_iri, pred, Literal(str(value))))

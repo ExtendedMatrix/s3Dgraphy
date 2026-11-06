@@ -119,10 +119,25 @@ class ResourceNode(Node):
     #: — see :func:`s3dgraphy.resources.files.pick_representation`.
     PACKAGINGS = ("file", "directory", "archive", "file_set", "datablock")
 
+    #: WHICH MASTER, when the tier is master (E.D., 30 Oct 2026, «Timbrare i
+    #: master, e due tipi di master»):
+    #:
+    #: * `very_high_resolution` — the densest geometry the survey gave, often
+    #:   with no texture (the mesh out of the dense reconstruction, a cloud);
+    #: * `complete` — the textured master: born from the REDUCED mesh and the
+    #:   aligned photographs, a step with two inputs (``texturing``), not a
+    #:   linear derivative of the very high resolution one.
+    #:
+    #: Both are masters: nothing remakes either by a button. The axis says
+    #: which one a viewer, a stamp or a radar holds; it is meaningless on a
+    #: distribution and refused there. Unstated, the textures decide — a
+    #: READING (``resources.master_stamp.master_kind``), never written here.
+    MASTER_KINDS = ("very_high_resolution", "complete")
+
     def __init__(self, node_id, name="Unnamed Link", url="", url_type="External link",
                  description="", checksum=None, scope=None,
                  residency=None, role=None, tier=None, packaging=None,
-                 size_bytes=None, primitives=None, preferred=None):
+                 size_bytes=None, primitives=None, preferred=None, master_kind=None):
         """
         Inizializza una nuova istanza di ResourceNode.
 
@@ -170,6 +185,8 @@ class ResourceNode(Node):
                 fixed pair would be the same ageing enumeration in disguise.
             preferred (bool, opzionale): a SUGGESTION between candidates that
                 are equally valid — never a gate. See :meth:`set_preferred`.
+            master_kind (str, opzionale): one of :attr:`MASTER_KINDS`, with a
+                master — see :meth:`set_master_kind`.
 
         Why measures and not a level enumeration: `lod0`/`lod1`/`lod2` is a
         vocabulary that ages the moment somebody adds a level in the middle, and
@@ -221,6 +238,15 @@ class ResourceNode(Node):
             self.set_measures(size_bytes=size_bytes, primitives=primitives)
         if preferred is not None:
             self.set_preferred(preferred)
+        if master_kind is not None:
+            # a constructor param (as tier) because `master_kind` is also the
+            # READER method: a loader that found it among the leftovers would
+            # put it in `attributes`, and the RDF would never see it. A value a
+            # file carries wrongly stays as written, it does not degrade the node.
+            try:
+                self.set_master_kind(master_kind)
+            except ValueError:
+                self.data["master_kind"] = master_kind
 
     # ── the three fences, and where the bytes live ──────────────────────────
 
@@ -268,6 +294,21 @@ class ResourceNode(Node):
             raise ValueError(
                 f"tier must be one of {list(self.TIERS)}, got {tier!r}")
         self.data["tier"] = tier
+
+    def set_master_kind(self, kind):
+        """Say which master this is (:attr:`MASTER_KINDS`). Raises on an unknown
+        value, and on a resource whose stated tier is ``distribution``: a
+        version made to be consumed is not a master of any kind."""
+        if kind not in self.MASTER_KINDS:
+            raise ValueError(
+                f"master_kind must be one of {list(self.MASTER_KINDS)}, got {kind!r}")
+        if self.data.get("tier") == "distribution":
+            raise ValueError("master_kind on a distribution: only a master has a kind of master")
+        self.data["master_kind"] = kind
+
+    def master_kind(self):
+        """The stated kind of master, or None. No invention."""
+        return self.data.get("master_kind") or None
 
     def set_packaging(self, packaging):
         """Set how the bytes are shaped. Raises on an unknown value, same reason."""

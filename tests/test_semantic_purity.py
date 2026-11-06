@@ -66,6 +66,9 @@ ENGINE_NAMES = ("nodeodm", "opendronemap", "colmap", "micmac", "meshroom",
 FORMAT_READERS = {
     "importer/metashape_project.py":    # MICRO-IL-LETTORE-DI-METASHAPE, 02-10-2026
         "reads a .psx and the zips beside it; stdlib only, drives nothing",
+    "importer/metashape_chain.py":      # MICRO-TIMBRA-MASTER, 06-11-2026
+        "writes that reading as one stamp per step of the photogrammetric chain; "
+        "stdlib and the library only, drives nothing",
 }
 
 

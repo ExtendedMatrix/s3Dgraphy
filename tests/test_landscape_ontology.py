@@ -70,7 +70,7 @@ def test_the_three_units_are_declared_with_their_cidoc_class_and_no_crmem_class(
 def test_crmem_gets_two_concepts_and_still_one_landscape_class():
     ttl = (Path(load_json_mapping.__code__.co_filename).parent.parent
            / "JSON_config" / "em.ttl").read_text(encoding="utf-8")
-    assert 'owl:versionInfo "1.6.25"' in ttl
+    assert 'owl:versionInfo "1.6.26"' in ttl  # 1.6.26: em:masterKind (MICRO-TIMBRA-MASTER, 6 Nov); 1.6.25 the district kinds
     assert "em:DistrictUrban\n    a crm:E55_Type" in ttl
     assert "em:DistrictRural\n    a crm:E55_Type" in ttl
     assert "em:VirtualSite\n    a owl:Class" in ttl

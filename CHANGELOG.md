@@ -5,6 +5,33 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
+- **The master and its stamp, the two kinds of master** (MICRO-TIMBRA-MASTER,
+  6 November 2026, on E.D.'s «Timbrare i master, e due tipi di master», 30
+  October). `ResourceNode.MASTER_KINDS` (`very_high_resolution` | `complete`),
+  `set_master_kind` / `master_kind` (refused on a distribution); nodes
+  datamodel 1.6.42 `ResourceNode.properties.master_kind` → `em:masterKind`
+  (em.ttl / CRMem 1.6.26), labels in the translations 1.16 (section
+  `master_kinds`, `datamodel_i18n.master_kind_label`), RDF out and back.
+  `resources.master_stamp`: `master_kind`, `is_textured` (OBJ, glTF/glb, PLY;
+  vertex colours are not a texture), `looks_like_master`, `stamp_state`
+  (`unstamped` · `stamped` · `changed_after_stamp` · `unverified`), `mark` — the
+  sign «master not stamped · very high resolution» EMStudio, EM Tools and 3DSC
+  draw — and `register_master_revision` (a new master `was_revision_of` the old,
+  derived from it, the RMs moved to it). **The texturing step has two
+  inputs**: the Metashape reader writes `BuildUV` + `BuildTexture` as ONE
+  `texturing` act whose inputs are the mesh before it (the stage
+  `untextured`, a resource with no bytes of its own) and the oriented
+  photographs — it was a linear derivative of the depth maps, and a textured
+  copy lost its texturing; the textured model is `master_kind: complete`, the
+  reconstruction `very_high_resolution`. `importer.metashape_chain`
+  (`photogrammetric_chain`, `write_chain`): the whole chain of a chunk as one
+  stamp per step — image sets, alignment, VHR mesh, reduction, texturing —
+  with the graph's identities; what the project does not hold is `pending`.
+  `blend_folder.check`: an object that differs from its STAMPED master
+  proposes `export_master_version` («Export as a new version of the master»),
+  row field `master_stamped`. `s3dgraphy.stamp` re-exports `new_tree_stamp`,
+  `content_digest`, `now_iso`, `parse_psx_locator`. Shipped mappings
+  re-stamped. Tests: `tests/test_timbra_master.py` (25).
 - **The ontology of the Landscape Graph** (MICRO-LANDSCAPE-ONTOLOGIA,
   6 November 2026, on the proposals D-LG1..9 of 24 October). Three node
   classes under one abstract Python parent, `LandscapeUnitNode`

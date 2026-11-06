@@ -1447,6 +1447,8 @@ class RDFImporter:
                               # the digest covers
                               ("packaging", EM.packaging),
                               ("tier", EM.tier),
+                              # MICRO-TIMBRA-MASTER: which master
+                              ("master_kind", EM.masterKind),
                               ("digest_covers", EM.digestCovers),
                               ("content_digest", EM.contentDigest)):
                 value = self._one_literal(store, ref, pred)

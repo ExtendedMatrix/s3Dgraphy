@@ -454,6 +454,20 @@ class _G:
 #: it made when their url is a file outside
 FROM_DATABLOCK = "from_datablock"
 
+#: MICRO-TIMBRA-MASTER p.3 · the radar's gesture for an object that differs
+#: from its STAMPED master (changed in Blender after the stamp, or other bytes
+#: than the ones the stamp names): «Export as a new version of the master» —
+#: a new master file, stamped, derived from the previous one and its revision
+#: (``was_revision_of``); the .blend stays a cache and is never stamped
+EXPORT_MASTER_VERSION = "export_master_version"
+
+
+def master_is_stamped_file(node: Optional[Dict[str, Any]]) -> bool:
+    """The master the graph cites is a FILE outside the .blend (its url is
+    not a ``blend://`` datablock): what the stamp is on."""
+    url = str(_data(node or {}).get("url") or "")
+    return bool(url) and not _blend_url(url)
+
 
 def _blend_url(url: str) -> bool:
     return str(url or "").startswith("blend://")
@@ -541,15 +555,24 @@ def check(inv: Dict[str, Any], doc: Any, *, files: Optional[Dict[str, Dict[str, 
         newer = g.newer_revision(res) if res else None
         # what the source (disk or room) says of the master's file
         f = files.get(res or "") or (files.get(want) if want else None) or {}
+        master_node = g.nodes.get(bound["master"]) if bound["master"] else None
+        stamped_master = master_is_stamped_file(master_node)
         if recorded and o["fingerprint"] and recorded != o["fingerprint"]:
             state, why = "changed_here", "the mesh changed in Blender since its bytes were stamped"
             actions, action = ["register_version", "register_resource", "restore_from_master", "leave"], "register_version"
+            if stamped_master:
+                # the object differs from its stamped master: a new version OF
+                # THE MASTER is proposed first (a person's call: not ticked)
+                why = "the mesh changed in Blender after its master was stamped"
+                actions, action = [EXPORT_MASTER_VERSION] + actions, EXPORT_MASTER_VERSION
         elif newer:
             state, why = "newer_outside", f"a newer revision is in the graph: {g.name(newer)}"
             actions, action, tick = ["restore_from_master", "leave"], "restore_from_master", True
         elif have and want and have != want:
             state, why = "newer_outside", "the graph cites other bytes than the ones in the .blend"
             actions, action, tick = ["restore_from_master", "register_version", "leave"], "restore_from_master", True
+            if stamped_master:
+                actions.insert(1, EXPORT_MASTER_VERSION)
         elif f and f.get("exists") is False:
             state, why = "missing", "the master the graph cites is not on the " + ("server" if source == "room" else "disk")
             actions, action = ["export_master", "leave"], "export_master"
@@ -580,6 +603,7 @@ def check(inv: Dict[str, Any], doc: Any, *, files: Optional[Dict[str, Dict[str, 
         children = g.children_of(bound["master"]) if bound["master"] else []
         r = row(state=state, why=why, actions=actions, action=action, tick=tick, **base)
         r["notes"] += notes
+        r["master_stamped"] = stamped_master if bound["master"] else None
         r["versions"] = len(children)
         r["version_names"] = [g.name(c) for c in children][:12]
         r["epochs_graph"] = g.epochs_of(hat) if hat else []

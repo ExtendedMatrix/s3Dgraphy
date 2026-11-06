@@ -32,6 +32,7 @@ Shape — one section per kind of key, each keyed by a STABLE identity::
       "stratigraphic_kinds":  {"<kind>":            {"label": {...}}},
       "end_reasons":          {"<end reason>":      {"label": {...}}},
       "packagings":           {"<packaging>":       {"label": {...}}},
+      "master_kinds":         {"<master kind>":     {"label": {...}}},
       "property_names":       {"<property name>":   {"label": {...}}},
       "reasoning":            {"<word>":            {"label": {...}, "description": {...}}}
     }
@@ -61,6 +62,12 @@ as it is.
 are packed — the `packaging` field of ResourceNode, seeded from its `labels`:
 «File set» → «Insieme di file», «Folder» → «Cartella» — what an inspector shows
 on the chip of a resource (before dev30 these were words of EMStudio's own i18n).
+
+`master_kinds.<kind>.label` (1.16, node datamodel 1.6.42, MICRO-TIMBRA-MASTER)
+is the name of the kind of a master — the `master_kind` field of ResourceNode,
+seeded from its `labels`: «Very high resolution» → «Altissima risoluzione»,
+«Complete (textured)» → «Completo (con texture)» — what the sign «master not
+stamped» says beside a master in EMStudio, EM Tools and 3DSC.
 
 `end_reasons.<reason>.label` (1.14, node datamodel 1.6.36) is how a unit ends —
 the `end_reason` node element of the continuity node (BR), seeded from its
@@ -146,6 +153,7 @@ SECTIONS: Dict[str, str] = {
     "stratigraphic_kinds": "strat_kind",
     "end_reasons": "end_reason",
     "packagings": "packaging",
+    "master_kinds": "master_kind",
     "reasoning": "reasoning",
     "property_names": "property_name",
 }
@@ -330,6 +338,19 @@ def _collect_packagings_en(dm: Dict[str, Any]) -> Dict[str, Dict[str, str]]:
     return out
 
 
+def _collect_master_kinds_en(dm: Dict[str, Any]) -> Dict[str, Dict[str, str]]:
+    """{master kind: {"label": ...}} from the ``labels`` of ResourceNode's
+    ``master_kind`` field in the datamodel (1.6.42)."""
+    el = (((dm.get("reference_nodes") or {}).get("ResourceNode") or {})
+          .get("properties") or {}).get("master_kind")
+    out: Dict[str, Dict[str, str]] = {}
+    if isinstance(el, dict) and isinstance(el.get("labels"), dict):
+        for value, label in el["labels"].items():
+            if isinstance(label, str) and label.strip():
+                out[value] = {"label": label}
+    return out
+
+
 def _collect_reasoning_en(connections: Dict[str, Any]) -> Dict[str, Dict[str, str]]:
     """{word: {"label": ..., "description": ...}} from the connections
     datamodel's ``paradata_reasoning`` block (1.6.36); ``_`` keys are notes."""
@@ -352,6 +373,7 @@ def _collect_all_en() -> Dict[str, Dict[str, Dict[str, str]]]:
     out["stratigraphic_kinds"] = _collect_stratigraphic_kinds_en(_load(DATAMODEL))
     out["end_reasons"] = _collect_end_reasons_en(_load(DATAMODEL))
     out["packagings"] = _collect_packagings_en(_load(DATAMODEL))
+    out["master_kinds"] = _collect_master_kinds_en(_load(DATAMODEL))
     out["reasoning"] = _collect_reasoning_en(_load(CONNECTIONS))
     out["property_names"] = _collect_property_names_en(_load(QUALIA))
     return out
@@ -415,7 +437,7 @@ def _rows(doc: Dict[str, Any]) -> List[Tuple[str, str, str]]:
     keys: List[Tuple[str, str, str]] = []
     for section in ("entries", "qualia_categories", "qualia_subcategories", "qualia",
                     "edge_types", "dtc_kinds", "stratigraphic_kinds", "end_reasons",
-                    "packagings", "reasoning"):
+                    "packagings", "master_kinds", "reasoning"):
         entries = doc.get(section, {})
         for key in sorted(entries):
             for field in ("label", "description") + PHRASE_FIELDS:
@@ -534,6 +556,13 @@ def end_reason_label(reason: str, lang: str = "en") -> Optional[str]:
     """How a unit ends, in ``lang`` («destroyed» → «distrutta»), English
     fallback; ``None`` for a reason the datamodel does not have."""
     return translate("end_reasons", reason, "label", lang)
+
+
+def master_kind_label(kind: str, lang: str = "en") -> Optional[str]:
+    """The name of a kind of master in ``lang`` («very_high_resolution» →
+    «Altissima risoluzione»), English fallback; ``None`` for a kind the
+    datamodel does not have."""
+    return translate("master_kinds", kind, "label", lang)
 
 
 def packaging_label(packaging: str, lang: str = "en") -> Optional[str]:
@@ -691,6 +720,10 @@ def export_xlsx(path: str, force: bool = False) -> None:
             area = "resource packaging"
             note = (f"Name of the packaging '{key}' of a resource (how its bytes are "
                     "packed), shown on the resource's chip in an inspector")
+        elif section == "master_kinds":
+            area = "kinds of master"
+            note = (f"Name of the kind of master '{key}' (very high resolution: dense, often "
+                    "untextured; complete: textured), shown beside the sign «master not stamped»")
         elif section == "reasoning":
             area = "reasoning between properties"
             note = (f"{'Title' if field == 'label' else 'Sentence'} of '{key}' (an instance of a "

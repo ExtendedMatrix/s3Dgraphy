@@ -167,7 +167,10 @@ def test_check_five_states():
     assert w["versions"] == 1   # walls.v1 is born from the master
     # the mesh changed since its bytes were stamped → ↑, not ticked
     m = rows["object:Moved"]
-    assert m["state"] == "changed_here" and not m["tick"] and m["action"] == "register_version"
+    # MICRO-TIMBRA-MASTER p.3: its master is a stamped FILE, so the first
+    # gesture is a new version OF THE MASTER; «Register as a version» stays
+    assert m["state"] == "changed_here" and not m["tick"] and m["action"] == BF.EXPORT_MASTER_VERSION
+    assert "register_version" in m["actions"] and m["master_stamped"] is True
     # epochs differ (the graph says II and IV) → ↓ with the graph's epochs
     a = rows["object:Architrave"]
     assert a["state"] == "newer_outside" and a["action"] == "take_epochs_from_graph"

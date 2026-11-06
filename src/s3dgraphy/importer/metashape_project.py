@@ -880,28 +880,70 @@ def _operations(reader: _Reader, chunk: Chunk, chunk_meta: Dict[str, str],
             reader.warn(f"{here} {asset.type} {asset.key}: operation {name} has no "
                         f"DTC kind this reader knows: recorded without one")
             own.append(name)
+        # MICRO-TIMBRA-MASTER p.2 · a textured model is the output of a
+        # texturing step with TWO inputs — the mesh as it was before (reduced,
+        # untextured: a STAGE of the same asset, Metashape textures in place)
+        # and the oriented photographs (the cameras) — never a linear
+        # derivative of the very high resolution model
+        tex = [n for n in own if OPERATIONS.get(n, (None, None))[1] == "texturing"] \
+            if asset.type == "model" else []
+        own = [n for n in own if n not in tex]
+        mesh_out = {"type": asset.type, "key": asset.key}
+        if tex:
+            mesh_out = dict(mesh_out, stage=UNTEXTURED)
         if asset.type == "model" and "BuildModel" in groups:
             sig = (tuple(sorted(groups["BuildModel"].items())), asset.created)
             first = signatures.get(sig)
             if first is not None:
                 # the same BuildModel, the same date: a COPY of the first model
                 # (decimated or duplicated), not a second reconstruction
-                ops.append(_derived_model(chunk, first, asset, here, reader))
+                op = _derived_model(chunk, first, asset, here, reader)
+                op.output = dict(mesh_out)
+                ops.append(op)
+                ops.extend(_texturing(tex, groups, asset, cameras))
                 continue
             signatures[sig] = asset
-        if not own:
+        if not own and not tex:
             if not groups and asset.type != "tie_points":
                 reader.warn(f"{here} {asset.type} {asset.key}: no operation recorded "
                             f"(imported, or made by a step Metashape does not log)")
             continue
         inputs = _inputs_of(asset, groups, by_type, cameras)
         for name in own:
-            ops.append(_operation(name, groups[name],
-                                  {"type": asset.type, "key": asset.key},
+            ops.append(_operation(name, groups[name], dict(mesh_out),
                                   recorded_on=f"{asset.type}/{asset.key}",
                                   date=asset.created, inputs=inputs,
                                   software_version=asset.software_version))
+        ops.extend(_texturing(tex, groups, asset, cameras))
     return _in_order(ops)
+
+
+#: the stage of a model before its texturing (the reduced mesh of the
+#: complete master): an input of the texturing step, with no bytes of its own
+#: in the project — Metashape textures the model in place
+UNTEXTURED = "untextured"
+
+
+def _texturing(names: List[str], groups: Dict[str, Any], asset: Asset,
+               cameras: Dict[str, str]) -> List[Operation]:
+    """The texturing operations of a model (``BuildUV``, ``BuildTexture``): ONE
+    step for the two, the projection and the baking being one act of kind
+    ``texturing`` (E.D., 2 Oct 2026), with two inputs — the model before
+    (:data:`UNTEXTURED`) and the oriented photographs."""
+    if not names:
+        return []
+    params: Dict[str, Any] = {}
+    for n in names:
+        params.update(groups[n])
+    name = "BuildTexture" if "BuildTexture" in names else names[0]
+    op = _operation(name, params, {"type": asset.type, "key": asset.key},
+                    recorded_on=f"{asset.type}/{asset.key}", date=asset.created,
+                    inputs=[{"type": asset.type, "key": asset.key, "stage": UNTEXTURED},
+                            dict(cameras)],
+                    software_version=asset.software_version)
+    if len(names) > 1:
+        op.technique = f"{TECHNIQUE_PREFIX} " + " + ".join(_words(n) for n in names)
+    return [op]
 
 
 def _inputs_of(asset: Asset, groups: Dict[str, Any], by_type: Dict[str, List[Asset]],
@@ -970,6 +1012,10 @@ def _in_order(ops: List[Operation]) -> List[Operation]:
     """By date; an undated operation (the chunk's) goes after the latest one
     that comes before it in the pipeline."""
     def rank(op: Operation) -> int:
+        if op.dtc_kind == "texturing":
+            # after the reduction it textures (a copy, a decimation): the
+            # mesh before is one of its two inputs
+            return 97
         if op.name in OPERATIONS:
             return OPERATIONS[op.name][2]
         return 95 if op.name in (LOD0_OPERATION, "copy") else 200
@@ -1112,7 +1158,9 @@ def metashape_to_dtc(project: MetashapeProject, graph: Any, *, chunk: Any = None
                                         "members": res["count"]})
 
     # ── the outputs ──────────────────────────────────────────────────────────
-    nodes_by_asset: Dict[Tuple[str, str], str] = {}
+    nodes_by_asset: Dict[Tuple[str, ...], str] = {}
+    textured = {(o.output.get("type"), o.output.get("key")) for o in target.operations
+                if o.dtc_kind == "texturing"}
     for asset in target.assets:
         locator = asset_locator(project, target, asset.type, asset.key)
         rid = asset_id(locator)
@@ -1127,6 +1175,15 @@ def metashape_to_dtc(project: MetashapeProject, graph: Any, *, chunk: Any = None
             data = {"locator": locator, "dtc_kind": kind,
                     "created_at": asset.created}
             data = {k: v for k, v in data.items() if v is not None}
+            # MICRO-TIMBRA-MASTER · which master: the textured model is the
+            # complete one; the model a reconstruction built, untextured, the
+            # very high resolution one; a copy (a reduction) says nothing
+            if (asset.type, asset.key) in textured or asset.flags.get("textures"):
+                data["master_kind"] = "complete"
+            elif asset.type == "model" and "BuildModel" in _grouped(asset.meta) \
+                    and not any(o.output.get("key") == asset.key and o.name in (LOD0_OPERATION, "copy")
+                                for o in target.operations if o.output.get("type") == "model"):
+                data["master_kind"] = "very_high_resolution"
             add_resource(graph, name=f"{target.label} · {label}", resource_id=rid,
                          kind="3d_model" if asset.type in ("model", "tiled_model") else None,
                          tier="master", packaging="datablock",
@@ -1137,15 +1194,32 @@ def metashape_to_dtc(project: MetashapeProject, graph: Any, *, chunk: Any = None
             # night of 1 October gave `blend://` (res:sp-blend), measured.
         out["resources"].append({"id": rid, "type": asset.type, "key": asset.key,
                                  "locator": locator, "counts": dict(asset.counts)})
+        if (asset.type, asset.key) in textured:
+            # the mesh before its texturing: a stage with no bytes of its own,
+            # the output of the reduction and an input of the texturing
+            stage_loc = f"{locator}@{UNTEXTURED}"
+            sid = asset_id(stage_loc)
+            nodes_by_asset[(asset.type, asset.key, UNTEXTURED)] = sid
+            if _find(graph, sid) is None:
+                word = ASSET_WORDS[asset.type][0]
+                add_resource(graph, name=f"{target.label} · {asset.label or f'{word} {asset.key}'} "
+                                         f"before texturing", resource_id=sid,
+                             kind="3d_model", tier="master", packaging="datablock",
+                             data={"locator": stage_loc, "dtc_kind": "mesh", "stage": UNTEXTURED})
+            out["resources"].append({"id": sid, "type": asset.type, "key": asset.key,
+                                     "stage": UNTEXTURED, "locator": stage_loc, "counts": {}})
 
     # ── one act per operation ────────────────────────────────────────────────
     for op in target.operations:
-        output = nodes_by_asset.get((op.output.get("type"), op.output.get("key")))
+        out_key = (op.output.get("type"), op.output.get("key")) + \
+            ((op.output["stage"],) if op.output.get("stage") else ())
+        output = nodes_by_asset.get(out_key)
         if output is None:
             warnings.append(f"{op.name}: its output is not in the project; act not written")
             continue
-        inputs = [nodes_by_asset[(i["type"], i["key"])] for i in op.inputs
-                  if (i["type"], i["key"]) in nodes_by_asset]
+        in_keys = [(i["type"], i["key"]) + ((i["stage"],) if i.get("stage") else ())
+                   for i in op.inputs]
+        inputs = [nodes_by_asset[k] for k in in_keys if k in nodes_by_asset]
         if op.name == "MatchPhotos" or (op.output.get("type") == "depth_maps"):
             inputs = list(acquisitions) + inputs
         if not inputs:
@@ -1158,6 +1232,8 @@ def metashape_to_dtc(project: MetashapeProject, graph: Any, *, chunk: Any = None
             warnings.append(f"{op.name} → {op.output.get('type')} {op.output.get('key')}: "
                             f"no DTC kind for this operation; the act is written without one")
         locator = asset_locator(project, target, op.output["type"], op.output["key"])
+        if op.output.get("stage"):
+            locator = f"{locator}@{op.output['stage']}"
         pid = "psx-op:" + str(uuid.uuid5(uuid.NAMESPACE_URL, f"{locator}|{op.name}"))
         params = dict(op.parameters)
         res = declare_derivation(graph, output, inputs, process_id=pid,

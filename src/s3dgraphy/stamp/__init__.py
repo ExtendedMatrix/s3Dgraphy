@@ -56,6 +56,10 @@ from .hints import (HINTS_VERSION, file_digest, for_export, hints_filename,
 from .identity import (COMPARABLE, UNKNOWN, VERIFIABLE, describe_identity,
                        identity_strength, is_comparable, is_verifiable,
                        split_identity)
+# MICRO-TIMBRA-MASTER · what a format reader needs to write stamps, through the
+# library (a reader imports nothing but the stdlib and s3dgraphy)
+from dtcstamp import (content_digest, new_tree_stamp, now_iso,
+                      parse_psx_locator)
 
 __all__ = [
     "AbsorbResult", "BadStamp", "COMPARABLE", "Disagreement", "HINTS_VERSION",
@@ -67,4 +71,5 @@ __all__ = [
     "read_hints", "read_stamp", "scan_directory", "split_identity",
     "stamp_filename", "stamp_identity", "stamp_to_graph", "substance",
     "validate_stamp", "write_hints", "write_public_hints", "write_stamp",
+    "content_digest", "new_tree_stamp", "now_iso", "parse_psx_locator",
 ]
