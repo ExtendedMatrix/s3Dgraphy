@@ -29,7 +29,18 @@ class GeoPositionNode(Node):
     Attributi:
         type (str): Tipo di nodo, impostato su "geo_position".
         data (dict): ``epsg``, ``shift_x``, ``shift_y``, ``shift_z``, ``rotation``,
-            ``rotation_reference`` (``"grid"``: D2).
+            ``rotation_reference`` (``"grid"``: D2); facoltativo
+            ``datum_operation``.
+
+    **L'operazione di datum è dichiarata, non indovinata** (MICRO-DATUM-
+    DICHIARATO, 9 nov 2026). ``data.datum_operation`` = ``"EPSG:<codice>"``:
+    l'operazione con cui le coordinate del dataset sono state portate in
+    WGS 84 (Metashape per EPSG:3844 usa il TOWGS84 di EPSG:1645; PROJ, per la
+    Romania, sceglie EPSG:15995 — 0,8 m di differenza a Templu Mare). Chi
+    porta un dato vero in ECEF nel CRS dello studio usa quella; assente = la
+    migliore operazione di PROJ, come prima. Si scrive con
+    :func:`s3dgraphy.api.declare_georeference` (forma controllata da
+    ``normalise_datum_operation``).
     """
     node_type = "geo_position"
     def __init__(self, node_id, epsg=None, shift_x=0.0, shift_y=0.0, shift_z=0.0,

@@ -1326,7 +1326,8 @@
         "shift_y": "Q9_is_expressed_in_terms_of",
         "shift_z": "Q9_is_expressed_in_terms_of",
         "rotation": "Q9_is_expressed_in_terms_of",
-        "rotation_reference": {"note": "1.6.25 (D2, decided by E.D. 4 Oct 2026): the north 'rotation' is measured from — always 'grid' (the grid north of the CRS epsg), written by GeoPositionNode and set on load when a document does not carry it (it is the definition, not a guess). Not projected to RDF: the anchor's frame is the CRS itself."}
+        "rotation_reference": {"note": "1.6.25 (D2, decided by E.D. 4 Oct 2026): the north 'rotation' is measured from — always 'grid' (the grid north of the CRS epsg), written by GeoPositionNode and set on load when a document does not carry it (it is the definition, not a guess). Not projected to RDF: the anchor's frame is the CRS itself."},
+        "datum_operation": {"note": "1.6 (MICRO-DATUM-DICHIARATO, 9 Nov 2026): OPTIONAL, 'EPSG:<code>' — the coordinate operation the dataset's coordinates were taken to WGS 84 with (Metashape writes EPSG:3844 data in ECEF with the TOWGS84 of EPSG:1645, Pulkovo 1942(58) to WGS 84 (1); PROJ's own choice for Romania is EPSG:15995 — 0.8 m apart at Templu Mare). A reader that brings true ECEF / WGS 84 data into the study's CRS uses the declared operation; absent = PROJ's best non-ballpark operation, as before. Declared, never guessed: an operation PROJ does not know is refused by name, never silently replaced. Written by api.declare_georeference (form checked by api.normalise_datum_operation). Not projected to RDF in this round."}
       }
     },
     "ResourceNode": {

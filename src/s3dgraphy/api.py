@@ -2862,12 +2862,39 @@ def georeference_state(graph: Graph) -> str:
     return "declared"
 
 
+def normalise_datum_operation(value: Any) -> Optional[str]:
+    """MICRO-DATUM-DICHIARATO (9 Nov 2026) · the operation a dataset's
+    coordinates were taken to WGS 84 with, as ``"EPSG:<code>"``. ``None`` / ``""``
+    = not declared (PROJ's best operation is used); ``1645``, ``"epsg:1645"``,
+    ``"EPSG::1645"`` → ``"EPSG:1645"``; anything else is a ``ValueError``. Only the
+    form is checked here: whether PROJ knows the operation is the reader's
+    question (a bridge refuses an unknown one by name, never replaces it)."""
+    if value is None or (isinstance(value, str) and not value.strip()):
+        return None
+    if isinstance(value, bool):
+        raise ValueError(f"datum_operation: {value!r} is not an EPSG operation")
+    if isinstance(value, int):
+        code = value
+    else:
+        m = re.fullmatch(r"\s*(?:EPSG\s*:{1,2}\s*)?(\d+)\s*", str(value), re.IGNORECASE)
+        if not m:
+            raise ValueError(f"datum_operation: {value!r} is not «EPSG:<code>»")
+        code = int(m.group(1))
+    if code <= 0:
+        raise ValueError(f"datum_operation: {value!r} is not an EPSG operation")
+    return f"EPSG:{code}"
+
+
 def declare_georeference(graph: Graph, epsg: int, shift_x: float = 0.0,
                          shift_y: float = 0.0, shift_z: float = 0.0,
-                         rotation: Optional[float] = None) -> Dict[str, Any]:
+                         rotation: Optional[float] = None,
+                         datum_operation: Any = ...) -> Dict[str, Any]:
     """Say where the graph is: the CRS and the anchor of the scene-local frame,
     on its GeoPositionNode (created when missing). ``read_shift`` gives the four
-    values of a SHIFT.txt. Returns the anchor as written."""
+    values of a SHIFT.txt. ``datum_operation`` (``"EPSG:<code>"``, see
+    :func:`normalise_datum_operation`): the operation the dataset's coordinates
+    were taken to WGS 84 with; omitted = left as it is, ``None`` = removed.
+    Returns the anchor as written."""
     from .nodes.geo_position_node import GeoPositionNode
     node = _geo_node(graph)
     if node is None:
@@ -2880,6 +2907,12 @@ def declare_georeference(graph: Graph, epsg: int, shift_x: float = 0.0,
     if rotation is not None:
         node.data["rotation"] = float(rotation)
     node.data.setdefault("rotation", 0.0)
+    if datum_operation is not ...:
+        op = normalise_datum_operation(datum_operation)
+        if op is None:
+            node.data.pop("datum_operation", None)
+        else:
+            node.data["datum_operation"] = op
     return _geo_anchor(graph)
 
 
@@ -2894,7 +2927,7 @@ def _geo_anchor(graph: Graph) -> Dict[str, Any]:
     node = _geo_node(graph)
     if node is None:
         return {"epsg": None, "shift_x": 0.0, "shift_y": 0.0, "shift_z": 0.0,
-                "rotation": 0.0}
+                "rotation": 0.0, "datum_operation": None}
     data = dict(getattr(node, "data", {}) or {})
     epsg = data.get("epsg")
     return {
@@ -2905,6 +2938,8 @@ def _geo_anchor(graph: Graph) -> Dict[str, Any]:
         "shift_y": float(data.get("shift_y") or 0.0),
         "shift_z": float(data.get("shift_z") or 0.0),
         "rotation": float(data.get("rotation") or 0.0),
+        # MICRO-DATUM-DICHIARATO · None = not declared: PROJ's best operation
+        "datum_operation": data.get("datum_operation") or None,
     }
 
 
