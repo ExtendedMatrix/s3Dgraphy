@@ -33,7 +33,9 @@ class PyArchInitImporter(BaseImporter):
                  existing_graph=None,
                  filters: Optional[Dict[str, Any]] = None,
                  *,
-                 connection_url: Optional[str] = None):
+                 connection_url: Optional[str] = None,
+                 footprints: Optional[bool] = None,
+                 layer_url: Optional[str] = None):
         """
         Initialize pyArchInit importer with mapping configuration.
 
@@ -64,6 +66,16 @@ class PyArchInitImporter(BaseImporter):
                 (``pip install s3dgraphy[postgres]``); a friendly
                 ``ImportError`` fires on first connection attempt if
                 it isn't.
+            footprints: read the GIS layers the mapping declares
+                (``footprint_layers``) and write the FOOTPRINTS of the site,
+                the areas, the saggi and the CUTS (never of a positive unit:
+                its geometry is the proxy). ``None`` (default) follows the
+                mapping; ``False`` skips them. See
+                :mod:`.pyarchinit_footprints`; the counts are in
+                ``self.footprint_report``.
+            layer_url: the locator written on each layer resource — the
+                address in a node's bucket when the caller has one; default
+                the database's local path.
 
         Raises:
             ValueError: If both ``filepath`` and ``connection_url`` are
@@ -136,6 +148,14 @@ class PyArchInitImporter(BaseImporter):
         # dict}``. Neutral data exposed to any caller; the EMtools
         # Hybrid-C adapter maps it to graph.attributes['aux_orphans'].
         self.orphans = []
+
+        # (sito, area, us) → node id of every row imported or enriched: the
+        # key a pyArchInit layer (pyunitastratigrafiche) names a unit by
+        self._unit_index: Dict[Tuple[str, str, str], str] = {}
+        self._sites_seen: set = set()
+        self._footprints = footprints
+        self._layer_url = layer_url
+        self.footprint_report: Optional[Dict[str, Any]] = None
 
         self.validate_mapping()
 
@@ -282,6 +302,7 @@ class PyArchInitImporter(BaseImporter):
                 # properties.
                 self._process_pyarchinit_properties(row_dict, existing_node)
                 self._process_memberships(row_dict, existing_node)
+                self._index_unit(row_dict, existing_node)
                 return existing_node
                 
             elif is_enriching_existing:
@@ -318,6 +339,15 @@ class PyArchInitImporter(BaseImporter):
                 id_col_config = self.mapping['column_mappings'][id_column]
                 strat_type = id_col_config.get('node_type', 'US')
                 node_class = get_stratigraphic_node_class(strat_type)
+                # 12 Nov 2026 · the two VOIDS by the row's own unita_tipo: a
+                # 'USN' row is a cut (NegativeStratigraphicUnit) and 'USNt' a
+                # neutral void — measured, they came in as plain US because
+                # only the mapping's 'US' was read, and a cut that is a US
+                # cannot carry its footprint. The other unita_tipo (USV…) are
+                # left as they were (kinds via apply_legacy_kind below).
+                _ut = str(row_dict.get('unita_tipo') or '').strip()
+                if _ut in self._VOID_TYPES:
+                    node_class = get_stratigraphic_node_class(_ut)
                 
                 # Create new node. Identity: if a column is flagged
                 # ``is_passthrough`` (e.g. node_uuid / EMid, UUID v7), carry its
@@ -350,11 +380,46 @@ class PyArchInitImporter(BaseImporter):
                 # author).
                 self._process_pyarchinit_properties(row_dict, new_node)
                 self._process_memberships(row_dict, new_node)
+                self._index_unit(row_dict, new_node)
                 return new_node
 
         except KeyError as e:
             self.warnings.append(f"Missing required column: {str(e)}")
             raise
+
+    #: the unita_tipo that make their own class (the two voids, POL6)
+    _VOID_TYPES = ("USN", "USNt")
+
+    def _index_unit(self, row_dict: Dict[str, Any], node: Node) -> None:
+        key = tuple(str(row_dict.get(c) if row_dict.get(c) is not None else "").strip()
+                    for c in ("sito", "area", "us"))
+        self._unit_index[key] = node.node_id
+        if key[0]:
+            self._sites_seen.add(key[0])
+
+    def _footprint_sites(self) -> set:
+        """The sites whose features are read: the filter's, else the rows'."""
+        f = (self.filters or {}).get("sito")
+        return {str(f).strip()} if f else set(self._sites_seen)
+
+    def _read_footprints(self, conn) -> None:
+        cfg = self.mapping.get("footprint_layers")
+        if self._footprints is False or not cfg or cfg.get("enabled") is False:
+            return
+        from .pyarchinit_footprints import FootprintReader
+        try:
+            self.footprint_report = FootprintReader(
+                self, conn, cfg, layer_url=self._layer_url).run()
+        except Exception as e:  # noqa: BLE001 — the rows are imported; the drawings are extra
+            logger.warning("pyArchInit footprints not read", exc_info=True)
+            self.warnings.append(f"Footprints not read: {redact_dsn(e)}")
+            return
+        r = self.footprint_report
+        self.warnings.append(
+            f"Footprints: {r['site_with_footprint']} site, {r['places_with_footprint']} "
+            f"places, {r['cuts_with_footprint']} cuts; {r['positive_units_excluded']} "
+            f"positive-unit polygons left to the proxy; {r['layers_registered']} layers")
+        self.warnings += r["warnings"]
 
     def _process_pyarchinit_properties(self, row_dict: Dict[str, Any], strat_node: Node):
         """
@@ -454,9 +519,15 @@ class PyArchInitImporter(BaseImporter):
             # the source column is part of the identity (not just kind+value).
             loc_id = f"loc::{col_name}::{kind}::{loc_name}"
             if self.graph.find_node_by_id(loc_id) is None:
-                self.graph.add_node(LocationNodeGroup(
+                loc = LocationNodeGroup(
                     node_id=loc_id, name=loc_name, kind=kind,
-                    description=col_config.get('description', '')))
+                    description=col_config.get('description', ''))
+                # nodes 1.6.43 · an operational place says its level — the
+                # column it comes from (area, settore, saggio) — so a reader
+                # (a map) tells a saggio from an area without parsing an id
+                if kind == 'study':
+                    loc.attributes['level'] = col_name
+                self.graph.add_node(loc)
             edge_id = f"{strat_node.node_id}_is_in_location_{loc_id}"
             if not self.graph.find_edge_by_id(edge_id):
                 self.graph.add_edge(
@@ -998,6 +1069,7 @@ class PyArchInitImporter(BaseImporter):
             if error_rows > 0:
                 self.warnings.append(f"Errors: {error_rows}")
 
+            self._read_footprints(conn)
             self._finish_relative_chronology("imported")
             return self.graph
             

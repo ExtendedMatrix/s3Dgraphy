@@ -5,6 +5,38 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
+- **The footprints of saggi and cuts** (NIGHT impronte di saggi e tagli, 12
+  November 2026, decided by E.D. 11 November). Qualia 1.6.11: `footprint`
+  declares WHO may carry it — `applies_to` the site (LocationNodeGroup level
+  `sito`), the operational places (kind `study`: area, settore, saggio,
+  quadrato), a LandscapeUnitNode and the CUT (`NegativeStratigraphicUnit`,
+  USN, «US-»: the interface a subtraction of matter left, CRMarchaeo A3);
+  `not_applies_to` the positive unit (its geometry is the proxy, quale
+  `geometry`) and the USNt (a designed void). Nodes 1.6.43: `level` on a
+  kind-study place is the operational one (area, settore, saggio), and
+  `gis_format` gains `spatialite` | `postgis`. `gis.footprint`
+  (`footprint_verdict` reads the rule from the qualia JSON, `write_footprint` /
+  `set_footprint` for places and cuts — a positive unit is refused naming the
+  proxy —, `footprints`, `simplify_polygons`: above 500 vertices the inline
+  outline is simplified with Douglas–Peucker and the tolerance declared on the
+  extractor, `data.simplified`, the full geometry staying in its `gis_layer`);
+  `gis.site.set_footprint` writes through it with the same ids.
+  `gis.spatialite`: a SpatiaLite geometry BLOB read without GDAL
+  (pyArchInit's layers are not WKB); `gis.wkb` gives `polygons` for a
+  (multi)polygon. The pyArchInit importer reads the layers the mapping declares
+  (mapping 1.6.5 `footprint_layers`: `pyarchinit_siti_polygonal`,
+  `pyarchinit_sondaggi`, `pyarchinit_ripartizioni_spaziali`,
+  `pyunitastratigrafiche`), writes the footprints of the site, the areas, the
+  saggi and the cuts, registers each layer as a `gis_layer` hatted by a
+  DocumentNode the extractors cite, counts the positive units' polygons it
+  leaves to the proxy (`footprint_report`); `footprints=False` skips it,
+  `layer_url=` is the bucket address. The importer now makes a
+  NegativeStratigraphicUnit (and a NeutralStratigraphicUnit) from a row whose
+  `unita_tipo` is `USN` (`USNt`) — they came in as plain US — and writes the
+  column as `level` on the study places. `JSON_config/em_basemap_sources.json`:
+  the catalogue of base maps (licence, `offline`), moved from EMStudio's
+  `geoglobe.ts` verbatim, vendored by StratiField. The nine shipped mappings
+  re-stamped against nodes 1.6.43.
 - **The master and its stamp, the two kinds of master** (MICRO-TIMBRA-MASTER,
   6 November 2026, on E.D.'s «Timbrare i master, e due tipi di master», 30
   October). `ResourceNode.MASTER_KINDS` (`very_high_resolution` | `complete`),

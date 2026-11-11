@@ -79,21 +79,28 @@ def _read(buf: bytes, off: int) -> Tuple[Dict[str, Any], int]:
         for _ in range(n):
             r, off = points(off)
             rings.append(r)
-        return {"type": "Polygon", "coords": rings, "has_z": has_z}, off
+        # ``polygons`` (12 Nov 2026): the same rings with the polygon kept, so a
+        # footprint can tell an outer ring from a hole across a multipolygon
+        return {"type": "Polygon", "coords": rings, "has_z": has_z, "polygons": [rings]}, off
     if base in (4, 5, 6, 7):
         n = struct.unpack_from(end + "I", buf, off)[0]
         off += 4
         parts: List[Any] = []
         kinds = set()
+        polygons: List[Any] = []
         for _ in range(n):
             g, off = _read(buf, off)
             kinds.add(g["type"])
             has_z = has_z or g["has_z"]
             parts += [g["coords"]] if g["type"] == "Point" else g["coords"]
+            polygons += g.get("polygons") or []
         name = BASE_TYPES[base]
         if base == 4:
             parts = [parts]       # a multipoint is ONE part of points
-        return {"type": name, "coords": parts, "has_z": has_z, "members": sorted(kinds)}, off
+        out = {"type": name, "coords": parts, "has_z": has_z, "members": sorted(kinds)}
+        if polygons:
+            out["polygons"] = polygons
+        return out, off
     raise WkbError(f"WKB type {raw} is not read")
 
 

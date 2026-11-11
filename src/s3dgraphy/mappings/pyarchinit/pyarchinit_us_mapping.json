@@ -1,7 +1,7 @@
 {
   "name": "pyArchInit US Table",
   "description": "Mapping for pyArchInit us_table -> Extended Matrix graph. Tier 1: identity via node_uuid passthrough (#14; canonical UUID v7 column added by the pyArchInit node_uuid backfill migration), spatial via LocationNodeGroup (#24), and intrinsic qualia typed -> CIDOC (E54 Dimension / E55 Type / E57 Material) through em_qualia_types.json. Tier 2 (this version): periodo/fase -> EpochNode via has_first_epoch / survive_in_epoch (resolved against periodizzazione_table by epoch_mappings), documentazione/doc_usv -> DocumentNode via has_documentation, schedatore/direttore_us/responsabile_us -> AuthorNode via has_author. Remaining deferred columns are in _tier2_pending_handlers (issue #26).",
-  "version": "1.6.4",
+  "version": "1.6.5",
   "table_settings": {
     "format_type": "sqlite",
     "table_name": "us_table",
@@ -203,6 +203,17 @@
     }
   },
   "relations": [],
+  "footprint_layers": {
+    "_comment": "v1.6.5 (NIGHT impronte di saggi e tagli, 12 Nov 2026, decided by E.D. 2026-11-11): the GIS layers of the same database whose polygons become FOOTPRINTS (qualia footprint 1.6.11) — read by importer/pyarchinit_footprints.py after the rows, never failing the import. Table and column names MEASURED on pyArchInit's demo database (geometry_columns, SRID 3004, SpatiaLite BLOB). The site → the site place (level sito); sondaggi → the saggio; ripartizioni_spaziali → the area / settore / saggio its tip_rip names (other tip_rip, e.g. Quadrato, have no place column in us_table and are counted as unmatched); pyunitastratigrafiche → ONLY the negative units (USN): a positive unit's polygons are counted, its geometry is the proxy. Each layer is registered as a gis_layer resource hatted by a DocumentNode, the source the extractors cite. enabled:false (or footprints=False to the importer) skips it.",
+    "enabled": true,
+    "site": {"table": "pyarchinit_siti_polygonal", "site_column": "sito_id"},
+    "places": [
+      {"table": "pyarchinit_sondaggi", "site_column": "sito_sond", "key_column": "id_sondaggio", "location_column": "saggio"},
+      {"table": "pyarchinit_ripartizioni_spaziali", "site_column": "sito_rs", "key_column": "id_rs", "type_column": "tip_rip",
+       "location_column_by_type": {"area": "area", "settore": "settore", "saggio": "saggio", "sector": "settore", "trench": "saggio", "sondaggio": "saggio"}}
+    ],
+    "units": {"table": "pyunitastratigrafiche", "site_column": "scavo_s", "area_column": "area_s", "key_column": "us_s", "geometry_type": "MultiPolygon"}
+  },
   "epoch_mappings": [
     {
       "edge_type": "has_first_epoch",
@@ -250,10 +261,10 @@
     "pyarchinit_quote table": "Per-point elevations (700 rows) live in the separate pyarchinit_quote table, not us_table. A future handler could join it (like periodizzazione_table) for richer elevation qualia / GeoPositionNode points."
   },
   "_validated_against": {
-    "s3dgraphy": "1.6.0.dev93",
+    "s3dgraphy": "1.6.0.dev102",
     "schema_version": "1",
-    "node_datamodel": "1.6.42",
+    "node_datamodel": "1.6.43",
     "connections_datamodel": "1.6.53",
-    "on": "2026-11-06"
+    "on": "2026-11-12"
   }
 }

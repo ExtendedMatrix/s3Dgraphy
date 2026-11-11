@@ -1,0 +1,79 @@
+{
+  "metadata": {
+    "version": "1.6.0",
+    "last_updated": "2026-11-12",
+    "description": "The catalogue of the BASE MAPS an EM client may draw under its places: XYZ tile sources, each with its licence and whether its terms let a copy be kept OFFLINE. One catalogue for EMStudio (frontend/src/geoglobe.ts SOURCES, where it was born, 23 Oct 2026) and StratiField (the map of a room). Not datamodel: no node, no edge, nothing exported. NIGHT impronte di saggi e tagli (12 Nov 2026): moved here from EMStudio's literal, VERBATIM (the four entries of geoglobe.ts SOURCES at EMStudio main, 12 Nov 2026), so the two clients read one list.",
+    "consumers": {
+      "stratigraph-chatbot": "sync-basi.sh copies this file into app/basi.json; the node's tile bridge (GET /v1/tiles/{source}/{z}/{x}/{y}) serves only what is listed here, caches on disk, never prefetches a source with offline:false.",
+      "EMStudio": "NOT YET: geoglobe.ts still holds its literal. To read it from here: add `cp \"$CFG/em_basemap_sources.json\" \"$DST/\"` to frontend/scripts/sync-datamodels.sh and `import BASEMAPS from './assets/em_basemap_sources.json'; export const SOURCES: GeoSource[] = BASEMAPS.sources as GeoSource[];` in geoglobe.ts (the fields are the GeoSource interface's, one for one)."
+    },
+    "fields": "id, kind (imagery|terrain), label, url (XYZ template, {z}/{x}/{y}), minZoom, maxZoom, tileSize, format, attribution, licence, licenceUrl, offline (may a copy be kept: the SOURCE's terms, not ours), offlineNote, encoding (terrarium), planet (a PMTiles of the planet)"
+  },
+  "default_imagery": "s2cloudless-2016",
+  "default_terrain": "mapterhorn",
+  "sources": [
+    {
+      "id": "s2cloudless-2016",
+      "kind": "imagery",
+      "label": "Sentinel-2 cloudless 2016 (EOX)",
+      "url": "https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless_3857/default/GoogleMapsCompatible/{z}/{y}/{x}.jpg",
+      "minZoom": 0,
+      "maxZoom": 15,
+      "tileSize": 256,
+      "format": "jpg",
+      "attribution": "Sentinel-2 cloudless 2016 © EOX IT Services GmbH (contains modified Copernicus Sentinel data 2016), CC BY 4.0",
+      "licence": "CC BY 4.0",
+      "licenceUrl": "https://creativecommons.org/licenses/by/4.0/",
+      "offline": true,
+      "offlineNote": "CC BY 4.0: copying is allowed with the attribution; later years (2018–2025) are CC BY-NC-SA and are left out"
+    },
+    {
+      "id": "osm",
+      "kind": "imagery",
+      "label": "OpenStreetMap",
+      "url": "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+      "minZoom": 0,
+      "maxZoom": 19,
+      "tileSize": 256,
+      "format": "png",
+      "attribution": "© OpenStreetMap contributors (ODbL)",
+      "licence": "ODbL 1.0 (data), CC BY-SA 2.0 (tiles)",
+      "licenceUrl": "https://www.openstreetmap.org/copyright",
+      "offline": false,
+      "offlineNote": "the OSMF tile usage policy forbids «download for offline» and any prefetch: online only"
+    },
+    {
+      "id": "mapterhorn",
+      "kind": "terrain",
+      "label": "Mapterhorn (Copernicus GLO-30 + open national DEMs)",
+      "url": "https://tiles.mapterhorn.com/{z}/{x}/{y}.webp",
+      "minZoom": 0,
+      "maxZoom": 16,
+      "tileSize": 512,
+      "format": "webp",
+      "encoding": "terrarium",
+      "planet": "https://download.mapterhorn.com/planet.pmtiles",
+      "attribution": "Terrain © Mapterhorn — Copernicus GLO-30 © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018 provided under COPERNICUS by the EU and ESA, and national open DEMs (mapterhorn.com/attribution)",
+      "licence": "open data, per source (Copernicus full free and open licence; national CC BY 4.0 / OGL); code BSD-3",
+      "licenceUrl": "https://mapterhorn.com/attribution",
+      "offline": true,
+      "offlineNote": "Mapterhorn publishes its PMTiles for download; the attribution goes with the copy"
+    },
+    {
+      "id": "aws-terrarium",
+      "kind": "terrain",
+      "label": "Terrain Tiles (AWS Open Data, Mapzen)",
+      "url": "https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png",
+      "minZoom": 0,
+      "maxZoom": 15,
+      "tileSize": 256,
+      "format": "png",
+      "encoding": "terrarium",
+      "attribution": "Terrain Tiles (AWS Open Data): SRTM, GMTED2010 and 3DEP courtesy of the U.S. Geological Survey; EU-DEM produced using Copernicus data; ETOPO1 NOAA; and others (github.com/tilezen/joerd attribution)",
+      "licence": "per source, attribution required (tilezen/joerd attribution.md)",
+      "licenceUrl": "https://github.com/tilezen/joerd/blob/master/docs/attribution.md",
+      "offline": true,
+      "offlineNote": "open data on AWS: copying is allowed with the attribution list"
+    }
+  ]
+}

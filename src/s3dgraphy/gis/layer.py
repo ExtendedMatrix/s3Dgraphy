@@ -35,9 +35,13 @@ from .shapefile import companions, read_shapefile
 
 URL_TYPE = "gis_layer"
 #: the formats a layer may declare; shapefile, geopackage, geojson and geotiff
-#: are READ by this package (MICRO-GIS-BASE), the services are only declared
+#: are READ by this package (MICRO-GIS-BASE), the services are only declared.
+#: ``spatialite`` and ``postgis`` (12 Nov 2026): a TABLE of a database — the
+#: layers of pyArchInit — named by ``data.layer``; their geometries are read
+#: by :mod:`.spatialite` / :mod:`.wkb` when the pyArchInit importer takes the
+#: footprints, never by :func:`add_gis_layer` (a database is not a file here)
 GIS_FORMATS = ("shapefile", "geopackage", "geotiff", "geojson", "wms", "wfs",
-               "ogc_api_features")
+               "ogc_api_features", "spatialite", "postgis")
 
 _MEDIA = {".shp": "application/x-esri-shape", ".dbf": "application/x-dbf",
           ".shx": "application/x-esri-shape-index", ".prj": "text/plain",

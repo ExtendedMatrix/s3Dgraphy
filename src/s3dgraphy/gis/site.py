@@ -104,7 +104,8 @@ def add_site(graph, name: str, *, entity_uuid: Optional[str] = None,
 
 
 def footprint_of(graph, site_id: str) -> Optional[Dict[str, Any]]:
-    """``{property_id, wkt, crs, shape, polygons}`` of the site's footprint."""
+    """``{property_id, wkt, crs, shape, polygons}`` of the footprint of
+    ``site_id`` — a site, or any owner :mod:`.footprint` admits."""
     for e in getattr(graph, "edges", []) or []:
         if e.edge_type != "has_property" or e.edge_source != site_id:
             continue
@@ -132,45 +133,14 @@ def set_footprint(graph, site_id: str, polygons, crs: str, *,
     given — the chain: ``has_data_provenance`` → an extractor →
     ``extracted_from`` each source. Ids are derived from the site, so the same
     act twice is once. Returns ``{property_id, extractor_id, wkt, vertices}``."""
-    from ..nodes.extractor_node import ExtractorNode
-    from ..nodes.property_node import PropertyNode
-    wkt = polygon_to_wkt(polygons, crs, max_vertices=max_vertices)
-    pid = str(uuid.uuid5(_NS, f"{site_id}|footprint"))
-    prop = graph.find_node_by_id(pid)
-    if prop is None:
-        prop = PropertyNode(pid, QUALIA, description="", value=wkt,
-                            property_type=QUALIA,
-                            data={"property_type": QUALIA, "value": wkt})
-        graph.add_node(prop)
-    else:
-        prop.value = wkt
-        _data(prop).update({"property_type": QUALIA, "value": wkt})
-    eid = f"{site_id}__has_property__{pid}"
-    if graph.find_edge_by_id(eid) is None:
-        graph.add_edge(eid, site_id, pid, "has_property")
-    xid = None
-    if sources:
-        xid = str(uuid.uuid5(_NS, f"{site_id}|footprint|extractor"))
-        ext = graph.find_node_by_id(xid)
-        desc = note or "Footprint computed from the geometry of its sources"
-        if ext is None:
-            ext = ExtractorNode(xid, extractor_name or "D.footprint", description=desc,
-                                data={"extractor_type": method})
-            graph.add_node(ext)
-        else:
-            ext.description = desc
-        if author:
-            _data(ext)["author"] = author
-        e2 = f"{pid}__has_data_provenance__{xid}"
-        if graph.find_edge_by_id(e2) is None:
-            graph.add_edge(e2, pid, xid, "has_data_provenance")
-        for s in sources:
-            e3 = f"{xid}__extracted_from__{s}"
-            if graph.find_edge_by_id(e3) is None:
-                graph.add_edge(e3, xid, s, "extracted_from")
-    _, _, polys = wkt_to_polygons(wkt)
-    return {"property_id": pid, "extractor_id": xid, "wkt": wkt,
-            "vertices": sum(len(r) for p in polys for r in p)}
+    from .footprint import write_footprint
+    # one writer for every owner (gis.footprint, 12 Nov 2026): same ids, so a
+    # site written by either door is one property; the site keeps its contract
+    # (above the inline limit → WktError, nothing simplified behind its back)
+    out = write_footprint(graph, site_id, polygons, crs, sources=sources,
+                          extractor_name=extractor_name, method=method, note=note,
+                          author=author, max_vertices=max_vertices, simplify=False)
+    return {k: out[k] for k in ("property_id", "extractor_id", "wkt", "vertices")}
 
 
 # ── the footprint from the proxies ─────────────────────────────────────────

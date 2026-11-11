@@ -20,7 +20,13 @@ when it has a node to hang from.
 * :mod:`.layer` — the layer as a ``ResourceNode`` of url_type ``gis_layer``;
 * :mod:`.site` — the site (a ``LocationNodeGroup`` with ``place_type: site``),
   its footprint (a ``PropertyNode`` of qualia ``footprint``, WKT with its CRS)
-  and the footprint read from the proxies of its units.
+  and the footprint read from the proxies of its units;
+* :mod:`.footprint` — WHO may carry a footprint (the datamodel's
+  ``applies_to``: the site, the operational places — area, saggio — and the
+  CUTS, USN; never a positive unit, whose geometry is the proxy), the writer
+  every owner shares, the simplification above 500 vertices;
+* :mod:`.spatialite` — a SpatiaLite geometry blob (pyArchInit's layers) read
+  without GDAL.
 """
 
 from .crs import same_grid, crs_of_prj, crs_of_shapefile, SAME_GRID
@@ -34,6 +40,8 @@ from .contours import contours, levels_for
 from .landscape import add_landscape_surface, landscape_surfaces, add_contours
 from .site import (add_site, sites, site_of, set_footprint, footprint_of,
                    footprint_from_glbs, plan_hull, PLACE_TYPES)
+from .footprint import (FootprintRefused, footprint_verdict, may_have_footprint,
+                        write_footprint, footprints, simplify_polygons)
 
 __all__ = [
     "same_grid", "crs_of_prj", "crs_of_shapefile", "SAME_GRID",
@@ -44,4 +52,6 @@ __all__ = [
     "contours", "levels_for", "add_landscape_surface", "landscape_surfaces", "add_contours",
     "add_site", "sites", "site_of", "set_footprint", "footprint_of",
     "footprint_from_glbs", "plan_hull", "PLACE_TYPES",
+    "FootprintRefused", "footprint_verdict", "may_have_footprint", "write_footprint",
+    "footprints", "simplify_polygons",
 ]

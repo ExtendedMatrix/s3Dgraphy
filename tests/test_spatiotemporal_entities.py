@@ -63,7 +63,7 @@ def _templu():
 
 def test_the_datamodel_names_the_three_classes():
     dm = load_json_mapping("s3Dgraphy_node_datamodel.json")
-    assert dm["s3Dgraphy_data_model_version"] == "1.6.42"  # 1.6.42 the two kinds of master (6 Nov); 1.6.41 the units of the Landscape Graph (6 Nov); 1.6.40 the base GIS formats and the landscape surface (6 Nov); 1.6.39 the site and the GIS layer (30 Oct); 1.6.38 the frame of a file (25 Oct); 1.6.27 introduced them; 1.6.36 the end of a unit typed (23 Oct); 1.6.37 periodizations (24 Oct)
+    assert dm["s3Dgraphy_data_model_version"] == "1.6.43"  # 1.6.43 the operational levels and the footprints of saggi and cuts (12 Nov); 1.6.42 the two kinds of master (6 Nov); 1.6.41 the units of the Landscape Graph (6 Nov); 1.6.40 the base GIS formats and the landscape surface (6 Nov); 1.6.39 the site and the GIS layer (30 Oct); 1.6.38 the frame of a file (25 Oct); 1.6.27 introduced them; 1.6.36 the end of a unit typed (23 Oct); 1.6.37 periodizations (24 Oct)
     # 1.6.41: the units of the Landscape Graph, through their parent
     assert spatiotemporal_classes() == ("StratigraphicNode", "DocumentNode", "AuthorNode",
                                         "LandscapeUnitNode")
@@ -175,7 +175,7 @@ def test_the_label_reads_the_node_itself():
 
 def test_the_owner_names_come_from_the_qualia_file():
     q = load_json_mapping("em_qualia_types.json")
-    assert q["metadata"]["version"] == "1.6.10"  # 1.6.10 footprint (30 Oct)
+    assert q["metadata"]["version"] == "1.6.11"  # 1.6.11 who carries a footprint (12 Nov); 1.6.10 footprint (30 Oct)
     t = load_json_mapping("datamodel_translations.json")
     assert t["version"] == "1.16"  # 1.16 master_kinds; 1.10 introduced them; 1.11 study_took_place_at; 1.14 end_reasons; 1.15 horizons
     assert t["qualia"]["absolute_time_end"]["label_author"]["en"] == "Date of death"
