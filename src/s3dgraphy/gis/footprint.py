@@ -381,6 +381,64 @@ def footprints(graph) -> List[Dict[str, Any]]:
     return out
 
 
+# ── the footprint of a cut, from its proxy (NIGHT-TAGLI-E-NEUTRE) ──────────
+
+def proxy_geometry_property(graph, unit_id: str) -> Optional[str]:
+    """The id of the unit's ``geometry`` property (the proxy, quale
+    ``geometry``), or None: the property a footprint computed from the proxy
+    is ``extracted_from``."""
+    by_id = {n.node_id: n for n in getattr(graph, "nodes", []) or []}
+    for e in getattr(graph, "edges", []) or []:
+        if e.edge_type != "has_property" or e.edge_source != unit_id:
+            continue
+        p = by_id.get(e.edge_target)
+        if p is not None and ((getattr(p, "data", None) or {}).get("property_type")
+                              or getattr(p, "property_type", None) or p.name) == "geometry":
+            return p.node_id
+    return None
+
+
+def top_outline(vertices: Iterable[Sequence[float]], tolerance: float = 0.02) -> List[List[float]]:
+    """The plan outline (x, y) of the UPPER part of a cut's proxy (em_visual_rules
+    1.6.44: the proxy of a USN is the volume of the matter removed, closed at the
+    top by the plane the cut starts from). The vertices within ``tolerance`` ×
+    the proxy's height of its top are projected and hulled; a volume whose top is
+    not flat (fewer than three vertices up there) falls back to the hull of all
+    its vertices. z is up; the coordinates are the CRS's (the caller has applied
+    any shift). CONVEX: a concave mouth is drawn by its hull — said in the
+    extractor's note."""
+    from .site import plan_hull  # the site's hull (site imports this module)
+    pts = [[float(v[0]), float(v[1]), float(v[2])] for v in vertices]
+    if len(pts) < 3:
+        raise ValueError("a proxy with fewer than three vertices has no outline")
+    z0 = min(p[2] for p in pts)
+    z1 = max(p[2] for p in pts)
+    top = [p for p in pts if p[2] >= z1 - tolerance * (z1 - z0)]
+    ring = plan_hull([p[:2] for p in top])
+    if len(ring) < 3:
+        ring = plan_hull([p[:2] for p in pts])
+    return ring
+
+
+def footprint_from_proxy(graph, unit_id: str, vertices: Iterable[Sequence[float]],
+                         crs: Optional[str] = None, *, tolerance: float = 0.02,
+                         author: Optional[str] = None) -> Dict[str, Any]:
+    """The footprint of a CUT (USN) read from its proxy: :func:`top_outline` of
+    the proxy's vertices, written by :func:`write_footprint` with the paradata
+    chain footprint → extractor ``extracted_from`` the unit's ``geometry``
+    property (the proxy). Refused, as always, for a node that may not carry a
+    footprint (a positive unit, a USNt)."""
+    ring = top_outline(vertices, tolerance)
+    geom = proxy_geometry_property(graph, unit_id)
+    return write_footprint(
+        graph, unit_id, [ring], crs, sources=[geom] if geom else [],
+        extractor_name="D.footprint_from_proxy", method="geometric_calculation",
+        note=("Footprint computed from the proxy: the plan projection of its upper "
+              "outline (the plane the cut starts from), convex hull"),
+        author=author)
+
+
 __all__ = ["QUALIA", "FootprintRefused", "footprint_rule", "footprint_verdict",
            "may_have_footprint", "simplify_polygons", "write_footprint", "set_footprint",
-           "footprint_of", "footprints", "footprint_ids"]
+           "footprint_of", "footprints", "footprint_ids", "top_outline",
+           "footprint_from_proxy", "proxy_geometry_property"]

@@ -319,6 +319,89 @@ def get_material_color(matname, rules_path=None):
         return None
 
 
+#: The ripieghi of :func:`get_threed_style` when the rules file has no
+#: ``threed_style`` block (a file written before 1.6.44): what every client
+#: drew until then — faces as the material, no edges of the type's own.
+_THREED_FALLBACK = {
+    "defaults": {"faces": {"show": True, "opacity": 1.0},
+                 "edges": {"show": False, "width": 1, "style": "solid"}},
+    "feature_angle_deg": 20,
+    "dashed": {"dash_ratio": 0.04, "gap_ratio": 0.025},
+    "corners": {"tick_ratio": 0.34},
+    "world_width_ratio": 0.0025,
+}
+
+THREED_EDGE_STYLES = ("solid", "dashed", "corners")
+
+
+def get_threed_style(node_type, rules_path=None):
+    """The COMPLETE 3D style of a node type (em_visual_rules 1.6.44,
+    ``node_styles.<type>.style.threed`` read with the rule of
+    ``threed_style._comment``), every fallback resolved:
+
+    ``{"type", "faces": {"show", "rgba_color", "opacity"},
+    "edges": {"show", "rgba_color", "width", "style"}, "geometry",
+    "feature_angle_deg", "dashed": {...}, "corners": {...},
+    "world_width_ratio"}`` — colours as ``(r, g, b, a)`` linear tuples.
+
+    * ``faces.rgba_color`` absent → the material's colour
+      (:func:`get_material_color`, the one source of the colour);
+    * ``edges.rgba_color`` absent → the faces' colour;
+    * a key absent from the type's ``threed`` → ``threed_style.defaults``;
+    * a type with no ``material`` never becomes a mesh → ``None``
+      (and so does an unknown type).
+
+    The opacity returned is the TYPE's: a client multiplies it by its own
+    global proxy opacity (the rule, point 3)."""
+    try:
+        if rules_path is None:
+            rules = _load_visual_rules()
+        else:
+            with open(rules_path, 'r', encoding='utf-8') as f:
+                rules = json.load(f)
+    except (FileNotFoundError, json.JSONDecodeError) as e:
+        print(f"[s3dgraphy] get_threed_style('{node_type}') fallback: {type(e).__name__}: {e}")
+        return None
+    entry = (rules.get("node_styles") or {}).get(node_type)
+    if not isinstance(entry, dict):
+        return None
+    style = entry.get("style") or {}
+    material = _material_rgba(style)
+    if material is None:
+        return None
+    block = rules.get("threed_style") or {}
+    defaults = block.get("defaults") or _THREED_FALLBACK["defaults"]
+    own = style.get("threed") if isinstance(style.get("threed"), dict) else {}
+
+    def _rgba(c):
+        if isinstance(c, dict) and {"r", "g", "b"} <= set(c):
+            return (c["r"], c["g"], c["b"], c.get("a", 1.0))
+        return None
+
+    faces = {**_THREED_FALLBACK["defaults"]["faces"], **(defaults.get("faces") or {}),
+             **(own.get("faces") or {})}
+    edges = {**_THREED_FALLBACK["defaults"]["edges"], **(defaults.get("edges") or {}),
+             **(own.get("edges") or {})}
+    faces["rgba_color"] = _rgba(faces.get("rgba_color")) or material
+    edges["rgba_color"] = _rgba(edges.get("rgba_color")) or faces["rgba_color"]
+    faces["show"] = bool(faces.get("show", True))
+    faces["opacity"] = float(faces.get("opacity", 1.0))
+    edges["show"] = bool(edges.get("show", False))
+    edges["width"] = float(edges.get("width", 1))
+    if edges.get("style") not in THREED_EDGE_STYLES:
+        edges["style"] = "solid"
+    return {
+        "type": node_type,
+        "faces": faces,
+        "edges": edges,
+        "geometry": own.get("geometry"),
+        "feature_angle_deg": float(block.get("feature_angle_deg", _THREED_FALLBACK["feature_angle_deg"])),
+        "dashed": {k: v for k, v in (block.get("dashed") or _THREED_FALLBACK["dashed"]).items() if not k.startswith("_")},
+        "corners": {k: v for k, v in (block.get("corners") or _THREED_FALLBACK["corners"]).items() if not k.startswith("_")},
+        "world_width_ratio": float(block.get("world_width_ratio", _THREED_FALLBACK["world_width_ratio"])),
+    }
+
+
 # Cache for the loaded visual rules file. Loaded lazily; reloadable
 # for tests via ``_reload_visual_rules``.
 _VISUAL_RULES_CACHE = None

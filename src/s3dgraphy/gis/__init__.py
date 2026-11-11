@@ -41,7 +41,8 @@ from .landscape import add_landscape_surface, landscape_surfaces, add_contours
 from .site import (add_site, sites, site_of, set_footprint, footprint_of,
                    footprint_from_glbs, plan_hull, PLACE_TYPES)
 from .footprint import (FootprintRefused, footprint_verdict, may_have_footprint,
-                        write_footprint, footprints, simplify_polygons)
+                        write_footprint, footprints, simplify_polygons,
+                        footprint_from_proxy, top_outline)
 
 __all__ = [
     "same_grid", "crs_of_prj", "crs_of_shapefile", "SAME_GRID",
@@ -53,5 +54,5 @@ __all__ = [
     "add_site", "sites", "site_of", "set_footprint", "footprint_of",
     "footprint_from_glbs", "plan_hull", "PLACE_TYPES",
     "FootprintRefused", "footprint_verdict", "may_have_footprint", "write_footprint",
-    "footprints", "simplify_polygons",
+    "footprints", "simplify_polygons", "footprint_from_proxy", "top_outline",
 ]

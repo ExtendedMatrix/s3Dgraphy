@@ -1,6 +1,6 @@
 {
   "formal_language": "EM",
-  "version": "1.6.43",
+  "version": "1.6.44",
   "_note_material_vs_qualia_color": [
     "DUE COSE DIVERSE CHE SI CHIAMANO ENTRAMBE color. Non confonderle: e gia successo.",
     "1) QUI, in node_styles.<tipo>.style.material.rgba_color — il COLORE DEL MATERIALE BLENDER del proxy 3D, in float LINEARI. UNA sola chiave: `rgba_color`. Fino a S8 il file ne usava due (`color` sui 13 tipi stratigrafici, `rgba_color` sugli altri) e get_material_color() ne leggeva una sola, restituendo None per 21 tipi su 38; ora sono unificate e la vecchia `color` e letta solo come tolleranza verso file scritti prima. Un tipo che non diventa mai una mesh NON ha material affatto (i contenitori di gruppo, e da S7 i dieci nodi che rendono per icona): per loro get_material_color() torna None, ed e corretto.",
@@ -9,6 +9,7 @@
     "In breve: qui si decide di che colore DISEGNARE una US; li si registra di che colore ERA."
   ],
   "_changelog": {
+    "1.6.44": "TAGLI E NEUTRE IN 3D: THE 3D TRANSLATES THE GLYPH (NIGHT-TAGLI-E-NEUTRE, 13 Nov 2026). New `threed` block in node_styles.<type>.style, beside `material`, on every type that becomes a mesh (every type with a `material`): `faces` (show, rgba_color, opacity), `edges` (show, rgba_color, width, style solid|dashed|corners), `geometry` (only USN and USNt). The reading rule, the defaults and the patterns are in the new top-level block `threed_style`. USN (the cut): transparent faces (opacity 0.3) and continuous edges; its proxy is the VOLUME OF THE MATTER REMOVED. USNt (the designed void): no faces, dashed edges; its proxy is the volume of the void. USN keeps its 3D grey (linear 0.55 = sRGB #C4C4C4); USNt takes linear 0.262 = #8C8C8C, its own 2D frame colour converted like every other type's (two greys already in the language: until 1.6.43 the two had the same 0.55 and could not be told apart in 3D). Every other type: faces shown at opacity 1.0 (×the client's global proxy opacity = as before), no edges of its own = as before. s3dgraphy.utils.utils.get_threed_style reads it.",
     "1.6.43": "THE UNITS OF THE LANDSCAPE GRAPH, AS A DRAFT (MICRO-LANDSCAPE-ONTOLOGIA, 6 Nov 2026). node_styles.UT, UT0, district (keyed by node_type, so a client finds them without an alias): the TopographicUnitNode, NegativeTopographicUnitNode and DistrictNode of nodes 1.6.41, in an earth brown #8B5A2B of their own (the scale of distance, not the red of the contact scale). The observed UT is a hexagon with the thick solid frame of an observed unit; the UT0 (−UT, an absence observed) the same hexagon with a dashed frame and a white fill; the declared district a dotted rounded rectangle, the tray; edge_style.is_in_district dotted in the same brown. Their icons are drafts in src/2D/bozze (UT.svg, UT0.svg, district.svg, marked BOZZA); no 2d_glyphs entry and no material yet: the colours of the Landscape Matrix are E.D.'s (decisioni/landscape-graph-semantica §10, «i colori»), these are placeholders marked draft.",
     "1.6.42": "THE GROUND OF THE LANDSCAPE (MICRO-GIS-BASE, 6 Nov 2026). node_styles.LSF: the LandscapeSurfaceNode (nodes 1.6.40), in the #FF6600 reference family of GEO, GCP and RGT — a geometry placed in the world — with its own glyph src/2D/landscape_surface.svg (a ground as a mesh, two contour lines).",
     "1.6.41": "THE SITE HAS A GLYPH, AS A DRAFT (MICRO lab sito Sarmizegetusa, 30 Oct 2026). 2d_render_glyph_types.data_glyphs += site: a LocationNodeGroup of level sito (the site of D-LG4, node datamodel 1.6.39) is drawn with src/2D/bozze/site.svg — a footprint in plan (a closed outline on a ground hatch) with a survey point inside, in the square plate of the HDT-O layer (a node of the cultural context; the site is the place the studies took place at). Drawn by Claude and marked BOZZA, so its 2d_glyphs entry carries draft: true: the mark is E.D.'s to approve (move it to src/2D/site.svg, drop the marker, rerun glyphs_from_svg --write). A virtual site (data.virtual) uses the same glyph for now. node_styles.LocationNodeGroup gains level_modifiers.sito: the toponym grey border, thicker (2.0), so a site reads as the strongest place of its chain where it is drawn as a folder. ADDITIVE.",
@@ -5725,6 +5726,15 @@
             "a": 1.0
           }
         },
+        "threed": {
+          "faces": {
+            "show": true,
+            "opacity": 1.0
+          },
+          "edges": {
+            "show": false
+          }
+        },
         "border_color": "#9B3333",
         "fill_color": "#F0F0F0",
         "border_style": "solid",
@@ -5744,6 +5754,15 @@
             "g": 0.191,
             "b": 0.026,
             "a": 1.0
+          }
+        },
+        "threed": {
+          "faces": {
+            "show": true,
+            "opacity": 1.0
+          },
+          "edges": {
+            "show": false
           }
         },
         "border_color": "#31792D",
@@ -5767,6 +5786,15 @@
             "a": 1.0
           }
         },
+        "threed": {
+          "faces": {
+            "show": true,
+            "opacity": 1.0
+          },
+          "edges": {
+            "show": false
+          }
+        },
         "border_color": "#248FE7",
         "fill_color": "#000000",
         "border_style": "solid",
@@ -5786,6 +5814,15 @@
             "g": 0.346,
             "b": 0.119,
             "a": 1.0
+          }
+        },
+        "threed": {
+          "faces": {
+            "show": true,
+            "opacity": 1.0
+          },
+          "edges": {
+            "show": false
           }
         },
         "border_color": "#B19F61",
@@ -5809,6 +5846,15 @@
             "a": 1.0
           }
         },
+        "threed": {
+          "faces": {
+            "show": true,
+            "opacity": 1.0
+          },
+          "edges": {
+            "show": false
+          }
+        },
         "border_color": "#D8BD30",
         "fill_color": "#CCCCCC",
         "border_style": "solid",
@@ -5828,6 +5874,15 @@
             "g": 0.033,
             "b": 0.033,
             "a": 1.0
+          }
+        },
+        "threed": {
+          "faces": {
+            "show": true,
+            "opacity": 1.0
+          },
+          "edges": {
+            "show": false
           }
         },
         "border_color": "#9B3333",
@@ -5851,6 +5906,15 @@
             "a": 1.0
           }
         },
+        "threed": {
+          "faces": {
+            "show": true,
+            "opacity": 1.0
+          },
+          "edges": {
+            "show": false
+          }
+        },
         "border_color": "#D86400",
         "fill_color": "#F5F5F5",
         "border_style": "solid",
@@ -5872,6 +5936,15 @@
             "a": 1.0
           }
         },
+        "threed": {
+          "faces": {
+            "show": true,
+            "opacity": 1.0
+          },
+          "edges": {
+            "show": false
+          }
+        },
         "border_color": "#9B3333",
         "fill_color": "#EFEFEF",
         "border_style": "solid",
@@ -5890,6 +5963,15 @@
             "g": 0.127,
             "b": 0.0,
             "a": 1.0
+          }
+        },
+        "threed": {
+          "faces": {
+            "show": true,
+            "opacity": 1.0
+          },
+          "edges": {
+            "show": false
           }
         },
         "border_color": "#D86400",
@@ -5913,6 +5995,15 @@
             "a": 1.0
           }
         },
+        "threed": {
+          "faces": {
+            "show": true,
+            "opacity": 1.0
+          },
+          "edges": {
+            "show": false
+          }
+        },
         "border_color": "#31792D",
         "fill_color": "#000000",
         "border_style": "solid",
@@ -5931,6 +6022,15 @@
             "g": 0.275,
             "b": 0.799,
             "a": 1.0
+          }
+        },
+        "threed": {
+          "faces": {
+            "show": true,
+            "opacity": 1.0
+          },
+          "edges": {
+            "show": false
           }
         },
         "border_color": "#248FE7",
@@ -5954,6 +6054,15 @@
             "a": 1.0
           }
         },
+        "threed": {
+          "faces": {
+            "show": true,
+            "opacity": 1.0
+          },
+          "edges": {
+            "show": false
+          }
+        },
         "border_color": "#B19F61",
         "fill_color": "#CCCCCC",
         "border_style": "solid",
@@ -5973,6 +6082,15 @@
             "g": 0.033,
             "b": 0.033,
             "a": 1.0
+          }
+        },
+        "threed": {
+          "faces": {
+            "show": true,
+            "opacity": 1.0
+          },
+          "edges": {
+            "show": false
           }
         },
         "border_color": "#9B3333",
@@ -5997,6 +6115,15 @@
             "a": 1.0
           }
         },
+        "threed": {
+          "faces": {
+            "show": true,
+            "opacity": 1.0
+          },
+          "edges": {
+            "show": false
+          }
+        },
         "border_color": "#000000",
         "fill_color": "#000000",
         "border_style": "solid",
@@ -6019,6 +6146,15 @@
             "g": 0.262,
             "b": 0.262,
             "a": 1.0
+          }
+        },
+        "threed": {
+          "faces": {
+            "show": true,
+            "opacity": 1.0
+          },
+          "edges": {
+            "show": false
           }
         },
         "border_color": "#2A8C8C",
@@ -6114,6 +6250,15 @@
             "a": 1.0
           }
         },
+        "threed": {
+          "faces": {
+            "show": true,
+            "opacity": 1.0
+          },
+          "edges": {
+            "show": false
+          }
+        },
         "border_color": "#00AAFF",
         "fill_color": "#E0F4FF",
         "border_style": "solid",
@@ -6133,6 +6278,15 @@
             "g": 0.6,
             "b": 0.0,
             "a": 1.0
+          }
+        },
+        "threed": {
+          "faces": {
+            "show": true,
+            "opacity": 1.0
+          },
+          "edges": {
+            "show": false
           }
         },
         "border_color": "#FFD700",
@@ -6156,6 +6310,15 @@
             "a": 1.0
           }
         },
+        "threed": {
+          "faces": {
+            "show": true,
+            "opacity": 1.0
+          },
+          "edges": {
+            "show": false
+          }
+        },
         "border_color": "#CC0000",
         "fill_color": "#FFEEEE",
         "border_style": "dashed",
@@ -6174,6 +6337,15 @@
             "g": 0.3,
             "b": 0.3,
             "a": 1.0
+          }
+        },
+        "threed": {
+          "faces": {
+            "show": true,
+            "opacity": 1.0
+          },
+          "edges": {
+            "show": false
           }
         },
         "border_color": "#333333",
@@ -6195,6 +6367,15 @@
             "g": 0.35,
             "b": 0.4,
             "a": 1.0
+          }
+        },
+        "threed": {
+          "faces": {
+            "show": true,
+            "opacity": 1.0
+          },
+          "edges": {
+            "show": false
           }
         },
         "border_color": "#5A5A66",
@@ -6333,6 +6514,15 @@
             "a": 1.0
           }
         },
+        "threed": {
+          "faces": {
+            "show": true,
+            "opacity": 1.0
+          },
+          "edges": {
+            "show": false
+          }
+        },
         "border_color": "#FF6600",
         "fill_color": "#FFFFFF",
         "border_style": "solid",
@@ -6352,6 +6542,15 @@
             "a": 1.0
           }
         },
+        "threed": {
+          "faces": {
+            "show": true,
+            "opacity": 1.0
+          },
+          "edges": {
+            "show": false
+          }
+        },
         "border_color": "#FF6600",
         "fill_color": "#FFFFFF",
         "border_style": "solid",
@@ -6369,6 +6568,15 @@
             "g": 0.0,
             "b": 0.0,
             "a": 1.0
+          }
+        },
+        "threed": {
+          "faces": {
+            "show": true,
+            "opacity": 1.0
+          },
+          "edges": {
+            "show": false
           }
         },
         "border_color": "#FF6600",
@@ -6413,6 +6621,15 @@
             "a": 1.0
           }
         },
+        "threed": {
+          "faces": {
+            "show": true,
+            "opacity": 1.0
+          },
+          "edges": {
+            "show": false
+          }
+        },
         "border_color": "#D86400",
         "fill_color": "#FFFFFF",
         "border_style": "solid",
@@ -6422,7 +6639,39 @@
       "label_position": "over"
     },
     "USNt": {
-      "_comment": "NEUTRAL stratigraphic unit (POL5, token USNt since POL6): a void that is part of the DESIGN — the `risparmi` of masonry, a window or door opening, the volume of a room. NOT the negative unit, which is USN (displayed US-) below: nothing was removed here, so there is no interface produced by a removal. Drawn with the outline only at the FOUR CORNERS (`corner_brackets`), and the reason is semantic: a continuous border states a surface, and a risparmio has none — what is observed is the EXTENT of the void, which is what a crop mark says. Grey #8C8C8C, one of the language's existing greys (it is the `symbolic` rung of document_variant_styles): the #C4C4C4 this entry carried before POL4 was already faint against the #F0F0F0 fill, and with only four ticks of ink left there was nothing to see. Same grey as USN on purpose — the SHAPE tells the two voids apart, which is how EM distinguishes types everywhere else.",
+      "_comment": "NEUTRAL stratigraphic unit (POL5, token USNt since POL6): a void that is part of the DESIGN — the `risparmi` of masonry, a window or door opening, the volume of a room. NOT the negative unit, which is USN (displayed US-) below: nothing was removed here, so there is no interface produced by a removal. Drawn with the outline only at the FOUR CORNERS (`corner_brackets`), and the reason is semantic: a continuous border states a surface, and a risparmio has none — what is observed is the EXTENT of the void, which is what a crop mark says. Grey #8C8C8C, one of the language's existing greys (it is the `symbolic` rung of document_variant_styles): the #C4C4C4 this entry carried before POL4 was already faint against the #F0F0F0 fill, and with only four ticks of ink left there was nothing to see. Same grey as USN on purpose — the SHAPE tells the two voids apart, which is how EM distinguishes types everywhere else. 1.6.44 · IN 3D (NIGHT-TAGLI-E-NEUTRE): the proxy is the volume of the void; NO FACES and DASHED edges, the 3D of the four corners: a face would state the surface the corners refuse. 3D grey linear 0.262 = #8C8C8C (its own frame colour, converted to linear like every other type): until 1.6.43 it shared USN's 0.55 and in 3D the two voids were the same grey solid — the SHAPE told them apart in the graph, now the drawing does in space.",
+      "file_3d": "src/3D/US.glb",
+      "file_2d": "src/2D/US.png",
+      "style": {
+        "material": {
+          "rgba_color": {
+            "r": 0.262,
+            "g": 0.262,
+            "b": 0.262,
+            "a": 1.0
+          }
+        },
+        "threed": {
+          "faces": {
+            "show": false
+          },
+          "edges": {
+            "show": true,
+            "width": 1,
+            "style": "dashed"
+          },
+          "geometry": "The volume of the VOID that is part of the design (the room, the opening, the risparmio). No face — a face would state a surface a void does not have — only dashed edges: one sees how large the void is, not a surface."
+        },
+        "border_color": "#8C8C8C",
+        "fill_color": "#F0F0F0",
+        "border_style": "solid",
+        "shape": "corner_brackets",
+        "border_width": 4
+      },
+      "label_position": "over"
+    },
+    "USN": {
+      "_comment": "NEGATIVE / destructive stratigraphic unit, displayed US- (POL5; token USN again since POL6). A lacuna produced by a REMOVAL: a pit cut, an erosion surface, a demolition void. Rendered like a US — same rectangle, same thick frame — because it IS a unit of the sequence and behaves like one; only the colour changes, to the neutral grey of the absence family. E.D.: 'una US grigia a contorno pieno', explicitly NOT the orange roundrectangle of USD (which is the DOCUMENTARY unit and unrelated). This type answers to the node_type `USN`, as it always did: POL5 moved it to `USNeg` for a few hours and POL6 put it back, because the spelling says negativa and because pyArchInit vendors the same token with the same meaning. 1.6.44 · IN 3D (NIGHT-TAGLI-E-NEUTRE): the proxy is the volume of the matter removed, closed above by the plane the cut starts from — the cut's surface is its lower and lateral face (A3). Faces transparent (opacity 0.3 × the global proxy opacity) and edges CONTINUOUS, like the full frame of the glyph: the void is seen and the fills inside it are read. 3D grey kept at linear 0.55 (#C4C4C4).",
       "file_3d": "src/3D/US.glb",
       "file_2d": "src/2D/US.png",
       "style": {
@@ -6434,26 +6683,17 @@
             "a": 1.0
           }
         },
-        "border_color": "#8C8C8C",
-        "fill_color": "#F0F0F0",
-        "border_style": "solid",
-        "shape": "corner_brackets",
-        "border_width": 4
-      },
-      "label_position": "over"
-    },
-    "USN": {
-      "_comment": "NEGATIVE / destructive stratigraphic unit, displayed US- (POL5; token USN again since POL6). A lacuna produced by a REMOVAL: a pit cut, an erosion surface, a demolition void. Rendered like a US — same rectangle, same thick frame — because it IS a unit of the sequence and behaves like one; only the colour changes, to the neutral grey of the absence family. E.D.: 'una US grigia a contorno pieno', explicitly NOT the orange roundrectangle of USD (which is the DOCUMENTARY unit and unrelated). This type answers to the node_type `USN`, as it always did: POL5 moved it to `USNeg` for a few hours and POL6 put it back, because the spelling says negativa and because pyArchInit vendors the same token with the same meaning.",
-      "file_3d": "src/3D/US.glb",
-      "file_2d": "src/2D/US.png",
-      "style": {
-        "material": {
-          "rgba_color": {
-            "r": 0.55,
-            "g": 0.55,
-            "b": 0.55,
-            "a": 1.0
-          }
+        "threed": {
+          "faces": {
+            "show": true,
+            "opacity": 0.3
+          },
+          "edges": {
+            "show": true,
+            "width": 1,
+            "style": "solid"
+          },
+          "geometry": "The VOLUME OF THE MATTER REMOVED, closed at the top by the plane the cut starts from: the surface of the cut (the interface, A3) is its lower and lateral face. Transparent faces and continuous edges: one sees the void and reads the fills that lie in it. Its plan footprint (qualia `footprint`) can be taken from it: the projection of the upper outline, with the paradata chain extracted_from → the proxy's `geometry` property."
         },
         "border_color": "#8C8C8C",
         "fill_color": "#F0F0F0",
@@ -6678,6 +6918,36 @@
       "count_word": "×{n}"
     },
     "id": "{master}##{place}"
+  },
+  "threed_style": {
+    "_comment": "1.6.44 (NIGHT-TAGLI-E-NEUTRE, E.D. 11-13 Nov 2026: «la grafica resta attaccata al TIPO di nodo, in 2D e in 3D»). How a proxy of a type is DRAWN in 3D: the 3D translates the glyph of the graph as the glyph translates the meaning. READING RULE. node_styles.<type>.style.threed = {faces, edges, geometry?}. (1) `material.rgba_color` stays THE colour (linear floats): `threed.faces.rgba_color` absent = the material's colour, `threed.edges.rgba_color` absent = the faces' colour; a colour is written in `threed` only when it DIFFERS (no duplicate). (2) A key absent from a type's `threed` takes the value in `defaults` below; a type with a `material` and no `threed` at all takes `defaults` whole; a type without `material` never becomes a mesh and has no 3D style. (3) OPACITY MULTIPLIES: what is drawn = faces.opacity × the client's global proxy opacity (EMStudio s3_opacity_proxy / s3_opacity_wire, EM Tools proxy_display_alpha). The global slider fades every proxy; the type's opacity keeps the ratio between types. faces.show false = no face at all, whatever the slider. (4) EDGES. show false = the type has no edge mark of its own (a client keeps the neutral contour it may draw around every mesh as part of its interface — it is not the type's sign). show true = the type's edges are drawn: the FEATURE edges of the proxy (two faces meeting at more than `feature_angle_deg`, plus boundary edges — not the diagonals of a triangulation), `style` solid = whole, dashed = the `dashed` pattern, corners = the `corners` pattern (the 3D of corner_brackets: the two ends of each edge). `width` is in screen pixels (a viewer that cannot draw thick lines draws 1 px; a renderer that needs a world size scales it by `world_width_ratio` of the proxy's diagonal). Edges are drawn ABOVE the global opacity: their alpha is 1. (5) `geometry`: a sentence saying what the proxy's volume IS, only where it is not the obvious «the volume of the unit». Reference reader: s3dgraphy.utils.utils.get_threed_style(type).",
+    "defaults": {
+      "faces": {
+        "show": true,
+        "opacity": 1.0
+      },
+      "edges": {
+        "show": false,
+        "width": 1,
+        "style": "solid"
+      }
+    },
+    "feature_angle_deg": 20,
+    "dashed": {
+      "dash_ratio": 0.04,
+      "gap_ratio": 0.025,
+      "_comment": "dash and gap as fractions of the proxy's bounding-box diagonal: the pattern keeps its look from a niche to a room"
+    },
+    "corners": {
+      "tick_ratio": 0.34,
+      "_comment": "each end of a feature edge keeps a tick of tick_ratio × the SHORTEST side of the proxy's bounding box (never more than half the edge): the 3D of bracketTick, min(w, h) × 0.34"
+    },
+    "world_width_ratio": 0.0025,
+    "styles": [
+      "solid",
+      "dashed",
+      "corners"
+    ]
   },
   "alternatives": {
     "_comment": "1.6.37 (MICRO le alternative e la trasformazione, E.D. 17 Oct 2026, «lo stesso cappello»). A SET OF ALTERNATIVES is the group of 3D resources that represent the same thing, with the same coverage, in different forms; a viewer lights ONE alternative per set — by hand, by use, or by distance. The criterion is the HAT: the node that reaches a resource's asset (its master) with `hat_edge` — an RM (`hats.rm`) or an RM container (`hats.container`). Two resources are alternatives if and only if they have the same hat; versions inherit the hat of their asset (resources.versions.inherited_links), nothing is copied. Never deduced from the DTC. TWO NESTED LEVELS: the RM (master, LODs and other formats of one piece) and the CONTAINER (a tileset of the whole survey is hatted by the container, not by an RM of its own: choosing it switches the members off, choosing the members switches it off, and each member then chooses its LOD); a container's sets are its members' (by `member_edge`, transitively: a sub-container is a member too). REASONS, computed: `lod` (two levels of one chain), `fidelity` (the master and a version derived from it), `packaging` (a tileset beside meshes; at the container level, the container's own alternative against its members). A tileset is recognised by what it declares (`tileset`). DIAGNOSES (warnings, each with its cure): `two_hats` (an asset reached by two hats; a tileset reached by a container and by an RM of its own), `partial_coverage` (measured only on boxes a consumer passes: no box is written in the graph), `epochs` (two alternatives of one hat in different epochs — cannot happen, since the epoch is on the hat: if it does, the link was copied on a version — or a container with an alternative whose members lie in different epochs). A VIEW: nothing written. The reference implementation is s3dgraphy.resources.alternatives.alternative_sets; the cases both sides pass are JSON_config/alternative_cases.json.",
