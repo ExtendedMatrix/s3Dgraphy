@@ -187,17 +187,74 @@ def volume_points(bv: Optional[Dict[str, Any]], n: int = 3) -> List[Tuple[float,
     return out  # type: ignore[return-value]
 
 
+def _svd_columns(S: List[List[float]]) -> Tuple[List[List[float]], List[float], List[List[float]]]:
+    """``S`` (n×3) = U·diag(σ)·Vᵀ by one-sided Jacobi rotations (Hestenes):
+    the columns of S rotated until orthogonal, V the rotations. Returns
+    ``(U, σ, V)`` — U n×3 with unit columns (zero where σ is), V with the
+    right singular vectors as COLUMNS. Works on S itself, never on SᵀS: the
+    small singular values keep the eps·σmax accuracy numpy's cut is set on."""
+    n = len(S)
+    u = [row[:] for row in S]
+    v = [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]
+    for _ in range(64):
+        rotated = False
+        for p, q in ((0, 1), (0, 2), (1, 2)):
+            alpha = sum(u[r][p] * u[r][p] for r in range(n))
+            beta = sum(u[r][q] * u[r][q] for r in range(n))
+            gamma = sum(u[r][p] * u[r][q] for r in range(n))
+            if gamma == 0.0 or abs(gamma) <= 2.220446049250313e-16 * math.sqrt(alpha * beta):
+                continue
+            rotated = True
+            zeta = (beta - alpha) / (2.0 * gamma)
+            t = (1.0 if zeta >= 0 else -1.0) / (abs(zeta) + math.sqrt(1.0 + zeta * zeta))
+            c = 1.0 / math.sqrt(1.0 + t * t)
+            s = c * t
+            for r in range(n):
+                up, uq = u[r][p], u[r][q]
+                u[r][p], u[r][q] = c * up - s * uq, s * up + c * uq
+            for r in range(3):
+                vp, vq = v[r][p], v[r][q]
+                v[r][p], v[r][q] = c * vp - s * vq, s * vp + c * vq
+        if not rotated:
+            break
+    sigma = [math.sqrt(sum(u[r][k] * u[r][k] for r in range(n))) for k in range(3)]
+    for k in range(3):
+        if sigma[k] > 0.0:
+            for r in range(n):
+                u[r][k] /= sigma[k]
+    return u, sigma, v
+
+
 def _fit_affine(src: Sequence[Sequence[float]], dst: Sequence[Sequence[float]]) -> List[List[float]]:
     """The affine 3×4 (rows) that maps ``src`` onto ``dst`` in least squares.
-    Centred on the means first, so the ECEF millions do not eat the digits."""
-    import numpy as np
-    S = np.asarray(src, dtype=float)
-    D = np.asarray(dst, dtype=float)
-    cs, cd = S.mean(axis=0), D.mean(axis=0)
-    A, *_ = np.linalg.lstsq(S - cs, D - cd, rcond=None)     # (S−cs)·A ≈ D−cd
-    L = A.T                                                  # 3×3
-    t = cd - L @ cs
-    return [[float(L[r][0]), float(L[r][1]), float(L[r][2]), float(t[r])] for r in range(3)]
+    Centred on the means first, so the ECEF millions do not eat the digits.
+
+    MICRO-FIT-AFFINE-SENZA-NUMPY (11 Nov 2026) · pure Python, no numpy (the
+    core of s3Dgraphy imports none: the frozen bridge has none). The same
+    solution as ``numpy.linalg.lstsq(rcond=None)``: the pseudo-inverse of the
+    centred S through its singular values, those under eps·max(n, 3)·σmax taken
+    as zero — so a flat volume or aligned points get the minimum-norm answer
+    numpy gives, not a division by zero. EMStudio's ``em_gis.fit_affine``
+    (MICRO-ANTEPRIMA-AGGANCIATA, 7 Nov) went through the normal equations SᵀS:
+    the square of the condition number lets the rounding of an almost-null
+    direction (a tilted plane, aligned points) pass that cut — measured, 3.8
+    off numpy on eleven aligned points. Here the SVD is taken on S itself."""
+    n = len(src)
+    if n == 0 or n != len(dst):
+        raise ValueError("_fit_affine: as many points on both sides, at least one")
+    cs = [sum(float(p[k]) for p in src) / n for k in range(3)]
+    cd = [sum(float(p[k]) for p in dst) / n for k in range(3)]
+    S = [[float(p[k]) - cs[k] for k in range(3)] for p in src]
+    D = [[float(p[k]) - cd[k] for k in range(3)] for p in dst]
+    U, sigma, V = _svd_columns(S)
+    # numpy's rcond: singular values of S under eps·max(n, 3)·σmax are zero
+    cut = 2.220446049250313e-16 * max(n, 3) * max(sigma)
+    inv = [1.0 / x if x > cut and x > 0 else 0.0 for x in sigma]
+    UtD = [[sum(U[r][k] * D[r][j] for r in range(n)) for j in range(3)] for k in range(3)]
+    A = [[sum(V[i][k] * inv[k] * UtD[k][j] for k in range(3)) for j in range(3)] for i in range(3)]  # S·A ≈ D
+    L = [[A[c][r] for c in range(3)] for r in range(3)]                                              # Aᵀ
+    t = [cd[r] - sum(L[r][k] * cs[k] for k in range(3)) for r in range(3)]
+    return [[L[r][0], L[r][1], L[r][2], t[r]] for r in range(3)]
 
 
 def _column_major(m3x4: List[List[float]]) -> List[float]:
