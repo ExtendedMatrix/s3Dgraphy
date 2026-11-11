@@ -1,6 +1,6 @@
 {
   "formal_language": "EM",
-  "version": "1.6.44",
+  "version": "1.6.45",
   "_note_material_vs_qualia_color": [
     "DUE COSE DIVERSE CHE SI CHIAMANO ENTRAMBE color. Non confonderle: e gia successo.",
     "1) QUI, in node_styles.<tipo>.style.material.rgba_color — il COLORE DEL MATERIALE BLENDER del proxy 3D, in float LINEARI. UNA sola chiave: `rgba_color`. Fino a S8 il file ne usava due (`color` sui 13 tipi stratigrafici, `rgba_color` sugli altri) e get_material_color() ne leggeva una sola, restituendo None per 21 tipi su 38; ora sono unificate e la vecchia `color` e letta solo come tolleranza verso file scritti prima. Un tipo che non diventa mai una mesh NON ha material affatto (i contenitori di gruppo, e da S7 i dieci nodi che rendono per icona): per loro get_material_color() torna None, ed e corretto.",
@@ -9,6 +9,7 @@
     "In breve: qui si decide di che colore DISEGNARE una US; li si registra di che colore ERA."
   ],
   "_changelog": {
+    "1.6.45": "TAGLI 3D: LE QUATTRO DECISIONI DI E.D. DELL'11 NOV (MICRO-TAGLI-3D-DECISIONI, 13 Nov 2026). (1) Every mesh type has edges: `threed_style.defaults.edges` = {show true, width 1, style solid, feature_angle_deg 1} — thin, continuous, in the colour EMStudio drew its thin contour in (the linear of the 2D border_color; written as `edges.rgba_color` only on the 9 types where it differs from the material: AUTH_AI, LIC, EMB, GRAPH, NARR, RM, RMDoc, RMSF, UL). Blender now draws them too. Faces unchanged for every type. (2) USN edges in dark grey: `edges.rgba_color` linear 0.262 (= #8C8C8C, its 2D frame), readable on a light background; USN faces unchanged (0.55, opacity 0.3). USN and USNt stay apart by faces yes/no and edges solid/dashed. (3) The type decides the faces in every display mode (rule point 4): a USNt has no faces in EM Tools' Epochs/Properties modes either. (4) A proxy whose origin is at 0,0,0 must not hide its fill behind the cut: clients sort transparent proxies by the centre of the volume, not by the origin (rule point 4b; no change to the user's data). `feature_angle_deg` moved from the top of threed_style into `edges` (default 1, USN/USNt 20).",
     "1.6.44": "TAGLI E NEUTRE IN 3D: THE 3D TRANSLATES THE GLYPH (NIGHT-TAGLI-E-NEUTRE, 13 Nov 2026). New `threed` block in node_styles.<type>.style, beside `material`, on every type that becomes a mesh (every type with a `material`): `faces` (show, rgba_color, opacity), `edges` (show, rgba_color, width, style solid|dashed|corners), `geometry` (only USN and USNt). The reading rule, the defaults and the patterns are in the new top-level block `threed_style`. USN (the cut): transparent faces (opacity 0.3) and continuous edges; its proxy is the VOLUME OF THE MATTER REMOVED. USNt (the designed void): no faces, dashed edges; its proxy is the volume of the void. USN keeps its 3D grey (linear 0.55 = sRGB #C4C4C4); USNt takes linear 0.262 = #8C8C8C, its own 2D frame colour converted like every other type's (two greys already in the language: until 1.6.43 the two had the same 0.55 and could not be told apart in 3D). Every other type: faces shown at opacity 1.0 (×the client's global proxy opacity = as before), no edges of its own = as before. s3dgraphy.utils.utils.get_threed_style reads it.",
     "1.6.43": "THE UNITS OF THE LANDSCAPE GRAPH, AS A DRAFT (MICRO-LANDSCAPE-ONTOLOGIA, 6 Nov 2026). node_styles.UT, UT0, district (keyed by node_type, so a client finds them without an alias): the TopographicUnitNode, NegativeTopographicUnitNode and DistrictNode of nodes 1.6.41, in an earth brown #8B5A2B of their own (the scale of distance, not the red of the contact scale). The observed UT is a hexagon with the thick solid frame of an observed unit; the UT0 (−UT, an absence observed) the same hexagon with a dashed frame and a white fill; the declared district a dotted rounded rectangle, the tray; edge_style.is_in_district dotted in the same brown. Their icons are drafts in src/2D/bozze (UT.svg, UT0.svg, district.svg, marked BOZZA); no 2d_glyphs entry and no material yet: the colours of the Landscape Matrix are E.D.'s (decisioni/landscape-graph-semantica §10, «i colori»), these are placeholders marked draft.",
     "1.6.42": "THE GROUND OF THE LANDSCAPE (MICRO-GIS-BASE, 6 Nov 2026). node_styles.LSF: the LandscapeSurfaceNode (nodes 1.6.40), in the #FF6600 reference family of GEO, GCP and RGT — a geometry placed in the world — with its own glyph src/2D/landscape_surface.svg (a ground as a mesh, two contour lines).",
@@ -5730,9 +5731,6 @@
           "faces": {
             "show": true,
             "opacity": 1.0
-          },
-          "edges": {
-            "show": false
           }
         },
         "border_color": "#9B3333",
@@ -5760,9 +5758,6 @@
           "faces": {
             "show": true,
             "opacity": 1.0
-          },
-          "edges": {
-            "show": false
           }
         },
         "border_color": "#31792D",
@@ -5790,9 +5785,6 @@
           "faces": {
             "show": true,
             "opacity": 1.0
-          },
-          "edges": {
-            "show": false
           }
         },
         "border_color": "#248FE7",
@@ -5820,9 +5812,6 @@
           "faces": {
             "show": true,
             "opacity": 1.0
-          },
-          "edges": {
-            "show": false
           }
         },
         "border_color": "#B19F61",
@@ -5850,9 +5839,6 @@
           "faces": {
             "show": true,
             "opacity": 1.0
-          },
-          "edges": {
-            "show": false
           }
         },
         "border_color": "#D8BD30",
@@ -5880,9 +5866,6 @@
           "faces": {
             "show": true,
             "opacity": 1.0
-          },
-          "edges": {
-            "show": false
           }
         },
         "border_color": "#9B3333",
@@ -5910,9 +5893,6 @@
           "faces": {
             "show": true,
             "opacity": 1.0
-          },
-          "edges": {
-            "show": false
           }
         },
         "border_color": "#D86400",
@@ -5940,9 +5920,6 @@
           "faces": {
             "show": true,
             "opacity": 1.0
-          },
-          "edges": {
-            "show": false
           }
         },
         "border_color": "#9B3333",
@@ -5969,9 +5946,6 @@
           "faces": {
             "show": true,
             "opacity": 1.0
-          },
-          "edges": {
-            "show": false
           }
         },
         "border_color": "#D86400",
@@ -5999,9 +5973,6 @@
           "faces": {
             "show": true,
             "opacity": 1.0
-          },
-          "edges": {
-            "show": false
           }
         },
         "border_color": "#31792D",
@@ -6028,9 +5999,6 @@
           "faces": {
             "show": true,
             "opacity": 1.0
-          },
-          "edges": {
-            "show": false
           }
         },
         "border_color": "#248FE7",
@@ -6058,9 +6026,6 @@
           "faces": {
             "show": true,
             "opacity": 1.0
-          },
-          "edges": {
-            "show": false
           }
         },
         "border_color": "#B19F61",
@@ -6088,9 +6053,6 @@
           "faces": {
             "show": true,
             "opacity": 1.0
-          },
-          "edges": {
-            "show": false
           }
         },
         "border_color": "#9B3333",
@@ -6119,9 +6081,6 @@
           "faces": {
             "show": true,
             "opacity": 1.0
-          },
-          "edges": {
-            "show": false
           }
         },
         "border_color": "#000000",
@@ -6152,9 +6111,6 @@
           "faces": {
             "show": true,
             "opacity": 1.0
-          },
-          "edges": {
-            "show": false
           }
         },
         "border_color": "#2A8C8C",
@@ -6256,7 +6212,12 @@
             "opacity": 1.0
           },
           "edges": {
-            "show": false
+            "rgba_color": {
+              "r": 0.0,
+              "g": 0.402,
+              "b": 1.0,
+              "a": 1.0
+            }
           }
         },
         "border_color": "#00AAFF",
@@ -6286,7 +6247,12 @@
             "opacity": 1.0
           },
           "edges": {
-            "show": false
+            "rgba_color": {
+              "r": 1.0,
+              "g": 0.68,
+              "b": 0.0,
+              "a": 1.0
+            }
           }
         },
         "border_color": "#FFD700",
@@ -6316,7 +6282,12 @@
             "opacity": 1.0
           },
           "edges": {
-            "show": false
+            "rgba_color": {
+              "r": 0.604,
+              "g": 0.0,
+              "b": 0.0,
+              "a": 1.0
+            }
           }
         },
         "border_color": "#CC0000",
@@ -6345,7 +6316,12 @@
             "opacity": 1.0
           },
           "edges": {
-            "show": false
+            "rgba_color": {
+              "r": 0.033,
+              "g": 0.033,
+              "b": 0.033,
+              "a": 1.0
+            }
           }
         },
         "border_color": "#333333",
@@ -6375,7 +6351,12 @@
             "opacity": 1.0
           },
           "edges": {
-            "show": false
+            "rgba_color": {
+              "r": 0.102,
+              "g": 0.102,
+              "b": 0.133,
+              "a": 1.0
+            }
           }
         },
         "border_color": "#5A5A66",
@@ -6520,7 +6501,12 @@
             "opacity": 1.0
           },
           "edges": {
-            "show": false
+            "rgba_color": {
+              "r": 1.0,
+              "g": 0.133,
+              "b": 0.0,
+              "a": 1.0
+            }
           }
         },
         "border_color": "#FF6600",
@@ -6548,7 +6534,12 @@
             "opacity": 1.0
           },
           "edges": {
-            "show": false
+            "rgba_color": {
+              "r": 1.0,
+              "g": 0.133,
+              "b": 0.0,
+              "a": 1.0
+            }
           }
         },
         "border_color": "#FF6600",
@@ -6576,7 +6567,12 @@
             "opacity": 1.0
           },
           "edges": {
-            "show": false
+            "rgba_color": {
+              "r": 1.0,
+              "g": 0.133,
+              "b": 0.0,
+              "a": 1.0
+            }
           }
         },
         "border_color": "#FF6600",
@@ -6627,7 +6623,12 @@
             "opacity": 1.0
           },
           "edges": {
-            "show": false
+            "rgba_color": {
+              "r": 0.687,
+              "g": 0.127,
+              "b": 0.0,
+              "a": 1.0
+            }
           }
         },
         "border_color": "#D86400",
@@ -6658,7 +6659,8 @@
           "edges": {
             "show": true,
             "width": 1,
-            "style": "dashed"
+            "style": "dashed",
+            "feature_angle_deg": 20
           },
           "geometry": "The volume of the VOID that is part of the design (the room, the opening, the risparmio). No face — a face would state a surface a void does not have — only dashed edges: one sees how large the void is, not a surface."
         },
@@ -6691,7 +6693,14 @@
           "edges": {
             "show": true,
             "width": 1,
-            "style": "solid"
+            "style": "solid",
+            "feature_angle_deg": 20,
+            "rgba_color": {
+              "r": 0.262,
+              "g": 0.262,
+              "b": 0.262,
+              "a": 1.0
+            }
           },
           "geometry": "The VOLUME OF THE MATTER REMOVED, closed at the top by the plane the cut starts from: the surface of the cut (the interface, A3) is its lower and lateral face. Transparent faces and continuous edges: one sees the void and reads the fills that lie in it. Its plan footprint (qualia `footprint`) can be taken from it: the projection of the upper outline, with the paradata chain extracted_from → the proxy's `geometry` property."
         },
@@ -6920,19 +6929,19 @@
     "id": "{master}##{place}"
   },
   "threed_style": {
-    "_comment": "1.6.44 (NIGHT-TAGLI-E-NEUTRE, E.D. 11-13 Nov 2026: «la grafica resta attaccata al TIPO di nodo, in 2D e in 3D»). How a proxy of a type is DRAWN in 3D: the 3D translates the glyph of the graph as the glyph translates the meaning. READING RULE. node_styles.<type>.style.threed = {faces, edges, geometry?}. (1) `material.rgba_color` stays THE colour (linear floats): `threed.faces.rgba_color` absent = the material's colour, `threed.edges.rgba_color` absent = the faces' colour; a colour is written in `threed` only when it DIFFERS (no duplicate). (2) A key absent from a type's `threed` takes the value in `defaults` below; a type with a `material` and no `threed` at all takes `defaults` whole; a type without `material` never becomes a mesh and has no 3D style. (3) OPACITY MULTIPLIES: what is drawn = faces.opacity × the client's global proxy opacity (EMStudio s3_opacity_proxy / s3_opacity_wire, EM Tools proxy_display_alpha). The global slider fades every proxy; the type's opacity keeps the ratio between types. faces.show false = no face at all, whatever the slider. (4) EDGES. show false = the type has no edge mark of its own (a client keeps the neutral contour it may draw around every mesh as part of its interface — it is not the type's sign). show true = the type's edges are drawn: the FEATURE edges of the proxy (two faces meeting at more than `feature_angle_deg`, plus boundary edges — not the diagonals of a triangulation), `style` solid = whole, dashed = the `dashed` pattern, corners = the `corners` pattern (the 3D of corner_brackets: the two ends of each edge). `width` is in screen pixels (a viewer that cannot draw thick lines draws 1 px; a renderer that needs a world size scales it by `world_width_ratio` of the proxy's diagonal). Edges are drawn ABOVE the global opacity: their alpha is 1. (5) `geometry`: a sentence saying what the proxy's volume IS, only where it is not the obvious «the volume of the unit». Reference reader: s3dgraphy.utils.utils.get_threed_style(type).",
+    "_comment": "1.6.44-1.6.45 (NIGHT-TAGLI-E-NEUTRE + MICRO-TAGLI-3D-DECISIONI, E.D. 11-13 Nov 2026: «la grafica resta attaccata al TIPO di nodo, in 2D e in 3D»). How a proxy of a type is DRAWN in 3D: the 3D translates the glyph of the graph as the glyph translates the meaning. READING RULE. node_styles.<type>.style.threed = {faces, edges, geometry?}. (1) `material.rgba_color` stays THE colour (linear floats): `threed.faces.rgba_color` absent = the material's colour, `threed.edges.rgba_color` absent = the faces' colour; a colour is written in `threed` only when it DIFFERS (no duplicate). (2) A key absent from a type's `threed` takes the value in `defaults` below; a type with a `material` and no `threed` at all takes `defaults` whole; a type without `material` never becomes a mesh and has no 3D style. (3) OPACITY MULTIPLIES: what is drawn = faces.opacity × the client's global proxy opacity (EMStudio s3_opacity_proxy / s3_opacity_wire, EM Tools proxy_display_alpha). The global slider fades every proxy; the type's opacity keeps the ratio between types. faces.show false = no face at all, whatever the slider. (4) EDGES (1.6.45, decisions of E.D. 11 Nov 2026). EVERY mesh type has edges: thin and continuous by default (`defaults.edges`), in the colour EMStudio drew its thin contour in until 1.6.44 = the linear of the 2D `border_color` (where that differs from the material, the type writes its own `edges.rgba_color`). The edges are the proxy's FEATURE edges: two faces meeting at more than `edges.feature_angle_deg` (default 1 = the thin contour as it was drawn: every crease, no diagonal of a flat triangulation; the type marks of USN/USNt take 20, so a dash never runs over a curved surface), plus boundary edges. `style` solid = whole, dashed = the `dashed` pattern, corners = the `corners` pattern (the 3D of corner_brackets: the two ends of each edge). `width` is in screen pixels (a viewer that cannot draw thick lines draws 1 px; a renderer that needs a world size scales it by `world_width_ratio` of the proxy's diagonal). Edges are drawn ABOVE the global opacity: their alpha is 1. `show` false = no edge at all. THE TYPE DECIDES THE FACES IN EVERY DISPLAY MODE: a client that recolours the proxies by another key (EM Tools' Epochs / Properties modes) recolours the edges, and the faces of the types that have faces; a type with faces.show false (USNt) stays without faces there too. (4b) TRANSPARENCY ORDER: a client sorts the transparent proxies by the centre of their volume (bounding box), never by the object's origin — a proxy modelled in place has its origin at 0,0,0 and its fill would vanish behind its cut. The user's data (origins, transforms, files) are never changed for this. (5) `geometry`: a sentence saying what the proxy's volume IS, only where it is not the obvious «the volume of the unit». Reference reader: s3dgraphy.utils.utils.get_threed_style(type).",
     "defaults": {
       "faces": {
         "show": true,
         "opacity": 1.0
       },
       "edges": {
-        "show": false,
+        "show": true,
         "width": 1,
-        "style": "solid"
+        "style": "solid",
+        "feature_angle_deg": 1
       }
     },
-    "feature_angle_deg": 20,
     "dashed": {
       "dash_ratio": 0.04,
       "gap_ratio": 0.025,

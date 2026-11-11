@@ -335,12 +335,12 @@ THREED_EDGE_STYLES = ("solid", "dashed", "corners")
 
 
 def get_threed_style(node_type, rules_path=None):
-    """The COMPLETE 3D style of a node type (em_visual_rules 1.6.44,
+    """The COMPLETE 3D style of a node type (em_visual_rules 1.6.44-1.6.45,
     ``node_styles.<type>.style.threed`` read with the rule of
     ``threed_style._comment``), every fallback resolved:
 
     ``{"type", "faces": {"show", "rgba_color", "opacity"},
-    "edges": {"show", "rgba_color", "width", "style"}, "geometry",
+    "edges": {"show", "rgba_color", "width", "style", "feature_angle_deg"}, "geometry",
     "feature_angle_deg", "dashed": {...}, "corners": {...},
     "world_width_ratio"}`` — colours as ``(r, g, b, a)`` linear tuples.
 
@@ -390,12 +390,17 @@ def get_threed_style(node_type, rules_path=None):
     edges["width"] = float(edges.get("width", 1))
     if edges.get("style") not in THREED_EDGE_STYLES:
         edges["style"] = "solid"
+    # 1.6.45: the angle is the edges' own (default 1 = the thin contour, the
+    # marks of USN/USNt 20); a 1.6.44 file had one at the top of threed_style
+    edges["feature_angle_deg"] = float(edges.get(
+        "feature_angle_deg", block.get("feature_angle_deg", _THREED_FALLBACK["feature_angle_deg"])))
     return {
         "type": node_type,
         "faces": faces,
         "edges": edges,
         "geometry": own.get("geometry"),
-        "feature_angle_deg": float(block.get("feature_angle_deg", _THREED_FALLBACK["feature_angle_deg"])),
+        # the edges' angle, repeated where 1.6.44 readers look for it
+        "feature_angle_deg": edges["feature_angle_deg"],
         "dashed": {k: v for k, v in (block.get("dashed") or _THREED_FALLBACK["dashed"]).items() if not k.startswith("_")},
         "corners": {k: v for k, v in (block.get("corners") or _THREED_FALLBACK["corners"]).items() if not k.startswith("_")},
         "world_width_ratio": float(block.get("world_width_ratio", _THREED_FALLBACK["world_width_ratio"])),
