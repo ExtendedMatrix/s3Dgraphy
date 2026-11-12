@@ -156,6 +156,11 @@ class PyArchInitImporter(BaseImporter):
         self._footprints = footprints
         self._layer_url = layer_url
         self.footprint_report: Optional[Dict[str, Any]] = None
+        # 15 Nov 2026 · THE NUMBER of every unit (unit_numbers): written on the
+        # node as data.us / data.unita_tipo from the row's own columns; what
+        # is not a unit, or cannot be told, is counted here and not invented.
+        from .unit_numbers import new_report
+        self.numbering_report: Dict[str, Any] = new_report()
 
         self.validate_mapping()
 
@@ -303,6 +308,7 @@ class PyArchInitImporter(BaseImporter):
                 self._process_pyarchinit_properties(row_dict, existing_node)
                 self._process_memberships(row_dict, existing_node)
                 self._index_unit(row_dict, existing_node)
+                self._number_unit(row_dict, existing_node)
                 return existing_node
                 
             elif is_enriching_existing:
@@ -381,6 +387,7 @@ class PyArchInitImporter(BaseImporter):
                 self._process_pyarchinit_properties(row_dict, new_node)
                 self._process_memberships(row_dict, new_node)
                 self._index_unit(row_dict, new_node)
+                self._number_unit(row_dict, new_node)
                 return new_node
 
         except KeyError as e:
@@ -389,6 +396,29 @@ class PyArchInitImporter(BaseImporter):
 
     #: the unita_tipo that make their own class (the two voids, POL6)
     _VOID_TYPES = ("USN", "USNt")
+
+    def _number_unit(self, row_dict: Dict[str, Any], node: Node) -> None:
+        """The row's number on its node (15 Nov 2026, unit_numbers): ``us``
+        is the number and ``unita_tipo`` its code (the mapping's node_type
+        when the row has none). The NAME stays as the template made it; a
+        row whose code is not a unit's, or cannot be told, gets no number and
+        is said in ``numbering_report`` and in the warnings."""
+        from .unit_numbers import number_of, record, write_number
+        id_column = self._get_id_column()
+        code = (str(row_dict.get('unita_tipo') or '').strip()
+                or self.mapping['column_mappings'][id_column].get('node_type', 'US'))
+        verdict = number_of(code, row_dict.get(id_column))
+        label = str(getattr(node, "name", "") or "")
+        record(self.numbering_report, label, verdict)
+        if write_number(node, verdict):
+            return
+        if verdict["status"] == "not_unit":
+            self.warnings.append(
+                f"'{label}': unita_tipo '{verdict['code']}' names "
+                f"{verdict['class']} (not a unit): no unit number "
+                f"(the node is still a {type(node).__name__})")
+        else:
+            self.warnings.append(f"'{label}': no unit number, {verdict['reason']}")
 
     def _index_unit(self, row_dict: Dict[str, Any], node: Node) -> None:
         key = tuple(str(row_dict.get(c) if row_dict.get(c) is not None else "").strip()
@@ -1068,6 +1098,11 @@ class PyArchInitImporter(BaseImporter):
                 self.warnings.append(f"Skipped rows (not in graph): {skipped_rows}")
             if error_rows > 0:
                 self.warnings.append(f"Errors: {error_rows}")
+            nr = self.numbering_report
+            self.warnings.append(
+                f"Unit numbers: {nr['numbered']} numbered, "
+                f"{len(nr['not_unit'])} rows that are not units, "
+                f"{len(nr['ambiguous'])} ambiguous")
 
             self._read_footprints(conn)
             self._finish_relative_chronology("imported")
