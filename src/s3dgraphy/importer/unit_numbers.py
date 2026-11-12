@@ -1,31 +1,29 @@
-"""THE NUMBER OF A UNIT that came in from another tool (15 Nov 2026).
+"""THE NUMBER OF A UNIT is read from its NAME (15 Nov 2026; E.D., 12 Nov 2026).
 
-An importer that does not mint the unit's id leaves it without a number a
-reader can find: the pyArchInit importer names a unit by its
+In EM the identifier of a unit is its ``name`` (``P1_is_identified_by``). The
+number is NOT copied into another key: no ``data.us``, in the data or in the
+datamodel. The name the pyArchInit importer builds from its
 ``node_name_template`` (``{area}.{settore}.{unita_tipo}{us}`` → ``1.1.US1``,
-``1.USM12``, ``1.SF300``) and gives it the row's UUID as id. Measured on the
-StratiField test room: 45 real units with nothing a «go to US…» could find.
+``1.US2``, ``1.USM12``, ``1.SF300``) already holds code and number, and the
+area in front makes it unique (in pyArchInit the key is site + area + number).
+No room is migrated: order and the «no number» sign are display only.
 
-WHERE THE NUMBER GOES. The node datamodel has no element for a unit's number:
-the identifier is the ``name`` (``P1_is_identified_by``). The one key the
-library already reads it from is ``attributes['us']`` (em.json ``data.us``),
-the pyArchInit column itself: the sync projector writes it, the ``rapporti``
-writer reads it before falling back to the name. The importers write THAT key,
-beside ``unita_tipo`` (the code the number goes with: US, USM, SF, USVs…), and
-leave the name as it came.
-
-ONE RULE, used by the importer (from the row: the number is the ``us`` column,
-the code ``unita_tipo``) and by anything that has only the name — a room
-imported before this, to be put in order (:func:`number_of_name`):
+ONE RULE, used by the importer to CLASSIFY a row (from its columns: the number
+is ``us``, the code ``unita_tipo``) and by any reader that has only the name
+(:func:`number_of_name`, a pure reader):
 
 * the code names a stratigraphic unit of the datamodel (its subtypes, the voids,
   and the genre codes USM/USR/USS and their localised forms) and the number is
   a unit number → ``numbered``;
 * the code names something that is not a unit (pyArchInit's paradata codes:
   DOC, Combinar, Extractor, property; CON for continuity) → ``not_unit``, with
-  the class it names: no number is given, the unit is not invented;
+  the class it names: the unit is not invented;
 * anything else (an unknown code, no code, a number that is not one) →
   ``ambiguous``, with the reason. Not guessed: said.
+
+The importer writes nothing on the node from this: it counts the verdicts in
+its ``numbering_report`` and says the non-units and the ambiguous rows in its
+warnings.
 """
 
 from __future__ import annotations
@@ -34,12 +32,7 @@ import json
 import re
 from functools import lru_cache
 from pathlib import Path
-from typing import Any, Dict, Iterable, Optional
-
-#: The key a unit's number is written under (em.json ``data.us``), and the key
-#: of the code it goes with. The same keys sync/graph_projector.py writes.
-NUMBER_KEY = "us"
-CODE_KEY = "unita_tipo"
+from typing import Any, Dict, Optional
 
 #: pyArchInit's codes for what is NOT a unit: the paradata rows of us_table
 #: (the same table as sync/yed_import_pipeline._CLASSIFIED_KIND_TO_UNITA_TIPO:
@@ -134,21 +127,6 @@ def number_of_name(name: Any) -> Dict[str, Any]:
     return number_of(m.group("code"), m.group("number"))
 
 
-def write_number(node: Any, verdict: Dict[str, Any]) -> bool:
-    """Put a ``numbered`` verdict on the node (``attributes``: em.json
-    ``data.us`` and ``data.unita_tipo``); the name is not touched. False, and
-    nothing written, for any other verdict."""
-    if verdict.get("status") != "numbered":
-        return False
-    attrs = getattr(node, "attributes", None)
-    if not isinstance(attrs, dict):
-        attrs = {}
-        node.attributes = attrs
-    attrs[NUMBER_KEY] = verdict["number"]
-    attrs[CODE_KEY] = verdict["code"]
-    return True
-
-
 def new_report() -> Dict[str, Any]:
     """The numbering part of an import report."""
     return {"numbered": 0, "not_unit": [], "ambiguous": []}
@@ -164,35 +142,3 @@ def record(report: Dict[str, Any], label: str, verdict: Dict[str, Any]) -> None:
     else:
         report["ambiguous"].append({"name": label,
                                     "reason": verdict.get("reason", "")})
-
-
-def plan_for_document(document: Dict[str, Any],
-                      stratigraphic_types: Iterable[str]) -> Dict[str, Any]:
-    """A DRY RUN over an em.json container (a room already imported): for every
-    stratigraphic node with no number (no ``data.us``, an id not minted as
-    ``US<n>``), the verdict of its name. Writes nothing; returns
-    ``{"plan": [{graph, node, name, number, code}], "report": …}`` — the plan
-    is what an ``update_field`` op per unit (``data.us``, ``data.unita_tipo``)
-    would write, if E.D. decides to."""
-    kinds = set(stratigraphic_types)
-    plan, report = [], new_report()
-    for gid, section in (document.get("graphs") or {}).items():
-        for node in section.get("nodes") or []:
-            if str(node.get("node_type") or "") not in kinds:
-                continue
-            data = node.get("data") if isinstance(node.get("data"), dict) else {}
-            if data.get("removed") or str(data.get(NUMBER_KEY) or "").strip():
-                continue
-            nid = str(node.get("id") or "")
-            if nid.startswith("US") and UNIT_NUMBER.fullmatch(nid[2:]):
-                continue
-            name = str(node.get("name") or "")
-            if name.upper().startswith("US ") and UNIT_NUMBER.fullmatch(
-                    name[3:].split(" — ")[0].strip()):
-                continue
-            verdict = number_of_name(name)
-            record(report, name, verdict)
-            if verdict["status"] == "numbered":
-                plan.append({"graph": gid, "node": nid, "name": name,
-                             "number": verdict["number"], "code": verdict["code"]})
-    return {"plan": plan, "report": report}

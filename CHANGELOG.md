@@ -5,19 +5,22 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
-- **A number for the units imported without one** (MICRO un numero alle unità
-  importate, 15 November 2026). The pyArchInit importer named a unit by its
-  template (`1.1.US1`, `1.USM12`, `1.SF300`) under a UUID, and nothing a reader
-  could find said its number. Now every row writes `attributes['us']` /
-  `attributes['unita_tipo']` (em.json `data.us`, `data.unita_tipo`: the key the
-  sync projector already writes and `rapporti` already reads; the datamodel has
-  no number element, the name stays the identifier and is not touched). One
-  rule in `importer/unit_numbers.py`: a code of a stratigraphic unit + a unit
-  number → numbered; pyArchInit's paradata codes (DOC, Combinar, Extractor,
-  property) and CON → not a unit, no number; anything else → ambiguous, said.
-  `numbering_report` and the warnings say both. `plan_for_document` is the dry
-  run for a room imported before (writes nothing). On the StratiField test
-  room: 44 numbered, 7 not units (Combinar900 among them), 0 ambiguous.
+- **The number of a unit is read from its name** (MICRO il numero dal nome,
+  15 November 2026; E.D. 12 November). In EM a unit's identifier is its NAME
+  (`P1_is_identified_by`); the number is not copied into another key — no
+  `data.us`, in the data or in the datamodel. The name the pyArchInit importer
+  builds (`{area}.{settore}.{unita_tipo}{us}` → `1.US2`, `1.1.US1`) already
+  holds code and number, and the area makes it unique (pyArchInit's key is
+  site + area + number). No room is migrated. What stays from the MICRO un
+  numero alle unità importate (7b7e04c): `importer/unit_numbers.py` is the one
+  rule — a code of a stratigraphic unit + a unit number → numbered;
+  pyArchInit's paradata codes (DOC, Combinar, Extractor, property) and CON →
+  not a unit; anything else → ambiguous, said — used by the importer to
+  CLASSIFY each row (`numbering_report` and the warnings) and by
+  `number_of_name`, a pure reader of the name. Removed: the importer no longer
+  writes `attributes['us']` / `attributes['unita_tipo']`; `write_number` and
+  `plan_for_document` (the migration dry run) are gone. On the StratiField
+  test room: 44 numbered, 7 not units (Combinar900 among them), 0 ambiguous.
 - **The footprints of saggi and cuts** (NIGHT impronte di saggi e tagli, 12
   November 2026, decided by E.D. 11 November). Qualia 1.6.11: `footprint`
   declares WHO may carry it — `applies_to` the site (LocationNodeGroup level

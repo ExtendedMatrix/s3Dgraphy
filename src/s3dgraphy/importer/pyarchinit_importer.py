@@ -156,9 +156,10 @@ class PyArchInitImporter(BaseImporter):
         self._footprints = footprints
         self._layer_url = layer_url
         self.footprint_report: Optional[Dict[str, Any]] = None
-        # 15 Nov 2026 · THE NUMBER of every unit (unit_numbers): written on the
-        # node as data.us / data.unita_tipo from the row's own columns; what
-        # is not a unit, or cannot be told, is counted here and not invented.
+        # 15 Nov 2026 · every row CLASSIFIED (unit_numbers): a unit, not a
+        # unit (with the class its code names), or ambiguous — counted here
+        # and said in the warnings. Nothing is written on the node: the
+        # unit's number is read from its NAME (E.D., 12 Nov 2026).
         from .unit_numbers import new_report
         self.numbering_report: Dict[str, Any] = new_report()
 
@@ -398,19 +399,20 @@ class PyArchInitImporter(BaseImporter):
     _VOID_TYPES = ("USN", "USNt")
 
     def _number_unit(self, row_dict: Dict[str, Any], node: Node) -> None:
-        """The row's number on its node (15 Nov 2026, unit_numbers): ``us``
-        is the number and ``unita_tipo`` its code (the mapping's node_type
-        when the row has none). The NAME stays as the template made it; a
-        row whose code is not a unit's, or cannot be told, gets no number and
-        is said in ``numbering_report`` and in the warnings."""
-        from .unit_numbers import number_of, record, write_number
+        """The row CLASSIFIED (15 Nov 2026, unit_numbers): ``unita_tipo`` and
+        ``us`` say whether it is a unit (the mapping's node_type when the row
+        has no code), not a unit, or cannot be told. Nothing is written on the
+        node — the number is in the NAME the template made (``1.US2``), the
+        identifier (E.D., 12 Nov 2026: no ``data.us``). What is not a unit, or
+        ambiguous, is said in ``numbering_report`` and in the warnings."""
+        from .unit_numbers import number_of, record
         id_column = self._get_id_column()
         code = (str(row_dict.get('unita_tipo') or '').strip()
                 or self.mapping['column_mappings'][id_column].get('node_type', 'US'))
         verdict = number_of(code, row_dict.get(id_column))
         label = str(getattr(node, "name", "") or "")
         record(self.numbering_report, label, verdict)
-        if write_number(node, verdict):
+        if verdict["status"] == "numbered":
             return
         if verdict["status"] == "not_unit":
             self.warnings.append(

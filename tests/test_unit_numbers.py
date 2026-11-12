@@ -1,4 +1,5 @@
-"""A number for the units imported without one (MICRO-NUMERI-UNITA, 15 Nov 2026).
+"""The number of a unit is read from its name (MICRO-NUMERI-UNITA, then
+MICRO-NUMERO-DAL-NOME, 15 Nov 2026: E.D. 12 Nov — no data.us, nothing migrated).
 
 The cases are the StratiField test room's, measured: the pyArchInit demo
 database (`Scavo archeologico`) imported with the 1.6 name template gave
@@ -17,7 +18,8 @@ _REPO_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(_REPO_ROOT / "src"))
 
 from s3dgraphy.importer.unit_numbers import (  # noqa: E402
-    number_of, number_of_name, plan_for_document)
+    number_of, number_of_name)
+import s3dgraphy.importer.unit_numbers as unit_numbers  # noqa: E402
 
 
 @pytest.mark.parametrize("name,number,code", [
@@ -101,7 +103,7 @@ def _fixture(tmp_path):
     return str(db), str(mdir)
 
 
-def test_the_pyarchinit_importer_writes_the_number_and_keeps_the_name(tmp_path):
+def test_the_pyarchinit_importer_classifies_and_writes_no_number(tmp_path):
     from s3dgraphy.importer.pyarchinit_importer import PyArchInitImporter
     from s3dgraphy.mappings.registry import mapping_registry
     db, mdir = _fixture(tmp_path)
@@ -117,8 +119,10 @@ def test_the_pyarchinit_importer_writes_the_number_and_keeps_the_name(tmp_path):
               "1.SF300": ("300", "SF"), "1.USVs102": ("102", "USVs")}
     for name, (number, code) in expect.items():
         node = by_name[name]                       # the name as it came
-        assert node.attributes.get("us") == number
-        assert node.attributes.get("unita_tipo") == code
+        assert "us" not in node.attributes         # E.D. 12 Nov: no data.us
+        assert "unita_tipo" not in node.attributes
+        v = number_of_name(node.name)              # the number IS the name's
+        assert (v["number"], v["code"]) == (number, code)
     for name in ("1.Combinar900", "1.DOC4001", "1.Pippo55"):
         assert "us" not in by_name[name].attributes
     rep = imp.numbering_report
@@ -129,31 +133,7 @@ def test_the_pyarchinit_importer_writes_the_number_and_keeps_the_name(tmp_path):
     assert any("'1.Combinar900'" in w and "CombinerNode" in w for w in imp.warnings)
 
 
-def test_the_number_travels_in_the_em_json(tmp_path):
-    from s3dgraphy.exporter.emjson_exporter import _node_payload
-    from s3dgraphy.nodes.stratigraphic_node import StratigraphicUnit
-    from s3dgraphy.importer.unit_numbers import write_number
-    node = StratigraphicUnit(node_id="u1", name="1.USM12", description="")
-    assert write_number(node, number_of_name("1.USM12"))
-    data = _node_payload(node).get("data") or {}
-    assert data["us"] == "12" and data["unita_tipo"] == "USM"
-    assert node.name == "1.USM12"
-
-
-def test_a_room_already_imported_is_planned_not_written():
-    doc = {"graphs": {"scavo": {"nodes": [
-        {"id": "a", "node_type": "US", "name": "1.1.US1"},
-        {"id": "b", "node_type": "US", "name": "1.Combinar900"},
-        {"id": "c", "node_type": "US", "name": "1.Pippo4"},
-        {"id": "US3014", "node_type": "US", "name": "US 3014 — Area 3000"},
-        {"id": "d", "node_type": "US", "name": "1.US2", "data": {"us": "2"}},
-        {"id": "e", "node_type": "property", "name": "1.US9"},
-    ]}}}
-    before = json.dumps(doc, sort_keys=True)
-    out = plan_for_document(doc, ["US", "USN"])
-    assert json.dumps(doc, sort_keys=True) == before
-    assert out["plan"] == [{"graph": "scavo", "node": "a", "name": "1.1.US1",
-                            "number": "1", "code": "US"}]
-    assert out["report"]["numbered"] == 1
-    assert [x["name"] for x in out["report"]["not_unit"]] == ["1.Combinar900"]
-    assert [x["name"] for x in out["report"]["ambiguous"]] == ["1.Pippo4"]
+def test_no_writer_and_no_migration():
+    """The number is not copied into another key, and no room is migrated."""
+    for gone in ("write_number", "plan_for_document", "NUMBER_KEY", "CODE_KEY"):
+        assert not hasattr(unit_numbers, gone)
