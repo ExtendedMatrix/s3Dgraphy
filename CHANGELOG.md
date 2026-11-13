@@ -5,6 +5,30 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
+- **The epochs of anything, one rule; a container's epoch is the one it
+  declares** (MICRO-TESTATE-COERENTI, 13 November 2026). New module
+  `epoch_scope`: `epoch_presence` (what an epoch holds: born there by
+  `has_first_epoch` ∪ surviving there by `survive_in_epoch`, a mother epoch
+  with its sub-epochs, each survivor with the epoch it was born in — Templu
+  Mare v9: 2013 holds SU001–SU004, SU050, SU019 as survivors), `epoch_road` /
+  `node_epochs` (each type's road to the lanes, read from the connections
+  datamodel), `plan_epoch_move` / `move_to_epoch` («Sposta / Estendi in
+  epoca…» for a mixed selection: per node from → to, the edges, the nodes
+  excluded with the reason, a container's members following it or living by
+  their own choice, the chronology warnings before anything is written),
+  `plan_model_kind` / `convert_model_kind` (RM · RMDoc · RMSF with the edges
+  each class wants). `resources.alternatives`: `container_epoch_check`'s
+  reference is only what the container DECLARES (no more its tilesets'
+  epochs); a member with its own epoch is `own_choice`, not «out of step»
+  (`mismatched` stays, always empty); `align_member_epochs` is «Segui il
+  container» for those members (where a container's alternative is drawn is
+  unchanged: its members' epochs, its own without); `leave_container`, `unpublish_container`,
+  `remove_alternative`, `container_links` (the four bonds of a container and a
+  suggestion for each empty one: the document publishing most members, the
+  epoch of its date / of its members / of its name, a tileset of the same
+  document or epoch). Tests `test_epoch_scope.py` (9), `test_spazio_container.py`
+  (rewritten for the new reference, + the card).
+
 - **The criterion of RM / RMDoc / RMSF, a reading on one photo of a
   campaign, a unit's photos shared with the campaign, documents into the
   series D.nn** (MICRO-FOTO-DOCUMENTI-BBOX, 13 November 2026). Node datamodel

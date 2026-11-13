@@ -40,13 +40,53 @@ def test_a_container_without_document_nor_epoch_lies_in_no_epoch():
     assert ALT.container_epoch_check(g, gid)["no_epoch"] is True
 
 
-def test_members_out_of_step_with_their_tileset_are_said_and_aligned_on_request():
+def test_a_container_declares_its_epoch_its_tileset_gives_it_none():
+    """MICRO-TESTATE-COERENTI p.11 (E.D. 13 Nov 2026, 17:05) replaces the
+    reference of MICRO-SPAZIO-CONTAINER: the tileset among the members no
+    longer gives the container its epoch, and a member with an epoch of its
+    own is a choice, not a member out of step."""
     g = _graph()
     gid = ALT.create_container(g, "Survey2015", members=["M1", "M2", "T"])["group_id"]
     c = ALT.container_epoch_check(g, gid)
-    assert c["tilesets"] == ["T"] and c["reference"] == ["E15"] and sorted(c["mismatched"]) == ["M1", "M2"]
+    assert c["tilesets"] == ["T"] and c["reference"] == [] and c["mismatched"] == []
+    assert sorted(c["own_choice"]) == ["M1", "M2", "T"] and c["following"] == []
+    try:
+        ALT.align_member_epochs(g, gid, dry_run=True)
+        raise AssertionError("a container without a declared epoch has nothing to follow")
+    except ValueError:
+        pass
+    g.add_edge("decl", "E15", gid, "has_representation_model")
+    c = ALT.container_epoch_check(g, gid)
+    assert c["own"] == ["E15"] and sorted(c["own_choice"]) == ["M1", "M2"]   # T is in E15 too
     plan = ALT.align_member_epochs(g, gid, dry_run=True)
     assert [x["removed"] for x in plan["changes"]] == [["XX"], ["XX"]]
-    assert ALT.container_epoch_check(g, gid)["mismatched"]          # the preview writes nothing
+    assert ALT.container_epoch_check(g, gid)["own_choice"]          # the preview writes nothing
     ALT.align_member_epochs(g, gid)
-    assert ALT.container_epoch_check(g, gid)["mismatched"] == []
+    c = ALT.container_epoch_check(g, gid)
+    assert c["own_choice"] == [] and sorted(c["following"]) == ["M1", "M2"]
+
+
+def test_the_card_suggests_from_the_graph_and_the_bonds_come_off_again():
+    """MICRO-TESTATE-COERENTI p.9 · «Completa il container»: a suggestion for
+    each empty bond, and every bond can be taken off after."""
+    from s3dgraphy.nodes.document_node import DocumentNode
+    g = _graph()
+    g.add_node(DocumentNode("D1", "D.01"))
+    for i in (1, 2):
+        g.add_edge(f"pub{i}", "D1", f"M{i}", "has_representation_model")
+    gid = ALT.create_container(g, "Survey2015", members=["M1", "M2"])["group_id"]
+    s = ALT.container_links(g, gid)["suggestions"]
+    assert s["document"]["id"] == "D1" and s["document"]["why"] == {"code": "publishes-members", "n": 2, "of": 2}
+    assert s["epoch"]["id"] == "XX"                                   # where its members are
+    assert s["alternative"]["id"] == "T"                              # the tileset of the same epoch
+    e = ALT.create_container(g, "Survey2015 bis")["group_id"]
+    assert ALT.container_links(g, e)["suggestions"]["epoch"]["id"] == "E15"   # by its name
+    g.add_edge("p", "D1", gid, "has_representation_model")
+    assert [d["id"] for d in ALT.container_links(g, gid)["documents"]] == ["D1"]
+    assert ALT.unpublish_container(g, gid, "D1")["removed"]
+    assert ALT.container_links(g, gid)["documents"] == []
+    ALT.declare_alternative(g, "T", gid)
+    assert ALT.container_links(g, gid)["alternatives"] == [{"id": "TR", "name": "Survey_2015"}]
+    out = ALT.remove_alternative(g, gid, "TR")
+    assert out["removed"] and out["warnings"]
+    assert ALT.leave_container(g, "M1", gid)["left"] and ALT.members_of(g, gid) == ["M2"]

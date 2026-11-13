@@ -342,13 +342,17 @@ def container_own_epochs(graph, group_id: str,
 
 def _epochs(graph, hat_id: str, rule: Dict[str, Any]) -> List[str]:
     """The epochs of a hat: those reaching it with the rule's ``epoch_edge``;
-    for a container, its members'. A container whose members have no epoch
-    (or that has no member yet: a tileset of the whole survey and no mesh)
-    takes its OWN (:func:`container_own_epochs`, E.D. 25 Oct 2026): without
-    them its alternative would lie in no epoch and be seen nowhere."""
+    for a container, its members' — where its alternative is drawn. A container
+    whose members have no epoch (or that has no member yet: a tileset of the
+    whole survey and no mesh) takes its OWN (:func:`container_own_epochs`, E.D.
+    25 Oct 2026): without them its alternative would lie in no epoch and be seen
+    nowhere."""
     node = _node(graph, hat_id)
     if getattr(node, "node_type", "") != GROUP_NODE_TYPE:
         return _epochs_reaching(graph, [hat_id], rule)
+    # (MICRO-TESTATE-COERENTI p.11 changed the container's OWN epoch — what it
+    # declares —, not this: where its alternative is drawn stays where its members
+    # are, as the page's alternatives.ts reads it)
     out = _epochs_reaching(graph, members_of(graph, hat_id, deep=True), rule)
     return out or container_own_epochs(graph, hat_id, rule)
 
@@ -907,19 +911,24 @@ def _is_tileset_hat(graph, hat_id: str, rule: Dict[str, Any]) -> bool:
 
 def container_epoch_check(graph, group_id: str,
                           rule: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-    """What a container says of its epochs, for Archive › Assets (E.D. 13 Nov
-    2026: «Survey2015: mesh in XX sec, tileset 2015»).
+    """What a container says of its epochs, for Archive › Assets and the
+    Outliner.
 
-    The REFERENCE is the container's own epochs (an epoch reaching it, the
-    epochs of the Document that publishes it — :func:`container_own_epochs`)
-    and the epochs of the TILESETS among its members (a tileset is the survey
-    as a whole: where it is, the survey is). A member whose epochs are not
-    all in the reference (or that has none) is out of step. A view: nothing
-    is written; a member WITHOUT epochs follows the container and is not out
-    of step. → ``{group, name, documents, own, reference, tilesets,
-    members: [{id, name, epochs, ok}], mismatched, no_epoch}`` — ``no_epoch``
-    when neither the container nor any member lies in an epoch (it appears
-    in no epoch of the Space)."""
+    MICRO-TESTATE-COERENTI p.11 (E.D. 13 Nov 2026, 17:05, «come in EM Tools: usavo
+    il container per assegnare epoche in blocco, poi metto modelli specifici
+    nelle epoche che voglio»): a container has an epoch only when it
+    DECLARES one (:func:`container_own_epochs`: an epoch reaching it, the
+    Document publishing it) — never by the tileset it holds nor by its
+    members (until this MICRO the reference took its tilesets' epochs too:
+    Survey2015 lay in 2015 «di risulta»). A member WITHOUT an epoch of its
+    own lives in the container's (the assignment in block: ``follows``); a
+    member WITH one lives there by its own choice (``own_choice``) — a
+    legitimate override, not an error, so nothing is «out of step» any more
+    (``mismatched`` stays, always empty, for the clients of 1.6.0.dev111).
+    A view: nothing is written. → ``{group, name, documents, own, reference
+    (= own), tilesets, members: [{id, name, epochs, follows, own_choice,
+    ok}], following, own_choice, mismatched, no_epoch}`` — ``no_epoch`` when
+    neither the container nor any member lies in an epoch."""
     r = _rule(rule)
     node = _node(graph, group_id)
     if getattr(node, "node_type", "") != GROUP_NODE_TYPE:
@@ -932,22 +941,18 @@ def container_epoch_check(graph, group_id: str,
     own = container_own_epochs(graph, group_id, r)
     members = [m for m in members_of(graph, group_id, deep=True)]
     tiles = [m for m in members if _is_tileset_hat(graph, m, r)]
-    ref = sorted(set(own) | set(_epochs_reaching(graph, tiles, r)))
-    rows, bad = [], []
+    rows, following, chosen = [], [], []
     for m in members:
-        if m in tiles:
-            continue
         eps = _epochs_reaching(graph, [m], r)
-        # a member without epoch follows its container (the rule of
-        # cover_by_tilesets, MICRO-ASSETS-LIVELLI): not out of step
-        ok = (not eps or set(eps) <= set(ref)) if ref else True
-        rows.append({"id": m, "name": str(getattr(_node(graph, m), "name", "") or m), "epochs": eps, "ok": ok})
-        if not ok:
-            bad.append(m)
+        follows = not eps
+        choice = bool(eps) and set(eps) != set(own)
+        rows.append({"id": m, "name": str(getattr(_node(graph, m), "name", "") or m), "epochs": eps,
+                     "follows": follows, "own_choice": choice, "ok": True})
+        (following if follows else chosen if choice else []).append(m)
     no_epoch = not own and not _epochs_reaching(graph, members, r)
     return {"group": group_id, "name": str(getattr(node, "name", "") or group_id), "documents": docs,
-            "own": own, "reference": ref, "tilesets": tiles, "members": rows,
-            "mismatched": bad, "no_epoch": no_epoch}
+            "own": own, "reference": list(own), "tilesets": tiles, "members": rows,
+            "following": following, "own_choice": chosen, "mismatched": [], "no_epoch": no_epoch}
 
 
 def container_checks(graph, rule: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
@@ -958,31 +963,27 @@ def container_checks(graph, rule: Optional[Dict[str, Any]] = None) -> List[Dict[
 
 def align_member_epochs(graph, group_id: str, *, dry_run: bool = False,
                         rule: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
-    """«Allinea le epoche dei membri a quella del container»: each member out
-    of step (:func:`container_epoch_check`) loses the epoch edges
-    (``epoch_edge``) from epochs outside the reference and gains one from each
-    epoch of the reference. Asked with a preview (``dry_run``) and a
-    confirmation: E.D.'s data are never corrected on their own. → ``{group,
+    """«Segui il container» for every member with an epoch of its own
+    (MICRO-TESTATE-COERENTI p.11): each loses its epoch edges (``epoch_edge``)
+    and so lives in the container's declared epoch. Asked with a preview
+    (``dry_run``) and a confirmation. Refused when the container declares no
+    epoch: the members would fall out of every epoch. → ``{group,
     reference, changes: [{id, name, removed, added}]}``."""
     r = _rule(rule)
     chk = container_epoch_check(graph, group_id, r)
     ref = chk["reference"]
     if not ref:
-        raise ValueError(f"{chk['name']!r} has no epoch of its own nor a tileset in an epoch: nothing to align to")
+        raise ValueError(f"{chk['name']!r} declares no epoch: its members would lie in none")
     changes = []
     for row in chk["members"]:
-        if row["ok"]:
+        if not row["own_choice"]:
             continue
-        removed = [e for e in row["epochs"] if e not in ref]
-        added = [e for e in ref if e not in row["epochs"]]
-        changes.append({"id": row["id"], "name": row["name"], "removed": removed, "added": added})
+        changes.append({"id": row["id"], "name": row["name"], "removed": list(row["epochs"]), "added": []})
         if dry_run:
             continue
         for e in list(graph.edges):
-            if e.edge_type == r.get("epoch_edge") and e.edge_target == row["id"] and e.edge_source in removed:
+            if e.edge_type == r.get("epoch_edge") and e.edge_target == row["id"] and e.edge_source in row["epochs"]:
                 graph.remove_edge(e.edge_id)
-        for ep in added:
-            graph.add_edge(f"{ep}_{r.get('epoch_edge')}_{row['id']}", ep, row["id"], r.get("epoch_edge"))
     return {"group": group_id, "reference": ref, "changes": changes, "dry_run": dry_run}
 
 
@@ -1025,3 +1026,153 @@ def remove_container(graph, group_id: str) -> Dict[str, Any]:
         raise ValueError("the container has an alternative of its own: move it to another first")
     graph.remove_node(group_id)
     return {"group": group_id, "removed": True}
+
+
+# ── MICRO-TESTATE-COERENTI p.9 · a container completed and changed after ─────
+
+def leave_container(graph, node_id: str, group_id: str) -> Dict[str, Any]:
+    """``node_id`` leaves ``group_id`` (its other containers, epochs and
+    documents stay): the Outliner's drag out of a container. → ``{node,
+    group, left}``."""
+    if getattr(_node(graph, group_id), "node_type", "") != GROUP_NODE_TYPE:
+        raise ValueError(f"{group_id!r} is not an RM container")
+    left = False
+    for e in list(graph.edges):
+        if e.edge_type == EDGE_MEMBER and e.edge_source == node_id and e.edge_target == group_id:
+            graph.remove_edge(e.edge_id)
+            left = True
+    return {"node": node_id, "group": group_id, "left": left}
+
+
+def unpublish_container(graph, group_id: str, document_id: str) -> Dict[str, Any]:
+    """The Document no longer publishes the container (its edge
+    ``has_representation_model`` → container goes; the Document stays, with
+    what else it publishes). → ``{group, document, removed}``."""
+    if getattr(_node(graph, group_id), "node_type", "") != GROUP_NODE_TYPE:
+        raise ValueError(f"{group_id!r} is not an RM container")
+    removed = False
+    for e in list(graph.edges):
+        if e.edge_type == "has_representation_model" and e.edge_source == document_id and e.edge_target == group_id:
+            graph.remove_edge(e.edge_id)
+            removed = True
+    return {"group": group_id, "document": document_id, "removed": removed}
+
+
+def remove_alternative(graph, group_id: str, resource_id: str) -> Dict[str, Any]:
+    """The container no longer hats the asset of ``resource_id``: its edge
+    ``has_linked_resource`` goes. The asset is left WITHOUT a hat — it is drawn
+    nowhere until it gets one again (:func:`declare_alternative`, or an RM):
+    the answer says it. → ``{group, asset, removed, warnings}``."""
+    if getattr(_node(graph, group_id), "node_type", "") != GROUP_NODE_TYPE:
+        raise ValueError(f"{group_id!r} is not an RM container")
+    asset = asset_of(graph, resource_id)
+    removed = False
+    for e in list(graph.edges):
+        if e.edge_type == EDGE_HAT and e.edge_source == group_id and e.edge_target in (asset, resource_id):
+            graph.remove_edge(e.edge_id)
+            removed = True
+    warn = [] if hats_of(graph, asset) else [f"{getattr(_node(graph, asset), 'name', asset)!r} has no hat now: "
+                                            f"it is drawn in no epoch until it gets one"]
+    return {"group": group_id, "asset": asset, "removed": removed, "warnings": warn}
+
+
+def container_links(graph, group_id: str, rule: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+    """The four bonds of a container, as they are, and a SUGGESTION for each
+    empty one computed from the graph (the card «Completa il container»):
+
+    * ``documents`` who publishes it (Document → ``has_representation_model``
+      → container); suggestion: the Document that already publishes most of
+      its members (at least half) — «D.01 pubblica già 9 delle 10 mesh»;
+    * ``epochs`` the epochs it declares (:func:`container_own_epochs`);
+      suggestion: the epoch of the suggested (or declared) Document's date
+      (``spatiotemporal.entity_epoch``: the narrowest epoch holding it), else
+      the epoch most of its members are in;
+    * ``alternatives`` the assets it hats; suggestion: a TILESET hatted by an
+      RM outside the container that shares its Document or its epoch;
+    * ``members`` its members (direct).
+
+    Each suggestion ``{id, name, why: {code, n, of}}`` or None. A view."""
+    from ..spatiotemporal import entity_epoch
+    r = _rule(rule)
+    node = _node(graph, group_id)
+    if getattr(node, "node_type", "") != GROUP_NODE_TYPE:
+        raise ValueError(f"{group_id!r} is not an RM container")
+    name = lambda i: str(getattr(_node(graph, i), "name", "") or i)  # noqa: E731
+    is_doc = lambda i: str(getattr(_node(graph, i), "node_type", "")) == "document"  # noqa: E731
+    docs = sorted({e.edge_source for e in graph.edges if e.edge_type == "has_representation_model"
+                   and e.edge_target == group_id and is_doc(e.edge_source)})
+    own = container_own_epochs(graph, group_id, r)
+    alts = _linked_3d_assets(graph, group_id, r)
+    members = members_of(graph, group_id)
+    deep = members_of(graph, group_id, deep=True)
+    sug: Dict[str, Any] = {"document": None, "epoch": None, "alternative": None}
+    # the document
+    count: Dict[str, int] = {}
+    for e in graph.edges:
+        if e.edge_type == "has_representation_model" and e.edge_target in deep and is_doc(e.edge_source):
+            count[e.edge_source] = count.get(e.edge_source, 0) + 1
+    if not docs and count:
+        best = max(sorted(count), key=lambda d: count[d])
+        if count[best] * 2 >= len(deep):
+            sug["document"] = {"id": best, "name": name(best),
+                               "why": {"code": "publishes-members", "n": count[best], "of": len(deep)}}
+    # the epoch
+    doc_for = docs[0] if docs else (sug["document"] or {}).get("id")
+    if not own:
+        ep = entity_epoch(graph, doc_for) if doc_for else None
+        if ep:
+            sug["epoch"] = {"id": ep, "name": name(ep), "why": {"code": "document-date", "document": name(doc_for)}}
+        else:
+            eps: Dict[str, int] = {}
+            for m in deep:
+                for x in _epochs_reaching(graph, [m], r):
+                    eps[x] = eps.get(x, 0) + 1
+            if eps:
+                best = max(sorted(eps), key=lambda x: eps[x])
+                sug["epoch"] = {"id": best, "name": name(best),
+                                "why": {"code": "members-epoch", "n": eps[best], "of": len(deep)}}
+            else:
+                # an empty container named after its year («Survey2013»): the
+                # epoch of that name, else the narrowest epoch holding the year
+                label = name(group_id)
+                epn = [n for n in graph.nodes if str(getattr(n, "node_type", "")) == "EpochNode"]
+                hit = [n for n in epn if str(n.name) and re.search(rf"(?<!\d){re.escape(str(n.name))}(?!\d)", label)]
+                if not hit:
+                    m = re.search(r"(?<!\d)(\d{3,4})(?!\d)", label)
+                    if m:
+                        y = float(m.group(1))
+                        hit = sorted((n for n in epn if getattr(n, "start_time", None) is not None
+                                      and getattr(n, "end_time", None) is not None
+                                      and float(n.start_time) <= y <= float(n.end_time)),
+                                     key=lambda n: float(n.end_time) - float(n.start_time))
+                if hit:
+                    sug["epoch"] = {"id": hit[0].node_id, "name": name(hit[0].node_id),
+                                    "why": {"code": "container-name"}}
+    # the alternative
+    if not alts:
+        want_docs = set(docs) | ({doc_for} if doc_for else set())
+        from ..epoch_scope import epoch_family
+        want_eps = set()
+        for x in set(own) | ({sug["epoch"]["id"]} if sug["epoch"] else set()):
+            want_eps |= set(epoch_family(graph, x))   # a mother takes its phases
+        best, score = None, 0
+        for n in graph.nodes:
+            if _hat_kind(n, r) != "rm" or n.node_id in deep or not _is_tileset_hat(graph, n.node_id, r):
+                continue
+            s = 0
+            if any(e.edge_type == "has_representation_model" and e.edge_target == n.node_id and e.edge_source in want_docs
+                   for e in graph.edges):
+                s += 2
+            if set(_epochs_reaching(graph, [n.node_id], r)) & want_eps:
+                s += 1
+            if s > score:
+                best, score = n.node_id, s
+        if best:
+            sug["alternative"] = {"id": best, "name": name(best),
+                                  "why": {"code": "same-document" if score >= 2 else "same-epoch"}}
+    return {"group": group_id, "name": name(group_id),
+            "documents": [{"id": d, "name": name(d)} for d in docs],
+            "epochs": [{"id": x, "name": name(x)} for x in own],
+            "alternatives": [{"id": a, "name": name(a)} for a in alts],
+            "members": [{"id": m, "name": name(m)} for m in members],
+            "suggestions": sug}
