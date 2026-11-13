@@ -549,12 +549,16 @@ def alternative_sets(graph, *, bounds: Optional[Dict[str, Any]] = None,
                            f"{len(epochs(hat_id))} epochs ({', '.join(name(x) for x in epochs(hat_id))}): "
                            f"an alternative does not cross epochs",
                 "cure": "one sub-container per epoch, each with its own alternative"})
-        return {"hat": hat_id, "hat_kind": kind, "name": name(hat_id),
-                "node_type": str(getattr(node, "node_type", "") or ""),
-                "epochs": epochs(hat_id), "assets": assets, "alternatives": alts,
-                "reasons": reasons, "members": members,
-                "covers": covers if kind == "container" else [hat_id],
-                "coverage": coverage, "parent": parent}
+        out = {"hat": hat_id, "hat_kind": kind, "name": name(hat_id),
+               "node_type": str(getattr(node, "node_type", "") or ""),
+               "epochs": epochs(hat_id), "assets": assets, "alternatives": alts,
+               "reasons": reasons, "members": members,
+               "covers": covers if kind == "container" else [hat_id],
+               "coverage": coverage, "parent": parent}
+        if kind == "container":
+            # MICRO-ASSETS-LIVELLI · the choice written in the graph, by use
+            out["active"] = active_choices(graph, hat_id)
+        return out
 
     seen: set = set()
     top: List[Dict[str, Any]] = []
@@ -665,6 +669,10 @@ def choose_alternative(aset: Dict[str, Any], use: Any,
     from .versions import choose_version
     uses = [use] if isinstance(use, str) else list(use or [])
     hat = aset.get("hat")
+    if force is None and aset.get("hat_kind") == "container":
+        # MICRO-ASSETS-LIVELLI (E.D., 13 Nov 2026) · the choice the graph
+        # keeps for these uses (:func:`set_active_alternative`) is the hand's
+        force = active_of(aset.get("active") or {}, uses)
     if aset.get("hat_kind") != "container":
         ch = choose_version(aset.get("alternatives") or [], uses, prefer_level)
         if ch is None:
@@ -701,3 +709,185 @@ def choose_alternative(aset: Dict[str, Any], use: Any,
     if out["use"] is None:
         out["note"] = f"no version for {', '.join(uses) or 'no use'}: the members, each with its master"
     return out
+
+
+# ── MICRO-ASSETS-LIVELLI · the active alternative, kept in the graph ─────────
+#
+# E.D., 13 Nov 2026: inside a container the meshes and the tileset are, by
+# default, ALTERNATIVES of each other — one is seen, or the other. The person
+# may change the one lit for a use, and the choice is written in the graph,
+# where every reader (EMStudio, EM Tools, Heriverse) finds the same answer: a
+# property of the CONTAINER, ``data.active_alternative`` (node datamodel,
+# RepresentationModelNodeGroup.properties.active_alternative), a map from a
+# use — or a target of Archive › Assets (``mobile``, ``web``, ``desk``) — to
+# ``"container"`` (its own alternative, the tileset) or ``"members"`` (the
+# models, each with its version); ``"*"`` for every use not named. No key: the
+# rule of :func:`choose_alternative` (the tileset when it declares the use).
+
+ACTIVE_KEY = "active_alternative"
+ACTIVE_WHICH = ("container", "members")
+
+
+def active_choices(graph, group_id: str) -> Dict[str, str]:
+    """The choices a container keeps, ``{use: "container" | "members"}``
+    (only well-formed entries)."""
+    node = _node(graph, group_id)
+    raw = _data(node).get(ACTIVE_KEY) if node is not None else None
+    if not isinstance(raw, dict):
+        return {}
+    return {str(k): str(v) for k, v in raw.items() if v in ACTIVE_WHICH}
+
+
+def active_of(choices: Dict[str, str], uses: Iterable[str]) -> Optional[str]:
+    """The choice for these uses: the first use named, else ``"*"``, else
+    None (the rule decides)."""
+    for u in list(uses or []):
+        if u in choices:
+            return choices[u]
+    return choices.get("*")
+
+
+def set_active_alternative(graph, group_id: str, which: Optional[str],
+                           use: str = "*") -> Dict[str, Any]:
+    """Write which alternative a container lights for ``use`` (``"*"``: every
+    use not named): ``"container"`` (its own alternative, the tileset) or
+    ``"members"`` (its models); ``None`` takes the choice away (the rule
+    decides again). Idempotent. → ``{group, use, which, choices}``."""
+    node = _node(graph, group_id)
+    if getattr(node, "node_type", "") != GROUP_NODE_TYPE:
+        raise ValueError(f"{group_id!r} is not an RM container")
+    if which is not None and which not in ACTIVE_WHICH:
+        raise ValueError(f"which is one of {ACTIVE_WHICH} or None, not {which!r}")
+    d = _data(node)
+    choices = active_choices(graph, group_id)
+    if which is None:
+        choices.pop(str(use), None)
+    else:
+        choices[str(use)] = which
+    if choices:
+        d[ACTIVE_KEY] = choices
+    else:
+        d.pop(ACTIVE_KEY, None)
+    return {"group": group_id, "use": use, "which": which, "choices": dict(choices)}
+
+
+# ── MICRO-ASSETS-LIVELLI · the containers by hand (Archive › Assets) ─────────
+#
+# A row dragged onto a container, a container made from a selection: the
+# graph's own gestures, so that EMStudio's page carries no rule of its own.
+# Membership is m:n (E.D. 23 Oct 2026); the file on disk never moves — the
+# graph changes, not the tree of folders.
+
+def put_in_container(graph, node_id: str, group_id: str, *,
+                     move_from: Optional[str] = None) -> Dict[str, Any]:
+    """``node_id`` (a model or a container) becomes a MEMBER of ``group_id``
+    (``is_in_representation_model_group``). With ``move_from`` it leaves that
+    container (a move); without, it is added and keeps the others (m:n).
+    A container cannot enter itself nor one of its own members. Idempotent.
+    → ``{node, group, added, left}``."""
+    group = _node(graph, group_id)
+    if getattr(group, "node_type", "") != GROUP_NODE_TYPE:
+        raise ValueError(f"{group_id!r} is not an RM container")
+    node = _node(graph, node_id)
+    if node is None:
+        raise ValueError(f"{node_id!r} is not a node of this graph")
+    if node_id == group_id or (getattr(node, "node_type", "") == GROUP_NODE_TYPE
+                               and group_id in _inside(graph, node_id)):
+        raise ValueError(f"{getattr(node, 'name', node_id)!r} cannot enter a container it holds")
+    left = []
+    if move_from and move_from != group_id:
+        for e in list(graph.edges):
+            if e.edge_type == EDGE_MEMBER and e.edge_source == node_id and e.edge_target == move_from:
+                graph.remove_edge(e.edge_id)
+                left.append(move_from)
+    added = group_id not in containers_of(graph, node_id)
+    if added:
+        graph.add_edge(f"{node_id}_{EDGE_MEMBER}_{group_id}", node_id, group_id, EDGE_MEMBER)
+    return {"node": node_id, "group": group_id, "added": added, "left": left}
+
+
+def _inside(graph, group_id: str) -> List[str]:
+    """Every container under ``group_id`` (its sub-containers, deep)."""
+    out, todo = [], [group_id]
+    while todo:
+        g = todo.pop()
+        for m in members_of(graph, g):
+            if getattr(_node(graph, m), "node_type", "") == GROUP_NODE_TYPE and m not in out:
+                out.append(m)
+                todo.append(m)
+    return out
+
+
+def create_container(graph, label: str, *, epoch_id: Optional[str] = None,
+                     document_id: Optional[str] = None,
+                     members: Sequence[str] = (), group_id: Optional[str] = None) -> Dict[str, Any]:
+    """A new RM container named ``label``: its epoch reaches it with
+    ``has_representation_model`` (EpochNode → container, admitted by the
+    connections datamodel; :func:`container_own_epochs` reads it — the
+    «default» epochs, the members keep theirs), the Document that publishes it
+    the same (Document → container, as «Survey 2015» under D.01), and
+    ``members`` put in it (added: m:n). The id follows :func:`group_id_for`
+    (from the document when given), ``-2``… when taken.
+    → ``{group_id, created, members}``."""
+    from ..nodes.group_node import RepresentationModelNodeGroup
+    label = str(label or "").strip()
+    if not label:
+        raise ValueError("a container needs a name")
+    for ref, kind in ((epoch_id, "EpochNode"), (document_id, None)):
+        if ref and _node(graph, ref) is None:
+            raise ValueError(f"{ref!r} is not a node of this graph")
+        if ref and kind and getattr(_node(graph, ref), "node_type", "") != kind:
+            raise ValueError(f"{ref!r} is not an epoch")
+    gid = group_id or group_id_for(label, document_id or "")
+    base, n = gid, 2
+    while _node(graph, gid) is not None:
+        gid = f"{base}-{n}"
+        n += 1
+    graph.add_node(RepresentationModelNodeGroup(node_id=gid, name=label, description=""))
+    for src in (epoch_id, document_id):
+        if src:
+            graph.add_edge(f"{src}_has_representation_model_{gid}", src, gid,
+                           "has_representation_model")
+    put = [m for m in members if put_in_container(graph, m, gid)["added"]]
+    return {"group_id": gid, "created": True, "members": put}
+
+
+def rename_container(graph, group_id: str, label: str) -> Dict[str, Any]:
+    """A container's name (its id stays)."""
+    node = _node(graph, group_id)
+    if getattr(node, "node_type", "") != GROUP_NODE_TYPE:
+        raise ValueError(f"{group_id!r} is not an RM container")
+    label = str(label or "").strip()
+    if not label:
+        raise ValueError("a container needs a name")
+    old = node.name
+    node.name = label
+    return {"group": group_id, "old": old, "name": label}
+
+
+def empty_container(graph, group_id: str) -> Dict[str, Any]:
+    """Every member leaves the container (their other containers, epochs and
+    documents stay); its own alternative (``has_linked_resource``) stays
+    with it. → ``{group, left}``."""
+    if getattr(_node(graph, group_id), "node_type", "") != GROUP_NODE_TYPE:
+        raise ValueError(f"{group_id!r} is not an RM container")
+    left = []
+    for e in list(graph.edges):
+        if e.edge_type == EDGE_MEMBER and e.edge_target == group_id:
+            graph.remove_edge(e.edge_id)
+            left.append(e.edge_source)
+    return {"group": group_id, "left": left}
+
+
+def remove_container(graph, group_id: str) -> Dict[str, Any]:
+    """An EMPTY container goes, with its edges (its epochs, its document, the
+    container it is in). One with members, or with an alternative of its own,
+    is refused: empty it first, or move its alternative."""
+    if getattr(_node(graph, group_id), "node_type", "") != GROUP_NODE_TYPE:
+        raise ValueError(f"{group_id!r} is not an RM container")
+    if members_of(graph, group_id):
+        raise ValueError("the container is not empty: empty it first")
+    if any(e.edge_type == EDGE_HAT and e.edge_source == group_id for e in graph.edges):
+        raise ValueError("the container has an alternative of its own: move it to another first")
+    graph.remove_node(group_id)
+    return {"group": group_id, "removed": True}

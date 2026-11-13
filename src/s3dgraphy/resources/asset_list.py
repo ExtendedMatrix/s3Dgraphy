@@ -393,7 +393,19 @@ def cover_by_tilesets(graph, assets: List[Dict[str, Any]]) -> Dict[str, int]:
     («serve per epoca: il tileset non si divide»), or a mesh is cited alone in
     a narrative. Where the tileset does not fit, the meshes keep their
     proposal and say why the tileset does not cover them yet. → the meshes
-    covered per target."""
+    covered per target.
+
+    MICRO-ASSETS-LIVELLI (E.D., 13 Nov 2026) · meshes and tileset are
+    ALTERNATIVES of each other: the container's choice kept in the graph
+    (:func:`.alternatives.set_active_alternative`, by target, by use or
+    ``*``) wins over the rule — ``container`` covers the meshes even where
+    the tileset is out of its band or the meshes lie in several epochs (said
+    in their why), ``members`` switches the tileset off for that target (state
+    ``na``, ``off_by_choice``) and leaves the meshes their proposals. Each
+    container row says, per target, the alternative lit (``alternative``:
+    ``{active, chosen}``). A member WITHOUT an epoch is not «another epoch»:
+    only the members that have epochs are compared."""
+    from .alternatives import active_choices, active_of
     cited = None
     n = {k: 0 for k in STREAMED}
     for c in assets:
@@ -402,25 +414,49 @@ def cover_by_tilesets(graph, assets: List[Dict[str, Any]]) -> Dict[str, int]:
         tv = next((v for v in c["versions"] if v["tileset"] and v["id"] in
                    {c["targets"][k]["loads"] for k in STREAMED}), None)
         if tv is None:
+            tv = next((v for v in c["versions"] if v["tileset"]), None)
+        if tv is None:
             continue
         members = [a for a in assets if a is not c and a["kind"] == "rm"
                    and any(x["id"] == c["id"] for x in a["containers"])]
+        choices = active_choices(graph, c["id"])
+        c["alternative"] = {}
         if not members:
             continue
         if cited is None:
             cited = _cited_alone(graph)
-        epochs = {tuple(sorted(a["epochs"])) for a in members}
+        epochs = {tuple(sorted(a["epochs"])) for a in members if a["epochs"]}
         by_epoch = len(epochs) > 1
-        for a in members:
-            alone = ("serve per epoca: il tileset non si divide" if by_epoch else
-                     f"usata da sola nella narrazione «{cited[a['id']]}»: il tileset non si divide"
-                     if a["id"] in cited else "")
-            for k in STREAMED:
-                tc, cell = c["targets"][k], a["targets"][k]
+        for k in STREAMED:
+            chosen = active_of(choices, [k, *TARGETS[k]["uses"]])
+            tc = c["targets"][k]
+            if chosen == "members":
+                c["alternative"][k] = {"active": "members", "chosen": True}
+                if tc["state"] != "na":
+                    for v in c["versions"]:
+                        if k in v["loaded_by"]:
+                            v["loaded_by"].remove(k)
+                    say = "spento: per questo uso sono scelte le mesh del contenitore"
+                    c["targets"][k] = {**tc, "state": "na", "why": say, "off_by_choice": True,
+                                       "proposal": {"tool": "keep", "triangles": None, "texture": None,
+                                                    "ktx2": False, "why": say}}
+                for a in members:
+                    cell = a["targets"][k]
+                    if cell["state"] != "na":
+                        cell["tileset_of"] = {"id": c["id"], "name": c["name"], "state": "na"}
+                continue
+            lit = chosen == "container" or tc["state"] == "ok"
+            c["alternative"][k] = {"active": "container" if lit else "members", "chosen": chosen is not None}
+            for a in members:
+                alone = ("" if chosen == "container" else
+                         "serve per epoca: il tileset non si divide" if by_epoch else
+                         f"usata da sola nella narrazione «{cited[a['id']]}»: il tileset non si divide"
+                         if a["id"] in cited else "")
+                cell = a["targets"][k]
                 if cell["state"] == "na":
                     continue
                 cell["tileset_of"] = {"id": c["id"], "name": c["name"], "state": tc["state"]}
-                if tc["state"] != "ok":
+                if not lit:
                     cell["why"] = f"{cell['why']} (il tileset di {c['name']} non la copre: {tc['why']})"
                     continue
                 if alone:
@@ -429,14 +465,16 @@ def cover_by_tilesets(graph, assets: List[Dict[str, Any]]) -> Dict[str, int]:
                     cell["proposal"] = {**cell["proposal"], "why": f"{alone} — {cell['proposal']['why']}"}
                     continue
                 say = f"coperta dal tileset di {c['name']}"
+                if chosen == "container":
+                    say += " (scelto nel grafo)"
                 for v in a["versions"]:
                     if k in v["loaded_by"]:
                         v["loaded_by"].remove(k)
                 a["targets"][k] = {"state": "na", "loads": cell["loads"], "why": say,
                                    "covered_by": {"id": c["id"], "name": c["name"], "version": tv["id"]},
                                    "tileset_of": cell["tileset_of"],
-                                   "proposal": {"tool": "keep", "triangles": None, "texture": None, "ktx2": False,
-                                                "why": say}}
+                                   "proposal": {"tool": "keep", "triangles": None, "texture": None,
+                                                "ktx2": False, "why": say}}
                 n[k] += 1
     return n
 

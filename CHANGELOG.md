@@ -5,6 +5,29 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
+- **Meshes and tileset as alternatives in a container; the containers by
+  hand** (MICRO-ASSETS-LIVELLI, 13 November 2026; E.D. 12–13 November).
+  `resources.alternatives`: the alternative a container lights is kept in the
+  graph — `data.active_alternative` on the `RepresentationModelNodeGroup`
+  (node datamodel, proposed), a map from a use or a target (`mobile`, `web`,
+  `desk`) or `*` to `container` (the tileset) or `members` (the models);
+  `set_active_alternative`, `active_choices`, `active_of`; `alternative_sets`
+  gives a container set its `active`, `choose_alternative` reads it when no
+  hand choice is forced. `asset_list.cover_by_tilesets`: the graph's choice
+  wins over the rule (`container` covers the meshes even with the tileset out
+  of its band or the meshes in several epochs; `members` switches the tileset
+  off for that target, `off_by_choice`), each container row says the
+  alternative lit per target (`alternative: {active, chosen}`); and a member
+  WITHOUT an epoch is no longer «another epoch» — on Templu Mare v9 the RMSF
+  of the meadow, with no epoch, kept the Survey2015 tileset from covering
+  its nine meshes («serve per epoca»): web budget 1,959,129 → 787,234
+  triangles. The containers by hand, for EMStudio's Archive › Assets (a row
+  dragged onto a container, a container made from a selection):
+  `put_in_container` (m:n add, or a move with `move_from`; a loop refused),
+  `create_container` (name, its epoch and its Document by
+  `has_representation_model`, members), `rename_container`,
+  `empty_container`, `remove_container` (only an empty one without an
+  alternative of its own). Tests: `tests/test_assets_livelli.py`.
 - **The number of a unit is read from its name** (MICRO il numero dal nome,
   15 November 2026; E.D. 12 November). In EM a unit's identifier is its NAME
   (`P1_is_identified_by`); the number is not copied into another key — no

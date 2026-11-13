@@ -1484,6 +1484,42 @@ def list_versions(folder: str, model: Optional[str] = None, *, measure: bool = T
     return out
 
 
+IMAGE_EXTS = (".png", ".jpg", ".jpeg", ".ktx2", ".webp", ".basis", ".tga", ".tif", ".tiff", ".exr")
+
+
+def version_files(entry: str) -> Dict[str, Any]:
+    """Every file that goes with ONE version, wherever it is (MICRO-ASSETS-
+    LIVELLI, E.D. 13 Nov 2026: the versions the graph cites, not only those in
+    a ``versions/`` folder): the ``.glb``/``.stl`` itself, or a ``.gltf`` with
+    its ``.bin`` and textures — the whole folder when the glTF sits in a
+    folder named as a version (``<model>@<level>…/``) — and its stamp and
+    hints beside it. → ``{entry, path, files, bytes, images}`` (``images``:
+    the texture files among ``files``, what a removal may keep when another
+    geometry uses them). A file that cannot be read is listed alone."""
+    entry = os.path.abspath(entry)
+    path = entry
+    parent = os.path.dirname(entry)
+    files: List[str] = [entry]
+    if entry.lower().endswith(".gltf") and parse_version_name(os.path.basename(parent)) is not None:
+        path = parent
+        for root, _dirs, fs in os.walk(parent):
+            files += [os.path.join(root, f) for f in fs]
+    elif entry.lower().endswith(".gltf"):
+        try:
+            files += list(measure_gltf(entry)["files"])
+        except (OSError, ValueError, KeyError, IndexError, struct.error):
+            pass
+    side = sidecars(entry)
+    if path != entry:
+        outer = sidecars(path)
+        side = {k: side[k] or outer[k] for k in side}
+    files += [f for f in side.values() if f]
+    files = sorted(set(os.path.abspath(f) for f in files if os.path.exists(f)))
+    return {"entry": entry, "path": path, "files": files,
+            "bytes": sum(os.path.getsize(f) for f in files if os.path.isfile(f)),
+            "images": [f for f in files if f.lower().endswith(IMAGE_EXTS)]}
+
+
 def stl_triangles(path: str) -> Optional[int]:
     """The triangles of an STL: a binary one says it in its header, an ASCII
     one counts its ``facet`` lines. None when it cannot be read."""
