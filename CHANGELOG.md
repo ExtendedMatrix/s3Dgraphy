@@ -5,6 +5,20 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
+- **A container with its document; a survey's epochs said and aligned**
+  (MICRO-SPAZIO-CONTAINER, 13 November 2026; E.D.: «tutti gli asset 3D da
+  rilievo dovrebbero ricadere in un documento per avere una maniglia seria»).
+  `resources.alternatives`: `new_document` (a Document born to publish a
+  survey: its name, what it documents, `data.absolute_time_start`,
+  `has_author`, `has_first_epoch`); `create_container(document={…})` makes it
+  and publishes the container with it (Document → container, so its epoch is
+  the container's own); `container_epoch_check` / `container_checks` (the
+  container's documents, own epochs, the reference — its own and its
+  tilesets' —, the members out of step, «in no epoch»; a member without an
+  epoch follows its container) and `align_member_epochs(dry_run=…)` (each
+  member out of step loses the epochs outside the reference and takes the
+  reference's; asked with a preview, never on its own). `asset_list` says
+  each container's check (`containers`). Tests: `test_spazio_container.py`.
 - **A document shows the thing, and stays cited** (MICRO-NARRATIVE-MODULI,
   13 November 2026). `bake_narrative`: a figure the client rendered for a
   `document`/`source` block (its image, the still of its models) makes a

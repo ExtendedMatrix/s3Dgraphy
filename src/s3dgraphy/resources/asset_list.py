@@ -587,7 +587,18 @@ def asset_list(graph, *, states: Optional[Dict[str, str]] = None, measure=None,
             "tools": list(TOOLS), "assets": assets, "textures": textures, "totals": totals,
             "counts": counts, "consolidate": {"say_it": cons["say_it"], "scene_light": cons["scene_light"],
                                               "totals": cons["totals"]},
+            # MICRO-SPAZIO-CONTAINER p.2/p.3 · each container: its document, its
+            # epochs, the members out of step (a view: nothing written)
+            "containers": _container_checks(graph),
             "say_it": say}
+
+
+def _container_checks(graph) -> List[Dict[str, Any]]:
+    from .alternatives import container_checks
+    try:
+        return container_checks(graph)
+    except Exception:   # noqa: BLE001 — a view: a graph without the rule still lists its assets
+        return []
 
 
 def scene_totals(assets: Sequence[Dict[str, Any]], target: str) -> Dict[str, Any]:
