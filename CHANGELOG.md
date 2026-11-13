@@ -5,6 +5,22 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
+- **The criterion of RM / RMDoc / RMSF, a reading on one photo of a
+  campaign, a unit's photos shared with the campaign, documents into the
+  series D.nn** (MICRO-FOTO-DOCUMENTI-BBOX, 13 November 2026). Node datamodel
+  1.6.44: one sentence each in `scope_note` (RM: the position is a datum of the
+  object; RMDoc: a movable document placed by an act, the placement an
+  interpretation; RMSF: a find moved and placed again). Connections 1.6.54:
+  `is_on_resource` admits a `ResourceFileNode` (the one photo of a set the
+  region is on); `annotation.paradata._source_document` makes the extractor
+  cite the document of that set (the campaign), else the set promoted — never
+  the file. `resources.files.unit_photo_resource` (a unit's «T15 · foto» whose
+  `has_file` are the campaign's own file nodes); `diagnostics.document_series_hints`
+  / `rename_documents_to_series` (the former name when free, else the first
+  free D.nn; extractors that read `<document>.nn` follow; the old name kept in
+  `former_name` / `former_names`), said in `api.validate`'s `info`. The nine
+  shipped mappings re-stamped against nodes 1.6.44 / connections 1.6.54. Tests:
+  `test_foto_documenti.py`.
 - **A container with its document; a survey's epochs said and aligned**
   (MICRO-SPAZIO-CONTAINER, 13 November 2026; E.D.: «tutti gli asset 3D da
   rilievo dovrebbero ricadere in un documento per avere una maniglia seria»).

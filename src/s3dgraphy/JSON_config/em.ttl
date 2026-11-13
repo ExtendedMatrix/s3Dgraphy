@@ -447,7 +447,7 @@ em:isOnResource
     rdfs:subPropertyOf crm:P106i_forms_part_of ;
     rdfs:domain em:AnnotationRegion ;
     rdfs:range crm:E73_Information_Object ;
-    rdfs:comment "The image (or source document) an annotation region is a region OF. P106i and NOT P46i: a region is an informational part of a symbolic object, not a physical part of a thing — and P46i is also the nesting axis of the EM drawing, so reusing it would make every region a box inside its image in the matrix, a layout claim nobody made. Maps to: connections_datamodel edge 'is_on_resource' (source AnnotationRegionNode, target ResourceNode|DocumentNode)."@en .
+    rdfs:comment "The image (or source document) an annotation region is a region OF. P106i and NOT P46i: a region is an informational part of a symbolic object, not a physical part of a thing — and P46i is also the nesting axis of the EM drawing, so reusing it would make every region a box inside its image in the matrix, a layout claim nobody made. Maps to: connections_datamodel edge 'is_on_resource' (source AnnotationRegionNode, target ResourceNode|DocumentNode|RepresentationModel*|ResourceFileNode). SINCE connections 1.6.54 the target may be ONE file of a resource (a photograph of a campaign, a crmdig:D1 Digital Object, an E73): the region sits on that file, the resource stays the handle one cites."@en .
 
 
 # ============================================================================

@@ -29,6 +29,7 @@ from ..nodes.annotation_region_node import (
 from ..nodes.document_node import DocumentNode
 from ..nodes.extractor_node import ExtractorNode
 from ..nodes.property_node import PropertyNode
+from ..nodes.resource_file_node import ResourceFileNode
 from ..nodes.resource_node import ResourceNode
 from ..nodes.stratigraphic_node import StratigraphicNode
 
@@ -77,6 +78,30 @@ def _source_document(graph: Graph, image_id: str, image: Any,
     if isinstance(image, DocumentNode):
         result.source_document_id = image_id
         return image_id
+    if isinstance(image, ResourceFileNode):
+        # ONE photograph of a set (connections 1.6.54, E.D. 13 Nov 2026): the
+        # region sits on the file, the extraction cites the set — the document
+        # that has_linked_resource the resource holding this file (a campaign,
+        # D.20), else the resource promoted as above. A file is never itself
+        # promoted: it would make every photograph a document.
+        sets = [e.edge_source for e in graph.edges
+                if e.edge_type == "has_file" and e.edge_target == image_id]
+        for set_id in sets:
+            for e in graph.edges:
+                if (e.edge_type == _EDGE_HAS_LINKED_RESOURCE
+                        and e.edge_target == set_id
+                        and isinstance(graph.find_node_by_id(e.edge_source),
+                                       DocumentNode)):
+                    result.source_document_id = e.edge_source
+                    return e.edge_source
+        for set_id in sets:
+            owner = graph.find_node_by_id(set_id)
+            if isinstance(owner, ResourceNode):
+                return _source_document(graph, set_id, owner, result)
+        result.warnings.append(
+            f"annotation: file '{image_id}' is in no resource; nothing to cite "
+            f"as a source")
+        return None
     if not isinstance(image, ResourceNode):
         # Something else entirely (a US? an epoch?). Not our business to promote:
         # say so and let the caller see a chain without the extraction link.

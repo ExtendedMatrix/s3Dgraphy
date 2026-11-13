@@ -538,3 +538,141 @@ def read_only_edge_hints(graph) -> List[dict]:
                         "target": tgt.node_id,
                         "target_name": getattr(tgt, "name", "") or tgt.node_id})
     return out
+
+
+# ---------------------------------------------------------------------------
+# Documents named outside the D.nn series (MICRO-FOTO-DOCUMENTI-BBOX, C)
+# ---------------------------------------------------------------------------
+
+import re as _re
+
+#: the series a document's name follows: D.<n> (D.01, D.115)
+DOCUMENT_SERIES_RE = _re.compile(r"^D\.(\d+)$")
+
+
+def _series_number(name) -> Optional[int]:
+    m = DOCUMENT_SERIES_RE.match(str(name or "").strip())
+    return int(m.group(1)) if m else None
+
+
+def _former_names(node) -> List[str]:
+    """The names a node had before: ``data.former_names`` (a list) and
+    ``data.former_name`` (one), oldest first, without repeats."""
+    data = getattr(node, "data", None) or {}
+    out: List[str] = []
+    many = data.get("former_names")
+    if isinstance(many, (list, tuple)):
+        out.extend(str(x) for x in many if str(x or "").strip())
+    one = data.get("former_name")
+    if isinstance(one, str) and one.strip():
+        out.append(one.strip())
+    return [x for i, x in enumerate(out) if x not in out[:i]]
+
+
+def document_series_hints(graph) -> List[dict]:
+    """The documents whose name is OUTSIDE the D.nn series, each with the name
+    proposed and what follows it (E.D., 13 Nov 2026: the TM003…TM045 tables of
+    the Templu Mare make the documentary chain hard to read).
+
+    The series is D.<n>; an extractor's D.<n>.<mm> is a sub-level of its
+    document, never a document. A document already in the series is never
+    reported. The name PROPOSED is the ``former_name`` when it is in the series
+    and free (no other node bears it, no other proposal took it), else the first
+    free D.<n>, written with the graph's padding (D.01… → D.09). Its extractors
+    follow (TM015.01 → D.115.01) ONLY when they already read
+    ``<document>.<nn>``; the others are listed, not renamed.
+
+    One record per document, in the graph's order:
+    ``{document, name, suggestion, from_former_name, extractors: [{id, from, to}],
+    extractors_kept: [{id, name}]}``. Read-only.
+    """
+    by_id = {n.node_id: n for n in graph.nodes}
+    docs = [n for n in graph.nodes if getattr(n, "node_type", "") == "document"]
+    names = {str(getattr(n, "name", "") or "").strip() for n in graph.nodes}
+    used = {k for k in (_series_number(getattr(n, "name", "")) for n in docs) if k is not None}
+    pad = 0
+    for n in docs:
+        m = DOCUMENT_SERIES_RE.match(str(getattr(n, "name", "") or "").strip())
+        if m and len(m.group(1)) > 1 and m.group(1).startswith("0"):
+            pad = max(pad, len(m.group(1)))
+    taken = set(names)
+    out: List[dict] = []
+    for doc in docs:
+        name = str(getattr(doc, "name", "") or "").strip()
+        if _series_number(name) is not None:
+            continue
+        suggestion, from_former = None, False
+        for former in reversed(_former_names(doc)):
+            k = _series_number(former)
+            if k is not None and former not in taken:
+                suggestion, from_former = former, True
+                break
+        if suggestion is None:
+            k = 1
+            while k in used or f"D.{str(k).zfill(pad)}" in taken:
+                k += 1
+            suggestion = f"D.{str(k).zfill(pad)}"
+        k = _series_number(suggestion)
+        if k is not None:
+            used.add(k)
+        taken.add(suggestion)
+        moved, kept = [], []
+        prefix = f"{name}." if name else None
+        for e in graph.edges:
+            if e.edge_type != "extracted_from" or e.edge_target != doc.node_id:
+                continue
+            x = by_id.get(e.edge_source)
+            if x is None or getattr(x, "node_type", "") != "extractor":
+                continue
+            xname = str(getattr(x, "name", "") or "").strip()
+            tail = xname[len(prefix):] if prefix and xname.startswith(prefix) else None
+            if tail and tail.isdigit():
+                moved.append({"id": x.node_id, "from": xname, "to": f"{suggestion}.{tail}"})
+            else:
+                kept.append({"id": x.node_id, "name": xname})
+        out.append({"document": doc.node_id, "name": name, "suggestion": suggestion,
+                    "from_former_name": from_former,
+                    "extractors": moved, "extractors_kept": kept})
+    return out
+
+
+def rename_documents_to_series(graph, documents: Optional[List[str]] = None,
+                               dry_run: bool = True) -> List[dict]:
+    """Apply :func:`document_series_hints` — to the given documents, or to all.
+
+    The old name is kept: in ``data.former_name`` when the node has none (or
+    had the proposed one there), else appended to ``data.former_names``. The
+    extractors that follow are renamed with their old name kept the same way.
+    No edge is touched. With ``dry_run`` (the default) nothing is written: the
+    records are the preview. Returns the records applied.
+    """
+    hints = document_series_hints(graph)
+    if documents is not None:
+        want = set(documents)
+        hints = [h for h in hints if h["document"] in want]
+    if dry_run:
+        return hints
+    by_id = {n.node_id: n for n in graph.nodes}
+
+    def keep_old(node, old: str, new: str) -> None:
+        data = node.data if isinstance(getattr(node, "data", None), dict) else {}
+        node.data = data
+        former = data.get("former_name")
+        if not former or former == new:
+            data["former_name"] = old
+        else:
+            many = list(data.get("former_names") or [])
+            if old not in many and old != former:
+                many.append(old)
+            data["former_names"] = many
+
+    for h in hints:
+        doc = by_id[h["document"]]
+        keep_old(doc, h["name"], h["suggestion"])
+        doc.name = h["suggestion"]
+        for x in h["extractors"]:
+            node = by_id.get(x["id"])
+            if node is not None:
+                keep_old(node, x["from"], x["to"])
+                node.name = x["to"]
+    return hints

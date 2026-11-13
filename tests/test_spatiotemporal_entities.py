@@ -63,7 +63,7 @@ def _templu():
 
 def test_the_datamodel_names_the_three_classes():
     dm = load_json_mapping("s3Dgraphy_node_datamodel.json")
-    assert dm["s3Dgraphy_data_model_version"] == "1.6.43"  # 1.6.43 the operational levels and the footprints of saggi and cuts (12 Nov); 1.6.42 the two kinds of master (6 Nov); 1.6.41 the units of the Landscape Graph (6 Nov); 1.6.40 the base GIS formats and the landscape surface (6 Nov); 1.6.39 the site and the GIS layer (30 Oct); 1.6.38 the frame of a file (25 Oct); 1.6.27 introduced them; 1.6.36 the end of a unit typed (23 Oct); 1.6.37 periodizations (24 Oct)
+    assert dm["s3Dgraphy_data_model_version"] == "1.6.44"  # 1.6.44 the criterion of RM, RMDoc, RMSF (13 Nov); 1.6.43 the operational levels and the footprints of saggi and cuts (12 Nov); 1.6.42 the two kinds of master (6 Nov); 1.6.41 the units of the Landscape Graph (6 Nov); 1.6.40 the base GIS formats and the landscape surface (6 Nov); 1.6.39 the site and the GIS layer (30 Oct); 1.6.38 the frame of a file (25 Oct); 1.6.27 introduced them; 1.6.36 the end of a unit typed (23 Oct); 1.6.37 periodizations (24 Oct)
     # 1.6.41: the units of the Landscape Graph, through their parent
     assert spatiotemporal_classes() == ("StratigraphicNode", "DocumentNode", "AuthorNode",
                                         "LandscapeUnitNode")

@@ -771,3 +771,71 @@ def current_revision(graph, res_id: str) -> str:
     """The newest resource of the chain ``res_id`` belongs to (``res_id``
     itself when nothing revises it). See :func:`revisions_of`."""
     return revisions_of(graph, res_id)[-1]
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# A UNIT'S PHOTOGRAPHS, SHARED WITH THE CAMPAIGN (MICRO-FOTO-DOCUMENTI-BBOX B2.3)
+# ═══════════════════════════════════════════════════════════════════════════
+
+def unit_photo_resource(graph, unit_id: str, file_ids: Iterable[str] = (), *,
+                        remove: Iterable[str] = (), name: Optional[str] = None
+                        ) -> Dict[str, Any]:
+    """Some photographs of a campaign linked to ONE unit (E.D., 13 Nov 2026).
+
+    The unit gets ONE resource of its own, «<unit> · foto», reached by
+    ``has_linked_resource`` from the unit, whose ``has_file`` are THE SAME
+    ``ResourceFileNode`` of the campaign — the same file in N resources is the
+    rule of ResourceFileNode, so nothing is copied and no edge type is new.
+    Created on first use, extended after (an existing resource of the unit
+    whose ``data.unit_photos`` names it is found again). ``remove`` takes files
+    out of it (the file node stays: it is the campaign's). The edge keeps the
+    file's relative path when the campaign's edge had one.
+
+    Returns ``{resource, created, added, removed}``.
+    """
+    unit = _node(graph, unit_id)
+    if unit is None:
+        raise ValueError(f"unit '{unit_id}' is not in the graph")
+    rid = None
+    for e in graph.edges:
+        if e.edge_type == "has_linked_resource" and e.edge_source == unit_id:
+            r = _node(graph, e.edge_target)
+            if r is not None and _is_resource(r) and _data(r).get("unit_photos") == unit_id:
+                rid = r.node_id
+                break
+    created = False
+    if rid is None:
+        if not list(file_ids):
+            return {"resource": None, "created": False, "added": [], "removed": []}
+        from ..nodes.resource_node import ResourceNode
+        rid = str(uuid.uuid5(_NS, f"unit-photos|{unit_id}"))
+        label = name or f"{getattr(unit, 'name', '') or unit_id} · foto"
+        node = ResourceNode(rid, name=label, url="")
+        _data(node)["unit_photos"] = unit_id
+        _data(node)["kind"] = "image"
+        graph.add_node(node)
+        graph.add_edge(f"{unit_id}__has_linked_resource__{rid}", unit_id, rid,
+                       "has_linked_resource")
+        created = True
+    have = {e.edge_target for e in _file_edges(graph, rid)}
+    added: List[str] = []
+    for fid in file_ids:
+        f = _node(graph, fid)
+        if f is None or getattr(f, "node_type", None) != "resource_file" or fid in have:
+            continue
+        path = next((e.attributes.get("path") for e in graph.edges
+                     if e.edge_type == EDGE_HAS_FILE and e.edge_target == fid
+                     and getattr(e, "attributes", None) and e.attributes.get("path")), None)
+        edge = graph.add_edge(f"{rid}__has_file__{fid}", rid, fid, EDGE_HAS_FILE)
+        edge.attributes["role"] = "member"
+        if path:
+            edge.attributes["path"] = path
+        have.add(fid)
+        added.append(fid)
+    removed: List[str] = []
+    for fid in remove:
+        eid = f"{rid}__has_file__{fid}"
+        if graph.find_edge_by_id(eid) is not None:
+            graph.remove_edge(eid)
+            removed.append(fid)
+    return {"resource": rid, "created": created, "added": added, "removed": removed}

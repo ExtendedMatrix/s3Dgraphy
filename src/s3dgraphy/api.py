@@ -137,7 +137,8 @@ def validate(graph: Graph) -> Dict[str, Any]:
     an extractor reading from a unit that has no property of the name it
     feeds (connections 1.6.24, :func:`diagnostics.extraction_source_hints`);
     a property documented without an extractor (connections 1.6.51,
-    :func:`diagnostics.read_only_edge_hints`).
+    :func:`diagnostics.read_only_edge_hints`); a document named outside the
+    D.nn series (:func:`diagnostics.document_series_hints`).
     Minimal and extensible; adds no side effects."""
     nodes = list(getattr(graph, "nodes", []) or [])
     edges = list(getattr(graph, "edges", []) or [])
@@ -169,6 +170,12 @@ def validate(graph: Graph) -> Dict[str, Any]:
             f"property '{r['source_name']}' ({r['source']}) is documented in "
             f"'{r['target_name']}' ({r['target']}) without an extractor "
             f"({r['edge_type']}): insert the extractor?")
+    # MICRO-FOTO-DOCUMENTI-BBOX C: a document named outside the D.nn series
+    from .diagnostics import document_series_hints
+    for r in document_series_hints(graph):
+        info.append(
+            f"document '{r['name']}' ({r['document']}) is named outside the "
+            f"D.nn series: rename it {r['suggestion']}?")
     warnings = list(getattr(graph, "warnings", []) or [])
     # a property as a source (connections 1.6.36): the source changed, was
     # removed, the reasoning comes back to itself, two owners nobody declared
