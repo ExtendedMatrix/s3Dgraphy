@@ -5,6 +5,15 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
+- **A document shows the thing, and stays cited** (MICRO-NARRATIVE-MODULI,
+  13 November 2026). `bake_narrative`: a figure the client rendered for a
+  `document`/`source` block (its image, the still of its models) makes a
+  citation that carries it — the reference list keeps the entry; the LaTeX
+  exporter places it as a figure under the `\cite`. The node datamodel's
+  `valid_view_types` say what `scene3d` (a VIEW computed from the graph on a
+  container, a document that publishes models, an epoch or the graph — an
+  epoch still cannot hold geometry), `document` (the thing shown) and `source`
+  (its use in the graph) mean; the set of types is unchanged.
 - **Meshes and tileset as alternatives in a container; the containers by
   hand** (MICRO-ASSETS-LIVELLI, 13 November 2026; E.D. 12–13 November).
   `resources.alternatives`: the alternative a container lights is kept in the

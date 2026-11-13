@@ -369,3 +369,35 @@ def test_every_renderer_survives_a_figure_dict_full_of_nothing():
     baked = bake_narrative(graph, "NARR", figures=noise)
     kinds = {b.kind for c in baked.chapters for b in c.blocks}
     assert "image" not in kinds, "…and an unmatched key shows nothing"
+
+
+# ── MICRO-NARRATIVE-MODULI p.19 · a document shows the thing, and stays cited ──
+
+def test_a_document_with_a_client_figure_is_a_CITATION_that_carries_it():
+    """E.D., 13 Nov 2026: «Documento = mostra il contenuto». The client hands
+    the document's picture (its image, the still of its models); the block
+    stays a citation — the reference list keeps the entry — and carries it."""
+    doc = study()
+    doc["graph"]["nodes"].append({"id": "D7", "name": "D.07", "node_type": "document",
+                                  "description": "Maison Carrée, plan", "data": {}})
+    doc["graph"]["nodes"][-2]["data"]["chapters"][0]["blocks"].append(
+        {"block_type": "embed", "ref": "D7", "view_type": "document"})
+    baked = bake_narrative(graph_of(doc), "NARR",
+                          figures={figure_key("document", "D7"): PNG})
+    block = next(b for c in baked.chapters for b in c.blocks if b.ref == "D7")
+    assert block.kind == "citation", block.kind
+    assert block.image is not None and block.image.data == PNG
+    assert block.meta.get("rendered_by") == "client"
+    assert block.meta["citation"] in baked.citations, "the document stays in the references"
+
+
+def test_latex_puts_a_documents_figure_under_its_citation():
+    from s3dgraphy.exporter.latex_exporter import export_narrative_latex
+    doc = study()
+    doc["graph"]["nodes"].append({"id": "D7", "name": "D.07", "node_type": "document",
+                                  "description": "Maison Carrée, plan", "data": {}})
+    doc["graph"]["nodes"][-2]["data"]["chapters"][0]["blocks"].append(
+        {"block_type": "embed", "ref": "D7", "view_type": "document"})
+    out = export_narrative_latex(graph_of(doc), "NARR", figures={figure_key("document", "D7"): PNG})
+    tex = out["tex"]
+    assert "\\cite{" in tex and figure_file("document", "D7") in tex

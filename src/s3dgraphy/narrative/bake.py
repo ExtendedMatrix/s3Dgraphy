@@ -606,6 +606,18 @@ def bake_narrative(graph: Any, narrative_id: str, *,
                 baked_chapter.blocks.append(block)
                 continue
 
+            if rendered and view_type in CITED_VIEW_TYPES:
+                # MICRO-NARRATIVE-MODULI p.19 (E.D., 13 Nov 2026) · a DOCUMENT
+                # shows the thing: the client's picture of it (the still of its
+                # models, a page) is the citation's image — the document stays
+                # cited, with its entry in the references.
+                entry = add_citation(target)
+                baked_chapter.blocks.append(BakedBlock(
+                    kind="citation", text=entry["title"], ref=str(ref),
+                    view_type=view_type, image=figure,
+                    meta={"citation": entry, "rendered_by": "client"}))
+                continue
+
             if rendered:
                 # Somebody rendered it: it is a figure like any other, and every
                 # renderer already knows how to place a `kind="image"`.

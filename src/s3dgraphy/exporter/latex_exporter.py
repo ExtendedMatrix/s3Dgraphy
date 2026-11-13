@@ -535,6 +535,14 @@ def export_narrative_latex(graph: Any, narrative_id: str, *,
                 key = cite(target)
                 name = getattr(target, "name", "") or ref
                 lines.append(f"\\noindent {latex_escape(name)}~\\cite{{{key}}}.")
+                # MICRO-NARRATIVE-MODULI p.19 · a document SHOWS the thing: the
+                # picture the client handed (its image, the still of its
+                # models) goes under its citation, as a figure
+                fkey = f"{view_type}:{getattr(target, 'node_id', '')}"
+                if (figures or {}).get(fkey):
+                    lines.append("")
+                    lines.append(_figure(target, view_type, "", figure_file(
+                        view_type, getattr(target, "node_id", ""), figure_suffix)))
             else:
                 options = getattr(block, "options", None) or {}
                 extra = ""
