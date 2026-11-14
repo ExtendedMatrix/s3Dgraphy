@@ -144,4 +144,10 @@ ALL_US_TYPES: frozenset = frozenset(_subtype_map().keys())
 #: agree on which nodes need a diamond. NOT family-derived: SF/RSF/USD are
 #: ``family == "real"`` for palette/colour but life-wise behave like virtuals
 #: (per Emanuel, 2026-07).
+#: MICRO-C-CORREZIONI-ED (E.D., 14 Nov 2026): the LIFE of a unit
+#: (``unit_life``) reads the family, not this set — SF, RSF, USD… are real and
+#: still existing without a continuity. This set stays for the GraphML
+#: importer and the exporter: derived from the family it would change what
+#: they write (measured: test_special_finds_are_birth_only and the dev29
+#: GraphML conversion go red), so it is left as it was, to be decided.
 CONTINUITY_PERSISTENT_TYPES: frozenset = frozenset({"US", "serSU"})

@@ -202,14 +202,49 @@ def test_a_continuity_closes_a_real_unit_dated_or_not():
     life = UL.unit_life(g, "SU1")
     assert life["status"] == "ended_undated" and life["end_epoch"] == "E13"
     assert life["epochs"] == ["II", "PA", "XX", "E13"]
-    assert "data non indicata" in life["why"] and "2013" in life["why"]
-    assert resolve_provenance(g, "SU1", END)["value"] == 2014.0
+    assert "data della fine non indicata" in life["why"] and "2013" in life["why"]
+    # the limit of the epoch, not an end (MICRO-C-CORREZIONI-ED)
+    assert "limite dell'epoca: 2014" in life["why"]
+    assert (life["end_kind"], life["end_limit_of"]) == ("epoch_limit", "E13")
+    e = resolve_provenance(g, "SU1", END)
+    assert (e["value"], e["bound"], e["limit_of"]) == (2014.0, "epoch_limit", "E13")
     g.add_node(PropertyNode("BT", "absolute_time_end", value="2013"))
     g.add_edge("bt", "BR", "BT", "has_property")
     life = UL.unit_life(g, "SU1")
-    assert life["status"] == "ended" and life["end_value"] == 2013.0
+    assert life["status"] == "ended" and life["end_value"] == 2013.0 and life["end_kind"] == "dated"
     e = resolve_provenance(g, "SU1", END)
-    assert (e["value"], e["level"], e["origin"]) == (2013.0, "life", "BR")
+    assert (e["value"], e["level"], e["origin"], e["bound"]) == (2013.0, "life", "BR", "date")
+
+
+def test_real_is_the_family_of_the_datamodel():
+    # MICRO-C-CORREZIONI-ED: SF, RSF, USD, USN… are «real» in the node datamodel
+    from s3dgraphy.classification import REAL_US_TYPES
+    from s3dgraphy.nodes.stratigraphic_node import SpecialFindUnit
+    assert {"US", "SF", "RSF", "USD", "serSU", "serUSD", "TSU", "UL", "USN", "USNt"} == set(REAL_US_TYPES)
+    g = _graph()
+    g.add_node(SpecialFindUnit("T1", "T01"))
+    g.add_edge("ft", "T1", "II", "has_first_epoch")
+    life = UL.unit_life(g, "T1")
+    assert life["real"] and life["status"] == "still_existing"
+    assert life["epochs"] == ["II", "PA", "XX", "E13", "E15"]
+
+
+def test_the_limit_of_an_epoch_is_not_an_end():
+    g = _graph()
+    g.add_node(VirtualStratigraphicUnit("V1", "USV100"))
+    g.add_edge("fv", "V1", "II", "has_first_epoch")
+    life = UL.unit_life(g, "V1")
+    assert (life["end_kind"], life["end_limit_of"]) == ("epoch_limit", "II")
+    assert "vive nell'epoca II A.D. (limite dell'epoca: 199)" in life["why"]
+    e = resolve_provenance(g, "V1", END)
+    assert (e["value"], e["bound"], e["limit_of"]) == (199.0, "epoch_limit", "II")
+    assert resolve_provenance(g, "SU1", START)["bound"] == "epoch_limit"
+    # the chronology says where a pushed bound was born
+    g.add_edge("aft", "V1", "SU1", "is_after")
+    c = g.chronology()
+    assert c["V1"]["start_rule"] == "tpq"
+    assert c["V1"]["start_root"] == {"node": "SU1", "rule": "epoch", "source": "II"}
+    assert "start_root" not in c["SU1"]
 
 
 def test_a_virtual_unit_lives_in_its_epoch_and_a_continuity_extends_it():
@@ -261,17 +296,40 @@ def test_the_epoch_command_excludes_the_servile_nodes_and_says_why():
     assert [i["id"] for i in plan["items"]] == ["SU1"]
 
 
-def test_dating_warnings_a_survey_against_its_document_a_reconstruction_is_not():
+def _acquired(g, model, tag, kind, year=None):
+    """model → resource ← process ← resource ← acquisition (dated or not)"""
+    from s3dgraphy.nodes.dtc_acquisition_node import DTCAcquisitionNode
+    from s3dgraphy.nodes.dtc_process_node import DTCProcessNode
+    from s3dgraphy.nodes.resource_node import ResourceNode
+    g.add_node(ResourceNode(f"qR{tag}", f"mesh {tag}"))
+    g.add_node(ResourceNode(f"qS{tag}", f"photos {tag}"))
+    g.add_node(DTCProcessNode(f"qP{tag}", f"photogrammetry {tag}", dtc_kind="transformation"))
+    g.add_node(DTCAcquisitionNode(f"qA{tag}", f"campaign {tag}", dtc_kind=kind,
+                                  data={"date": f"{year}-06-03"} if year is not None else {}))
+    g.add_edge(f"l{tag}", model, f"qR{tag}", "has_linked_resource")
+    g.add_edge(f"o{tag}", f"qP{tag}", f"qR{tag}", "dtc_had_output")
+    g.add_edge(f"i{tag}", f"qP{tag}", f"qS{tag}", "dtc_had_input")
+    g.add_edge(f"a{tag}", f"qA{tag}", f"qS{tag}", "dtc_had_output")
+
+
+def test_dating_warnings_when_a_model_was_made_against_its_document():
+    # MICRO-C-CORREZIONI-ED: the acquisition date (the DTC's capture), not what
+    # the model represents; silent without an acquisition date; no exception
+    # for a «reconstruction»
     g = _graph()
-    g.add_node(RepresentationModelNode("M1", "survey"))
-    g.add_edge("r1", "XX", "M1", "has_representation_model")
-    g.add_edge("p1", "D1", "M1", "has_representation_model")
-    g.add_node(RepresentationModelNode("M2", "reconstruction"))
-    g.add_edge("r2", "II", "M2", "has_representation_model")
-    g.add_edge("p2", "D1", "M2", "has_representation_model")
-    w = AT.dating_warnings(g)
-    assert [(x["rule"], x["id"]) for x in w] == [("model_vs_document", "M1")]
-    assert w[0]["epoch"] == "E13" and "D.01" in w[0]["message"]
+    for mid, lane in (("M1", "XX"), ("M2", "II"), ("M3", "II"), ("M4", "XX"), ("M5", "XX")):
+        g.add_node(RepresentationModelNode(mid, mid.lower()))
+        g.add_edge(f"r{mid}", lane, mid, "has_representation_model")
+        g.add_edge(f"p{mid}", "D1", mid, "has_representation_model")
+    _acquired(g, "M1", "1", "photo", 2015)        # made after its document (2013–2014)
+    _acquired(g, "M2", "2", "laserscanner", 2013)  # a 2nd-c. model made in 2013: fine
+    _acquired(g, "M4", "4", "photo")               # a capture without a date: silent
+    _acquired(g, "M5", "5", "download", 2020)      # a retrieval says when it arrived
+    assert AT.acquisition_dates(g, "M1")["start"] == 2015.0
+    assert AT.acquisition_dates(g, "M5")["start"] is None
+    w = [x for x in AT.dating_warnings(g) if x["rule"] == "model_vs_document"]
+    assert [x["id"] for x in w] == ["M1"]
+    assert w[0]["fix"] is None and "2015" in w[0]["message"] and "D.01" in w[0]["message"]
 
 
 def test_dating_warnings_a_member_outside_its_container():

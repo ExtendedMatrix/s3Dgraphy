@@ -4,6 +4,31 @@ All notable changes to **s3dgraphy** are documented here.
 
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
+### Changed
+- **Three corrections of E.D. to the life of a unit and the dating warnings**
+  (MICRO-C-CORREZIONI-ED, 14 November 2026). `unit_life`: a unit is «real»
+  by the `family` the node datamodel declares for its subtype (US, SF, RSF,
+  serSU, serUSD, USD, TSU, UL, USN, USNt; `classification.is_real`), not by
+  `CONTINUITY_PERSISTENT_TYPES` — on Templu Mare v10 48 units (25 SF, 11 RSF,
+  9 USD, 2 USN, 1 USNt) go from birth-only to still existing.
+  `CONTINUITY_PERSISTENT_TYPES` stays {US, serSU} for the GraphML importer
+  and `materialize_continuity`: derived from the family it would change the
+  importer (two tests: special finds birth-only, dev29 GraphML). **The limit
+  of an epoch is not an end**: `unit_life` says `end_kind` (`dated` /
+  `epoch_limit`) and `end_limit_of`, its `why` «vive nell'epoca II A.D.
+  (limite dell'epoca: 199)», «chiusa nell'epoca 2013 (limite dell'epoca:
+  2014), data della fine non indicata»; `resolve_provenance` marks an inherited
+  date `bound: "epoch_limit"` (and `limit_of`) or `"date"`;
+  `Graph.chronology` gives a pushed TPQ / TAQ its `start_root` / `end_root`
+  (`{node, rule, source}`: where the value was born — an epoch's limit or a
+  written date); a catalogue is not closed by the end of its epoch.
+  `attribution.dating_warnings` · `model_vs_document` compares WHEN the model
+  was made — new `attribution.acquisition_dates`, the date of the CAPTURE
+  acquisitions up its DTC chain (`data.date`, else `data.taken_at`; a
+  retrieval and `created_at` not read) — with its Document's dates, silent
+  without an acquisition date, no «reconstruction» exception and no cure of
+  its own (`fix` None). Tests in `test_proprio_ereditato.py`.
+
 ### Added
 - **One node per set, not per photograph: implicit members, logical groups,
   sets inside sets, the catalogue, the role in the group** (MICRO-B-DOCUMENTI-

@@ -279,7 +279,10 @@ def resolve_provenance(graph, node, rule, *, index: Optional[EdgeIndex] = None,
     ``{value, level, origin, chain}`` (+ ``via`` the first node of an inherited
     hop, ``from_level`` the level that answered on the master / publisher…,
     ``status`` for a unit's end: ``still_existing`` / ``ended`` /
-    ``ended_undated``).
+    ``ended_undated`` / ``birth_only``; for an inherited date ``bound``:
+    ``epoch_limit`` — the value is the limit of the epoch ``limit_of``, not a
+    date of the node: «limite dell'epoca II A.D.» — or ``date``, a date written
+    on another node, e.g. a dated continuity).
 
     ``level`` one of :data:`LEVELS` or None; ``origin`` the id of the node the
     value is WRITTEN on (the node itself, an epoch, a continuity, the graph
@@ -312,6 +315,13 @@ def resolve_provenance(graph, node, rule, *, index: Optional[EdgeIndex] = None,
         return dict(memo[key])
     seen.add(nid)
     r = _walk(graph, ix, node, nid, rule, seen)
+    # the limit of an epoch is not a date of the node (MICRO-C-CORREZIONI-ED):
+    # a temporal value whose origin is an epoch is said «limite dell'epoca X»
+    if rule.id in _TEMPORAL and r.get("value") is not None and r.get("origin") and nid != r["origin"]:
+        if ix.is_epoch(r["origin"]):
+            r["bound"], r["limit_of"] = "epoch_limit", r["origin"]
+        else:
+            r["bound"] = "date"
     memo[key] = r
     return dict(r)
 

@@ -3,10 +3,12 @@ E.D. 14 Nov 2026).
 
 The rule of the Extended Matrix, said once here for every client:
 
-* a **real** unit (``classification.CONTINUITY_PERSISTENT_TYPES``: US, serSU)
-  lives from the epoch it is born in until a **continuity** (BR) closes it; with
+* a **real** unit — the ``family`` the node datamodel declares for its subtype
+  (``stratigraphic_nodes › StratigraphicNode › subtypes › <type> › family``:
+  US, SF, RSF, serSU, serUSD, USD, TSU, UL, USN, USNt; ``classification.is_real``,
+  MICRO-C-CORREZIONI-ED) — lives from the epoch it is born in until a **continuity** (BR) closes it; with
   no continuity it is **«still existing»** — never «unknown»;
-* every other unit (virtual, special find, documentary, negative…) lives in its
+* every other unit (the virtual family: USVs, USVn, VSF and their series) lives in its
   epoch and is **extended** by a continuity up to the continuity's epoch (the
   importer's own rule since 2026-07, ``transforms.materialize_continuity``).
 
@@ -20,6 +22,14 @@ A continuity can be **dated** (its own ``absolute_time_end`` — or
 ``absolute_time_start`` — PropertyNode, through the resolver); undated it says
 «fine nell'epoca X, data non indicata».
 
+**The limit of an epoch is not an end** (E.D., MICRO-C-CORREZIONI-ED): when a
+unit «ends» because the epoch it lives in ends — a virtual unit, a unit closed
+by an undated continuity, a unit still existing — the year is the LIMIT OF
+THE EPOCH, not the end of the unit: ``end_kind == "epoch_limit"`` and
+``end_limit_of`` the epoch, said «vive nell'epoca II A.D. (limite dell'epoca:
+199)». ``end_kind == "dated"`` only when an end is really dated (a dated
+continuity).
+
 The epochs are ordered by their start (the swimlane getters of the resolver); an epoch
 belongs to the life when it begins between the birth and the end epoch; a
 mother epoch (``has_sub_epoch``) belongs to it when one of its daughters does.
@@ -29,7 +39,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional
 
-from .classification import CONTINUITY_PERSISTENT_TYPES
+from .classification import is_real as _family_is_real
 from .resolvers.provenance import EdgeIndex, _ix
 
 FIRST = "has_first_epoch"
@@ -76,7 +86,9 @@ def _continuity_date(graph, br_id: str, ix: EdgeIndex):
 
 
 def is_real(node) -> bool:
-    return str(getattr(node, "node_type", "") or "") in CONTINUITY_PERSISTENT_TYPES
+    """The family of the datamodel, not a list written here (BR and SE have
+    none: not real)."""
+    return _family_is_real(str(getattr(node, "node_type", "") or ""))
 
 
 def unit_life(graph, unit_id: str, *, index: Optional[EdgeIndex] = None) -> Dict[str, Any]:
@@ -94,13 +106,16 @@ def unit_life(graph, unit_id: str, *, index: Optional[EdgeIndex] = None) -> Dict
     written on the unit; ``redundant`` those the rule implies; ``contradicting``
     those it does not reach. ``end_value`` the year the life ends, for the
     resolver (the continuity's date, else the end of its epoch; for a unit
-    still existing the end of the latest epoch it reaches)."""
+    still existing the end of the latest epoch it reaches). ``end_kind``
+    ``dated`` (a dated continuity) or ``epoch_limit`` (the value is the limit
+    of the epoch ``end_limit_of``, not an end of the unit)."""
     ix = _ix(graph, index)
     node = ix.node(unit_id)
     out: Dict[str, Any] = {"unit": unit_id, "real": is_real(node), "birth": None, "end_epoch": None,
                            "continuity": None, "status": "undated", "epochs": [], "why": "",
                            "declared": [], "redundant": [], "contradicting": [],
-                           "end_value": None, "end_origin": None, "end_chain": [], "end_dated": False}
+                           "end_value": None, "end_origin": None, "end_chain": [], "end_dated": False,
+                           "end_kind": None, "end_limit_of": None}
     if node is None:
         return out
     firsts = [t for t in ix.targets(unit_id, FIRST) if ix.is_epoch(t)]
@@ -161,27 +176,39 @@ def unit_life(graph, unit_id: str, *, index: Optional[EdgeIndex] = None) -> Dict
     out["contradicting"] = [] if undated_lanes else [d for d in declared if d not in epochs]
 
     name = lambda e: str(getattr(ix.node(e), "name", "") or e)  # noqa: E731
+
+    def limit(e):
+        v = ends.get(e) if e else None
+        return f" (limite dell'epoca: {v:g})" if v is not None else ""
+
     if br is not None:
         date = _continuity_date(graph, br, ix)
         if date is not None:
             out.update(status="ended", end_value=date, end_origin=br,
-                       end_chain=[unit_id, br], end_dated=True,
+                       end_chain=[unit_id, br], end_dated=True, end_kind="dated",
                        why=f"viva da {name(birth)}, chiusa da un continuity datato {date:g}")
         else:
             ev = ends.get(end_epoch) if end_epoch else None
             out.update(status="ended_undated", end_value=ev, end_origin=end_epoch or br,
                        end_chain=[unit_id, br] + ([end_epoch] if end_epoch else []),
-                       why=(f"viva da {name(birth)}, fine nell'epoca {name(end_epoch)}, data non indicata"
+                       end_kind="epoch_limit" if ev is not None else None,
+                       end_limit_of=end_epoch if ev is not None else None,
+                       why=(f"viva da {name(birth)}, chiusa nell'epoca {name(end_epoch)}{limit(end_epoch)}, "
+                            "data della fine non indicata"
                             if end_epoch else f"viva da {name(birth)}, chiusa da un continuity senza epoca"))
     elif out["real"]:
         last = max((e for e in epochs if e in ends), key=lambda e: ends[e], default=None)
         out.update(status="still_existing", end_value=ends.get(last) if last else None,
                    end_origin=last, end_chain=[unit_id] + ([last] if last else []),
+                   end_kind="epoch_limit" if last else None, end_limit_of=last,
                    why=f"viva da {name(birth)}, nessun continuity → still existing")
     else:
-        out.update(status="birth_only", end_value=ends.get(birth), end_origin=birth,
+        ev = ends.get(birth)
+        out.update(status="birth_only", end_value=ev, end_origin=birth,
                    end_chain=[unit_id, birth],
-                   why=f"vive nella sua epoca ({name(birth)}): nessun continuity la estende")
+                   end_kind="epoch_limit" if ev is not None else None,
+                   end_limit_of=birth if ev is not None else None,
+                   why=f"vive nell'epoca {name(birth)}{limit(birth)}: nessun continuity la estende")
     return out
 
 

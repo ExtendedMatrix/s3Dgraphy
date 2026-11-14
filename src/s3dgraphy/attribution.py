@@ -232,12 +232,73 @@ def _span(graph, ix, nid):
     return s, e
 
 
+def _year_of(v) -> Optional[float]:
+    if v is None or isinstance(v, bool):
+        return None
+    if isinstance(v, (int, float)):
+        return float(v)
+    import re
+    m = re.match(r"\s*(-?\d{1,4})", str(v))
+    return float(m.group(1)) if m else None
+
+
+def acquisition_dates(graph, model_id: str, *, index: Optional[EdgeIndex] = None) -> Dict[str, Any]:
+    """WHEN a model was MADE, as the DTC says it (MICRO-C-CORREZIONI-ED, until
+    the field ``acquired`` exists): ``{start, end, acquisitions}`` or
+    ``{start: None…}`` when no date can be read — never invented.
+
+    The walk goes UP the chain from the resources the model links
+    (``has_linked_resource``): a resource ← the step that output it
+    (``dtc_had_output``), a process → its inputs (``dtc_had_input``), a
+    resource → what it derives from (``dtc_derived_from``). Each
+    ``DTCAcquisitionNode`` met of the CAPTURE family (photo, laserscanner,
+    topographic… — the vocabulary's ``family``, not a list here) gives its
+    date: ``data.date`` (the representative facts of a lot,
+    ``dtc.ingest.bucket_acquisition``), else ``data.taken_at`` — a
+    ``has_property`` from an acquisition is not admitted by the connections
+    datamodel, so no PropertyNode is read. A
+    retrieval (download, import…) says when an object arrived, not when it was
+    made: not read. ``created_at`` is the software's instant: not read."""
+    from .dtc.capture import is_capture
+    ix = _ix(graph, index)
+    seen, todo = set(), list(ix.targets(model_id, "has_linked_resource"))
+    years: List[float] = []
+    acqs: List[str] = []
+    while todo and len(seen) < 5000:
+        nid = todo.pop()
+        if nid in seen:
+            continue
+        seen.add(nid)
+        nt = ix.nt(nid)
+        if nt == "dtc_acquisition":
+            node = ix.node(nid)
+            d = getattr(node, "data", None) or {}
+            if not is_capture(d.get("dtc_kind")):
+                continue
+            got = [y for y in (_year_of(d.get("date")), _year_of(d.get("taken_at"))) if y is not None][:1]
+            if got:
+                years.extend(got)
+                acqs.append(nid)
+            continue
+        if nt == "dtc_process":
+            todo.extend(ix.targets(nid, "dtc_had_input"))
+            continue
+        todo.extend(ix.sources(nid, "dtc_had_output"))
+        todo.extend(ix.targets(nid, "dtc_derived_from"))
+    if not years:
+        return {"start": None, "end": None, "acquisitions": []}
+    return {"start": min(years), "end": max(years), "acquisitions": acqs}
+
+
 def dating_warnings(graph, *, index: Optional[EdgeIndex] = None) -> List[Dict[str, Any]]:
     """``[{rule, id, name, other, other_name, message, fix}]``:
 
-    * ``model_vs_document`` — a model (RM, RMDoc, RMSF) dated by its own epoch
-      otherwise than the Document that publishes it (both dated, by their own
-      or their epoch's dates); fix ``move_to_document_epoch``;
+    * ``model_vs_document`` — a model (RM, RMDoc, RMSF) MADE (its acquisition
+      date, :func:`acquisition_dates`) outside the dates of the Document that
+      publishes it (own or its epoch's; a Document with a start only is that
+      year). Not what the model represents (MICRO-C-CORREZIONI-ED, E.D. 14 Nov
+      2026): silent when no acquisition date can be read; no cure of its own
+      (``fix`` None — moving the model's epoch would not answer it);
     * ``servile_vs_master`` — a servile node with an epoch of its own out of
       step with its master; fix ``clean``;
     * ``member_vs_container`` — a container member dated outside the span its
@@ -256,31 +317,28 @@ def dating_warnings(graph, *, index: Optional[EdgeIndex] = None) -> List[Dict[st
         nt = ix.nt(nid)
         if nt in MODEL_TYPES:
             ms, me = _span(graph, ix, nid)
-            if ms["level"] not in own_levels:
-                continue
+            acq = acquisition_dates(graph, nid, index=ix)
             pubs = [s for et in ("has_representation_model", "has_representation_model_doc")
                     for s in ix.sources(nid, et) if ix.nt(s) == "document"]
-            for d in dict.fromkeys(pubs):
+            for d in dict.fromkeys(pubs) if acq["start"] is not None else ():
                 ds, de = _span(graph, ix, d)
                 if ds["level"] not in own_levels or ds["value"] is None:
                     continue
-                if (ms["value"], me["value"]) == (ds["value"], de["value"]):
+                d0 = float(ds["value"])
+                d1 = float(de["value"]) if de["value"] is not None and de["level"] in own_levels else d0
+                if d0 <= acq["start"] and acq["end"] <= d1:
                     continue
-                # a model WHOLLY before its Document shows a past state (a
-                # reconstruction of the 2nd c. published in 2013): that is what
-                # it is for, not a discrepancy. A model overlapping its Document
-                # with another span (a survey dated «XX sec» by a 2013 campaign)
-                # or beginning after the Document ends is.
-                if me["value"] is not None and de["value"] is not None and ds["value"] is not None \
-                        and me["value"] < ds["value"]:
-                    continue
-                if True:
-                    out.append({"rule": "model_vs_document", "id": nid, "name": _name(ix, nid),
-                                "other": d, "other_name": _name(ix, d),
-                                "message": f"{_name(ix, nid)} {fmt(ms, me)} ({_name(ix, ms['origin'])}), "
-                                           f"il documento {_name(ix, d)} {fmt(ds, de)} ({_name(ix, ds['origin'])})",
-                                "fix": "move_to_document_epoch",
-                                "epoch": (lane_epochs(ix, d) or [None])[0]})
+                a = f"{acq['start']:g}" + ("" if acq["end"] == acq["start"] else f"–{acq['end']:g}")
+                b = f"{d0:g}" + ("" if d1 == d0 else f"–{d1:g}")
+                out.append({"rule": "model_vs_document", "id": nid, "name": _name(ix, nid),
+                            "other": d, "other_name": _name(ix, d),
+                            "message": f"{_name(ix, nid)} acquisito {a} "
+                                       f"({', '.join(_name(ix, x) for x in acq['acquisitions'])}), "
+                                       f"il documento {_name(ix, d)} {b}",
+                            "fix": None, "acquired": [acq["start"], acq["end"]],
+                            "acquisitions": acq["acquisitions"]})
+            if ms["level"] not in own_levels:
+                continue
             for c in ix.targets(nid, "is_in_representation_model_group"):
                 declared = container_own_epochs(graph, c)
                 if not declared or ms["level"] not in own_levels:

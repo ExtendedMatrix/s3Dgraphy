@@ -807,6 +807,11 @@ class Graph:
         ``tpq`` / ``taq``  pushed along the stratigraphic sequence; the source is
                        the NEIGHBOUR it came from and the relation is the edge
                        between them, so a chain reads back step by step.
+                       ``start_root`` / ``end_root`` say where the value was
+                       born: ``{"node", "rule", "source"}`` — the unit whose own
+                       bound it is, and its rule (``epoch`` / ``sub_epoch``: the
+                       LIMIT of the epoch ``source``, not an end; ``written``: a
+                       date). MICRO-C-CORREZIONI-ED.
         ``cited``      the life of a SITE in a landscape (D-LG7, MICRO-LANDSCAPE-
                        ONTOLOGIA, 6 Nov 2026): computed from the studies cited
                        that took place there, never written. The studies live
@@ -903,6 +908,9 @@ class Graph:
                 continue
             entry = {k: st[k] for k in self._BOUND_KEYS}
             entry["rule"] = st["start_rule"] or st["end_rule"]
+            for side in ("start", "end"):
+                if st.get(side + "_rule") in ("tpq", "taq") and st.get(side + "_root"):
+                    entry[side + "_root"] = st[side + "_root"]
             if "contained" in st:
                 entry["contained"] = st["contained"]
             out[nid] = entry
@@ -956,6 +964,18 @@ class Graph:
         st[side + "_rule"] = rule
         st[side + "_source"] = source
         st[side + "_relation"] = relation
+
+    @staticmethod
+    def _bound_root(state, node_id, side):
+        """Where a pushed bound was BORN (MICRO-C-CORREZIONI-ED): the unit
+        whose own bound it is and its rule and source — ``epoch`` /
+        ``sub_epoch`` say the value is the limit of that epoch, not an end
+        written anywhere («TAQ · is_after USV101 — limite dell'epoca II A.D.»)."""
+        st = state.get(node_id) or {}
+        if st.get(side + "_rule") in ("tpq", "taq") and st.get(side + "_root"):
+            return dict(st[side + "_root"])
+        return {"node": node_id, "rule": st.get(side + "_rule"),
+                "source": st.get(side + "_source")}
 
     def _base_bound(self, node, side):
         """``(value, rule, source_id, relation)`` for one side, or None.
@@ -1260,6 +1280,7 @@ class Graph:
                     nst = state.setdefault(neighbor_id, self._blank_bounds())
                     if tighter(value, nst[side]):
                         self._set_bound(nst, side, value, rule, via_id, edge_type)
+                        nst[side + "_root"] = self._bound_root(state, node.node_id, side)
 
                     for next_id, et in adjacency.get(neighbor_id, []):
                         if next_id not in visited:

@@ -199,13 +199,24 @@ extractor or a combiner is dated as the ACT of its author,
 :func:`~s3dgraphy.resolvers.provenance.act_time`) — never the node's creation
 in the software, which is the DTC's, and never invented.
 
-**The life of a unit** (:mod:`s3dgraphy.unit_life`): a real unit (US, serSU)
-lives until a continuity closes it — «still existing» otherwise, never
-«unknown»; any other unit lives in its epoch and a continuity extends it. The
-epochs of the life are computed (a new phase between birth and end is
-inherited without ticking it); a continuity is dated by its own
-``absolute_time_end`` (or ``absolute_time_start``), else «fine nell'epoca X,
-data non indicata». :mod:`s3dgraphy.attribution` reads the same rules for the
+**The life of a unit** (:mod:`s3dgraphy.unit_life`): a real unit — the
+``family`` the node datamodel declares for its subtype (US, SF, RSF, serSU,
+serUSD, USD, TSU, UL, USN, USNt) — lives until a continuity closes it — «still
+existing» otherwise, never «unknown»; any other unit (the virtual family)
+lives in its epoch and a continuity extends it. The epochs of the life are
+computed (a new phase between birth and end is inherited without ticking it);
+a continuity is dated by its own ``absolute_time_end`` (or
+``absolute_time_start``), else «chiusa nell'epoca X, data della fine non
+indicata».
+
+**The limit of an epoch is not an end** (MICRO-C-CORREZIONI-ED): when a
+unit «ends» because its epoch ends, the year is the limit of the epoch —
+``unit_life`` says ``end_kind == "epoch_limit"`` and ``end_limit_of``, the
+resolver ``bound: "epoch_limit"`` and ``limit_of`` («vive nell'epoca II A.D.
+(limite dell'epoca: 199)»); ``end_kind == "dated"`` / ``bound: "date"`` only
+for a date written somewhere (a dated continuity). The chronology says where
+a pushed TPQ / TAQ was born (``start_root`` / ``end_root``): «TAQ · is_after
+USV101 — limite dell'epoca II A.D.». :mod:`s3dgraphy.attribution` reads the same rules for the
 epochs a node is attributed to (``epoch_attribution``), the redundant lane
 edges and the bulk clean (``redundancy_report``, ``plan_clean``,
 ``clean_redundant``) and the dating warnings (``dating_warnings``).

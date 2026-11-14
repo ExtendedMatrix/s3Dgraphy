@@ -100,6 +100,10 @@ def _dates(graph, doc_id: str) -> Dict[str, Any]:
     for key, rule in (("start", "absolute_time_start"), ("end", "absolute_time_end")):
         r = resolve_provenance(graph, doc_id, get_rule(rule))
         out[key] = r.get("value") if r.get("level") != "graph" else None
+        # the limit of an epoch is not an end (MICRO-C-CORREZIONI-ED): a
+        # catalogue drawn in an epoch is not closed by the epoch's end
+        if key == "end" and r.get("bound") == "epoch_limit":
+            out[key] = None
         out[f"{key}_level"] = r.get("level")
     return out
 
