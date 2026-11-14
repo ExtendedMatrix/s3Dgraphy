@@ -56,8 +56,13 @@ CONTAINER_TYPE = "RepresentationModelNodeGroup"
 EPOCH_TYPE = "EpochNode"
 
 #: the levels, in the order a reader meets them; ``swimlane`` is the epoch
-LEVELS = ("node", "swimlane", "life", "members", "master", "publisher",
+LEVELS = ("node", "swimlane", "life", "members", "master", "set", "publisher",
           "container", "graph")
+#: resources and their files: node → swimlane → SET (the set they are part
+#: of: ``is_sub_resource_of``, ``is_file_of``) → publisher (the document that
+#: links them) → graph — an entry of a catalogue inherits the catalogue's
+#: dates, authors and licences unless it has its own (MICRO-B-DOCUMENTI-MEDIA)
+RESOURCE_TYPES = frozenset({"resource", "resource_file"})
 
 _TEMPORAL = ("absolute_time_start", "absolute_time_end")
 
@@ -288,6 +293,8 @@ def resolve_provenance(graph, node, rule, *, index: Optional[EdgeIndex] = None,
     * model: node → swimlane (the epochs reaching it) → publisher → container → graph;
     * container: node → swimlane → publisher → graph;
     * stratigraphic unit, end: node → life (continuity rule) → graph;
+    * resource, file: node → swimlane → set (the set it is part of) →
+      publisher (the document linking it) → graph;
     * anything else: node → swimlane → graph.
     """
     ix = _ix(graph, index)
@@ -376,6 +383,18 @@ def _walk(graph, ix, node, nid, rule, seen) -> Dict[str, Any]:
             if r:
                 return r
         return graph_level()
+
+    if nt in RESOURCE_TYPES:
+        r = _swimlane(graph, ix, rule, nid, lane_epochs(ix, nid))
+        if r:
+            return r
+        ups = ix.sources(nid, "has_file") if nt == "resource_file" else ix.sources(nid, "has_sub_resource")
+        r = _combine(rule, nid, "set", [sub(u) for u in ups], [[nid, u] for u in ups])
+        if r:
+            return r
+        pubs = [s for s in ix.sources(nid, "has_linked_resource") if ix.nt(s) == "document"]
+        r = _combine(rule, nid, "publisher", [sub(p) for p in pubs], [[nid, p] for p in pubs])
+        return r or graph_level()
 
     if rule.id == "absolute_time_end" and _is_life_bearing(node):
         from ..unit_life import unit_life

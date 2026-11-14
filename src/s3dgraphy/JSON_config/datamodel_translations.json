@@ -6222,6 +6222,65 @@
     "de": "{node} Datei von {x}"
    }
   },
+  "has_sub_resource": {
+   "label": {
+    "en": "Has sub-resource",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Ha come parte l'insieme",
+    "el": "Έχει ως μέρος το σύνολο",
+    "he": "כולל את הקבוצה",
+    "es": "Tiene como parte el conjunto",
+    "pl": "Ma jako część zbiór",
+    "ro": "Are ca parte ansamblul",
+    "fr": "A pour partie l'ensemble",
+    "de": "Hat als Teil die Menge"
+   },
+   "ui_phrase_as_source": {
+    "en": "{node} has the part {x}",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "{node} contiene {x}",
+    "el": "{node} περιέχει {x}",
+    "he": "{node} מכיל את {x}",
+    "es": "{node} contiene {x}",
+    "pl": "{node} zawiera {x}",
+    "ro": "{node} conține {x}",
+    "fr": "{node} contient {x}",
+    "de": "{node} enthält {x}"
+   },
+   "ui_phrase_as_target": {
+    "en": "{node} part of {x}",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "{node} fa parte di {x}",
+    "el": "{node} είναι μέρος του {x}",
+    "he": "{node} חלק מ־{x}",
+    "es": "{node} forma parte de {x}",
+    "pl": "{node} jest częścią {x}",
+    "ro": "{node} face parte din {x}",
+    "fr": "{node} fait partie de {x}",
+    "de": "{node} ist Teil von {x}"
+   }
+  },
   "has_first_epoch": {
    "label": {
     "en": "Has first epoch",

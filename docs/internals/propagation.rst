@@ -166,6 +166,9 @@ model (RM, RMDoc, RMSF)  node → swimlane (the epochs reaching it with
                          ``has_representation_model``, or its own lanes) →
                          **publisher** (the Document) → **container** → graph
 container                node → swimlane → **publisher** → graph
+resource, file           node → swimlane → **set** (the set it is part of:
+                         ``is_sub_resource_of``, ``is_file_of``) →
+                         **publisher** (the Document linking it) → graph
 unit, end                node → **life** (the continuity rule) → graph
 anything else            node → swimlane → graph
 =======================  ====================================================
@@ -181,6 +184,13 @@ units, their union (``min`` / ``max`` for the dates); a proxy
 the Document of the resource it lies on. The walk stops at the first node that
 is not servile. A master whose answer is the graph's is reported as the graph
 level, not «via» the master.
+
+**Sets of files** (MICRO-B-DOCUMENTI-MEDIA, 14 Nov 2026): an entry of a
+catalogue (the folder of a piece, a set inside a set) inherits the dates, the
+authors and the licences of the catalogue — through its parents to the set the
+Document links — unless it has its own; a file of a set, once a node, inherits
+from its set first. The level says ``set``; ``from_level`` the level that
+answered up there (``publisher`` for the catalogue).
 
 **Time that is not an epoch's.** An author lives (``absolute_time_start`` /
 ``absolute_time_end``: birth and death, node datamodel ``spatiotemporal``); an

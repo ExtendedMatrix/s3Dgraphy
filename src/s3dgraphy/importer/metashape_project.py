@@ -1051,15 +1051,24 @@ def asset_id(locator: str) -> str:
 
 def metashape_to_dtc(project: MetashapeProject, graph: Any, *, chunk: Any = None,
                      author: Optional[str] = None, digests: bool = True,
-                     at: Optional[str] = None) -> Dict[str, Any]:
+                     at: Optional[str] = None, photo_nodes: bool = False) -> Dict[str, Any]:
     """Write one chunk of a read project into ``graph`` as its DTC chain.
 
     * one **acquisition per sensor** (``bucket_acquisition``, ``dtc_kind:
-      photo``) whose members are the photographs, one resource each —
-      identified by their sha256 when ``digests`` and the file is on the disk,
-      so a photograph the graph already holds (absorbed from its stamp) is THAT
-      resource, and an acquisition every member already came from is THAT
-      acquisition;
+      photo``) whose member is the SET of its photographs — one node for the
+      set, not one per photograph (E.D. 14 Nov 2026, MICRO-B-DOCUMENTI-MEDIA):
+      the folder as a ``directory`` resource whose ``data.members`` lists every
+      file with its sha256 (its ``content_digest`` is the folder's, so a folder
+      met again is recognised), or — when the folder holds other things too,
+      or a photograph is off the disk — a ``file_set`` of the project's own
+      photographs. What the project says of each photograph (camera, date,
+      enabled, aligned) stays on its ROW. A photograph becomes a node only
+      when it is used (``resources.files.materialize_member``), or here when
+      ``photo_nodes`` asks for it (the form written before 14 Nov 2026: one
+      ``has_file`` per photograph of a directory the graph holds, else one
+      resource per photograph). A photograph the graph already holds as a
+      resource (by its sha256) keeps that resource, and an acquisition every
+      member already came from is THAT acquisition;
     * one **act per operation** (``declare_derivation``), in order, with the
       ``dtc_kind`` of :data:`OPERATIONS`; an operation without a known kind
       stays without one and says so in the warnings (dev29, A3);
@@ -1108,24 +1117,36 @@ def metashape_to_dtc(project: MetashapeProject, graph: Any, *, chunk: Any = None
         if not photos:
             continue
         ids = []
+        as_set = False
+        base = os.path.dirname(project.path)
         directory = _photo_directory(graph, photos) if digests else None
         if directory is not None:
             # D7 (E.D., 2 Oct 2026): the photographs ARE the members of a
             # directory resource the graph already holds (the folder, recognised
-            # by the digest of its content): one has_file each, role member, the
-            # relative path on the edge — not one resource per photograph beside
-            # a directory that says the same thing.
+            # by the digest of its content) — not one resource per photograph
+            # beside a directory that says the same thing. Since 14 Nov 2026
+            # they are its ROWS (implicit members); nodes only when asked.
             dir_id, folder = directory
-            for photo in photos:
-                _photo_member(graph, dir_id, folder, photo)
+            if photo_nodes:
+                for photo in photos:
+                    _photo_member(graph, dir_id, folder, photo)
+            else:
+                from ..resources.files import member_rows
+                _photo_rows(graph, dir_id, folder, photos, sensor.label, digests,
+                            known={r["path"]: r["digest"] for r in member_rows(graph, dir_id)
+                                   if r.get("digest")})
             ids = [dir_id]
+            as_set = True
             warnings.append(f"the {len(photos)} photographs of {sensor.label} are the "
                             f"members of the directory «{_find(graph, dir_id).name}» "
                             f"({dir_id}): recognised by the digest of the folder")
-        else:
+        elif photo_nodes or _any_photo_resource(graph, photos, digests, _find):
             for photo in photos:
                 ids.append(_photo_resource(graph, photo, digests, add_resource, _find,
-                                           warnings, os.path.dirname(project.path)))
+                                           warnings, base))
+        else:
+            ids = [_photo_set(graph, photos, sensor.label, digests, base, warnings)]
+            as_set = True
         name = f"Photographs {sensor.label or sensor.id}"
         meta = {"device": device_name(sensor.make, sensor.model),
                 "sensor": sensor.label, "resolution": list(sensor.resolution)
@@ -1154,8 +1175,10 @@ def metashape_to_dtc(project: MetashapeProject, graph: Any, *, chunk: Any = None
         warnings.extend(res["warnings"])
         if res["acquisition_id"]:
             acquisitions.append(res["acquisition_id"])
+            # the photographs, also when the member is their set
             out["acquisitions"].append({"id": res["acquisition_id"], "sensor": sensor.label,
-                                        "members": res["count"]})
+                                        "members": len(photos) if as_set else res["count"],
+                                        "sets": ids if as_set else []})
 
     # ── the outputs ──────────────────────────────────────────────────────────
     nodes_by_asset: Dict[Tuple[str, ...], str] = {}
@@ -1320,7 +1343,7 @@ def _photo_member(graph: Any, dir_id: str, folder: str, photo: Photo) -> str:
     from ..dtc.ingest import _find
     rel = os.path.relpath(photo.resolved, folder).replace(os.sep, "/")
     name = os.path.basename(rel)
-    spec = {"path": rel, "checksum": _sha256(photo.resolved), "role": "member"}
+    spec = {"path": rel, "checksum": _sha256_cached(photo.resolved), "role": "member"}
     if photo.size_bytes is not None:
         spec["size_bytes"] = photo.size_bytes
     if name.lower().endswith((".jpg", ".jpeg")):
@@ -1336,13 +1359,151 @@ def _photo_member(graph: Any, dir_id: str, folder: str, photo: Photo) -> str:
     return out.get("file_id") or dir_id
 
 
+_SHA_CACHE: Dict[Tuple[str, float, int], str] = {}
+
+
+def _sha256_cached(path: str) -> str:
+    """The sha256 of a photograph, once per reading of the same bytes (the set
+    and the recognition of an old resource both ask)."""
+    st = os.stat(path)
+    key = (path, st.st_mtime, st.st_size)
+    if key not in _SHA_CACHE:
+        _SHA_CACHE[key] = _sha256(path)
+    return _SHA_CACHE[key]
+
+
+def _photo_facts(photo: Photo, sensor_label: Optional[str]) -> Dict[str, Any]:
+    facts = {"camera_label": photo.label, "taken_at": photo.date,
+             "enabled": photo.enabled, "aligned": photo.aligned,
+             "sensor_label": sensor_label}
+    if photo.exists is False:
+        facts["missing"] = True
+    return {k: v for k, v in facts.items() if v is not None}
+
+
+def _any_photo_resource(graph: Any, photos: Sequence[Photo], digests: bool, find) -> bool:
+    """Whether a photograph of the sensor is already a resource of the graph
+    (by its sha256): then the old form is kept for all of them, so that THAT
+    resource stays the member (a photograph absorbed from its stamp)."""
+    if not digests:
+        return False
+    for p in photos:
+        if p.exists and p.resolved and find(graph, _sha256_cached(p.resolved)) is not None:
+            return True
+    return False
+
+
+_IMAGE_EXT = (".jpg", ".jpeg", ".tif", ".tiff", ".png", ".dng", ".cr2", ".cr3", ".nef",
+              ".arw", ".raf", ".orf", ".rw2", ".heic", ".webp", ".bmp")
+
+
+def _only_images(folder: str, limit: int = 200000) -> bool:
+    """True when every file under ``folder`` is an image (a folder of
+    photographs, not the project's folder with its .psx and .files)."""
+    seen = 0
+    for root, _dirs, names in os.walk(folder):
+        for n in names:
+            if n in (".DS_Store", "Thumbs.db") or n.startswith("._"):
+                continue
+            seen += 1
+            if seen > limit or not n.lower().endswith(_IMAGE_EXT):
+                return False
+    return seen > 0
+
+
+def _photo_rows(graph: Any, set_id: str, folder: Optional[str], photos: Sequence[Photo],
+                sensor_label: Optional[str], digests: bool, base: Optional[str] = None,
+                known: Optional[Dict[str, str]] = None) -> None:
+    """The project's photographs as ROWS of a set (``data.members``): path
+    relative to the folder (or to the project's folder), sha256 when on the
+    disk and ``digests``, and what the project says of each."""
+    from ..resources.files import add_members
+    rows = []
+    for photo in photos:
+        if photo.resolved and folder:
+            rel = os.path.relpath(photo.resolved, folder).replace(os.sep, "/")
+        elif photo.resolved and base:
+            rel = os.path.relpath(photo.resolved, base).replace(os.sep, "/")
+        else:
+            rel = os.path.basename((photo.path or "").replace("\\", "/")) or photo.label \
+                or f"camera {photo.camera_id}"
+        row: Dict[str, Any] = {"path": rel, **_photo_facts(photo, sensor_label)}
+        if known and rel in known:
+            row["digest"] = known[rel]          # the folder's listing already hashed it
+        elif digests and photo.exists and photo.resolved:
+            row["digest"] = _sha256_cached(photo.resolved)
+        if photo.size_bytes is not None:
+            row["size_bytes"] = photo.size_bytes
+        elif photo.exists and photo.resolved:
+            row["size_bytes"] = os.path.getsize(photo.resolved)
+        rows.append(row)
+    add_members(graph, set_id, rows)
+
+
+def _photo_set(graph: Any, photos: Sequence[Photo], sensor_label: Optional[str],
+               digests: bool, base: str, warnings: List[str]) -> str:
+    """ONE resource for a sensor's photographs (MICRO-B-DOCUMENTI-MEDIA):
+
+    * every photograph on the disk, in ONE folder that holds only images, and
+      ``digests`` → a ``directory``: its rows are the folder's (dtcstamp
+      ``tree_members``), its ``content_digest`` the folder's, recognised the
+      next time by :func:`~s3dgraphy.resources.files.directory_for_folder`;
+    * otherwise → a ``file_set`` of the project's photographs (a photograph
+      off the disk is a row with ``missing``), stamped by the digest of its
+      list when every row has one.
+
+    The ``url`` is the folder RELATIVE to the project's (no private path
+    reaches the RDF). Returns its id; a second reading lands on the same."""
+    from ..resources.files import add_resource, directory_rows, refresh_members_digest, rows_digest
+    from ..dtc.ingest import _find
+    on_disk = [p for p in photos if p.resolved]
+    folders = {os.path.dirname(p.resolved) for p in on_disk}
+    folder = folders.pop() if len(folders) == 1 else (
+        os.path.commonpath(sorted(folders)) if folders else None)
+    all_there = bool(on_disk) and len(on_disk) == len(photos) and all(p.exists for p in photos)
+    rel_folder = os.path.relpath(folder, base).replace(os.sep, "/") if folder else ""
+    label = f"Photographs {sensor_label}" if sensor_label else "Photographs"
+    directory = bool(digests and all_there and folder and len({os.path.dirname(p.resolved) for p in on_disk}) == 1
+                     and _only_images(folder))
+    if directory:
+        # the folder's listing, each file hashed ONCE in this reading (the
+        # recognition of an old resource asked the same sha256s)
+        rows = directory_rows(folder, digests=False)
+        for r in rows:
+            r["digest"] = _sha256_cached(os.path.join(folder, *r["path"].split("/")))
+        digest = rows_digest(rows)
+        rid = "res:" + digest.split(":", 1)[1][:12]
+        if _find(graph, rid) is None:
+            add_resource(graph, name=f"{label} ({len(rows)} files)", resource_id=rid, kind="image",
+                         packaging="directory", tier="master",
+                         data={"url": rel_folder, "content_digest": {"digest": digest, "files": len(rows)},
+                               "checksum": digest, "members": []})
+            from ..resources.files import add_members
+            add_members(graph, rid, rows)
+        _photo_rows(graph, rid, folder, photos, sensor_label, digests,
+                    known={r["path"]: r["digest"] for r in rows if r.get("digest")})
+        return rid
+    rid = "photos:" + str(uuid.uuid5(uuid.NAMESPACE_URL, f"file://{folder or base}|{sensor_label}"))
+    if _find(graph, rid) is None:
+        add_resource(graph, name=f"{label} ({len(photos)} photographs)", resource_id=rid,
+                     kind="image", packaging="file_set", tier="master",
+                     data={"url": rel_folder, "members": []})
+    _photo_rows(graph, rid, folder, photos, sensor_label, digests, base)
+    refresh_members_digest(graph, rid)
+    missing = sum(1 for p in photos if p.exists is False)
+    if missing:
+        warnings.append(f"{missing} photograph(s) of {sensor_label} are rows of «{label}» "
+                        f"marked missing: not on this disk")
+    return rid
+
+
 def _photo_resource(graph, photo: Photo, digests: bool, add_resource, find,
                     warnings: List[str], base: str) -> str:
     name = os.path.basename((photo.path or "").replace("\\", "/")) or photo.label \
         or f"camera {photo.camera_id}"
     checksum = None
     if digests and photo.exists and photo.resolved:
-        checksum = _sha256(photo.resolved)
+        checksum = _sha256_cached(photo.resolved)
         existing = find(graph, checksum)
         if existing is not None:
             return existing.node_id

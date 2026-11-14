@@ -94,6 +94,16 @@ def _source_document(graph: Graph, image_id: str, image: Any,
                                        DocumentNode)):
                     result.source_document_id = e.edge_source
                     return e.edge_source
+        # a set inside a set (MICRO-B-DOCUMENTI-MEDIA, has_sub_resource): the
+        # piece of a catalogue cites the CATALOGUE — «D.30 · 18383» — and is
+        # never promoted to a document of its own (E.D.: the folders of the
+        # pieces are entries, not numbered documents)
+        from ..resources.catalog import catalogue_document_of
+        for set_id in sets:
+            doc = catalogue_document_of(graph, set_id)
+            if doc is not None:
+                result.source_document_id = doc
+                return doc
         for set_id in sets:
             owner = graph.find_node_by_id(set_id)
             if isinstance(owner, ResourceNode):

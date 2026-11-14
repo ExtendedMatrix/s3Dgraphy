@@ -27,6 +27,18 @@ WRITING
     file, or when the one file has an identity of its own (an ``id`` given by
     the caller, a stamp receipt, or a parent it was derived from).
 
+IMPLICIT MEMBERS (E.D. 14 Nov 2026, MICRO-B-DOCUMENTI-MEDIA, «un nodo per
+insieme, non per foto»): a ``directory`` or a ``file_set`` may hold the LIST of
+its members inside itself — ``data.members``, the rows of the canonical list
+(``{path, digest, size_bytes, media_type, …}``, the form of
+``dtcstamp.canonical_members``) — instead of one ``ResourceFileNode`` each. The
+list IS the index (the ``content_digest`` of a directory is its digest). A
+member becomes a node only when it is USED (a reading, a region, a link to a
+unit, a name given): :func:`materialize_member`. :func:`resource_files` answers
+with both, the written first, each path once; a logical group draws its
+members from a directory (``data.members_from``) and its paths are that
+directory's.
+
 REVISIONS (E.D. 30 Sep 2026, after the report of 18 Oct): replacing a file
 makes a NEW resource that ``was_revision_of`` the old one (connections
 datamodel 1.6.31, ``prov:wasRevisionOf``). The old resource stays as it was,
@@ -54,6 +66,21 @@ _NS = uuid.uuid5(uuid.NAMESPACE_URL, "https://extendedmatrix.org/s3dgraphy/resou
 #: otherwise be a field silently not written.
 _FILE_KEYS = {"path", "url", "checksum", "size_bytes", "media_type", "role",
               "id", "stamp", "blend_file", "datablock", "datablock_type"}
+
+#: Keys of a row of ``data.members`` (an implicit member). The first four are
+#: the canonical list's (``dtcstamp.canonical_members``: ``digest`` and not
+#: ``checksum``, as in a tree manifest); the others are what a reading of the
+#: file says of it (Metashape: the camera, the date) and what a person gives
+#: it (``media_role``) — they follow the file into its node when it is
+#: materialized.
+MEMBER_KEYS = ("path", "digest", "size_bytes", "role", "media_type",
+               "media_role", "name", "description", "taken_at",
+               "camera_label", "sensor_label", "enabled", "aligned", "missing")
+#: what of a row is the canonical list's (and so the digest's)
+_CANONICAL_MEMBER_KEYS = ("role", "path", "digest", "size_bytes")
+#: the facts a row hands to its node when it is materialized
+_MEMBER_FACTS = ("media_role", "taken_at", "camera_label", "sensor_label",
+                 "enabled", "aligned", "missing")
 
 
 def _node(graph, node_id):
@@ -126,7 +153,8 @@ def resource_files(graph, res_id: str) -> List[Dict[str, Any]]:
     if res is None or not _is_resource(res):
         raise ValueError(f"{res_id!r} is not a resource of this graph")
     edges = _file_edges(graph, res_id)
-    if edges:
+    listed = member_rows(graph, res_id)
+    if edges or listed:
         out = []
         for e in edges:
             f = _node(graph, e.edge_target)
@@ -134,6 +162,15 @@ def resource_files(graph, res_id: str) -> List[Dict[str, Any]]:
             out.append({"role": attrs.get("role") or "member",
                         "path": attrs.get("path") or _leaf(getattr(f, "url", "")),
                         "node": f, "implicit": False, "edge_id": e.edge_id})
+        written = {r["path"] for r in out}
+        digests = {_data(r["node"]).get("checksum") for r in out if r["node"] is not None}
+        for row in listed:
+            if row["path"] in written or (row.get("digest") and row["digest"] in digests):
+                continue
+            written.add(row["path"])
+            out.append({"role": row.get("role") or "member", "path": row["path"],
+                        "node": _listed_node(graph, res_id, row), "implicit": True,
+                        "listed": True, "edge_id": None, "member": row})
         out.sort(key=lambda r: (r["role"] != "entry_point", r["path"]))
         return out
     d = _data(res)
@@ -163,6 +200,11 @@ def file_set_members(graph, res_id: str) -> Optional[List[Dict[str, Any]]]:
 
     rows = []
     for f in resource_files(graph, res_id):
+        if f.get("listed"):
+            m = f["member"]
+            rows.append({"role": f["role"], "path": f["path"], "digest": m.get("digest"),
+                         "size_bytes": m.get("size_bytes")})
+            continue
         if f["implicit"]:
             return None
         d = _data(f["node"])
@@ -325,6 +367,232 @@ def pick_representation(graph, res_id: str, can_open: Iterable[str]
     return {"picked": None, "candidates": ordered,
             "reason": f"none of the {len(ordered)} representation(s) opens here: "
                       f"they are {have}, this reader opens {sorted(wanted)}"}
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# IMPLICIT MEMBERS — the list inside the set (MICRO-B-DOCUMENTI-MEDIA, 14 Nov)
+# ═══════════════════════════════════════════════════════════════════════════
+
+def member_rows(graph, res_id: str) -> List[Dict[str, Any]]:
+    """The rows of ``data.members`` of a resource, as written (``[]`` when it
+    has none). Each has at least a ``path``."""
+    res = _node(graph, res_id)
+    if res is None:
+        return []
+    rows = _data(res).get("members")
+    if not isinstance(rows, list):
+        return []
+    return [r for r in rows if isinstance(r, dict) and r.get("path")]
+
+
+def members_base(graph, res_id: str) -> Dict[str, Any]:
+    """Where the paths of a set's members are relative to: ``{resource, url}``
+    — the directory the set draws from (``data.members_from``, a logical
+    group) or the set itself (a directory, whose ``url`` is its folder)."""
+    res = _node(graph, res_id)
+    d = _data(res) if res is not None else {}
+    src = d.get("members_from")
+    if src and _node(graph, src) is not None and src != res_id:
+        return {"resource": src, "url": str(_data(_node(graph, src)).get("url") or "")}
+    return {"resource": res_id, "url": str(d.get("url") or "")}
+
+
+def member_locator(graph, res_id: str, path: str) -> str:
+    """The locator of a member: its path under the base of the set (see
+    :func:`members_base`), or the path alone when the base has no url."""
+    base = members_base(graph, res_id)["url"].rstrip("/")
+    return f"{base}/{path}" if base else path
+
+
+def _listed_node(graph, res_id: str, row: Dict[str, Any]):
+    """A TRANSIENT ``ResourceFileNode`` for a listed member — never added to
+    the graph (reading must not write). Its id is the one
+    :func:`materialize_member` will give it: from the digest when there is
+    one, so the same bytes are one node wherever they turn up."""
+    from ..nodes.resource_file_node import ResourceFileNode
+    base = members_base(graph, res_id)["resource"]
+    f = ResourceFileNode(file_id_for(base, row["path"], row.get("digest")),
+                         name=row.get("name") or posixpath.basename(row["path"]),
+                         url=member_locator(graph, res_id, row["path"]),
+                         checksum=row.get("digest"), size_bytes=row.get("size_bytes"),
+                         media_type=row.get("media_type"),
+                         description=row.get("description") or "")
+    for k in _MEMBER_FACTS:
+        if row.get(k) is not None:
+            f.data[k] = row[k]
+    return f
+
+
+def _check_member(row: Dict[str, Any]) -> Dict[str, Any]:
+    if not isinstance(row, dict) or not row.get("path"):
+        raise ValueError(f"a member is a dict with a path, got {row!r}")
+    unknown = set(row) - set(MEMBER_KEYS)
+    if unknown:
+        raise ValueError(f"unknown member key(s) {sorted(unknown)}; known: {list(MEMBER_KEYS)}")
+    out = {k: row[k] for k in MEMBER_KEYS if row.get(k) is not None}
+    out["path"] = str(out["path"]).replace("\\", "/").lstrip("/")
+    if out.get("role") not in (None, *FILE_ROLES):
+        raise ValueError(f"member role must be one of {list(FILE_ROLES)}, got {out['role']!r}")
+    if not out.get("media_type"):
+        import mimetypes
+        mt = mimetypes.guess_type(out["path"])[0]
+        if mt:
+            out["media_type"] = mt
+    return out
+
+
+def add_members(graph, res_id: str, rows: Iterable[Dict[str, Any]]) -> Dict[str, Any]:
+    """Add IMPLICIT members to a set: rows of ``data.members``, no node. A path
+    already listed is updated with the keys the new row brings (a digest
+    computed later, a camera read from a project), never duplicated. The set's
+    identity follows: a ``file_set`` recomputes its members digest (see
+    :func:`refresh_members_digest`); a ``directory`` keeps its
+    ``content_digest``, which is the folder's and not the list's to change.
+    Returns ``{added, updated, members}``."""
+    res = _node(graph, res_id)
+    if res is None or not _is_resource(res):
+        raise ValueError(f"{res_id!r} is not a resource of this graph")
+    d = _data(res)
+    have = d.get("members") if isinstance(d.get("members"), list) else []
+    by_path = {r.get("path"): r for r in have if isinstance(r, dict)}
+    added = updated = 0
+    for raw in rows:
+        row = _check_member(dict(raw))
+        cur = by_path.get(row["path"])
+        if cur is None:
+            have.append(row)
+            by_path[row["path"]] = row
+            added += 1
+        else:
+            fresh = {k: v for k, v in row.items() if cur.get(k) != v}
+            if fresh:
+                cur.update(fresh)
+                updated += 1
+    have.sort(key=lambda r: str(r.get("path", "")).encode("utf-8"))
+    d["members"] = have
+    if d.get("packaging") == "file_set":
+        refresh_members_digest(graph, res_id)
+    return {"added": added, "updated": updated, "members": len(have)}
+
+
+def remove_members(graph, res_id: str, paths: Iterable[str]) -> Dict[str, Any]:
+    """Take members out of a set by path: the row goes, and so does the
+    ``has_file`` edge of a member already a node (the node stays when anything
+    else holds it). Returns ``{removed, edges}``."""
+    want = {str(p) for p in paths}
+    d = _data(_node(graph, res_id))
+    rows = member_rows(graph, res_id)
+    kept = [r for r in rows if r["path"] not in want]
+    removed = len(rows) - len(kept)
+    if isinstance(d.get("members"), list):
+        d["members"] = kept
+    edges = 0
+    for e in list(_file_edges(graph, res_id)):
+        if (getattr(e, "attributes", None) or {}).get("path") in want:
+            remove_file(graph, res_id, e.edge_target)
+            edges += 1
+    if d.get("packaging") == "file_set":
+        refresh_members_digest(graph, res_id)
+    return {"removed": removed, "edges": edges}
+
+
+def materialize_member(graph, res_id: str, path: str, *, name: Optional[str] = None,
+                       description: Optional[str] = None) -> Dict[str, Any]:
+    """A listed member becomes a ``ResourceFileNode`` — because it is USED: a
+    reading on it, a region, a link to a unit, a name of its own (E.D. 14 Nov
+    2026: «le foto restano implicite e diventano nodo solo quando le usi»).
+
+    The node takes the row's digest, size, type and facts (camera, date, role)
+    and the ``name`` / ``description`` given; it is reached by ``has_file``
+    (role member, the row's path) from the set and, for a logical group, from
+    the directory it draws from too — one file, one node, in every set that
+    holds it. The row stays in the list: the list is the index, and the
+    digest of the set does not change because one of its files got a name.
+    Done once: a second call finds the node and only sets the name given.
+    Returns ``{file_id, created}``."""
+    res = _node(graph, res_id)
+    if res is None or not _is_resource(res):
+        raise ValueError(f"{res_id!r} is not a resource of this graph")
+    path = str(path).replace("\\", "/").lstrip("/")
+    row = next((r for r in member_rows(graph, res_id) if r["path"] == path), None)
+    written = next((f for f in resource_files(graph, res_id)
+                    if f["path"] == path and not f["implicit"]), None)
+    if row is None and written is None:
+        raise ValueError(f"{path!r} is not a member of {res_id!r}")
+    created = False
+    if written is not None:
+        node = written["node"]
+    else:
+        base = members_base(graph, res_id)["resource"]
+        spec = {"path": path, "url": member_locator(graph, res_id, path),
+                "checksum": row.get("digest"), "size_bytes": row.get("size_bytes"),
+                "media_type": row.get("media_type")}
+        spec = {k: v for k, v in spec.items() if v is not None}
+        if not spec.get("checksum"):
+            spec["id"] = file_id_for(base, path, None)
+        created = _node(graph, spec.get("id") or file_id_for(base, path, spec.get("checksum"))) is None \
+            and _find_file_by_checksum(graph, spec.get("checksum")) is None
+        node = _write_file(graph, res_id, spec, row.get("role") or "member")
+        if base != res_id:
+            _write_file(graph, base, {"id": node.node_id, "path": path}, "member")
+        for k in _MEMBER_FACTS:
+            if row.get(k) is not None:
+                _data(node).setdefault(k, row[k])
+        if row.get("name") and not name:
+            name = row["name"]
+    if name:
+        node.name = str(name)
+    if description is not None:
+        node.description = str(description)
+    return {"file_id": node.node_id, "created": created}
+
+
+def rows_digest(rows: Iterable[Dict[str, Any]]) -> Optional[str]:
+    """The digest of a list of rows (``dtcstamp.members_digest`` of their
+    canonical form, every row a ``member`` unless it says otherwise), or None
+    when a row has no digest — the identity of a set listed by its rows."""
+    rows = list(rows)
+    if not rows or not all(r.get("digest") for r in rows):
+        return None
+    from dtcstamp import canonical_members, members_digest
+    return members_digest(canonical_members(
+        [{"role": r.get("role") or "member", "path": r["path"], "digest": r["digest"],
+          **({"size_bytes": r["size_bytes"]} if r.get("size_bytes") is not None else {})}
+         for r in rows]))
+
+
+def directory_rows(folder: str, *, digests: bool = True) -> List[Dict[str, Any]]:
+    """The rows of a folder on this disk, for ``data.members``: every file
+    (recursively) as ``{path, size_bytes, media_type[, digest]}``, sorted by
+    the canonical order. With ``digests`` they are dtcstamp's own
+    (``tree_members``: the folder's ``content_digest`` is their digest);
+    without, only path, size and type — a listing cheap enough for a folder of
+    thousands of photographs, completed later by :func:`add_members`."""
+    import mimetypes
+    import os
+    if digests:
+        from dtcstamp import tree_members
+        rows = tree_members(folder, entry_point=None)
+    else:
+        rows = []
+        for root, dirs, names in os.walk(folder):
+            dirs.sort()
+            for n in sorted(names):
+                if n in (".DS_Store", "Thumbs.db") or n.startswith("._"):
+                    continue
+                full = os.path.join(root, n)
+                rel = os.path.relpath(full, folder).replace(os.sep, "/")
+                rows.append({"role": "member", "path": rel,
+                             "size_bytes": os.path.getsize(full)})
+        rows.sort(key=lambda r: r["path"].encode("utf-8"))
+    out = []
+    for r in rows:
+        row = {k: r[k] for k in ("path", "digest", "size_bytes") if r.get(k) is not None}
+        mt = mimetypes.guess_type(row["path"])[0]
+        if mt:
+            row["media_type"] = mt
+        out.append(row)
+    return out
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -687,7 +955,7 @@ def replace_file(graph, res_id: str, old_file_id: Optional[str], *,
         raise ValueError(f"{res_id!r} is not a resource of this graph")
     files = resource_files(graph, res_id)
     if old_file_id is None:
-        old = next((f for f in files if f["implicit"]), None)
+        old = next((f for f in files if f["implicit"] and not f.get("listed")), None)
         if old is None:
             raise ValueError(f"{res_id!r} has no implicit file to replace")
         old_file_id = _implicit_file_node(graph, res).node_id

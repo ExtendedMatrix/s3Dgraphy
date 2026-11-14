@@ -204,11 +204,20 @@ def test_a_photograph_off_the_disk_is_named_and_kept(tmp_path):
     project = read_metashape_project(str(build(tmp_path)))
     assert any("1 photograph(s) not found" in w for w in project.warnings)
     graph = Graph("g")
-    metashape_to_dtc(project, graph)
+    metashape_to_dtc(project, graph, photo_nodes=True)
     missing = [n for n in graph.nodes if n.node_type == "resource"
                and n.name == "IMG_3948.JPG"]
     assert len(missing) == 1 and missing[0].data.get("missing") is True
     assert missing[0].data.get("checksum") is None
+    # MICRO-B-DOCUMENTI-MEDIA (14 Nov 2026): by default ONE set per sensor and
+    # the photograph off the disk is a ROW of it, marked missing, with no digest
+    graph = Graph("g")
+    metashape_to_dtc(project, graph)
+    rows = [r for n in graph.nodes if n.node_type == "resource"
+            for r in (n.data.get("members") or []) if r["path"].endswith("IMG_3948.JPG")]
+    assert len(rows) == 1 and rows[0]["missing"] is True and "digest" not in rows[0]
+    assert not [n for n in graph.nodes if n.node_type in ("resource", "resource_file")
+                and str(n.name).endswith(".JPG")]
 
 
 def test_a_project_without_a_crs_writes_no_placement(tmp_path):
@@ -357,6 +366,13 @@ def test_no_private_path_reaches_the_rdf(tmp_path):
     metashape_to_dtc(project, graph)
     ttl = api.emjson_to_ttl(api.graph_to_emjson(graph))
     assert "psx://" not in ttl and str(tmp_path) not in ttl
+    # the set's url is the folder RELATIVE to the project's (14 Nov 2026: one
+    # node per set, the photographs its rows)
+    drone = [n for n in graph.nodes if n.node_type == "resource"
+             and any(r["path"] == "DJI_0170.JPG" for r in n.data.get("members") or [])][0]
+    assert drone.url == "Segni_Acropoli_drone" and drone.data["packaging"] == "directory"
+    graph = Graph("g")
+    metashape_to_dtc(project, graph, photo_nodes=True)
     photo = [n for n in graph.nodes if n.name == "DJI_0170.JPG"][0]
     assert photo.url == "Segni_Acropoli_drone/DJI_0170.JPG"
 
@@ -397,9 +413,16 @@ def test_without_digests_no_photo_is_hashed_and_no_placement_is_written(tmp_path
     project = read_metashape_project(str(build(tmp_path)))
     graph = Graph("g")
     out = metashape_to_dtc(project, graph, digests=False)
+    # 14 Nov 2026: one set per sensor, its rows without a digest, no set digest
+    sets = [n for n in graph.nodes if n.node_type == "resource" and n.data.get("members")]
+    assert len(sets) == 2 and all(n.data["packaging"] == "file_set" for n in sets)
+    assert all("digest" not in r for n in sets for r in n.data["members"])
+    assert all(not n.data.get("checksum") for n in sets)
+    assert out["placements"] == []
+    graph = Graph("g")
+    metashape_to_dtc(project, graph, digests=False, photo_nodes=True)
     photos = [n for n in graph.nodes if n.node_type == "resource" and n.name.endswith(".JPG")]
     assert photos and all(not n.data.get("checksum") for n in photos)
-    assert out["placements"] == []
 
 
 def test_the_sheet_and_the_command(tmp_path, capsys):

@@ -5,6 +5,49 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
+- **One node per set, not per photograph: implicit members, logical groups,
+  sets inside sets, the catalogue, the role in the group** (MICRO-B-DOCUMENTI-
+  MEDIA, 14 November 2026). `resources.files`: a `directory` or a `file_set`
+  may LIST its members inside itself (`data.members`: path · digest · size ·
+  type, and what a reading said — camera, date, role, name); `resource_files`
+  answers with the written and the listed ones, each path once (`listed: True`,
+  a transient node whose id is the one it will get); `member_rows`,
+  `members_base` / `member_locator` (a logical group draws from a directory,
+  `data.members_from`), `add_members`, `remove_members`, `materialize_member`
+  (a member becomes a `ResourceFileNode` when it is used — a reading, a region,
+  a link, a name — held by the group and by its directory; the row stays),
+  `directory_rows`, `rows_digest`; `file_set_members` counts the listed rows.
+  New `resources.sets`: `has_sub_resource` (connections 1.6.55, reverse
+  `is_sub_resource_of` «fa parte di», `crm:P106_is_composed_of` / `prov:hadMember`
+  like `has_file`, the child's path on the edge), `add_sub_resource` (never a
+  cycle), `sub_resources`, `parent_sets`, `make_group`, `set_role`,
+  `split_by_folder` (a directory's sub-folders become its parts, the rows move
+  to the deepest set, each part's content digest the one dtcstamp gives its
+  folder), `tree_rows`, `set_tree`. New `resources.catalog`: a catalogue is ONE
+  document whose set has parts — `catalogue_root`, `is_catalogue`,
+  `catalogue_document_of`, `cite` («D.30 · 18383»), `catalogue_state` (open: a
+  start and no end, counts live; closed: the end and `data.catalog_stamp`, the
+  digest of the list of every file of the tree and the final counts;
+  `ended_unstamped`; `undated`), `catalogue_entries`, `open_catalogue`,
+  `close_catalogue`. New `resources.media_roles`: the vocabulary `em-media-role`
+  of stratigraph-templates (photogrammetry, frontispiece, detail, vector and
+  raster drawing, 3D model, orthophoto, archival documentation), extensible by
+  the project (`add_local_role`: `local:<slug>` on the graph node, who and
+  when). `resolvers.provenance`: level `set` — a resource or a file inherits
+  from the set it is part of, then from the document that links it (an entry
+  inherits the catalogue's dates, authors, licences). Node datamodel 1.6.46
+  (`ResourceNode.members`, `members_from`, `media_role`; `ResourceFileNode.media_role`;
+  `DocumentNode.catalog_stamp`), connections 1.6.55, translations of the new
+  edge, mappings re-stamped. `annotation.paradata`: a region on a photograph of
+  an entry cites the CATALOGUE, the piece is never promoted to a document.
+- **Metashape's importer writes the set, not the photographs**: one resource
+  per sensor — the folder as a `directory` (its rows from dtcstamp, its
+  content digest the folder's) when it holds only images, else a `file_set` of
+  the project's photographs (a photograph off the disk a row marked
+  `missing`); the project's facts on the rows; the directory the graph already
+  holds keeps its rows; `photo_nodes=True` writes the old form (one node per
+  photograph). `tests/test_media_sets.py` (13).
+
 - **Own or inherited, and from which node; the life of a unit; the servile
   nodes** (MICRO-A-PROPRIO-EREDITATO, 14 November 2026). `resolvers.provenance`:
   `resolve_provenance` (value, level, the ORIGIN node the value is written on,
