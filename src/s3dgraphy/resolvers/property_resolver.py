@@ -109,8 +109,14 @@ def resolve_with_source(graph, node, rule: PropagationRule,
     """Like :func:`resolve`, but also returns the source level.
 
     Returns a ``(value, source)`` tuple where ``source`` is one of
-    ``"node"``, ``"swimlane"``, ``"graph"`` or ``None`` (when the default was
-    used).
+    ``"node"``, ``"swimlane"``, ``"graph"`` — and, since 1.6
+    (MICRO-A-PROPRIO-EREDITATO, 14 Nov 2026), ``"master"`` (a servile node
+    follows the node it serves), ``"publisher"`` / ``"container"`` (a model
+    takes its Document, then its container), ``"members"`` (an activity
+    group, from its members) and ``"life"`` (a unit's end, from its
+    continuity) — or ``None`` when the default was used. The node the value
+    comes from, and the chain to it, are
+    :func:`s3dgraphy.resolvers.provenance.resolve_provenance`'s.
 
     **EpochNode query semantics.** When ``node`` is itself an EpochNode,
     the node- and swimlane-level collapse to the same lookup: a value
@@ -120,34 +126,11 @@ def resolve_with_source(graph, node, rule: PropagationRule,
     returned source is always ``"swimlane"`` (or ``"graph"``) — never
     ``"node"``.
     """
-    # --- node level (skipped for EpochNode: it IS its own swimlane) ---
-    if not _is_epoch_node(node):
-        v = rule.node_getter(graph, node)
-        if v is not None:
-            return v, "node"
-
-    # --- swimlane level ---
-    epochs = _iter_connected_epochs(graph, node)
-    if epochs:
-        if rule.swimlane_aggregate is not None:
-            collected = [rule.swimlane_getter(graph, e) for e in epochs]
-            collected = [x for x in collected if x is not None]
-            if collected:
-                agg = rule.swimlane_aggregate(collected)
-                if agg is not None:
-                    return agg, "swimlane"
-        else:
-            for e in epochs:
-                v = rule.swimlane_getter(graph, e)
-                if v is not None:
-                    return v, "swimlane"
-
-    # --- graph level ---
-    v = rule.graph_getter(graph)
-    if v is not None:
-        return v, "graph"
-
-    return default, None
+    from .provenance import resolve_provenance
+    r = resolve_provenance(graph, node, rule)
+    if r["value"] is None:
+        return default, None
+    return r["value"], r["level"]
 
 
 # ---------------------------------------------------------------------------

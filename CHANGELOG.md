@@ -5,6 +5,40 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Added
+- **Own or inherited, and from which node; the life of a unit; the servile
+  nodes** (MICRO-A-PROPRIO-EREDITATO, 14 November 2026). `resolvers.provenance`:
+  `resolve_provenance` (value, level, the ORIGIN node the value is written on,
+  the chain of nodes to it, the first node of an inherited hop), new levels
+  `master` (a servile node follows its master: paradata group → the node it
+  serves, property → its owner, extractor / combiner → the unit(s) it feeds,
+  proxy → the unit of its geometry, annotated region → its document; a
+  continuity after its own epoch), `publisher` and `container` (a model: the
+  epoch reaching it with `has_representation_model`, then its Document, then
+  its container; a container: its epoch, then its Document), `members` (an
+  activity group: start = min, end = max of its members), `life` (a unit's
+  end); `masters_of`, `servile_kind`, `provenance_table` (one edge index for a
+  pass), `act_time`. `resolve_with_source` keeps its signature and returns the
+  new levels. New `unit_life` (the continuity rule: a real unit lives until a
+  continuity closes it, «still existing» otherwise; any other unit lives in its
+  epoch and a continuity extends it; the epochs of the life computed, mothers
+  included; `survive_in_epoch` redundant or contradicting; a continuity dated or
+  «fine nell'epoca X, data non indicata»). New `attribution`: `epoch_attribution`
+  (the epochs of a node, own or inherited, by the same rules), `redundancy_report`,
+  `plan_clean` / `clean_redundant` (the bulk «Pulisci»: a servile's own epoch
+  edges, a unit's survivals its life implies; the contradicting ones are kept),
+  `dating_warnings` (a survey dated otherwise than its Document — a model wholly
+  before its Document is a reconstruction and is not warned —, a servile out of
+  step with its master, a container member outside its container).
+  `epoch_scope.plan_epoch_move` excludes every servile node (`reason: servile`,
+  with its `master`). Node datamodel 1.6.45: `ExtractorNode` / `CombinerNode`
+  `spatiotemporal` and `data.act_start` / `data.act_end` (the time of the act of
+  the author, not the node's creation, not an epoch). `em_visual_rules` 1.6.46:
+  `alternatives.container_epochs._comment` says the rule of 13 Nov (the declared
+  epochs, then the members only to draw the alternative). Mappings re-stamped.
+  Templu Mare v10: models dated 99/99 (from the epoch reaching them), extractors
+  300/302, combiners 23/23, paradata groups 123/127 (master); SU002 without its
+  continuity is still existing. `docs/internals/propagation.rst` «Own or
+  inherited». Tests `test_proprio_ereditato.py` (20).
 - **The epochs of anything, one rule; a container's epoch is the one it
   declares** (MICRO-TESTATE-COERENTI, 13 November 2026). New module
   `epoch_scope`: `epoch_presence` (what an epoch holds: born there by

@@ -26,6 +26,13 @@ from .property_resolver import (
     list_rules,
 )
 
+from .provenance import (
+    resolve_provenance,
+    provenance_table,
+    masters_of,
+    servile_kind,
+)
+
 # Importing builtin_rules has the side effect of registering the default rules.
 from . import builtin_rules  # noqa: F401
 
@@ -37,4 +44,8 @@ __all__ = [
     "unregister_rule",
     "get_rule",
     "list_rules",
+    "resolve_provenance",
+    "provenance_table",
+    "masters_of",
+    "servile_kind",
 ]

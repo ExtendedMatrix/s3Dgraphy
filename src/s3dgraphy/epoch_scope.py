@@ -96,8 +96,9 @@ def epoch_presence(graph, epoch_id: str, *, family: bool = True) -> Dict[str, An
     """What is in an epoch: ``{epoch, epochs, born, survive, models}``.
 
     ``born`` the nodes whose ``has_first_epoch`` is the epoch (or, with
-    ``family``, one of its sub-epochs); ``survive`` the others that
-    ``survive_in_epoch`` there, each ``{id, first}`` — ``first`` the epoch it
+    ``family``, one of its sub-epochs); ``survive`` the others that live
+    there — a unit by its computed life (:mod:`s3dgraphy.unit_life`), any
+    other node by its ``survive_in_epoch`` —, each ``{id, first}`` — ``first`` the epoch it
     was born in, for «sopravvive da II A.D.»; ``models`` what an epoch of the
     family reaches with ``has_representation_model`` (RMs and containers).
     Any node type: the client keeps the units, the documents… it wants."""
@@ -116,8 +117,23 @@ def epoch_presence(graph, epoch_id: str, *, family: bool = True) -> Dict[str, An
         elif e.edge_type == RM_EDGE and e.edge_source in inside and e.edge_target not in models:
             models.append(e.edge_target)
     seen = set(born)
+    # MICRO-A-PROPRIO-EREDITATO (E.D. 14 Nov 2026) · a unit is where its LIFE
+    # is (unit_life: a real unit until a continuity closes it, any other in its
+    # epoch extended by a continuity), not where survive_in_epoch was ticked:
+    # a new phase between its birth and its end holds it without a new edge
+    from .resolvers.provenance import EdgeIndex
+    from .unit_life import unit_life
+    from .attribution import _life_bearing
+    ix = EdgeIndex(graph)
+    for nid, node in ix.nodes.items():
+        if nid in seen or not _life_bearing(node) or nid not in firsts:
+            continue
+        if inside & set(unit_life(graph, nid, index=ix)["epochs"]):
+            seen.add(nid)
+            surv.append({"id": nid, "first": firsts.get(nid)})
     for e in graph.edges:
-        if e.edge_type == SURVIVE and e.edge_target in inside and e.edge_source not in seen:
+        if e.edge_type == SURVIVE and e.edge_target in inside and e.edge_source not in seen \
+                and not _life_bearing(ix.node(e.edge_source)):
             seen.add(e.edge_source)
             surv.append({"id": e.edge_source, "first": firsts.get(e.edge_source)})
     return {"epoch": epoch_id, "epochs": fam, "born": born, "survive": surv, "models": models}
@@ -205,6 +221,14 @@ def _plan_one(graph, nid: str, target: str, mode: str, starts: Dict[str, float])
     here = node_epochs(graph, nid)
     if road is None:
         return {**rec, "excluded": "no-lane"}
+    # MICRO-A-PROPRIO-EREDITATO (E.D. 14 Nov 2026) · a servile node has no
+    # epoch of its own: it follows its master, so it is never moved — even
+    # when it carries an epoch edge (that edge is redundant: «Pulisci»)
+    from .resolvers.provenance import masters_of, servile_kind
+    if servile_kind(node) == "servile":
+        ms = [m["id"] for m in masters_of(graph, nid) if m["id"] != nid]
+        if ms or not here["epochs"]:
+            return {**rec, "excluded": "servile", "master": _name(graph, ms[0]) if ms else None}
     if _nt(node) in _FOLLOWERS and not here["epochs"]:
         return {**rec, "excluded": "follows"}
     rec["road"] = road
@@ -330,8 +354,10 @@ def plan_epoch_move(graph, ids: Sequence[str], epoch_id: str, *, mode: str = "mo
     ``to``, their edges); ``excluded`` ``{id, name, node_type, reason}`` —
     ``epoch`` (an epoch is not moved into an epoch: it is a phase by
     ``has_sub_epoch``), ``no-lane`` (the datamodel puts it in no lane),
-    ``follows`` (an extractor, a combiner, a property without an epoch of its
-    own: it follows its document or unit), ``already``, ``unknown``;
+    ``servile`` (a paradata group, a property, an extractor, a combiner, a
+    proxy, an annotated region: it follows its master, named in ``master``,
+    MICRO-A-PROPRIO-EREDITATO), ``follows`` (the same, for a servile node
+    that serves nobody and has no epoch), ``already``, ``unknown``;
     ``counts`` by node_type; for a container ``following`` its members
     without an epoch (they follow it, nothing to write) and ``own_choice``
     those with one (left where they are unless ``with_own``); ``warnings``
@@ -364,8 +390,11 @@ def plan_epoch_move(graph, ids: Sequence[str], epoch_id: str, *, mode: str = "mo
         done.add(nid)
         rec = _plan_one(graph, nid, epoch_id, mode, starts)
         if "excluded" in rec:
-            excluded.append({"id": rec["id"], "name": rec["name"], "node_type": rec["node_type"],
-                             "reason": rec["excluded"]})
+            x = {"id": rec["id"], "name": rec["name"], "node_type": rec["node_type"],
+                 "reason": rec["excluded"]}
+            if rec.get("master") is not None:
+                x["master"] = rec["master"]
+            excluded.append(x)
         else:
             items.append(rec)
     add = [a for r in items for a in r["add"]]

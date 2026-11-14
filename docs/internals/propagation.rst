@@ -93,7 +93,8 @@ Two entry points::
     val, src = resolve_with_source(graph, node, AUTHOR_RULE) # → ("Giulia Rossi", "swimlane")
 
 ``src`` is one of ``"node"`` / ``"swimlane"`` / ``"graph"`` /
-``"none"``. Use it to tag UI labels (em-graph paints node-level values
+``"none"`` — and since 1.6 ``"master"``, ``"publisher"``, ``"container"``,
+``"members"``, ``"life"`` (see *Own or inherited* below). Use it to tag UI labels (em-graph paints node-level values
 black, swimlane-level grey, graph-level grey-italic).
 
 Worked example — author resolution
@@ -125,6 +126,79 @@ For an isolated unit US003 with no edges:
 #. Swimlane-level: nothing.
 #. Graph-level: ``graph.attributes["author_name"]`` from the DP-40
    canvas header → ``"Project lead"``.
+
+Own or inherited, and from which node
+-------------------------------------
+
+.. versionadded:: 1.6
+   MICRO-A-PROPRIO-EREDITATO (14 Nov 2026). «La catena dei valori propri del
+   nodo o ereditati da altro nodo è essenziale nell'esperienza utente» (E.D.).
+
+:func:`s3dgraphy.resolvers.provenance.resolve_provenance` answers the same
+question as :func:`resolve_with_source` and also says **from which node**::
+
+    from s3dgraphy.resolvers import get_rule, resolve_provenance
+
+    r = resolve_provenance(graph, "X1", get_rule("absolute_time_start"))
+    # {"value": 100.0, "level": "master", "origin": "II", "via": "SU1",
+    #  "chain": ["X1", "C1", "P1", "SU1", "II"], "from_level": "swimlane"}
+
+``origin`` is the node the value is WRITTEN on (the node itself, an epoch, a
+continuity, the graph node); ``chain`` the ids walked from the node to it;
+``via`` the first node of an inherited hop (the master, the Document, the
+container, the member). :func:`resolve_with_source` keeps its signature and
+returns the level of this walk, so its callers see the new levels too.
+:func:`~s3dgraphy.resolvers.provenance.provenance_table` resolves many nodes
+and rules with one edge index.
+
+The levels, by kind of node:
+
+=======================  ====================================================
+Kind                     Order
+=======================  ====================================================
+epoch                    swimlane → graph
+servile                  node → **master** → (its own epochs, only when it
+                         serves nobody) → graph
+continuity (BR)          node → its epoch → **master** (its unit) → graph
+activity group           node → **members** (start = min, end = max) →
+                         swimlane → graph
+model (RM, RMDoc, RMSF)  node → swimlane (the epochs reaching it with
+                         ``has_representation_model``, or its own lanes) →
+                         **publisher** (the Document) → **container** → graph
+container                node → swimlane → **publisher** → graph
+unit, end                node → **life** (the continuity rule) → graph
+anything else            node → swimlane → graph
+=======================  ====================================================
+
+**The servile nodes** (:func:`~s3dgraphy.resolvers.provenance.masters_of`)
+follow the node they serve and have no epoch of their own: a paradata group
+the node of its ``has_paradata_nodegroup`` (an orphan group drawn inside an
+activity, the activity); a property its owner (``has_property``, the original
+owner first); an extractor or a combiner the unit(s) it feeds through a
+property's ``has_data_provenance`` or a combiner's ``combines`` — several
+units, their union (``min`` / ``max`` for the dates); a proxy
+(``semantic_shape``) the unit of its geometry property; an annotated region
+the Document of the resource it lies on. The walk stops at the first node that
+is not servile. A master whose answer is the graph's is reported as the graph
+level, not «via» the master.
+
+**Time that is not an epoch's.** An author lives (``absolute_time_start`` /
+``absolute_time_end``: birth and death, node datamodel ``spatiotemporal``); an
+extractor or a combiner is dated as the ACT of its author,
+``data.act_start`` / ``data.act_end`` (node datamodel 1.6.45,
+:func:`~s3dgraphy.resolvers.provenance.act_time`) — never the node's creation
+in the software, which is the DTC's, and never invented.
+
+**The life of a unit** (:mod:`s3dgraphy.unit_life`): a real unit (US, serSU)
+lives until a continuity closes it — «still existing» otherwise, never
+«unknown»; any other unit lives in its epoch and a continuity extends it. The
+epochs of the life are computed (a new phase between birth and end is
+inherited without ticking it); a continuity is dated by its own
+``absolute_time_end`` (or ``absolute_time_start``), else «fine nell'epoca X,
+data non indicata». :mod:`s3dgraphy.attribution` reads the same rules for the
+epochs a node is attributed to (``epoch_attribution``), the redundant lane
+edges and the bulk clean (``redundancy_report``, ``plan_clean``,
+``clean_redundant``) and the dating warnings (``dating_warnings``).
 
 Custom rules
 ------------

@@ -41,14 +41,17 @@ def _graph():
 def test_an_epoch_holds_what_is_born_and_what_survives_there():
     g = _graph()
     p = ES.epoch_presence(g, "E13")
-    assert p["born"] == [] and p["survive"] == [{"id": "SU1", "first": "II"}]
+    # MICRO-A-PROPRIO-EREDITATO (14 Nov 2026): a real unit lives until a
+    # continuity closes it — SU3 (born II A.D., no continuity) is there too
+    assert p["born"] == [] and p["survive"] == [{"id": "SU1", "first": "II"},
+                                                {"id": "SU3", "first": "II"}]
 
 
 def test_a_mother_epoch_gathers_its_sub_epochs():
     g = _graph()
     p = ES.epoch_presence(g, "XX")
     assert p["epochs"] == ["XX", "E15", "E13"]
-    assert p["born"] == ["SU2"] and [x["id"] for x in p["survive"]] == ["SU1"]
+    assert p["born"] == ["SU2"] and [x["id"] for x in p["survive"]] == ["SU1", "SU3"]
     assert sorted(p["models"]) == ["M1", "M2"]
     assert ES.epoch_presence(g, "XX", family=False)["born"] == []
 

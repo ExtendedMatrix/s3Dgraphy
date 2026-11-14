@@ -1,6 +1,6 @@
 {
   "formal_language": "EM",
-  "version": "1.6.45",
+  "version": "1.6.46",
   "_note_material_vs_qualia_color": [
     "DUE COSE DIVERSE CHE SI CHIAMANO ENTRAMBE color. Non confonderle: e gia successo.",
     "1) QUI, in node_styles.<tipo>.style.material.rgba_color — il COLORE DEL MATERIALE BLENDER del proxy 3D, in float LINEARI. UNA sola chiave: `rgba_color`. Fino a S8 il file ne usava due (`color` sui 13 tipi stratigrafici, `rgba_color` sugli altri) e get_material_color() ne leggeva una sola, restituendo None per 21 tipi su 38; ora sono unificate e la vecchia `color` e letta solo come tolleranza verso file scritti prima. Un tipo che non diventa mai una mesh NON ha material affatto (i contenitori di gruppo, e da S7 i dieci nodi che rendono per icona): per loro get_material_color() torna None, ed e corretto.",
@@ -6977,7 +6977,7 @@
       "EpochNode"
     ],
     "container_epochs": {
-      "_comment": "1.6.40 (MICRO tileset, shift e epoche, E.D. 25 Oct 2026). A container's epochs are its members'; when it has no member, or its members have no epoch, it takes its OWN: an epoch reaching it with `epoch_edge`, and the epochs of the Document that wraps it (`wrapper_edge` from a `wrapper_types` node; `epoch_edges` from that Document to the epoch) — what EM Tools shows as «Epochs of this set». Without them a tileset of the whole survey, with no mesh yet in its container, lay in no epoch and was seen nowhere. Choice: a container with an alternative and no member lights the alternative whatever the uses (unless the members are chosen by hand).",
+      "_comment": "1.6.46 (MICRO-A-PROPRIO-EREDITATO, rule of E.D. 13 Nov 2026). A container's epoch is the one it DECLARES: an epoch reaching it with `epoch_edge`, and the epochs of the Document that wraps it (`wrapper_edge` from a `wrapper_types` node; `epoch_edges` from that Document to the epoch) — what EM Tools shows as «Epochs of this set» (s3dgraphy.resources.alternatives.container_own_epochs). It is the default epoch of its members: a member without an epoch of its own follows it, a member with one lives there by its own choice. Its members' epochs are read for ONE thing only, where its alternative is drawn (a tileset of the whole survey lit where the meshes are), and when it has no member, or its members have no epoch, the declared ones are used there too. 1.6.40 (25 Oct 2026) said «a container's epochs are its members'»: no longer the rule of the container's epoch. Choice: a container with an alternative and no member lights the alternative whatever the uses (unless the members are chosen by hand).",
       "wrapper_edge": "has_representation_model",
       "wrapper_types": [
         "document"
