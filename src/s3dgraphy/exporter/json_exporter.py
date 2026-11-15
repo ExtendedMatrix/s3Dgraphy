@@ -95,8 +95,12 @@ class JSONExporter:
         # the entrance, so every pass below (nodes, edges, and the
         # ``has_linked_resource`` scan inside ``_process_nodes``) sees the same
         # live graph. Policy and predicate: ``s3dgraphy.dissemination``.
-        from ..dissemination import live_view
+        from ..dissemination import live_view, publishable_view
         graph, _hidden = live_view(graph, surface="heriverse")
+        # MICRO-D-GIS-DOCUMENTI · and without what may only be studied: a node
+        # whose licence (own or inherited from its document) is «uso di
+        # studio, non pubblicabile» is absent, and the payload says why
+        graph, withheld = publishable_view(graph)
 
 
         #print(f"\nProcessing graph for JSON export:")
@@ -141,6 +145,8 @@ class JSONExporter:
             "nodes": self._process_nodes(graph),
             "edges": self._process_edges(graph)
         }
+        if withheld:
+            result["withheld"] = withheld
         
         #print(f"\nJSON output for graph metadata:")
         #print(f"Name: {result['name']}")

@@ -165,7 +165,8 @@ activity group           node → **members** (start = min, end = max) →
 model (RM, RMDoc, RMSF)  node → swimlane (the epochs reaching it with
                          ``has_representation_model``, or its own lanes) →
                          **publisher** (the Document) → **container** → graph
-container                node → swimlane → **publisher** → graph
+container                node → swimlane → **publisher** (author, licence;
+                         never a date: MICRO-D-GIS-DOCUMENTI) → graph
 resource, file           node → swimlane → **set** (the set it is part of:
                          ``is_sub_resource_of``, ``is_file_of``) →
                          **publisher** (the Document linking it) → graph
@@ -220,6 +221,22 @@ USV101 — limite dell'epoca II A.D.». :mod:`s3dgraphy.attribution` reads the s
 epochs a node is attributed to (``epoch_attribution``), the redundant lane
 edges and the bulk clean (``redundancy_report``, ``plan_clean``,
 ``clean_redundant``) and the dating warnings (``dating_warnings``).
+
+**The Document's date never passes to the container** (MICRO-D-GIS-DOCUMENTI,
+E.D. 15 Nov 2026): the Document that publishes a container gives it its author
+and its licence, never its date nor its epochs — a container's own epoch is
+an epoch reaching it (``alternatives.container_own_epochs``, em_visual_rules
+1.6.47); :mod:`s3dgraphy.attribution` reads no epoch of a container from its
+publisher either.
+
+**Licences that keep a node in the study** (MICRO-D-GIS-DOCUMENTI): the value
+``EM-STUDY-ONLY`` («uso di studio, non pubblicabile»,
+:data:`s3dgraphy.rights.STUDY_ONLY_LICENSE`) is written on a Document — a
+cadastre lent by an archive — and read with this walk:
+:func:`s3dgraphy.rights.publishable` answers for a sheet (a file of the
+Document's GIS set: ``set`` → ``publisher``) as for the Document, and
+:func:`s3dgraphy.dissemination.publishable_view` leaves those nodes out of the
+Heriverse payload (``withheld`` says which and why).
 
 Custom rules
 ------------

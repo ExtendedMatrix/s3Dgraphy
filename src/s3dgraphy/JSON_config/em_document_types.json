@@ -1,8 +1,9 @@
 {
   "metadata": {
-    "version": "2.1",
-    "last_updated": "2026-10-23",
+    "version": "2.2",
+    "last_updated": "2026-11-15",
     "changelog": {
+      "2.2": "MICRO-D-GIS-DOCUMENTI (decided by E.D. 15 Nov 2026): spatial_documentation.cartography — a cartographic source (a cadastre, a historical plan, an orthophoto, contour lines, a CAD plan) is a DOCUMENT; its sheets are files of one resource under it, each with its frame; in the space it has an RMDoc, never an RM; its date is a date, never an epoch (s3dgraphy.gis.document).",
       "2.1": "MICRO special find e fine dell'unità, part 5 (decided by E.D. 23 Oct 2026): the document type anastylosis — the dynamic document of the passage of each fragment from its findspot to its original position, in versions; the em_reading block says how EM reads it (argument: the paradata of the VSF; act: the activity group; backwards: the simulation of the collapse)."
     },
     "maintainers": ["Emanuel Demetrescu"],
@@ -91,6 +92,14 @@
               "associated_specifications"
             ]
           }
+        },
+        "cartography": {
+          "id": "cartography",
+          "name": "Cartographic Source",
+          "description": "A map, a cadastre (its sheets), a historical plan, an orthophoto, contour lines, a CAD plan: georeferenced 2D data laid in the space as an RMDoc (a base), never as an RM of an epoch.",
+          "formats": ["tiff", "geotiff", "jpg+world file", "png+world file", "shp", "gpkg", "geojson", "dxf"],
+          "vocabulary_mappings": {"getty_aat": "300028094"},
+          "possible_extractions": ["spatial_relationships", "toponyms", "boundaries", "elevations"]
         }
       }
     },

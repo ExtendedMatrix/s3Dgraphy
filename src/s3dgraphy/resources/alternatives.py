@@ -319,25 +319,17 @@ def _epochs_reaching(graph, ids, rule: Dict[str, Any]) -> List[str]:
 
 def container_own_epochs(graph, group_id: str,
                          rule: Optional[Dict[str, Any]] = None) -> List[str]:
-    """The epochs a container states of ITSELF (the rule's ``container_epochs``,
-    em_visual_rules 1.6.40): an epoch reaching it with ``epoch_edge``, and the
-    epochs of the Document that wraps it (``wrapper_edge`` from a
-    ``wrapper_types`` node — ``has_first_epoch`` / ``survive_in_epoch`` from
-    the Document to the epoch), as EM Tools shows «Epochs of this set»."""
+    """The epochs a container states of ITSELF (the rule's ``container_epochs``):
+    an epoch reaching it with ``epoch_edge`` — nothing else.
+
+    MICRO-D-GIS-DOCUMENTI p.6 (E.D. 15 Nov 2026, «la data/epoca del documento
+    non passa mai al container»; em_visual_rules 1.6.47): the Document that
+    publishes the container gives it neither its epochs (``has_first_epoch`` /
+    ``survive_in_epoch`` of the Document) nor its date. Until 1.6.46 the
+    wrapping Document's epochs were read too: on TempluMare v10 accepting
+    «Published by D.09?» put «Reconstruction II AC» in 2015, D.09's epoch."""
     r = _rule(rule)
-    ce = r.get("container_epochs") or {}
-    out = set(_epochs_reaching(graph, [group_id], r))
-    types = set(r.get("epoch_types") or ())
-    wtypes = set(ce.get("wrapper_types") or ())
-    wrappers = {e.edge_source for e in graph.edges
-                if e.edge_type == ce.get("wrapper_edge") and e.edge_target == group_id
-                and str(getattr(_node(graph, e.edge_source), "node_type", "")) in wtypes}
-    for e in graph.edges:
-        if e.edge_source in wrappers and e.edge_type in (ce.get("epoch_edges") or ()):
-            tgt = _node(graph, e.edge_target)
-            if tgt is not None and str(getattr(tgt, "node_type", "")) in types:
-                out.add(e.edge_target)
-    return sorted(out)
+    return sorted(set(_epochs_reaching(graph, [group_id], r)))
 
 
 def _epochs(graph, hat_id: str, rule: Dict[str, Any]) -> List[str]:
@@ -831,7 +823,9 @@ def new_document(graph, name: str, *, description: str = "", date: Any = None,
     into being (``data.absolute_time_start``, the node's own field, as the
     GraphML importer keeps it), its author (``has_author`` to an existing
     AuthorNode) and the epoch it is born in (``has_first_epoch``: the
-    container it publishes takes it as its own, :func:`container_own_epochs`).
+    Document's own; the container it publishes does NOT take it,
+    MICRO-D-GIS-DOCUMENTI p.6 — :func:`create_container` gives the container
+    the epoch directly).
     → the new node's id."""
     import uuid
     from ..nodes.document_node import DocumentNode
@@ -917,8 +911,8 @@ def container_epoch_check(graph, group_id: str,
     MICRO-TESTATE-COERENTI p.11 (E.D. 13 Nov 2026, 17:05, «come in EM Tools: usavo
     il container per assegnare epoche in blocco, poi metto modelli specifici
     nelle epoche che voglio»): a container has an epoch only when it
-    DECLARES one (:func:`container_own_epochs`: an epoch reaching it, the
-    Document publishing it) — never by the tileset it holds nor by its
+    DECLARES one (:func:`container_own_epochs`: an epoch reaching it; never
+    the Document publishing it, MICRO-D-GIS-DOCUMENTI p.6) — never by the tileset it holds nor by its
     members (until this MICRO the reference took its tilesets' epochs too:
     Survey2015 lay in 2015 «di risulta»). A member WITHOUT an epoch of its
     own lives in the container's (the assignment in block: ``follows``); a
@@ -933,11 +927,9 @@ def container_epoch_check(graph, group_id: str,
     node = _node(graph, group_id)
     if getattr(node, "node_type", "") != GROUP_NODE_TYPE:
         raise ValueError(f"{group_id!r} is not an RM container")
-    ce = r.get("container_epochs") or {}
-    wtypes = set(ce.get("wrapper_types") or ())
     docs = sorted({e.edge_source for e in graph.edges
-                   if e.edge_type == ce.get("wrapper_edge") and e.edge_target == group_id
-                   and str(getattr(_node(graph, e.edge_source), "node_type", "")) in wtypes})
+                   if e.edge_type == "has_representation_model" and e.edge_target == group_id
+                   and str(getattr(_node(graph, e.edge_source), "node_type", "")) == "document"})
     own = container_own_epochs(graph, group_id, r)
     members = [m for m in members_of(graph, group_id, deep=True)]
     tiles = [m for m in members if _is_tileset_hat(graph, m, r)]
@@ -1084,15 +1076,16 @@ def container_links(graph, group_id: str, rule: Optional[Dict[str, Any]] = None)
       → container); suggestion: the Document that already publishes most of
       its members (at least half) — «D.01 pubblica già 9 delle 10 mesh»;
     * ``epochs`` the epochs it declares (:func:`container_own_epochs`);
-      suggestion: the epoch of the suggested (or declared) Document's date
-      (``spatiotemporal.entity_epoch``: the narrowest epoch holding it), else
-      the epoch most of its members are in;
+      suggestion: the epoch most of its members are in, else the epoch the
+      container's name says — never the Document's date or epoch
+      (MICRO-D-GIS-DOCUMENTI p.6);
     * ``alternatives`` the assets it hats; suggestion: a TILESET hatted by an
-      RM outside the container that shares its Document or its epoch;
+      RM outside the container published by the same Document, or whose
+      declared master is the container's members (the same content) — never
+      for an epoch alone (MICRO-D-GIS-DOCUMENTI p.7);
     * ``members`` its members (direct).
 
     Each suggestion ``{id, name, why: {code, n, of}}`` or None. A view."""
-    from ..spatiotemporal import entity_epoch
     r = _rule(rule)
     node = _node(graph, group_id)
     if getattr(node, "node_type", "") != GROUP_NODE_TYPE:
@@ -1116,60 +1109,70 @@ def container_links(graph, group_id: str, rule: Optional[Dict[str, Any]] = None)
         if count[best] * 2 >= len(deep):
             sug["document"] = {"id": best, "name": name(best),
                                "why": {"code": "publishes-members", "n": count[best], "of": len(deep)}}
-    # the epoch
+    # the epoch — never the Document's date or epoch (MICRO-D-GIS-DOCUMENTI
+    # p.6, E.D. 15 Nov 2026): the epoch most of its members are in, else the
+    # epoch its name says
     doc_for = docs[0] if docs else (sug["document"] or {}).get("id")
     if not own:
-        ep = entity_epoch(graph, doc_for) if doc_for else None
-        if ep:
-            sug["epoch"] = {"id": ep, "name": name(ep), "why": {"code": "document-date", "document": name(doc_for)}}
+        eps: Dict[str, int] = {}
+        for m in deep:
+            for x in _epochs_reaching(graph, [m], r):
+                eps[x] = eps.get(x, 0) + 1
+        if eps:
+            best = max(sorted(eps), key=lambda x: eps[x])
+            sug["epoch"] = {"id": best, "name": name(best),
+                            "why": {"code": "members-epoch", "n": eps[best], "of": len(deep)}}
         else:
-            eps: Dict[str, int] = {}
-            for m in deep:
-                for x in _epochs_reaching(graph, [m], r):
-                    eps[x] = eps.get(x, 0) + 1
-            if eps:
-                best = max(sorted(eps), key=lambda x: eps[x])
-                sug["epoch"] = {"id": best, "name": name(best),
-                                "why": {"code": "members-epoch", "n": eps[best], "of": len(deep)}}
-            else:
-                # an empty container named after its year («Survey2013»): the
-                # epoch of that name, else the narrowest epoch holding the year
-                label = name(group_id)
-                epn = [n for n in graph.nodes if str(getattr(n, "node_type", "")) == "EpochNode"]
-                hit = [n for n in epn if str(n.name) and re.search(rf"(?<!\d){re.escape(str(n.name))}(?!\d)", label)]
-                if not hit:
-                    m = re.search(r"(?<!\d)(\d{3,4})(?!\d)", label)
-                    if m:
-                        y = float(m.group(1))
-                        hit = sorted((n for n in epn if getattr(n, "start_time", None) is not None
-                                      and getattr(n, "end_time", None) is not None
-                                      and float(n.start_time) <= y <= float(n.end_time)),
-                                     key=lambda n: float(n.end_time) - float(n.start_time))
-                if hit:
-                    sug["epoch"] = {"id": hit[0].node_id, "name": name(hit[0].node_id),
-                                    "why": {"code": "container-name"}}
-    # the alternative
+            # an empty container named after its year («Survey2013»): the
+            # epoch of that name, else the narrowest epoch holding the year
+            label = name(group_id)
+            epn = [n for n in graph.nodes if str(getattr(n, "node_type", "")) == "EpochNode"]
+            hit = [n for n in epn if str(n.name) and re.search(rf"(?<!\d){re.escape(str(n.name))}(?!\d)", label)]
+            if not hit:
+                m = re.search(r"(?<!\d)(\d{3,4})(?!\d)", label)
+                if m:
+                    y = float(m.group(1))
+                    hit = sorted((n for n in epn if getattr(n, "start_time", None) is not None
+                                  and getattr(n, "end_time", None) is not None
+                                  and float(n.start_time) <= y <= float(n.end_time)),
+                                 key=lambda n: float(n.end_time) - float(n.start_time))
+            if hit:
+                sug["epoch"] = {"id": hit[0].node_id, "name": name(hit[0].node_id),
+                                "why": {"code": "container-name"}}
+    # the alternative — MICRO-D-GIS-DOCUMENTI p.7 (E.D. 15 Nov 2026): a
+    # tileset is suggested only when THE SAME DOCUMENT publishes it, or when it
+    # has THE SAME MEMBERS (its declared master — the meshes it was tiled from
+    # — is exactly the meshes of the container's members: the same content).
+    # Never for an epoch alone (until dev.124 a shared epoch scored +1 and
+    # Survey_2015_egm2008 was offered to «Reconstruction II AC»); else no
+    # suggestion, and the field stays «nessuna».
     if not alts:
         want_docs = set(docs) | ({doc_for} if doc_for else set())
-        from ..epoch_scope import epoch_family
-        want_eps = set()
-        for x in set(own) | ({sug["epoch"]["id"]} if sug["epoch"] else set()):
-            want_eps |= set(epoch_family(graph, x))   # a mother takes its phases
-        best, score = None, 0
+        from .graph_compose import tileset_master
+        mine = set()
+        for m in deep:
+            mine |= set(_linked_3d_assets(graph, m, r))
+        best, why = None, None
         for n in graph.nodes:
             if _hat_kind(n, r) != "rm" or n.node_id in deep or not _is_tileset_hat(graph, n.node_id, r):
                 continue
-            s = 0
             if any(e.edge_type == "has_representation_model" and e.edge_target == n.node_id and e.edge_source in want_docs
                    for e in graph.edges):
-                s += 2
-            if set(_epochs_reaching(graph, [n.node_id], r)) & want_eps:
-                s += 1
-            if s > score:
-                best, score = n.node_id, s
+                best, why = n.node_id, "same-document"
+                break
+            if mine and why is None:
+                for t in _linked_3d_assets(graph, n.node_id, r):
+                    if not is_tileset(_data(_node(graph, t)), r):
+                        continue
+                    try:
+                        srcs = {asset_of(graph, x["id"]) for x in tileset_master(graph, t)["sources"]}
+                    except ValueError:
+                        continue
+                    if srcs and srcs == mine:
+                        best, why = n.node_id, "same-members"
+                        break
         if best:
-            sug["alternative"] = {"id": best, "name": name(best),
-                                  "why": {"code": "same-document" if score >= 2 else "same-epoch"}}
+            sug["alternative"] = {"id": best, "name": name(best), "why": {"code": why}}
     return {"group": group_id, "name": name(group_id),
             "documents": [{"id": d, "name": name(d)} for d in docs],
             "epochs": [{"id": x, "name": name(x)} for x in own],

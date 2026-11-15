@@ -14,7 +14,9 @@ def _types():
 
 def test_the_type_is_declared_with_its_reading():
     doc = _types()
-    assert doc["metadata"]["version"] == "2.1"
+    # 2.1 declared it; 2.2 (MICRO-D-GIS-DOCUMENTI) added spatial_documentation.cartography
+    assert tuple(int(x) for x in doc["metadata"]["version"].split(".")) >= (2, 1)
+    assert "2.1" in doc["metadata"]["changelog"]
     t = doc["document_types"]["anastylosis"]
     assert "findspot" in t["description"] and "original position" in t["description"]
     assert "VERSIONS" in t["description"]

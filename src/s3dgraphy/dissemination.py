@@ -184,3 +184,30 @@ def live_edges(edges: Iterable[Any]) -> list:
     """The edges a dissemination surface may emit — tombstones only. Dangling
     edges need the node set, so they are :func:`live_view`'s business."""
     return [e for e in edges if not is_removed_edge(e)]
+
+
+def publishable_view(graph: Any) -> Tuple[Any, list]:
+    """MICRO-D-GIS-DOCUMENTI (15 Nov 2026) · a twin of ``graph`` without the
+    nodes whose licence — their own or INHERITED (a sheet of a cadastre under
+    its document) — keeps them out of a dissemination surface
+    (:data:`s3dgraphy.rights.RESTRICTIVE_LICENSES`: «uso di studio, non
+    pubblicabile»), nor the edges touching them. The same shallow copy as
+    :func:`live_view`. → ``(view, withheld)``, ``withheld`` = ``[{id, name,
+    license, origin, why}]``: what was left out and why, said by the exporter.
+    """
+    from .rights import study_only_nodes
+    out = study_only_nodes(graph)
+    if not out:
+        return graph, []
+    withheld = [{"id": nid, "name": str(getattr(graph.find_node_by_id(nid), "name", "") or nid),
+                 "license": p["license"], "origin": p["origin"], "why": p["why"]}
+                for nid, p in out.items()]
+    gone = set(out)
+    view = copy.copy(graph)
+    view.nodes = [n for n in graph.nodes if getattr(n, "node_id", None) not in gone]
+    view.edges = [e for e in graph.edges if getattr(e, "edge_source", None) not in gone
+                  and getattr(e, "edge_target", None) not in gone]
+    if hasattr(view, "_indices"):
+        view._indices = None
+        view._indices_dirty = True
+    return view, withheld

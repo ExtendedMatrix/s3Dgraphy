@@ -161,8 +161,12 @@ def test_a_model_takes_the_epoch_reaching_it_then_its_document_then_its_containe
     assert resolve_provenance(g, "M1", START)[ "level"] == "swimlane"
     r2 = resolve_provenance(g, "M2", START)
     assert (r2["value"], r2["level"], r2["via"], r2["origin"]) == (2013.0, "publisher", "D1", "E13")
+    # MICRO-D-GIS-DOCUMENTI p.6 · the Document's date never passes to the container
     rg = resolve_provenance(g, "G", START)
-    assert (rg["level"], rg["via"]) == ("publisher", "D1")
+    assert rg["level"] != "publisher"
+    g.add_edge("ge", "E13", "G", "has_representation_model")
+    rg = resolve_provenance(g, "G", START)
+    assert (rg["level"], rg["origin"]) == ("swimlane", "E13")
     r3 = resolve_provenance(g, "M3", START)
     assert (r3["value"], r3["level"], r3["via"]) == (2013.0, "container", "G")
     assert AT.epoch_attribution(g, "M3")["level"] == "container"

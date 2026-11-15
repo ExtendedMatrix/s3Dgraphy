@@ -1,6 +1,6 @@
 {
-  "_version": "1.1.0",
-  "_note": "The alternatives of a 3D object (E.D., 17 Oct 2026, «lo stesso cappello»): two resources are alternatives if and only if they have the same hat (has_linked_resource from an RM or an RM container to their asset). ONE rule, s3dgraphy.resources.alternatives (alternative_sets, choose_alternative), described by em_visual_rules.json → alternatives and copied by the clients that cannot call Python (EMStudio, Heriverse); every copy passes these cases. graph: nodes and edges as an em.json graph section carries them. expect.sets: every set, containers before their members (hat, hat_kind, parent, alternatives as [id, reason], reasons, covers, coverage); expect.warnings: the codes; choices: use (tried in order), force (container | members), and the level, the id and the use chosen (members: the id each member lights). Written by scripts/make_alternative_cases.py. 1.1.0 (25 Oct 2026): a case may carry expect.epochs ({hat: [epoch ids]}), compared by both runners; the new case is a container with no member, whose epochs are its own (em_visual_rules 1.6.40, alternatives.container_epochs) and whose alternative is lit whatever the uses.",
+  "_version": "1.2.0",
+  "_note": "The alternatives of a 3D object (E.D., 17 Oct 2026, «lo stesso cappello»): two resources are alternatives if and only if they have the same hat (has_linked_resource from an RM or an RM container to their asset). ONE rule, s3dgraphy.resources.alternatives (alternative_sets, choose_alternative), described by em_visual_rules.json → alternatives and copied by the clients that cannot call Python (EMStudio, Heriverse); every copy passes these cases. graph: nodes and edges as an em.json graph section carries them. expect.sets: every set, containers before their members (hat, hat_kind, parent, alternatives as [id, reason], reasons, covers, coverage); expect.warnings: the codes; choices: use (tried in order), force (container | members), and the level, the id and the use chosen (members: the id each member lights). Written by scripts/make_alternative_cases.py. 1.1.0 (25 Oct 2026): a case may carry expect.epochs ({hat: [epoch ids]}), compared by both runners; the new case is a container with no member, whose epochs are its own (em_visual_rules 1.6.40, alternatives.container_epochs) and whose alternative is lit whatever the uses. 1.2.0 (15 Nov 2026, MICRO-D-GIS-DOCUMENTI p.6, E.D.: «la data/epoca del documento non passa mai al container»): the case's container takes the epoch reaching it (ep1), never its Document's (ep2, has_first_epoch of D.1) — em_visual_rules 1.6.47.",
   "cases": [
     {
       "name": "a container of 4 meshes and a tileset hatted by the container",
@@ -3193,13 +3193,19 @@
       ]
     },
     {
-      "name": "a container with no mesh and a tileset hatted by it: the container's own epoch (its Document's)",
+      "name": "a container with no mesh and a tileset hatted by it: the container's own epoch (one reaching it — never its Document's)",
       "graph": {
         "nodes": [
           {
             "id": "ep1",
             "node_type": "EpochNode",
             "name": "Epoch 1",
+            "data": {}
+          },
+          {
+            "id": "ep2",
+            "node_type": "EpochNode",
+            "name": "Epoch 2 (the Document's)",
             "data": {}
           },
           {
@@ -3285,12 +3291,18 @@
           {
             "id": "e5",
             "source": "D.1",
-            "target": "ep1",
+            "target": "ep2",
             "edge_type": "has_first_epoch"
           },
           {
             "id": "e6",
             "source": "D.1",
+            "target": "rmgroup_tls",
+            "edge_type": "has_representation_model"
+          },
+          {
+            "id": "ep1_rm_tls",
+            "source": "ep1",
             "target": "rmgroup_tls",
             "edge_type": "has_representation_model"
           }

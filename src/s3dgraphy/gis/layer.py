@@ -41,7 +41,10 @@ URL_TYPE = "gis_layer"
 #: by :mod:`.spatialite` / :mod:`.wkb` when the pyArchInit importer takes the
 #: footprints, never by :func:`add_gis_layer` (a database is not a file here)
 GIS_FORMATS = ("shapefile", "geopackage", "geotiff", "geojson", "wms", "wfs",
-               "ogc_api_features", "spatialite", "postgis")
+               "ogc_api_features", "spatialite", "postgis", "dxf", "worldfile_image")
+#: MICRO-D-GIS-DOCUMENTI (15 Nov 2026) · ``dxf`` (a CAD plan, :mod:`.dxf`: no
+#: CRS of its own, asked with its shift) and ``worldfile_image`` (a JPEG / PNG
+#: sheet and its world file, :mod:`.worldfile`) are read too
 
 _MEDIA = {".shp": "application/x-esri-shape", ".dbf": "application/x-dbf",
           ".shx": "application/x-esri-shape-index", ".prj": "text/plain",
@@ -105,15 +108,20 @@ def inspect_shapefile(shp_path: str, *, z_field: Optional[str] = None,
 
 
 FORMAT_OF_EXT = {".shp": "shapefile", ".gpkg": "geopackage", ".geojson": "geojson",
-                 ".json": "geojson", ".tif": "geotiff", ".tiff": "geotiff"}
+                 ".json": "geojson", ".tif": "geotiff", ".tiff": "geotiff", ".dxf": "dxf"}
 
 _MEDIA_ONE = {"geojson": "application/geo+json", "geopackage": "application/geopackage+sqlite3",
-              "geotiff": "image/tiff; application=geotiff"}
+              "geotiff": "image/tiff; application=geotiff", "dxf": "image/vnd.dxf"}
 
 
 def format_of(path: str) -> Optional[str]:
-    """The ``gis_format`` a file's extension says, or None."""
-    return FORMAT_OF_EXT.get(os.path.splitext(str(path))[1].lower())
+    """The ``gis_format`` a file's extension says, or None. A JPEG / PNG is a
+    ``worldfile_image`` when a world file stands beside it."""
+    ext = os.path.splitext(str(path))[1].lower()
+    if ext in (".jpg", ".jpeg", ".png"):
+        from .worldfile import world_file_of
+        return "worldfile_image" if world_file_of(str(path)) else None
+    return FORMAT_OF_EXT.get(ext)
 
 
 def bbox_wgs84(bbox, crs) -> Optional[List[float]]:
@@ -181,9 +189,29 @@ def inspect_layer(path: str, *, layer: Optional[str] = None, z_field: Optional[s
                "raster": {k: g[k] for k in ("width", "height", "bands", "bits", "kind", "pixel_size",
                                              "nodata", "tiled", "overviews", "cog", "compression",
                                              "vertical_crs", "georef_source")}}
+    elif fmt == "worldfile_image":
+        from .worldfile import read_worldfile_image_info
+        g = read_worldfile_image_info(path)
+        ins = {"path": path, "gis_format": fmt, "crs": g["crs"], "crs_source": g["crs_source"],
+               "geometry_type": None, "has_z": False, "bbox": g["bbox"], "z_range": None, "fields": [],
+               "feature_count": None, "feature_key": None, "z_field": None, "layer": None,
+               "layers": None, "companions": [os.path.basename(path), g["world_file"]],
+               "raster": {k: g[k] for k in ("width", "height", "bands", "bits", "kind", "pixel_size",
+                                             "nodata", "tiled", "overviews", "cog", "compression",
+                                             "vertical_crs", "georef_source")}}
+    elif fmt == "dxf":
+        from .dxf import read_dxf
+        info = read_dxf(path)
+        ins = {"path": path, "gis_format": fmt, "crs": None, "crs_source": None,
+               "geometry_type": info["geometry_type"], "has_z": info["has_z"], "bbox": info["bbox"],
+               "z_range": info["z_range"], "fields": info["fields"],
+               "feature_count": len(info["features"]), "feature_key": "text", "z_field": None,
+               "layer": None, "layers": None, "dxf_layers": info["layers"],
+               "dxf_skipped": info["skipped"], "raster": None,
+               "companions": [os.path.basename(path)]}
     else:
         raise ValueError(f"not a GIS layer this module reads: {os.path.basename(str(path))} "
-                         "(shp, gpkg, geojson, tif)")
+                         "(shp, gpkg, geojson, tif, dxf, jpg/png with a world file)")
     ins["bbox_wgs84"] = bbox_wgs84(ins["bbox"], ins["crs"])
     return ins
 
@@ -198,6 +226,10 @@ def read_features(path: str, *, layer: Optional[str] = None,
         gt = info["geometry_type"]
         feats = [{**f, "type": gt} for f in info["features"]]
         return {"crs": crs_of_shapefile(path), "features": feats, "geometry_type": gt}
+    if fmt == "dxf":
+        from .dxf import read_dxf
+        info = read_dxf(path)
+        return {"crs": None, "features": info["features"], "geometry_type": info["geometry_type"]}
     if fmt == "geojson":
         from .geojson import read_geojson
         info = read_geojson(path)

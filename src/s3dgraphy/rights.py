@@ -574,3 +574,65 @@ def _detach(graph: Any, node_id: str) -> None:
                    if _field(e, "edge_source", "source") != node_id
                    and _field(e, "edge_target", "target") != node_id]
     graph.nodes = [n for n in graph.nodes if getattr(n, "node_id", None) != node_id]
+
+
+# ---------------------------------------------------------------------------
+# «Uso di studio, non pubblicabile» (MICRO-D-GIS-DOCUMENTI, 15 Nov 2026)
+# ---------------------------------------------------------------------------
+
+#: a licence of the study's own vocabulary: the material may be STUDIED inside
+#: the project (a cadastre lent by an archive, a plan under copyright) and is
+#: NOT published — never in Publish, never in an export for Heriverse. Not a
+#: Creative Commons code: an identifier of Extended Matrix's vocabulary.
+STUDY_ONLY_LICENSE = "EM-STUDY-ONLY"
+
+#: the licences an interface offers, and how each is said (EMStudio's ingress
+#: list was the five CC codes; the sixth is the study's own)
+LICENSE_VOCABULARY = ("CC-BY-4.0", "CC-BY-SA-4.0", "CC-BY-NC-4.0", "CC-BY-NC-SA-4.0",
+                      "CC0-1.0", STUDY_ONLY_LICENSE)
+LICENSE_LABELS = {STUDY_ONLY_LICENSE: "Uso di studio, non pubblicabile"}
+
+#: the licences that keep a node OUT of a dissemination surface
+RESTRICTIVE_LICENSES = frozenset({STUDY_ONLY_LICENSE})
+
+
+def _license_code(value: Any) -> Optional[str]:
+    """The code of a resolved licence value («EM-STUDY-ONLY (url)» → the code)."""
+    if value in (None, ""):
+        return None
+    return str(value).split(" (", 1)[0].strip() or None
+
+
+def publishable(graph: Any, node: Any, *, index: Any = None) -> Dict[str, Any]:
+    """May ``node`` go out — in Publish, in an export for Heriverse? Read with
+    the resolver of provenance, so a licence INHERITED from a document (a
+    sheet of a cadastre) counts like its own. → ``{ok, license, level,
+    origin, why}``; ``ok`` False for a restrictive licence
+    (:data:`RESTRICTIVE_LICENSES`), with the node the licence is written on."""
+    from .resolvers.property_resolver import get_rule
+    from .resolvers.provenance import resolve_provenance
+    r = resolve_provenance(graph, node, get_rule("license"), index=index)
+    code = _license_code(r.get("value"))
+    if code in RESTRICTIVE_LICENSES:
+        origin = r.get("origin")
+        oname = getattr(graph.find_node_by_id(origin), "name", origin) if origin else None
+        why = (f"{LICENSE_LABELS.get(code, code)}"
+               + (f" — inherited from {oname}" if r.get("level") not in ("node", None) and oname else ""))
+        return {"ok": False, "license": code, "level": r.get("level"), "origin": origin, "why": why}
+    return {"ok": True, "license": code, "level": r.get("level"), "origin": r.get("origin"), "why": ""}
+
+
+def study_only_nodes(graph: Any, ids: Optional[List[str]] = None) -> Dict[str, Dict[str, Any]]:
+    """``{node_id: publishable(...)}`` for the nodes NOT publishable (every live
+    node when ``ids`` is None), one edge index for the pass."""
+    from .resolvers.provenance import EdgeIndex
+    ix = EdgeIndex(graph)
+    out: Dict[str, Dict[str, Any]] = {}
+    for nid in ids if ids is not None else [n.node_id for n in _alive_nodes(graph)]:
+        node = ix.node(nid)
+        if node is None or getattr(node, "node_type", "") == "license":
+            continue
+        p = publishable(graph, node, index=ix)
+        if not p["ok"]:
+            out[nid] = p
+    return out

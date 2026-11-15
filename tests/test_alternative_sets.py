@@ -168,12 +168,16 @@ def _container_case(members_epoch=None, with_member=False, direct=False):
     return _graph({"nodes": nodes, "edges": edges})
 
 
-def test_a_container_without_members_takes_its_documents_epochs():
+def test_a_container_never_takes_its_documents_epochs():
+    """MICRO-D-GIS-DOCUMENTI p.6 (E.D. 15 Nov 2026): «la data/epoca del
+    documento non passa mai al container» — until em_visual_rules 1.6.46 this
+    test said the opposite (the Document's has_first_epoch / survive_in_epoch
+    were the container's)."""
     from s3dgraphy.resources.alternatives import container_own_epochs
     g = _container_case()
-    assert container_own_epochs(g, "grp") == ["ep1", "ep2"]
+    assert container_own_epochs(g, "grp") == []
     s = find_set(alternative_sets(g), "grp")
-    assert s["covers"] == [] and s["epochs"] == ["ep1", "ep2"]
+    assert s["covers"] == [] and s["epochs"] == []
 
 
 def test_an_epoch_reaching_the_container_itself_counts():
@@ -182,8 +186,10 @@ def test_an_epoch_reaching_the_container_itself_counts():
 
 
 def test_members_without_epochs_fall_back_to_the_container_members_with_win():
-    assert find_set(alternative_sets(_container_case(with_member=True)), "grp")["epochs"] \
-        == ["ep1", "ep2"]
+    # the container's own epoch (one reaching it — never its Document's, MICRO-D p.6)
+    assert find_set(alternative_sets(_container_case(with_member=True, direct=True)), "grp")["epochs"] \
+        == ["ep2"]
+    assert find_set(alternative_sets(_container_case(with_member=True)), "grp")["epochs"] == []
     assert find_set(alternative_sets(_container_case(with_member=True, members_epoch="ep2")),
                     "grp")["epochs"] == ["ep2"]
 

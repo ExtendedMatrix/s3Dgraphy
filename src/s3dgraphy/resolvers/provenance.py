@@ -294,7 +294,7 @@ def resolve_provenance(graph, node, rule, *, index: Optional[EdgeIndex] = None,
     * continuity: node → its epoch → master → graph;
     * activity group: node → members → swimlane → graph;
     * model: node → swimlane (the epochs reaching it) → publisher → container → graph;
-    * container: node → swimlane → publisher → graph;
+    * container: node → swimlane → publisher (never for a date: MICRO-D p.6) → graph;
     * stratigraphic unit, end: node → life (continuity rule) → graph;
     * resource, file: node → swimlane → set (the set it is part of) →
       publisher (the document linking it) → graph;
@@ -384,6 +384,11 @@ def _walk(graph, ix, node, nid, rule, seen) -> Dict[str, Any]:
         pubs = [s for et in ("has_representation_model", "has_representation_model_doc")
                 for s in ix.sources(nid, et) if ix.nt(s) == "document"]
         pubs = list(dict.fromkeys(pubs))
+        if nt == CONTAINER_TYPE and rule.id in _TEMPORAL:
+            # MICRO-D-GIS-DOCUMENTI p.6 (E.D. 15 Nov 2026): the date / epoch of
+            # the Document never passes to the container (its author and
+            # licence do)
+            pubs = []
         r = _combine(rule, nid, "publisher", [sub(p) for p in pubs], [[nid, p] for p in pubs])
         if r:
             return r

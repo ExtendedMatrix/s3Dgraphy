@@ -23,7 +23,7 @@ def _graph():
     return g
 
 
-def test_a_new_document_publishes_the_container_and_gives_it_its_epoch():
+def test_a_new_document_publishes_the_container_and_the_epoch_is_given_directly():
     g = _graph()
     r = ALT.create_container(g, "Survey2013", document={"name": "D.20", "description": "Rilievo 2013", "date": 2013},
                              epoch_id="E15")
@@ -78,7 +78,8 @@ def test_the_card_suggests_from_the_graph_and_the_bonds_come_off_again():
     s = ALT.container_links(g, gid)["suggestions"]
     assert s["document"]["id"] == "D1" and s["document"]["why"] == {"code": "publishes-members", "n": 2, "of": 2}
     assert s["epoch"]["id"] == "XX"                                   # where its members are
-    assert s["alternative"]["id"] == "T"                              # the tileset of the same epoch
+    # MICRO-D-GIS-DOCUMENTI p.7 · T shares an epoch only (E15 inside XX): no suggestion
+    assert s["alternative"] is None
     e = ALT.create_container(g, "Survey2015 bis")["group_id"]
     assert ALT.container_links(g, e)["suggestions"]["epoch"]["id"] == "E15"   # by its name
     g.add_edge("p", "D1", gid, "has_representation_model")
@@ -90,3 +91,53 @@ def test_the_card_suggests_from_the_graph_and_the_bonds_come_off_again():
     out = ALT.remove_alternative(g, gid, "TR")
     assert out["removed"] and out["warnings"]
     assert ALT.leave_container(g, "M1", gid)["left"] and ALT.members_of(g, gid) == ["M2"]
+
+
+def test_accepting_who_publishes_never_gives_the_container_the_documents_epoch():
+    """MICRO-D-GIS-DOCUMENTI p.6 (E.D. 15 Nov 2026) · TempluMare v10: «Accept»
+    on «Published by D.09?» gave «Reconstruction II AC» the epoch 2015, D.09's.
+    The Document's epoch and date never pass to the container."""
+    from s3dgraphy.nodes.document_node import DocumentNode
+    from s3dgraphy.resolvers.provenance import resolve_provenance
+    from s3dgraphy.resolvers.property_resolver import get_rule
+    g = _graph()
+    g.add_node(DocumentNode("D9", "D.09", data={"absolute_time_start": 2015}))
+    g.add_edge("d9e", "D9", "E15", "has_first_epoch")
+    for i in (1, 2):
+        g.add_edge(f"pub{i}", "D9", f"M{i}", "has_representation_model")
+    gid = ALT.create_container(g, "Reconstruction II AC", members=["M1", "M2"])["group_id"]
+    sug = ALT.container_links(g, gid)["suggestions"]
+    assert sug["document"]["id"] == "D9"
+    assert sug["epoch"]["id"] == "XX"                  # where its members are, never D.09's 2015
+    g.add_edge("acc", "D9", gid, "has_representation_model")     # «Accept» (the bridge's step publish)
+    assert ALT.container_own_epochs(g, gid) == []
+    assert ALT.container_epoch_check(g, gid)["own"] == []
+    assert ALT.container_links(g, gid)["epochs"] == []
+    r = resolve_provenance(g, gid, get_rule("absolute_time_start"))
+    assert r["level"] != "publisher" and r["value"] != 2015
+
+
+def test_an_alternative_is_suggested_by_the_same_document_or_the_same_members():
+    """MICRO-D-GIS-DOCUMENTI p.7 · a tileset only when the same Document
+    publishes it, or its declared master is the container's meshes."""
+    from s3dgraphy.nodes.document_node import DocumentNode
+    from s3dgraphy.resources.graph_compose import declare_tileset_master
+    g = _graph()
+    for i in (1, 2):
+        g.add_node(ResourceNode(f"R{i}", f"mesh{i}", url=f"../RM/mesh{i}.glb"))
+        g.find_node_by_id(f"R{i}").data["url_type"] = "3d_model"
+        g.add_edge(f"h{i}", f"M{i}", f"R{i}", "has_linked_resource")
+    gid = ALT.create_container(g, "Survey2015", members=["M1", "M2"])["group_id"]
+    assert ALT.container_links(g, gid)["suggestions"]["alternative"] is None
+    declare_tileset_master(g, "TR", ["R1"])                         # a part only: not the same content
+    assert ALT.container_links(g, gid)["suggestions"]["alternative"] is None
+    declare_tileset_master(g, "TR", ["R1", "R2"])
+    a = ALT.container_links(g, gid)["suggestions"]["alternative"]
+    assert a["id"] == "T" and a["why"]["code"] == "same-members"
+    h = _graph()
+    h.add_node(DocumentNode("D1", "D.01"))
+    h.add_edge("pT", "D1", "T", "has_representation_model")
+    gid = ALT.create_container(h, "S", members=["M1"])["group_id"]
+    h.add_edge("pG", "D1", gid, "has_representation_model")
+    a = ALT.container_links(h, gid)["suggestions"]["alternative"]
+    assert a["id"] == "T" and a["why"]["code"] == "same-document"

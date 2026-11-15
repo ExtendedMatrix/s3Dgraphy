@@ -792,8 +792,16 @@ def consolidate(graph, platform_key: str = "heriverse", *, models: Optional[Iter
         say += f"; {counts['unchecked']} non controllati"
     if counts["modified_after_stamp"]:
         say += f"; {counts['modified_after_stamp']} modificate dopo il timbro"
+    # MICRO-D-GIS-DOCUMENTI · what may only be studied never goes to a viewer:
+    # the nodes whose licence (own or inherited from their document) is «uso
+    # di studio, non pubblicabile», said with the node the licence is on
+    from ..rights import study_only_nodes
+    withheld = [{"id": nid, "name": str(getattr(graph.find_node_by_id(nid), "name", "") or nid),
+                 "why": p["why"], "origin": p["origin"]} for nid, p in study_only_nodes(graph).items()]
+    if withheld:
+        say += f"; {len(withheld)} esclusi: uso di studio, non pubblicabili"
     return {"platform": plat, "in_room": in_room, "rows": rows, "totals": tot,
-            "counts": counts, "scene_light": scene_light, "say_it": say}
+            "counts": counts, "scene_light": scene_light, "say_it": say, "withheld": withheld}
 
 
 def measure_from_disk(states_or_resolved: Iterable[Dict[str, Any]]):

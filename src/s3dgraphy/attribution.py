@@ -103,6 +103,8 @@ def epoch_attribution(graph, node_id: str, *, index: Optional[EdgeIndex] = None,
         else:
             pubs = [s for et in ("has_representation_model", "has_representation_model_doc")
                     for s in ix.sources(node_id, et) if ix.nt(s) == "document"]
+            if nt == CONTAINER_TYPE:
+                pubs = []   # MICRO-D-GIS-DOCUMENTI p.6: the Document's epoch never passes to the container
             for level, ups in (("publisher", pubs),
                                ("container", ix.targets(node_id, "is_in_representation_model_group")
                                 if nt != CONTAINER_TYPE else [])):

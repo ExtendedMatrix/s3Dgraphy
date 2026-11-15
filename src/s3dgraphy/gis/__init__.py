@@ -26,7 +26,12 @@ when it has a node to hang from.
   CUTS, USN; never a positive unit, whose geometry is the proxy), the writer
   every owner shares, the simplification above 500 vertices;
 * :mod:`.spatialite` — a SpatiaLite geometry blob (pyArchInit's layers) read
-  without GDAL.
+  without GDAL;
+* :mod:`.worldfile`, :mod:`.dxf` — a JPEG / PNG sheet with its world file, an
+  ASCII DXF (MICRO-D-GIS-DOCUMENTI, 15 Nov 2026);
+* :mod:`.document` — GIS data as DOCUMENTS: a cartographic source is a D.nn,
+  its sheets files of one set, each with its frame, an RMDoc, the licence on
+  the document (never an epoch).
 """
 
 from .crs import same_grid, crs_of_prj, crs_of_shapefile, SAME_GRID
@@ -40,6 +45,9 @@ from .contours import contours, levels_for
 from .landscape import add_landscape_surface, landscape_surfaces, add_contours
 from .site import (add_site, sites, site_of, set_footprint, footprint_of,
                    footprint_from_glbs, plan_hull, PLACE_TYPES)
+from .document import add_gis_document, gis_documents, gis_set_of, next_document_name, set_license
+from .dxf import read_dxf, DxfError
+from .worldfile import read_worldfile_image_info, WorldFileError
 from .footprint import (FootprintRefused, footprint_verdict, may_have_footprint,
                         write_footprint, footprints, simplify_polygons,
                         footprint_from_proxy, top_outline)
@@ -55,4 +63,6 @@ __all__ = [
     "footprint_from_glbs", "plan_hull", "PLACE_TYPES",
     "FootprintRefused", "footprint_verdict", "may_have_footprint", "write_footprint",
     "footprints", "simplify_polygons", "footprint_from_proxy", "top_outline",
+    "add_gis_document", "gis_documents", "gis_set_of", "next_document_name", "set_license",
+    "read_dxf", "DxfError", "read_worldfile_image_info", "WorldFileError",
 ]
