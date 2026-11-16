@@ -125,11 +125,14 @@ def bring_in(graph, files: Iterable[Mapping[str, Any]], *, document_id: Optional
              license: Optional[str] = None, author_id: Optional[str] = None,
              gis: Optional[Mapping[str, Any]] = None) -> Dict[str, Any]:
     """Files into a document (see the module). ``files``: ``{path, url?, name?,
-    kind?, role?}`` — ``url`` the locator written (default ``path``), ``role``
-    one of :data:`ROLES` for a model or a tileset (default ``rm``). ``gis``:
+    kind?, role?, packaging?, checksum?, size_bytes?, media_type?, name_only?}``
+    — ``url`` the locator written (default ``path``), ``role`` one of
+    :data:`ROLES` for a model or a tileset (default ``rm``); the rest is what a
+    tileset's preview read (MICRO-F p.2: a tileset dropped passes by the door). ``gis``:
     the extra arguments of :func:`..gis.document.add_gis_document` (crs, shift,
     urls) for the GIS files among them."""
-    from .gis.document import add_gis_document, next_document_name, set_license
+    from .document_names import next_document_name
+    from .gis.document import add_gis_document, set_license
     from .nodes.representation_node import RepresentationModelDocNode, RepresentationModelNode
     from .resources.alternatives import new_document
     from .resources.files import add_resource
@@ -205,8 +208,24 @@ def bring_in(graph, files: Iterable[Mapping[str, Any]], *, document_id: Optional
         rid = resource_of_locator(graph, url)
         reused = bool(rid)
         if not rid:
-            extra = {"packaging": "archive"} if url.lower().endswith(".3tz") else {}
-            rid = add_resource(graph, name=name, kind="3d_model", tier="master", files=[{"path": url}],
+            # MICRO-F p.2 · what the tileset's preview knew passes with the file:
+            # its packaging (a .3tz / .zip an archive, a folder's tileset.json a
+            # directory), its digest (a resource with one is resident), its size,
+            # and that only its NAME is known (a drop from the system in a browser)
+            low = url.lower()
+            packaging = f.get("packaging") or (
+                "archive" if low.endswith(".3tz") or (kind == "tileset" and low.endswith(".zip")) else None)
+            spec = {"path": url}
+            for k in ("checksum", "size_bytes", "media_type"):
+                if f.get(k):
+                    spec[k] = f[k]
+            extra: Dict[str, Any] = {}
+            if f.get("name_only"):
+                extra["locator_note"] = "name only: the file was dropped, its path is not known"
+            elif f.get("checksum") and packaging == "directory":
+                extra["checksum_of"] = "entry-point"
+            rid = add_resource(graph, name=name, kind="3d_model", tier="master", files=[spec],
+                               packaging=packaging, residency="resident" if f.get("checksum") else None,
                                data=extra).node_id
         if role == "source":
             _edge(graph, document_id, rid, "has_linked_resource")

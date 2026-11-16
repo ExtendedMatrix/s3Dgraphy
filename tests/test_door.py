@@ -75,3 +75,30 @@ def test_tropy_plan_marks_rows_without_date_and_merges():
     rows = tropy_plan([{"title": "D.01", "date": "2015", "photos": ["a.jpg"]}, {"title": "Scavo", "photos": []}], _g())
     assert rows[0]["merge_with"] == "D1" and not rows[0]["missing_date"]
     assert rows[1]["missing_date"] and rows[1]["merge_with"] is None
+
+
+def test_a_dropped_tileset_passes_by_the_door_with_what_its_preview_read(tmp_path):
+    """MICRO-F p.2 · the tileset dropped on the Viewer / the Space: its packaging,
+    digest and size reach the resource (resident), a drop with no path is said
+    «name only»; the epoch goes to the model, the date to the document."""
+    from s3dgraphy.graph import Graph
+    from s3dgraphy.nodes.epoch_node import EpochNode
+    from s3dgraphy import door
+    g = Graph("g")
+    g.add_node(EpochNode("ep", "II A.D.", start_time=100, end_time=200))
+    z = tmp_path / "disco.zip"
+    z.write_bytes(b"PK\x05\x06" + b"\x00" * 18)
+    r = door.bring_in(g, [{"path": str(z), "url": "disco.zip", "kind": "tileset", "checksum": "sha256:ab", "size_bytes": 22}],
+                      title="Rilievo", date="2015", epoch_id="ep")
+    it = r["items"][0]
+    res = g.find_node_by_id(it["resource_id"])
+    assert it["kind"] == "tileset" and it["role"] == "rm"
+    assert res.data.get("packaging") == "archive" and res.data.get("residency") == "resident"
+    rm = g.find_node_by_id(it["model_id"])
+    assert rm.data["is_tileset"] and rm.data["tileset_path"] == "disco.zip"
+    assert any(e.edge_source == "ep" and e.edge_target == rm.node_id for e in g.edges)
+    assert g.find_node_by_id(r["document_id"]).data["absolute_time_start"] == "2015"
+    r2 = door.bring_in(g, [{"path": "T/tileset.json", "kind": "tileset", "packaging": "directory", "name_only": True}],
+                       title="T", date="2016")
+    res2 = g.find_node_by_id(r2["items"][0]["resource_id"])
+    assert res2.data.get("packaging") == "directory" and "name only" in res2.data.get("locator_note", "")

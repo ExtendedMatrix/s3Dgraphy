@@ -126,9 +126,10 @@ def test_documents_outside_the_series_are_said_with_their_name_proposed():
     hints = {h["name"]: h for h in document_series_hints(g)}
     assert set(hints) == {"TM015", "TM003", "Pianta"}          # D.01, D.02 follow the series
     assert hints["TM015"]["suggestion"] == "D.115" and hints["TM015"]["from_former_name"]
-    # D.02 is taken: the first free one, with the graph's padding
-    assert hints["TM003"]["suggestion"] == "D.03" and not hints["TM003"]["from_former_name"]
-    assert hints["Pianta"]["suggestion"] == "D.04"
+    # D.02 is taken: the highest + 1 (D.115, proposed in the same breath,
+    # counts — MICRO-F p.3), with the graph's padding
+    assert hints["TM003"]["suggestion"] == "D.116" and not hints["TM003"]["from_former_name"]
+    assert hints["Pianta"]["suggestion"] == "D.117"
     assert [x["to"] for x in hints["TM015"]["extractors"]] == ["D.115.01", "D.115.02"]
     assert hints["TM015"]["extractors_kept"] == [{"id": "odd", "name": "lettura libera"}]
     info = api.validate(g)["info"]
@@ -144,7 +145,7 @@ def test_renaming_keeps_the_old_name_and_no_edge_is_lost():
     tm15 = g.find_node_by_id("tm15")
     assert tm15.name == "D.115" and tm15.data["former_name"] == "TM015"
     tm3 = g.find_node_by_id("tm3")
-    assert tm3.name == "D.03" and tm3.data["former_name"] == "D.02" and tm3.data["former_names"] == ["TM003"]
+    assert tm3.name == "D.116" and tm3.data["former_name"] == "D.02" and tm3.data["former_names"] == ["TM003"]
     x = g.find_node_by_id("x15_1")
     assert x.name == "D.115.01" and x.data["former_name"] == "TM015.01"
     assert g.find_node_by_id("odd").name == "lettura libera"

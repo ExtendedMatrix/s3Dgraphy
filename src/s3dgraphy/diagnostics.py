@@ -578,7 +578,8 @@ def document_series_hints(graph) -> List[dict]:
     document, never a document. A document already in the series is never
     reported. The name PROPOSED is the ``former_name`` when it is in the series
     and free (no other node bears it, no other proposal took it), else the first
-    free D.<n>, written with the graph's padding (D.01… → D.09). Its extractors
+    next D.<n> (:func:`..document_names.next_document_name`, the highest + 1:
+    MICRO-F p.3), written with the graph's padding (D.01…D.70 → D.71). Its extractors
     follow (TM015.01 → D.115.01) ONLY when they already read
     ``<document>.<nn>``; the others are listed, not renamed.
 
@@ -589,12 +590,8 @@ def document_series_hints(graph) -> List[dict]:
     by_id = {n.node_id: n for n in graph.nodes}
     docs = [n for n in graph.nodes if getattr(n, "node_type", "") == "document"]
     names = {str(getattr(n, "name", "") or "").strip() for n in graph.nodes}
-    used = {k for k in (_series_number(getattr(n, "name", "")) for n in docs) if k is not None}
-    pad = 0
-    for n in docs:
-        m = DOCUMENT_SERIES_RE.match(str(getattr(n, "name", "") or "").strip())
-        if m and len(m.group(1)) > 1 and m.group(1).startswith("0"):
-            pad = max(pad, len(m.group(1)))
+    from .document_names import next_document_name
+    proposed: List[str] = []
     taken = set(names)
     out: List[dict] = []
     for doc in docs:
@@ -608,13 +605,11 @@ def document_series_hints(graph) -> List[dict]:
                 suggestion, from_former = former, True
                 break
         if suggestion is None:
-            k = 1
-            while k in used or f"D.{str(k).zfill(pad)}" in taken:
-                k += 1
-            suggestion = f"D.{str(k).zfill(pad)}"
-        k = _series_number(suggestion)
-        if k is not None:
-            used.add(k)
+            suggestion = next_document_name(graph, after=proposed)
+            while suggestion in taken:
+                proposed.append(suggestion)
+                suggestion = next_document_name(graph, after=proposed)
+        proposed.append(suggestion)
         taken.add(suggestion)
         moved, kept = [], []
         prefix = f"{name}." if name else None

@@ -264,6 +264,24 @@ scales (``em_color_ramps.json``) as EM Tools does; a property scheme is a VIEW,
 never written in the graph. The epochs' colours are the graph's
 (``data.color``).
 
+**One way of numbering the Documents** (MICRO-F-BUCKET-E-TILESET, E.D. 16 Nov
+2026): :func:`s3dgraphy.document_names.next_document_name` is the highest
+``D.nn`` + 1, never the first free one, in the graph's spelling (D.01…D.70 →
+D.71). A number used and then deleted does not come back: when a numbered
+Document leaves the graph (:meth:`~s3dgraphy.graph.Graph.remove_node`) its
+number is kept in ``graph.data["document_number_max"]``. The door, the GIS
+documents and the series hints all ask it; EMStudio's ``naming.ts`` replicates
+it with a parity check.
+
+**A tileset dropped passes by the door** (MICRO-F): what its preview read — the
+packaging (an archive, a folder's ``tileset.json``), the digest (a resource
+with one is resident), the size, a name only when the drop came with no path —
+travels with the file into :func:`s3dgraphy.door.bring_in`; the epoch it
+represents goes to its model as for any model. A bucket's object
+(:meth:`~s3dgraphy.resources.object_store.ObjectStore.listing`: one level, a
+page at a time, a search by name) enters by its ``s3://`` address and stays in
+the bucket.
+
 Custom rules
 ------------
 

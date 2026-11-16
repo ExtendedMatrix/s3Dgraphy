@@ -589,6 +589,11 @@ class Graph:
         The indices go stale with it (the list setters mark them): before
         2026-10-07 they did not, and `find_node_by_id` kept returning the node.
         """
+        gone = self.find_node_by_id(node_id)
+        if getattr(gone, "node_type", "") == "document":
+            # MICRO-F p.3 · a D.nn used and then deleted does not come back
+            from .document_names import remember_document_number
+            remember_document_number(self, getattr(gone, "name", ""))
         self.nodes = [node for node in self.nodes if node.node_id != node_id]
         self.edges = [edge for edge in self.edges if edge.edge_source != node_id and edge.edge_target != node_id]
 

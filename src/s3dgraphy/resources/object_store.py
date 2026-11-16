@@ -10,7 +10,10 @@ and nothing here names a vendor.
 * ``sha256(key)`` — the digest of the bytes, read by streaming (the only proof
   that two copies are the same bytes: an ETag is a digest of the PARTS of a
   multipart upload, not of the file);
-* ``put(path, key)`` and ``delete(key)``.
+* ``put(path, key)`` and ``delete(key)``;
+* ``listing(prefix, …)`` — what is in it, one level (folders = common
+  prefixes) a page at a time, or a search by name under a prefix
+  (MICRO-F-BUCKET-E-TILESET p.1: Archive ▸ Files ▸ Bucket).
 
 :class:`S3Store` implements them over the S3 API through ``boto3`` — plain S3
 operations (HeadBucket, CreateBucket, HeadObject, GetObject, PutObject,
@@ -69,6 +72,16 @@ class ObjectStore:
         raise NotImplementedError
 
     def delete(self, key: str) -> None:
+        raise NotImplementedError
+
+    def listing(self, prefix: str = "", *, token: Optional[str] = None, limit: int = 1000,
+                search: str = "", scan_max: int = 20000) -> Dict[str, Any]:
+        """What the bucket holds under ``prefix``: ``{folders: [prefix/], objects:
+        [{key, size, modified, etag}], next_token, truncated, scanned}``. One
+        level (the folders are the common prefixes), ``limit`` objects a page,
+        ``token`` the next page. With ``search`` the whole tree under ``prefix``
+        is read (up to ``scan_max`` keys) and only the names that contain it
+        come back, no folders."""
         raise NotImplementedError
 
 
@@ -143,6 +156,49 @@ class S3Store(ObjectStore):
             self._get_client().delete_object(Bucket=self.config.bucket, Key=key)
         except Exception as exc:  # noqa: BLE001
             raise StoreError(f"{self.locator(key)}: {exc}") from exc
+
+    def listing(self, prefix: str = "", *, token: Optional[str] = None, limit: int = 1000,
+                search: str = "", scan_max: int = 20000) -> Dict[str, Any]:
+        client = self._get_client()
+        prefix = str(prefix or "").lstrip("/")
+        limit = max(1, min(int(limit or 1000), 1000))      # S3's own page
+
+        def page(**kw):
+            try:
+                return client.list_objects_v2(Bucket=self.config.bucket, Prefix=prefix, **kw)
+            except Exception as exc:  # noqa: BLE001
+                if is_not_found(exc):
+                    raise StoreError(f"s3://{self.config.bucket}: no such bucket") from exc
+                raise StoreError(f"s3://{self.config.bucket}/{prefix}: {exc}") from exc
+
+        def obj(o):
+            m = o.get("LastModified")
+            return {"key": o["Key"], "size": int(o.get("Size") or 0),
+                    "modified": m.isoformat() if hasattr(m, "isoformat") else (str(m) if m else None),
+                    "etag": str(o.get("ETag") or "").strip('"')}
+
+        if search:
+            want = str(search).lower()
+            found, scanned, tok, truncated = [], 0, token, False
+            while True:
+                r = page(MaxKeys=1000, **({"ContinuationToken": tok} if tok else {}))
+                for o in r.get("Contents") or []:
+                    scanned += 1
+                    if want in o["Key"].rsplit("/", 1)[-1].lower():
+                        found.append(obj(o))
+                tok = r.get("NextContinuationToken")
+                if not r.get("IsTruncated") or not tok:
+                    break
+                if scanned >= scan_max or len(found) >= limit:
+                    truncated = True
+                    break
+            return {"folders": [], "objects": found[:limit], "next_token": tok if truncated else None,
+                    "truncated": truncated, "scanned": scanned}
+        r = page(Delimiter="/", MaxKeys=limit, **({"ContinuationToken": token} if token else {}))
+        return {"folders": [c["Prefix"] for c in r.get("CommonPrefixes") or []],
+                "objects": [obj(o) for o in r.get("Contents") or [] if o["Key"] != prefix],
+                "next_token": r.get("NextContinuationToken") if r.get("IsTruncated") else None,
+                "truncated": bool(r.get("IsTruncated")), "scanned": int(r.get("KeyCount") or 0)}
 
 
 _FACTORIES: Dict[str, Callable[[Optional[S3Config]], ObjectStore]] = {

@@ -43,6 +43,7 @@ from ..geometry.frame import make_frame, normalise_crs
 from .crs import same_grid
 from .layer import _MEDIA, _MEDIA_ONE, _graph_crs, _sha256, bbox_wgs84, format_of, inspect_layer
 from .shapefile import companions
+from ..document_names import next_document_name  # noqa: F401 — the one rule (MICRO-F p.3)
 
 #: the document's type in ``em_document_types.json`` (2.2): a cartographic source
 DOCUMENT_TYPE = "spatial_documentation"
@@ -56,18 +57,6 @@ def _nodes(graph):
 
 def _node(graph, nid):
     return graph.find_node_by_id(nid) if nid else None
-
-
-def next_document_name(graph) -> str:
-    """The study's next ``D.nn`` (the highest number + 1, two digits at least)."""
-    best = 0
-    for n in _nodes(graph):
-        if getattr(n, "node_type", "") != "document":
-            continue
-        m = re.match(r"^\s*D\.?\s*(\d+)\s*$", str(getattr(n, "name", "") or ""))
-        if m:
-            best = max(best, int(m.group(1)))
-    return f"D.{best + 1:02d}"
 
 
 def gis_set_of(graph, document_id: str) -> Optional[str]:
