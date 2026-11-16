@@ -1,0 +1,100 @@
+{
+  "version": "1.0.0",
+  "description": "The colour scales of the visual manager, the same as EM Tools (visual_manager/color_ramps.py), written as the hex colours a person sees (sRGB). In a .emc file a colour is stored as Blender's scene-linear floats: s3dgraphy.color_schemes converts (gamma 2.2, as EM Tools' hex_to_rgb).",
+  "source": "EM-blender-tools/visual_manager/color_ramps.py",
+  "ramps": {
+    "sequential": {
+      "viridis": {
+        "name": "Viridis",
+        "description": "A perceptually uniform colormap (matplotlib's default)",
+        "colors": [
+          "#440154",
+          "#414487",
+          "#2A788E",
+          "#22A884",
+          "#7AD151",
+          "#FDE725"
+        ]
+      },
+      "blues": {
+        "name": "Blues",
+        "description": "Classic blue sequential scale",
+        "colors": [
+          "#08306B",
+          "#08519B",
+          "#2171B5",
+          "#4393C3",
+          "#92C5DE",
+          "#D1E5F0"
+        ]
+      },
+      "heat": {
+        "name": "Heat",
+        "description": "Traditional heat map colors",
+        "colors": [
+          "#053061",
+          "#166789",
+          "#74ADD1",
+          "#F4A582",
+          "#D6604D",
+          "#B2182B"
+        ]
+      }
+    },
+    "diverging": {
+      "red_blue": {
+        "name": "Red-Blue",
+        "description": "Classic diverging scale for positive/negative values",
+        "colors": [
+          "#67001F",
+          "#D6604D",
+          "#FDDBC7",
+          "#F7F7F7",
+          "#D1E5F0",
+          "#4393C3",
+          "#053061"
+        ]
+      },
+      "brown_teal": {
+        "name": "Brown-Teal",
+        "description": "Earthy diverging scale",
+        "colors": [
+          "#543005",
+          "#C4812D",
+          "#F6E8C3",
+          "#F5F5F5",
+          "#C7EAE5",
+          "#36978F",
+          "#013C30"
+        ]
+      }
+    },
+    "qualitative": {
+      "set1": {
+        "name": "Set 1",
+        "description": "Distinct colors for categorical data",
+        "colors": [
+          "#E41A1C",
+          "#377EB8",
+          "#4DAF4A",
+          "#984EA3",
+          "#FF7F00",
+          "#FFFF33",
+          "#A65628"
+        ]
+      },
+      "pastel": {
+        "name": "Pastel",
+        "description": "Soft pastel colors for categorical data",
+        "colors": [
+          "#FBB4AE",
+          "#B3CDE3",
+          "#CCEBC5",
+          "#DECBE4",
+          "#FED9A6",
+          "#FFFFCC"
+        ]
+      }
+    }
+  }
+}

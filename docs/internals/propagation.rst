@@ -238,6 +238,32 @@ Document's GIS set: ``set`` → ``publisher``) as for the Document, and
 :func:`s3dgraphy.dissemination.publishable_view` leaves those nodes out of the
 Heriverse payload (``withheld`` says which and why).
 
+**One door, a document always dated** (MICRO-E-PORTA-VERSIONI-COLORI, E.D.
+15–16 Nov 2026): :func:`s3dgraphy.door.bring_in` brings files into ONE
+Document — a new ``D.nn`` or one there — and refuses one without a date
+(``data.absolute_time_start``, «Quando è stato fatto questo documento?»). The
+epoch a model represents is another answer: it goes to the model
+(``EpochNode ──has_representation_model──▶ RM``), never to the Document, so the
+walk above never reads a model's epoch as its Document's date (D.09: made in
+2026, representing the II A.D.). A file already in the graph is published by
+the Document, not duplicated; a mesh brought in with a tileset can be its
+source (a ``tiling`` step, :func:`~s3dgraphy.resources.graph_compose.declare_tileset_master`).
+
+**A master replaced** (MICRO-E): :func:`s3dgraphy.resources.master_swap.replace_master`
+points the model at a new master and records it with the DTC's own
+``transformation`` (``technique: "master replacement"``, who and when); the old
+master stays with the Documents that published the model (``has_linked_resource``),
+and its versions carry ``data.regenerate`` — every target counts them missing,
+never the master in their place. :func:`~s3dgraphy.resources.master_swap.promote_version`
+makes the richest version the master.
+
+**Colour schemes** (MICRO-E): :mod:`s3dgraphy.color_schemes` reads and writes
+EM Tools' ``.emc`` (``{metadata: {property_name, …}, color_mapping: {value:
+[r, g, b, a]}}``, Blender's scene-linear floats, gamma 2.2) and spreads its
+scales (``em_color_ramps.json``) as EM Tools does; a property scheme is a VIEW,
+never written in the graph. The epochs' colours are the graph's
+(``data.color``).
+
 Custom rules
 ------------
 
