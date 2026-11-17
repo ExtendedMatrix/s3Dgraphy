@@ -139,7 +139,9 @@ def _author_label(node: Any) -> str:
     name = _first(data, "name") or getattr(node, "name", "") or ""
     surname = _first(data, "surname")
     if surname and name:
-        return f"{surname}, {name}"
+        # MICRO-K §B5: «Demetrescu, Emanuel», not «Demetrescu, Emanuel Demetrescu»
+        from ..person_name import byline
+        return byline(name, surname) or f"{surname}, {name}"
     return str(surname or name or getattr(node, "node_id", ""))
 
 

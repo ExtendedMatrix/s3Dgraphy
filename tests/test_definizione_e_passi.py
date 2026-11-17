@@ -231,3 +231,19 @@ def test_a_virtual_unit_lives_in_its_epoch_whatever_was_ticked():
 def test_a_continuity_closes_the_life_in_its_epoch():
     e = _lives().chronology()["SU2"]
     assert e["end"] == 1800.0 and e["end_life"]["status"] == "ended_undated"
+
+
+# ── B5 · a person's name, never the surname twice ───────────────────────────
+
+def test_a_name_that_carries_the_surname_is_not_doubled():
+    from s3dgraphy.person_name import byline, compose_name
+    assert compose_name("Emanuel Demetrescu", "Demetrescu") == "Emanuel Demetrescu"
+    assert compose_name("Emanuel", "Demetrescu") == "Emanuel Demetrescu"
+    assert compose_name("Ana", "Anastasiu") == "Ana Anastasiu"
+    assert compose_name("Dev User", "nosurname") == "Dev User"
+    assert byline("Emanuel Demetrescu", "Demetrescu") == "Demetrescu, Emanuel"
+    from s3dgraphy.nodes.author_node import AuthorNode
+    from s3dgraphy.resolvers.builtin_rules import _format_author
+    a = AuthorNode("A1", "A.01")
+    a.data.update({"name": "Emanuel Demetrescu", "surname": "Demetrescu"})
+    assert _format_author(a) == "Emanuel Demetrescu"

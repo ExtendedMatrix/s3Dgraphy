@@ -313,7 +313,9 @@ def _format_author(author_node):
     surname = data.get("surname")
     # Skip sentinel defaults from the legacy constructor
     if name and name != "noname" and surname and surname != "nosurname":
-        return f"{name} {surname}".strip()
+        # MICRO-K §B5: never the surname twice (a name that already carries it)
+        from ..person_name import compose_name
+        return compose_name(name, surname)
     if name and name != "noname":
         return name
     if surname and surname != "nosurname":

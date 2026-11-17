@@ -167,7 +167,7 @@ def echoes(description: Any, definition: Any) -> bool:
     a, b = _fold(_text(description)), _fold(_text(definition))
     if not a or not b:
         return False
-    return a == b or SequenceMatcher(None, a, b).ratio() >= ECHO_RATIO
+    return a == b or SequenceMatcher(None, a, b, autojunk=False).ratio() >= ECHO_RATIO
 
 
 def echoes_emjson(section: Mapping[str, Any]) -> List[Dict[str, Any]]:
