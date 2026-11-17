@@ -296,15 +296,19 @@ declared on the node datamodel (kind ``sheet_sign``). The levels of a place
 (``LocationNodeGroup.level``) have their names in em-place-level, ``ambiente``
 among them (kind functional).
 
-**Three entries, two texts** (MICRO-J §C): the description says what is seen;
-the INTERPRETATION is a PropertyNode ``interpretation`` with its chain; the
-DEFINITION is the element ``data.definition``, a term. The PropertyNode
-``definition`` of the EM 1.5 GraphML templates is the historical spelling of
-``interpretation`` (``property_names.definition.alias_of``): the GraphML
-importer reads it as ``interpretation``, and
-:mod:`s3dgraphy.migrations.definition_to_interpretation` renames an existing
-graph's in place — a plan first, then a delta of ``update_field`` and its undo,
-ids and chain untouched.
+**One node, two texts** (MICRO-K-DEFINIZIONE-E-PASSI, E.D. 17 Nov 2026;
+nodes 1.6.48, qualia 1.6.13 — withdraws the rule of MICRO-J §C): the
+DEFINITION is the VALUE of the unit's PropertyNode ``definition``, a short
+sentence with its chain; a term may classify it on the same node
+(``data.concept``); the INTERPRETATION is the DESCRIPTION of that node, none
+while it equals the value; the DESCRIPTION of the unit is its own field. The
+element ``data.definition`` is deprecated and still read. Read by
+:mod:`s3dgraphy.definition`; RDF types the unit from the concept.
+
+**The chronology reads the life** (MICRO-K §B2): ``Graph.chronology`` takes a
+unit's base bounds from :func:`s3dgraphy.unit_life.unit_life` (relation
+``unit_life``), so a unit still existing ends at the limit of the latest
+epoch, not of the epochs ticked by hand.
 
 Custom rules
 ------------

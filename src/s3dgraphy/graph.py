@@ -759,7 +759,8 @@ class Graph:
                         'UT', 'UT0', 'district')
 
     #: Where a bound can come from, in :meth:`chronology`'s ``rule`` field.
-    CHRONOLOGY_RULES = ('written', 'cited', 'epoch', 'sub_epoch', 'contained', 'tpq', 'taq')
+    CHRONOLOGY_RULES = ('written', 'cited', 'epoch', 'sub_epoch', 'continuity', 'contained',
+                        'tpq', 'taq')
 
     def _chronology_nodes(self):
         nodes = []
@@ -795,9 +796,24 @@ class Graph:
         ``written``    a PropertyNode ``absolute_time_start/end`` on the node
                        itself (relation ``has_property``, source that
                        PropertyNode).
-        ``epoch``      the node's epochs (min start / max end over
-                       ``has_first_epoch`` + ``survive_in_epoch``); the source is
-                       the epoch that gives the bound.
+        ``epoch``      the node's epochs; the source is the epoch that gives
+                       the bound. For a UNIT (a stratigraphic node, BR and SE
+                       excepted) the epochs are those of its LIFE
+                       (:func:`s3dgraphy.unit_life.unit_life`, MICRO-K §B2, E.D.
+                       17 Nov 2026): the start is the start of its birth epoch
+                       (relation ``has_first_epoch``), the end the limit of the
+                       last epoch its life reaches — a real unit with no
+                       continuity is still existing and reaches the latest
+                       epoch, a virtual one lives in its birth epoch, a
+                       continuity closes either in its epoch (relation
+                       ``unit_life``; ``end_life`` says the status). The
+                       ``survive_in_epoch`` written by hand no longer move a
+                       bound: the life implies or contradicts them. A node
+                       that is not a unit, or a unit with no birth epoch,
+                       reads min start / max end over ``has_first_epoch`` +
+                       ``survive_in_epoch`` as before.
+        ``continuity`` the end of a unit closed by a DATED continuity (BR):
+                       its date, source the continuity, relation ``unit_life``.
         ``sub_epoch``  the same, when the node's epoch is a SUB-EPOCH whose bound
                        comes from its parent (``has_sub_epoch``, 1.6.47: the
                        sub-epoch restricts its parent's interval — a bound it
@@ -856,6 +872,10 @@ class Graph:
                     known.add(nid)
         # the epochs' effective intervals, sub-epochs restricted by their parent
         self._epoch_iv = self.epoch_intervals(warnings=sink)
+        # the lives of the units (MICRO-K §B2): one index for all of them
+        from .resolvers.provenance import EdgeIndex
+        self._life_ix = EdgeIndex(self)
+        self._life_end = {}
 
         # Pass 0: stratigraphic cycles (AI-extracted graphs can close loops).
         self._warn_on_stratigraphic_cycles(sink)
@@ -878,6 +898,8 @@ class Graph:
                 if found[1] == "written":
                     written[node.node_id] = found[0]
         self._epoch_iv = None
+        self._life_ix = None
+        life_end, self._life_end = self._life_end, {}
 
         # Pass 2: what the node contains (a container is not older than its
         # contents). Beside a written start, never over it.
@@ -918,6 +940,8 @@ class Graph:
                     entry[side + "_root"] = st[side + "_root"]
             if "contained" in st:
                 entry["contained"] = st["contained"]
+            if st.get("end_relation") == "unit_life" and nid in life_end:
+                entry["end_life"] = life_end[nid]
             out[nid] = entry
         return out
 
@@ -1000,6 +1024,9 @@ class Graph:
         intervals = getattr(self, "_epoch_iv", None)
         if intervals is None:
             intervals = self.epoch_intervals()
+        life = self._life_bound(node, side, intervals)
+        if life is not None:
+            return life
         values, seen = [], set()
         for edge_type in ("has_first_epoch", "survive_in_epoch"):
             for epoch in self.get_connected_epoch_nodes_list_by_edge_type(node, edge_type):
@@ -1018,6 +1045,42 @@ class Graph:
         if iv.get(side + "_rule") == "sub_epoch":
             return best, "sub_epoch", iv[side + "_source"], "has_sub_epoch"
         return best, "epoch", epoch.node_id, edge_type
+
+    def _life_bound(self, node, side, intervals):
+        """A UNIT's bound from its LIFE (MICRO-K §B2), or None when the node
+        is not a unit or its life has no birth epoch: ``(value, rule, source,
+        relation)`` as :meth:`_base_bound`."""
+        from .nodes.stratigraphic_node import StratigraphicNode
+        if (not isinstance(node, StratigraphicNode)
+                or getattr(node, "node_type", "") in ("BR", "SE")):
+            return None
+        from .unit_life import unit_life
+        ix = getattr(self, "_life_ix", None)
+        life = unit_life(self, node.node_id, index=ix)
+        if life["birth"] is None:
+            return None
+
+        def epoch_bound(eid, which, relation):
+            iv = intervals.get(eid) or {}
+            v = iv.get(which)
+            if v is None:
+                return None
+            if iv.get(which + "_rule") == "sub_epoch":
+                return float(v), "sub_epoch", iv[which + "_source"], "has_sub_epoch"
+            return float(v), "epoch", eid, relation
+
+        if side == "start":
+            return epoch_bound(life["birth"], "start", "has_first_epoch")
+        store = getattr(self, "_life_end", None)
+        if store is not None:
+            store[node.node_id] = {"status": life["status"], "why": life["why"],
+                                   "end_kind": life["end_kind"]}
+        if life["status"] == "ended" and life["end_value"] is not None:
+            return float(life["end_value"]), "continuity", life["continuity"], "unit_life"
+        limit = life.get("end_limit_of")
+        if limit is None:
+            return None
+        return epoch_bound(limit, "end", "unit_life")
 
     def epoch_intervals(self, warnings=None):
         """The EFFECTIVE interval of every epoch, sub-epochs included.

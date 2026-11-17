@@ -7,6 +7,14 @@ from .paradata_node import ParadataNode
 #: E.D. 28 Oct 2026). Same spelling as ``geometry.proxy.GEOMETRY_PROPERTY_TYPE``.
 GEOMETRY_PROPERTY = "geometry"
 
+#: The property whose description is its own text once it says more than the
+#: value (MICRO-K-DEFINIZIONE-E-PASSI, E.D. 17 Nov 2026): the PropertyNode
+#: ``definition`` holds the DEFINITION in its value («fondazione in opera
+#: cementizia») and the INTERPRETATION, the argued text of the ICCD sheet, in
+#: its description — one node, one chain of sources for both. While the two
+#: are equal (every EM GraphML template) there is no interpretation.
+DEFINITION_PROPERTY = "definition"
+
 _UUID_RE = re.compile(
     r"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$")
 
@@ -197,6 +205,14 @@ class PropertyNode(ParadataNode):
         return (d.get("property_type") == GEOMETRY_PROPERTY
                 or d.get("name") == GEOMETRY_PROPERTY)
 
+    def interpreted(self) -> bool:
+        """The ``definition`` property: its description is the interpretation,
+        a text of its own once it differs from the value (see
+        :data:`DEFINITION_PROPERTY`)."""
+        d = self.__dict__
+        return DEFINITION_PROPERTY in (str(d.get("property_type") or "").strip().lower(),
+                                       str(d.get("name") or "").strip().lower())
+
     def _raw(self, attr, value):
         object.__setattr__(self, attr, value)
         if attr == "value":
@@ -212,6 +228,9 @@ class PropertyNode(ParadataNode):
             return
         tv, td = _as_text(v), _as_text(d)
         if tv is None or td is None:
+            return
+        if tv and td and self.interpreted():
+            # a definition and its interpretation: two texts, both kept
             return
         if tv and tv != td:
             self._raw("description", tv)
@@ -232,6 +251,21 @@ class PropertyNode(ParadataNode):
             return
         tv_old, td_old = _as_text(old_v), _as_text(old_d)
         was_aligned = tv_old is not None and tv_old == (td_old or "")
+        if self.interpreted():
+            # the value is the definition, the description its interpretation:
+            # a new value carries the description along only while the two are
+            # one (no interpretation yet, or none written); writing the
+            # description never touches the value — unless there is no value
+            # at all, the EM writer that keeps it in the description alone
+            if attr == "value":
+                t = _as_text(value)
+                if t is not None and not is_uuid_pointer(value) and (was_aligned or not td_old):
+                    object.__setattr__(self, "description", t)
+            else:
+                t = _as_text(value)
+                if t and not tv_old:
+                    self._raw("value", t)
+            return
         if attr == "value":
             if is_uuid_pointer(value):
                 return

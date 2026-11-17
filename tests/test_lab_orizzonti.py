@@ -114,14 +114,17 @@ def test_horizons_of_unit_epoch_and_graph():
     g = _graph()
     c, _, _ = _with_periodizations(g)
     names = lambda hs: [h["name"] for h in hs]
-    # US2 lives in Roman (-100..300): Impero AND Tardo antico (overlap)
-    assert names(P.horizons_of(c, g, "US2")) == ["Impero", "Tardo antico"]
+    # US2 is born in Roman (-100..300): Impero AND Tardo antico (overlap) — and,
+    # a real unit with no continuity being still existing, the chronology reads
+    # its life (MICRO-K §B2): it reaches the latest epoch, Medioevo too
+    assert names(P.horizons_of(c, g, "US2")) == ["Impero", "Tardo antico", "Medioevo"]
     assert names(P.horizons_of(c, g, "EP_M")) == ["Medioevo"]
     assert names(P.horizons_of(c, g, None)) == ["Impero", "Tardo antico", "Medioevo"]
     assert names(P.horizons_of(c, g, "US1", periodization_id="PB")) == ["Postantico"]
     assert P.horizons_of(c, g, "US1", periodization_id="PB", enabled_only=True) == []
     by_node = P.horizons_by_node(c, g)
-    assert by_node["US3"] == ["H1", "H2"] and by_node["G1"] == ["H1", "H2", "H3"]
+    # US3, still existing like US2 (MICRO-K §B2), reaches H3 as well
+    assert by_node["US3"] == ["H1", "H2", "H3"] and by_node["G1"] == ["H1", "H2", "H3"]
 
 
 def test_one_horizon_is_valid_for_every_graph_of_the_container():
@@ -180,7 +183,11 @@ def test_sub_epoch_restricts_the_parent():
     assert chron["U1"]["start"] == -100.0
     assert (chron["U1"]["start_rule"], chron["U1"]["start_source"], chron["U1"]["start_relation"]) == (
         "sub_epoch", "EP", "has_sub_epoch")
-    assert (chron["U1"]["end_rule"], chron["U1"]["end_source"]) == ("epoch", "PH1")
+    # MICRO-K §B2: U1 is a real unit with no continuity — still existing, its
+    # end the limit of the latest epoch its life reaches (EP), not of PH1
+    assert (chron["U1"]["end_rule"], chron["U1"]["end_source"], chron["U1"]["end_relation"]) == (
+        "epoch", "EP", "unit_life")
+    assert chron["U1"]["end_life"]["status"] == "still_existing"
     assert chron["U2"]["end"] == 300.0 and chron["U2"]["end_rule"] == "sub_epoch"
     assert "sub_epoch" in Graph.CHRONOLOGY_RULES
 

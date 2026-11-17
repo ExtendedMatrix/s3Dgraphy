@@ -1359,7 +1359,7 @@ class RDFExporter:
 
         # The unit's DEFINITION — an element of the node, declared (and its
         # projection with it) in the node datamodel.
-        self._serialize_definition(node, node_iri, ctx)
+        self._serialize_definition(node, node_iri, ctx, g)
 
         # A node element whose value is a TYPE (the end of a unit): its concept,
         # and the class the type decides.
@@ -1490,7 +1490,7 @@ class RDFExporter:
                    f"original, {s.get('translations_stale', 0)} to realign)"
                    if s.get("translations") else ""))
 
-    def _serialize_definition(self, node: Any, node_iri: URIRef, ctx) -> None:
+    def _serialize_definition(self, node: Any, node_iri: URIRef, ctx, g=None) -> None:
         """Project the DEFINITION of a unit (datamodel 1.6.9). THE one place.
 
         What is emitted is not decided here but read from the datamodel entry
@@ -1509,16 +1509,30 @@ class RDFExporter:
           label as a literal. Either way the case is counted in
           ``stats["definitions_label_only"]``.
         * no definition, or a node type that does not declare one → nothing.
+
+        Since node datamodel 1.6.48 the term is read first from the unit's
+        PropertyNode ``definition`` (``data.concept``, the projection declared
+        on ``PropertyNode.properties.concept``, the same as the element's);
+        the deprecated element ``data.definition`` only when that has none.
         """
         rule = self.datamodel.get_node_element_rule(node, "definition")
         if not rule:
             return
-        data = getattr(node, "data", None)
-        value = data.get("definition") if isinstance(data, dict) else None
-        if value is None:
-            value = getattr(node, "definition", None)
         from ..nodes.stratigraphic_node import definition_parts
-        concept, label = definition_parts(value)
+        concept = label = None
+        if g is not None:
+            # 1.6.48 (MICRO-K §A): the term of the unit's PropertyNode
+            # `definition` (data.concept) first — the element is deprecated
+            from ..definition import of_unit
+            d = of_unit(g, node)
+            if d["from"] == "property" and (d["concept"] or d["concept_label"]):
+                concept, label = d["concept"], d["concept_label"]
+        if not (concept or label):
+            data = getattr(node, "data", None)
+            value = data.get("definition") if isinstance(data, dict) else None
+            if value is None:
+                value = getattr(node, "definition", None)
+            concept, label = definition_parts(value)
         rdf = rule.get("rdf") or {}
         if concept:
             predicate = _resolve_prefixed(rdf.get("with_concept"))

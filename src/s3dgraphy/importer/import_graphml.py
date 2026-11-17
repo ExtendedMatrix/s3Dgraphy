@@ -536,12 +536,9 @@ class GraphMLImporter:
         # lossless for qualia-style properties.
         self._restore_property_metadata_from_side_channel(tree)
 
-        # em_qualia_types 1.6.12 (MICRO-J §C, E.D. 17 Nov 2026): the property
-        # the EM 1.5 templates call ``definition`` is an INTERPRETATION (a text
-        # with its chain); the unit's definition is the element data.definition,
-        # a term. Same node, same id, chain intact — only the name changes.
-        from ..migrations import definition_to_interpretation as _d2i
-        self.renamed_definitions = _d2i.apply(self.graph)
+        # em_qualia_types 1.6.13 (MICRO-K §A, E.D. 17 Nov 2026): the property
+        # the EM templates call ``definition`` IS the definition — imported as
+        # it is written, never renamed (the 1.6.12 rename is withdrawn).
 
         # Arricchisci i master document con i valori delle PropertyNode collegate
         self._enrich_canonical_documents()

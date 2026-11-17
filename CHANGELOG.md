@@ -5,6 +5,44 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Changed
+- **The definition is the property; the interpretation its description**
+  (MICRO-K-DEFINIZIONE-E-PASSI, E.D. 17 November 2026 — withdraws the rule of
+  MICRO-J §C). The DEFINITION of a unit is the VALUE of its PropertyNode
+  `definition` (a short sentence, with its chain); an optional term classifies
+  it on the same node (`data.concept`, node datamodel 1.6.48
+  `PropertyNode.properties.concept`); the INTERPRETATION, the argued text of the
+  ICCD sheet, is the DESCRIPTION of that same node — none while it equals the
+  value. `PropertyNode`: the value-in-two-places rule bends for `definition`
+  (`DEFINITION_PROPERTY`, `interpreted()`): two different texts survive birth, a
+  new value carries the description only while the two are one, writing the
+  description never moves the value (unless the value is empty). New
+  `s3dgraphy.definition` (`split`, `of_unit`, `of_unit_emjson`, `echoes`,
+  `echoes_emjson`: the description that repeats the definition, said, never
+  corrected — 28 units on Templu Mare v10). `StratigraphicNode.data.definition`
+  is DEPRECATED (read, no longer written); RDF `crm:P2_has_type` leaves from the
+  concept of the definition PropertyNode first. em_qualia_types 1.6.13:
+  `property_names._rule` rewritten, `definition` loses `alias_of`,
+  `interpretation` is `legacy` (read when the definition has no
+  interpretation: Templu Mare v10 USV108, T43). **Removed**:
+  `s3dgraphy.migrations.definition_to_interpretation` (never applied to a
+  document: the v10 was not migrated, and the rename is now wrong) and the
+  GraphML importer's rename (`renamed_definitions`). Tests in
+  `test_definizione_e_passi.py`.
+- **When a representation was acquired** (node datamodel 1.6.48, the MICRO-A
+  proposal approved by E.D. on 14 November 2026): `data.acquired` and
+  `data.valid_until` on RM, RMDoc, RMSF, the container and DocumentNode.
+  `attribution.acquired_of` (own → DTC capture → publishing document →
+  container); `dating_warnings` · `model_vs_document` reads the own
+  `acquired` first (then the DTC, then the container), and says from where.
+- **The computed chronology reads the life of the units**
+  (`Graph.chronology`, MICRO-K §B2): a unit's base bounds come from
+  `unit_life` — start of the birth epoch, end at the limit of the last epoch
+  its life reaches (still existing → the latest epoch; virtual → its epoch;
+  a continuity → its epoch, or its date: rule `continuity`); relation
+  `unit_life` and `end_life` (status, why) on the entry. Hand-written
+  `survive_in_epoch` no longer move a bound. Templu Mare v10: 47 units change
+  end (43 from 199 to 2026, T15 among them), 0 change start.
+
 - **Three corrections of E.D. to the life of a unit and the dating warnings**
   (MICRO-C-CORREZIONI-ED, 14 November 2026). `unit_life`: a unit is «real»
   by the `family` the node datamodel declares for its subtype (US, SF, RSF,

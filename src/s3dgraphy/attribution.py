@@ -23,7 +23,7 @@ warnings and the «Pulisci»:
 
 from __future__ import annotations
 
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from .resolvers.provenance import (CONTAINER_TYPE, MEMBER_DATED_TYPES, MODEL_TYPES, EdgeIndex,
                                    _ix, lane_epochs, masters_of, model_epochs, resolve_provenance,
@@ -292,11 +292,70 @@ def acquisition_dates(graph, model_id: str, *, index: Optional[EdgeIndex] = None
     return {"start": min(years), "end": max(years), "acquisitions": acqs}
 
 
+def _acquired_span(v) -> Optional[Tuple[float, float]]:
+    """``(start, end)`` years of a ``data.acquired`` value: a year, an ISO
+    date, or an interval ``{start, end}`` (a long campaign)."""
+    if isinstance(v, dict):
+        a, b = _year_of(v.get("start")), _year_of(v.get("end"))
+        if a is None and b is None:
+            return None
+        return (a if a is not None else b, b if b is not None else a)
+    y = _year_of(v)
+    return None if y is None else (y, y)
+
+
+def acquired_of(graph, model_id: str, *, index: Optional[EdgeIndex] = None,
+                publisher: bool = True) -> Dict[str, Any]:
+    """WHEN a representation was MADE (node datamodel 1.6.48, ``data.acquired``;
+    the MICRO-A proposal approved by E.D. on 14 Nov 2026, MICRO-K §B1):
+    ``{start, end, from, by, acquisitions}`` or ``{start: None, from: None…}``.
+
+    Precedence: its OWN ``data.acquired`` → the DTC acquisition of the capture
+    family that produced its resources (:func:`acquisition_dates`) → the
+    DOCUMENT that publishes it (its own ``data.acquired``, else its start;
+    skipped with ``publisher=False``, as the warning that compares the two
+    does) → its CONTAINER's ``data.acquired``. ``from`` says which: ``own``,
+    ``dtc``, ``document``, ``container``; ``by`` the node that said it."""
+    ix = _ix(graph, index)
+    none = {"start": None, "end": None, "from": None, "by": None, "acquisitions": []}
+
+    def own(nid):
+        node = ix.node(nid)
+        d = getattr(node, "data", None) or {}
+        return _acquired_span(d.get("acquired"))
+
+    got = own(model_id)
+    if got:
+        return {**none, "start": got[0], "end": got[1], "from": "own", "by": model_id}
+    dtc = acquisition_dates(graph, model_id, index=ix)
+    if dtc["start"] is not None:
+        return {**none, **dtc, "from": "dtc",
+                "by": (dtc["acquisitions"] or [None])[0]}
+    if publisher:
+        for et in ("has_representation_model", "has_representation_model_doc"):
+            for d in ix.sources(model_id, et):
+                if ix.nt(d) != "document":
+                    continue
+                got = own(d)
+                if not got:
+                    ds, de = _span(graph, ix, d)
+                    if ds["level"] in ("node", "swimlane") and ds["value"] is not None:
+                        got = (float(ds["value"]), float(ds["value"]))
+                if got:
+                    return {**none, "start": got[0], "end": got[1], "from": "document", "by": d}
+    for c in ix.targets(model_id, "is_in_representation_model_group"):
+        got = own(c)
+        if got:
+            return {**none, "start": got[0], "end": got[1], "from": "container", "by": c}
+    return none
+
+
 def dating_warnings(graph, *, index: Optional[EdgeIndex] = None) -> List[Dict[str, Any]]:
     """``[{rule, id, name, other, other_name, message, fix}]``:
 
     * ``model_vs_document`` — a model (RM, RMDoc, RMSF) MADE (its acquisition
-      date, :func:`acquisition_dates`) outside the dates of the Document that
+      date: its own ``data.acquired``, else the DTC, else its container —
+      :func:`acquired_of` without the publisher) outside the dates of the Document that
       publishes it (own or its epoch's; a Document with a start only is that
       year). Not what the model represents (MICRO-C-CORREZIONI-ED, E.D. 14 Nov
       2026): silent when no acquisition date can be read; no cure of its own
@@ -319,7 +378,9 @@ def dating_warnings(graph, *, index: Optional[EdgeIndex] = None) -> List[Dict[st
         nt = ix.nt(nid)
         if nt in MODEL_TYPES:
             ms, me = _span(graph, ix, nid)
-            acq = acquisition_dates(graph, nid, index=ix)
+            # MICRO-K §B1: the representation's own `acquired` (then the DTC,
+            # then its container) — never the document it is compared with
+            acq = acquired_of(graph, nid, index=ix, publisher=False)
             pubs = [s for et in ("has_representation_model", "has_representation_model_doc")
                     for s in ix.sources(nid, et) if ix.nt(s) == "document"]
             for d in dict.fromkeys(pubs) if acq["start"] is not None else ():
@@ -332,11 +393,14 @@ def dating_warnings(graph, *, index: Optional[EdgeIndex] = None) -> List[Dict[st
                     continue
                 a = f"{acq['start']:g}" + ("" if acq["end"] == acq["start"] else f"–{acq['end']:g}")
                 b = f"{d0:g}" + ("" if d1 == d0 else f"–{d1:g}")
+                said = (", ".join(_name(ix, x) for x in acq["acquisitions"]) if acq["from"] == "dtc"
+                        else "proprio" if acq["from"] == "own"
+                        else f"container {_name(ix, acq['by'])}")
                 out.append({"rule": "model_vs_document", "id": nid, "name": _name(ix, nid),
                             "other": d, "other_name": _name(ix, d),
-                            "message": f"{_name(ix, nid)} acquisito {a} "
-                                       f"({', '.join(_name(ix, x) for x in acq['acquisitions'])}), "
+                            "message": f"{_name(ix, nid)} acquisito {a} ({said}), "
                                        f"il documento {_name(ix, d)} {b}",
+                            "acquired_from": acq["from"],
                             "fix": None, "acquired": [acq["start"], acq["end"]],
                             "acquisitions": acq["acquisitions"]})
             if ms["level"] not in own_levels:
