@@ -1,6 +1,6 @@
 {
  "schema": "s3Dgraphy_datamodel_translations",
- "version": "1.16",
+ "version": "1.17",
  "languages": [
   "en",
   "it",
@@ -9358,6 +9358,27 @@
   }
  },
  "property_names": {
+  "interpretation": {
+   "label": {
+    "en": "Interpretation",
+    "validated_it": true,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Interpretazione",
+    "de": "Interpretation",
+    "el": "Ερμηνεία",
+    "he": "פרשנות",
+    "es": "Interpretación",
+    "pl": "Interpretacja",
+    "ro": "Interpretare",
+    "fr": "Interprétation"
+   }
+  },
   "definition": {
    "label": {
     "en": "Definition",

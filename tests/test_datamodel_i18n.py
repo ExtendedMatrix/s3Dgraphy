@@ -187,7 +187,7 @@ def test_property_names_are_labelled_and_are_not_qualia():
     t._doc.cache_clear()
     qualia = json.loads(t.QUALIA.read_text(encoding="utf-8"))
     en = t._collect_property_names_en(qualia)
-    assert set(en) == {"definition", "material"}
+    assert set(en) == {"definition", "material", "interpretation"}  # interpretation: 1.6.12
     assert not any(k.startswith("_") for k in en)
     ids = set(t._collect_qualia_en(qualia)["qualia"])
     assert not (set(en) & ids)
@@ -196,9 +196,11 @@ def test_property_names_are_labelled_and_are_not_qualia():
     assert t.property_name_label("definition", "it") == "Definizione"
     assert t.property_name_label("material", "xx") == "Material"
     assert t.property_name_label("riser_depth", "it") is None
-    for name in en:
+    for name in ("definition", "material"):
         for lang in ("it", "de"):
             assert t.is_validated("property_names", name, "label", lang) is True
+    # 1.6.12: interpretation, validated in it (E.D.'s word); de waits for a person
+    assert t.is_validated("property_names", "interpretation", "label", "it") is True
     # E.D.'s words for the dating qualia
     assert t.qualia_label("absolute_time_start", "it") == "Data di inizio"
     assert t.qualia_label("absolute_time_end", "it") == "Data di fine"

@@ -282,6 +282,30 @@ represents goes to its model as for any model. A bucket's object
 page at a time, a search by name) enters by its ``s3://`` address and stays in
 the bucket.
 
+**The sheet says where it writes** (MICRO-J-SCHEDA-SPEC-VOCABOLARI, E.D. 17 Nov
+2026; nodes 1.6.47, qualia 1.6.12, translations 1.17). Recording and revision
+are ACTS to trace: an ``ActivityNodeGroup`` with ``data.act_kind`` (excavation,
+recording, revision — the module em-documentation-act of
+ExtendedMatrix/vocabularies), ``data.act_start`` (the time of the act, as on
+extractors and combiners) and its author by ``has_author``; the unit
+``is_in_activity`` of it. An activity without ``act_kind`` is a narrative one,
+as before, and a view that draws activities as boxes leaves an act out. The
+unit carries its record's status (``data.record_status``: from_field, revised).
+The sign of a recording-sheet box (``data.scheda``, ``data.scheda_links``) is
+declared on the node datamodel (kind ``sheet_sign``). The levels of a place
+(``LocationNodeGroup.level``) have their names in em-place-level, ``ambiente``
+among them (kind functional).
+
+**Three entries, two texts** (MICRO-J §C): the description says what is seen;
+the INTERPRETATION is a PropertyNode ``interpretation`` with its chain; the
+DEFINITION is the element ``data.definition``, a term. The PropertyNode
+``definition`` of the EM 1.5 GraphML templates is the historical spelling of
+``interpretation`` (``property_names.definition.alias_of``): the GraphML
+importer reads it as ``interpretation``, and
+:mod:`s3dgraphy.migrations.definition_to_interpretation` renames an existing
+graph's in place — a plan first, then a delta of ``update_field`` and its undo,
+ids and chain untouched.
+
 Custom rules
 ------------
 
