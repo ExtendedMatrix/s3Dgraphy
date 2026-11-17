@@ -29,6 +29,16 @@ when it reads it:
 
 PROJ (``pyproj``) is needed by :func:`relocate_transform` only, and imported
 there: the reading of the frame works without it.
+
+MICRO-P-GEOREF-PER-GRAFO (E.D., 17 Nov 2026) · a frame may say the DATUM
+OPERATION of its CRS, ``"datum_operation": "EPSG:<code>"`` — the same meaning
+as the GeoPositionNode's: the operation the file's coordinates were taken to
+WGS 84 with (Stereo 70: EPSG:1645). Written only when the file and its graph
+stand on two models of the Earth; read and kept here (normalised as
+``api.normalise_datum_operation`` does; a malformed one is dropped by the
+reading, never guessed). Absent = PROJ's best, as before. The georeference
+lives on each GRAPH (its GeoPositionNode), never on the file that holds the
+graphs: a frame says how one model differs from its own graph.
 """
 
 from __future__ import annotations
@@ -64,9 +74,20 @@ def normalise_crs(crs: Any) -> Optional[str]:
     return s
 
 
+def _datum_operation(value: Any) -> Optional[str]:
+    """``api.normalise_datum_operation``, None for a malformed value (a reading
+    never fails on it: the operation is then PROJ's best, as when absent)."""
+    from ..api import normalise_datum_operation
+    try:
+        return normalise_datum_operation(value)
+    except ValueError:
+        return None
+
+
 def make_frame(crs: Any, shift: Sequence[Any], note: str = "",
-               source: str = "") -> Dict[str, Any]:
-    """A frame as the datamodel writes it: numbers, never strings."""
+               source: str = "", datum_operation: Any = None) -> Dict[str, Any]:
+    """A frame as the datamodel writes it: numbers, never strings.
+    ``datum_operation`` is checked (``ValueError`` for a malformed one)."""
     sh = [(_num(v) or 0.0) for v in list(shift or [])[:3]]
     sh += [0.0] * (3 - len(sh))
     out: Dict[str, Any] = {"crs": normalise_crs(crs), "shift": sh}
@@ -76,6 +97,9 @@ def make_frame(crs: Any, shift: Sequence[Any], note: str = "",
         if source not in SOURCES:
             raise ValueError(f"frame.source is one of {SOURCES}, not {source!r}")
         out["source"] = source
+    if datum_operation not in (None, ""):
+        from ..api import normalise_datum_operation
+        out["datum_operation"] = normalise_datum_operation(datum_operation)
     return out
 
 
@@ -99,6 +123,9 @@ def read_frame(data: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
     for k in ("note", "source"):
         if f.get(k):
             out[k] = str(f[k])
+    op = _datum_operation(f.get("datum_operation"))
+    if op:
+        out["datum_operation"] = op
     return out
 
 

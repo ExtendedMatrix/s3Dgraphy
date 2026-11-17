@@ -5,6 +5,17 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Changed
+- **A frame may say its datum operation** (MICRO-P-GEOREF-PER-GRAFO, E.D.
+  17 November 2026). `data.frame` — a model's own coordinate system, «CRS X
+  minus shift S» (1.6.38) — keeps `datum_operation` («EPSG:<code>», the
+  GeoPositionNode's meaning: the operation its CRS's datum is taken to WGS 84
+  with), written only when the model and its graph stand on two models of the
+  Earth. `geometry.frame.make_frame(…, datum_operation=)` checks it with
+  `api.normalise_datum_operation`; `read_frame` keeps it normalised and drops a
+  malformed one (never guessed); `set_frame` keeps it. A frame written before
+  reads as it did. The georeference stays on each GRAPH (its GeoPositionNode),
+  never on the file. No datamodel bump: the `structure` of ResourceNode.frame
+  should name the key at the next one. `tests/test_frame_datum_operation.py`.
 - **The definition is the property; the interpretation its description**
   (MICRO-K-DEFINIZIONE-E-PASSI, E.D. 17 November 2026 — withdraws the rule of
   MICRO-J §C). The DEFINITION of a unit is the VALUE of its PropertyNode
