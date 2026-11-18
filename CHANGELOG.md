@@ -5,6 +5,41 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Changed
+- **The vocabulary manager of the machine** (MICRO-PL02-GESTORE-DEI-VOCABOLARI,
+  row W20 of the extensions plan, 18 November 2026). New `s3dgraphy.vocabularies`
+  over MICRO-U's packages (same folder, same `.emvocab.zip`, index compiled
+  here). **Versions side by side**: one folder per version
+  (`<vocab_dir>/<id>/<version>/`; a MICRO-U flat folder is read and becomes its
+  version at the next install), `vocab_installed()` gives the newest with
+  `versions`, `all_versions=True` one row each; `concept_of(uri, vocabulary,
+  version)` resolves a value with the version it was saved with. **Who brings
+  it, who owns it**: `carriers` (`vocabularies`, `node:<host>`,
+  `extension:<id>`, `user`, `local`), `owner` (`owner_of`: the package of a
+  `…/profile/<name>/vocab/` IRI, `vocabularies` for EM and redistributed
+  external schemes, the local copy for tier C), `copy_of`. **The three cases of
+  a duplicate** (SPEC-pacchetto §16.7): same digest = one more carrier; another
+  version = side by side; same version, another digest = the owner's copy wins
+  (replacing a copy installed before it), else the first installed — a warning
+  in EN and IT in the answer and in the manager's log (`vocab_log`).
+  **Install from a package**: `install_extension_vocabularies` reads
+  `em-extension.toml` (`[[data.vocabularies]]`; tomllib, tomli on 3.9/3.10) and
+  validates every vocabulary before writing any — scheme and `owl:versionInfo`
+  inside the file (`scheme_versions`), digest, tier against licence
+  (`tier_for_license`, `check_tier`: a less prudent tier refused), tier C only
+  as a pointer (`fetch`). **Tier C by hand**: `vocab_fetch_local(id, data=)`
+  takes the file the person downloaded, checked against `fetch.digest`.
+  **Removal keeps** (D-19): `vocab_release(carrier, purge=False)`,
+  `vocab_carried_only_by`; `vocab_remove(id, version=)`. A node serves what it
+  has: `vocab_package_bytes` (tiers A/B only). **Labels through verified
+  alignments**: `authorities.alignments` (`install_alignments` of a
+  `vocabularies` alignment file, `aligned_concepts`, `aligned_label`);
+  `terms.value_label` shows the label of a concept a person VERIFIED as matching
+  when the value's vocabulary has none in the language asked (`from:
+  alignment`, `via`) — a `proposed` row never speaks. **Node datamodel 1.6.49**:
+  `PropertyNode.properties.concept` widened — shape `{concept, label, lang?,
+  vocabulary?, version?}`, `applies_when` `{property_type: definition,
+  or_controlled_field: true}` (what MICRO-U wrote without a bump); mappings
+  re-stamped. `tests/test_vocabulary_manager.py`.
 - **Connector API 1.1: a delta can change and remove** (MICRO-PL01-CONTRATTO-1.1,
   row W5 of the extensions plan, 18 November 2026). `contract.Delta.ops` carries
   the CRDT's `update_field` (or `remove: true`), `remove_node`, `remove_edge`

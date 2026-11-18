@@ -101,7 +101,8 @@ def test_install_compiles_the_index_here_and_lists_it(installed):
     idx = P.vocab_index("iccd-ra-materia")
     # the hierarchy from narrower AND from the broader IRI repaired in the index only
     assert idx["concepts"][ICCD + "031.001"]["broader"] == [ICCD + "031"]
-    src = (P.vocab_dir() / "iccd-ra-materia" / "source" / "m.rdf").read_bytes()
+    # MICRO-PL02: one folder per version (<id>/<version>/)
+    src = (P.vocab_folder("iccd-ra-materia") / "source" / "m.rdf").read_bytes()
     assert src == RDFXML                       # the source as published
 
 

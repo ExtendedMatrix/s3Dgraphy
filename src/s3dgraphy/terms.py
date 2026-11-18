@@ -45,6 +45,7 @@ import json
 from functools import lru_cache
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple
 
+from .authorities import alignments as _al
 from .authorities import packages as _pk
 
 #: the data key of the term on a PropertyNode
@@ -62,6 +63,8 @@ VOCABULARY_WARNING_KINDS = (KIND_UNCONTROLLED, KIND_MISSING_VOCABULARY)
 FROM_VOCABULARY = "vocabulary"
 FROM_STORED = "stored"
 FROM_TEXT = "text"
+#: the label came from a concept a person VERIFIED as matching (MICRO-PL02)
+FROM_ALIGNMENT = "alignment"
 
 
 # ── the controlled fields ───────────────────────────────────────────────────
@@ -210,14 +213,19 @@ def value_label(node: Any, lang: Optional[str] = None, *,
                 embedded: Optional[Mapping[str, Any]] = None) -> Dict[str, Any]:
     """What to SHOW for a node's value in ``lang``.
 
-    The label in ``lang`` from the INSTALLED vocabulary (or from the copy of
-    its terms in the file, ``embedded`` = the document's ``vocabularies``
-    section); else the label saved with the value; and when the vocabulary is
-    neither installed nor copied, the sign ``missing_vocabulary``. A value only
-    text is shown as it is.
+    The label in ``lang`` from the INSTALLED vocabulary — the version the
+    value was saved with first — (or from the copy of its terms in the file,
+    ``embedded`` = the document's ``vocabularies`` section); else, when that
+    vocabulary has no label in ``lang``, the label in ``lang`` of a concept an
+    installed alignment VERIFIED as matching (``from: alignment``, with
+    ``via``: AAT «limestone» shown «calcare» through the ICCD); else its label
+    in the language the value was written in; else the label saved with the
+    value; and when the vocabulary is neither installed nor copied, the sign
+    ``missing_vocabulary``. A value only text is shown as it is.
 
     Returns ``{text, lang, from, concept, missing_vocabulary, vocabulary,
-    attribution}`` — ``from`` one of ``vocabulary`` / ``stored`` / ``text``.
+    attribution}`` — ``from`` one of ``vocabulary`` / ``alignment`` /
+    ``stored`` / ``text``.
     """
     _, _, value, _ = _fields(node)
     term = term_of(node)
@@ -226,7 +234,7 @@ def value_label(node: Any, lang: Optional[str] = None, *,
         return {"text": text, "lang": None, "from": FROM_TEXT, "concept": None,
                 "missing_vocabulary": False, "vocabulary": None, "attribution": None}
     stored = term["label"] or ("" if value is None else str(value)) or term["concept"]
-    found = _pk.concept_of(term["concept"], term.get("vocabulary"))
+    found = _pk.concept_of(term["concept"], term.get("vocabulary"), term.get("version"))
     vocab, attribution, concept = term.get("vocabulary"), None, None
     if found:
         summary, concept = found
@@ -236,8 +244,16 @@ def value_label(node: Any, lang: Optional[str] = None, *,
         if concept is not None and vocab:
             attribution = ((embedded.get("used") or {}).get(vocab) or {}).get("attribution")
     if concept is not None:
-        hit = (_pk.label_in(concept, lang) if lang else None) or (
-            _pk.label_in(concept, term["lang"]) if term.get("lang") else None)
+        hit = _pk.label_in(concept, lang) if lang else None
+        if hit is None and lang:
+            via = _al.aligned_label(term["concept"], lang)
+            if via is not None:
+                return {"text": via["text"], "lang": via["lang"], "from": FROM_ALIGNMENT,
+                        "concept": term["concept"], "missing_vocabulary": False,
+                        "vocabulary": vocab, "attribution": attribution,
+                        "via": {k: via[k] for k in ("concept", "vocabulary", "match", "attribution")}}
+        if hit is None and term.get("lang"):
+            hit = _pk.label_in(concept, term["lang"])
         if hit is not None:
             return {"text": hit[0], "lang": hit[1], "from": FROM_VOCABULARY,
                     "concept": term["concept"], "missing_vocabulary": False,
@@ -468,6 +484,7 @@ def embedded_concept(section: Mapping[str, Any], uri: str) -> Optional[Dict[str,
 __all__ = [
     "TERM_KEY", "VOCABULARIES_KEY", "KIND_UNCONTROLLED", "KIND_MISSING_VOCABULARY",
     "WARNING_CATEGORY", "VOCABULARY_WARNING_KINDS", "FROM_VOCABULARY", "FROM_STORED", "FROM_TEXT",
+    "FROM_ALIGNMENT",
     "quale_of", "controlled_quale", "is_controlled", "make_term", "term_of", "set_term",
     "clear_term", "value_label", "vocabulary_warnings", "same_text", "candidates", "link",
     "used_terms", "read_section", "declare", "embedded_concept",

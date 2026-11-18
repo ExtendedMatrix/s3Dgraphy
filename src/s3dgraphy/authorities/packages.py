@@ -21,6 +21,9 @@ alternative labels, its broader concepts.
 **One folder per machine**, shared by every EM tool (EMStudio, EM Tools, the
 bridge, StratiGraph's server): :func:`vocab_dir` — XDG on Linux, ``~/Library``
 on macOS, ``%APPDATA%`` on Windows, ``EM_VOCABULARIES_DIR`` to say otherwise.
+Since MICRO-PL02 (W20) every version has its own folder (``<id>/<version>/``),
+with who brought it and who owns its scheme: see the manager section below
+and :mod:`s3dgraphy.vocabularies`.
 
 **Three tiers of licence** (decided 20–21 Sep 2026):
 
@@ -414,14 +417,263 @@ def _verify(m: Mapping[str, Any], data: bytes) -> None:
         raise PackageError(f"{m['id']}: the source does not match its sha256 — refused")
 
 
-def _write(m: Dict[str, Any], data: Optional[bytes], origin: str, *, local: bool) -> Dict[str, Any]:
+# ── the manager: versions side by side, carriers, owners (MICRO-PL02, W20) ──
+#
+# A vocabulary is identified by its SCHEME (the IRI of its skos:ConceptScheme,
+# the manifest's ``scheme``; the id when a manifest has none) and its
+# VERSION; the sha256 of its source says whether two copies are the same
+# (SPEC-pacchetto §16.7). Every version lives in its own folder::
+#
+#     <vocab_dir>/<id>/<version>/manifest.json, source/<file>, index.json
+#
+# so a value saved with 0.1.0 keeps resolving with 0.1.0 after 0.2.0 arrives.
+# A folder of MICRO-U (``<id>/manifest.json``, one version) is still read.
+#
+# The manifest of an installed version also says WHO brought it
+# (``carriers``: ``vocabularies`` — the central repository —, ``node:<host>``,
+# ``extension:<id>``, ``user``, ``local``), who OWNS its scheme (``owner``)
+# and whose bytes the copy is (``copy_of``). Removing a package takes its name
+# off ``carriers``; the vocabulary stays, like a font (D-19).
+
+CARRIER_CENTRAL = "vocabularies"
+CARRIER_USER = "user"
+CARRIER_LOCAL = "local"
+EM_VOCAB_NS = "https://w3id.org/extendedmatrix/vocab/"
+_PROFILE_NS_RE = re.compile(r"/profile/([a-z0-9][a-z0-9._-]*)/vocab/")
+#: the log of what the manager decided (duplicates, replacements, releases)
+LOG_FILE = "_log.jsonl"
+
+#: what an install may say, with its sentence in English and Italian
+WARN_DUPLICATE_KEPT = "duplicate_kept"
+WARN_REPLACED_BY_OWNER = "replaced_by_owner"
+
+
+def owner_of(scheme: Optional[str], tier: Optional[str] = None) -> str:
+    """Who answers for a scheme: the package ``<name>`` for an IRI under
+    ``…/profile/<name>/vocab/``, the repository ``vocabularies`` for one under
+    ``https://w3id.org/extendedmatrix/vocab/`` and for an external authority
+    it redistributes (tiers A, B), the local copy for a tier C one (the only
+    copy that may exist)."""
+    s = str(scheme or "")
+    m = _PROFILE_NS_RE.search(s)
+    if m:
+        return f"extension:{m.group(1)}"
+    if s.startswith(EM_VOCAB_NS) or not s:
+        return CARRIER_CENTRAL
+    return CARRIER_LOCAL if tier == TIER_LOCAL else CARRIER_CENTRAL
+
+
+def carrier_of_origin(origin: str) -> str:
+    """The carrier an install from ``origin`` gets when none is said."""
+    o = str(origin or "")
+    if o.startswith("https://github.com/ExtendedMatrix/vocabularies/"):
+        return CARRIER_CENTRAL
+    if o.startswith(("http://", "https://")):
+        return "node:" + urllib.request.urlparse(o).netloc
+    return CARRIER_USER
+
+
+def _vslug(version: Any) -> str:
+    v = re.sub(r"[^A-Za-z0-9._+-]+", "_", str(version or "0")).strip("._") or "0"
+    return v[:80]
+
+
+def _vkey(v: Any):
+    return [(0, int(x), "") if x.isdigit() else (1, 0, x) for x in re.split(r"[.\-+_]", str(v or ""))]
+
+
+def _version_folders(vocab_id: str) -> List[Path]:
+    """The folders of the installed versions of one id (MICRO-U's flat folder
+    counts as one)."""
+    base = vocab_dir() / vocab_id
+    if not base.is_dir():
+        return []
+    if (base / "manifest.json").is_file():
+        return [base]
+    return [p for p in sorted(base.iterdir())
+            if p.is_dir() and not p.name.startswith(".") and (p / "manifest.json").is_file()]
+
+
+def _ids() -> List[str]:
+    root = vocab_dir()
+    if not root.is_dir():
+        return []
+    return [p.name for p in sorted(root.iterdir())
+            if p.is_dir() and not p.name.startswith((".", "_"))]
+
+
+def _read_manifest(folder: Path) -> Optional[Dict[str, Any]]:
+    try:
+        return json.loads((folder / "manifest.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+
+
+def vocab_folder(vocab_id: str, version: Optional[str] = None) -> Optional[Path]:
+    """The folder of an installed version (the newest when none is said)."""
+    folders = _version_folders(vocab_id)
+    if not folders:
+        return None
+    if version is not None:
+        for f in folders:
+            m = _read_manifest(f) or {}
+            if str(m.get("version")) == str(version):
+                return f
+        return None
+    return max(folders, key=lambda f: _rank(_read_manifest(f) or {}))
+
+
+def _rank(m: Mapping[str, Any]):
+    return (str(m.get("snapshot_date") or ""), _vkey(m.get("version")))
+
+
+def _digest_of(m: Mapping[str, Any]) -> Optional[str]:
+    src = m.get("source") or {}
+    if src.get("sha256"):
+        return str(src["sha256"])
+    d = str((m.get("fetch") or {}).get("digest") or "")
+    return d.split(":", 1)[1] if d.startswith("sha256:") else (d or None)
+
+
+def find_installed(scheme_or_id: str, version: Optional[str] = None) -> List[Tuple[Path, Dict[str, Any]]]:
+    """``[(folder, manifest)]`` of the installed copies whose SCHEME (or id) is
+    ``scheme_or_id`` — of one version, or all."""
+    out = []
+    for vid in _ids():
+        for f in _version_folders(vid):
+            m = _read_manifest(f)
+            if not m:
+                continue
+            if scheme_or_id not in (m.get("scheme"), m.get("id")):
+                continue
+            if version is not None and str(m.get("version")) != str(version):
+                continue
+            out.append((f, m))
+    return out
+
+
+def _log(event: Dict[str, Any]) -> None:
     root = vocab_dir()
     root.mkdir(parents=True, exist_ok=True)
-    tmp = Path(tempfile.mkdtemp(prefix=f".{m['id']}-", dir=root))
+    event = dict(event, at=time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()))
+    with open(root / LOG_FILE, "a", encoding="utf-8") as fh:
+        fh.write(json.dumps(event, ensure_ascii=False, sort_keys=True) + "\n")
+
+
+def vocab_log(limit: int = 200) -> List[Dict[str, Any]]:
+    """The last things the manager decided, newest last."""
     try:
-        m = dict(m)
-        m["installed"] = {"from": origin, "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-                          "local_copy": bool(local)}
+        lines = (vocab_dir() / LOG_FILE).read_text(encoding="utf-8").splitlines()
+    except OSError:
+        return []
+    out = []
+    for line in lines[-limit:]:
+        try:
+            out.append(json.loads(line))
+        except ValueError:
+            continue
+    return out
+
+
+def _warning(kind: str, **kw: Any) -> Dict[str, Any]:
+    vid, ver = kw.get("id"), kw.get("version")
+    who = lambda c: str(c or "").split(":", 1)[-1] if str(c or "").startswith("extension:") else c  # noqa: E731
+    new, kept, owner = who(kw.get("carrier")), who(kw.get("kept_from")), who(kw.get("owner"))
+    if kind == WARN_DUPLICATE_KEPT:
+        tail_en = (f"{kept}, which owns the scheme, is used" if kept == owner
+                   else f"the copy installed first ({kept}) is used")
+        tail_it = (f"si usa quello di {kept}, che ne è il padrone" if kept == owner
+                   else f"si usa la copia installata per prima ({kept})")
+        en = (f"{new} brings {vid} {ver} different from the one installed: {tail_en}. "
+              f"Its curators should cite it instead of copying it.")
+        it = (f"{new} porta {vid} {ver} diverso da quello installato: {tail_it}. "
+              f"I curatori di {new} dovrebbero citarlo invece di copiarlo.")
+    elif kind == WARN_REPLACED_BY_OWNER:
+        en = f"{vid} {ver}: the copy of {kept} replaced by the copy of {new}, owner of the scheme."
+        it = f"{vid} {ver}: la copia di {kept} sostituita da quella di {new}, padrone dello schema."
+    else:
+        raise ValueError(kind)
+    return dict(kw, kind=kind, message=en, message_it=it)
+
+
+def _write(m: Dict[str, Any], data: Optional[bytes], origin: str, *, local: bool,
+           carrier: Optional[str] = None) -> Dict[str, Any]:
+    """Place a version, by the three cases of the SPEC-pacchetto §16.7:
+
+    * same scheme, same version, SAME digest → one copy, ``carrier`` added;
+    * same scheme, other version → side by side;
+    * same scheme, same version, OTHER digest → the OWNER's copy wins, else
+      the first installed; a warning, in the answer and in the log.
+
+    Returns the summary of the version, with ``warnings``."""
+    root = vocab_dir()
+    root.mkdir(parents=True, exist_ok=True)
+    m = dict(m)
+    carrier = carrier or (CARRIER_LOCAL if local else carrier_of_origin(origin))
+    ident = m.get("scheme") or m["id"]
+    owner = owner_of(m.get("scheme"), m.get("tier"))
+    digest = hashlib.sha256(data).hexdigest() if data is not None else _digest_of(m)
+    warnings: List[Dict[str, Any]] = []
+    same = find_installed(ident, m["version"])
+    if same:
+        folder, old = same[0]
+        m["id"] = old["id"]
+        carriers = list(old.get("carriers") or [old.get("copy_of") or CARRIER_USER])
+        if carrier not in carriers:
+            carriers.append(carrier)
+        old_ready = bool(old.get("source"))
+        if data is None or (old_ready and _digest_of(old) == digest):
+            # the same copy (or a stub where the copy already is): one more carrier
+            old["carriers"] = carriers
+            old["removed_carriers"] = [c for c in old.get("removed_carriers") or [] if c != carrier]
+            (folder / "manifest.json").write_text(
+                json.dumps(old, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
+            _changed()
+            return dict(_summary(folder), warnings=[])
+        m["carriers"] = carriers
+        if not old_ready:
+            # a stub completed (tier C, «Download locally»)
+            m["copy_of"] = carrier
+        else:
+            kept_from = old.get("copy_of") or carriers[0]
+            if carrier == owner and kept_from != owner:
+                w = _warning(WARN_REPLACED_BY_OWNER, id=old["id"], version=m["version"],
+                             carrier=carrier, kept_from=kept_from, owner=owner)
+                warnings.append(w)
+                _log(w)
+                m["copy_of"] = carrier
+            else:
+                old["carriers"] = carriers
+                (folder / "manifest.json").write_text(
+                    json.dumps(old, ensure_ascii=False, indent=2, sort_keys=True), encoding="utf-8")
+                w = _warning(WARN_DUPLICATE_KEPT, id=old["id"], version=m["version"],
+                             carrier=carrier, kept_from=kept_from, owner=owner)
+                _log(w)
+                _changed()
+                return dict(_summary(folder), warnings=[w])
+    else:
+        # another version of the same scheme keeps its id (side by side)
+        others = find_installed(ident)
+        if others:
+            m["id"] = others[0][1]["id"]
+        m["carriers"] = [carrier]
+        m["copy_of"] = carrier
+    m["owner"] = owner
+    m["installed"] = {"from": origin, "at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                      "local_copy": bool(local)}
+    base = root / m["id"]
+    legacy = base / "manifest.json"
+    if legacy.is_file():
+        # MICRO-U's flat folder becomes the folder of its version
+        old = _read_manifest(base) or {}
+        moved = Path(tempfile.mkdtemp(prefix=".legacy-", dir=root))
+        for p in list(base.iterdir()):
+            shutil.move(str(p), str(moved / p.name))
+        moved.rename(base / _vslug(old.get("version")))
+    base.mkdir(parents=True, exist_ok=True)
+    tmp = Path(tempfile.mkdtemp(prefix=f".{m['id']}-", dir=root))
+    final = base / _vslug(m["version"])
+    try:
         if data is not None:
             dest = tmp / m["source"]["file"]
             dest.parent.mkdir(parents=True, exist_ok=True)
@@ -433,7 +685,6 @@ def _write(m: Dict[str, Any], data: Optional[bytes], origin: str, *, local: bool
                 m["languages"] = index["languages"]
         (tmp / "manifest.json").write_text(json.dumps(m, ensure_ascii=False, indent=2, sort_keys=True),
                                            encoding="utf-8")
-        final = root / m["id"]
         if final.exists():
             shutil.rmtree(final)
         tmp.rename(final)
@@ -441,58 +692,134 @@ def _write(m: Dict[str, Any], data: Optional[bytes], origin: str, *, local: bool
         if tmp.exists():
             shutil.rmtree(tmp, ignore_errors=True)
     _changed()
-    return _summary(root / m["id"])
+    return dict(_summary(final), warnings=warnings)
 
 
-def vocab_install(source: Any) -> Dict[str, Any]:
+def vocab_install(source: Any, *, carrier: Optional[str] = None) -> Dict[str, Any]:
     """Install a package: a ``.emvocab.zip`` on disk, a folder, an URL (the
     central repository's release, a StratiGraph node's
     ``/v1/vocabularies/<id>.emvocab.zip``), or the bytes of one. The source is
     checked against its sha256 and the index compiled here. A tier C package
     that carries its source is REFUSED (it should not exist: nobody may hand
     it on); its stub (manifest only) installs, and :func:`vocab_fetch_local`
-    completes it. Returns the installed summary."""
+    completes it. ``carrier`` says who brings it (default: from where it
+    comes). Returns the installed summary, with ``warnings`` (duplicates)."""
     m, data, origin = _read_package(source)
     if m["tier"] == TIER_LOCAL and data is not None:
         raise PackageError(f"{m['id']}: tier C — its source may not be handed on; "
                            f"install the manifest alone and use vocab_fetch_local")
     if data is not None:
         _verify(m, data)
-    return _write(m, data, origin, local=False)
+    return _write(m, data, origin, local=False, carrier=carrier)
 
 
-def vocab_fetch_local(vocab_id: str, *, fetch: Optional[Callable[[str], bytes]] = None) -> Dict[str, Any]:
-    """Tier C: go to the source named by the manifest (``fetch.url``) and keep
-    the copy on THIS machine only, index compiled here. ``fetch`` replaces the
-    download (tests, a node's proxy)."""
-    folder = vocab_dir() / vocab_id
-    try:
-        m = json.loads((folder / "manifest.json").read_text(encoding="utf-8"))
-    except FileNotFoundError as exc:
-        raise PackageError(f"{vocab_id}: not installed (install its manifest first)") from exc
+def vocab_fetch_local(vocab_id: str, *, fetch: Optional[Callable[[str], bytes]] = None,
+                      data: Any = None, version: Optional[str] = None) -> Dict[str, Any]:
+    """Tier C, «Download locally»: the source named by the manifest
+    (``fetch.url``) kept on THIS machine only, index compiled here. Phase 1:
+    ``data`` is the file the person downloaded by hand from the source's page
+    (``fetch.terms``) — its bytes or its path; without it the URL is fetched
+    (``fetch`` replaces the download: tests, a node's proxy). A ``fetch.digest``
+    (``sha256:…``) is checked: a different file is refused."""
+    folder = vocab_folder(vocab_id, version)
+    m = _read_manifest(folder) if folder else None
+    if m is None:
+        raise PackageError(f"{vocab_id}: not installed (install its manifest first)")
     m = check_manifest(m, stub_ok=True)
     spec = m.get("fetch") or {}
     if not spec.get("url"):
         raise PackageError(f"{vocab_id}: the manifest does not say where to fetch from")
-    data = (fetch or _fetch)(spec["url"])
     fname = spec.get("file") or Path(spec["url"].split("?")[0]).name or "source.rdf"
+    if data is None:
+        blob = (fetch or _fetch)(spec["url"])
+        origin = spec["url"]
+    elif isinstance(data, (bytes, bytearray)):
+        blob, origin = bytes(data), "file"
+    else:
+        p = Path(str(data)).expanduser()
+        blob, origin = p.read_bytes(), str(p)
+        if not spec.get("file") and p.suffix.lower() in SOURCE_FORMATS:
+            fname = p.name
+    want = str(spec.get("digest") or "")
+    got = hashlib.sha256(blob).hexdigest()
+    if want and want.split(":", 1)[-1] != got:
+        raise PackageError(f"{vocab_id}: the file is not the one the manifest names "
+                           f"(sha256 {got[:12]}…, expected {want.split(':', 1)[-1][:12]}…) — refused")
     fmt = spec.get("format") or SOURCE_FORMATS.get(Path(fname).suffix.lower())
-    m["source"] = {"file": f"source/{fname}", "format": fmt,
-                   "sha256": hashlib.sha256(data).hexdigest(),
-                   "retrieved_from": spec["url"],
+    m["source"] = {"file": f"source/{fname}", "format": fmt, "sha256": got,
+                   "retrieved_from": spec["url"] if data is None else f"{spec['url']} (by hand: {origin})",
                    "retrieved_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())}
     m = check_manifest(m)
-    return _write(m, data, spec["url"], local=True)
+    return _write(m, blob, spec["url"], local=True, carrier=CARRIER_LOCAL)
 
 
-def vocab_remove(vocab_id: str) -> bool:
-    """Remove an installed vocabulary. False when it was not there."""
-    folder = vocab_dir() / vocab_id
-    if not _ID_RE.match(vocab_id or "") or not folder.is_dir():
+def vocab_remove(vocab_id: str, version: Optional[str] = None) -> bool:
+    """Remove an installed vocabulary — one version, or all of them — by the
+    person's hand (the manager's «Remove»). False when it was not there."""
+    if not _ID_RE.match(vocab_id or ""):
         return False
-    shutil.rmtree(folder)
+    base = vocab_dir() / vocab_id
+    if version is None:
+        if not base.is_dir():
+            return False
+        shutil.rmtree(base)
+    else:
+        folder = vocab_folder(vocab_id, version)
+        if folder is None:
+            return False
+        shutil.rmtree(folder)
+        if base.is_dir() and not any(p for p in base.iterdir() if not p.name.startswith(".")):
+            shutil.rmtree(base)
+    _log({"kind": "removed", "id": vocab_id, "version": version})
     _changed()
     return True
+
+
+def vocab_carried_only_by(carrier: str) -> List[Dict[str, Any]]:
+    """The versions nobody but ``carrier`` brings — what the unticked box
+    «remove also the vocabularies nobody else brings» lists by name."""
+    out = []
+    for vid in _ids():
+        for f in _version_folders(vid):
+            m = _read_manifest(f) or {}
+            if list(m.get("carriers") or []) == [carrier]:
+                out.append({"id": m.get("id"), "version": m.get("version"),
+                            "title": m.get("title"), "scheme": m.get("scheme")})
+    return out
+
+
+def vocab_release(carrier: str, *, purge: bool = False) -> Dict[str, Any]:
+    """A package goes away: its name leaves ``carriers`` everywhere. A version
+    nobody brings any more STAYS (like a font, D-19), «installed by X,
+    removed», unless ``purge`` (the box, unticked by default). Returns
+    ``{released, removed, orphaned}`` as ``[{id, version}]``."""
+    released, removed, orphaned = [], [], []
+    for vid in _ids():
+        for f in _version_folders(vid):
+            m = _read_manifest(f) or {}
+            cs = list(m.get("carriers") or [])
+            if carrier not in cs:
+                continue
+            cs.remove(carrier)
+            item = {"id": m.get("id"), "version": m.get("version")}
+            released.append(item)
+            if not cs and purge:
+                vocab_remove(m["id"], m.get("version"))
+                removed.append(item)
+                continue
+            m["carriers"] = cs
+            gone = list(m.get("removed_carriers") or [])
+            if carrier not in gone:
+                gone.append(carrier)
+            m["removed_carriers"] = gone
+            (f / "manifest.json").write_text(json.dumps(m, ensure_ascii=False, indent=2, sort_keys=True),
+                                             encoding="utf-8")
+            if not cs:
+                orphaned.append(item)
+    if released:
+        _log({"kind": "released", "carrier": carrier, "removed": removed, "orphaned": orphaned})
+    _changed()
+    return {"released": released, "removed": removed, "orphaned": orphaned}
 
 
 def _summary(folder: Path) -> Dict[str, Any]:
@@ -513,25 +840,64 @@ def _summary(folder: Path) -> Dict[str, Any]:
     out["status"] = status
     out["local_copy"] = bool((m.get("installed") or {}).get("local_copy"))
     out["installed_from"] = (m.get("installed") or {}).get("from")
+    out["carriers"] = list(m.get("carriers") or [])
+    out["removed_carriers"] = list(m.get("removed_carriers") or [])
+    out["orphan"] = not out["carriers"] and bool(out["removed_carriers"])
+    out["owner"] = m.get("owner") or owner_of(m.get("scheme"), m.get("tier"))
+    out["copy_of"] = m.get("copy_of")
+    out["sha256"] = _digest_of(m)
+    if m.get("fetch"):
+        out["fetch"] = {k: v for k, v in m["fetch"].items() if k in ("url", "terms", "digest")}
     if problem:
         out["problem"] = problem
     return out
 
 
-def vocab_installed() -> List[Dict[str, Any]]:
-    """Every vocabulary installed on this machine, by id."""
-    root = vocab_dir()
-    if not root.is_dir():
-        return []
-    return [_summary(p) for p in sorted(root.iterdir())
-            if p.is_dir() and not p.name.startswith(".")]
+def vocab_installed(*, all_versions: bool = False) -> List[Dict[str, Any]]:
+    """The vocabularies installed on this machine, by id: the NEWEST version
+    of each, with ``versions`` (every version, newest first, each with its
+    carriers). ``all_versions`` gives one row per version instead."""
+    out = []
+    for vid in _ids():
+        rows = [_summary(f) for f in _version_folders(vid)]
+        if not rows:
+            continue
+        rows.sort(key=lambda r: (r.get("snapshot_date") or "", _vkey(r.get("version"))), reverse=True)
+        if all_versions:
+            out.extend(rows)
+            continue
+        head = dict(rows[0])
+        head["versions"] = [{k: r.get(k) for k in ("version", "snapshot_date", "status", "carriers",
+                                                  "removed_carriers", "orphan", "copy_of", "sha256")}
+                            for r in rows]
+        out.append(head)
+    return out
 
 
-def vocab_manifest(vocab_id: str) -> Optional[Dict[str, Any]]:
-    try:
-        return json.loads((vocab_dir() / vocab_id / "manifest.json").read_text(encoding="utf-8"))
-    except (OSError, ValueError):
-        return None
+def vocab_manifest(vocab_id: str, version: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    folder = vocab_folder(vocab_id, version)
+    return _read_manifest(folder) if folder else None
+
+
+def vocab_package_bytes(vocab_id: str, version: Optional[str] = None) -> bytes:
+    """The ``.emvocab.zip`` of an installed version, rebuilt from its folder —
+    what a node serves. Only tiers A and B: a tier C copy never leaves the
+    machine (:class:`PackageError`)."""
+    folder = vocab_folder(vocab_id, version)
+    m = _read_manifest(folder) if folder else None
+    if m is None:
+        raise PackageError(f"{vocab_id}: not installed")
+    if not redistributable(m):
+        raise PackageError(f"{vocab_id}: tier {m.get('tier')} — not redistributable")
+    if not m.get("source"):
+        raise PackageError(f"{vocab_id}: no source here")
+    out = {k: v for k, v in m.items()
+           if k not in ("installed", "carriers", "removed_carriers", "copy_of", "owner")}
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as z:
+        z.writestr("manifest.json", json.dumps(out, ensure_ascii=False, indent=2, sort_keys=True))
+        z.write(folder / m["source"]["file"], m["source"]["file"])
+    return buf.getvalue()
 
 
 def vocab_catalog(url: str = CENTRAL_CATALOG_URL, *,
@@ -590,9 +956,13 @@ def vocab_updates(catalog: Optional[Iterable[Mapping[str, Any]]] = None) -> List
 _INDEX_CACHE: Dict[str, Tuple[float, Dict[str, Any]]] = {}
 
 
-def vocab_index(vocab_id: str) -> Optional[Dict[str, Any]]:
-    """The compiled index of an installed vocabulary (cached; None if absent)."""
-    path = vocab_dir() / vocab_id / "index.json"
+def vocab_index(vocab_id: str, version: Optional[str] = None) -> Optional[Dict[str, Any]]:
+    """The compiled index of an installed vocabulary — the version asked, else
+    the newest (cached; None if absent)."""
+    folder = vocab_folder(vocab_id, version)
+    if folder is None:
+        return None
+    path = folder / "index.json"
     try:
         mtime = path.stat().st_mtime
     except OSError:
@@ -608,20 +978,32 @@ def vocab_index(vocab_id: str) -> Optional[Dict[str, Any]]:
     return idx
 
 
-def ready_vocabularies() -> List[Tuple[Dict[str, Any], Dict[str, Any]]]:
-    """``[(summary, index)]`` of every installed vocabulary that has an index."""
+def ready_vocabularies(*, all_versions: bool = False) -> List[Tuple[Dict[str, Any], Dict[str, Any]]]:
+    """``[(summary, index)]`` of the installed vocabularies that have an index:
+    the newest ready version of each id (``all_versions``: every one)."""
     out = []
-    for s in vocab_installed():
-        if s.get("status") == STATUS_READY:
-            idx = vocab_index(s["id"])
-            if idx:
-                out.append((s, idx))
+    for s in vocab_installed(all_versions=True):
+        if s.get("status") != STATUS_READY:
+            continue
+        if not all_versions and any(o[0]["id"] == s["id"] for o in out):
+            continue          # rows come newest first
+        idx = vocab_index(s["id"], s.get("version"))
+        if idx:
+            out.append((s, idx))
     return out
 
 
-def concept_of(uri: str, vocabulary: Optional[str] = None) -> Optional[Tuple[Dict[str, Any], Dict[str, Any]]]:
-    """``(summary, concept)`` of an URI in the installed vocabularies — the one
-    named first, then any."""
+def concept_of(uri: str, vocabulary: Optional[str] = None,
+               version: Optional[str] = None) -> Optional[Tuple[Dict[str, Any], Dict[str, Any]]]:
+    """``(summary, concept)`` of an URI in the installed vocabularies — the
+    version named first (a value saved with 0.1.0 resolves with 0.1.0), then
+    the vocabulary named, then any."""
+    if vocabulary and version is not None:
+        folder = vocab_folder(vocabulary, version)
+        idx = vocab_index(vocabulary, version) if folder else None
+        c = (idx or {}).get("concepts", {}).get(uri)
+        if c is not None:
+            return _summary(folder), c
     pairs = ready_vocabularies()
     if vocabulary:
         pairs.sort(key=lambda p: p[0]["id"] != vocabulary)
@@ -701,4 +1083,7 @@ __all__ = [
     "vocab_install", "vocab_fetch_local", "vocab_remove", "vocab_installed", "vocab_manifest",
     "vocab_catalog", "vocab_updates", "vocab_index", "ready_vocabularies", "concept_of",
     "label_in", "search",
+    "CARRIER_CENTRAL", "CARRIER_USER", "CARRIER_LOCAL", "WARN_DUPLICATE_KEPT",
+    "WARN_REPLACED_BY_OWNER", "owner_of", "carrier_of_origin", "vocab_folder", "find_installed",
+    "vocab_log", "vocab_carried_only_by", "vocab_release", "vocab_package_bytes",
 ]
