@@ -45,7 +45,8 @@ _OUTSIDE_OK = re.compile(r"^(em-extension\.toml|LICEN[SC]E[^/]*|README[^/]*|CHAN
 #: the closed sets of SPEC-pacchetto §5.2 and §6
 PRIMITIVE_PRODUCES = {"point": ("position", "elevation"), "line": ("length",), "polyline": ("length",),
                       "surface": ("area",), "volume": ("volume",)}
-#: operation → (kind of inputs, min, max); D-9 adds the last two. Executed by W4.
+#: operation → (kind of inputs, min, max); D-9 adds the last two. Executed by
+#: :mod:`s3dgraphy.annotation.combiners` (W4).
 OPERATIONS = {"distance": ("landmark", 2, 2), "angle": ("landmark", 3, 3), "ratio": ("quale", 2, 2),
               "mean": ("any", 1, None), "area_of_polygon": ("landmark", 3, None),
               "elevation_difference": ("landmark", 2, 2), "angle_between_planes": ("landmark", 6, 6),

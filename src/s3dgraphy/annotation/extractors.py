@@ -59,13 +59,16 @@ class PlacedExtractor:
     pose_id: Optional[str] = None
     replaced: List[str] = field(default_factory=list)
     warnings: List[str] = field(default_factory=list)
+    #: the declared combiners computed again because this point moved (W4)
+    recomputed: List[Dict[str, Any]] = field(default_factory=list)
 
     def as_dict(self) -> Dict[str, Any]:
         return {"extractor_id": self.extractor_id, "region_id": self.region_id,
                 "em_kind": self.em_kind, "geometry_kind": self.geometry_kind,
                 "measure": self.measure, "created": self.created,
                 "landmark": self.landmark, "pose_id": self.pose_id,
-                "replaced": list(self.replaced), "warnings": list(self.warnings)}
+                "replaced": list(self.replaced), "warnings": list(self.warnings),
+                "recomputed": list(self.recomputed)}
 
 
 def check_vertices(geometry: Dict[str, Any], vertices: Sequence[Sequence[float]]) -> None:
@@ -260,6 +263,11 @@ def place_landmark(graph: Graph, overlay: Any, set_id: str, point_id: str,
         _ensure_edge(graph, pose_id, placed.extractor_id, _EDGE_COMBINES, sink)
         placed.warnings.extend(sink.warnings)
         placed.pose_id = pose_id
+    if placed.replaced:
+        # the point moved: what the declared combiners computed from it is
+        # computed again (MICRO-PL08, W4) — before anybody reads it stale
+        from .combiners import recompute
+        placed.recomputed = recompute(graph, [placed.extractor_id], author=author)
     return placed
 
 

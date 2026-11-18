@@ -25,6 +25,10 @@ Since 2026-10-06 the region is the place of ANY reading (`geometry_kind`:
 region2d, passage, point, line, polyline) and `place_reading` fixes it for an
 extractor that already exists — see :mod:`.reading`.
 
+Since 2026-11-18 a community package's extractors are placed by
+:mod:`.extractors` (W3) and its declared combiners — an operation of a closed
+set, never a formula — are computed and recomputed by :mod:`.combiners` (W4).
+
 This module is headless on purpose. No endpoint, no UI: those are the "canvas"
 batch, and they will call `create_annotation_paradata`.
 """

@@ -5,6 +5,30 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Changed
+- **The declared combiners** (MICRO-PL08-COMBINATORI-DICHIARATI, row W4 of the
+  extensions plan, D-9, 18 November 2026). Node datamodel **1.6.50 → 1.6.51**.
+  New **`annotation.combiners`**: a package's `combiner_types` are EXECUTED —
+  an operation of the closed set, never a formula: `distance`, `angle` (at
+  the second point), `ratio` (the units made equal), `mean` (of qualia, or
+  the centroid of points), `area_of_polygon`, `elevation_difference` (first −
+  second), and D-9's `angle_between_planes` (0–90°) and `symmetry_index`
+  (bilateral asymmetry of mirror pairs over their mean width). `compute`
+  writes ONE PropertyNode (name = produces, `data.value` the number,
+  `data.unit`, `data.measure`) with the chain unit → has_property → property →
+  has_data_provenance → CombinerNode (`data.em_kind`, `data.combiner` =
+  operation, the inputs bound to extractor / property ids, unit, value,
+  digest) → combines → the extractors (for qualia inputs, those under them) →
+  region → model; idempotent, in the type's unit (a unit not shown: the
+  default, said). `compute_available` computes what the placed points allow,
+  the ratio after the distances it reads, naming what is missing.
+  **Recomputing**: `stale_combiners` (no package needed: what was read is in
+  the node), `recompute(graph, extractor_ids=None)` — those reading the
+  extractors, then those reading their properties; an input gone leaves the
+  value and says `data.combiner.stale`. `place_landmark` recomputes when a
+  point is placed again (`recomputed`). CombinerNode `data.em_kind`,
+  `data.landmark_pose`, `data.combiner` and PropertyNode `data.measure` /
+  `data.unit` described in the datamodel; mappings re-stamped; the two
+  version-pinning tests said out loud. `tests/test_combiners.py` 23.
 - **The geometry of the extractors** (MICRO-PL07-GEOMETRIA-DEGLI-ESTRATTORI,
   row W3 of the extensions plan, D-3, 18 November 2026). Node datamodel
   **1.6.49 → 1.6.50**. `surface` is a `geometry_kind` of the core: a closed
