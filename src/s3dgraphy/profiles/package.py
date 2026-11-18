@@ -764,6 +764,49 @@ def _check_code(pkg: Package, r: Report) -> None:
         r.error("version_bad", ENVELOPE, key="[code].version", value=code["version"])
 
 
+def _check_carried_entries(pkg: Package, carried: List[Dict[str, Any]], r: Report) -> Set[int]:
+    """The head of every ``[[data.vocabularies]]`` with its own code, in EN and
+    IT (W19): scheme and version, the licence, the tier AGAINST the licence
+    (SPEC-pacchetto §16.2, D-16), tier C as a pointer only, the file and its
+    digest. Returns the (1-based) entries flagged, so the manager's planner
+    does not say the same thing again in English only."""
+    from ..vocabularies import TIERS, check_tier, tier_for_license
+    flagged: Set[int] = set()
+    for i, e in enumerate(carried, 1):
+        scheme, version = str(e.get("scheme") or ""), str(e.get("version") or "")
+        tier, lic = e.get("fascia") or e.get("tier"), e.get("license")
+        at = f"[[data.vocabularies]] #{i}"
+        n = len(r.errors)
+        if not scheme or not version:
+            r.error("vocab_entry_key", at)
+        elif not lic:
+            r.error("vocab_license_missing", at, scheme=scheme)
+        elif tier not in TIERS:
+            r.error("vocab_tier_bad", at, scheme=scheme, value=tier, allowed=tier_for_license(lic))
+        elif check_tier(tier, lic):
+            r.error("vocab_tier_less_prudent", at, scheme=scheme, tier=tier, license=lic, allowed=tier_for_license(lic))
+        elif tier == "C":
+            if e.get("path"):
+                r.error("vocab_tier_c_file", at, scheme=scheme, path=e["path"])
+            elif not (e["fetch"].get("url") if isinstance(e.get("fetch"), Mapping) else None):
+                r.error("vocab_tier_c_fetch", at, scheme=scheme)
+        elif not e.get("path"):
+            r.error("vocab_path_missing", at, scheme=scheme, tier=tier)
+        else:
+            path = pkg.data_file(str(e["path"]))
+            if not pkg.source.exists(path):
+                r.error("missing_file", at, path=path)
+            elif not e.get("digest"):
+                r.error("vocab_digest_missing", at, scheme=scheme)
+            else:
+                got = "sha256:" + sha256_hex(pkg.source.read(path))
+                if str(e["digest"]).split(":", 1)[-1] != got[7:]:
+                    r.error("vocab_digest_mismatch", at, scheme=scheme, got=got[:19] + "…")
+        if len(r.errors) > n:
+            flagged.add(i)
+    return flagged
+
+
 def _check_carried(pkg: Package, r: Report) -> None:
     """[[data.vocabularies]] (validated by the vocabulary manager's own planner,
     nothing written) and their coherence with the profile (SPEC §16.1)."""
@@ -771,10 +814,14 @@ def _check_carried(pkg: Package, r: Report) -> None:
     if carried:
         from ..authorities.packages import PackageError
         from ..vocabularies import plan_extension_vocabularies
+        flagged = _check_carried_entries(pkg, carried, r)
         try:
             arg = pkg.source.dir if pkg.source.dir is not None else _zip_bytes(pkg.source)
             plan = plan_extension_vocabularies(arg)
             for p in plan.get("problems") or []:
+                m_ = re.match(r"^\[\[data\.vocabularies\]\] #(\d+)", str(p))
+                if m_ and int(m_.group(1)) in flagged:
+                    continue  # already said above, with its own code
                 r.error("data_vocabulary", ENVELOPE, message=str(p))
         except PackageError as exc:
             r.error("data_vocabulary", ENVELOPE, message=str(exc))

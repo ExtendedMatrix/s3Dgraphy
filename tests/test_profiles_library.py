@@ -171,7 +171,9 @@ def test_a_carried_vocabulary_is_checked_inside_its_file(tmp_path):
     pkg = copy(SEPARATE, tmp_path)
     ttl = pkg / "vocab" / "lavorazione.ttl"
     ttl.write_text(ttl.read_text().replace("subbia", "subbia piatta"))
-    assert "data_vocabulary" in codes(pkg, "error")      # the digest no longer matches
+    # the digest no longer matches — since W19 said with its own code, in EN and IT
+    # (was the planner's English-only «data_vocabulary»)
+    assert "vocab_digest_mismatch" in codes(pkg, "error")
 
 
 def test_a_permission_carries_its_short_reason(tmp_path):

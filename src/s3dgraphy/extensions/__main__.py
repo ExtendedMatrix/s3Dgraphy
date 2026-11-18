@@ -1,11 +1,19 @@
-"""``python -m s3dgraphy.extensions preview|install|update|remove|list``
+"""``python -m s3dgraphy.extensions validate|build|preview|install|update|remove|list``
 
-Installing by parts on the command line (W21), the same calls the Extensions
-window makes. ``validate`` and ``build`` are W19's; until then the validator
-is ``python -m s3dgraphy.profiles validate``.
+The curator's commands (W19), as ``blender --command extension validate|build``:
+
+    validate <folder or zip>… [--json]        the validator of the window; exit 1 on an error
+    build <folder> [--output-dir D] [--dry-run] [--json]
+                                              <id>-<version>.zip, the envelope completed
+                                              (type, vocabularies moved, digests, requires);
+                                              the folder is never written
+
+Installing by parts (W21), the same calls the Extensions window makes:
 
     install <archive> [--data-only] [--trust]   the code needs --trust (the question)
     remove <id> [--code|--data] [--confirm] [--purge-vocabularies]
+
+``--lang it`` says everything in Italian.
 """
 from __future__ import annotations
 
@@ -14,24 +22,78 @@ import json
 import sys
 
 from . import store
+from .build import build
+from .validate import validate_archive
 
 
 def _say(doc, lang: str) -> None:
     print(json.dumps(doc, ensure_ascii=False, indent=2, default=str))
 
 
+def _line(p: dict, lang: str) -> str:
+    return f"  {p['level']:7} {p[lang]}"
+
+
+def _validate(args) -> int:
+    failed, out = False, {}
+    for path in args.paths:
+        r = validate_archive(path)
+        failed |= not r.ok
+        if args.json:
+            out[path] = r.as_dict()
+            continue
+        print(f"{'OK ' if r.ok else 'NO '} {path}")
+        for p in r.problems:
+            print(_line(p.as_dict(), args.lang))
+    if args.json:
+        print(json.dumps(out, ensure_ascii=False, indent=2))
+    return 1 if failed else 0
+
+
+def _build(args) -> int:
+    res = build(args.path, output_dir=args.output_dir, dry_run=args.dry_run)
+    if args.json:
+        _say(res, args.lang)
+        return 0 if res["ok"] else 1
+    head = res["path"] or res["file"] or args.path
+    print(f"{'OK ' if res['ok'] else 'NO '} {head}" + ("" if res["written"] or not res["ok"] else
+                                                      (" (dry run, nothing written)" if args.lang == "en"
+                                                       else " (prova, niente scritto)")))
+    for key in ("changes", "warnings", "errors"):
+        for p in res[key]:
+            print(_line(p, args.lang))
+    if res["ok"]:
+        print(f"  {res['kind']} · {res['files']} files · {res['size']} bytes · {res['archive_hash']}")
+    return 0 if res["ok"] else 1
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="python -m s3dgraphy.extensions")
     ap.add_argument("--lang", default="en", choices=("en", "it"))
+    # --lang before or after the command (``validate x --lang it`` as the profiles' command line)
+    lang = argparse.ArgumentParser(add_help=False)
+    lang.add_argument("--lang", choices=("en", "it"), default=argparse.SUPPRESS)
     sub = ap.add_subparsers(dest="cmd", required=True)
-    p = sub.add_parser("preview", help="what installing would do, nothing written")
+
+    def add(name: str, **kw):
+        return sub.add_parser(name, parents=[lang], **kw)
+
+    v = add("validate", help="validate archives (folder or zip), as the Extensions window does")
+    v.add_argument("paths", nargs="+")
+    v.add_argument("--json", action="store_true")
+    b = add("build", help="build <id>-<version>.zip from a folder (the folder is not written)")
+    b.add_argument("path")
+    b.add_argument("--output-dir", default=None, help="where the zip goes (default: the folder itself)")
+    b.add_argument("--dry-run", action="store_true", help="build and validate in memory, write nothing")
+    b.add_argument("--json", action="store_true")
+    p = add("preview", help="what installing would do, nothing written")
     p.add_argument("path")
     for name in ("install", "update"):
-        i = sub.add_parser(name, help=f"{name} an archive by parts")
+        i = add(name, help=f"{name} an archive by parts")
         i.add_argument("path")
         i.add_argument("--data-only", action="store_true", help="«Data only»: the code is not installed")
         i.add_argument("--trust", action="store_true", help="the answer to the trust question for the code")
-    r = sub.add_parser("remove", help="remove the code, the data or the package")
+    r = add("remove", help="remove the code, the data or the package")
     r.add_argument("id")
     g = r.add_mutually_exclusive_group()
     g.add_argument("--code", action="store_true")
@@ -39,10 +101,14 @@ def main(argv=None) -> int:
     r.add_argument("--confirm", action="store_true", help="remove data another package requires")
     r.add_argument("--purge-vocabularies", action="store_true",
                    help="remove also the vocabularies nobody else brings (off by default)")
-    sub.add_parser("list", help="the installed extensions")
+    add("list", help="the installed extensions")
     args = ap.parse_args(argv)
+    if args.cmd == "validate":
+        return _validate(args)
     try:
-        if args.cmd == "preview":
+        if args.cmd == "build":
+            return _build(args)
+        elif args.cmd == "preview":
             out = store.preview(args.path)
         elif args.cmd in ("install", "update"):
             fn = store.install if args.cmd == "install" else store.update

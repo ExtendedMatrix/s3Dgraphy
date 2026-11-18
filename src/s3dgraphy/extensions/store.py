@@ -33,10 +33,8 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-import platform
 import re
 import shutil
-import sys
 import tempfile
 import time
 from pathlib import Path
@@ -44,8 +42,10 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Set, Tuple
 
 from ..profiles import semver
 from ..profiles import store as _profiles
-from ..profiles.package import ENVELOPE, Package, content_digest, is_code_problem, open_package, validate
+from ..profiles.package import ENVELOPE, Package, content_digest, is_code_problem, open_package
 from ..profiles.problems import ERROR, WARNING, Problem, ProfileError, Report
+from .validate import ARCHIVE_CODE_PROBLEMS, validate_archive
+from .wheels import this_platform, wheel_dist, wheel_platforms
 
 EXTENSIONS_ENV = "S3DGRAPHY_EXTENSIONS_DIR"
 PLUGINS_ENV = "S3DGRAPHY_PLUGINS_DIR"
@@ -121,41 +121,6 @@ def _save_enabled(doc: Dict[str, Any]) -> None:
     _write_json(plugins_dir() / ENABLED_FILE, doc)
 
 
-# ── this machine ────────────────────────────────────────────────────────────
-
-def this_platform() -> str:
-    """``macos-arm64``, ``windows-x64``, ``linux-x64``… (the names of ``platforms``)."""
-    osname = "macos" if sys.platform == "darwin" else "windows" if sys.platform.startswith("win") else "linux"
-    m = platform.machine().lower()
-    arch = "arm64" if m in ("arm64", "aarch64") else "x64" if m in ("x86_64", "amd64", "x64") else m
-    return f"{osname}-{arch}"
-
-
-def wheel_platforms(filename: str) -> Optional[Set[str]]:
-    """The platforms a wheel runs on, from its file name (PEP 427); ``None``
-    for a pure wheel (``…-none-any.whl``)."""
-    parts = Path(filename).name[:-len(".whl")].split("-") if filename.endswith(".whl") else []
-    if len(parts) < 5:
-        return set()
-    out: Set[str] = set()
-    for tag in parts[-1].split("."):
-        if tag == "any":
-            return None
-        osname = "macos" if tag.startswith("macosx") else "windows" if tag.startswith("win") else \
-            "linux" if "linux" in tag else ""
-        if tag.endswith("universal2"):
-            out |= {"macos-arm64", "macos-x64"}
-        elif tag.endswith(("arm64", "aarch64")):
-            out.add(f"{osname}-arm64")
-        elif tag.endswith(("x86_64", "amd64")):
-            out.add(f"{osname}-x64")
-    return out
-
-
-def _wheel_dist(filename: str) -> str:
-    return Path(filename).name.split("-", 1)[0].lower().replace("_", "-")
-
-
 # ── reading an archive ──────────────────────────────────────────────────────
 
 def archive_hash(pkg: Package) -> str:
@@ -202,24 +167,18 @@ def _trust_changes(old: Optional[Mapping[str, Any]], new: Mapping[str, Any]) -> 
 
 
 def _code_checks(pkg: Package, platform_name: str) -> Report:
-    """What the validator does not know: the wheels in the archive, the
-    platform of this machine (SPEC-plugin §17.1)."""
+    """What the validator cannot know: the platform of THIS machine
+    (SPEC-plugin §17.1). The wheels in the archive and the platforms it
+    declares are the validator's (W19, :mod:`.validate`)."""
     r = Report()
     c = _code(pkg)
-    root = (pkg.code_root or "").rstrip("/")
     wheels = [str(w) for w in (c.get("wheels") or [])]
-    files = set(pkg.source.files())
-    for w in wheels:
-        rel = str(Path(root) / w) if root else w
-        rel = pkg.source.norm(rel)
-        if rel not in files:
-            r.error("code_wheel_missing", ENVELOPE, path=w)
     plats = c.get("platforms")
     if isinstance(plats, list) and plats and platform_name not in [str(p) for p in plats]:
         r.error("code_platform", platforms=", ".join(map(str, plats)), platform=platform_name)
     by_dist: Dict[str, List[Optional[Set[str]]]] = {}
     for w in wheels:
-        by_dist.setdefault(_wheel_dist(w), []).append(wheel_platforms(w))
+        by_dist.setdefault(wheel_dist(w), []).append(wheel_platforms(w))
     for dist, plist in sorted(by_dist.items()):
         if not any(p is None or platform_name in p for p in plist):
             r.error("code_no_wheel", dist=dist, platform=platform_name)
@@ -227,7 +186,7 @@ def _code_checks(pkg: Package, platform_name: str) -> Report:
 
 
 def _is_code_problem(p: Problem) -> bool:
-    return p.code == "code_wheel_missing" or is_code_problem(p)
+    return p.code in ARCHIVE_CODE_PROBLEMS or is_code_problem(p)
 
 
 # ── what a package asks of the machine ──────────────────────────────────────
@@ -374,7 +333,7 @@ def _preview(source: Any, *, source_name: str = SOURCE_DISK, platform_name: Opti
     question must be asked (and why again), what ``[requires]`` lacks."""
     pkg = _open(source)
     plat = platform_name or this_platform()
-    report = validate(pkg)
+    report = validate_archive(pkg)
     archive = [p for p in report.errors if not _is_code_problem(p)]
     code_errors = [p for p in report.errors if _is_code_problem(p)]
     if pkg.has_code:

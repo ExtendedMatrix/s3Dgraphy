@@ -180,10 +180,15 @@ def test_a_wheel_missing_or_not_for_this_platform(tmp_path):
     pkg = copy(MIXED, tmp_path)
     set_toml(pkg, r'^(platforms = .*)$', r'\1\nwheels = ["./wheels/numpy-2.1.0-cp311-cp311-macosx_11_0_arm64.whl"]')
     pv = X.preview(pkg, platform_name="macos-arm64")
-    assert [e["code"] for e in pv["code"]["errors"]] == ["code_wheel_missing"] and pv["data"]["installable"]
+    # W19: the validator also says that windows-x64 and linux-x64 are declared with no numpy wheel
+    assert [e["code"] for e in pv["code"]["errors"]] == ["code_wheel_missing"] + ["code_platform_wheel"] * 2
+    assert pv["data"]["installable"]
     (pkg / "code" / "wheels").mkdir()
     (pkg / "code" / "wheels" / "numpy-2.1.0-cp311-cp311-macosx_11_0_arm64.whl").write_bytes(b"PK")
+    assert [e["code"] for e in X.preview(pkg, platform_name="macos-arm64")["code"]["errors"]] == ["code_platform_wheel"] * 2
+    set_toml(pkg, r'^platforms = .*$', 'platforms = ["macos-arm64"]')
     assert X.preview(pkg, platform_name="macos-arm64")["code"]["errors"] == []
+    set_toml(pkg, r'^platforms = .*$', 'platforms = ["macos-arm64", "windows-x64"]')
     out = X.install(pkg, trust=True, platform_name="windows-x64")
     assert out["code"]["reason"]["code"] == "code_invalid"
     assert "no wheel of numpy for windows-x64" in out["code"]["reason"]["en"]
