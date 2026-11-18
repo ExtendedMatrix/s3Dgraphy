@@ -163,6 +163,8 @@ class MultiGraphManager:
             active_graph_id=active_graph_id or getattr(loaded, "active_graph_id", None),
             # MICRO-T · the colour schemes the file carried go back into it
             presentation=dict(getattr(loaded, "presentation", None) or {}),
+            # MICRO-U · and so does the declaration of its vocabularies
+            vocabularies=dict(getattr(loaded, "vocabularies", None) or {}),
         )
         return save_container_file(container, filepath)
 

@@ -11,7 +11,7 @@
 | Editor | Emanuel Demetrescu (CNR-ISPC), ORCID [0000-0002-5065-7970](https://orcid.org/0000-0002-5065-7970) |
 | Source | `spec/em-json/` in the [s3Dgraphy](https://github.com/ExtendedMatrix/s3Dgraphy) repository |
 | Licence | Text: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Schemas and examples: [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) |
-| Status | **Editor's Draft.** 1.2 is a minor, ADDITIVE version: it describes the site, its footprint and the GIS layers (§2.5), and an optional top-level `presentation` (§2.8). No other key of the container changes, the schema of 1.1 validates its files and a reader of 1.1 reads them; writers keep writing `"1.1"` until the editor makes 1.2 a Release. The Release is the editor's decision. |
+| Status | **Editor's Draft.** 1.2 is a minor, ADDITIVE version: it describes the site, its footprint and the GIS layers (§2.5), an optional top-level `presentation` (§2.8), and controlled values with the optional top-level `vocabularies` (§2.9). No other key of the container changes, the schema of 1.1 validates its files and a reader of 1.1 reads them; writers keep writing `"1.1"` until the editor makes 1.2 a Release. The Release is the editor's decision. |
 
 ## 1. What it is for
 
@@ -273,6 +273,63 @@ each graph the one in use.
 - Writers write it only when it holds a scheme, with its keys in a stable order
   (§4.6).
 
+### 2.9 Controlled values and the vocabularies they use (optional)
+
+A value taken from a controlled vocabulary is kept **twice**, always: the
+**code** of the term (its URI — the identity, the same in every language) and
+the **label** written when it was entered, with its **language**, the
+**vocabulary** it came from and its **version**. On a property node they live
+in `data.concept`, the node element the node datamodel declares for a term on
+a PropertyNode (1.6.48), widened from `{concept, label}`:
+
+```json
+{"id": "…", "node_type": "property", "name": "material",
+ "description": "calcare",
+ "data": {"value": "calcare",
+          "concept": {"concept": "http://dati.beniculturali.it/vocabularies/materia_e_tecnica-ra/def/…",
+                      "label": "calcare", "lang": "it",
+                      "vocabulary": "iccd-ra-materia", "version": "2018-09"}}}
+```
+
+- `value` (and `description`) stay the **word**: a reader that does not know
+  `concept` reads what it always read. A reader that has the vocabulary shows
+  the label in its own language; without it, the label saved; and it says that
+  the vocabulary is missing.
+- A field takes its values from a vocabulary when its quale
+  (`em_qualia_types.json`) is a `controlled_vocabulary` with an external
+  `vocabulary_source`. A value there that is only text is valid; readers may
+  call it *not controlled*.
+- A reader never makes a code out of a text: a code is written when a person
+  chooses it.
+
+The file **declares** the vocabularies its values use, as a document declares
+its fonts, in an optional top-level `vocabularies`:
+
+```json
+"vocabularies": {
+  "used": {
+    "iccd-ra-materia": {"version": "2018-09", "snapshot_date": "2018-09-01",
+                        "license": "CC BY-SA 3.0 IT", "tier": "B",
+                        "attribution": "ICCD — …", "versions_used": ["2018-09"],
+                        "concepts_used": 3,
+                        "terms": {"<uri>": {"pref": {"it": "calcare"}, "broader": ["<uri>"]}}}
+  },
+  "embed": true
+}
+```
+
+- `used` is recomputed from the nodes at every write; nothing is written when
+  no value has a code. Like `presentation` (§2.8) it is outside the digest of
+  the work: the codes themselves are on the nodes, and those the digest sees.
+- `terms` — a copy of the terms the file uses, with all their languages — is
+  written only when `embed` is true (off by default) and only for a
+  vocabulary whose licence lets its terms travel (tiers `A`: open, `B`:
+  share-alike); a vocabulary of tier `C` is declared and never copied
+  (`embedded: false`).
+- The vocabularies themselves are installed on the machine, not in the file:
+  packages `em-vocabulary-package/1` (the unmodified source and a manifest),
+  whose index each machine compiles (`s3dgraphy.authorities.packages`).
+
 ## 3. Reading
 
 A conforming reader:
@@ -435,7 +492,10 @@ last resort.
 ## 11. Changes
 
 - **1.2 — Editor's Draft, 30 October 2026.** Additive. Added on 18 November
-  2026 (decided by E.D.): §2.8, the optional top-level `presentation` — named
+  2026 (decided by E.D.): §2.9, controlled values kept twice (`data.concept`:
+  code, label, language, vocabulary, version) and the optional top-level
+  `vocabularies` that declares them, with the copy of the terms used for
+  tiers A and B when `embed` (MICRO-U); §2.8, the optional top-level `presentation` — named
   colour schemes (each a `.emc` document, with the codes of the terms in
   `metadata.value_codes`) and the scheme each graph uses; outside the digest of
   the work. §2.5 describes the site

@@ -225,11 +225,22 @@ def resolve(
         return []
 
     snapshots = _load_snapshots()
+    packages = _installed_packages(facet)
     candidates: List[Dict[str, Any]] = []
     rank = 0
-    for authority in FACET_ORDER[facet]:
+    order = list(FACET_ORDER[facet])
+    order += sorted({p["authority"] or p["id"] for p in packages} - set(order))
+    for authority in order:
+        # MICRO-U · the vocabularies installed on the machine come first, and
+        # a real package replaces the hand-seeded sample of its authority
+        mine = [p for p in packages if (p["authority"] or p["id"]) == authority]
+        for pkg in mine:
+            for hit in _package_hits(term, pkg):
+                rank += 1
+                hit["rank"] = rank
+                candidates.append(hit)
         snap = snapshots.get(authority)
-        if not snap:
+        if not snap or (mine and snap.get("fixture")):
             continue  # no offline snapshot for this authority (hint-only)
         # exact hits first, then close — stable within the authority
         for want in (MATCH_EXACT, MATCH_CLOSE):
@@ -267,6 +278,41 @@ def resolve(
                     cand["broader"] = broader
                 candidates.append(cand)
     return candidates
+
+
+def _installed_packages(facet: str) -> List[Dict[str, Any]]:
+    """The installed vocabulary packages (``packages.vocab_installed``) that
+    serve ``facet``, ready to search."""
+    try:
+        from .packages import STATUS_READY, vocab_installed
+    except Exception:  # noqa: BLE001
+        return []
+    return [p for p in vocab_installed()
+            if p.get("status") == STATUS_READY and str(p.get("facet") or "").upper() == facet]
+
+
+def _package_hits(term: str, pkg: Dict[str, Any]) -> List[Dict[str, Any]]:
+    """The candidates one installed package gives — exact, then close."""
+    from .packages import redistributable, search
+    out = []
+    for c in search(term, vocabularies=[pkg["id"]], limit=50):
+        cand = {
+            "uri": c["uri"], "authority": pkg.get("authority") or pkg["id"],
+            "label": c["label"], "lang": c["lang"], "scheme": pkg.get("scheme"),
+            "match": c["match"],
+            "provenance": {"package": pkg["id"], "version": pkg.get("version"),
+                           "snapshot_date": pkg.get("snapshot_date"),
+                           "attribution": pkg.get("attribution")},
+            "license": pkg.get("license"),
+            "redistributable": "yes" if redistributable(pkg) else "no",
+            "vocabulary": pkg["id"], "version": pkg.get("version"),
+        }
+        if c.get("broader"):
+            cand["broader"] = c["broader"][0]
+        if pkg.get("local_copy"):
+            cand["local"] = True
+        out.append(cand)
+    return out
 
 
 def as_authority_ref(candidate: Dict[str, Any]) -> Dict[str, Any]:

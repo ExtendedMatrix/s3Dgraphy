@@ -59,8 +59,8 @@ def _with_state_warnings(graph: Graph, warnings: List[str]) -> Tuple[Graph, List
     return graph, merged
 
 
-def graph_warnings(graph: Graph, *, recompute: bool = False
-                   ) -> List[Dict[str, Any]]:
+def graph_warnings(graph: Graph, *, recompute: bool = False,
+                   vocabulary: bool = False) -> List[Dict[str, Any]]:
     """The graph's warnings as ``{kind, node_id, message}`` records.
 
     The load path already fills these, so the default is to read them; pass
@@ -73,6 +73,10 @@ def graph_warnings(graph: Graph, *, recompute: bool = False
     reader clicks the warning (for an edge, its source). Edge records also carry
     ``edge_id``, ``target_id`` and the ``candidates`` the datamodel would allow.
 
+    ``vocabulary=True`` adds the subcategory ``vocabulary``
+    (:func:`s3dgraphy.terms.vocabulary_warnings`): ``uncontrolled_value`` and
+    ``missing_vocabulary``, each with ``category: "vocabulary"``.
+
     Warnings that are not state warnings — a stratigraphic cycle, a
     deserialisation note — have no record: this surface does not pretend to know
     what they point at. They remain in ``graph.warnings``.
@@ -81,9 +85,18 @@ def graph_warnings(graph: Graph, *, recompute: bool = False
                                             state_warning_records)
     if recompute:
         recompute_warnings(graph)
-        return list(getattr(graph, "warning_records", []) or [])
-    existing = getattr(graph, "warning_records", None)
-    return list(existing) if existing else state_warning_records(graph)
+        out = list(getattr(graph, "warning_records", []) or [])
+    else:
+        existing = getattr(graph, "warning_records", None)
+        out = list(existing) if existing else state_warning_records(graph)
+    if vocabulary:
+        # MICRO-U · the subcategory «vocabulary» (category: "vocabulary"): a
+        # value only text where the field takes a vocabulary's, a term whose
+        # vocabulary is not installed here. Asked for, not folded into the
+        # load: it depends on what this machine has installed.
+        from .terms import vocabulary_warnings
+        out.extend(vocabulary_warnings(graph))
+    return out
 
 
 def load_emjson(doc: EmJson) -> Tuple[Graph, List[str]]:

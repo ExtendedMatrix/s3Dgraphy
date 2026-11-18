@@ -232,6 +232,13 @@ class Container:
     #: file, :mod:`s3dgraphy.presentation`). Not content: the digest does not
     #: see it. Empty = nothing is written.
     presentation: Dict[str, Any] = field(default_factory=dict)
+    #: MICRO-U (E.D., 18 Nov 2026) · the VOCABULARIES the values use, declared
+    #: like the fonts of a document (``vocabularies`` in the file,
+    #: :func:`s3dgraphy.terms.declare`): recomputed from the terms on the nodes
+    #: at every write; ``{"embed": True}`` asks for the copy of the terms used.
+    #: Not content: the digest does not see it (the terms themselves are on the
+    #: nodes, and those it sees). Nothing is written when no value has a term.
+    vocabularies: Dict[str, Any] = field(default_factory=dict)
 
     def graph_ids(self) -> List[str]:
         return list(self.graphs.keys())
@@ -377,6 +384,8 @@ def parse_container(doc: Dict[str, Any], *,
     from .presentation import read_presentation
     presentation, pres_warnings = read_presentation(doc)
     warnings.extend(pres_warnings)
+    from .terms import read_section as read_vocabularies
+    vocabularies = read_vocabularies(doc)
 
     if not is_container(doc):
         # LEGACY single-graph: read it with the reader that has always read it,
@@ -389,12 +398,13 @@ def parse_container(doc: Dict[str, Any], *,
             layouts={graph.graph_id: file_layout} if file_layout else {},
             version=ProjectVersion.from_dict(doc.get(VERSION_KEY)),
             presentation=presentation,
+            vocabularies=vocabularies,
         )
         return container, warnings + list(graph_warnings)
 
     container = Container(header=header,
                           version=ProjectVersion.from_dict(doc.get(VERSION_KEY)),
-                          presentation=presentation)
+                          presentation=presentation, vocabularies=vocabularies)
     own_layouts: Dict[str, Dict[str, Any]] = {}
     node_ids: Dict[str, List[str]] = {}
     members = doc[GRAPHS_KEY]
@@ -539,6 +549,11 @@ def build_container(container: Container) -> Dict[str, Any]:
     pres = presentation_section(container.presentation)
     if pres:
         doc[PRESENTATION_KEY] = pres
+    # MICRO-U · the vocabularies the values use, like a document's fonts
+    from .terms import VOCABULARIES_KEY, declare
+    vocabs = declare(graphs.values(), container.vocabularies)
+    if vocabs:
+        doc[VOCABULARIES_KEY] = vocabs
     return doc
 
 
