@@ -31,7 +31,7 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Set, Tuple
 
 from . import core
 from . import semver
-from .problems import ProfileError, Report
+from .problems import Problem, ProfileError, Report
 
 PROFILE_FILE = "profile.json"
 ENVELOPE = "em-extension.toml"
@@ -874,6 +874,17 @@ def validate(source: Any) -> Report:
     return r
 
 
+#: the validator's codes about the code section alone: they never keep the data out (SPEC-pacchetto §16.3)
+CODE_PROBLEMS = ("code_entry", "code_hosts", "permission_reason", "permission_unknown")
+
+
+def is_code_problem(p: Problem) -> bool:
+    """A problem of the ``[code]`` section only (W21: the data go in, the code falls alone)."""
+    if p.code in CODE_PROBLEMS:
+        return True
+    return p.code == "version_bad" and str(p.params.get("key", "")).startswith("[code]")
+
+
 def content_digest(pkg: Package, *, section: str = "data") -> str:
     """``sha256:`` over the files of a section (path and bytes, in order of
     path) — what says whether two copies of a version are the same."""
@@ -892,5 +903,5 @@ def content_digest(pkg: Package, *, section: str = "data") -> str:
 
 
 __all__ = ["PROFILE_FILE", "ENVELOPE", "FORMATS", "EXECUTABLE_SUFFIXES", "PRIMITIVE_PRODUCES", "OPERATIONS",
-           "BUILTIN_READERS", "PERMISSIONS", "HOSTS", "Source", "Package", "open_package", "own_types",
+           "BUILTIN_READERS", "PERMISSIONS", "HOSTS", "CODE_PROBLEMS", "is_code_problem", "Source", "Package", "open_package", "own_types",
            "schema_for", "validate_profile", "validate_envelope", "validate", "content_digest", "sha256_hex"]

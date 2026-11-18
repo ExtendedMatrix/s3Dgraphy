@@ -31,7 +31,7 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Tuple
 
 from . import semver
 from .overlay import Profile, ProfileOverlay
-from .package import ENVELOPE, PROFILE_FILE, content_digest, open_package, own_types, validate
+from .package import ENVELOPE, PROFILE_FILE, content_digest, is_code_problem, open_package, own_types, validate
 from .problems import WARNING, Problem, ProfileError
 
 ENV_VAR = "S3DGRAPHY_PROFILES_DIR"
@@ -176,7 +176,8 @@ def find(ref: str, version: Optional[str] = None, *, exact: bool = False) -> Opt
 def install(source: Any, *, vocabularies: bool = True, origin: Optional[str] = None) -> Dict[str, Any]:
     """Install the DATA section of a package (folder, zip, bytes, a bare
     profile or an envelope): validate everything first, nothing written on an
-    error (:class:`ProfileError` with the report); the carried vocabularies to
+    error (:class:`ProfileError` with the report) — an error of the ``[code]``
+    section alone does not keep the data out (SPEC-pacchetto §16.3); the carried vocabularies to
     the vocabulary manager; the rest to ``<name>/<version>/``; the index
     recompiled. Returns ``{name, version, iri, path, digest, status, kind,
     vocabularies, code, warnings}``; ``status`` is ``installed`` or
@@ -185,8 +186,9 @@ def install(source: Any, *, vocabularies: bool = True, origin: Optional[str] = N
     report = validate(pkg)
     m = pkg.profile or {}
     name, version = str(m.get("name") or pkg.id or "?"), str(m.get("version") or "?")
-    if not report.ok:
-        raise ProfileError(f"{name} {version}: " + "; ".join(str(p) for p in report.errors), report)
+    blocking = [p for p in report.errors if not is_code_problem(p)]
+    if blocking:
+        raise ProfileError(f"{name} {version}: " + "; ".join(str(p) for p in blocking), report)
     if not pkg.has_data:
         raise ProfileError(f"{pkg.id}: a package with only code is a plugin — not installed here (W21)", report)
     digest = content_digest(pkg, section="data")
