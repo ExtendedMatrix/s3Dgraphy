@@ -45,8 +45,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple
 
-from .core import (Delta, Descriptor, Refusals, Registry, Result, Slot,  # noqa: F401
-                   invoke, stable_id)
+from .core import (DELTA_OPS, Delta, Descriptor, Refusals, Registry,  # noqa: F401
+                   Result, Slot, invoke, stable_id)
 
 # ── what a connector may declare it does ─────────────────────────────────────
 #
@@ -114,7 +114,30 @@ class Versions:
 
 #: The connector API version. Bumped when a descriptor's SHAPE changes, never for
 #: a new capability (adding one is what the set is for).
-CONNECTOR_API_VERSION = "1.0.0"
+#:
+#: 1.1.0 (MICRO-PL01, 18 Nov 2026): the delta gained ``ops`` — ``update_field``,
+#: ``remove_node``, ``remove_edge`` — so an adapter can correct and remove, not
+#: only add. A minor: a 1.0 delta is a 1.1 delta with no ``ops``, and a 1.0 peer
+#: is still accepted (see :func:`speaks_ops`).
+CONNECTOR_API_VERSION = "1.1.0"
+
+#: The first connector API whose deltas may carry ``ops``. A peer below it is
+#: accepted by the handshake — it reads, and it adds the way it always did — but
+#: a delta of its with ``ops`` is refused at the seam: it declared a language in
+#: which that delta cannot be said, so something between it and here is lying.
+OPS_SINCE = "1.1.0"
+
+
+def speaks_ops(versions: Optional["Versions"]) -> bool:
+    """Whether a peer that declared these versions may send ``ops``.
+
+    Undeclared is *no*: the handshake already treats a silent connector_api as
+    unknown, and a change or a removal is the last thing to grant on a guess."""
+    from ..tools.consumer_drift import version_key
+    api = getattr(versions, "connector_api", None)
+    if not api:
+        return False
+    return version_key(str(api)) >= version_key(OPS_SINCE)
 
 
 def current_versions() -> Versions:
@@ -326,8 +349,15 @@ def handshake(descriptor: ConnectorDescriptor, *,
                                 "reason": f"version-{entry['state']}",
                                 "field": what, "versions": report})
 
+    # 1.1 · accepted, and said in what: a 1.0 peer READS and ADDS (its deltas are
+    # 1.1 deltas without ops); only a peer at OPS_SINCE or later may change and
+    # remove. Said here, once, so a host draws the right affordances instead of
+    # discovering the difference at the seam.
+    ops = speaks_ops(theirs)
     return Result(ok=True, message=phrases.ok.format(name=descriptor.name),
-                  data={"connector": descriptor.name, "versions": report})
+                  data={"connector": descriptor.name, "versions": report,
+                        "ops": ops,
+                        "mode": "read-add-change" if ops else "read-add"})
 
 
 # ── the write seam ───────────────────────────────────────────────────────────
@@ -342,9 +372,72 @@ class SeamRefusals:
                          "— refused at the seam, the graph is intact")
     no_author: str = ("nothing enters a study unattributed: this write has no "
                       "author")
+    #: 1.1 · the ops
+    ops_too_old: str = ("«{name}» speaks connector_api {theirs}: changing or "
+                        "removing needs {since} — update it")
+    ops_not_write: str = ("changing or removing is a write-graph, not "
+                          "{capability} — «{name}» proposes, it does not correct")
+    ops_in_proposal: str = ("a proposal adds; changing or removing what is "
+                            "already in the study is a decision, not a proposal")
+    ops_bad: str = "the operation {index} cannot be applied: {why}"
 
 
 SEAM = SeamRefusals()
+
+#: The same refusals in Italian — the second language of the interface (EN + IT).
+#: A host that speaks Italian passes it as ``phrases``.
+SEAM_IT = SeamRefusals(
+    not_declared=("«{name}» non ha dichiarato {capability}: una capability è "
+                  "una promessa, e questa non è stata fatta"),
+    not_allowed=("il linguaggio di EM non ammette {edge} tra {src} e {tgt}: "
+                 "rifiutato al confine, il grafo è intatto"),
+    unknown_type=("il linguaggio di EM non conosce il tipo di nodo {unknown}: "
+                  "rifiutato al confine, il grafo è intatto"),
+    no_author=("niente entra in uno studio senza autore: questa scrittura non "
+               "ne ha uno"),
+    ops_too_old=("«{name}» parla connector_api {theirs}: per cambiare o "
+                 "togliere serve {since}, aggiornalo"),
+    ops_not_write=("cambiare o togliere è un write-graph, non {capability}: "
+                   "«{name}» propone, non corregge"),
+    ops_in_proposal=("una proposta aggiunge; cambiare o togliere ciò che è già "
+                     "nello studio è una decisione, non una proposta"),
+    ops_bad="l'operazione {index} non si può applicare: {why}",
+)
+
+#: The fields of a node that are the SEAM's to write, never an adapter's: the
+#: editorial stamps, the field clocks, the tombstone (``crdt.META_KEYS``) and the
+#: proposal marker. An ``update_field`` on one of them would forge a hand, a
+#: date, a deletion or a bake.
+_SEAM_OWNED_FIELDS = ("created_by", "created_at", "created_auth", "modified_by",
+                      "modified_at", "modified_auth", "field_clocks", "removed",
+                      "em_volatile_aux", "aux_volatile")
+
+
+def validate_ops(delta: Delta) -> List[Dict[str, Any]]:
+    """Which ``ops`` of a delta cannot be applied, and why — the SHAPE only.
+
+    One entry per bad op: ``{"index", "op", "why"}``. Whether the node is there
+    or the clock newer is the applier's to say (it says it in ``refused``); this
+    is what no graph could make right."""
+    from ..crdt import validate_op
+    bad: List[Dict[str, Any]] = []
+    for index, op in enumerate(delta.ops):
+        kind = str(op.get("op") or "") if isinstance(op, dict) else ""
+        if kind in ("add_node", "add_edge"):
+            why = (f"{kind} travels in the delta's "
+                   f"{'nodes' if kind == 'add_node' else 'edges'}, not in ops")
+        elif kind and kind not in DELTA_OPS:
+            why = f"unknown operation '{kind}' (a delta's ops: {', '.join(DELTA_OPS)})"
+        else:
+            why = validate_op(op)
+            if why is None and kind == "update_field":
+                name = str(op.get("field") or "")
+                if name.startswith("data.") and name[5:] in _SEAM_OWNED_FIELDS:
+                    why = (f"'{name}' is written by the seam (who, when, removed, "
+                           f"proposed), never by an adapter")
+        if why:
+            bad.append({"index": index, "op": kind, "why": why})
+    return bad
 
 
 def validate_delta(delta: Delta, *, node_types: Optional[Mapping[str, str]] = None,
@@ -394,6 +487,39 @@ def validate_delta(delta: Delta, *, node_types: Optional[Mapping[str, str]] = No
     return bad
 
 
+def _guard_ops(descriptor: ConnectorDescriptor, capability: str, delta: Delta,
+               phrases: SeamRefusals) -> Optional[Result]:
+    """1.1 · the four questions a delta with ``ops`` answers before anything is
+    applied, in the order a person can act on: does the peer speak 1.1? is this a
+    write-graph? is it a proposal? is every op well formed?"""
+    if not speaks_ops(descriptor.versions):
+        theirs = descriptor.versions.connector_api or "?"
+        return Result(ok=False,
+                      message=phrases.ops_too_old.format(
+                          name=descriptor.name, theirs=theirs, since=OPS_SINCE),
+                      data={"connector": descriptor.name, "reason": "ops-need-1.1",
+                            "connector_api": descriptor.versions.connector_api})
+    if capability != "write-graph":
+        return Result(ok=False,
+                      message=phrases.ops_not_write.format(
+                          name=descriptor.name, capability=capability),
+                      data={"connector": descriptor.name,
+                            "reason": "ops-need-write-graph",
+                            "capability": capability})
+    if delta.volatile:
+        return Result(ok=False, message=phrases.ops_in_proposal,
+                      data={"connector": descriptor.name,
+                            "reason": "ops-in-proposal"})
+    bad = validate_ops(delta)
+    if bad:
+        return Result(ok=False,
+                      message=phrases.ops_bad.format(index=bad[0]["index"],
+                                                     why=bad[0]["why"]),
+                      data={"connector": descriptor.name, "reason": "op-malformed",
+                            "refused": bad})
+    return None
+
+
 def _node_types_known() -> Sequence[str]:
     """The node_types the datamodel knows, by name. ``Node.node_type_map`` is the
     registry the resolver reads, so this asks IT rather than a list."""
@@ -421,6 +547,10 @@ def guard_write(descriptor: ConnectorDescriptor, capability: str, delta: Delta,
     if delta.writes and not delta.author:
         return Result(ok=False, message=phrases.no_author,
                       data={"connector": descriptor.name, "reason": "no-author"})
+    if delta.ops:
+        refused = _guard_ops(descriptor, capability, delta, phrases)
+        if refused is not None:
+            return refused
     bad = validate_delta(delta, node_types=node_types)
     if bad:
         first = bad[0]
@@ -469,6 +599,13 @@ def apply_delta(section: Dict[str, Any], descriptor: ConnectorDescriptor,
     ``volatile`` defaults to the delta's own flag (an ``ingest-batch`` proposes;
     a ``write-graph`` records). A volatile write is marked and stays out of
     :func:`document_view` until :func:`bake`.
+
+    1.1 · the delta's ``ops`` are applied AFTER its nodes and edges (so an op may
+    name what the same delta added), each as the CRDT op it already is, with the
+    seam's clock and the delta's author: a ``remove_node`` leaves a tombstone, an
+    emptied field a field tombstone, exactly as from any other writer.
+    ``data["applied"]`` gains ``"ops"`` only when the delta had some — the answer
+    to a 1.0 delta is the 1.0 answer.
 
     Returns the guard's refusal unchanged when it refuses — nothing is applied,
     so a rejected write cannot leave half a subgraph behind.
@@ -529,11 +666,203 @@ def apply_delta(section: Dict[str, Any], descriptor: ConnectorDescriptor,
             refused.append({"edge": edge.get("id") or
                             f"{edge.get('source')}→{edge.get('target')}",
                             "why": out.reason})
+    if delta.ops:
+        applied["ops"] = 0
+        for index, op in enumerate(delta.ops):
+            out = apply_op_to_section(section, _seam_op(op, delta.author, at))
+            if out.applied:
+                applied["ops"] += 1
+            else:
+                refused.append({"op": index, "kind": op.get("op"),
+                                "why": out.reason})
 
     return Result(ok=True, message="", delta=delta,
                   data={"connector": descriptor.name, "capability": capability,
                         "applied": applied, "refused": refused,
                         "volatile": volatile, "injector": injector})
+
+
+def _seam_op(op: Dict[str, Any], author: Optional[str], at: str) -> Dict[str, Any]:
+    """An op of the delta as it travels on: the adapter's own ``ts``/``author``
+    dropped, the seam's put in their place."""
+    out = {k: v for k, v in op.items() if k not in ("ts", "author")}
+    out["ts"] = at
+    if author:
+        out["author"] = author
+    return out
+
+
+def apply_delta_to_graph(graph: Any, descriptor: ConnectorDescriptor,
+                         capability: str, delta: Delta, *,
+                         volatile: Optional[bool] = None,
+                         at: Optional[str] = None) -> Result:
+    """The same act as :func:`apply_delta`, on a live :class:`~s3dgraphy.graph.Graph`
+    (G2) — what EM Tools holds in its ``multi_graph_manager``, and what a script
+    with no application behind it (``em``, W11) works on.
+
+    **The same seam**: :func:`guard_write` with the types of the nodes already in
+    the graph, so the refusals are the section's, word for word, and a refused
+    delta leaves the graph untouched. **The same stamps**: a node born here is
+    stamped ``created_by``/``created_at`` with the delta's author and the seam's
+    clock (at the second, as the CRDT stamps a section); a field is written with
+    :func:`s3dgraphy.api.set_field` / ``clear_field``, the one way to write a
+    field, so it carries its clock. **The same answer**: ``applied``, ``refused``,
+    ``volatile``, ``injector``.
+
+    Where a live graph differs from a section, and says so:
+
+    * a node whose id is already in the graph is **not** merged: it is listed in
+      ``data["unchanged"]`` — a change to it travels as an ``update_field``;
+      the second application of the same delta is therefore a no-op, as on a
+      section;
+    * ``remove_node`` **removes** the node and its relations, as EM Tools does
+      with a room's op (a live graph keeps no tombstones; the section that is
+      saved from it is the record);
+    * an edge whose endpoint is not in the graph is refused with its reason
+      (``Graph.add_edge`` needs both ends); the connection rule itself was
+      already checked by the guard, so the edge is added as written.
+    """
+    from ..api import clear_field, set_field, stamp_created
+    from ..crdt import Clock, editorial_clock
+    from ..editorial import normalize_orcid, now_op_iso
+    from ..importer.emjson_importer import _instantiate
+
+    verdict = guard_write(
+        descriptor, capability, delta,
+        node_types={str(n.node_id): str(getattr(n, "node_type", "") or "")
+                    for n in graph.nodes})
+    if not verdict.ok:
+        return verdict
+
+    volatile = delta.volatile if volatile is None else volatile
+    injector = f"connector:{descriptor.name}"
+    at = at or now_op_iso()
+    stamp_at = editorial_clock(Clock(ts=at, by=delta.author)).ts or at
+    applied: Dict[str, int] = {"nodes": 0, "edges": 0}
+    refused: List[Dict[str, Any]] = []
+    unchanged: List[str] = []
+    warnings: List[str] = []
+
+    study_lang = _graph_language(graph)
+    from ..crdt import is_text_node
+    for node in delta.nodes:
+        payload = dict(node)
+        node_id = str(payload.get("id") or "")
+        if not node_id:
+            refused.append({"node": None, "why": "add_node without an id"})
+            continue
+        if graph.find_node_by_id(node_id) is not None:
+            unchanged.append(node_id)
+            continue
+        data = dict(payload.get("data") or {})
+        if is_text_node(payload) and not data.get("lang"):
+            data["lang"] = study_lang or "und"
+        if volatile:
+            data[VOLATILE_KEY] = injector
+        payload["data"] = data
+        try:
+            built = _instantiate(str(payload.get("node_type") or ""), payload,
+                                 warnings)
+        except Exception as exc:                  # noqa: BLE001 — said, not raised
+            refused.append({"node": node_id, "why": str(exc)})
+            continue
+        stamp_created(built, by=normalize_orcid(delta.author), at=stamp_at)
+        graph.add_node(built)
+        applied["nodes"] += 1
+
+    for edge in delta.edges:
+        src, tgt = str(edge.get("source") or ""), str(edge.get("target") or "")
+        etype = str(edge.get("edge_type") or "")
+        edge_id = str(edge.get("id") or "") or f"{src}__{etype}__{tgt}"
+        label = edge.get("id") or f"{src}→{tgt}"
+        if not (src and tgt and etype):
+            refused.append({"edge": label,
+                            "why": "add_edge without source, target or edge_type"})
+            continue
+        if graph.find_edge_by_id(edge_id) is not None or any(
+                (e.edge_source, e.edge_type, e.edge_target) == (src, etype, tgt)
+                for e in graph.edges):
+            unchanged.append(edge_id)
+            continue
+        try:
+            made = graph.add_edge(edge_id, src, tgt, etype, validate=False)
+        except ValueError as exc:
+            refused.append({"edge": label, "why": str(exc)})
+            continue
+        if delta.author:
+            made.attributes.update({"created_by": normalize_orcid(delta.author),
+                                    "created_at": stamp_at})
+        applied["edges"] += 1
+
+    if delta.ops:
+        applied["ops"] = 0
+        for index, op in enumerate(delta.ops):
+            why = _apply_op_to_graph(graph, op, delta.author, at,
+                                     set_field=set_field, clear_field=clear_field)
+            if why is None:
+                applied["ops"] += 1
+            else:
+                refused.append({"op": index, "kind": op.get("op"), "why": why})
+
+    data: Dict[str, Any] = {"connector": descriptor.name, "capability": capability,
+                            "applied": applied, "refused": refused,
+                            "volatile": volatile, "injector": injector}
+    if unchanged:
+        data["unchanged"] = unchanged
+    if warnings:
+        data["warnings"] = warnings
+    return Result(ok=True, message="", delta=delta, data=data)
+
+
+def _graph_language(graph: Any) -> Optional[str]:
+    """The study language of a live graph — the one a section's is read from
+    (``crdt._section_language``), through :func:`s3dgraphy.language.
+    working_language`; ``None`` unless it is a tag."""
+    from ..language import is_language_tag, working_language
+    value = working_language(graph)
+    return value if is_language_tag(value) else None
+
+
+def _apply_op_to_graph(graph: Any, op: Dict[str, Any], author: Optional[str],
+                       at: str, *, set_field, clear_field) -> Optional[str]:
+    """One op of a delta on a live graph. ``None`` when applied, else why not —
+    a sentence, the same kind the CRDT gives for a section."""
+    kind = op.get("op")
+    if kind == "update_field":
+        node_id = str(op.get("node_id") or op.get("id") or "")
+        node = graph.find_node_by_id(node_id)
+        if node is None:
+            return f"node '{node_id}' is not here"
+        name = str(op.get("field"))
+        try:
+            if op.get("remove") is True:
+                clear_field(node, name, author=author, at=at)
+            else:
+                set_field(node, name, op.get("value"), author=author, at=at)
+        except ValueError as exc:            # an invalid language tag, said
+            return str(exc)
+        from ..api import stamp_modified
+        stamp_modified(node, by=author, at=at)
+        # a name or a property value may be what an index answers on
+        graph._property_stale = True
+        return None
+    if kind == "remove_node":
+        node_id = str(op.get("id") or op.get("node_id") or "")
+        if graph.find_node_by_id(node_id) is None:
+            return f"node '{node_id}' is not here"
+        graph.remove_node(node_id)
+        return None
+    # remove_edge
+    edge_id = op.get("id")
+    edge = graph.find_edge_by_id(edge_id) if edge_id else None
+    if edge is None and op.get("source"):
+        triple = (op.get("source"), op.get("edge_type"), op.get("target"))
+        edge = next((e for e in graph.edges
+                     if (e.edge_source, e.edge_type, e.edge_target) == triple), None)
+    if edge is None:
+        return "no such relation"
+    graph.remove_edge(edge.edge_id)
+    return None
 
 
 def document_view(section: Dict[str, Any]) -> Dict[str, Any]:

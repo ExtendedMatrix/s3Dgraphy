@@ -5,6 +5,22 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Changed
+- **Connector API 1.1: a delta can change and remove** (MICRO-PL01-CONTRATTO-1.1,
+  row W5 of the extensions plan, 18 November 2026). `contract.Delta.ops` carries
+  the CRDT's `update_field` (or `remove: true`), `remove_node`, `remove_edge`
+  (`DELTA_OPS`; builders `Delta.update_field/remove_node/remove_edge`,
+  `Delta.from_dict`); the additions stay in `nodes`/`edges`, and a delta with no
+  ops keeps the 1.0 wire byte for byte. `guard_write` refuses ops from a peer
+  below `OPS_SINCE` (1.1.0), outside a `write-graph`, in a volatile proposal, or
+  malformed (`validate_ops`: a store's verb, an addition in `ops`, a field the
+  seam writes — stamps, clocks, tombstone, proposal marker). `apply_delta`
+  applies them after the nodes and edges with the seam's clock and the delta's
+  author (`applied.ops` only when there were some). New `apply_delta_to_graph`
+  (G2): the same seam, stamps and answer on a live `Graph` (an existing id is
+  `unchanged`, `remove_node` removes, as EM Tools does). `CONNECTOR_API_VERSION`
+  = 1.1.0; the handshake still accepts a 1.0 peer and says what it may do
+  (`data.ops`, `data.mode` = `read-add` / `read-add-change`; `speaks_ops`). The
+  seam's refusals also in Italian (`SEAM_IT`). `tests/test_contract_ops.py`.
 - **A frame may say its datum operation** (MICRO-P-GEOREF-PER-GRAFO, E.D.
   17 November 2026). `data.frame` — a model's own coordinate system, «CRS X
   minus shift S» (1.6.38) — keeps `datum_operation` («EPSG:<code>», the

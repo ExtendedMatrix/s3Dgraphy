@@ -396,7 +396,11 @@ def test_a_subscription_in_a_restricted_study_needs_a_grant():
 #: it stops being true.
 CORE_NAMES = {"CONTRACT_NAMESPACE", "Delta", "Descriptor", "Handler",
               "REFUSALS", "Refusals", "Registry", "Result", "Slot", "invoke",
-              "stable_id"}
+              "stable_id",
+              # said out loud (MICRO-PL01, connector API 1.1): the DELTA learnt
+              # to change and remove — the names of its three ops. Not a refusal,
+              # not a registry: the shape of a write, hence the version bump.
+              "DELTA_OPS"}
 
 #: The capability set at the end of the Blender session (2026-08-21).
 CAPABILITIES_BEFORE = {
@@ -431,7 +435,8 @@ def test_adding_a_consumer_did_not_change_the_contract():
     assert set(CAPABILITIES) - CAPABILITIES_BEFORE == {"resolve-preview"}
     assert CAPABILITIES_BEFORE - set(CAPABILITIES) == set()
     assert CAPABILITY_LAYER["resolve-preview"] == "asset"
-    assert connector_mod.CONNECTOR_API_VERSION == "1.0.0"
+    # (1.1.0 since MICRO-PL01: the DELTA changed shape — `ops` — not the set)
+    assert connector_mod.CONNECTOR_API_VERSION == "1.1.0"
 
     # 3 · the consumer capabilities are a SUBSET of the one closed set, not a
     # second list beside it

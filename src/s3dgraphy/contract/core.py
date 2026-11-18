@@ -54,6 +54,13 @@ def stable_id(*parts: Any, namespace: uuid.UUID = CONTRACT_NAMESPACE) -> str:
 
 # ── what an adapter changes ──────────────────────────────────────────────────
 
+#: Connector API 1.1 · the operations a delta may carry in ``ops``: the CRDT's
+#: three that are not an addition (``s3dgraphy.crdt.OPS`` minus ``add_node`` and
+#: ``add_edge``, which travel in ``nodes``/``edges`` as in 1.0). Restated rather
+#: than imported to keep this module free of the graph's code (see the module
+#: docstring); ``tests/test_contract_ops.py`` checks the two agree.
+DELTA_OPS = ("update_field", "remove_node", "remove_edge")
+
 @dataclass
 class Delta:
     """What an act did to the graph — the DTC-attributed transformation.
@@ -72,6 +79,18 @@ class Delta:
     stays out of the saved document until a person bakes it. Declared on the delta
     rather than decided by the applier, because the adapter is the one that knows
     whether it just read a folder or recorded a decision.
+
+    ``ops`` (connector API 1.1, MICRO-PL01) is what a 1.0 delta could not say:
+    *change* a field, *remove* a node, *remove* a relation. They are the CRDT's own
+    operations (:data:`DELTA_OPS`, a subset of ``s3dgraphy.crdt.OPS``) in the
+    wire's shape — ``{"op": "update_field", "node_id", "field", "value"}`` (or
+    ``"remove": true`` to empty the field), ``{"op": "remove_node", "id"}``,
+    ``{"op": "remove_edge", "id"}`` or its ``source``/``edge_type``/``target`` —
+    so there is still one vocabulary on every wire. The two additions stay in
+    ``nodes`` and ``edges``: a 1.0 delta is a 1.1 delta whose ``ops`` is empty,
+    which is what lets a 1.1 build read a 1.0 peer unchanged. The clock and the
+    author of each op are the seam's, never the adapter's (``editorial.py``'s
+    rule): whatever ``ts``/``author`` an op carries is overwritten on the way in.
     """
 
     nodes: List[Dict[str, Any]] = field(default_factory=list)
@@ -84,13 +103,53 @@ class Delta:
     process: Optional[Dict[str, Any]] = None
     #: True for a proposal that must not reach the document until it is baked.
     volatile: bool = False
+    #: 1.1 · the changes and the removals, in the CRDT's words (see above).
+    ops: List[Dict[str, Any]] = field(default_factory=list)
 
     @property
     def writes(self) -> bool:
-        return bool(self.nodes or self.edges)
+        return bool(self.nodes or self.edges or self.ops)
+
+    # the three builders: what a plugin (and `em.write`, W11) writes instead of
+    # spelling the wire by hand — the shape is checked at the seam either way
+
+    def update_field(self, node_id: str, field_name: str, value: Any = None, *,
+                     remove: bool = False) -> "Delta":
+        """Change ``name`` / ``description`` / ``data.<key>`` of a node;
+        ``remove=True`` empties it (a field tombstone, not an absence)."""
+        op: Dict[str, Any] = {"op": "update_field", "node_id": str(node_id),
+                              "field": str(field_name)}
+        if remove:
+            op["remove"] = True
+        else:
+            op["value"] = value
+        self.ops.append(op)
+        return self
+
+    def remove_node(self, node_id: str) -> "Delta":
+        self.ops.append({"op": "remove_node", "id": str(node_id)})
+        return self
+
+    def remove_edge(self, edge_id: Optional[str] = None, *,
+                    source: Optional[str] = None, edge_type: Optional[str] = None,
+                    target: Optional[str] = None) -> "Delta":
+        """By id, or by the triple when the id is not known."""
+        op: Dict[str, Any] = {"op": "remove_edge"}
+        if edge_id:
+            op["id"] = str(edge_id)
+        for key, val in (("source", source), ("edge_type", edge_type),
+                         ("target", target)):
+            if val:
+                op[key] = str(val)
+        self.ops.append(op)
+        return self
 
     def as_dict(self) -> Dict[str, Any]:
         out: Dict[str, Any] = {"nodes": self.nodes, "edges": self.edges}
+        # absent when empty: the wire of a delta that only adds is the 1.0 wire,
+        # byte for byte, so a 1.0 reader of it sees nothing new
+        if self.ops:
+            out["ops"] = self.ops
         if self.author:
             out["author"] = self.author
         if self.process:
@@ -98,6 +157,24 @@ class Delta:
         if self.volatile:
             out["volatile"] = True
         return out
+
+    @classmethod
+    def from_dict(cls, raw: Optional[Dict[str, Any]]) -> "Delta":
+        """The wire form back — a 1.0 delta (no ``ops``) included. Lists are
+        copied, never shared with the caller's JSON; a key that is not a list is
+        read as empty, and the seam then says what is missing."""
+        raw = raw if isinstance(raw, dict) else {}
+
+        def _list(key: str) -> List[Dict[str, Any]]:
+            val = raw.get(key)
+            return [dict(x) for x in val if isinstance(x, dict)] \
+                if isinstance(val, list) else []
+
+        return cls(nodes=_list("nodes"), edges=_list("edges"), ops=_list("ops"),
+                   author=raw.get("author") or None,
+                   process=raw.get("process") if isinstance(raw.get("process"), dict)
+                   else None,
+                   volatile=bool(raw.get("volatile")))
 
 
 @dataclass

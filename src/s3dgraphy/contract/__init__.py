@@ -13,14 +13,15 @@ and proposals dropped). :mod:`~s3dgraphy.contract.reference` holds the descripto
 whose adapter belongs to another team — the spec they implement against.
 """
 
-from .core import (CONTRACT_NAMESPACE, Delta, Descriptor, Handler, REFUSALS,
-                   Refusals, Registry, Result, Slot, invoke, stable_id)
+from .core import (CONTRACT_NAMESPACE, DELTA_OPS, Delta, Descriptor, Handler,
+                   REFUSALS, Refusals, Registry, Result, Slot, invoke, stable_id)
 from .connector import (CAPABILITIES, CAPABILITY_LAYER, CAPABILITY_LAYERS,
                         CONNECTOR_API_VERSION, ConnectorDescriptor,
-                        ConnectorRegistry, HOSTS, TRANSPORTS, Versions,
-                        VOLATILE_KEY, WRITING_CAPABILITIES, apply_delta, bake,
-                        current_versions, document_view, guard_write, handshake,
-                        validate_delta)
+                        ConnectorRegistry, HOSTS, OPS_SINCE, SEAM, SEAM_IT,
+                        SeamRefusals, TRANSPORTS, Versions, VOLATILE_KEY,
+                        WRITING_CAPABILITIES, apply_delta, apply_delta_to_graph,
+                        bake, current_versions, document_view, guard_write,
+                        handshake, speaks_ops, validate_delta, validate_ops)
 from .consumer import (CONSUMER_CAPABILITIES, READ_CAPABILITIES, ROLES,
                        SERVE, VISIBILITIES, PublishedCount, ServeRefusals,
                        Subscription, granted, is_consumer, may_read,
@@ -30,13 +31,16 @@ from .reference import (HERIVERSE_CAPABILITIES, HERIVERSE_TRANSPORT, heriverse,
                         heriverse_wire)
 
 __all__ = [
-    "CONTRACT_NAMESPACE", "Delta", "Descriptor", "Handler", "REFUSALS",
+    "CONTRACT_NAMESPACE", "DELTA_OPS", "Delta", "Descriptor", "Handler", "REFUSALS",
     "Refusals", "Registry", "Result", "Slot", "invoke", "stable_id",
     "CAPABILITIES", "CAPABILITY_LAYER", "CAPABILITY_LAYERS",
     "CONNECTOR_API_VERSION", "ConnectorDescriptor", "ConnectorRegistry",
     "HOSTS", "TRANSPORTS", "Versions", "WRITING_CAPABILITIES",
     "VOLATILE_KEY", "apply_delta", "bake", "current_versions",
     "document_view", "guard_write", "handshake", "validate_delta",
+    # connector API 1.1 (MICRO-PL01): ops, a live Graph, the seam's words in IT
+    "OPS_SINCE", "SEAM", "SEAM_IT", "SeamRefusals", "apply_delta_to_graph",
+    "speaks_ops", "validate_ops",
     # the outgoing direction: a consumer is SERVED
     "CONSUMER_CAPABILITIES", "READ_CAPABILITIES", "ROLES", "SERVE",
     "VISIBILITIES", "PublishedCount", "ServeRefusals", "Subscription",
