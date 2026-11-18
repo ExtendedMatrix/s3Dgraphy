@@ -185,6 +185,11 @@ def repo(name: str) -> Path:
 
 
 def exists(name: str) -> bool:
+    # EM_RELEASE_SKIP=repo1,repo2: the release leaves these repositories alone
+    # (E.D., 18 Nov 2026: work in progress on stratigraph-server must not block
+    # an EMStudio release); a skipped repository is treated as absent
+    if name in [s.strip() for s in os.environ.get("EM_RELEASE_SKIP", "").split(",") if s.strip()]:
+        return False
     return (repo(name) / ".git").exists()
 
 
