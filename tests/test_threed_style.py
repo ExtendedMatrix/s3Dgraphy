@@ -72,7 +72,9 @@ def test_the_reading_rule_is_written():
     assert "MULTIPLIES" in block["_comment"]
     assert "get_threed_style" in block["_comment"]
     assert block["defaults"]["faces"] == {"show": True, "opacity": 1.0}
-    assert block["defaults"]["edges"] == {"show": True, "width": 1, "style": "solid", "feature_angle_deg": 1}
+    # 1.6.48 (MICRO-PL06 part 0, E.D. 18 Nov 2026): 30°, no longer 1° — at 1°
+    # a proxy modelled on the survey drew nearly every triangle (TempluMare v11)
+    assert block["defaults"]["edges"] == {"show": True, "width": 1, "style": "solid", "feature_angle_deg": 30}
     assert "feature_angle_deg" not in block  # 1.6.45: the edges' own
     assert "EVERY DISPLAY MODE" in block["_comment"]
     assert "centre of their volume" in block["_comment"]
@@ -82,13 +84,15 @@ def test_the_reading_rule_is_written():
 def test_every_other_type_keeps_its_faces_and_has_the_thin_contour(name):
     """Decision 1 (E.D., 11 Nov): faces as before; edges thin, continuous, in
     the colour of EMStudio's thin contour = THREE.Color(border_color) = the
-    linear of the 2D frame, at 1° (EdgesGeometry's default threshold)."""
+    linear of the 2D frame. The angle was 1° (EdgesGeometry's default
+    threshold) until 1.6.48; 30° since (MICRO-PL06 part 0: on a proxy modelled
+    on the survey 1° drew nearly every side of a triangle)."""
     s = get_threed_style(name)
     assert s["faces"]["show"] is True
     assert s["faces"]["opacity"] == 1.0
     assert s["faces"]["rgba_color"] == get_material_color(name)
     e = s["edges"]
-    assert (e["show"], e["style"], e["width"], e["feature_angle_deg"]) == (True, "solid", 1.0, 1.0)
+    assert (e["show"], e["style"], e["width"], e["feature_angle_deg"]) == (True, "solid", 1.0, 30.0)
     want = _lin(STYLES[name]["style"]["border_color"])
     assert max(abs(e["rgba_color"][i] - want[i]) for i in range(3)) < 0.002, (name, e["rgba_color"], want)
     assert e["rgba_color"][3] == 1.0
