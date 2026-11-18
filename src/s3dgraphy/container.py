@@ -162,7 +162,8 @@ class ProjectVersion:
 def content_digest(doc: Dict[str, Any]) -> str:
     """`sha256:<12 hex>` over the project's CONTENT.
 
-    The graphs and which one was active — NOT the layout, and not the version
+    The graphs and which one was active — NOT the layout, not the presentation
+    (the colour schemes: a way of looking, MICRO-T), and not the version
     block itself. Moving a box is not a new version of a study, and hashing the
     version block would make every hash depend on the previous one for no gain.
 
@@ -226,6 +227,11 @@ class Container:
     #: P3 · which revision of the work this is (None = never versioned; the
     #: first write gives it a v1 rather than pretending it always had one)
     version: Optional[ProjectVersion] = None
+    #: MICRO-T (E.D., 18 Nov 2026) · ways of LOOKING at the graphs: the named
+    #: colour schemes and the one each graph uses (``presentation`` in the
+    #: file, :mod:`s3dgraphy.presentation`). Not content: the digest does not
+    #: see it. Empty = nothing is written.
+    presentation: Dict[str, Any] = field(default_factory=dict)
 
     def graph_ids(self) -> List[str]:
         return list(self.graphs.keys())
@@ -368,6 +374,10 @@ def parse_container(doc: Dict[str, Any], *,
     file_layout = doc.get(LAYOUT_KEY)
     file_layout = dict(file_layout) if isinstance(file_layout, dict) else {}
 
+    from .presentation import read_presentation
+    presentation, pres_warnings = read_presentation(doc)
+    warnings.extend(pres_warnings)
+
     if not is_container(doc):
         # LEGACY single-graph: read it with the reader that has always read it,
         # then wrap. No second parser, no drift between the two paths.
@@ -378,11 +388,13 @@ def parse_container(doc: Dict[str, Any], *,
             header=header,
             layouts={graph.graph_id: file_layout} if file_layout else {},
             version=ProjectVersion.from_dict(doc.get(VERSION_KEY)),
+            presentation=presentation,
         )
-        return container, list(graph_warnings)
+        return container, warnings + list(graph_warnings)
 
     container = Container(header=header,
-                          version=ProjectVersion.from_dict(doc.get(VERSION_KEY)))
+                          version=ProjectVersion.from_dict(doc.get(VERSION_KEY)),
+                          presentation=presentation)
     own_layouts: Dict[str, Dict[str, Any]] = {}
     node_ids: Dict[str, List[str]] = {}
     members = doc[GRAPHS_KEY]
@@ -522,6 +534,11 @@ def build_container(container: Container) -> Dict[str, Any]:
         doc[LAYOUT_KEY] = active_layout
     if container.version is not None:
         doc[VERSION_KEY] = container.version.as_dict()
+    # MICRO-T · the presentation, when there is one: how the graphs are looked at
+    from .presentation import PRESENTATION_KEY, section as presentation_section
+    pres = presentation_section(container.presentation)
+    if pres:
+        doc[PRESENTATION_KEY] = pres
     return doc
 
 

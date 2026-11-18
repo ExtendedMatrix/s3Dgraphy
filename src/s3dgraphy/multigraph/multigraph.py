@@ -157,10 +157,12 @@ class MultiGraphManager:
                 shelf = graph
             else:
                 graphs[graph_id] = graph
+        loaded = getattr(self, "container", None)
         container = Container(
             graphs=graphs, shelf=shelf,
-            active_graph_id=active_graph_id or getattr(
-                getattr(self, "container", None), "active_graph_id", None),
+            active_graph_id=active_graph_id or getattr(loaded, "active_graph_id", None),
+            # MICRO-T · the colour schemes the file carried go back into it
+            presentation=dict(getattr(loaded, "presentation", None) or {}),
         )
         return save_container_file(container, filepath)
 

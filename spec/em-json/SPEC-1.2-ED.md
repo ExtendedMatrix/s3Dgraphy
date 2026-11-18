@@ -11,7 +11,7 @@
 | Editor | Emanuel Demetrescu (CNR-ISPC), ORCID [0000-0002-5065-7970](https://orcid.org/0000-0002-5065-7970) |
 | Source | `spec/em-json/` in the [s3Dgraphy](https://github.com/ExtendedMatrix/s3Dgraphy) repository |
 | Licence | Text: [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). Schemas and examples: [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) |
-| Status | **Editor's Draft.** 1.2 is a minor, ADDITIVE version: it describes the site, its footprint and the GIS layers (§2.5). No key of the container changes, the schema of 1.1 validates its files and a reader of 1.1 reads them; writers keep writing `"1.1"` until the editor makes 1.2 a Release. The Release is the editor's decision. |
+| Status | **Editor's Draft.** 1.2 is a minor, ADDITIVE version: it describes the site, its footprint and the GIS layers (§2.5), and an optional top-level `presentation` (§2.8). No other key of the container changes, the schema of 1.1 validates its files and a reader of 1.1 reads them; writers keep writing `"1.1"` until the editor makes 1.2 a Release. The Release is the editor's decision. |
 
 ## 1. What it is for
 
@@ -231,6 +231,48 @@ contains, and how a node or an edge of a profile type carries what a reader
 without the profile needs to draw it as the core type it specialises, is in
 the [EM Profiles specification](https://github.com/ExtendedMatrix/vocabularies/blob/main/profiles/SPEC.md).
 
+### 2.8 Presentation (optional)
+
+Ways of *looking* at the graphs, kept apart from them: an optional top-level
+`presentation`. It holds no knowledge — it touches no node and no edge, the
+digest of the version of the work (§2.7) does not include it, and a reader that
+does not know it ignores it (§3.1). Removing it changes nothing in the study.
+
+Today it holds the **colour schemes** of the visual manager (colouring the
+proxies by the value of a property): several schemes, each with a name, and for
+each graph the one in use.
+
+```json
+"presentation": {
+  "colour_schemes": {
+    "material": {
+      "metadata": {"property_name": "material", "created": "…", "description": "…",
+                   "value_codes": {"white rock": "http://vocab.getty.edu/aat/…"}},
+      "color_mapping": {"white rock": [0.0, 0.376, 0.0, 1.0],
+                        "empty property material node": [1.0, 0.0, 1.0, 1.0],
+                        "no property material node": [0.5, 0.5, 0.5, 1.0]}
+    }
+  },
+  "active_colour_scheme": {"<graph id>": "material"}
+}
+```
+
+- A scheme **is** a `.emc` document, the file EM Tools and EMStudio save beside
+  the em.json: `metadata.property_name`, and `color_mapping` from each value to
+  its colour as scene-linear floats (`[r, g, b]` or `[r, g, b, a]`). The two
+  keys `empty property <p> node` and `no property <p> node` colour the units
+  whose property has no value and the units without the property. A scheme can
+  be taken out into a `.emc` and brought back without any conversion.
+- `metadata.value_codes` (optional) maps the text a colour is written under to
+  the **code of the term** (its URI) when the value comes from a vocabulary. A
+  unit whose value carries a code takes the colour of the entry with the same
+  code; otherwise the colour of the entry with the same text. So a scheme holds
+  in every language.
+- `active_colour_scheme` names, per graph id, a scheme of the same file. A name
+  that is not there is ignored, and said.
+- Writers write it only when it holds a scheme, with its keys in a stable order
+  (§4.6).
+
 ## 3. Reading
 
 A conforming reader:
@@ -392,7 +434,11 @@ last resort.
 
 ## 11. Changes
 
-- **1.2 — Editor's Draft, 30 October 2026.** Additive. §2.5 describes the site
+- **1.2 — Editor's Draft, 30 October 2026.** Additive. Added on 18 November
+  2026 (decided by E.D.): §2.8, the optional top-level `presentation` — named
+  colour schemes (each a `.emc` document, with the codes of the terms in
+  `metadata.value_codes`) and the scheme each graph uses; outside the digest of
+  the work. §2.5 describes the site
   (a location of level `sito`, `virtual` for a supposed site), its footprint (a
   property whose value is a GeoSPARQL WKT with the CRS inside, `POLYGON` /
   `MULTIPOLYGON`, 2D or Z, at most 500 vertices inline) and the GIS layer as a
