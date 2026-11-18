@@ -15,6 +15,7 @@ told about:
     point      → mode 0  POINTS
     line       → mode 3  LINE_STRIP  (two vertices; mode 1 LINES is read too)
     polyline   → mode 3  LINE_STRIP  (an OPEN chain)
+    surface    → mode 2  LINE_LOOP   (a CLOSED ring, node datamodel 1.6.50)
     convex     → mode 4  TRIANGLES   (one primitive per hull: its convex hull,
                                       triangulated here, outward-facing)
 
@@ -49,14 +50,15 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 from .reading_glb import (_ARRAY_BUFFER, _CHUNK_BIN, _CHUNK_JSON, _FLOAT, _MAGIC,
                           ReadingGlbError, _pad)
 
-POINTS, LINES, LINE_STRIP, TRIANGLES = 0, 1, 3, 4
+POINTS, LINES, LINE_LOOP, LINE_STRIP, TRIANGLES = 0, 1, 2, 3, 4
 
 #: geometry kind → the glTF primitive mode it is written with.
 WRITE_MODES = {"point": POINTS, "line": LINE_STRIP, "polyline": LINE_STRIP,
-               "convex": TRIANGLES}
+               "surface": LINE_LOOP, "convex": TRIANGLES}
 #: the modes each kind accepts when read back.
 READ_MODES = {"point": (POINTS,), "line": (LINE_STRIP, LINES),
-              "polyline": (LINE_STRIP, LINES), "convex": (TRIANGLES,)}
+              "polyline": (LINE_STRIP, LINES), "surface": (LINE_LOOP,),
+              "convex": (TRIANGLES,)}
 
 _EPS = 1e-9
 
@@ -258,7 +260,7 @@ def geometry_to_gltf(node: Any) -> bytes:
             extras["spheres"] = spheres
         return _glb(hulls, name=name, extras=extras)
 
-    if kind in ("point", "line", "polyline"):
+    if kind in ("point", "line", "polyline", "surface"):
         coords = data.get("coords") or getattr(node, "coords", None)
         if not coords:
             raise ReadingGlbError(

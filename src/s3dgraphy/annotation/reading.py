@@ -25,20 +25,26 @@ edge the datamodel refuses is a warning, never a `generic_connection`.
 
 from __future__ import annotations
 
+import math
 import os
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from ..graph import Graph
 from ..nodes.annotation_region_node import (
+    AREA_KINDS,
     GEOMETRY_KINDS,
     GLB_KINDS,
     MEASURE_KINDS,
     VOLUME_KINDS,
     AnnotationRegionError,
     AnnotationRegionNode,
+    area_unit,
     chain_length,
+    check_coords,
     inline_max_vertices,
+    ring_area,
+    ring_perimeter,
 )
 from .paradata import AnnotationParadataResult, _ensure_edge, _stable_id
 
@@ -143,8 +149,9 @@ def place_reading(graph: Graph, extractor_id: str, on_id: Optional[str],
         geometry: ``{"geometry_kind": …}`` plus, by kind —
             ``region2d``: ``shape_kind``, ``rect`` | ``points``, ``page``;
             ``passage``: ``start``, ``end``, ``text``;
-            ``point`` / ``line`` / ``polyline``: ``vertices`` = ``[[x,y,z], …]``
-            in the model's glTF frame (a single ``p`` is accepted for a point).
+            ``point`` / ``line`` / ``polyline`` / ``surface``: ``vertices`` =
+            ``[[x,y,z], …]`` in the model's glTF frame (a single ``p`` is
+            accepted for a point; a surface's ring is closed by definition).
             They become the region's ``data.coords``.
         project_root: the project folder a .glb is written under — only for
             a 3D reading of more than ``coords.inline_max_vertices`` vertices.
@@ -178,12 +185,17 @@ def place_reading(graph: Graph, extractor_id: str, on_id: Optional[str],
                       text=geometry.get("text"))
     else:
         vertices = _vertices(geometry, kind)
+        if kind in AREA_KINDS:
+            vertices = check_coords(kind, vertices)   # a ring written closed is opened
         if len(vertices) <= inline_max_vertices():
             kwargs["coords"] = vertices          # the node computes count and length
         else:
             kwargs["vertex_count"] = len(vertices)
             if kind in MEASURE_KINDS:
                 kwargs["length"] = polyline_length(vertices)
+            if kind in AREA_KINDS:
+                kwargs["area"] = ring_area(vertices)
+                kwargs["perimeter"] = ring_perimeter(vertices)
             kwargs["crs"] = "local"
     probe = AnnotationRegionNode("__probe__", "__probe__", **kwargs)
 
@@ -298,13 +310,157 @@ def _attach_glb_resource(graph, result, sink, vertices, project_root, author) ->
             f"at it — write it with write_reading_glb before saving")
 
 
+#: The units a measure may be SHOWN in (SPEC-pacchetto §5.3: «a package may ask
+#: cm for display, the graph stays in metres»): factor from metres.
+LENGTH_UNITS = {"m": 1.0, "cm": 100.0, "mm": 1000.0, "km": 0.001}
+#: what each kind produces (SPEC-pacchetto §5.2, the closed table)
+PRODUCES = {"point": "elevation", "line": "length", "polyline": "length",
+            "surface": "area", "volume": "volume"}
+#: D-3 · which elevation a point's value is
+ELEVATION_ABSOLUTE = "absolute"
+ELEVATION_MODEL = "model"
+
+
+def _show_unit(unit: Optional[str], power: int) -> Tuple[str, float]:
+    """``(unit, factor from m^power)`` for showing a measure; an unknown unit
+    is refused, never guessed (``cm2`` is the square of ``cm``)."""
+    base = (unit or "m").strip()
+    if power > 1 and base.endswith(str(power)):
+        base = base[:-1]
+    if base not in LENGTH_UNITS:
+        raise ValueError(f"unit {unit!r}: one of {list(LENGTH_UNITS)} "
+                         f"(squared/cubed with 2/3) is shown")
+    return (base if power == 1 else f"{base}{power}"), LENGTH_UNITS[base] ** power
+
+
+def _fmt(value: float, unit: str) -> str:
+    return f"{value:.3f} {unit}"
+
+
+def elevation_of(graph: Graph, position: Sequence[float], *,
+                 frame: str = "auto") -> Dict[str, Any]:
+    """The ELEVATION of a point of the scene (D-3, E.D. 18 Nov 2026).
+
+    The scene-local frame is glTF's: Y is up, so the height in the model's
+    frame is ``y``. When the graph is GEOREFERENCED (its GeoPositionNode
+    declares an EPSG) the elevation is ABSOLUTE — ``y + shift_z``, the height
+    in the vertical of the CRS the survey was shifted from (orthometric for the
+    national grids a site is surveyed in; the rotation of the scene is about
+    the vertical, so it does not enter); otherwise it is ``y`` in the model's
+    frame. The answer says which (``reference``), and the CRS it is in.
+
+    ``frame``: ``auto`` (D-3), ``model`` (always the model's y), ``graph``
+    (absolute; on a graph that is not georeferenced it falls back to the
+    model's y and ``warning`` says so).
+    """
+    if frame not in ("auto", "model", "graph"):
+        raise ValueError(f"frame must be auto, model or graph, got {frame!r}")
+    y = float(position[1])
+    out: Dict[str, Any] = {"value": y, "unit": "m", "reference": ELEVATION_MODEL,
+                           "crs": "local", "model_value": y}
+    if frame == "model":
+        return out
+    from ..api import _geo_anchor
+    anchor = _geo_anchor(graph)
+    if anchor.get("epsg") is None:
+        if frame == "graph":
+            out["warning"] = ("the graph is not georeferenced (its GeoPositionNode "
+                              "declares no EPSG): the elevation is in the model's frame")
+        return out
+    out.update(value=y + float(anchor.get("shift_z") or 0.0), reference=ELEVATION_ABSOLUTE,
+               crs=f"EPSG:{anchor['epsg']}", shift_z=float(anchor.get("shift_z") or 0.0))
+    return out
+
+
+def position_in_crs(graph: Graph, position: Sequence[float]) -> Optional[List[float]]:
+    """A scene point in the graph's CRS — ``[E, N, H]`` — or None when the graph
+    is not georeferenced. glTF's ground is ``x, -z`` (east, north of the scene),
+    turned by the scene's ``rotation`` (clockwise from grid north, D2) and
+    shifted, as :func:`s3dgraphy.api.georeference_scene` does in plan."""
+    from ..api import _geo_anchor
+    anchor = _geo_anchor(graph)
+    if anchor.get("epsg") is None:
+        return None
+    x, y, z = (float(v) for v in position[:3])
+    east, north = x, -z
+    t = math.radians(float(anchor.get("rotation") or 0.0))
+    e = east * math.cos(t) + north * math.sin(t)
+    n = -east * math.sin(t) + north * math.cos(t)
+    return [e + anchor["shift_x"], n + anchor["shift_y"], y + anchor["shift_z"]]
+
+
+def _semantic_shape_of(graph: Graph, region_id: str):
+    for edge in graph.edges:
+        if edge.edge_source == region_id and edge.edge_type == _EDGE_HAS_SEMANTIC_SHAPE:
+            node = graph.find_node_by_id(edge.edge_target)
+            if node is not None:
+                return node
+    return None
+
+
+def hull_volume(points: Sequence[Sequence[float]]) -> float:
+    """The volume of the convex hull of ``points`` (the triangles of
+    :func:`geometry.gltf.convex_hull_triangles`, outward, summed as signed
+    tetrahedra from the first vertex). A flat or degenerate hull: 0."""
+    from ..geometry.gltf import convex_hull_triangles
+    pts = [[float(c) for c in p] for p in points]
+    tris = convex_hull_triangles(pts)
+    if not tris:
+        return 0.0
+    o = pts[tris[0][0]]
+    vol = 0.0
+    for a, b, c in tris:
+        ax, ay, az = (pts[a][k] - o[k] for k in range(3))
+        bx, by, bz = (pts[b][k] - o[k] for k in range(3))
+        cx, cy, cz = (pts[c][k] - o[k] for k in range(3))
+        vol += ax * (by * cz - bz * cy) - ay * (bx * cz - bz * cx) + az * (bx * cy - by * cx)
+    return abs(vol) / 6.0
+
+
+def volume_of_shape(node: Any) -> Dict[str, Any]:
+    """The volume a SemanticShape encloses: its convex hulls and its spheres,
+    each measured and SUMMED — two parts that overlap are counted twice, and
+    ``overlap_not_removed`` says so (the union of hulls needs a mesh boolean,
+    which is not a measure of the sign but a computation on it)."""
+    data = getattr(node, "data", {}) or {}
+    hulls = data.get("convexshapes") or getattr(node, "convexshapes", None) or []
+    spheres = data.get("spheres") or getattr(node, "spheres", None) or []
+    parts: List[float] = []
+    for flat in hulls:
+        flat = [float(v) for v in flat]
+        parts.append(hull_volume([flat[k:k + 3] for k in range(0, len(flat) - 2, 3)]))
+    for sp in spheres:
+        if len(sp) >= 4:
+            parts.append(4.0 / 3.0 * math.pi * abs(float(sp[3])) ** 3)
+    return {"volume": sum(parts), "parts": parts, "hulls": len(hulls),
+            "spheres": len(spheres), "overlap_not_removed": len(parts) > 1}
+
+
 def measure(graph: Graph, region_id: str, *,
-            project_root: Optional[str] = None) -> Dict[str, Any]:
+            project_root: Optional[str] = None,
+            unit: Optional[str] = None,
+            frame: str = "auto") -> Dict[str, Any]:
     """What a reading's place measures, ready to become a property's value.
 
     Returns ``{region_id, geometry_kind, vertex_count, length, unit, crs,
-    value}``; ``value`` is the text «Usa come valore» writes (``"1.234 m"``) or
-    None when the place measures nothing (a region, a passage, a point).
+    produces, value}`` and, by kind (node datamodel 1.6.50, MICRO-PL07):
+
+    * ``point`` — ``position`` (the first vertex, model frame), ``positions``
+      when there are several, ``position_crs`` ``[E, N, H]`` when the graph is
+      georeferenced, and ``elevation`` (:func:`elevation_of`: absolute when the
+      graph is georeferenced, else the model's y — D-3 — with ``reference``
+      and ``crs`` saying which); ``value`` is the elevation of a single point;
+    * ``line`` / ``polyline`` — ``length``;
+    * ``surface`` — ``area`` (``area_unit``) and ``perimeter``;
+    * ``volume`` — ``volume`` (``volume_unit``) of the SemanticShape it reaches.
+
+    ``value`` is the text «Usa come valore» writes (``"1.234 m"``, ``"0.512
+    m2"``; a point's says its frame: ``"412.305 m (EPSG:3844)"`` or ``"1.210 m
+    (local)"``), in ``unit`` when asked (``cm``, ``mm`` and their squares and
+    cubes: a package's display unit — the graph stays in metres), else None
+    when the place measures nothing (a region, a passage). ``measure`` carries
+    the number itself in the unit shown (``quantity``, ``value_number``,
+    ``value_unit``).
     """
     node = graph.find_node_by_id(region_id)
     if node is None or getattr(node, "node_type", None) != "annotation_region":
@@ -312,14 +468,15 @@ def measure(graph: Graph, region_id: str, *,
     data = getattr(node, "data", {}) or {}
     kind = data.get("geometry_kind") or "region2d"
     length = data.get("length")
-    unit = data.get("unit")
+    stored_unit = data.get("unit")
     out: Dict[str, Any] = {
         "region_id": region_id,
         "geometry_kind": kind,
         "vertex_count": data.get("vertex_count"),
         "length": length,
-        "unit": unit,
+        "unit": stored_unit,
         "crs": data.get("crs"),
+        "produces": PRODUCES.get(kind),
         "value": None,
     }
     coords = data.get("coords")
@@ -330,9 +487,46 @@ def measure(graph: Graph, region_id: str, *,
         out["crs"] = data.get("crs") or "local"
         if kind in MEASURE_KINDS:
             length = chain_length([[float(v) for v in p] for p in coords])
-            out["length"], out["unit"] = length, unit or "m"
+            out["length"], out["unit"] = length, stored_unit or "m"
+    number: Optional[float] = None
+    power = 1
+    suffix = ""
     if kind in MEASURE_KINDS and length is not None:
-        out["value"] = f"{float(length):.3f} {unit or 'm'}"
+        number = float(length)
+    elif kind in AREA_KINDS:
+        if coords:
+            ring = [[float(v) for v in p] for p in coords]
+            area, perimeter = ring_area(ring), ring_perimeter(ring)
+        else:
+            area, perimeter = data.get("area"), data.get("perimeter")
+        out.update(area=area, perimeter=perimeter, unit=stored_unit or "m",
+                   area_unit=area_unit(stored_unit))
+        if area is not None:
+            number, power = float(area), 2
+    elif kind == "point" and coords:
+        pts = [[float(v) for v in p] for p in coords]
+        out["position"] = pts[0]
+        if len(pts) > 1:
+            out["positions"] = pts
+        crs_pos = position_in_crs(graph, pts[0])
+        if crs_pos is not None:
+            out["position_crs"] = crs_pos
+        elev = elevation_of(graph, pts[0], frame=frame)
+        out["elevation"] = elev
+        if len(pts) == 1:
+            number = elev["value"]
+            suffix = f" ({elev['crs']})"
+    elif kind in VOLUME_KINDS:
+        shape = _semantic_shape_of(graph, region_id)
+        if shape is not None:
+            vol = volume_of_shape(shape)
+            out.update(volume=vol["volume"], volume_unit="m3", volume_parts=vol)
+            number, power = vol["volume"], 3
+    if number is not None:
+        shown, factor = _show_unit(unit, power)
+        out["measure"] = {"quantity": out["produces"], "value_number": number * factor,
+                          "value_unit": shown}
+        out["value"] = _fmt(number * factor, shown) + suffix
     if project_root and kind in GLB_KINDS and not coords:
         out["glb"] = _measure_glb(graph, region_id, kind, data, project_root)
     return out
@@ -378,6 +572,12 @@ def _measure_glb(graph, region_id, kind, data, project_root) -> Dict[str, Any]:
     out["vertex_count"] = len(verts)
     agrees = read["geometry_kind"] == kind and (
         data.get("vertex_count") in (None, len(verts)))
+    if kind in AREA_KINDS:
+        ring = [[float(v) for v in p] for p in verts]
+        out["area"] = ring_area(ring)
+        cached = data.get("area")
+        if cached is not None:
+            agrees = agrees and abs(out["area"] - float(cached)) <= 1e-4 * max(1.0, out["area"])
     if kind in MEASURE_KINDS:
         length = polyline_length(verts)
         out["length"] = length

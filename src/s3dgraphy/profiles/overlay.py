@@ -205,6 +205,44 @@ class ProfileOverlay:
     def landmark_set(self, set_id: str) -> Optional[Dict[str, Any]]:
         return self.landmark_sets().get(set_id)
 
+    def extractor_geometry(self, type_id: str) -> Optional[Dict[str, Any]]:
+        """The 3D component of an extractor type (SPEC-pacchetto §5.3) — what a
+        Space tool draws and what its measure produces — with the defaults of
+        the SPEC filled in (``unit`` m, ``snap`` surface, ``frame`` model,
+        ``vertices`` of the primitive). None for a type without one (every
+        core type: the core's extractors have no geometric field)."""
+        entry = self.extractor_types().get(str(type_id or ""))
+        g = (entry or {}).get("geometry")
+        if not isinstance(g, Mapping) or not g.get("primitive"):
+            return None
+        prim = str(g["primitive"])
+        least = {"point": 1, "line": 2, "polyline": 2, "surface": 3}.get(prim)
+        verts = dict(g.get("vertices") or {})
+        if least is not None:
+            verts.setdefault("min", least)
+        if prim == "line":
+            verts.setdefault("max", 2)
+        default_unit = {"surface": "m2", "volume": "m3"}.get(prim, "m")
+        return dict(g, primitive=prim, unit=g.get("unit") or default_unit, snap=g.get("snap") or "surface",
+                    frame=g.get("frame") or "model", vertices=verts, type=str(type_id),
+                    origin=entry.get("origin"), profile=entry.get("profile"))
+
+    def landmark_points(self, set_id: str) -> List[Dict[str, Any]]:
+        """The points of a landmark set, in the set's order, each with its set."""
+        ls = self.landmark_set(set_id) or {}
+        return [dict(p, set=set_id) for p in ((ls.get("set") or {}).get("points") or [])
+                if isinstance(p, Mapping) and p.get("id")]
+
+    def landmark_point(self, ref: str, point: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        """One canonical point: ``landmark_point("stat:volto/nasion")`` or
+        ``landmark_point("stat:volto", "nasion")`` — the combiners' form and the
+        tools' form. None when the set or the point is not known."""
+        set_id, pid = (ref, point) if point is not None else (str(ref).rsplit("/", 1) + [""])[:2]
+        for p in self.landmark_points(set_id):
+            if str(p["id"]) == str(pid):
+                return p
+        return None
+
     def qualia_vocabularies(self) -> List[Dict[str, Any]]:
         return [dict(q, origin=p.origin, profile=p.iri) for p in self.profiles for q in p.items("qualia_vocabularies")]
 

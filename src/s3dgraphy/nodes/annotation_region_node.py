@@ -38,10 +38,13 @@ so they are the same node, told apart by ``geometry_kind``:
                 where, the quote survives an edit that moves them);
   ``point``     one or more points on a 3D model;
   ``line``      two points: a measure;
-  ``polyline``  an open chain of points: an articulated measure.
+  ``polyline``  an open chain of points: an articulated measure;
+  ``surface``   a closed ring of ≥ 3 points: an area (node datamodel 1.6.50,
+                MICRO-PL07, D-3 — the Areale of EM Tools, a package's «infill
+                surface»: a primitive for everybody, so in the core).
 
 For the two document kinds the selector lives in the node's data, as it always
-did. **For the three 3D kinds the coordinates live in the node too** (E.D.
+did. **For the 3D kinds the coordinates live in the node too** (E.D.
 2026-09-30, node datamodel 1.6.15): geometry is divided BY ORIGIN, not by shape.
 The sign of whoever argues — the point of a reading, the line and the polyline
 of a measure — is data of the node, ``data.coords`` (``[[x, y, z], …]`` in the
@@ -93,9 +96,10 @@ def _norm_pair(pair: Any, where: str) -> List[float]:
     return out
 
 
-#: The five kinds of place a reading can look at. ``region2d`` first: it is the
-#: default, and every region written before 2026-10-06 is one.
-GEOMETRY_KINDS = ("region2d", "passage", "point", "line", "polyline", "volume")
+#: The kinds of place a reading can look at. ``region2d`` first: it is the
+#: default, and every region written before 2026-10-06 is one. ``surface``
+#: since node datamodel 1.6.50 (MICRO-PL07, D-3).
+GEOMETRY_KINDS = ("region2d", "passage", "point", "line", "polyline", "surface", "volume")
 #: A volume ON a model: an annotation that encloses a part of it (ATON's convex
 #: hulls and spheres) and is not the proxy of any unit. Its geometry is not in
 #: the region: the region reaches a SemanticShape with ``has_semantic_shape``,
@@ -103,13 +107,18 @@ GEOMETRY_KINDS = ("region2d", "passage", "point", "line", "polyline", "volume")
 VOLUME_KINDS = ("volume",)
 #: The 3D kinds: vertices in the model's frame, in ``data.coords`` (the name
 #: is historical — from 2026-10-06 to 2026-10-11 their vertices were a `.glb`).
-GLB_KINDS = ("point", "line", "polyline")
+GLB_KINDS = ("point", "line", "polyline", "surface")
 SPATIAL_KINDS = GLB_KINDS
 #: Used when the datamodel cannot be read (it always can, in a built package).
 _INLINE_MAX_FALLBACK = 500
 _STITCH_TOLERANCE_FALLBACK = 1e-6
-#: The kinds that measure something (a length).
+#: The kinds that measure a length.
 MEASURE_KINDS = ("line", "polyline")
+#: The kinds that measure an area (and a perimeter): a CLOSED ring, the last
+#: vertex joined to the first (never written twice).
+AREA_KINDS = ("surface",)
+#: How many vertices a 3D kind needs, at least.
+LEAST_VERTICES = {"point": 1, "line": 2, "polyline": 2, "surface": 3}
 #: glTF's own unit, and the frame the proxies are written in: scene-local
 #: (already net of the GeoPositionNode shift), not a projected CRS.
 DEFAULT_UNIT = "m"
@@ -164,17 +173,53 @@ def check_coords(kind: str, coords: Any) -> List[List[float]]:
                 isinstance(v, bool) or not isinstance(v, (int, float)) for v in p):
             raise AnnotationRegionError(f"{kind} vertex {i}: expected [x, y, z], got {p!r}")
         out.append([float(v) for v in p])
-    least = 1 if kind == "point" else 2
+    least = LEAST_VERTICES.get(kind, 2)
     if len(out) < least:
         raise AnnotationRegionError(f"a {kind} needs at least {least} vertices, got {len(out)}")
     if kind == "line" and len(out) != 2:
         raise AnnotationRegionError(f"a line has exactly 2 vertices, got {len(out)} (use polyline)")
+    if kind in AREA_KINDS and len(out) > 3 and math.dist(out[0], out[-1]) <= stitch_tolerance():
+        # a ring written closed (GeoJSON, WKT): the repeated first vertex goes,
+        # the ring is closed by definition
+        out = out[:-1]
     return out
 
 
 def chain_length(coords: List[List[float]]) -> float:
     """Sum of the segments of an OPEN chain (a line is the one-segment case)."""
     return sum(math.dist(a, b) for a, b in zip(coords, coords[1:]))
+
+
+def ring_perimeter(coords: List[List[float]]) -> float:
+    """The perimeter of a CLOSED ring: the chain plus the side back to the start."""
+    if len(coords) < 2:
+        return 0.0
+    return chain_length(coords) + math.dist(coords[-1], coords[0])
+
+
+def ring_area(coords: List[List[float]]) -> float:
+    """The area of a closed ring in 3D: half the norm of its VECTOR AREA
+    (Newell). Exact for a plane polygon, whatever its orientation in space; for
+    a ring that is not plane (drawn on a curved surface) it is the area of its
+    projection on the plane that fits it best — the area the ring encloses, not
+    the area of the mesh under it, which only the model knows (a reading is a
+    sign on the model, not a cut of it)."""
+    n = len(coords)
+    if n < 3:
+        return 0.0
+    sx = sy = sz = 0.0
+    for i in range(n):
+        x1, y1, z1 = coords[i]
+        x2, y2, z2 = coords[(i + 1) % n]
+        sx += (y1 - y2) * (z1 + z2)
+        sy += (z1 - z2) * (x1 + x2)
+        sz += (x1 - x2) * (y1 + y2)
+    return 0.5 * math.sqrt(sx * sx + sy * sy + sz * sz)
+
+
+def area_unit(unit: Optional[str]) -> str:
+    """The unit of an area measured in ``unit`` (``m`` → ``m2``)."""
+    return f"{unit or DEFAULT_UNIT}2"
 
 
 def _non_negative_int(value: Any, where: str) -> int:
@@ -218,7 +263,10 @@ class AnnotationRegionNode(Node):
             of ``coords`` when they are inline).
         length (float): ``line`` / ``polyline`` — the measured length, the sum
             of the segments, in ``unit`` and ``crs``.
-        unit (str): of the length; ``"m"``.
+        area (float): ``surface`` — the area the closed ring encloses
+            (:func:`ring_area`), in ``area_unit`` (``unit`` squared).
+        perimeter (float): ``surface`` — the ring's perimeter, in ``unit``.
+        unit (str): of the length and the perimeter; ``"m"``.
         crs (str): the frame of the coordinates and of the length; ``"local"``.
 
     A ``volume`` carries none of these: it is ON a model (``resource_id``, the
@@ -254,7 +302,9 @@ class AnnotationRegionNode(Node):
                  length: Optional[float] = None,
                  unit: Optional[str] = None,
                  crs: Optional[str] = None,
-                 coords: Optional[List[List[float]]] = None):
+                 coords: Optional[List[List[float]]] = None,
+                 area: Optional[float] = None,
+                 perimeter: Optional[float] = None):
         super().__init__(node_id=node_id, name=name, description=description)
 
         kind = geometry_kind or "region2d"
@@ -272,6 +322,8 @@ class AnnotationRegionNode(Node):
         self.text: Optional[str] = None
         self.vertex_count: Optional[int] = None
         self.length: Optional[float] = None
+        self.area: Optional[float] = None
+        self.perimeter: Optional[float] = None
         self.unit: Optional[str] = None
         self.crs: Optional[str] = None
         self.coords: List[List[float]] = []
@@ -283,7 +335,7 @@ class AnnotationRegionNode(Node):
         elif kind in VOLUME_KINDS:
             pass           # the hulls and spheres are the SemanticShape's
         else:
-            self._init_glb_kind(vertex_count, length, unit, crs, coords)
+            self._init_glb_kind(vertex_count, length, unit, crs, coords, area, perimeter)
 
         self.data: Dict[str, Any] = {"geometry_kind": self.geometry_kind}
         if kind == "region2d":
@@ -304,6 +356,10 @@ class AnnotationRegionNode(Node):
                 self.data["vertex_count"] = self.vertex_count
             if self.length is not None:
                 self.data.update({"length": self.length, "unit": self.unit,
+                                  "crs": self.crs})
+            elif self.area is not None:
+                self.data.update({"area": self.area, "perimeter": self.perimeter,
+                                  "unit": self.unit, "area_unit": area_unit(self.unit),
                                   "crs": self.crs})
             elif self.crs is not None:
                 self.data["crs"] = self.crs
@@ -326,7 +382,8 @@ class AnnotationRegionNode(Node):
         # (the offsets still say where) but never invented.
         self.text = text or ""
 
-    def _init_glb_kind(self, vertex_count, length, unit, crs, coords=None) -> None:
+    def _init_glb_kind(self, vertex_count, length, unit, crs, coords=None,
+                       area=None, perimeter=None) -> None:
         kind = self.geometry_kind
         if coords:
             self.coords = check_coords(kind, coords)
@@ -338,10 +395,13 @@ class AnnotationRegionNode(Node):
             # number free to disagree with them
             if kind in MEASURE_KINDS:
                 length = chain_length(self.coords)
+            if kind in AREA_KINDS:
+                area, perimeter = ring_area(self.coords), ring_perimeter(self.coords)
+                unit = unit or DEFAULT_UNIT
             self.crs = crs or DEFAULT_CRS
         if vertex_count is not None:
             n = _non_negative_int(vertex_count, f"{kind} vertex_count")
-            least = 1 if kind == "point" else 2
+            least = LEAST_VERTICES.get(kind, 2)
             if n < least:
                 raise AnnotationRegionError(
                     f"a {kind} needs at least {least} vertices, got {n}")
@@ -359,6 +419,21 @@ class AnnotationRegionNode(Node):
                 raise AnnotationRegionError(
                     f"length must be a non-negative number, got {length!r}")
             self.length = float(length)
+            self.unit = unit or DEFAULT_UNIT
+            self.crs = crs or DEFAULT_CRS
+        if area is not None or perimeter is not None:
+            if kind not in AREA_KINDS:
+                raise AnnotationRegionError(
+                    f"a {kind} measures no area; area belongs to {list(AREA_KINDS)}")
+            for label, value in (("area", area), ("perimeter", perimeter)):
+                if value is not None and (isinstance(value, bool) or not isinstance(
+                        value, (int, float)) or float(value) < 0):
+                    raise AnnotationRegionError(
+                        f"{label} must be a non-negative number, got {value!r}")
+            if area is None:
+                raise AnnotationRegionError("a surface's perimeter comes with its area")
+            self.area = float(area)
+            self.perimeter = float(perimeter) if perimeter is not None else None
             self.unit = unit or DEFAULT_UNIT
             self.crs = crs or DEFAULT_CRS
 
@@ -405,7 +480,7 @@ class AnnotationRegionNode(Node):
 
     @property
     def is_glb_kind(self) -> bool:
-        """True for the 3D kinds (point, line, polyline). Historical name: their
+        """True for the 3D kinds (point, line, polyline, surface). Historical name: their
         vertices are in ``coords`` unless there are more than
         :func:`inline_max_vertices` of them."""
         return self.geometry_kind in GLB_KINDS

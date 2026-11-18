@@ -95,6 +95,11 @@ MEASURE_UNIT_IRI: Dict[str, URIRef] = {
     "cm": QUDT_UNIT.CentiM,
     "mm": QUDT_UNIT.MilliM,
     "km": QUDT_UNIT.KiloM,
+    # 1.6.50: the area of a surface (unit², QUDT's own names)
+    "m2":  QUDT_UNIT.M2,
+    "cm2": QUDT_UNIT.CentiM2,
+    "mm2": QUDT_UNIT.MilliM2,
+    "km2": QUDT_UNIT.KiloM2,
 }
 
 DEFAULT_BASE_URI = "https://w3id.org/em/id/"
@@ -2141,7 +2146,7 @@ class RDFExporter:
                 ctx.add((node_iri, CRM.P2_has_type, Literal(shape_kind)))
             if geometry_kind == "passage":
                 self._emit_passage_quote(node_iri, node, ctx)
-            if geometry_kind in ("point", "line", "polyline"):
+            if geometry_kind in ("point", "line", "polyline", "surface"):
                 # node datamodel 1.6.15: the vertices are the node's, and leave
                 # as ONE GeoSPARQL literal (the 3D twin of the 2D Media
                 # Fragment): <region> geo:hasGeometry <region/geometry>, which
@@ -2163,6 +2168,14 @@ class RDFExporter:
                              Literal(int(vc), datatype=XSD.nonNegativeInteger)))
                 if getattr(node, "length", None) is not None:
                     self._emit_measure(node_iri, node, ctx)
+                if getattr(node, "area", None) is not None:
+                    # 1.6.50: a surface's area and perimeter, the same E54 shape
+                    self._emit_measure(node_iri, node, ctx, kind="area",
+                                       value=node.area,
+                                       unit=data.get("area_unit") or f"{node.unit or 'm'}2")
+                    if getattr(node, "perimeter", None) is not None:
+                        self._emit_measure(node_iri, node, ctx, kind="perimeter",
+                                           value=node.perimeter)
             # Page 0 is emitted as NOTHING. A plain image has no page, and
             # asserting `onPage 0` for every region would put a fact in the store
             # that nobody stated — and the importer defaults to 0 anyway, so the
@@ -2352,7 +2365,8 @@ class RDFExporter:
         ctx.add((quote, RDF.type, OA.TextQuoteSelector))
         ctx.add((quote, OA.exact, Literal(text)))
 
-    def _emit_measure(self, node_iri: URIRef, node: Any, ctx) -> None:
+    def _emit_measure(self, node_iri: URIRef, node: Any, ctx, *, kind: str = "length",
+                      value: Any = None, unit: Optional[str] = None) -> None:
         """The length of a line or polyline as a CIDOC E54 Dimension.
 
         CIDOC already has the whole shape — P43 has dimension → E54, P90 has
@@ -2366,13 +2380,13 @@ class RDFExporter:
         for the scene frame) has no CIDOC property on a dimension, so it is
         em:crs. The dimension is `<region>/length`, typed "length" with P2.
         """
-        dim = URIRef(str(node_iri) + "/length")
+        dim = URIRef(str(node_iri) + "/" + kind)
         ctx.add((node_iri, CRM.P43_has_dimension, dim))
         ctx.add((dim, RDF.type, CRM.E54_Dimension))
-        ctx.add((dim, CRM.P2_has_type, Literal("length")))
+        ctx.add((dim, CRM.P2_has_type, Literal(kind)))
         ctx.add((dim, CRM.P90_has_value,
-                 Literal(float(node.length), datatype=XSD.double)))
-        unit = getattr(node, "unit", None)
+                 Literal(float(node.length if value is None else value), datatype=XSD.double)))
+        unit = unit or getattr(node, "unit", None)
         if unit:
             unit_iri = MEASURE_UNIT_IRI.get(unit) or S3D[f"unit_{_iri_local(unit)}"]
             ctx.add((dim, CRM.P91_has_unit, unit_iri))

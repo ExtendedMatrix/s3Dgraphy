@@ -1563,7 +1563,7 @@ class RDFImporter:
                 AnnotationRegionError, AnnotationRegionNode,
             )
             kind = self._one_literal(store, ref, CRM.P2_has_type)
-            if kind in ("passage", "point", "line", "polyline", "volume"):
+            if kind in ("passage", "point", "line", "polyline", "surface", "volume"):
                 data["geometry_kind"] = str(kind)
             selector = self._one_literal(store, ref, EM.hasSelector)
             if data.get("geometry_kind") == "volume":
@@ -1571,7 +1571,7 @@ class RDFImporter:
                 # hulls and spheres are the SemanticShape it points at, which
                 # comes back as a node of its own with its edge.
                 pass
-            elif data.get("geometry_kind") in ("point", "line", "polyline"):
+            elif data.get("geometry_kind") in ("point", "line", "polyline", "surface"):
                 # No selector for a 3D kind: its vertices come back from the
                 # GeoSPARQL WKT of <region>/geometry (node datamodel 1.6.15).
                 data.update(self._wkt_coords(store, ref, node_id))
@@ -1594,7 +1594,7 @@ class RDFImporter:
                         if exact is not None:
                             data["text"] = exact
                             break
-            if data.get("geometry_kind") in ("point", "line", "polyline"):
+            if data.get("geometry_kind") in ("point", "line", "polyline", "surface"):
                 vc = self._one_literal(store, ref, EM.vertexCount)
                 if vc is not None:
                     data["vertex_count"] = int(vc)
@@ -1986,14 +1986,34 @@ class RDFImporter:
         `<u>`; any other unit IRI is kept whole rather than guessed at.
         """
         unit_of = {str(iri): short for short, iri in MEASURE_UNIT_IRI.items()}
+        out: Dict[str, Any] = {}
         for dim in store.objects(ref, CRM.P43_has_dimension):
-            if self._one_literal(store, dim, CRM.P2_has_type) != "length":
+            dkind = self._one_literal(store, dim, CRM.P2_has_type)
+            if dkind in ("area", "perimeter"):
+                # 1.6.50: a surface's two numbers
+                value = self._one_literal(store, dim, CRM.P90_has_value)
+                try:
+                    out[str(dkind)] = float(value)
+                except (TypeError, ValueError):
+                    self.warnings.append(
+                        f"node '{node_id}': measured {dkind} {value!r} is not a number")
+                    continue
+                unit = self._one_object_text(store, dim, CRM.P91_has_unit)
+                if unit and dkind == "area":
+                    out["area_unit"] = unit_of.get(unit, unit)
+                elif unit:
+                    out["unit"] = unit_of.get(unit, unit)
+                crs = self._one_literal(store, dim, EM.crs)
+                if crs:
+                    out["crs"] = crs
+                continue
+            if dkind != "length":
                 continue
             value = self._one_literal(store, dim, CRM.P90_has_value)
             if value is None:
                 continue
             try:
-                out: Dict[str, Any] = {"length": float(value)}
+                out["length"] = float(value)
             except ValueError:
                 self.warnings.append(
                     f"node '{node_id}': measured length {value!r} is not a number")
@@ -2012,7 +2032,7 @@ class RDFImporter:
             if crs:
                 out["crs"] = crs
             return out
-        return {}
+        return out
 
     @staticmethod
     def _one_literal(store: ConjunctiveGraph, ref: URIRef,

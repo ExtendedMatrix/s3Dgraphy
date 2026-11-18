@@ -5,6 +5,30 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Changed
+- **The geometry of the extractors** (MICRO-PL07-GEOMETRIA-DEGLI-ESTRATTORI,
+  row W3 of the extensions plan, D-3, 18 November 2026). Node datamodel
+  **1.6.49 → 1.6.50**. `surface` is a `geometry_kind` of the core: a closed
+  ring of ≥ 3 vertices on a 3D model, with `area` (half the norm of the vector
+  area: exact for a plane ring, the projection on the best plane otherwise),
+  `perimeter`, `unit`, `area_unit`; a ring written closed is opened; glTF
+  LINE_LOOP, WKT `POLYGON Z`, RDF E54 typed `area`/`perimeter` (QUDT M2…);
+  above `coords.inline_max_vertices` a .glb with the area kept. **`measure()`**
+  gives the ELEVATION of a point — absolute (`y + shift_z`) when the graph is
+  georeferenced, the model's `y` otherwise, the value saying which
+  («412.305 m (EPSG:3844)», «1.210 m (local)»), `position_crs` with the
+  rotation —, the area of a surface, the VOLUME of a volume's SemanticShape
+  (hulls and spheres summed, overlap said), in the unit a package shows
+  (`cm`, `mm`, squares, cubes). **Overlay**: `extractor_geometry(type)` with
+  the SPEC's defaults, `landmark_points(set)`, `landmark_point("set/point")`.
+  New **`annotation.extractors`**: `place_extractor` (the type's primitive and
+  vertices checked before anything is written, `data.em_kind`, the measure in
+  the type's unit), `start_landmark_pose` (the act's CombinerNode,
+  `data.landmark_pose`), `place_landmark` (ONE extractor per canonical point,
+  `data.landmark = {set, point, concept, label, lang?, side?}`, `combines`
+  from the pose; placing it again moves it), `landmark_pose_status`
+  (placed, missing required/optional, next). ExtractorNode `data.em_kind` and
+  `data.landmark` described in the datamodel; mappings re-stamped; the two
+  version-pinning tests said out loud. `tests/test_extractor_geometry.py` 24.
 - **The library of the community packages** (MICRO-PL03-PROFILI-LIBRERIA, row
   W1 of the extensions plan, 18 November 2026). New `s3dgraphy.profiles`: a
   community package is an EM Profile 0.2 («Pacchetto di comunità» in the

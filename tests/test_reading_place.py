@@ -69,7 +69,11 @@ def test_the_3d_kinds_keep_no_coordinates_in_the_node():
     ("polyline", dict(vertex_count=1)),
     ("point", dict(vertex_count=1, length=2.0)),
     ("line", dict(vertex_count=2, length=-1)),
-    ("surface", dict()),
+    # until 1.6.49 `surface` was not a kind at all; since 1.6.50 (MICRO-PL07,
+    # D-3) it is, and what it refuses is a ring of fewer than three vertices
+    # or a length
+    ("surface", dict(vertex_count=2)),
+    ("surface", dict(vertex_count=3, length=1.0)),
 ])
 def test_3d_kinds_refuse_what_they_are_not(kind, kw):
     with pytest.raises(AnnotationRegionError):
@@ -110,8 +114,9 @@ def test_passage_and_3d_kind_survive_the_rdf_round_trip():
 def test_datamodels_declare_the_kinds_and_the_missing_edge():
     node = _raw("s3Dgraphy_node_datamodel.json")
     entry = node["visualization_nodes"]["AnnotationRegionNode"]
+    # 1.6.50 (MICRO-PL07, D-3): `surface`, a closed ring with its area
     assert list(entry["geometry_kinds"]) == ["region2d", "passage", "point", "line",
-                                             "polyline", "volume"]
+                                             "polyline", "surface", "volume"]
     # 1.6.16: the kinds of the node are the kinds of the datamodel
     from s3dgraphy.nodes.annotation_region_node import GEOMETRY_KINDS
     assert tuple(entry["geometry_kinds"]) == GEOMETRY_KINDS

@@ -7,6 +7,8 @@ nothing is encoded in a way somebody has to be told about:
     point     → mode 0  POINTS
     line      → mode 1  LINES       (exactly two vertices: one segment)
     polyline  → mode 3  LINE_STRIP  (an OPEN chain; LINE_LOOP, mode 2, would close it)
+    surface   → mode 2  LINE_LOOP   (a CLOSED ring: the area's outline, node
+                                     datamodel 1.6.50)
 
 ATON and Blender read these as they are.
 
@@ -38,7 +40,7 @@ _ARRAY_BUFFER = 34962
 
 #: geometry_kind ↔ glTF primitive mode. One mode per kind, so the file alone
 #: says what it is.
-MODES = {"point": 0, "line": 1, "polyline": 3}
+MODES = {"point": 0, "line": 1, "polyline": 3, "surface": 2}
 _KINDS = {mode: kind for kind, mode in MODES.items()}
 
 
@@ -54,7 +56,7 @@ def _check(kind: str, vertices: Sequence[Sequence[float]]) -> List[List[float]]:
         if not isinstance(p, (list, tuple)) or len(p) != 3:
             raise ReadingGlbError(f"vertex {i}: expected [x, y, z], got {p!r}")
         pts.append([float(v) for v in p])
-    least = 1 if kind == "point" else 2
+    least = {"point": 1, "surface": 3}.get(kind, 2)
     if len(pts) < least:
         raise ReadingGlbError(f"a {kind} needs at least {least} vertices, got {len(pts)}")
     if kind == "line" and len(pts) != 2:
@@ -103,7 +105,7 @@ def glb_bytes(kind: str, vertices: Sequence[Sequence[float]], *,
 def parse_glb(data: bytes) -> Dict[str, Any]:
     """GLB bytes → ``{"geometry_kind", "vertices"}``. The inverse of
     :func:`glb_bytes`; also reads any GLB whose first primitive is POINTS,
-    LINES or LINE_STRIP with a float VEC3 POSITION."""
+    LINES, LINE_LOOP or LINE_STRIP with a float VEC3 POSITION."""
     if len(data) < 20:
         raise ReadingGlbError("not a GLB: too short")
     magic, version, total = struct.unpack_from("<III", data, 0)
@@ -129,7 +131,7 @@ def parse_glb(data: bytes) -> Dict[str, Any]:
         raise ReadingGlbError(f"GLB without a readable POSITION primitive ({exc})")
     if mode not in _KINDS:
         raise ReadingGlbError(
-            f"primitive mode {mode} is not a reading's (0 POINTS, 1 LINES, 3 LINE_STRIP)")
+            f"primitive mode {mode} is not a reading's (0 POINTS, 1 LINES, 2 LINE_LOOP, 3 LINE_STRIP)")
     if acc.get("componentType") != _FLOAT or acc.get("type") != "VEC3":
         raise ReadingGlbError("POSITION is not a float VEC3")
     count = int(acc["count"])

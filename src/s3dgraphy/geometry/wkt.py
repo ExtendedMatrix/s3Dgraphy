@@ -88,7 +88,8 @@ def _triple(p) -> str:
 
 def coords_to_wkt(kind: str, coords: List[List[float]], crs: Optional[str] = None) -> str:
     """``POINT Z`` (one point), ``MULTIPOINT Z`` (several), ``LINESTRING Z``
-    (a line or a polyline), prefixed with the CRS IRI."""
+    (a line or a polyline), ``POLYGON Z`` (a surface: one ring, closed),
+    prefixed with the CRS IRI."""
     if not coords:
         raise WktError("no coordinates")
     if kind == "point":
@@ -96,6 +97,10 @@ def coords_to_wkt(kind: str, coords: List[List[float]], crs: Optional[str] = Non
                 "MULTIPOINT Z (" + ", ".join(f"({_triple(p)})" for p in coords) + ")")
     elif kind in ("line", "polyline"):
         body = "LINESTRING Z (" + ", ".join(_triple(p) for p in coords) + ")"
+    elif kind == "surface":
+        # 1.6.50: one closed ring, the first vertex repeated as WKT wants
+        ring = list(coords) + [coords[0]]
+        body = "POLYGON Z ((" + ", ".join(_triple(p) for p in ring) + "))"
     else:
         raise WktError(f"no WKT for geometry_kind {kind!r}")
     return f"<{crs_iri(crs)}> {body}"
@@ -113,13 +118,22 @@ def _parse_triples(text: str) -> List[List[float]]:
 
 def wkt_to_coords(literal: str) -> Tuple[str, str, List[List[float]]]:
     """The inverse of :func:`coords_to_wkt`: ``(crs, shape, coords)`` with
-    ``shape`` one of ``POINT`` / ``MULTIPOINT`` / ``LINESTRING``."""
+    ``shape`` one of ``POINT`` / ``MULTIPOINT`` / ``LINESTRING`` / ``POLYGON``
+    (a surface's ring, given back OPEN: the repeated first vertex dropped)."""
     m = _WKT_RE.match(literal or "")
     if not m:
         raise WktError(f"not a WKT literal: {literal!r}")
     iri, shape, z, body = m.group(1), m.group(2).upper(), m.group(3), m.group(4)
-    if shape not in ("POINT", "MULTIPOINT", "LINESTRING") or not z:
-        raise WktError(f"only POINT Z, MULTIPOINT Z and LINESTRING Z are read, got {shape}")
+    if shape not in ("POINT", "MULTIPOINT", "LINESTRING", "POLYGON") or not z:
+        raise WktError(f"only POINT Z, MULTIPOINT Z, LINESTRING Z and POLYGON Z are read, got {shape}")
+    if shape == "POLYGON":
+        inner = body.strip()
+        if not (inner.startswith("(") and inner.endswith(")")) or "(" in inner[1:-1]:
+            raise WktError("a surface is ONE ring: POLYGON Z ((x y z, …))")
+        ring = _parse_triples(inner[1:-1])
+        if len(ring) > 1 and ring[0] == ring[-1]:
+            ring = ring[:-1]
+        return crs_of_iri(iri), shape, ring
     return crs_of_iri(iri), shape, _parse_triples(body)
 
 
