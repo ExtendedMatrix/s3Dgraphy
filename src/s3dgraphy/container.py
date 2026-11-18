@@ -239,6 +239,13 @@ class Container:
     #: Not content: the digest does not see it (the terms themselves are on the
     #: nodes, and those it sees). Nothing is written when no value has a term.
     vocabularies: Dict[str, Any] = field(default_factory=dict)
+    #: MICRO-PL03 (W1) · the COMMUNITY PACKAGES the file declares
+    #: (``header.profiles``), activated when it was read: a
+    #: :class:`s3dgraphy.profiles.ProfileOverlay` (None = none declared), and
+    #: the declared ones not installed here (``[{iri, version}]``) — the file
+    #: opens all the same. Not content; the header carries the declaration.
+    profiles: Any = None
+    profiles_missing: List[Dict[str, Any]] = field(default_factory=list)
 
     def graph_ids(self) -> List[str]:
         return list(self.graphs.keys())
@@ -386,6 +393,7 @@ def parse_container(doc: Dict[str, Any], *,
     warnings.extend(pres_warnings)
     from .terms import read_section as read_vocabularies
     vocabularies = read_vocabularies(doc)
+    profiles, profiles_missing = _activate_profiles(header, warnings)
 
     if not is_container(doc):
         # LEGACY single-graph: read it with the reader that has always read it,
@@ -399,12 +407,15 @@ def parse_container(doc: Dict[str, Any], *,
             version=ProjectVersion.from_dict(doc.get(VERSION_KEY)),
             presentation=presentation,
             vocabularies=vocabularies,
+            profiles=profiles,
+            profiles_missing=profiles_missing,
         )
         return container, warnings + list(graph_warnings)
 
     container = Container(header=header,
                           version=ProjectVersion.from_dict(doc.get(VERSION_KEY)),
-                          presentation=presentation, vocabularies=vocabularies)
+                          presentation=presentation, vocabularies=vocabularies,
+                          profiles=profiles, profiles_missing=profiles_missing)
     own_layouts: Dict[str, Dict[str, Any]] = {}
     node_ids: Dict[str, List[str]] = {}
     members = doc[GRAPHS_KEY]
@@ -476,6 +487,40 @@ def parse_container(doc: Dict[str, Any], *,
     return container, warnings
 
 
+def _activate_profiles(header: Dict[str, Any], warnings: List[str]):
+    """MICRO-PL03 · the packages of ``header.profiles``, activated: ``(overlay,
+    missing)``. A missing package is said and never refuses the file; a
+    failure of the machine's folder is said and never stops the reading."""
+    declared = header.get("profiles")
+    if not declared:
+        return None, []
+    try:
+        from .profiles import activate
+        overlay, missing, problems = activate(declared)
+    except Exception as exc:  # noqa: BLE001 — the file is read without packages
+        warnings.append(f"community packages not activated: {exc}")
+        return None, []
+    warnings.extend(p.text("en") for p in problems)
+    return overlay, missing
+
+
+def _declare_profiles(header: Dict[str, Any], graphs: Dict[str, Any],
+                      container: "Container") -> None:
+    """MICRO-PL03 (REPORT G6) · ``header.profiles``: what the file declared,
+    plus the package of every prefix its content uses. Nothing is written
+    when there is none, so a file without packages stays what it was."""
+    declared = header.get("profiles")
+    try:
+        from .profiles import declare
+        out = declare(graphs.values(), declared, container.profiles)
+    except Exception:  # noqa: BLE001 — never lose a save to the packages' folder
+        out = list(declared or []) if isinstance(declared, list) else []
+    if out:
+        header["profiles"] = out
+    else:
+        header.pop("profiles", None)
+
+
 def _member_section(graph: Graph) -> Dict[str, Any]:
     """A graph as a container member: the `graph` section of the single-graph
     document, reusing the one builder there is."""
@@ -534,6 +579,7 @@ def build_container(container: Container) -> Dict[str, Any]:
         merged = dict(container.header)
         merged.update(header)
         header = merged
+    _declare_profiles(header, graphs, container)
     doc: Dict[str, Any] = {"header": header, GRAPHS_KEY: graphs}
     active = container.active_graph_id or next(iter(container.graphs), None)
     if active:

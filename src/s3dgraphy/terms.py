@@ -103,10 +103,16 @@ def quale_of(name: Any) -> Optional[str]:
     return aliases.get(key)
 
 
-def controlled_quale(name: Any) -> Optional[Dict[str, Any]]:
+def controlled_quale(name: Any, overlay: Any = None) -> Optional[Dict[str, Any]]:
     """The quale entry when a property of this name takes its values from an
     external vocabulary; None otherwise (free text, numbers, a closed custom
-    list)."""
+    list). MICRO-PL03 · with the ``overlay`` of the active community packages
+    (:class:`s3dgraphy.profiles.ProfileOverlay`), a package's quale controlled
+    by its own scheme (``qualia_vocabularies``) is controlled too."""
+    if overlay:
+        own = overlay.qualia_types().get(str(name or "").strip())
+        if own and own.get("origin") != "core" and own.get("vocabulary_source"):
+            return own
     q = quale_of(name)
     if not q:
         return None
@@ -133,9 +139,9 @@ def _fields(node: Any) -> Tuple[str, Any, Any, Dict[str, Any]]:
     return str(getattr(node, "node_type", "") or ""), name, getattr(node, "value", None), data
 
 
-def is_controlled(node: Any) -> bool:
+def is_controlled(node: Any, overlay: Any = None) -> bool:
     kind, name, _, _ = _fields(node)
-    return kind == "property" and controlled_quale(name) is not None
+    return kind == "property" and controlled_quale(name, overlay) is not None
 
 
 # ── the term ────────────────────────────────────────────────────────────────
@@ -281,7 +287,8 @@ def _node_id(node: Any) -> Optional[str]:
 
 
 def vocabulary_warnings(graph_or_section: Any, *,
-                        installed: Optional[Iterable[str]] = None) -> List[Dict[str, Any]]:
+                        installed: Optional[Iterable[str]] = None,
+                        overlay: Any = None) -> List[Dict[str, Any]]:
     """The subcategory ``vocabulary`` of a graph's warnings, as records
     ``{kind, category, node_id, message, field, value, quale, vocabulary?}``:
 
@@ -290,7 +297,9 @@ def vocabulary_warnings(graph_or_section: Any, *,
     * ``missing_vocabulary`` — a value carries a term whose vocabulary is not
       installed on this machine (its saved label is still shown).
 
-    ``installed`` names the vocabularies present (default: this machine's)."""
+    ``installed`` names the vocabularies present (default: this machine's);
+    ``overlay`` (MICRO-PL03) the active community packages, whose controlled
+    qualia count as controlled fields."""
     have = set(installed) if installed is not None else {
         s["id"] for s in _pk.vocab_installed() if s.get("status") == _pk.STATUS_READY}
     out: List[Dict[str, Any]] = []
@@ -298,7 +307,7 @@ def vocabulary_warnings(graph_or_section: Any, *,
         kind, name, value, _ = _fields(node)
         if kind != "property":
             continue
-        quale = controlled_quale(name)
+        quale = controlled_quale(name, overlay)
         term = term_of(node)
         text = "" if value is None or isinstance(value, (dict, list)) else str(value).strip()
         if term:

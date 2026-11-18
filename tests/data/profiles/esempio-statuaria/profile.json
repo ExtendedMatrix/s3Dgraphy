@@ -1,0 +1,322 @@
+{
+  "$schema": "https://w3id.org/extendedmatrix/schemas/profile.v0.2.schema.json",
+  "profile_format": "0.2",
+  "iri": "https://w3id.org/extendedmatrix/profile/esempio-statuaria",
+  "name": "esempio-statuaria",
+  "prefix": "stat",
+  "version": "0.1.0",
+  "lifecycle": "proposed",
+  "example": true,
+  "title": {
+    "it": "Lettura stratigrafica della statuaria (ESEMPIO)",
+    "en": "Stratigraphic reading of statuary (EXAMPLE)"
+  },
+  "description": {
+    "it": "Pacchetto d'esempio sintetico (D-5). Non citare.",
+    "en": "Synthetic example package (D-5). Not to be cited."
+  },
+  "languages": [
+    "it",
+    "en"
+  ],
+  "unverified_languages": [
+    "en"
+  ],
+  "curators": [
+    "@zalmoxes-laran"
+  ],
+  "license": "CC-BY-4.0",
+  "parts": {
+    "examples/": {
+      "license": "CC0-1.0"
+    }
+  },
+  "is_profile_of": [
+    {
+      "iri": "https://w3id.org/extendedmatrix/spec/em-json/",
+      "version": "1.1"
+    },
+    {
+      "iri": "https://w3id.org/extendedmatrix/core/",
+      "version": "1.6"
+    }
+  ],
+  "requires": {
+    "core": {
+      "em": ">=1.6,<1.7"
+    }
+  },
+  "qualia_vocabularies": [
+    {
+      "property_type": "stat:lavorazione",
+      "label": {
+        "it": "Lavorazione",
+        "en": "Working"
+      },
+      "scheme": "https://w3id.org/extendedmatrix/profile/esempio-statuaria/vocab/lavorazione/",
+      "version": "0.1.0"
+    },
+    {
+      "property_type": "stat:fase_di_superficie",
+      "label": {
+        "it": "Fase della superficie",
+        "en": "Surface phase"
+      },
+      "scheme": "https://w3id.org/extendedmatrix/profile/esempio-statuaria/vocab/fase-superficie/",
+      "version": "0.1.0"
+    }
+  ],
+  "qualia": [
+    {
+      "id": "stat:larghezza_biorbitale",
+      "label": {
+        "it": "Larghezza biorbitale",
+        "en": "Biorbital width"
+      },
+      "data_type": "float",
+      "units": [
+        "m",
+        "cm"
+      ],
+      "mapping": {
+        "iri": "http://www.cidoc-crm.org/cidoc-crm/E54_Dimension"
+      }
+    },
+    {
+      "id": "stat:altezza_facciale",
+      "label": {
+        "it": "Altezza del volto (nasion–gnathion)",
+        "en": "Face height"
+      },
+      "data_type": "float",
+      "units": [
+        "m",
+        "cm"
+      ]
+    },
+    {
+      "id": "stat:indice_facciale",
+      "label": {
+        "it": "Indice facciale",
+        "en": "Facial index"
+      },
+      "data_type": "float",
+      "units": []
+    },
+    {
+      "id": "stat:area_integrazione",
+      "label": {
+        "it": "Area dell'integrazione",
+        "en": "Area of the infill"
+      },
+      "data_type": "float",
+      "units": [
+        "m2",
+        "cm2"
+      ]
+    }
+  ],
+  "extractor_types": [
+    {
+      "id": "stat:punto_canonico",
+      "specializes": "extractor",
+      "label": {
+        "it": "Punto canonico",
+        "en": "Canonical point"
+      },
+      "geometry": {
+        "primitive": "point",
+        "produces": "position",
+        "unit": "m",
+        "snap": "surface",
+        "frame": "model"
+      },
+      "source_documents": [
+        "3d_model"
+      ]
+    },
+    {
+      "id": "stat:traccia_strumento",
+      "specializes": "extractor",
+      "label": {
+        "it": "Traccia di strumento",
+        "en": "Tool trace"
+      },
+      "geometry": {
+        "primitive": "polyline",
+        "produces": "length",
+        "unit": "m",
+        "vertices": {
+          "min": 2
+        },
+        "snap": "surface",
+        "frame": "model"
+      },
+      "produces": [
+        "stat:lavorazione"
+      ],
+      "source_documents": [
+        "3d_model",
+        "stat:rilievo_rti"
+      ]
+    },
+    {
+      "id": "stat:superficie_integrata",
+      "specializes": "extractor",
+      "label": {
+        "it": "Superficie di integrazione",
+        "en": "Infill surface"
+      },
+      "geometry": {
+        "primitive": "surface",
+        "produces": "area",
+        "unit": "m2",
+        "vertices": {
+          "min": 3
+        },
+        "snap": "surface",
+        "frame": "model"
+      },
+      "produces": [
+        "stat:area_integrazione",
+        "stat:fase_di_superficie"
+      ],
+      "source_documents": [
+        "3d_model"
+      ]
+    }
+  ],
+  "landmark_sets": [
+    {
+      "id": "stat:volto",
+      "path": "landmarks/volto.json",
+      "extractor_type": "stat:punto_canonico",
+      "label": {
+        "it": "Punti canonici del volto",
+        "en": "Canonical points of the face"
+      }
+    }
+  ],
+  "combiner_types": [
+    {
+      "id": "stat:c_larghezza_biorbitale",
+      "label": {
+        "it": "Larghezza biorbitale",
+        "en": "Biorbital width"
+      },
+      "operation": "distance",
+      "inputs": [
+        {
+          "landmark": "stat:volto/exocanthion_r"
+        },
+        {
+          "landmark": "stat:volto/exocanthion_l"
+        }
+      ],
+      "produces": "stat:larghezza_biorbitale",
+      "unit": "m"
+    },
+    {
+      "id": "stat:c_altezza_facciale",
+      "label": {
+        "it": "Altezza del volto",
+        "en": "Face height"
+      },
+      "operation": "distance",
+      "inputs": [
+        {
+          "landmark": "stat:volto/nasion"
+        },
+        {
+          "landmark": "stat:volto/gnathion"
+        }
+      ],
+      "produces": "stat:altezza_facciale",
+      "unit": "m"
+    },
+    {
+      "id": "stat:c_indice_facciale",
+      "label": {
+        "it": "Indice facciale",
+        "en": "Facial index"
+      },
+      "operation": "ratio",
+      "inputs": [
+        {
+          "quale": "stat:altezza_facciale"
+        },
+        {
+          "quale": "stat:larghezza_biorbitale"
+        }
+      ],
+      "produces": "stat:indice_facciale"
+    }
+  ],
+  "document_types": [
+    {
+      "id": "stat:rilievo_rti",
+      "specializes": "document",
+      "label": {
+        "it": "Rilievo RTI",
+        "en": "RTI survey"
+      },
+      "content_nature": "2d_object",
+      "formats": [
+        {
+          "media_type": "application/x-rti",
+          "extensions": [
+            ".rti",
+            ".ptm"
+          ]
+        }
+      ]
+    }
+  ],
+  "file_types": [
+    {
+      "id": "stat:scansione_ply",
+      "label": {
+        "it": "Scansione PLY",
+        "en": "PLY scan"
+      },
+      "media_type": "application/ply",
+      "extensions": [
+        ".ply"
+      ],
+      "document_type": "3d_model",
+      "content_nature": "3d_object",
+      "reader": "builtin:mesh"
+    }
+  ],
+  "forms": [
+    {
+      "id": "stat-scheda-superficie",
+      "source": "forms/stat-scheda-superficie/template.yaml",
+      "compiled": "forms/stat-scheda-superficie/0.1.0.json",
+      "digest": "sha256:250b14659ff69b02eed7c6c9445668f0ed5614b69f324559707a3f3556359521"
+    }
+  ],
+  "visual_rules": {},
+  "color_schemes": [
+    {
+      "id": "stat:fasi",
+      "path": "colors/fasi-di-superficie.emc",
+      "property": "stat:fase_di_superficie",
+      "label": {
+        "it": "Fasi della superficie",
+        "en": "Surface phases"
+      }
+    }
+  ],
+  "i18n": {
+    "it": "i18n/it.json",
+    "en": "i18n/en.json"
+  },
+  "help": {
+    "it": "help/it/",
+    "en": "help/en/"
+  },
+  "examples": [
+    "examples/testa-esempio.em.json"
+  ]
+}

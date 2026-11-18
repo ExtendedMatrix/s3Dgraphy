@@ -207,6 +207,11 @@ s3dgraphy = [
 "s3dgraphy.authorities" = [
     "snapshots/*",
 ]
+# MICRO-PL03 · the schemas of the EM Profile manifest (0.1, 0.2): the validator
+# of every tool reads them from the wheel
+"s3dgraphy.profiles" = [
+    "schema/*.json",
+]
 
 [tool.black]
 line-length = 88

@@ -1,0 +1,110 @@
+{
+  "header": {
+    "format": "em.json",
+    "version": "1.1",
+    "schema_version": 2,
+    "generator": {
+      "tool": "hand-written example (D-5)",
+      "version": "0.1"
+    },
+    "profiles": [
+      {
+        "iri": "https://w3id.org/extendedmatrix/profile/esempio-statuaria",
+        "version": "0.1.0"
+      }
+    ]
+  },
+  "graphs": {
+    "testa": {
+      "graph_id": "testa",
+      "name": "Testa di prova (ESEMPIO)",
+      "nodes": [
+        {
+          "id": "us1",
+          "node_type": "US",
+          "name": "US1",
+          "description": "Superficie del volto (ESEMPIO)"
+        },
+        {
+          "id": "x1",
+          "node_type": "extractor",
+          "name": "D.01.01",
+          "description": "esocantion destro",
+          "data": {
+            "em_kind": "stat:punto_canonico",
+            "landmark": {
+              "set": "stat:volto",
+              "point": "exocanthion_r",
+              "concept": "https://w3id.org/extendedmatrix/profile/esempio-statuaria/vocab/punti-volto/exocanthion",
+              "label": "esocantion destro",
+              "lang": "it"
+            }
+          }
+        },
+        {
+          "id": "x2",
+          "node_type": "extractor",
+          "name": "D.01.02",
+          "description": "esocantion sinistro",
+          "data": {
+            "em_kind": "stat:punto_canonico",
+            "landmark": {
+              "set": "stat:volto",
+              "point": "exocanthion_l",
+              "concept": "https://w3id.org/extendedmatrix/profile/esempio-statuaria/vocab/punti-volto/exocanthion",
+              "label": "esocantion sinistro",
+              "lang": "it"
+            }
+          }
+        },
+        {
+          "id": "c1",
+          "node_type": "combiner",
+          "name": "C.01",
+          "description": "Larghezza biorbitale",
+          "data": {
+            "em_kind": "stat:c_larghezza_biorbitale"
+          }
+        },
+        {
+          "id": "p1",
+          "node_type": "property",
+          "name": "stat:larghezza_biorbitale",
+          "description": "0.0912",
+          "data": {
+            "value": "0.0912",
+            "property_type": "stat:larghezza_biorbitale",
+            "unit": "m"
+          }
+        }
+      ],
+      "edges": [
+        {
+          "id": "e1",
+          "edge_type": "has_property",
+          "source": "us1",
+          "target": "p1"
+        },
+        {
+          "id": "e2",
+          "edge_type": "has_data_provenance",
+          "source": "p1",
+          "target": "c1"
+        },
+        {
+          "id": "e3",
+          "edge_type": "combines",
+          "source": "c1",
+          "target": "x1"
+        },
+        {
+          "id": "e4",
+          "edge_type": "combines",
+          "source": "c1",
+          "target": "x2"
+        }
+      ]
+    }
+  },
+  "active_graph_id": "testa"
+}

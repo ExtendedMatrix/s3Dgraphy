@@ -7,3 +7,4 @@ recursive-include src/s3dgraphy/mappings *.json
 recursive-include src/s3dgraphy/data *
 recursive-include src/s3dgraphy/templates *
 recursive-include src/s3dgraphy/authorities/snapshots *
+recursive-include src/s3dgraphy/profiles/schema *.json

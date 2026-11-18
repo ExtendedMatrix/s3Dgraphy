@@ -5,6 +5,47 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Changed
+- **The library of the community packages** (MICRO-PL03-PROFILI-LIBRERIA, row
+  W1 of the extensions plan, 18 November 2026). New `s3dgraphy.profiles`: a
+  community package is an EM Profile 0.2 («Pacchetto di comunità» in the
+  interface, D-4), read the same way by every tool. **Load and validate**
+  (`validate`, `open_package`, `load`; `python -m s3dgraphy.profiles validate`):
+  the JSON schema of its `profile_format` (0.1 and the new 0.2, shipped in
+  `profiles/schema/`; checked when `jsonschema` is installed), the coherence
+  checks of `vocabularies/tests/test_profiles.py` brought into the library (core
+  types read live from the datamodel), and the 0.2 additions — 3D component of
+  extractors (closed primitives, `produces` coherent), landmark sets (file,
+  points, mirrors), combiners (closed operations with D-9's two, arity, inputs),
+  file types and readers (`builtin:`/`plugin:` required), forms with their
+  digest, colour schemes, `i18n`/`help`/`examples`, labels in every declared
+  language, licences per part, `datamodel_checked` said never refused, node and
+  edge types suspended (D-1: refused for a stable package). **The envelope**
+  `em-extension.toml`: head, `[data]`/`[code]` (at least one, `type` checked),
+  roots, the partition (no executable under the data, nothing outside the roots
+  but the envelope, LICENSE, README, CHANGELOG), `[requires]` with `part` (code
+  always optional), the carried `[[data.vocabularies]]` through the vocabulary
+  manager's planner and their coherence with `qualia_vocabularies` (carried or
+  required, same version), `[code]` entry, hosts, permissions each with its
+  short reason (D-14). Every problem has a code and speaks English and Italian.
+  **Overlay** (`ProfileOverlay`) and **merged views** (`qualia_types`,
+  `extractor_types`, `document_types`, `combiner_types`, `file_types`,
+  `landmark_sets`, forms, colour schemes, visual rules, labels, interface
+  strings): the core's entries (`origin: core`) beside each package's; two
+  packages never share a prefix. **The machine folder**
+  `~/.s3dgraphy/profiles` (`S3DGRAPHY_PROFILES_DIR`): `install` (the data
+  section, validated first, nothing written on an error; the carried
+  vocabularies to the vocabulary manager; a version never reused; the code
+  section recorded as not installed — W21), `installed`, `find` (exact, else
+  the newest compatible), `remove`, `index.local.json` compiled here.
+  **em.json**: the importer activates the packages of `header.profiles`
+  (`Container.profiles`, `Container.profiles_missing`; a missing package is
+  said and the file opens); the exporter writes `header.profiles` (REPORT G6:
+  what was declared, kept, plus the package of every prefix the content uses);
+  the multigraph manager keeps the declaration. `terms.controlled_quale`,
+  `is_controlled` and `vocabulary_warnings` take the overlay: a package's quale
+  with its own scheme is a controlled field. Synthetic «esempio-statuaria»
+  packages (D-5) in `tests/data/profiles` in both forms.
+  `test_profiles_library.py` 53.
 - **The vocabulary manager of the machine** (MICRO-PL02-GESTORE-DEI-VOCABOLARI,
   row W20 of the extensions plan, 18 November 2026). New `s3dgraphy.vocabularies`
   over MICRO-U's packages (same folder, same `.emvocab.zip`, index compiled

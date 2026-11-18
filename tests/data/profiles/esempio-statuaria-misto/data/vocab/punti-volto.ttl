@@ -1,0 +1,30 @@
+# ESEMPIO INVENTATO (D-5) — non citare. / INVENTED EXAMPLE — not to be cited.
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix dct:  <http://purl.org/dc/terms/> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix v:    <https://w3id.org/extendedmatrix/profile/esempio-statuaria/vocab/punti-volto/> .
+
+v: a skos:ConceptScheme ;
+    dct:title "Punti canonici del volto (ESEMPIO)"@it , "Canonical points of the face (EXAMPLE)"@en ;
+    dct:license <https://creativecommons.org/licenses/by/4.0/> ;
+    owl:versionInfo "0.1.0" .
+
+v:glabella a skos:Concept ; skos:inScheme v: ; skos:topConceptOf v: ;
+    skos:prefLabel "glabella"@it , "glabella"@en ;
+    dct:source "Esempio scritto per la SPEC dei pacchetti di comunità." .
+
+v:nasion a skos:Concept ; skos:inScheme v: ; skos:topConceptOf v: ;
+    skos:prefLabel "nasion"@it , "nasion"@en ;
+    dct:source "Esempio scritto per la SPEC dei pacchetti di comunità." .
+
+v:exocanthion a skos:Concept ; skos:inScheme v: ; skos:topConceptOf v: ;
+    skos:prefLabel "esocantion"@it , "exocanthion"@en ;
+    dct:source "Esempio scritto per la SPEC dei pacchetti di comunità." .
+
+v:pronasale a skos:Concept ; skos:inScheme v: ; skos:topConceptOf v: ;
+    skos:prefLabel "pronasale"@it , "pronasale"@en ;
+    dct:source "Esempio scritto per la SPEC dei pacchetti di comunità." .
+
+v:gnathion a skos:Concept ; skos:inScheme v: ; skos:topConceptOf v: ;
+    skos:prefLabel "gnathion"@it , "gnathion"@en ;
+    dct:source "Esempio scritto per la SPEC dei pacchetti di comunità." .

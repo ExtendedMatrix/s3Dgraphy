@@ -1,0 +1,9 @@
+# ESEMPIO INVENTATO (D-5) — non citare. / INVENTED EXAMPLE — not to be cited.
+id: stat-scheda-superficie
+version: 0.1.0
+label: {it: Scheda della superficie (ESEMPIO), en: Surface form (EXAMPLE)}
+fields:
+  - id: fase
+    graph: {verdict: property, qualia: stat:fase_di_superficie}
+  - id: area
+    graph: {verdict: property, qualia: stat:area_integrazione}

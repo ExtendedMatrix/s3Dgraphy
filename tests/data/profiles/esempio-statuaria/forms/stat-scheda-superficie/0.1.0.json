@@ -1,0 +1,15 @@
+{
+  "_note": "ESEMPIO INVENTATO (D-5) — non citare. / INVENTED EXAMPLE — not to be cited.",
+  "id": "stat-scheda-superficie",
+  "version": "0.1.0",
+  "fields": [
+    {
+      "id": "fase",
+      "qualia": "stat:fase_di_superficie"
+    },
+    {
+      "id": "area",
+      "qualia": "stat:area_integrazione"
+    }
+  ]
+}

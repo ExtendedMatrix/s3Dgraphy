@@ -165,6 +165,11 @@ class MultiGraphManager:
             presentation=dict(getattr(loaded, "presentation", None) or {}),
             # MICRO-U · and so does the declaration of its vocabularies
             vocabularies=dict(getattr(loaded, "vocabularies", None) or {}),
+            # MICRO-PL03 · and the community packages it declared (kept even
+            # when not installed here) and the ones activated when it was read
+            header={"profiles": list((getattr(loaded, "header", None) or {}).get("profiles") or [])}
+            if (getattr(loaded, "header", None) or {}).get("profiles") else {},
+            profiles=getattr(loaded, "profiles", None),
         )
         return save_container_file(container, filepath)
 

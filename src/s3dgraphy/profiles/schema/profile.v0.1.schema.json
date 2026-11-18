@@ -1,0 +1,255 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://w3id.org/extendedmatrix/schemas/profile.v0.1.schema.json",
+  "title": "EM Profile manifest (profile.json), version 0.1",
+  "description": "The manifest of an EM Profile: what a scientific community adds to the Extended Matrix core — qualia vocabularies, extractor and document types, node and edge types that specialise core types, their visual rules, and pointers to plugins. Specification: profiles/SPEC.md in https://github.com/ExtendedMatrix/vocabularies (editor Emanuel Demetrescu, CNR-ISPC). Readers MUST ignore keys they do not know. This schema is dedicated to the public domain (CC0 1.0).",
+  "type": "object",
+  "required": ["profile_format", "iri", "name", "prefix", "version", "lifecycle", "title", "curators", "license", "is_profile_of"],
+  "properties": {
+    "$schema": {"type": "string"},
+    "profile_format": {"const": "0.1", "description": "Version of THIS manifest format (the EM Profiles specification), not of the profile."},
+    "iri": {"type": "string", "format": "uri", "description": "The identity of the profile, a prof:Profile. Real profiles live under https://w3id.org/extendedmatrix/profile/<name>; the em.json header cites it."},
+    "name": {"$ref": "#/$defs/slug", "description": "Equal to the name of the profile's folder, profiles/<name>/."},
+    "prefix": {"type": "string", "pattern": "^[a-z][a-z0-9]{1,15}$", "description": "Short prefix of the profile's own types: a type is written <prefix>:<name>."},
+    "version": {"$ref": "#/$defs/semver"},
+    "lifecycle": {"enum": ["proposed", "stable", "deprecated"]},
+    "title": {"$ref": "#/$defs/i18n"},
+    "description": {"$ref": "#/$defs/i18n"},
+    "curators": {"type": "array", "minItems": 1, "items": {"type": "string", "minLength": 1}},
+    "license": {"type": "string", "minLength": 1},
+    "attribution": {"type": "string"},
+    "example": {"type": "boolean", "description": "true for profiles that only illustrate the specification; never cited by real data."},
+    "is_profile_of": {
+      "type": "array", "minItems": 1,
+      "description": "prof:isProfileOf — the specifications this profile constrains and extends, each with the range of versions it was written for.",
+      "items": {
+        "type": "object", "required": ["iri", "version"],
+        "properties": {
+          "iri": {"type": "string", "format": "uri"},
+          "version": {"type": "string", "minLength": 1, "description": "A version or a range (\">=1.6.37 <1.7\")."},
+          "label": {"type": "string"}
+        }
+      }
+    },
+    "qualia_vocabularies": {
+      "type": "array",
+      "description": "role:vocabulary — SKOS schemes whose concepts are the values of a quale (an EM property).",
+      "items": {
+        "type": "object", "required": ["property_type", "label", "scheme", "version"],
+        "properties": {
+          "property_type": {"$ref": "#/$defs/typeName", "description": "The quale: a core property type, or <prefix>:<name> for one of the profile's own."},
+          "label": {"$ref": "#/$defs/i18n"},
+          "scheme": {"type": "string", "format": "uri", "description": "IRI of the skos:ConceptScheme."},
+          "version": {"$ref": "#/$defs/semver"},
+          "path": {"type": "string", "description": "Path of the Turtle file, relative to the profile folder, when the scheme lives in this repository."},
+          "mapping": {"$ref": "#/$defs/mapping"}
+        }
+      }
+    },
+    "extractor_types": {
+      "type": "array",
+      "description": "Kinds of extractor (the reading of a source) the community uses.",
+      "items": {
+        "type": "object", "required": ["id", "label", "specializes", "input_formats"],
+        "properties": {
+          "id": {"$ref": "#/$defs/ownType"},
+          "label": {"$ref": "#/$defs/i18n"},
+          "description": {"$ref": "#/$defs/i18n"},
+          "specializes": {"const": "extractor"},
+          "input_formats": {"$ref": "#/$defs/formats"},
+          "source_documents": {"type": "array", "items": {"$ref": "#/$defs/typeName"}},
+          "produces": {"type": "array", "items": {"$ref": "#/$defs/typeName"}, "description": "The qualia this extractor yields."},
+          "mapping": {"$ref": "#/$defs/mapping"}
+        }
+      }
+    },
+    "document_types": {
+      "type": "array",
+      "description": "Kinds of document peculiar to the community, with their formats.",
+      "items": {
+        "type": "object", "required": ["id", "label", "specializes", "formats"],
+        "properties": {
+          "id": {"$ref": "#/$defs/ownType"},
+          "label": {"$ref": "#/$defs/i18n"},
+          "description": {"$ref": "#/$defs/i18n"},
+          "specializes": {"const": "document"},
+          "content_nature": {"enum": ["2d_object", "3d_object"]},
+          "formats": {"$ref": "#/$defs/formats"},
+          "mapping": {"$ref": "#/$defs/mapping"}
+        }
+      }
+    },
+    "node_types": {
+      "type": "array",
+      "description": "The profile's own node types. Each is a species of a core node type.",
+      "items": {
+        "type": "object", "required": ["type", "label", "specializes", "mapping"],
+        "properties": {
+          "type": {"$ref": "#/$defs/ownType"},
+          "label": {"$ref": "#/$defs/i18n"},
+          "description": {"$ref": "#/$defs/i18n"},
+          "specializes": {"$ref": "#/$defs/coreName", "description": "A runtime node_type of the core (profiles/core-types.json)."},
+          "data_keys": {
+            "type": "object", "description": "Keys of node.data this type adds, with a short description each.",
+            "additionalProperties": {"type": "string"}
+          },
+          "mapping": {"$ref": "#/$defs/mapping"}
+        }
+      }
+    },
+    "edge_types": {
+      "type": "array",
+      "description": "The profile's own edge types. Each declares its family and whether it takes part in propagation.",
+      "items": {
+        "type": "object", "required": ["type", "label", "family", "propagates", "allowed_connections", "mapping"],
+        "properties": {
+          "type": {"$ref": "#/$defs/ownType"},
+          "label": {"$ref": "#/$defs/i18n"},
+          "description": {"$ref": "#/$defs/i18n"},
+          "family": {"enum": ["stratigraphic", "relative_chronology", "epochs", "paradata", "other"]},
+          "specializes": {"$ref": "#/$defs/coreName", "description": "A core edge_type; required when propagates is true."},
+          "propagates": {"type": "boolean", "description": "true only if the core propagation algorithms must treat this edge as the core edge it specialises."},
+          "reverse": {
+            "type": "object", "required": ["type", "label"],
+            "properties": {"type": {"$ref": "#/$defs/ownType"}, "label": {"$ref": "#/$defs/i18n"}}
+          },
+          "allowed_connections": {
+            "type": "array", "minItems": 1,
+            "items": {
+              "type": "object", "required": ["source", "target"],
+              "properties": {"source": {"$ref": "#/$defs/typeName"}, "target": {"$ref": "#/$defs/typeName"}}
+            }
+          },
+          "mapping": {"$ref": "#/$defs/mapping"}
+        },
+        "if": {"properties": {"propagates": {"const": true}}},
+        "then": {"required": ["specializes"]}
+      }
+    },
+    "visual_rules": {
+      "type": "object",
+      "description": "Glyphs and visual rules, in the format of the core's em_visual_rules.json, keyed by the profile type (<prefix>:<name>). A reader that lacks the profile draws the type with the rules of the core type it specialises.",
+      "properties": {
+        "node_styles": {"type": "object", "propertyNames": {"$ref": "#/$defs/ownType"}, "additionalProperties": {"$ref": "#/$defs/nodeStyle"}},
+        "2d_glyphs": {"type": "object", "propertyNames": {"$ref": "#/$defs/ownType"}, "additionalProperties": {"$ref": "#/$defs/glyph"}},
+        "edge_style": {"type": "object", "propertyNames": {"$ref": "#/$defs/ownType"}, "additionalProperties": {"$ref": "#/$defs/edgeStyle"}},
+        "matrix": {
+          "type": "object", "propertyNames": {"$ref": "#/$defs/ownType"},
+          "description": "Whether the type is drawn in the Matrix view, and in which lane.",
+          "additionalProperties": {
+            "type": "object", "required": ["draw"],
+            "properties": {
+              "draw": {"type": "boolean"},
+              "lane": {"type": "string", "pattern": "^(first_epoch|follow:[a-z][A-Za-z0-9_:]*)$", "description": "first_epoch: the lane of the epoch the node begins in (has_first_epoch); follow:<edge_type>: the lane of the node it reaches by that edge."}
+            }
+          }
+        }
+      }
+    },
+    "plugins": {
+      "type": "array",
+      "description": "Pointers to plugins that view or interpret the profile's media. A pointer, never code.",
+      "items": {
+        "type": "object", "required": ["id", "kind", "href", "descriptor"],
+        "properties": {
+          "id": {"$ref": "#/$defs/slug"},
+          "kind": {"enum": ["viewer", "interpreter", "connector"]},
+          "label": {"$ref": "#/$defs/i18n"},
+          "href": {"type": "string", "format": "uri", "description": "Where the plugin is published (a repository, a package)."},
+          "license": {"type": "string"},
+          "handles": {"type": "array", "items": {"$ref": "#/$defs/typeName"}, "description": "The node, document or extractor types it opens."},
+          "descriptor": {
+            "type": "object", "required": ["host", "transport", "capabilities", "versions"],
+            "description": "The connector descriptor of the EM plugin architecture (s3dgraphy.contract.connector.ConnectorDescriptor).",
+            "properties": {
+              "host": {"enum": ["app-side", "emstudio-side"]},
+              "transport": {"type": "array", "minItems": 1, "items": {"enum": ["direct", "lan", "cloud"]}},
+              "capabilities": {"type": "array", "items": {"enum": ["read-graph", "write-graph", "subscribe", "link-selection", "presence", "attach-asset", "resolve-asset", "resolve-preview", "materialize-3D", "publish-3D", "ingest-batch", "resolve-uri"]}},
+              "versions": {
+                "type": "object",
+                "properties": {"emjson": {"type": "string"}, "datamodel": {"type": "string"}, "connector_api": {"type": "string"}}
+              },
+              "writes": {"type": "boolean"},
+              "provenance": {"type": "string"}
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "slug": {"type": "string", "pattern": "^[a-z][a-z0-9-]{1,62}$"},
+    "semver": {"type": "string", "pattern": "^(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)$"},
+    "i18n": {
+      "type": "object", "minProperties": 1,
+      "propertyNames": {"pattern": "^[a-z]{2,3}(-[A-Za-z0-9]+)*$"},
+      "additionalProperties": {"type": "string", "minLength": 1}
+    },
+    "ownType": {"type": "string", "pattern": "^[a-z][a-z0-9]{1,15}:[a-z][a-z0-9_]*$"},
+    "coreName": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9_]*$"},
+    "typeName": {"anyOf": [{"$ref": "#/$defs/ownType"}, {"$ref": "#/$defs/coreName"}]},
+    "mapping": {
+      "type": "object", "required": ["iri"],
+      "description": "The class or property this type is mapped to (CIDOC CRM family, CRMem, or another ontology).",
+      "properties": {
+        "iri": {"type": "string", "format": "uri"},
+        "label": {"type": "string"}
+      }
+    },
+    "formats": {
+      "type": "array", "minItems": 1,
+      "items": {
+        "type": "object", "required": ["media_type"],
+        "properties": {
+          "media_type": {"type": "string", "pattern": "^[a-z]+/[A-Za-z0-9.+-]+$"},
+          "extensions": {"type": "array", "items": {"type": "string", "pattern": "^\\.[A-Za-z0-9]+$"}},
+          "conforms_to": {"type": "string", "format": "uri"}
+        }
+      }
+    },
+    "nodeStyle": {
+      "type": "object",
+      "properties": {
+        "style": {
+          "type": "object",
+          "properties": {
+            "border_color": {"$ref": "#/$defs/hex"},
+            "fill_color": {"$ref": "#/$defs/hex"},
+            "border_style": {"enum": ["solid", "dashed", "dotted", "dashed-dotted"]},
+            "shape": {"type": "string"},
+            "border_width": {"type": "number", "minimum": 0},
+            "material": {"type": "object"}
+          }
+        },
+        "label_position": {"type": "string"},
+        "2d_file_vect": {"type": "string"}
+      }
+    },
+    "glyph": {
+      "type": "object", "required": ["viewBox", "aspect", "layers"],
+      "properties": {
+        "viewBox": {"type": "array", "minItems": 4, "maxItems": 4, "items": {"type": "number"}},
+        "aspect": {"type": "number", "exclusiveMinimum": 0},
+        "layers": {
+          "type": "array", "minItems": 1,
+          "items": {"type": "object", "required": ["d"], "properties": {"d": {"type": "string"}, "role": {"type": "string"}, "fill": {"$ref": "#/$defs/hex"}}}
+        }
+      }
+    },
+    "edgeStyle": {
+      "type": "object", "required": ["style"],
+      "properties": {
+        "style": {
+          "type": "object",
+          "properties": {
+            "color": {"$ref": "#/$defs/hex"},
+            "line_style": {"enum": ["solid", "dashed", "dotted", "dashed-dotted"]},
+            "width": {"type": "number", "minimum": 0}
+          }
+        },
+        "label": {"type": "string"}
+      }
+    },
+    "hex": {"type": "string", "pattern": "^#[0-9A-Fa-f]{6}$"}
+  }
+}

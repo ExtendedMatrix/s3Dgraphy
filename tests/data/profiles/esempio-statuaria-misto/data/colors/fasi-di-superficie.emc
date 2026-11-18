@@ -1,0 +1,10 @@
+{
+  "_note": "ESEMPIO INVENTATO (D-5) — non citare. / INVENTED EXAMPLE — not to be cited.",
+  "name": "Fasi della superficie (ESEMPIO)",
+  "property": "stat:fase_di_superficie",
+  "color_mapping": {
+    "https://w3id.org/extendedmatrix/profile/esempio-statuaria/vocab/fase-superficie/originale": "#C8B48C",
+    "https://w3id.org/extendedmatrix/profile/esempio-statuaria/vocab/fase-superficie/rilavorazione": "#8C6E46",
+    "https://w3id.org/extendedmatrix/profile/esempio-statuaria/vocab/fase-superficie/integrazione": "#5A8CC8"
+  }
+}

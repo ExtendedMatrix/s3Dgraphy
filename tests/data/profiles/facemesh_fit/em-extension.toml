@@ -1,0 +1,30 @@
+schema_version = "1.0.0"
+id = "facemesh_fit"
+version = "0.2.0"
+name = "Punti del volto, proposta automatica (ESEMPIO)"
+tagline = "Propone i punti canonici del volto su un modello"
+maintainer = "Curatori di esempio (ESEMPIO)"
+license = ["SPDX:EUPL-1.2"]
+em_api_min = "1.0"
+
+[requires]
+extensions = [{ id = "esempio-statuaria", version = "^0.1", part = "data" }]
+
+[code]
+entry = "facemesh_fit:plugin"
+hosts = ["emstudio"]
+platforms = ["macos-arm64", "windows-x64", "linux-x64"]
+  [code.permissions]
+  files = "Legge le texture del modello per riconoscere il volto"
+  [code.descriptor]
+  host = "emstudio-side"
+  transport = ["direct"]
+  capabilities = ["read-graph", "ingest-batch"]
+  provenance = "derivation"
+  [[code.commands]]
+  id = "facemesh.propose"
+  label = { it = "Proponi i punti del volto", en = "Propose face points" }
+  writes = true
+  slots = [{ name = "model", kind = "id" }]
+  in = ["context.node@1", "menu.tools@1"]
+  when = "selection:RM"

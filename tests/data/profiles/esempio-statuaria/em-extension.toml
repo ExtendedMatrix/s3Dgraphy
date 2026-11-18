@@ -1,0 +1,35 @@
+schema_version = "1.0.0"
+id = "esempio-statuaria"
+version = "0.1.0"
+name = "Statuaria antica (ESEMPIO)"
+tagline = "Vocabolari e punti del volto per la statuaria"
+maintainer = "Curatori di esempio (ESEMPIO)"
+license = ["SPDX:CC-BY-4.0"]
+em_api_min = "1.0"
+
+[requires]
+extensions = [{ id = "facemesh_fit", version = "^0.2", part = "code", optional = true }]
+
+[data]
+profile = "profile.json"
+  [[data.vocabularies]]
+  path = "vocab/punti-volto.ttl"
+  scheme = "https://w3id.org/extendedmatrix/profile/esempio-statuaria/vocab/punti-volto/"
+  version = "0.1.0"
+  license = "SPDX:CC-BY-4.0"
+  fascia = "A"
+  digest = "sha256:b7f9a4a1ac2a8985fde95bfff140fa9b8d357d0caf77413bf9dba93425aa94c1"
+  [[data.vocabularies]]
+  path = "vocab/fase-superficie.ttl"
+  scheme = "https://w3id.org/extendedmatrix/profile/esempio-statuaria/vocab/fase-superficie/"
+  version = "0.1.0"
+  license = "SPDX:CC-BY-4.0"
+  fascia = "A"
+  digest = "sha256:c504b543f0300c8b4e673397c5b3b3c944e98b833bf35897a482dd8d5824849d"
+  [[data.vocabularies]]
+  path = "vocab/lavorazione.ttl"
+  scheme = "https://w3id.org/extendedmatrix/profile/esempio-statuaria/vocab/lavorazione/"
+  version = "0.1.0"
+  license = "SPDX:CC-BY-4.0"
+  fascia = "A"
+  digest = "sha256:ebf888e50796e3db5e2573fde2ddc9ca265e40eba44e32b49431eced7030f50f"

@@ -1,0 +1,83 @@
+{
+  "_note": "ESEMPIO INVENTATO (D-5) — non citare. / INVENTED EXAMPLE — not to be cited.",
+  "id": "stat:volto",
+  "label": {
+    "it": "Punti canonici del volto",
+    "en": "Canonical points of the face"
+  },
+  "scheme": "https://w3id.org/extendedmatrix/profile/esempio-statuaria/vocab/punti-volto/",
+  "order": "listed",
+  "reference": {
+    "frame": "normalized",
+    "description": {
+      "it": "Volto frontale; origine al nasion; asse y verso l'alto; unità = nasion–gnathion.",
+      "en": "Frontal face; origin at nasion; y up; unit = nasion–gnathion."
+    }
+  },
+  "points": [
+    {
+      "id": "glabella",
+      "concept": "https://w3id.org/extendedmatrix/profile/esempio-statuaria/vocab/punti-volto/glabella",
+      "required": true,
+      "ref": [
+        0.0,
+        0.12,
+        0.03
+      ]
+    },
+    {
+      "id": "nasion",
+      "concept": "https://w3id.org/extendedmatrix/profile/esempio-statuaria/vocab/punti-volto/nasion",
+      "required": true,
+      "ref": [
+        0.0,
+        0.0,
+        0.0
+      ]
+    },
+    {
+      "id": "exocanthion_r",
+      "concept": "https://w3id.org/extendedmatrix/profile/esempio-statuaria/vocab/punti-volto/exocanthion",
+      "required": true,
+      "ref": [
+        -0.42,
+        -0.08,
+        -0.12
+      ],
+      "side": "right",
+      "mirror": "exocanthion_l"
+    },
+    {
+      "id": "exocanthion_l",
+      "concept": "https://w3id.org/extendedmatrix/profile/esempio-statuaria/vocab/punti-volto/exocanthion",
+      "required": true,
+      "ref": [
+        0.42,
+        -0.08,
+        -0.12
+      ],
+      "side": "left",
+      "mirror": "exocanthion_r"
+    },
+    {
+      "id": "pronasale",
+      "concept": "https://w3id.org/extendedmatrix/profile/esempio-statuaria/vocab/punti-volto/pronasale",
+      "required": false,
+      "ref": [
+        0.0,
+        -0.38,
+        0.22
+      ]
+    },
+    {
+      "id": "gnathion",
+      "concept": "https://w3id.org/extendedmatrix/profile/esempio-statuaria/vocab/punti-volto/gnathion",
+      "required": true,
+      "ref": [
+        0.0,
+        -1.0,
+        0.02
+      ]
+    }
+  ]
+}

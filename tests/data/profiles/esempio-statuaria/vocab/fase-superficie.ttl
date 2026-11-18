@@ -1,0 +1,22 @@
+# ESEMPIO INVENTATO (D-5) — non citare. / INVENTED EXAMPLE — not to be cited.
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix dct:  <http://purl.org/dc/terms/> .
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix v:    <https://w3id.org/extendedmatrix/profile/esempio-statuaria/vocab/fase-superficie/> .
+
+v: a skos:ConceptScheme ;
+    dct:title "Fase della superficie (ESEMPIO)"@it , "Surface phase (EXAMPLE)"@en ;
+    dct:license <https://creativecommons.org/licenses/by/4.0/> ;
+    owl:versionInfo "0.1.0" .
+
+v:originale a skos:Concept ; skos:inScheme v: ; skos:topConceptOf v: ;
+    skos:prefLabel "lavorazione originale"@it , "original working"@en ;
+    dct:source "Esempio scritto per la SPEC dei pacchetti di comunità." .
+
+v:rilavorazione a skos:Concept ; skos:inScheme v: ; skos:topConceptOf v: ;
+    skos:prefLabel "rilavorazione"@it , "reworking"@en ;
+    dct:source "Esempio scritto per la SPEC dei pacchetti di comunità." .
+
+v:integrazione a skos:Concept ; skos:inScheme v: ; skos:topConceptOf v: ;
+    skos:prefLabel "integrazione di restauro"@it , "restoration infill"@en ;
+    dct:source "Esempio scritto per la SPEC dei pacchetti di comunità." .
