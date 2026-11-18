@@ -5,6 +5,38 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Changed
+- **`em`, the scripting API** (MICRO-PL14-API-EM, row W11 of the extensions
+  plan, 18 November 2026). New package **`s3dgraphy.em`** (`from s3dgraphy
+  import em`), the same in EMStudio, EM Tools and a script: `em.graph`
+  (read-only views — a node by id or by its only name, never the first of
+  two; `nodes(type=, where={quale: value or concept})`, `edges`, properties
+  with their term, the core's `chronology`; `raw` warns that changing it
+  writes nothing), `em.vocab` (a concept of the installed vocabularies with
+  its labels, through verified alignments when the language is missing;
+  `search`), `em.profiles` (the document's packages, `extractor_type(...)`
+  with its geometry, `landmark_set`), `em.extensions` (preview, validate,
+  install / update / remove by parts, enable / disable / active, build — from
+  disk), `em.on` (the five events of SPEC-plugin §2.5) and **`em.write`**:
+  `with em.write("label") as tx:` works on a copy of the host's graph — low
+  level (`add_node`, `update`, `clear`, `remove`, `add_edge`, `remove_edge`)
+  and high level calling the core (`set_property` with the double value,
+  `start_pose`, `add_extractor` for a canonical point or a package type,
+  `place_reading`, `compute`, `compute_available`, `recompute`) — and its
+  difference becomes the `Delta` (nodes, edges, connector-API-1.1 `ops`) that
+  passes `invoke` (the author is the host's, never an argument) and
+  `guard_write`, then `host.apply` as one step. A refusal applies nothing and
+  raises `em.Refused` with the contract's sentence in EN and IT; a block that
+  raises applies nothing; `dry_run=True` (or the host's forced proof) returns
+  the delta only; `volatile=True` proposes (`ingest-batch`); a write opened
+  inside an event listener runs after the delivery. `em.host`: the `Host` /
+  `App` protocol an application implements and `install`s; the default host
+  is `ScriptHost`, «no application»: its graph is the one opened
+  (`em.open`, `em.use`, `em.save`), it applies through
+  `apply_delta_to_graph`, and `em.app` answers every call with
+  `em.NotAvailable` («no application» / «nessuna applicazione»). `python -m
+  s3dgraphy.em run script.py --file F --author ORCID [--save] [--dry-run]`
+  and `help`. `em.API_VERSION = "1.0.0"`. No datamodel change.
+  `tests/test_em_api.py` 18.
 - **The declared combiners** (MICRO-PL08-COMBINATORI-DICHIARATI, row W4 of the
   extensions plan, D-9, 18 November 2026). Node datamodel **1.6.50 → 1.6.51**.
   New **`annotation.combiners`**: a package's `combiner_types` are EXECUTED —
