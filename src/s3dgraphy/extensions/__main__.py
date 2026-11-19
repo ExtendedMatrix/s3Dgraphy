@@ -19,6 +19,14 @@ Installing by parts (W21), the same calls the Extensions window makes:
     install <archive> [--data-only] [--trust]   the code needs --trust (the question)
     remove <id> [--code|--data] [--confirm] [--purge-vocabularies]
 
+The repositories of this machine (X2), as ``blender --command extension
+repo-add|repo-list|repo-remove|sync|install``:
+
+    repo list | add <url> [--name N] [--token T] [--check-on-startup] | remove <name>
+    repo sync [<name>] | available [<name>] | online [on|off]
+    repo preview <name> <id> [--version V]
+    repo install <name> <id> [--version V] [--data-only] [--trust] [--no-requires] [--trust-requires]
+
 ``--lang it`` says everything in Italian.
 """
 from __future__ import annotations
@@ -27,7 +35,7 @@ import argparse
 import json
 import sys
 
-from . import store
+from . import remote, store
 from .build import build
 from .repository import server_generate
 from .validate import validate_archive
@@ -99,6 +107,39 @@ def _server_generate(args) -> int:
     return 0 if res["ok"] else 1
 
 
+def _repo(args):
+    a, rest = args.action, list(args.args)
+
+    def need(n: int, what: str):
+        if len(rest) < n:
+            raise store.ExtensionError.of("repo_url_bad" if a == "add" else "repo_unknown",
+                                          url=what, name=what)
+        return rest[:n]
+
+    if a == "list":
+        return {"online_access": remote.online_access_setting(), "repositories": remote.repositories()}
+    if a == "add":
+        (url,) = need(1, "<url>")
+        return remote.add_repository(url, name=args.name, token=args.token, check_on_startup=args.check_on_startup)
+    if a == "remove":
+        (name,) = need(1, "<name>")
+        return {"removed": remote.remove_repository(name)}
+    if a == "sync":
+        return remote.sync(rest[0] if rest else None)
+    if a == "available":
+        return remote.available(rest[0] if rest else None)
+    if a == "online":
+        if rest:
+            remote.set_online_access(rest[0].lower() in ("on", "1", "true", "yes", "si", "sì"))
+        return remote.online_access_setting()
+    name, eid = need(2, "<name> <id>")
+    if a == "preview":
+        return remote.preview_from(name, eid, args.version)
+    return remote.install_from(name, eid, args.version, parts="data" if args.data_only else "all",
+                               trust=args.trust, with_requires=not args.no_requires,
+                               trust_requires=args.trust_requires)
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="python -m s3dgraphy.extensions")
     ap.add_argument("--lang", default="en", choices=("en", "it"))
@@ -145,6 +186,18 @@ def main(argv=None) -> int:
     r.add_argument("--purge-vocabularies", action="store_true",
                    help="remove also the vocabularies nobody else brings (off by default)")
     add("list", help="the installed extensions")
+    rp = add("repo", help="the repositories of this machine (X2)")
+    rp.add_argument("action", choices=("list", "add", "remove", "sync", "available", "online", "preview", "install"))
+    rp.add_argument("args", nargs="*", help="add: <url> · remove/sync/available: <name> · online: on|off · "
+                                            "preview/install: <name> <id>")
+    rp.add_argument("--name", default=None)
+    rp.add_argument("--token", default=None, help="sent as Authorization: Bearer to the index's host")
+    rp.add_argument("--check-on-startup", action="store_true")
+    rp.add_argument("--version", default=None)
+    rp.add_argument("--data-only", action="store_true")
+    rp.add_argument("--trust", action="store_true", help="the answer to the trust question for the code")
+    rp.add_argument("--no-requires", action="store_true", help="do not install the missing requirements")
+    rp.add_argument("--trust-requires", action="store_true", help="the trust answer for the requirements' code")
     args = ap.parse_args(argv)
     if args.cmd == "validate":
         return _validate(args)
@@ -153,6 +206,8 @@ def main(argv=None) -> int:
             return _build(args)
         elif args.cmd == "server-generate":
             return _server_generate(args)
+        elif args.cmd == "repo":
+            out = _repo(args)
         elif args.cmd == "preview":
             out = store.preview(args.path)
         elif args.cmd in ("install", "update"):

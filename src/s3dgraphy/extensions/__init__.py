@@ -29,6 +29,13 @@ SPEC-pacchetto §16.3–§16.7, SPEC-plugin §17.
   only a repository sees; :func:`validate_index` / :func:`verify_archive` —
   for the clients of a repository.
 
+* :func:`add_repository` / :func:`sync` / :func:`available` /
+  :func:`install_from` — the repositories of this machine (X2): an index
+  read (``https``, ``file://``, a NAS), the archive checked against its
+  ``archive_hash`` before it is opened, the ``blocklist`` respected,
+  ``[requires]`` resolved, tier C fetched; :func:`online_access` — «Allow
+  online access», off by default, one switch for the machine.
+
 * :func:`dev_dir` / :func:`set_dev_dir` / :func:`dev_code` — the plugins'
   development folder (``plugins_dev_dir``, W15a): loaded where they are,
   marked ``dev``, never installed; the host decides when it counts.
@@ -47,6 +54,10 @@ from .dev import DEV_ENV, SOURCE_DEV, describe_dev, dev_code, dev_dir, dev_dir_s
 from .wheels import PLATFORMS
 from .repository import (INDEX_FILE, INDEX_VERSION, index_entry, repository_checks, server_generate, validate_index,
                          verify_archive)
+from .remote import (OFFICIAL_URL, ONLINE_ENV, RepoError, add_repository, available, cached_index, download,
+                     get_repository, install_from, normalize_url, online_access, online_access_setting,
+                     plan_install, preview_from, remove_repository, repositories, set_online_access, sync,
+                     update_from, update_repository, updates)
 
 __all__ = [
     "EXTENSIONS_ENV", "PLUGINS_ENV", "REGISTER_FILE", "ENABLED_FILE", "SOURCE_DISK", "PARTS", "TRUST_KEYS",
@@ -57,5 +68,9 @@ __all__ = [
     "select_files", "DEFAULT_EXCLUDES",
     "INDEX_FILE", "INDEX_VERSION", "index_entry", "repository_checks", "server_generate", "validate_index",
     "verify_archive",
+    "OFFICIAL_URL", "ONLINE_ENV", "RepoError", "online_access", "online_access_setting", "set_online_access",
+    "normalize_url", "repositories", "get_repository", "add_repository", "update_repository", "remove_repository",
+    "sync", "cached_index", "available", "updates", "download", "plan_install", "preview_from", "install_from",
+    "update_from",
     "DEV_ENV", "SOURCE_DEV", "dev_dir", "dev_dir_setting", "set_dev_dir", "dev_code", "describe_dev",
 ]

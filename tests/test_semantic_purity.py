@@ -43,6 +43,13 @@ NETWORK_ALLOWED = {
     "room_import/node.py",
     "room_import/access.py",
     "room_import/trust.py",
+    # The repositories of extensions (MICRO-PL22, row X2: Blender's «Get
+    # Extensions»): the one module that reads an index.json and downloads the
+    # archives it names, only with «Allow online access» on (off by default,
+    # S3DGRAPHY_ONLINE_ACCESS), every archive checked against its archive_hash
+    # before anything opens it. The index's writer (repository.py), the
+    # installer (store.py) and the validator stay without a socket.
+    "extensions/remote.py",
 }
 
 #: `urllib.parse` is deliberately NOT here: splitting a URL is string work, and a

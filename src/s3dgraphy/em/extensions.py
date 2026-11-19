@@ -104,5 +104,44 @@ class Extensions:
         from .. import extensions as E
         return E.describe_dev()
 
+    # X2 (MICRO-PL22) · the repositories of this machine
+    def repositories(self) -> List[Dict[str, Any]]:
+        """The repositories added on this machine (never their tokens)."""
+        from .. import extensions as E
+        return E.repositories()
+
+    def add_repository(self, url: str, *, name: Optional[str] = None, token: Optional[str] = None,
+                       check_on_startup: bool = False) -> Dict[str, Any]:
+        """*Repository ▸ +*: an ``index.json`` by URL, ``file://`` or a folder (a NAS)."""
+        from .. import extensions as E
+        return E.add_repository(url, name=name, token=token, check_on_startup=check_on_startup)
+
+    def remove_repository(self, name: str) -> bool:
+        from .. import extensions as E
+        return E.remove_repository(name)
+
+    def sync(self, name: Optional[str] = None) -> Dict[str, Any]:
+        """Read the index again (http(s) only with ``online_access``)."""
+        from .. import extensions as E
+        return E.sync(name)
+
+    def available(self, name: Optional[str] = None) -> Dict[str, Any]:
+        """What the repositories offer, with what this machine has."""
+        from .. import extensions as E
+        return E.available(name)
+
+    def install_from(self, repo: str, eid: str, version: Optional[str] = None, *, parts: str = "all",
+                     trust: bool = False, with_requires: bool = True, trust_requires: bool = False) -> Dict[str, Any]:
+        """Install from a repository: the archive checked against the index,
+        the missing requirements first (their code only with ``trust_requires``)."""
+        from .. import extensions as E
+        return E.install_from(repo, eid, version, parts=parts, trust=trust, with_requires=with_requires,
+                              trust_requires=trust_requires)
+
+    def online_access(self) -> bool:
+        """«Allow online access» (set it in the host's window, or ``s3dgraphy.extensions.set_online_access``)."""
+        from .. import extensions as E
+        return E.online_access()
+
     def __repr__(self) -> str:
-        return "<em.extensions: install, list, enable from disk>"
+        return "<em.extensions: install, list, enable from disk and from repositories>"

@@ -26,6 +26,8 @@ def _empty_vocabulary_folder(tmp_path_factory, monkeypatch):
     monkeypatch.setenv("S3DGRAPHY_EXTENSIONS_DIR", str(tmp_path_factory.mktemp("extensions")))
     monkeypatch.setenv("S3DGRAPHY_PLUGINS_DIR", str(tmp_path_factory.mktemp("plugins")))
     monkeypatch.delenv("S3DGRAPHY_PLUGINS_DEV_DIR", raising=False)
+    # MICRO-PL22 · «Allow online access» from the machine's settings (in the folder above), not the shell's
+    monkeypatch.delenv("S3DGRAPHY_ONLINE_ACCESS", raising=False)
     try:
         from s3dgraphy.authorities import packages
         packages._changed()
