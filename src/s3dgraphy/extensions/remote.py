@@ -81,9 +81,10 @@ MAX_INDEX = 32 * 1024 * 1024
 MAX_ARCHIVE = 1024 * 1024 * 1024
 #: the repository the ExtendedMatrix CI publishes (em-extensions, PL21) — offered, never added on its own
 OFFICIAL_URL = "https://extendedmatrix.github.io/em-extensions/index.json"
-#: X8 · the official index's minisign public keys, used when the person gives none. Empty until the
-#: ExtendedMatrix key exists (E.D.: ``python -m s3dgraphy.extensions sign keygen``, the secret in the CI)
-OFFICIAL_KEYS: Tuple[str, ...] = ()
+#: X8 · the official index's minisign public keys, used when the person gives none: the ExtendedMatrix
+#: key of 19 Nov 2026 (id 269B910A23431722; the public half is minisign.pub in em-extensions, the secret
+#: half the CI's EM_EXTENSIONS_SIGNING_KEY)
+OFFICIAL_KEYS: Tuple[str, ...] = ("RWQiF0MjCpGbJoDLaILCffTRygJzokREvTcV4tKIM6aHkwXgf6gehHIS",)
 #: a .minisig is four short lines
 MAX_SIGNATURE = 4096
 _NAME_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{0,47}$")
