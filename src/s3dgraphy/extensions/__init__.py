@@ -23,6 +23,10 @@ SPEC-pacchetto §16.3–§16.7, SPEC-plugin §17.
   to ``<id>-<version>.zip``, the envelope completed (W19,
   ``python -m s3dgraphy.extensions validate|build``).
 
+* :func:`dev_dir` / :func:`set_dev_dir` / :func:`dev_code` — the plugins'
+  development folder (``plugins_dev_dir``, W15a): loaded where they are,
+  marked ``dev``, never installed; the host decides when it counts.
+
 The window (EMStudio W6) asks; this library does. It never asks a question
 itself: the trust is a parameter, and :func:`preview` says when it is needed.
 """
@@ -33,6 +37,7 @@ from .store import (ENABLED_FILE, EXTENSIONS_ENV, PARTS, PLUGINS_ENV, REGISTER_F
                     wheel_platforms)
 from .build import DEFAULT_EXCLUDES, build, dump_toml, select_files
 from .validate import ARCHIVE_CODE_PROBLEMS, validate_archive
+from .dev import DEV_ENV, SOURCE_DEV, describe_dev, dev_code, dev_dir, dev_dir_setting, set_dev_dir
 from .wheels import PLATFORMS
 
 __all__ = [
@@ -42,4 +47,5 @@ __all__ = [
     "install_code", "installed", "get", "enable", "disable", "active_code", "removal_plan", "remove_code",
     "remove_data", "remove", "validate_archive", "ARCHIVE_CODE_PROBLEMS", "PLATFORMS", "build", "dump_toml",
     "select_files", "DEFAULT_EXCLUDES",
+    "DEV_ENV", "SOURCE_DEV", "dev_dir", "dev_dir_setting", "set_dev_dir", "dev_code", "describe_dev",
 ]

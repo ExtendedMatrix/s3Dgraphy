@@ -438,3 +438,107 @@ def test_scope_keeps_listeners_apart_and_plugins_hear_all():
         em.events.emit("graph-changed", {"n": 2})
     assert heard == [("plug", 1), ("a", 2), ("plug", 2)]
     assert em.events.off_owner("plug") == 1
+
+
+# ── MICRO-PL18 · the development folder (W15a, plugins_dev_dir) ──────────────
+
+def _dev(tmp_path, monkeypatch, **kw):
+    root = tmp_path / "dev"
+    root.mkdir(exist_ok=True)
+    folder = write_plugin(root, **kw)
+    monkeypatch.setenv(X.DEV_ENV, str(root))
+    return root, folder
+
+
+def test_dev_dir_setting(tmp_path, monkeypatch):
+    assert X.dev_dir() is None and X.dev_code("emstudio") == []
+    with pytest.raises(X.ExtensionError) as e:
+        X.set_dev_dir(str(tmp_path / "nowhere"))
+    assert "non è una cartella" in e.value.report.problems[0].text("it")
+    (tmp_path / "mine").mkdir()
+    assert X.set_dev_dir(str(tmp_path / "mine")) == str((tmp_path / "mine").resolve())
+    assert X.dev_dir() == (tmp_path / "mine").resolve()
+    monkeypatch.setenv(X.DEV_ENV, str(tmp_path))                  # the environment wins
+    assert X.dev_dir() == tmp_path and X.describe_dev()["env"] is True
+    monkeypatch.delenv(X.DEV_ENV)
+    assert X.set_dev_dir(None) is None and X.dev_dir() is None
+
+
+def test_dev_plugin_loads_only_when_the_host_says_and_is_marked(tmp_path, monkeypatch):
+    root, folder = _dev(tmp_path, monkeypatch)
+    (root / "only-data").mkdir()                                  # not a plugin: not listed
+    (root / "only-data" / "em-extension.toml").write_text('id = "x"\nversion = "1.0.0"\n[data]\n', encoding="utf-8")
+    assert PL.sync("emstudio") == []                              # the switch off: nothing from the folder
+    got = PL.sync("emstudio", dev=True)
+    assert len(got) == 1 and got[0].state == "loaded", got[0].problems
+    p = got[0]
+    assert p.dev and p.source == "dev" and p.folder == folder
+    d = p.as_dict()
+    assert d["dev"] is True and d["verified"] is False and d["dev_folder"] == str(folder)
+    assert p.descriptor.vendor["source"] == "dev" and p.descriptor.vendor["verified"] is False
+    assert not (folder / ".wheels").exists()                      # nothing written in the developer's folder
+    assert X.read_register().get("extensions", {}) == {}          # never installed
+    h = host()
+    r = PL.invoke(p.id, "mark", {"unit": "US2"}, author=ORCID)
+    assert r.ok and len(h.steps) == 1
+    assert PL.sync("emstudio") == [] and p.module not in sys.modules   # the switch off: gone, and forgotten
+
+
+def test_dev_plugin_reload_reads_the_files_again(tmp_path, monkeypatch):
+    root, folder = _dev(tmp_path, monkeypatch)
+    p = PL.sync("emstudio", dev=True)[0]
+    host()
+    assert PL.invoke(p.id, "count", {}).data["value"] == 2
+    init = folder / p.module / "__init__.py"
+    init.write_text(init.read_text(encoding="utf-8").replace(
+        'ctx.command("count", lambda s: len(list(em.graph.nodes(type="US"))))',
+        'ctx.command("count", lambda s: 42)'), encoding="utf-8")
+    assert PL.invoke(p.id, "count", {}).data["value"] == 2       # sync alone does not re-import
+    q = PL.reload(p.id, "emstudio")
+    assert q is not None and q.state == "loaded"
+    assert PL.invoke(p.id, "count", {}).data["value"] == 42
+    pid = install(write_plugin(tmp_path))["id"]                   # an installed plugin is not reloaded
+    PL.sync("emstudio", dev=True)
+    assert PL.reload(pid, "emstudio") is None
+
+
+def test_dev_copy_hides_the_installed_one_and_says_so(tmp_path, monkeypatch):
+    module = f"plug_{uuid.uuid4().hex[:8]}"
+    inst = install(write_plugin(tmp_path, module=module))
+    root, folder = _dev(tmp_path, monkeypatch, module=module, version="0.2.0")
+    p = PL.sync("emstudio", dev=True)[0]
+    assert p.id == inst["id"] and p.dev and p.version == "0.2.0" and p.state == "loaded", p.problems
+    hides = [n for n in p.notes if n["code"] == "dev_hides_installed"]   # the validator's warnings said too
+    assert len(hides) == 1 and "nasconde la 0.1.0" in hides[0]["it"]
+    q = PL.sync("emstudio")[0]                                    # the switch off: the installed one is back
+    assert not q.dev and q.version == "0.1.0" and q.state == "loaded", q.problems
+
+
+def test_dev_plugin_that_does_not_validate_is_refused_with_why(tmp_path, monkeypatch):
+    root, folder = _dev(tmp_path, monkeypatch, caps='["read-graph", "fly"]')
+    p = PL.sync("emstudio", dev=True)[0]
+    assert p.state == "refused" and "code_capability_unknown" in {x["code"] for x in p.problems}
+    assert all(x.get("it") for x in p.problems)
+    # mended on disk: the next sync takes it (a refused copy is read again)
+    toml = folder / "em-extension.toml"
+    toml.write_text(toml.read_text(encoding="utf-8").replace(', "fly"]', "]"), encoding="utf-8")
+    assert PL.sync("emstudio", dev=True)[0].state == "loaded"
+
+
+def test_dev_mixed_package_reads_its_data_in_place(tmp_path, monkeypatch):
+    root = tmp_path / "dev"
+    folder = root / "misto"
+    shutil.copytree(MIXED, folder)
+    (folder / "code" / "facemesh_fit" / "__init__.py").write_text(textwrap.dedent('''
+        STATE = {}
+        def setup(ctx):
+            STATE["package"] = ctx.package
+            STATE["set"] = ctx.package.landmark_set("stat:volto") if ctx.package else None
+        plugin = type("P", (), {"setup": staticmethod(setup)})
+    '''), encoding="utf-8")
+    monkeypatch.setenv(X.DEV_ENV, str(root))
+    p = PL.sync("emstudio", dev=True)[0]
+    assert p.state == "loaded" and p.dev, p.problems
+    assert p.folder == folder / "code"
+    st = sys.modules["facemesh_fit"].STATE
+    assert st["package"] and st["set"] is not None               # not installed: read from the folder

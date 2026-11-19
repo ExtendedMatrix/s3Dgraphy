@@ -51,6 +51,7 @@ from ..contract import Descriptor, Registry, Result, Slot, invoke as contract_in
 from ..contract.connector import ConnectorDescriptor, current_versions
 from . import events
 from .messages import both
+from ..extensions.dev import SOURCE_DEV
 
 #: the folder of a plugin's own state, kept across updates (SPEC-plugin §14.3)
 DATA_ENV = "S3DGRAPHY_PLUGINS_DATA_DIR"
@@ -143,6 +144,8 @@ class Plugin:
     entry: str = ""
     state: str = "refused"
     problems: List[Dict[str, Any]] = field(default_factory=list)
+    #: what does not refuse it but is said (W15a: a development copy hiding an installed one)
+    notes: List[Dict[str, Any]] = field(default_factory=list)
     commands: Dict[str, CommandDecl] = field(default_factory=dict)
     handlers: Dict[str, Callable[..., Any]] = field(default_factory=dict)
     exposed: Dict[str, Any] = field(default_factory=dict)
@@ -159,6 +162,11 @@ class Plugin:
     def package(self) -> Optional[str]:
         return self.meta.get("package")
 
+    @property
+    def dev(self) -> bool:
+        """W15a · loaded from the development folder, where it is (never installed)."""
+        return self.source == SOURCE_DEV
+
     def say(self, key: str, **kw: Any) -> None:
         self.problems.append({"code": key, **both(key, **kw)})
 
@@ -168,6 +176,7 @@ class Plugin:
                 "problems": [dict(p) for p in self.problems], "package": self.package,
                 "data_version": self.meta.get("data_version"), "verified": bool(self.meta.get("verified")),
                 "folder": str(self.folder), "listeners": _owned_counts(self.id),
+                "dev": self.dev, "dev_folder": self.meta.get("dev_folder"), "notes": [dict(n) for n in self.notes],
                 "exposed": sorted(self.exposed), "wired": sorted(self.handlers),
                 "commands": [c.as_dict() for c in self.commands.values()],
                 "capabilities": list(self.descriptor.capabilities) if self.descriptor else []}
@@ -182,10 +191,19 @@ class PackageView:
     one package (``landmark_set``, ``extractor_type``…) at the data version
     the code came with (or the newest compatible one installed)."""
 
-    def __init__(self, name: str, version: Optional[str]):
+    def __init__(self, name: str, version: Optional[str], *, folder: Optional[str] = None):
         from .. import profiles as P
         self.name = name
-        self.profile = P.find(name, version)
+        self.profile = None
+        if folder:
+            # W15a · a mixed package in the development folder: its data read
+            # where they are (not installed); the installed ones if they do not hold
+            try:
+                self.profile = P.load(folder)
+            except Exception:                        # noqa: BLE001 — the data in progress may not validate
+                self.profile = None
+        if self.profile is None:
+            self.profile = P.find(name, version)
         self.version = self.profile.version if self.profile is not None else version
         self.overlay = P.ProfileOverlay([self.profile] if self.profile is not None else [])
 
@@ -236,7 +254,8 @@ class Context:
         self.verified = bool(plugin.meta.get("verified"))
         self.package: Optional[PackageView] = None
         if plugin.package:
-            view = PackageView(plugin.package, plugin.meta.get("data_version"))
+            view = PackageView(plugin.package, plugin.meta.get("data_version"),
+                               folder=plugin.meta.get("dev_folder") if plugin.meta.get("dev") else None)
             self.package = view
 
     @property
@@ -387,8 +406,11 @@ def _wheel_paths(p: Plugin) -> List[str]:
         if plats is None:
             out.append(str(path))
             continue
-        target = p.folder / ".wheels" / path.name[:-4]
+        # W15a · a development copy unpacks into the loader's cache, not the developer's folder
+        base = Path(str(p.meta["wheels_dir"])) if p.meta.get("wheels_dir") else p.folder / ".wheels"
+        target = base / path.name[:-4]
         if not target.is_dir():
+            target.parent.mkdir(parents=True, exist_ok=True)
             tmp = target.with_name(target.name + ".part")
             with zipfile.ZipFile(path) as z:
                 z.extractall(tmp)
@@ -502,7 +524,30 @@ def unload(pid: str) -> bool:
             except Exception:                        # noqa: BLE001 — a teardown never blocks
                 pass
     _unhook(p)
+    if p.dev:
+        _forget_modules(p)
     return True
+
+
+def _forget_modules(p: Plugin) -> None:
+    """W15a · a development copy's modules (its own, by name, and any whose
+    file is under its folder) out of ``sys.modules``: the next load reads the
+    files again. Never for an installed plugin (§3.2: not promised)."""
+    try:
+        folder = str(p.folder.resolve())
+    except OSError:
+        folder = str(p.folder)
+    owned = bool(p.module) and _imported.get(p.module) == str(p.folder)
+    for name, mod in list(sys.modules.items()):
+        f = getattr(mod, "__file__", None)
+        # by name only what this loader imported from that folder (a refused
+        # «json» must never take the program's json away)
+        mine = owned and (name == p.module or name.startswith(p.module + "."))
+        if mine or (f and str(Path(f).resolve()).startswith(folder + os.sep)):
+            sys.modules.pop(name, None)
+    if _imported.get(p.module) == str(p.folder):
+        _imported.pop(p.module, None)
+    importlib.invalidate_caches()
 
 
 def _meta(folder: Path) -> Dict[str, Any]:
@@ -513,29 +558,75 @@ def _meta(folder: Path) -> Dict[str, Any]:
         return {}
 
 
-def sync(host: str) -> List[Plugin]:
+def sync(host: str, *, dev: bool = False) -> List[Plugin]:
     """Load what is active for ``host`` and not loaded; unload what is no
     longer active; a version changed needs a restart (said). Cheap: one read
-    of ``enabled.json``. Returns the plugins, in id order."""
+    of ``enabled.json``. Returns the plugins, in id order.
+
+    ``dev`` (W15a): the plugins of the development folder
+    (:func:`s3dgraphy.extensions.dev_dir`) count too, loaded where they are,
+    with no installation and no trust question — the HOST says when (EMStudio:
+    «Funzioni sperimentali» on). A development copy hides an installed plugin
+    with the same id, and says so. ``dev=False`` unloads them."""
     from ..extensions import active_code
     wanted: Dict[str, Dict[str, Any]] = {}
     for e in active_code(host):
         wanted[str(e.get("id"))] = e
+    if dev:
+        from ..extensions.dev import dev_code
+        for e in dev_code(host):
+            hidden = wanted.get(str(e.get("id")))
+            if hidden is not None:
+                e = dict(e, warnings=list(e.get("warnings") or []) + [
+                    {"code": "dev_hides_installed", **_problem_both("dev_hides_installed", id=e.get("id"),
+                                                                    version=hidden.get("version"))}])
+            wanted[str(e.get("id"))] = e
     for pid in [i for i in _plugins if i not in wanted]:
         unload(pid)
     for pid, e in sorted(wanted.items()):
         have = _plugins.get(pid)
-        if have is not None and have.version == str(e.get("version")) and have.source == str(e.get("source")):
+        if have is not None and have.version == str(e.get("version")) and have.source == str(e.get("source")) \
+                and str(have.folder) == str(e.get("folder")) and not (e.get("dev") and have.state != "loaded"):
+            have.notes = [dict(w) for w in e.get("warnings") or []] if e.get("dev") else have.notes
             continue
         if have is not None:
             unload(pid)
-        folder = Path(str(e.get("folder")))
-        meta = _meta(folder)
+        folder = Path(str(e.get("folder") or ""))
+        meta = dict(e["meta"]) if e.get("dev") and e.get("meta") else _meta(folder)
         p = Plugin(id=pid, version=str(e.get("version")), source=str(e.get("source") or "disk"),
                    folder=folder, meta=meta, module=str(e.get("module") or meta.get("module") or ""),
                    entry=str(e.get("entry") or meta.get("entry") or ""))
+        if e.get("dev"):
+            p.notes = [dict(w) for w in e.get("warnings") or []]
+            if e.get("problems"):
+                # the development copy does not validate: refused, with the validator's words
+                p.commands = {c.id: c for c in read_commands(p.id, meta.get("code") or {})} if meta else {}
+                p.problems = [dict(x) for x in e["problems"]]
+                p.state = "refused"
+                _plugins[pid] = p
+                continue
         _plugins[pid] = _load(p, host)
     return [_plugins[k] for k in sorted(_plugins)]
+
+
+def _problem_both(code: str, **params: Any) -> Dict[str, str]:
+    from ..profiles.problems import Problem, WARNING
+    pr = Problem(code, WARNING, "", params)
+    return {"en": pr.text("en"), "it": pr.text("it")}
+
+
+def reload(pid: str, host: str) -> Optional[Plugin]:
+    """W15a · a plugin of the development folder read again after its code
+    changed: ``teardown``, its modules (those whose file is under its folder)
+    out of ``sys.modules``, then loaded as new. Only a development copy: an
+    installed plugin changes by an update and a restart (§3.2). ``None`` when
+    ``pid`` is not a development plugin loaded here."""
+    p = _plugins.get(pid)
+    if p is None or not p.dev:
+        return None
+    unload(pid)                                      # a development copy leaves sys.modules too
+    sync(host, dev=True)
+    return _plugins.get(pid)
 
 
 def loaded() -> List[Plugin]:

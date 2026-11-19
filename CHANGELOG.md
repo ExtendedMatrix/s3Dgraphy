@@ -5,6 +5,29 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Changed
+- **The trust from disk: the plugins' development folder** (MICRO-PL18,
+  row W15a of the extensions plan, 19 November 2026). New
+  `s3dgraphy.extensions.dev`: `plugins_dev_dir` — `dev_dir()`,
+  `set_dev_dir(path|None)` (this machine's setting in
+  `~/.s3dgraphy/plugins/dev.json`, `S3DGRAPHY_PLUGINS_DEV_DIR` wins; a path
+  that is not a folder refused, `dev_dir_missing`), `dev_code(host)` (every
+  sub-folder with an `em-extension.toml` that has `[code]`, read and validated
+  each time; two with the same id: the first, the other said),
+  `describe_dev`. `em.plugins.sync(host, dev=True)` loads them WHERE THEY ARE —
+  not installed, no archive hash, no trust question; the host says when
+  (EMStudio: «Funzioni sperimentali») — with source `dev`, `verified: false`
+  (in the descriptor's vendor, so in the DTC of their acts); a development
+  copy that does not validate is refused with the validator's words; one that
+  has the id of an installed plugin hides it while it is there, and says so
+  (`dev_hides_installed`, in `Plugin.notes`); `dev=False` unloads them and
+  forgets their modules. `em.plugins.reload(id, host)` reads a development
+  plugin again (its modules out of `sys.modules`); an installed one is never
+  reloaded. A mixed package in development reads its data from the folder
+  (`ctx.package`). Binary wheels of a development copy unpack into
+  `~/.s3dgraphy/plugins/.dev-wheels/<id>/`, never into the developer's folder.
+  `em.extensions.dev_dir()`, `set_dev_dir()`, `dev()`. Five problem codes
+  (EN + IT). No datamodel change; `em.API_VERSION` unchanged (nothing new for
+  a plugin to call).
 - **The plugins loaded from disk, and the slots of phase 1** (MICRO-PL17,
   row W14 of the extensions plan, 18 November 2026). New `s3dgraphy.em.plugins`:
   `sync(host)` loads the code active for a host in `enabled.json` (W21) —

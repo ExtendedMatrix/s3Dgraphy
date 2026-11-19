@@ -87,5 +87,22 @@ class Extensions:
         from .. import extensions as E
         return E.build(folder, output_dir=output_dir, dry_run=dry_run)
 
+    def dev_dir(self) -> Optional[str]:
+        """W15a · the plugins' development folder as set (``None``: not set)."""
+        from .. import extensions as E
+        return E.dev_dir_setting()
+
+    def set_dev_dir(self, path: Optional[str]) -> Optional[str]:
+        """W15a · set (or clear, ``None``) the development folder of this
+        machine. Its plugins load where they are, marked «development, not
+        verified», only when the host says so (EMStudio: «Funzioni sperimentali»)."""
+        from .. import extensions as E
+        return E.set_dev_dir(path)
+
+    def dev(self) -> Dict[str, Any]:
+        """W15a · the development folder and the plugins in it, with their problems."""
+        from .. import extensions as E
+        return E.describe_dev()
+
     def __repr__(self) -> str:
         return "<em.extensions: install, list, enable from disk>"
