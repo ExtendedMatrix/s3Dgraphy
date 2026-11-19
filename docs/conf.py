@@ -91,8 +91,13 @@ html_theme_options = {
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
-# Custom CSS
+# Custom CSS. Il marchio arriva da `stratigraph-brand`, vendorizzato dal suo
+# `docs-theme/sync-brand-docs.sh` come lo vendorizzano le applicazioni; chiaro e
+# scuro seguono l'impostazione di sistema di chi legge.
 html_css_files = [
+    'brand/stratigraph-theme.css',
+    'brand/skins.css',
+    'brand/sphinx-rtd-bridge.css',
     'custom.css',
 ]
 
@@ -207,6 +212,9 @@ myst_heading_anchors = 3
 # Suppress noisy warnings for non-canonical MD anchors during the 1.5
 # documentation push. Drop once every cross-reference is migrated.
 suppress_warnings = [
+    # EPUB non conosce il tipo di un .woff2 e lo dice: i caratteri del
+    # marchio servono alla pagina web, non al libro.
+    'epub.unknown_project_files',
     'myst.header',
     # autodoc's cross-reference resolution treats `from x import Y`
     # in two modules as two valid targets for `Y`. The duplicates are
