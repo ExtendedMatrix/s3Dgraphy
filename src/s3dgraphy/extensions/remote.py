@@ -80,7 +80,15 @@ USER_AGENT = "s3dgraphy-extensions/1"
 MAX_INDEX = 32 * 1024 * 1024
 MAX_ARCHIVE = 1024 * 1024 * 1024
 #: the repository the ExtendedMatrix CI publishes (em-extensions, PL21) — offered, never added on its own
-OFFICIAL_URL = "https://extendedmatrix.github.io/em-extensions/index.json"
+OFFICIAL_URL = "https://extensions.extendedmatrix.org/index.json"
+#: the same official repository at its earlier address (GitHub Pages before the domain, 19 Nov 2026):
+#: a repository added with it stays the official one
+OFFICIAL_ALIASES: Tuple[str, ...] = ("https://extendedmatrix.github.io/em-extensions/index.json",)
+
+
+def _is_official(url: str) -> bool:
+    u = str(url or "")
+    return u == normalize_url(OFFICIAL_URL) or any(u == normalize_url(a) for a in OFFICIAL_ALIASES)
 #: X8 · the official index's minisign public keys, used when the person gives none: the ExtendedMatrix
 #: key of 19 Nov 2026 (id 269B910A23431722; the public half is minisign.pub in em-extensions, the secret
 #: half the CI's EM_EXTENSIONS_SIGNING_KEY)
@@ -217,14 +225,14 @@ def _trusts_reviews(r: Mapping[str, Any]) -> bool:
     set, else on for the official index only."""
     v = r.get("trust_reviews")
     if v is None:
-        return str(r.get("url")) == normalize_url(OFFICIAL_URL)
+        return _is_official(r.get("url"))
     return bool(v)
 
 
 def _key_texts(r: Mapping[str, Any]) -> List[str]:
     """X8 · the public keys of a repository: the person's, else (the official index) ours."""
     ks = [str(k) for k in r.get("keys") or [] if k]
-    if not ks and str(r.get("url")) == normalize_url(OFFICIAL_URL):
+    if not ks and _is_official(r.get("url")):
         ks = list(OFFICIAL_KEYS)
     return ks
 
@@ -273,7 +281,7 @@ def _public(r: Mapping[str, Any]) -> Dict[str, Any]:
     out["keys"] = [signing.describe_key(k) for k in _key_texts(r) if _readable_key(k)]
     out["signed"] = bool(out["keys"])
     out["trust_reviews"] = _trusts_reviews(r)
-    out["official"] = str(r.get("url")) == normalize_url(OFFICIAL_URL)
+    out["official"] = _is_official(r.get("url"))
     out["has_token"] = bool(r.get("token"))
     out["local"] = is_local(str(r.get("url")))
     cached = _cache_meta(str(r.get("name")))
