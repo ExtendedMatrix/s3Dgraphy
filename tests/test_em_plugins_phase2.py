@@ -518,6 +518,24 @@ def test_a_layer_is_loaded_and_computed_in_its_shape(tmp_path):
     assert v["value"][0]["display"]["mode"] == "one"
 
 
+def test_the_marks_on_a_plane():
+    """MICRO-GEO16 (row G16 b) · an anomaly traced on a slice is a sign the host draws on its plane."""
+    marks = [{"id": "x1", "label": {"en": "USD1 · linear anomaly", "it": "USD1 · anomalia lineare"},
+              "primitive": "polyline", "points": [[1, 2], [3.5, 4]]},
+             {"id": "x2", "primitive": "point", "points": [[5, 6], [7, 8]]},
+             {"id": "x3", "primitive": "surface", "points": [[0, 0], [1, 0]]},          # too few: dropped
+             {"id": "x4", "primitive": "voxel", "points": [[0, 0]]},                     # unknown: dropped
+             {"id": "x5", "primitive": "polyline", "points": [[0, 0], [1, "x"]]},        # not numbers: dropped
+             {"primitive": "point", "points": [[0, 0]]}]                                  # no id: dropped
+    item = {"id": "D.01", "image": None, "extent": [0, 0, 10, 10], "marks": marks}
+    ok, (l,) = PL.shape("space.layer@1", {"kind": "raster_stack", "id": "s", "items": [item]}, lang="it")
+    assert ok and l["items"][0]["marks"] == [
+        {"id": "x1", "label": "USD1 · anomalia lineare", "primitive": "polyline", "points": [[1.0, 2.0], [3.5, 4.0]]},
+        {"id": "x2", "label": "x2", "primitive": "point", "points": [[5.0, 6.0]]}]
+    ok, (l,) = PL.shape("space.layer@1", {"kind": "raster_stack", "id": "s", "items": [dict(item, marks="no")]})
+    assert l["items"][0]["marks"] == []
+
+
 def test_the_shape_of_a_layer():
     item = {"id": "D.01", "image": "cache/k/a.png", "extent": [0, 0, 1, 1]}
     ok, (l,) = PL.shape("space.layer@1", {"kind": "raster_stack", "id": "s", "items": [item]})

@@ -1033,6 +1033,11 @@ LAYER_ITEMS_MAX = 2000
 LAYER_ALL_MAX = 60
 LAYER_DISPLAY = ("all", "one", "up_to")
 LAYER_ORIENTATIONS = ("horizontal", "vertical")
+#: MICRO-GEO16 (row G16 b) · the signs a plugin draws ON a plane (an anomaly
+#: traced on a slice): their primitives, how many per plane, points per sign
+LAYER_MARK_PRIMITIVES = ("point", "polyline", "surface")
+LAYER_MARKS_MAX = 200
+LAYER_MARK_POINTS_MAX = 500
 
 
 def _num(v: Any) -> Optional[float]:
@@ -1065,6 +1070,29 @@ def _point2(v: Any) -> Optional[List[float]]:
     return None
 
 
+def _shape_marks(v: Any, lang: str) -> List[Dict[str, Any]]:
+    """The signs on one plane (MICRO-GEO16): ``[{id, label, primitive, points}]``,
+    ``points`` in the plane's own coordinates (those of its ``extent``); a sign
+    without an id, with another primitive or too few points is dropped."""
+    out: List[Dict[str, Any]] = []
+    if not isinstance(v, (list, tuple)):
+        return out
+    for m in list(v)[:LAYER_MARKS_MAX]:
+        if not isinstance(m, dict) or not str(m.get("id") or "").strip():
+            continue
+        prim = m.get("primitive")
+        if prim not in LAYER_MARK_PRIMITIVES:
+            continue
+        raw = m.get("points") if isinstance(m.get("points"), (list, tuple)) else []
+        pts = [_point2(p) for p in list(raw)[:LAYER_MARK_POINTS_MAX]]
+        if not pts or None in pts or len(pts) < {"point": 1, "polyline": 2, "surface": 3}[prim]:
+            continue
+        mid = str(m["id"]).strip()
+        out.append({"id": mid, "label": _one_line(_text(m.get("label") or mid, lang), CELL_MAX),
+                    "primitive": prim, "points": pts[:1] if prim == "point" else pts})
+    return out
+
+
 def _shape_layer(v: Any, lang: str) -> Optional[Dict[str, Any]]:
     """One layer of ``space.layer@1`` as every host reads it, or None::
 
@@ -1073,7 +1101,9 @@ def _shape_layer(v: Any, lang: str) -> Optional[Dict[str, Any]]:
          ground: {mode: "flat"|"surface", z, surface: <landscape_surface id>|null},
          items: [{id, label, image|null, stamp|null, extent: [x0, y0, x1, y1],
                   orientation: "horizontal"|"vertical", depth_top, depth_bottom,
-                  line: [[x, y], [x, y]]|null}],
+                  line: [[x, y], [x, y]]|null,
+                  marks: [{id, label, primitive: "point"|"polyline"|"surface",
+                           points: [[x, y], …]}]}],
          display: {mode: "all"|"one"|"up_to", index}, opacity: 0…1}
 
     ``items`` are planes in the layer's LOCAL frame (metres; a vertical one's
@@ -1082,7 +1112,10 @@ def _shape_layer(v: Any, lang: str) -> Optional[Dict[str, Any]]:
     elsewhere is dropped: a host serves nothing outside it), ``image`` null
     when the picture is not on this machine. ``origin`` null: the layer is not
     placed in the world (the scene's frame is its frame). Over
-    :data:`LAYER_ALL_MAX` horizontal planes ``all`` becomes ``one``."""
+    :data:`LAYER_ALL_MAX` horizontal planes ``all`` becomes ``one``.
+    ``marks`` (MICRO-GEO16, row G16 b: an anomaly traced on a slice) are the
+    signs the host draws ON the plane, in the coordinates of its ``extent``;
+    a host of @1 that does not know them draws the plane alone."""
     if not isinstance(v, dict) or v.get("kind") not in ("raster_stack",):
         return None
     lid = str(v.get("id") or "").strip()
@@ -1116,7 +1149,8 @@ def _shape_layer(v: Any, lang: str) -> Optional[Dict[str, Any]]:
             "extent": ext,
             "orientation": it.get("orientation") if it.get("orientation") in LAYER_ORIENTATIONS else "horizontal",
             "depth_top": _num(it.get("depth_top")), "depth_bottom": _num(it.get("depth_bottom")),
-            "line": line if line and None not in line else None})
+            "line": line if line and None not in line else None,
+            "marks": _shape_marks(it.get("marks"), lang)})
     flat = sum(1 for i in items if i["orientation"] == "horizontal")
     di = v.get("display") if isinstance(v.get("display"), dict) else {}
     dmode = di.get("mode") if di.get("mode") in LAYER_DISPLAY else "all"
