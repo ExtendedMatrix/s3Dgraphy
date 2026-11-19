@@ -260,7 +260,11 @@ myst_heading_anchors = 3
 
 # Suppress noisy warnings for non-canonical MD anchors during the 1.5
 # documentation push. Drop once every cross-reference is migrated.
+# EPUB non conosce il tipo di un .woff2 e, con -W, la sua lamentela
+# («unknown mimetype … ignoring») ferma la pubblicazione: i caratteri del
+# marchio servono alla pagina web, non al libro.
 suppress_warnings = [
+    'epub.unknown_project_files',  # i woff2 del marchio: vedi sotto
     'myst.header',
     # autodoc's cross-reference resolution treats `from x import Y`
     # in two modules as two valid targets for `Y`. The duplicates are
