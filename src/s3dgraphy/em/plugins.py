@@ -32,6 +32,15 @@ manifest's ``in`` names the slots (:mod:`s3dgraphy.extensions.slots`).
 
 ``ctx.package`` is the data of the same envelope (a mixed package: the
 package's version the code came with), ``None`` for a pure plugin (§17.4).
+
+MICRO-PL25 (row X5 of the plan) · the slots of phase 2. A command may also be
+drawn in ``inspector.section@1``, ``tabular.column@1``, ``statusbar@1`` (it
+only reads: :func:`compute` runs many at once and gives back their values in
+the shape the host draws, :func:`shape`) and ``space.tool@1`` (its
+``primitive`` and ``icon``; the host fills its ``geometry`` slot with what the
+person placed). ``[[code.panels]]`` are the declarative panels (``panel@1``):
+:class:`PanelDecl`, fields the host draws, values computed by read-only
+commands, buttons that invoke commands.
 """
 from __future__ import annotations
 
@@ -78,6 +87,13 @@ class CommandDecl:
     off: List[Dict[str, Any]]        # the entries turned off, with why (§14.7)
     when: str
     accept: List[str]
+    #: MICRO-PL25 (X5) · a tool of the Space: what it lays, its glyph
+    primitive: str = ""
+    icon: str = ""
+    #: an Inspector section's buttons (command ids of the same plugin)
+    buttons: List[str] = field(default_factory=list)
+    #: a column's sheet of the Tabular
+    view: str = ""
 
     @property
     def name(self) -> str:
@@ -89,7 +105,78 @@ class CommandDecl:
     def as_dict(self) -> Dict[str, Any]:
         return {"plugin": self.plugin, "id": self.id, "name": self.name, "label": dict(self.label),
                 "writes": self.writes, "slots": [dict(s) for s in self.slots], "in": list(self.where),
-                "off": [dict(o) for o in self.off], "when": self.when, "accept": list(self.accept)}
+                "off": [dict(o) for o in self.off], "when": self.when, "accept": list(self.accept),
+                "primitive": self.primitive, "icon": self.icon, "buttons": list(self.buttons), "view": self.view}
+
+
+@dataclass
+class PanelDecl:
+    """``[[code.panels]]``, read (``panel@1``, MICRO-PL25): a declarative panel —
+    the host draws its fields; nothing of the plugin runs in the page."""
+    plugin: str
+    id: str
+    label: Dict[str, str]
+    place: str
+    when: str
+    fields: List[Dict[str, Any]]
+
+    @property
+    def name(self) -> str:
+        return f"{self.plugin}/{self.id}"
+
+    def as_dict(self) -> Dict[str, Any]:
+        return {"plugin": self.plugin, "id": self.id, "name": self.name, "label": dict(self.label),
+                "place": self.place, "when": self.when, "fields": [dict(f) for f in self.fields]}
+
+
+def read_panels(pid: str, code: Dict[str, Any]) -> List[PanelDecl]:
+    """The panels of a ``[code]`` section; a field that does not read is left
+    out (the validator said it), a field that names a command the plugin does
+    not declare too."""
+    from ..extensions.slots import PANEL_FIELD_KINDS, PANEL_FIELDS_MAX, PANEL_PLACES
+    declared = {str(c.get("id")): c for c in code.get("commands") or [] if isinstance(c, dict)}
+    out: List[PanelDecl] = []
+    for p in code.get("panels") or []:
+        if not isinstance(p, dict) or not p.get("id"):
+            continue
+        fields: List[Dict[str, Any]] = []
+        for f in (p.get("fields") or [])[:PANEL_FIELDS_MAX]:
+            if not isinstance(f, dict) or f.get("kind") not in PANEL_FIELD_KINDS:
+                continue
+            kind = str(f["kind"])
+            row: Dict[str, Any] = {"kind": kind, "label": _label(f.get("label"), str(f.get("name") or f.get("command") or kind))}
+            if kind in ("value", "button"):
+                c = declared.get(str(f.get("command") or ""))
+                if c is None:
+                    continue
+                row["command"] = str(f["command"])
+                if f.get("label") is None:
+                    # a value or a button with no label of its own says its command's
+                    row["label"] = _label(c.get("label"), str(f["command"]))
+            else:
+                if not f.get("name"):
+                    continue
+                row["name"] = str(f["name"])
+                if f.get("default") is not None:
+                    row["default"] = f["default"]
+                if kind == "choice":
+                    row["options"] = [{"value": str(o), "label": {"en": str(o), "it": str(o)}} if not isinstance(o, dict)
+                                      else {"value": str(o.get("value")), "label": _label(o.get("label"), str(o.get("value")))}
+                                      for o in (f.get("options") or [])]
+                if kind == "number":
+                    for k in ("min", "max", "step"):
+                        if isinstance(f.get(k), (int, float)) and not isinstance(f.get(k), bool):
+                            row[k] = f[k]
+                    if isinstance(f.get("unit"), str):
+                        row["unit"] = f["unit"]
+            if isinstance(f.get("help"), (str, dict)):
+                row["help"] = _label(f.get("help"), "")
+            fields.append(row)
+        place = str(p.get("place") or "right")
+        out.append(PanelDecl(plugin=pid, id=str(p["id"]), label=_label(p.get("label"), str(p["id"])),
+                             place=place if place in PANEL_PLACES else "right",
+                             when=str(p.get("when") or ""), fields=fields))
+    return out
 
 
 def _label(raw: Any, fallback: str) -> Dict[str, str]:
@@ -105,7 +192,7 @@ def _label(raw: Any, fallback: str) -> Dict[str, str]:
 def read_commands(pid: str, code: Dict[str, Any]) -> List[CommandDecl]:
     """The commands of a ``[code]`` section; a command with an entry the host
     cannot draw keeps the others (§14.7: the entry, not the plugin)."""
-    from ..extensions.slots import COMMAND_SLOTS, parse_slot, slot_status
+    from ..extensions.slots import COMMAND_SLOTS, TABULAR_VIEWS, TOOL_PRIMITIVES, default_writes, parse_slot, slot_status
     out: List[CommandDecl] = []
     for c in code.get("commands") or []:
         if not isinstance(c, dict) or not c.get("id"):
@@ -119,15 +206,28 @@ def read_commands(pid: str, code: Dict[str, Any]) -> List[CommandDecl]:
             else:
                 off.append({"slot": str(w), "why": st if st != "ok" else "not-command"})
         names = [w.split("@")[0] for w in where]
-        is_check = "check" in names
+        # MICRO-PL25 · a tool without a primitive it can lay is not drawn (the validator said why)
+        if "space.tool" in names and str(c.get("primitive") or "") not in TOOL_PRIMITIVES:
+            where = [w for w in where if not w.startswith("space.tool@")]
+            off.append({"slot": "space.tool@1", "why": "primitive"})
+        view = str(c.get("view") or "Units")
+        if "tabular.column" in names and view not in TABULAR_VIEWS:
+            where = [w for w in where if not w.startswith("tabular.column@")]
+            off.append({"slot": "tabular.column@1", "why": "view"})
+        icon = c.get("icon") if isinstance(c.get("icon"), str) and 0 < len(c["icon"].strip()) <= 2 \
+            and "<" not in c["icon"] and "&" not in c["icon"] else ""
         out.append(CommandDecl(
             plugin=pid, id=str(c["id"]), label=_label(c.get("label"), str(c["id"])),
-            writes=bool(c.get("writes", not is_check)),
+            writes=default_writes({**c, "in": where}) if not isinstance(c.get("writes"), bool) else bool(c["writes"]),
             slots=[{"name": str(s.get("name")), "kind": str(s.get("kind") or "string"),
                     "required": bool(s.get("required", True))}
                    for s in (c.get("slots") or []) if isinstance(s, dict) and s.get("name")],
             where=where, off=off, when=str(c.get("when") or ""),
-            accept=[str(a).lower() for a in (c.get("accept") or []) if isinstance(a, str)]))
+            accept=[str(a).lower() for a in (c.get("accept") or []) if isinstance(a, str)],
+            primitive=str(c.get("primitive") or "") if "space.tool" in names else "", icon=str(icon or ""),
+            buttons=[str(b) for b in (c.get("buttons") or []) if isinstance(b, str)]
+            if isinstance(c.get("buttons"), list) else [],
+            view=view if "tabular.column" in names else ""))
     return out
 
 
@@ -147,6 +247,8 @@ class Plugin:
     #: what does not refuse it but is said (W15a: a development copy hiding an installed one)
     notes: List[Dict[str, Any]] = field(default_factory=list)
     commands: Dict[str, CommandDecl] = field(default_factory=dict)
+    #: MICRO-PL25 (X5) · the declarative panels (panel@1)
+    panels: Dict[str, PanelDecl] = field(default_factory=dict)
     handlers: Dict[str, Callable[..., Any]] = field(default_factory=dict)
     exposed: Dict[str, Any] = field(default_factory=dict)
     subscriptions: List[Any] = field(default_factory=list)
@@ -180,6 +282,7 @@ class Plugin:
                 "dev": self.dev, "dev_folder": self.meta.get("dev_folder"), "notes": [dict(n) for n in self.notes],
                 "exposed": sorted(self.exposed), "wired": sorted(self.handlers),
                 "commands": [c.as_dict() for c in self.commands.values()],
+                "panels": [x.as_dict() for x in self.panels.values()],
                 "capabilities": list(self.descriptor.capabilities) if self.descriptor else []}
 
 
@@ -473,6 +576,7 @@ def _check(p: Plugin, host: str) -> bool:
 
 def _load(p: Plugin, host: str) -> Plugin:
     p.commands = {c.id: c for c in read_commands(p.id, p.meta.get("code") or {})}
+    p.panels = {x.id: x for x in read_panels(p.id, p.meta.get("code") or {})}
     if not _check(p, host):
         if p.state != "restart":
             p.state = "refused"
@@ -656,6 +760,16 @@ def commands(slot: Optional[str] = None) -> List[CommandDecl]:
     return out
 
 
+def panels() -> List[PanelDecl]:
+    """MICRO-PL25 · the declarative panels of the loaded plugins (``panel@1``)."""
+    return [x for p in loaded() if p.state == "loaded" for x in p.panels.values()]
+
+
+def tools() -> List[CommandDecl]:
+    """MICRO-PL25 · the tools of the Space of the loaded plugins (``space.tool@1``)."""
+    return [c for c in commands("space.tool") if _plugins[c.plugin].state == "loaded"]
+
+
 def describe(lang: str = "en") -> Dict[str, Any]:
     """Everything a host draws: the plugins (state, problems in EN and IT,
     commands with their slots), and how many listeners per event."""
@@ -664,8 +778,9 @@ def describe(lang: str = "en") -> Dict[str, Any]:
 
 
 def _slot_table() -> Dict[str, Any]:
-    from ..extensions.slots import PHASE1, PHASE2
-    return {"phase1": dict(PHASE1), "phase2": dict(PHASE2)}
+    from ..extensions.slots import DRAWN2, PHASE1, PHASE2
+    return {"phase1": dict(PHASE1), "phase2": {k: v for k, v in PHASE2.items() if k not in DRAWN2},
+            "drawn2": dict(DRAWN2)}
 
 
 # ── invoking ────────────────────────────────────────────────────────────────
@@ -795,6 +910,117 @@ def run_checks(*, lang: str = "en") -> List[Dict[str, Any]]:
     return out
 
 
+# ── the values of phase 2 (inspector.section@1, tabular.column@1, statusbar@1, panel@1) ──
+
+#: what a host shows of one value: a cell, a line of the status bar, a row of a section
+CELL_MAX = 200
+STATUS_MAX = 80
+ROWS_MAX = 40
+#: the values asked at once (a column of 5.000 rows is ONE request with 5.000 ids)
+COMPUTE_MAX = 64
+
+
+def _text(v: Any, lang: str) -> str:
+    """A value as the host writes it: a ``{en, it}`` in the page's language, a
+    number as it is, ``None`` empty, anything else its text."""
+    if v is None:
+        return ""
+    if _is_words(v):
+        return v.get(lang) or v.get("en") or next(iter(v.values()), "")
+    if isinstance(v, bool):
+        return "✓" if v else "—"
+    if isinstance(v, float):
+        return f"{v:.6g}"
+    if isinstance(v, (str, int)):
+        return str(v)
+    try:
+        return json.dumps(v, ensure_ascii=False)
+    except (TypeError, ValueError):
+        return repr(v)
+
+
+def _is_words(v: Any) -> bool:
+    """``{"en": "…", "it": "…"}`` — the same sentence in some languages."""
+    return isinstance(v, dict) and bool(v) and ("en" in v or "it" in v) \
+        and all(isinstance(k, str) and len(k) <= 5 for k in v) and all(isinstance(x, str) for x in v.values())
+
+
+def _one_line(text: str, limit: int) -> str:
+    t = " ".join(str(text).split())
+    return t if len(t) <= limit else t[: limit - 1] + "…"
+
+
+def shape(slot: str, value: Any, *, lang: str = "en") -> Tuple[bool, Any]:
+    """What a host draws of a read-only command's ``value`` in ``slot``:
+
+    * ``statusbar`` — one line of text (≤ :data:`STATUS_MAX`);
+    * ``tabular.column`` — ``{id: text}`` (each ≤ :data:`CELL_MAX`);
+    * ``inspector.section`` and a panel's ``value`` — rows ``[{label, value}]``
+      (≤ :data:`ROWS_MAX`) from a dict (label → value), a list of
+      ``{label, value}`` or of pairs, or a text (one row without a label).
+
+    ``(False, None)`` when the value has another shape (said by the caller)."""
+    name = slot.split("@")[0]
+    if name == "statusbar":
+        if isinstance(value, (list, tuple)):
+            return False, None
+        return True, _one_line(_text(value, lang), STATUS_MAX)
+    if name == "tabular.column":
+        if not isinstance(value, dict):
+            return False, None
+        return True, {str(k): _one_line(_text(v, lang), CELL_MAX) for k, v in value.items()}
+    rows: List[Dict[str, str]] = []
+    if value is None:
+        return True, rows
+    if isinstance(value, dict) and not _is_words(value):
+        items = list(value.items())
+        rows = [{"label": _one_line(_text(k, lang), CELL_MAX), "value": _one_line(_text(v, lang), CELL_MAX)}
+                for k, v in items]
+    elif isinstance(value, (list, tuple)):
+        for it in value:
+            if isinstance(it, dict):
+                rows.append({"label": _one_line(_text(it.get("label"), lang), CELL_MAX),
+                             "value": _one_line(_text(it.get("value"), lang), CELL_MAX)})
+            elif isinstance(it, (list, tuple)) and len(it) == 2:
+                rows.append({"label": _one_line(_text(it[0], lang), CELL_MAX),
+                             "value": _one_line(_text(it[1], lang), CELL_MAX)})
+            else:
+                rows.append({"label": "", "value": _one_line(_text(it, lang), CELL_MAX)})
+    else:
+        rows = [{"label": "", "value": _one_line(_text(value, lang), CELL_MAX)}]
+    return True, rows[:ROWS_MAX]
+
+
+def compute(items: List[Dict[str, Any]], *, lang: str = "en", author: Optional[str] = None) -> List[Dict[str, Any]]:
+    """The values of phase 2 at once: each item ``{key, plugin, command, slot,
+    slots}`` is a READ-ONLY command (``writes = false``; one that is not is
+    refused before it runs, one that tries to write is refused by the seam)
+    run through the contract; the answer per item ``{key, ok, value}`` (in the
+    shape of :func:`shape`) or ``{key, ok: false, messages: {en, it}}``. At
+    most :data:`COMPUTE_MAX` items; one that fails never stops the others."""
+    out: List[Dict[str, Any]] = []
+    for it in list(items or [])[:COMPUTE_MAX]:
+        key = str(it.get("key") or "")
+        pid, cid = str(it.get("plugin") or ""), str(it.get("command") or "")
+        slot = str(it.get("slot") or "inspector.section")
+        p = _plugins.get(pid)
+        cmd = p.commands.get(cid) if p is not None else None
+        if cmd is not None and cmd.writes:
+            out.append({"key": key, "ok": False, "messages": both("compute_writes", plugin=pid, command=cid)})
+            continue
+        res = invoke(pid, cid, dict(it.get("slots") or {}), author=author)
+        if not res.ok:
+            msgs = res.data.get("messages") or {"en": res.message, "it": res.message}
+            out.append({"key": key, "ok": False, "messages": msgs, "reason": res.data.get("reason")})
+            continue
+        ok, value = shape(slot, res.data.get("value"), lang=lang)
+        if not ok:
+            out.append({"key": key, "ok": False, "messages": both("compute_shape", plugin=pid, command=cid, slot=slot)})
+            continue
+        out.append({"key": key, "ok": True, "value": value})
+    return out
+
+
 def readers_for(path: str) -> List[CommandDecl]:
     """The ``door.reader@1`` commands that accept this file (by its extension)."""
     name = Path(str(path)).name.lower()
@@ -857,4 +1083,5 @@ class Ext:
 __all__ = ["CommandDecl", "Plugin", "PackageView", "ExportFile", "Context", "Calling", "Ext",
            "calling_now", "sync", "loaded", "get", "unload", "reset", "commands", "describe",
            "registry", "descriptor_of", "invoke", "run_checks", "readers_for", "read_commands",
-           "plugins_data_dir", "DATA_ENV"]
+           "plugins_data_dir", "DATA_ENV", "PanelDecl", "read_panels", "shape", "compute",
+           "panels", "tools"]

@@ -5,6 +5,36 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Changed
+- **The slots of phase 2** (MICRO-PL25, row X5 of the extensions plan,
+  19 November 2026). `s3dgraphy.extensions.slots`: `DRAWN2` — the five slots
+  of phase 2 a host now draws are `ok`: `inspector.section@1` (a section of
+  the Inspector for a type of node, `when` read on the inspected node;
+  `buttons` = command ids of the same plugin), `tabular.column@1` (a
+  computed column of a sheet, `view` = Units, Epochs, Documents, Claims,
+  Authors), `statusbar@1` (one line of text), `space.tool@1` (`primitive` =
+  point, line, polyline, surface; `icon` = one or two characters of text; the
+  host fills a slot of the new kind `geometry` = {primitive, vertices, on,
+  frame} with what the person placed) and `panel@1`, the declarative panels
+  `[[code.panels]]` (id, label, `place` = right, left, below, window, `when`,
+  at most 40 `fields` of kind number, text, choice, node, check, value,
+  button; a value and a button name a command of the plugin; nothing of the
+  plugin runs in the page). The slots that SHOW a value only read
+  (`READ_ONLY_SLOTS`, `default_writes`): a command there is `writes = false`
+  unless it says otherwise, and one that says `writes = true` is refused by
+  the validator. Slot kind `bool` too. The other slots of phase 2 (palette,
+  keymap, workspace, context.outliner, context.edge) stay `phase2`.
+  `check_panels`; 20 problem codes of the code alone (EN + IT).
+  `em.plugins`: `CommandDecl.primitive/icon/buttons/view`, `PanelDecl`,
+  `read_panels` (a value or a button with no label says its command's),
+  `Plugin.panels`, `panels()`, `tools()`; `describe()` carries them and the
+  slots table `drawn2`; `compute(items)` runs many read-only commands at once
+  through the contract (a command that writes refused before it runs —
+  `compute_writes` —, one that tries refused by the seam, one that fails never
+  stops the others, at most 64) and `shape(slot, value)` gives each the form
+  its slot draws: rows `[{label, value}]` (a section, a panel's value), `{id:
+  text}` (a column), one line (the status bar), `{en, it}` read in the page's
+  language. No datamodel change; `em.API_VERSION` unchanged (the slots carry
+  their own versions, SPEC-plugin §14.7).
 - **The trust from disk: the plugins' development folder** (MICRO-PL18,
   row W15a of the extensions plan, 19 November 2026). New
   `s3dgraphy.extensions.dev`: `plugins_dev_dir` — `dev_dir()`,

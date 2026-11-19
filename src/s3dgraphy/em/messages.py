@@ -118,6 +118,15 @@ MESSAGES: Dict[str, Dict[str, str]] = {
         "en": "the check «{command}» of {plugin} returned something that is not a list of warnings",
         "it": "il controllo «{command}» di {plugin} ha restituito qualcosa che non è un elenco di avvisi",
     },
+    # MICRO-PL25 (X5) · the values of phase 2
+    "compute_writes": {
+        "en": "«{command}» of {plugin} writes: a section, a column, the status bar or a panel's value only show what a command that reads returns",
+        "it": "«{command}» di {plugin} scrive: una sezione, una colonna, la barra di stato o il valore di un pannello mostrano solo ciò che restituisce un comando che legge",
+    },
+    "compute_shape": {
+        "en": "«{command}» of {plugin} returned something {slot} cannot show",
+        "it": "«{command}» di {plugin} ha restituito qualcosa che {slot} non sa mostrare",
+    },
     "raw_warning": {
         "en": "node.raw is the live node: changing it writes NOTHING (no undo, no Log, no author) — use em.write",
         "it": "node.raw è il nodo vero: cambiarlo NON scrive niente (né annulla, né Log, né autore): usa em.write",

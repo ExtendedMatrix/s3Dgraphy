@@ -764,8 +764,11 @@ def _check_code(pkg: Package, r: Report) -> None:
     if code.get("version") is not None and not semver.is_semver(str(code["version"])):
         r.error("version_bad", ENVELOPE, key="[code].version", value=code["version"])
     # W14 (MICRO-PL17) · the commands, their slots and ``when``; the descriptor
-    from ..extensions.slots import check_commands
+    from ..extensions.slots import check_commands, check_panels, default_writes
     for level, pcode, params in check_commands(code.get("commands")):
+        (r.error if level == "error" else r.warn)(pcode, ENVELOPE, **params)
+    # X5 (MICRO-PL25) · the declarative panels
+    for level, pcode, params in check_panels(code.get("panels"), code.get("commands")):
         (r.error if level == "error" else r.warn)(pcode, ENVELOPE, **params)
     desc = code.get("descriptor")
     if desc is not None:
@@ -779,8 +782,7 @@ def _check_code(pkg: Package, r: Report) -> None:
                     r.error("code_capability_unknown", ENVELOPE, value=c, known=", ".join(CAPABILITIES))
             writing = [c for c in caps if c in WRITING_CAPABILITIES]
             for c in code.get("commands") or []:
-                if isinstance(c, Mapping) and c.get("writes", True) is True and not writing \
-                        and "check@1" not in (c.get("in") or []):
+                if isinstance(c, Mapping) and default_writes(dict(c)) and not writing:
                     r.warn("code_writes_no_capability", ENVELOPE, id=c.get("id"))
 
 
@@ -948,7 +950,13 @@ CODE_PROBLEMS = ("code_entry", "code_hosts", "permission_reason", "permission_un
                  "code_command_writes", "code_command_slots", "code_command_in", "code_command_when",
                  "code_reader_accept", "code_check_writes", "code_slot_unknown", "code_slot_phase2",
                  "code_slot_newer", "code_slot_not_command", "code_descriptor", "code_capability_unknown",
-                 "code_writes_no_capability")
+                 "code_writes_no_capability",
+                 # X5 (MICRO-PL25) · the slots of phase 2
+                 "code_shows_writes", "code_column_view", "code_tool_primitive", "code_tool_geometry",
+                 "code_icon", "code_section_buttons", "code_button_unknown", "code_buttons_unused",
+                 "code_panels_shape", "code_panel_id", "code_panel_twice", "code_panel_label",
+                 "code_panel_place", "code_panel_fields", "code_panel_field_kind", "code_panel_field_name",
+                 "code_panel_field_twice", "code_panel_choice", "code_panel_command", "code_panel_value_writes")
 
 
 def is_code_problem(p: Problem) -> bool:

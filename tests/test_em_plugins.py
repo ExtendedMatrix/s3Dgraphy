@@ -60,7 +60,7 @@ COMMANDS = '''
   id = "lonely"
   label = "Lonely"
   writes = false
-  in = ["menu.tools@1", "panel@1", "context.node@9"]
+  in = ["menu.tools@1", "palette@1", "context.node@9"]
   [[code.commands]]
   id = "nodesc"
   label = "Units without a description"
@@ -212,7 +212,7 @@ def host(g=None, author=ORCID):
 def test_slots_and_when():
     assert S.slot_status("context.node@1") == "ok"
     assert S.slot_status("context.node@2") == "newer"
-    assert S.slot_status("panel@1") == "phase2"
+    assert S.slot_status("palette@1") == "phase2"
     assert S.slot_status("nowhere@1") == "unknown"
     assert S.slot_status("context.node") == "bad"
     assert S.parse_when("") == []
@@ -236,7 +236,7 @@ def test_validator_says_what_is_wrong_with_the_commands(tmp_path):
   [[code.commands]]
   id = "a"
   label = ""
-  in = ["door.reader@1", "check@1", "panel@1", "event@1"]
+  in = ["door.reader@1", "check@1", "palette@1", "event@1"]
   writes = true
   slots = [{ name = "x", kind = "colour" }]
 '''
@@ -273,7 +273,7 @@ def test_loads_what_is_active_for_the_host_and_wires_the_commands(tmp_path):
     assert set(p.handlers) == {"mark", "count", "sneak", "nodesc", "boom", "read", "export"}
     lonely = p.commands["lonely"]
     assert lonely.where == ["menu.tools@1"]                       # the entries turned off, the command kept
-    assert {o["slot"] for o in lonely.off} == {"panel@1", "context.node@9"}
+    assert {o["slot"] for o in lonely.off} == {"palette@1", "context.node@9"}
     assert [c.id for c in PL.commands("context.node")] == ["mark"]
     assert PL.sync("blender") == []                               # hosts = emstudio
     assert PL.get(pid) is None                                    # …and syncing for blender unloads it
