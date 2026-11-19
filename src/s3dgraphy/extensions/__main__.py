@@ -1,4 +1,4 @@
-"""``python -m s3dgraphy.extensions validate|build|preview|install|update|remove|list``
+"""``python -m s3dgraphy.extensions validate|build|server-generate|preview|install|update|remove|list``
 
 The curator's commands (W19), as ``blender --command extension validate|build``:
 
@@ -7,6 +7,12 @@ The curator's commands (W19), as ``blender --command extension validate|build``:
                                               <id>-<version>.zip, the envelope completed
                                               (type, vocabularies moved, digests, requires);
                                               the folder is never written
+
+The repository's index (X1), as ``blender --command extension server-generate``:
+
+    server-generate --repo-dir D [--base-url U] [--html] [--check] [--json]
+                                              every *.zip of D → D/index.json (Listing API v1);
+                                              exit 1 when an archive is refused
 
 Installing by parts (W21), the same calls the Extensions window makes:
 
@@ -23,6 +29,7 @@ import sys
 
 from . import store
 from .build import build
+from .repository import server_generate
 from .validate import validate_archive
 
 
@@ -67,6 +74,31 @@ def _build(args) -> int:
     return 0 if res["ok"] else 1
 
 
+def _server_generate(args) -> int:
+    res = server_generate(args.repo_dir, base_url=args.base_url, blocklist=args.blocklist, reviewed=args.reviewed,
+                          output=args.output, html_page=args.html, check=args.check, dry_run=args.dry_run)
+    if args.json:
+        _say({k: v for k, v in res.items() if k != "index" or args.with_index}, args.lang)
+        return 0 if res["ok"] else 1
+    for p in res["problems"]:
+        print(_line(p, args.lang))
+    for x in res["listed"]:
+        print(f"OK  {x['file']}  {x['type']}")
+        for p in x["warnings"]:
+            print(_line(p, args.lang))
+    for x in res["refused"]:
+        print(f"{'--' if x.get('blocked') else 'NO'}  {x['file']}")
+        for p in x["errors"] + x["warnings"]:
+            print(_line(p, args.lang))
+    n = len((res["index"] or {}).get("data") or [])
+    if args.check:
+        if res.get("same"):
+            print(f"{res['path']}: {n} " + ("entries, unchanged" if args.lang == "en" else "voci, invariato"))
+    elif res["written"]:
+        print(f"{res['path']}: {n} " + ("entries" if args.lang == "en" else "voci"))
+    return 0 if res["ok"] else 1
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="python -m s3dgraphy.extensions")
     ap.add_argument("--lang", default="en", choices=("en", "it"))
@@ -86,6 +118,17 @@ def main(argv=None) -> int:
     b.add_argument("--output-dir", default=None, help="where the zip goes (default: the folder itself)")
     b.add_argument("--dry-run", action="store_true", help="build and validate in memory, write nothing")
     b.add_argument("--json", action="store_true")
+    s = add("server-generate", help="the index.json of a folder of archives (Listing API v1)")
+    s.add_argument("--repo-dir", required=True, help="the folder with the *.zip archives")
+    s.add_argument("--base-url", default=None, help="archive_url = <base-url>/<file> (default: ./<file>)")
+    s.add_argument("--blocklist", default=None, help="default: <repo-dir>/blocklist.json")
+    s.add_argument("--reviewed", default=None, help="default: <repo-dir>/reviewed.json")
+    s.add_argument("--output", default=None, help="default: <repo-dir>/index.json")
+    s.add_argument("--html", action="store_true", help="also index.html, the archives to download")
+    s.add_argument("--check", action="store_true", help="compare with the index already there, write nothing")
+    s.add_argument("--dry-run", action="store_true", help="write nothing")
+    s.add_argument("--json", action="store_true")
+    s.add_argument("--with-index", action="store_true", help="with --json: the index too")
     p = add("preview", help="what installing would do, nothing written")
     p.add_argument("path")
     for name in ("install", "update"):
@@ -108,6 +151,8 @@ def main(argv=None) -> int:
     try:
         if args.cmd == "build":
             return _build(args)
+        elif args.cmd == "server-generate":
+            return _server_generate(args)
         elif args.cmd == "preview":
             out = store.preview(args.path)
         elif args.cmd in ("install", "update"):
