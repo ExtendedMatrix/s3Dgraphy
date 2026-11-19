@@ -101,6 +101,10 @@ html_css_files = [
     'custom.css',
 ]
 
+# L'interruttore delle due facce: chiaro, scuro, come il sistema. Senza
+# scelta esplicita vale il sistema di chi legge, che è il modo di serie.
+html_js_files = ['brand/brand-theme-toggle.js']
+
 # -- Options for LaTeX / PDF output ------------------------------------------
 #
 # Read the Docs builds a PDF for this version too, and under pdfLaTeX it could
