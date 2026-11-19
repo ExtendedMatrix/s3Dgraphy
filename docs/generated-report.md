@@ -10,10 +10,10 @@ Every figure on this page is read off the datamodels and the installed package a
 
 | Component | Version |
 | --- | --- |
-| s3dgraphy (library) | 1.6.0.dev61 |
-| nodes datamodel | 1.6.36 |
-| connections datamodel | 1.6.46 |
-| qualia datamodel | 1.6.9 |
+| s3dgraphy (library) | 1.6.0.dev128 |
+| nodes datamodel | 1.6.51 |
+| connections datamodel | 1.6.55 |
+| qualia datamodel | 1.6.13 |
 | CIDOC-CRM | 7.1.3 |
 | CRMarchaeo | 2.1.1 |
 | CRMsci | 3.2 |
@@ -22,7 +22,9 @@ Every figure on this page is read off the datamodels and the installed package a
 | CRMinf | 1.2.1 |
 | HDT-O | 1.0 |
 | PROV-O | W3C Recommendation 2013-04-30 |
-| CRMem | 1.6.21 |
+| CRMem | 1.6.26 |
+
+> ⚠ The generated node registry declares node datamodel version `1.6.41` while the node datamodel itself is at `1.6.51`. The registry's `--check` mode compares class entries only, so a version drift like this one passes unnoticed. Regenerate with `python -m s3dgraphy.tools.sync_node_datamodel`.
 
 ## Node types
 
@@ -30,10 +32,10 @@ The three populations, named apart — see this module's docstring for why there
 
 | What | Count |
 | --- | --- |
-| declared in the node datamodel | 58 |
-| — of which authorable types | 54 |
+| declared in the node datamodel | 64 |
+| — of which authorable types | 60 |
 | — of which abstract family bases | 4 |
-| field-level mapping blocks (not node types) | 7 |
+| field-level mapping blocks (not node types) | 9 |
 | entries with no mapping block | 0 |
 
 Abstract family bases: `GroupNode`, `Node`, `ParadataNode`, `StratigraphicNode`.
@@ -42,49 +44,51 @@ Abstract family bases: `GroupNode`, `Node`, `ParadataNode`, `StratigraphicNode`.
 
 | What | Count |
 | --- | --- |
-| declared in the connections datamodel | 60 |
-| — of which live (not deprecated) | 59 |
-| — declaring a named reverse direction | 53 |
+| declared in the connections datamodel | 63 |
+| — of which live (not deprecated) | 62 |
+| — declaring a named reverse direction | 56 |
 
 ## Python classes
 
 | What | Count |
 | --- | --- |
-| Python node classes in the generated registry | 61 |
-| — of which abstract (no own node_type) | 3 |
-| present in the registry, absent from the datamodel | 3 |
+| Python node classes in the generated registry | 68 |
+| — of which abstract (no own node_type) | 4 |
+| present in the registry, absent from the datamodel | 4 |
 
-Abstract classes (no own `node_type`): `DTCNode`, `RepresentationNode`, `VirtualStratigraphicUnit`.
+Abstract classes (no own `node_type`): `DTCNode`, `LandscapeUnitNode`, `RepresentationNode`, `VirtualStratigraphicUnit`.
 
-Classes present in the registry with no entry in the node datamodel, and therefore with no declared CIDOC projection: `DTCNode`, `RepresentationNode`, `VirtualStratigraphicUnit`.
+Classes present in the registry with no entry in the node datamodel, and therefore with no declared CIDOC projection: `DTCNode`, `LandscapeUnitNode`, `RepresentationNode`, `VirtualStratigraphicUnit`.
 
 ## Other surfaces
 
 | What | Count |
 | --- | --- |
-| public API callables | 278 |
-| test modules in tests/ | 193 |
+| public API callables | 290 |
+| test modules in tests/ | 254 |
 | test modules in tests/*/ | 77 |
 
 ## Alignment by ontology
 
-Of the 58 node types declared, **14 reuse a class from an existing ontology unchanged** and **44 declare a class in the Extended Matrix namespace**. Every one of the latter keeps a CIDOC anchor, so the table below covers all of them.
+Of the 64 node types declared, **19 reuse a class from an existing ontology unchanged** and **45 declare a class in the Extended Matrix namespace**. Every one of the latter keeps a CIDOC anchor, so the table below covers all of them.
 
 Node types, by the ontology of the CIDOC class they are anchored to:
 
 | Ontology | Node types |
 | --- | --- |
-| crm | 31 |
+| crm | 33 |
 | crmarchaeo | 13 |
-| crmdig | 7 |
+| crmdig | 8 |
 | hdto | 4 |
 | crminf | 3 |
+| crmgeo | 2 |
+| crmsci | 1 |
 
 Edge types, by the ontology of the CIDOC predicate they emit. An edge with no CIDOC predicate is a *declared absence*: the family has no term for that relation and the edge is emitted on its extension predicate alone.
 
 | Ontology | Edge types |
 | --- | --- |
-| crm | 34 |
+| crm | 37 |
 | (none declared) | 10 |
 | crmdig | 6 |
 | hdto | 6 |
@@ -97,7 +101,7 @@ Edge types carrying a second, extension predicate beside (or instead of) the CID
 | --- | --- |
 | em | 14 |
 | CRMarchaeo | 11 |
-| prov | 6 |
+| prov | 7 |
 | CIDOC-CRM | 5 |
 | CRMdig | 2 |
 | CRMinf | 2 |
