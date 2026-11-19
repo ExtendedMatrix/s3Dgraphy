@@ -50,6 +50,12 @@ NETWORK_ALLOWED = {
     # before anything opens it. The index's writer (repository.py), the
     # installer (store.py) and the validator stay without a socket.
     "extensions/remote.py",
+    # The plugins on the node (MICRO-PL27, row X7): the probe of the cage
+    # opens a socket on 127.0.0.1 in the server (node.py) and the caged
+    # child tries to reach it (_node_child.py) — to PROVE there is no
+    # network inside; nothing goes beyond this machine.
+    "extensions/node.py",
+    "extensions/_node_child.py",
 }
 
 #: `urllib.parse` is deliberately NOT here: splitting a URL is string work, and a

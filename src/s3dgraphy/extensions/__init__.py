@@ -54,6 +54,11 @@ SPEC-pacchetto §16.3–§16.7, SPEC-plugin §17.
   development folder (``plugins_dev_dir``, W15a): loaded where they are,
   marked ``dev``, never installed; the host decides when it counts.
 
+* :mod:`s3dgraphy.extensions.node` — the plugins on the node (X7): installed
+  by the administrator, turned on per room, run one call per process in a
+  cage (bubblewrap / sandbox-exec) with quotas and a wall clock; the cage is
+  proved by a probe, and with no serious isolation they stay off.
+
 The window (EMStudio W6) asks; this library does. It never asks a question
 itself: the trust is a parameter, and :func:`preview` says when it is needed.
 """

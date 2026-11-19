@@ -38,6 +38,16 @@ Updates (X3), as Blender's «Check for updates» / «Update all»:
     document <file.em.json>                   «this file uses 1.0.0, 1.1.0 is here»
     build <folder> --split-platforms          one <id>-<version>-<platform>.zip per platform
 
+The plugins on the node (X7), the administrator's (the plugins themselves are
+installed with ``repo install`` in the node's folders; their hosts name ``server``):
+
+    node isolation [--refresh]                the probe of the cage: serious, or the plugins stay off
+    node list [--room R]                      the plugins of the node (and whether they are on in R)
+    node on|off <room> <id> [--by ORCID]      turn a plugin on (off) for a room
+    node limits [KEY=VALUE…] [--room R]       the limits (a room's may only be lower)
+    node run <room> <id> <command> --document F [--slots JSON] [--author ORCID] [--read-only]
+                                              one call in the cage: its value and its deltas (not applied)
+
 ``--lang it`` says everything in Italian.
 """
 from __future__ import annotations
@@ -182,6 +192,48 @@ def _review(args):
     return R.reviewed_installed()
 
 
+def _node(args) -> int:
+    from . import node as N
+    a = list(args.args)
+    try:
+        if args.action == "isolation":
+            out = N.isolation(refresh=args.refresh)
+            for c in out["checks"]:
+                print(f"  {'ok' if c['ok'] else ('said' if c['said'] else 'LEAKS'):5} {c[args.lang]} ({c['how']})",
+                      file=sys.stderr)
+            _say(out, args.lang)
+            return 0 if out["serious"] else 1
+        if args.action == "list":
+            out = N.plugins(args.room, lang=args.lang)
+        elif args.action in ("on", "off"):
+            if len(a) != 2:
+                print("node on|off <room> <id>", file=sys.stderr)
+                return 2
+            out = N.set_room(a[0], a[1], args.action == "on", by=args.by)
+        elif args.action == "limits":
+            changes = {}
+            for kv in a:
+                k, _, v = kv.partition("=")
+                changes[k] = float(v) if "." in v else int(v)
+            out = N.set_limits(changes, room=args.room) if changes else N.limits(args.room)
+        else:
+            if len(a) != 3 or not args.document:
+                print("node run <room> <id> <command> --document F", file=sys.stderr)
+                return 2
+            out = N.run(a[0], a[1], a[2], json.loads(args.slots) if args.slots else {}, document=args.document,
+                        author=args.author, can_write=not args.read_only, lang=args.lang)
+            _say(out, args.lang)
+            return 0 if out.get("ok") else 1
+    except N.NodeError as exc:
+        print(exc.messages[args.lang], file=sys.stderr)
+        return 1
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    _say(out, args.lang)
+    return 0
+
+
 def main(argv=None) -> int:
     ap = argparse.ArgumentParser(prog="python -m s3dgraphy.extensions")
     ap.add_argument("--lang", default="en", choices=("en", "it"))
@@ -278,7 +330,19 @@ def main(argv=None) -> int:
     rv.add_argument("--on", default=None, help="add: the date (default: today)")
     rv.add_argument("--as", dest="as_", default=None, help="add: in which role (em-extensions: editor | curator:<id>)")
     rv.add_argument("--note", default=None)
+    nd = add("node", help="the plugins on the node (X7): the cage, the rooms, the limits")
+    nd.add_argument("action", choices=("isolation", "list", "on", "off", "limits", "run"))
+    nd.add_argument("args", nargs="*", help="on/off: <room> <id> · limits: KEY=VALUE… · run: <room> <id> <command>")
+    nd.add_argument("--room", default=None)
+    nd.add_argument("--by", default=None)
+    nd.add_argument("--refresh", action="store_true")
+    nd.add_argument("--document", default=None, help="run: the room's em.json")
+    nd.add_argument("--slots", default=None, help="run: the slots as JSON")
+    nd.add_argument("--author", default=None, help="run: the person calling (ORCID)")
+    nd.add_argument("--read-only", action="store_true", help="run: the person's role only reads")
     args = ap.parse_args(argv)
+    if args.cmd == "node":
+        return _node(args)
     if args.cmd == "validate":
         return _validate(args)
     try:
