@@ -182,6 +182,20 @@ MESSAGES: Dict[str, Tuple[str, str]] = {
                            "ritirati: {id} non ha reason (la finestra la mostra)"),
     "index_review_shape": ("reviewed: {id} needs digest (sha256:…), by and on",
                            "rivisti: {id} vuole digest (sha256:…), by e on"),
+    "index_review_unused": ("reviewed: {id} {digest}… is the digest of no archive listed here",
+                            "rivisti: {id} {digest}… non è il digest di nessun archivio elencato qui"),
+    # the list of the reviewed (s3dgraphy.extensions.review, X4)
+    "review_no_id": ("the archive has no id: it cannot be reviewed", "l'archivio non ha un id: non si può rivedere"),
+    "review_no_by": ("{id}: who reviewed it? (by)", "{id}: chi l'ha rivisto? (by)"),
+    "review_duplicate": ("{id}: {by} already reviewed this code ({on})", "{id}: {by} ha già rivisto questo codice ({on})"),
+    "code_reviewed": ("code reviewed by {by} on {on} ({repo}): installed without the trust question",
+                      "codice rivisto da {by} il {on} ({repo}): si installa senza la domanda di fiducia"),
+    "review_arrived": ("{id} {version}: reviewed by {by} on {on} ({repo}), now verified",
+                       "{id} {version}: rivisto da {by} il {on} ({repo}), ora verificato"),
+    "review_withdrawn": ("{id} {version}: its review is no longer in a repository whose reviews count: "
+                         "it stays installed, not verified",
+                         "{id} {version}: la sua revisione non è più in un repository di cui ti fidi: "
+                         "resta installato, non verificato"),
     "index_duplicate": ("{id} {version} is already listed by {other}", "{id} {version} è già elencato da {other}"),
     "index_section_reused": ("{id}: [{section}] {version} has another content in {other} — a version is never reused",
                              "{id}: [{section}] {version} ha un altro contenuto in {other} — una versione non si riusa"),

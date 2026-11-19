@@ -175,6 +175,7 @@ class Plugin:
                 "module": self.module, "entry": self.entry, "state": self.state,
                 "problems": [dict(p) for p in self.problems], "package": self.package,
                 "data_version": self.meta.get("data_version"), "verified": bool(self.meta.get("verified")),
+                "reviewed": self.meta.get("reviewed"),     # X4 · by, on, as, repo
                 "folder": str(self.folder), "listeners": _owned_counts(self.id),
                 "dev": self.dev, "dev_folder": self.meta.get("dev_folder"), "notes": [dict(n) for n in self.notes],
                 "exposed": sorted(self.exposed), "wired": sorted(self.handlers),

@@ -206,7 +206,8 @@ def read_reviewed(path: Optional[Path]) -> Tuple[List[Dict[str, Any]], Report]:
         if not _HASH_RE.match(str(x.get("digest") or "")) or not x.get("by") or not x.get("on"):
             r.error("index_review_shape", id=x.get("id"))
             continue
-        out.append({k: _plain(x[k]) for k in ("id", "digest", "by", "on", "note") if x.get(k) is not None})
+        out.append({k: _plain(x[k]) for k in ("id", "digest", "by", "on", "as", "note", "version", "section")
+                    if x.get(k) is not None})
     return out, r
 
 
@@ -217,7 +218,7 @@ def _review_for(entry: Mapping[str, Any], reviewed: Iterable[Mapping[str, Any]])
     target = (sec.get("code") or sec.get("data") or {}).get("digest")
     for r in reviewed:
         if r.get("id") == entry.get("id") and r.get("digest") == target:
-            return {k: r[k] for k in ("by", "on", "digest", "note") if k in r}
+            return {k: r[k] for k in ("by", "on", "as", "digest", "note") if k in r}
     return None
 
 
@@ -396,6 +397,8 @@ def server_generate(repo_dir: Any, *, base_url: Optional[str] = None, blocklist:
         listed.append({"file": f.name, "id": entry["id"], "version": entry["version"], "type": entry["type"],
                        "warnings": [p.as_dict() for p in rep.warnings]})
     problems.extend(repository_checks(entries))
+    from .review import unused_reviews       # X4 · a review of no archive listed here
+    problems.extend(unused_reviews(reviews, entries))
     bad = {p.where for p in problems.errors if p.where}
     kept = [{k: v for k, v in e.items() if k != "where"} for e in entries if e["where"] not in bad]
     for e in entries:

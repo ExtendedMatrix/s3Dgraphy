@@ -34,6 +34,12 @@ does, for the index :func:`server_generate` writes (X1):
   (``fetch.url``, digest checked) when the switch allows it — a ``file://``
   source always; otherwise it stays a stub and the answer says why.
 
+* **whose reviews count** (X4, :mod:`.review`): ``trust_reviews`` per
+  repository — on by default for the official index only, off for every
+  other until the person turns it on; a code reviewed in such an index
+  installs without the trust question, and a sync looks again at what is
+  installed (a review arrived, a review withdrawn).
+
 Nothing here asks a question: the window (EMStudio) or the command line asks,
 and passes the answers (``trust``, ``parts``, ``with_requires``).
 """
@@ -182,9 +188,20 @@ def _default_name(url: str) -> str:
     return _slug(f"{first}-{seg[-1]}" if seg else first)
 
 
+def _trusts_reviews(r: Mapping[str, Any]) -> bool:
+    """X4 · whether this repository's ``reviewed`` counts here: what the person
+    set, else on for the official index only."""
+    v = r.get("trust_reviews")
+    if v is None:
+        return str(r.get("url")) == normalize_url(OFFICIAL_URL)
+    return bool(v)
+
+
 def _public(r: Mapping[str, Any]) -> Dict[str, Any]:
     """A repository as the window sees it: never the token, only whether there is one."""
     out = {k: v for k, v in r.items() if k != "token"}
+    out["trust_reviews"] = _trusts_reviews(r)
+    out["official"] = str(r.get("url")) == normalize_url(OFFICIAL_URL)
     out["has_token"] = bool(r.get("token"))
     out["local"] = is_local(str(r.get("url")))
     cached = _cache_meta(str(r.get("name")))
@@ -211,7 +228,7 @@ def get_repository(name: str) -> Dict[str, Any]:
 
 
 def add_repository(url: str, *, name: Optional[str] = None, token: Optional[str] = None,
-                   check_on_startup: bool = False) -> Dict[str, Any]:
+                   check_on_startup: bool = False, trust_reviews: Optional[bool] = None) -> Dict[str, Any]:
     """*Repository ▸ +*: the URL normalized, a name (given, or from the URL),
     the token kept for this machine only. The same URL twice is refused, as a
     name already used or reserved. Nothing is read from the network here: the
@@ -228,6 +245,8 @@ def add_repository(url: str, *, name: Optional[str] = None, token: Optional[str]
         raise RepoError.of("repo_name_used", name=nm)
     row = {"name": nm, "url": u, "enabled": True, "check_on_startup": bool(check_on_startup),
            "added_at": store._now()}
+    if trust_reviews is not None:
+        row["trust_reviews"] = bool(trust_reviews)
     if token:
         row["token"] = str(token)
     doc["repositories"].append(row)
@@ -237,7 +256,8 @@ def add_repository(url: str, *, name: Optional[str] = None, token: Optional[str]
 
 def update_repository(name: str, **changes: Any) -> Dict[str, Any]:
     """Change ``url``, ``token`` (``""`` or ``None`` clears it), ``enabled``,
-    ``check_on_startup``. A changed URL forgets the cached index."""
+    ``check_on_startup``, ``trust_reviews`` (X4: what is installed is looked
+    at again). A changed URL forgets the cached index."""
     doc = _read()
     r = _find(doc, name)
     if r is None:
@@ -254,11 +274,15 @@ def update_repository(name: str, **changes: Any) -> Dict[str, Any]:
             r["token"] = str(changes["token"])
         else:
             r.pop("token", None)
-    for k in ("enabled", "check_on_startup"):
+    for k in ("enabled", "check_on_startup", "trust_reviews"):
         if k in changes and changes[k] is not None:
             r[k] = bool(changes[k])
     _save(doc)
-    return _public(r)
+    out = _public(r)
+    if any(changes.get(k) is not None for k in ("trust_reviews", "enabled", "url")):
+        from . import review
+        out["reviews"] = review.refresh()
+    return out
 
 
 def remove_repository(name: str) -> bool:
@@ -272,6 +296,8 @@ def remove_repository(name: str) -> bool:
         return False
     _save(doc)
     _forget_cache(name)
+    from . import review
+    review.refresh()        # X4 · its reviews no longer count
     return True
 
 
@@ -397,7 +423,9 @@ def sync(name: Optional[str] = None, *, startup: bool = False) -> Dict[str, Any]
             (folder / "sync.json").write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
         out.append({"name": nm, "ok": entries is not None, "entries": entries,
                     "problems": [p.as_dict() for p in rep.problems]})
-    return {"repositories": out, "updates": updates(), "online_access": online_access()}
+    from . import review
+    return {"repositories": out, "updates": updates(), "online_access": online_access(),
+            "reviews": review.refresh()}
 
 
 # ── what the repositories offer ────────────────────────────────────────────
@@ -477,7 +505,8 @@ def available(name: Optional[str] = None) -> Dict[str, Any]:
                         "tagline": newest.get("tagline"), "type": newest.get("type"),
                         "license": newest.get("license"), "maintainer": newest.get("maintainer"),
                         "archive_size": newest.get("archive_size"), "permissions": newest.get("permissions"),
-                        "reviewed": newest.get("reviewed"), "requires": newest.get("requires") or {},
+                        "reviewed": newest.get("reviewed"), "verified": _entry_verified(r, newest),
+                        "requires": newest.get("requires") or {},
                         "sections": newest.get("sections") or {}, "installed": hv, "update": upd,
                         "same_source": bool(have and have.get("source") == nm)})
         for bid, b in sorted(_blocked(nm).items()):
@@ -488,6 +517,16 @@ def available(name: Optional[str] = None) -> Dict[str, Any]:
                                                     "reason": b.get("reason") or ""}).as_dict()})
     return {"available": out, "blocked": blocked, "other_platforms": elsewhere, "platform": plat,
             "online_access": online_access()}
+
+
+def _entry_verified(repo: Mapping[str, Any], entry: Mapping[str, Any]) -> bool:
+    """X4 · the entry's review counts here: the repository's reviews count and
+    the review is of the entry's code (data, with no code) digest."""
+    rv = entry.get("reviewed")
+    if not isinstance(rv, Mapping) or not _trusts_reviews(repo):
+        return False
+    sec = entry.get("sections") or {}
+    return rv.get("digest") == (sec.get("code") or sec.get("data") or {}).get("digest")
 
 
 def updates() -> List[Dict[str, Any]]:
@@ -686,7 +725,8 @@ def preview_from(name: str, eid: str, version: Optional[str] = None) -> Dict[str
                           optional=[p.as_dict() for p in reqs["optional"]])
     pv["repository"] = {"name": name, "url": (_find(_read(), name) or {}).get("url"),
                         "archive_hash": got["entry"].get("archive_hash"),
-                        "reviewed": got["entry"].get("reviewed"), "cached": got["cached"]}
+                        "reviewed": got["entry"].get("reviewed"), "cached": got["cached"],
+                        "trust_reviews": _trusts_reviews(_find(_read(), name) or {})}
     pv["plan"] = plan
     return pv
 
@@ -802,18 +842,24 @@ def check_updates(*, read: bool = True, startup: bool = False) -> Dict[str, Any]
 def _trust_ahead(repo: str, entry: Mapping[str, Any], row: Mapping[str, Any]) -> Dict[str, Any]:
     """From the index alone (nothing downloaded): would the update of
     ``row`` to ``entry`` ask the trust question again, and why."""
+    from . import review
     new_code = (entry.get("sections") or {}).get("code")
     old_code = row.get("code") or {}
     if not new_code:
         return {"code": False, "trust_needed": False, "trust_changes": []}
-    old = old_code.get("trusted") if old_code.get("status") == "installed" else None
+    old = review.old_trust(old_code)
     new = {"permissions": dict(new_code.get("permissions") or {}),
            "capabilities": sorted(new_code.get("capabilities") or []), "source": repo}
     if old_code.get("status") != "installed":
         # the person left the code out («Data only», no trust): an update keeps it out
         return {"code": True, "trust_needed": False, "trust_changes": [], "code_left_out": True}
+    if _entry_verified(_find(_read(), repo) or {}, entry):
+        # X4 · a reviewed code: no question, said with who read it
+        return {"code": True, "trust_needed": False, "trust_changes": [], "verified": True,
+                "reviewed": dict(entry["reviewed"], repo=repo)}
     changes = store._trust_changes(old, new)
-    return {"code": True, "trust_needed": changes is None or bool(changes), "trust_changes": changes or []}
+    return {"code": True, "trust_needed": changes is None or bool(changes), "trust_changes": changes or [],
+            "verified": False}
 
 
 def update_all(*, trust: Optional[List[str]] = None, read: bool = False,

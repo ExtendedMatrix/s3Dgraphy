@@ -114,10 +114,23 @@ class Extensions:
         return E.repositories()
 
     def add_repository(self, url: str, *, name: Optional[str] = None, token: Optional[str] = None,
-                       check_on_startup: bool = False) -> Dict[str, Any]:
-        """*Repository ▸ +*: an ``index.json`` by URL, ``file://`` or a folder (a NAS)."""
+                       check_on_startup: bool = False, trust_reviews: Optional[bool] = None) -> Dict[str, Any]:
+        """*Repository ▸ +*: an ``index.json`` by URL, ``file://`` or a folder (a NAS).
+        ``trust_reviews`` (X4): its reviews count here (default: the official index's only)."""
         from .. import extensions as E
-        return E.add_repository(url, name=name, token=token, check_on_startup=check_on_startup)
+        return E.add_repository(url, name=name, token=token, check_on_startup=check_on_startup,
+                                trust_reviews=trust_reviews)
+
+    # X4 (MICRO-PL24) · the list of the reviewed
+    def trust_reviews(self, repo: str, on: bool = True) -> Dict[str, Any]:
+        """Whether the reviews of ``repo`` count on this machine (what is installed is looked at again)."""
+        from .. import extensions as E
+        return E.update_repository(repo, trust_reviews=on)
+
+    def reviews(self) -> List[Dict[str, Any]]:
+        """The installed codes: ``verified``, ``reviewed`` (by, on, as, repo), ``trusted_by``."""
+        from .. import extensions as E
+        return E.reviewed_installed()
 
     def remove_repository(self, name: str) -> bool:
         from .. import extensions as E

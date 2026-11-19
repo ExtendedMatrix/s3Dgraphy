@@ -28,6 +28,7 @@ Nothing here asks a question: the window asks, this library does.
 """
 from __future__ import annotations
 
+import json
 import re
 import shutil
 from pathlib import Path
@@ -126,7 +127,14 @@ def use_code(eid: str, version: str, *, source: Optional[str] = None, trust: boo
         raise ExtensionError(str(clash), r)
     old = row.get("code") or {}
     new_trust = dict(meta.get("trusted") or {}, source=src)
-    changes = store._trust_changes(old.get("trusted") if old.get("status") == "installed" else None, new_trust)
+    from . import review as _rv
+    # X4 · a version a trusted repository lists as reviewed needs no answer
+    rv = _rv.review_for(eid, meta.get("digest"), src)
+    changes = store._trust_changes(_rv.old_trust(old), new_trust)
+    if changes is None and old.get("status") == "installed" and old.get("trusted_by") == _rv.BY_REVIEW:
+        changes = ["review"] if not rv else []     # never asked: the person answers now
+    if rv:
+        changes = []
     if changes and not trust:
         raise ExtensionError.of("code_trust_required_for", id=eid, version=version, changes=", ".join(changes))
     c = meta.get("code") or {}
@@ -139,7 +147,20 @@ def use_code(eid: str, version: str, *, source: Optional[str] = None, trust: boo
                 "permissions": dict(c.get("permissions") or {}),
                 "capabilities": sorted(str(x) for x in (desc.get("capabilities") or [])),
                 "trusted": new_trust, "trusted_at": store._now() if trust else old.get("trusted_at"),
-                "verified": False}
+                "verified": bool(rv)}
+    by = "person" if trust else (store.old_trusted_by(row) if not rv else
+                                 ("person" if store.old_trusted_by(row) == "person" else "review"))
+    if by:
+        code_row["trusted_by"] = by
+    if rv:
+        code_row["reviewed"] = rv
+    if bool(meta.get("verified")) != bool(rv) or meta.get("reviewed") != rv:
+        meta["verified"] = bool(rv)
+        meta.pop("reviewed", None)
+        if rv:
+            meta["reviewed"] = rv
+        (folder / store.CODE_META).write_text(json.dumps(meta, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
+                                              encoding="utf-8")
     if src != row.get("source"):
         row["source"] = src
     row["code"] = code_row

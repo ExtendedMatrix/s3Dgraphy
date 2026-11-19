@@ -44,6 +44,12 @@ SPEC-pacchetto §16.3–§16.7, SPEC-plugin §17.
   :func:`clean` — clean removal; ``build(split_platforms=True)`` — one
   archive per platform with its wheels only (X3).
 
+* :func:`add_review` / :func:`find_review` / :func:`refresh_reviews` — the
+  list of the reviewed (X4): a review is of the code section's digest, kept
+  in a repository's ``reviewed.json``; a code reviewed in a repository whose
+  reviews count (``trust_reviews``) installs without the trust question,
+  ``verified``.
+
 * :func:`dev_dir` / :func:`set_dev_dir` / :func:`dev_code` — the plugins'
   development folder (``plugins_dev_dir``, W15a): loaded where they are,
   marked ``dev``, never installed; the host decides when it counts.
@@ -68,6 +74,8 @@ from .remote import (OFFICIAL_URL, ONLINE_ENV, RepoError, add_repository, availa
                      update_from, update_repository, updates, check_updates, update_all, for_platform)
 from .lifecycle import (changelog, clean, document_updates, leftovers, prune_code, redeclare, remove_version,
                       use_code, versions)
+from .review import (REVIEWED_FILE, add_review, find_review, refresh as refresh_reviews, review_digest, review_row,
+                     reviewed_installed, trusted_repositories)
 
 __all__ = [
     "EXTENSIONS_ENV", "PLUGINS_ENV", "REGISTER_FILE", "ENABLED_FILE", "SOURCE_DISK", "PARTS", "TRUST_KEYS",
@@ -85,4 +93,6 @@ __all__ = [
     "check_updates", "update_all", "for_platform", "code_folders", "versions", "use_code", "remove_version",
     "prune_code", "leftovers", "clean", "changelog", "document_updates", "redeclare",
     "DEV_ENV", "SOURCE_DEV", "dev_dir", "dev_dir_setting", "set_dev_dir", "dev_code", "describe_dev",
+    "REVIEWED_FILE", "review_digest", "review_row", "add_review", "find_review", "refresh_reviews",
+    "reviewed_installed", "trusted_repositories",
 ]

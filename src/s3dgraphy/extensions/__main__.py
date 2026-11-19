@@ -143,7 +143,13 @@ def _repo(args):
         return {"online_access": remote.online_access_setting(), "repositories": remote.repositories()}
     if a == "add":
         (url,) = need(1, "<url>")
-        return remote.add_repository(url, name=args.name, token=args.token, check_on_startup=args.check_on_startup)
+        return remote.add_repository(url, name=args.name, token=args.token, check_on_startup=args.check_on_startup,
+                                     trust_reviews=args.trust_reviews)
+    if a == "reviews":
+        (name,) = need(1, "<name>")
+        if len(rest) > 1:
+            return remote.update_repository(name, trust_reviews=rest[1].lower() in ("on", "1", "true", "yes", "si", "sì"))
+        return remote.get_repository(name)
     if a == "remove":
         (name,) = need(1, "<name>")
         return {"removed": remote.remove_repository(name)}
@@ -161,6 +167,19 @@ def _repo(args):
     return remote.install_from(name, eid, args.version, parts="data" if args.data_only else "all",
                                trust=args.trust, with_requires=not args.no_requires,
                                trust_requires=args.trust_requires)
+
+
+def _review(args):
+    from . import review as R
+    if args.action == "add":
+        if not args.path or not args.by:
+            raise store.ExtensionError.of("review_no_by", id=args.path or "?")
+        return R.add_review(args.reviewed or ".", args.path, by=args.by, on=args.on, as_=args.as_, note=args.note)
+    if args.action == "digest":
+        return dict(R.review_digest(args.path), id=store._open(args.path).id)
+    if args.action == "refresh":
+        return R.refresh()
+    return R.reviewed_installed()
 
 
 def main(argv=None) -> int:
@@ -235,9 +254,12 @@ def main(argv=None) -> int:
     dc = add("document", help="the packages an em.json declares that have a newer version here")
     dc.add_argument("path")
     rp = add("repo", help="the repositories of this machine (X2)")
-    rp.add_argument("action", choices=("list", "add", "remove", "sync", "available", "online", "preview", "install"))
+    rp.add_argument("action", choices=("list", "add", "remove", "sync", "available", "online", "preview", "install",
+                                       "reviews"))
     rp.add_argument("args", nargs="*", help="add: <url> · remove/sync/available: <name> · online: on|off · "
-                                            "preview/install: <name> <id>")
+                                            "preview/install: <name> <id> · reviews: <name> [on|off]")
+    rp.add_argument("--trust-reviews", action="store_true", default=None,
+                    help="add: this repository's reviews count here (default: only the official index's)")
     rp.add_argument("--name", default=None)
     rp.add_argument("--token", default=None, help="sent as Authorization: Bearer to the index's host")
     rp.add_argument("--check-on-startup", action="store_true")
@@ -246,6 +268,16 @@ def main(argv=None) -> int:
     rp.add_argument("--trust", action="store_true", help="the answer to the trust question for the code")
     rp.add_argument("--no-requires", action="store_true", help="do not install the missing requirements")
     rp.add_argument("--trust-requires", action="store_true", help="the trust answer for the requirements' code")
+    rv = add("review", help="the list of the reviewed (X4): who read a code, by its digest")
+    rv.add_argument("action", choices=("add", "digest", "list", "refresh"),
+                    help="add: a line in reviewed.json · digest: what a review of the archive is of · "
+                         "list: the installed codes and their review · refresh: look again in the indexes")
+    rv.add_argument("path", nargs="?", help="add/digest: the archive (folder or zip)")
+    rv.add_argument("--reviewed", default=None, help="add: the repository's reviewed.json or its folder (default: .)")
+    rv.add_argument("--by", default=None, help="add: who read it (in em-extensions: @github-handle)")
+    rv.add_argument("--on", default=None, help="add: the date (default: today)")
+    rv.add_argument("--as", dest="as_", default=None, help="add: in which role (em-extensions: editor | curator:<id>)")
+    rv.add_argument("--note", default=None)
     args = ap.parse_args(argv)
     if args.cmd == "validate":
         return _validate(args)
@@ -256,6 +288,8 @@ def main(argv=None) -> int:
             return _server_generate(args)
         elif args.cmd == "repo":
             out = _repo(args)
+        elif args.cmd == "review":
+            out = _review(args)
         elif args.cmd == "preview":
             out = store.preview(args.path)
         elif args.cmd in ("install", "update"):

@@ -25,6 +25,8 @@ does (SPEC-pacchetto §16.3). The rules:
   unless the unticked box says otherwise;
 * **the trust question** is for the code only, and is asked again only when
   the permissions, the capabilities or the source change (SPEC-plugin §17.3);
+  a code whose digest a trusted repository lists as reviewed is installed
+  without it, ``verified`` (X4, :mod:`.review`);
 * **two archives with the same Python module** cannot be active together:
   the second is refused at activation (SPEC-plugin §17.2, phase 1).
 """
@@ -326,7 +328,8 @@ def _open(source: Any) -> Package:
         raise ExtensionError.of("not_a_package", why=str(exc)) from exc
 
 
-def _preview(source: Any, *, source_name: str = SOURCE_DISK, platform_name: Optional[str] = None) -> Dict[str, Any]:
+def _preview(source: Any, *, source_name: str = SOURCE_DISK, platform_name: Optional[str] = None,
+             review: Any = "auto") -> Dict[str, Any]:
     """What installing this archive would do, section by section, writing
     nothing: the two panels of the confirmation (SPEC-pacchetto §16.6),
     whether each section can go in, what an update changes, whether the trust
@@ -391,12 +394,20 @@ def _preview(source: Any, *, source_name: str = SOURCE_DISK, platform_name: Opti
             update = "new_version"
             code["updated"] = Problem("code_updated", WARNING, "", {"old": old.get("version"), "new": cv}).as_dict()
         code["update"] = update
-        changes = _trust_changes(old.get("trusted"), trust)
+        from . import review as _rv
+        changes = _trust_changes(_rv.old_trust(old), trust)
         code["trust"] = trust
         code["trust_needed"] = changes is None or bool(changes)
         code["trust_changes"] = changes or []
         if changes:
             code["trust_question"] = Problem("trust_changed", WARNING, "", {"changes": ", ".join(changes)}).as_dict()
+        # X4 · a code a trusted repository lists as reviewed: no trust question
+        try:
+            digest = content_digest(pkg, section="code")
+        except Exception:      # a broken archive: its errors say it
+            digest = None
+        code["digest"] = digest
+        _rv.apply_review(code, _rv.review_for(eid, digest, source_name, review))
         code["errors"] = [p.as_dict() for p in code_errors]
         code["installable"] = not archive and not code_errors
         clash = _collision(eid, _module(_code(pkg).get("entry")), list(_code(pkg).get("hosts") or []))
@@ -417,9 +428,11 @@ def _preview(source: Any, *, source_name: str = SOURCE_DISK, platform_name: Opti
     return out
 
 
-def preview(source: Any, *, source_name: str = SOURCE_DISK, platform_name: Optional[str] = None) -> Dict[str, Any]:
+def preview(source: Any, *, source_name: str = SOURCE_DISK, platform_name: Optional[str] = None,
+            review: Any = "auto") -> Dict[str, Any]:
     """What installing this archive would do, nothing written (see :func:`install`)."""
-    return {k: v for k, v in _preview(source, source_name=source_name, platform_name=platform_name).items()
+    return {k: v for k, v in _preview(source, source_name=source_name, platform_name=platform_name,
+                                      review=review).items()
             if not k.startswith("_")}
 
 
@@ -453,7 +466,8 @@ def _other_platform_wheels(pkg: Package, platform_name: str) -> List[str]:
 
 
 def _write_code(pkg: Package, eid: str, source_name: str, trust: Mapping[str, Any],
-                platform_name: Optional[str] = None) -> Tuple[Path, str]:
+                platform_name: Optional[str] = None,
+                reviewed: Optional[Mapping[str, Any]] = None) -> Tuple[Path, str]:
     cv = str(pkg.code_version or "")
     base = plugins_dir() / source_name / eid
     dest = base / cv
@@ -482,8 +496,10 @@ def _write_code(pkg: Package, eid: str, source_name: str, trust: Mapping[str, An
         meta = {"id": eid, "version": cv, "archive": {"id": eid, "version": (pkg.envelope or {}).get("version")},
                 "source": source_name, "digest": digest, "installed_at": _now(), "origin": pkg.source.origin,
                 "entry": c.get("entry"), "module": _module(c.get("entry")), "hosts": list(c.get("hosts") or []),
-                "trusted": dict(trust), "verified": False, "package": eid if pkg.has_data else None,
+                "trusted": dict(trust), "verified": bool(reviewed), "package": eid if pkg.has_data else None,
                 "data_version": pkg.data_version if pkg.has_data else None, "code": c,
+                # X4 (MICRO-PL24) · who read this code, when, in which repository
+                **({"reviewed": dict(reviewed)} if reviewed else {}),
                 # W14 (MICRO-PL17) · what the loader checks against em.API_VERSION
                 "em_api_min": (pkg.envelope or {}).get("em_api_min"),
                 "em_api_max": (pkg.envelope or {}).get("em_api_max"),
@@ -568,7 +584,7 @@ def _carrier(eid: str) -> str:
 
 
 def install(source: Any, *, parts: str = "all", trust: bool = False, source_name: str = SOURCE_DISK,
-            platform_name: Optional[str] = None, update_only: bool = False) -> Dict[str, Any]:
+            platform_name: Optional[str] = None, update_only: bool = False, review: Any = "auto") -> Dict[str, Any]:
     """Install an archive (folder, zip or bytes) by parts.
 
     ``parts``: ``all`` (*Install everything*), ``data`` (*Data only*: the code
@@ -578,7 +594,9 @@ def install(source: Any, *, parts: str = "all", trust: bool = False, source_name
     needed for a first install and again only when the permissions, the
     capabilities or the source changed — otherwise the code stays out, «code
     not installed: the trust question was not answered». Never a question
-    asked here: :func:`preview` says whether the window must ask.
+    asked here: :func:`preview` says whether the window must ask. ``review``
+    (X4): ``"auto"`` looks the code's digest up in the repositories whose
+    reviews count; a reviewed code needs no ``trust`` and is ``verified``.
 
     Raises :class:`ExtensionError` (nothing written) when the archive or its
     data have errors, when a mandatory ``[requires]`` makes a cycle, or when a
@@ -587,7 +605,7 @@ def install(source: Any, *, parts: str = "all", trust: bool = False, source_name
     if parts not in PARTS:
         raise ValueError(f"parts: {parts!r} — one of {PARTS}")
     pkg = _open(source)
-    pv = _preview(pkg, source_name=source_name, platform_name=platform_name)
+    pv = _preview(pkg, source_name=source_name, platform_name=platform_name, review=review)
     archive, code_errors, cyc = pv.pop("_problems")
     eid = pv["id"]
     reg = read_register()
@@ -654,14 +672,25 @@ def install(source: Any, *, parts: str = "all", trust: bool = False, source_name
                 warnings.append(pv["code"]["trust_question"])
         else:
             old_version = code_row.get("version") if code_row.get("status") == "installed" else None
-            folder, status = _write_code(pkg, eid, source_name, pv["code"]["trust"], pv["platform"])
+            rv = pv["code"].get("reviewed")
+            folder, status = _write_code(pkg, eid, source_name, pv["code"]["trust"], pv["platform"], rv)
             versions = set(code_row.get("versions") or []) | {cv}
             code_row = {"status": "installed", "version": cv, "versions": sorted(versions, key=semver.parse),
                         "path": f"plugins/{source_name}/{eid}/{cv}", "digest": content_digest(pkg, section="code"),
                         "entry": pv["code"]["entry"], "module": pv["code"]["module"], "hosts": pv["code"]["hosts"],
                         "permissions": pv["code"]["permissions"], "capabilities": pv["code"]["capabilities"],
                         "trusted": pv["code"]["trust"], "trusted_at": code_row.get("trusted_at") if not trust else _now(),
-                        "verified": False}
+                        "verified": bool(rv)}
+            # X4 · how the trust came: the person's answer, or a review alone
+            if trust:
+                code_row["trusted_by"] = "person"
+            elif rv:
+                code_row["trusted_by"] = "review" if old_trusted_by(row) != "person" else "person"
+            elif old_trusted_by(row):
+                code_row["trusted_by"] = old_trusted_by(row)
+            if rv:
+                code_row["reviewed"] = dict(rv)
+                warnings.append(pv["code"]["review_note"])
             if old_version and old_version != cv:
                 warnings.append(Problem("code_updated", WARNING, "", {"old": old_version, "new": cv}).as_dict())
         rd = reason.as_dict() if reason is not None else None
@@ -719,6 +748,15 @@ def install(source: Any, *, parts: str = "all", trust: bool = False, source_name
                incomplete=bool(reqs["missing"]), warnings=warnings)
     out["status"] = "installed" if code_row.get("status") in ("installed", "absent") else "data_only"
     return out
+
+
+def old_trusted_by(row: Mapping[str, Any]) -> Optional[str]:
+    """How the trust of the code in place came (X4): ``person``, ``review``, or
+    ``None`` (never installed). A row from before X4 with ``trusted_at`` is the person's."""
+    c = row.get("code") or {}
+    if c.get("status") != "installed":
+        return None
+    return c.get("trusted_by") or ("person" if c.get("trusted_at") or c.get("trusted") else None)
 
 
 def update(source: Any, **kw: Any) -> Dict[str, Any]:
