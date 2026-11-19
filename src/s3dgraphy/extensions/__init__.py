@@ -50,6 +50,11 @@ SPEC-pacchetto §16.3–§16.7, SPEC-plugin §17.
   reviews count (``trust_reviews``) installs without the trust question,
   ``verified``.
 
+* :func:`sign_repository` / :func:`verify_repository` / :func:`keygen` —
+  the signature of a repository (X8): minisign over ``archive_hash``, a
+  ``.minisig`` beside each archive and the index; a repository added with
+  ``keys`` takes only signed indexes and opens only signed archives.
+
 * :func:`dev_dir` / :func:`set_dev_dir` / :func:`dev_code` — the plugins'
   development folder (``plugins_dev_dir``, W15a): loaded where they are,
   marked ``dev``, never installed; the host decides when it counts.
@@ -79,6 +84,9 @@ from .remote import (OFFICIAL_URL, ONLINE_ENV, RepoError, add_repository, availa
                      update_from, update_repository, updates, check_updates, update_all, for_platform)
 from .lifecycle import (changelog, clean, document_updates, leftovers, prune_code, redeclare, remove_version,
                       use_code, versions)
+from .signing import (PUB_FILE, SIG_SUFFIX, SignatureError, check_archive, check_index, keygen, parse_public_key,
+                      sign_archive, sign_repository, verify_repository)
+from .remote import OFFICIAL_KEYS, signing_keys
 from .review import (REVIEWED_FILE, add_review, find_review, refresh as refresh_reviews, review_digest, review_row,
                      reviewed_installed, trusted_repositories)
 
@@ -100,4 +108,6 @@ __all__ = [
     "DEV_ENV", "SOURCE_DEV", "dev_dir", "dev_dir_setting", "set_dev_dir", "dev_code", "describe_dev",
     "REVIEWED_FILE", "review_digest", "review_row", "add_review", "find_review", "refresh_reviews",
     "reviewed_installed", "trusted_repositories",
+    "PUB_FILE", "SIG_SUFFIX", "SignatureError", "keygen", "parse_public_key", "sign_archive", "sign_repository",
+    "verify_repository", "check_archive", "check_index", "OFFICIAL_KEYS", "signing_keys",
 ]

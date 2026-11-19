@@ -38,6 +38,19 @@ Updates (X3), as Blender's «Check for updates» / «Update all»:
     document <file.em.json>                   «this file uses 1.0.0, 1.1.0 is here»
     build <folder> --split-platforms          one <id>-<version>-<platform>.zip per platform
 
+The signature of a repository (X8): minisign over archive_hash; the files are
+minisign's own (``minisign -Vm foo.zip -p minisign.pub`` verifies them):
+
+    sign keygen <secret.key> [--public P] [--encrypt] [--force]
+                                              a key pair (--encrypt: the password from S3DGRAPHY_SIGN_PASSWORD)
+    sign repo --repo-dir D --key <secret.key> every archive the index lists + the index: <file>.minisig
+    sign archive <zip> --key <secret.key>     one archive, its trusted comment from its envelope
+    sign verify --repo-dir D --key <pub>…     what a client checks, on the folder
+    sign check <zip>                          what the installer says of the .minisig beside it
+    server-generate … --sign-key <secret.key> the index, then the signatures
+    repo add <url> --key <pub> · repo keys <name> [<pub>…] [--clear]
+                                              a repository's public keys: with them, signed or refused
+
 The plugins on the node (X7), the administrator's (the plugins themselves are
 installed with ``repo install`` in the node's folders; their hosts name ``server``):
 
@@ -117,7 +130,8 @@ def _document(path: str):
 
 def _server_generate(args) -> int:
     res = server_generate(args.repo_dir, base_url=args.base_url, blocklist=args.blocklist, reviewed=args.reviewed,
-                          output=args.output, html_page=args.html, check=args.check, dry_run=args.dry_run)
+                          output=args.output, html_page=args.html, check=args.check, dry_run=args.dry_run,
+                          sign_key=args.sign_key)
     if args.json:
         _say({k: v for k, v in res.items() if k != "index" or args.with_index}, args.lang)
         return 0 if res["ok"] else 1
@@ -137,6 +151,11 @@ def _server_generate(args) -> int:
             print(f"{res['path']}: {n} " + ("entries, unchanged" if args.lang == "en" else "voci, invariato"))
     elif res["written"]:
         print(f"{res['path']}: {n} " + ("entries" if args.lang == "en" else "voci"))
+    sg = res.get("signature")
+    if sg and sg.get("ok"):
+        print(("signed with the key " if args.lang == "en" else "firmato con la chiave ") +
+              f"{sg['key_id']}: {len(sg['signed'])} " + ("archives + index.json" if args.lang == "en"
+                                                         else "archivi + index.json"))
     return 0 if res["ok"] else 1
 
 
@@ -154,7 +173,12 @@ def _repo(args):
     if a == "add":
         (url,) = need(1, "<url>")
         return remote.add_repository(url, name=args.name, token=args.token, check_on_startup=args.check_on_startup,
-                                     trust_reviews=args.trust_reviews)
+                                     trust_reviews=args.trust_reviews, keys=args.key)
+    if a == "keys":
+        (name,) = need(1, "<name>")
+        if args.clear or len(rest) > 1 or args.key:
+            return remote.update_repository(name, keys=[] if args.clear else rest[1:] + list(args.key or []))
+        return remote.get_repository(name)
     if a == "reviews":
         (name,) = need(1, "<name>")
         if len(rest) > 1:
@@ -190,6 +214,29 @@ def _review(args):
     if args.action == "refresh":
         return R.refresh()
     return R.reviewed_installed()
+
+
+def _sign(args):
+    from . import signing as G
+    a, rest = args.action, list(args.args)
+    if a == "keygen":
+        if not rest:
+            raise G.SignatureError("sign_secret_bad")
+        pw = None
+        if args.encrypt:
+            import os
+            pw = os.environ.get(G.PASSWORD_ENV)
+            if not pw:
+                raise G.SignatureError("sign_password_needed")
+        return G.keygen(rest[0], args.public, password=pw, force=args.force)
+    if a == "repo":
+        return G.sign_repository(args.repo_dir or ".", (args.key or [None])[0])
+    if a == "archive":
+        return G.sign_archive(rest[0], (args.key or [None])[0])
+    if a == "verify":
+        return G.verify_repository(args.repo_dir or ".", args.key or [])
+    pkg = store._open(rest[0])
+    return {"path": rest[0], "id": pkg.id, "signature": store._signature(pkg)}
 
 
 def _node(args) -> int:
@@ -266,6 +313,8 @@ def main(argv=None) -> int:
     s.add_argument("--dry-run", action="store_true", help="write nothing")
     s.add_argument("--json", action="store_true")
     s.add_argument("--with-index", action="store_true", help="with --json: the index too")
+    s.add_argument("--sign-key", default=None,
+                   help="a minisign secret key: sign every listed archive and the index (X8)")
     p = add("preview", help="what installing would do, nothing written")
     p.add_argument("path")
     for name in ("install", "update"):
@@ -307,11 +356,14 @@ def main(argv=None) -> int:
     dc.add_argument("path")
     rp = add("repo", help="the repositories of this machine (X2)")
     rp.add_argument("action", choices=("list", "add", "remove", "sync", "available", "online", "preview", "install",
-                                       "reviews"))
+                                       "reviews", "keys"))
     rp.add_argument("args", nargs="*", help="add: <url> · remove/sync/available: <name> · online: on|off · "
                                             "preview/install: <name> <id> · reviews: <name> [on|off]")
     rp.add_argument("--trust-reviews", action="store_true", default=None,
                     help="add: this repository's reviews count here (default: only the official index's)")
+    rp.add_argument("--key", action="append", default=None,
+                    help="add/keys: a minisign public key of the repository (RW…, or its .pub file); repeatable")
+    rp.add_argument("--clear", action="store_true", help="keys: the repository is no longer signed")
     rp.add_argument("--name", default=None)
     rp.add_argument("--token", default=None, help="sent as Authorization: Bearer to the index's host")
     rp.add_argument("--check-on-startup", action="store_true")
@@ -330,6 +382,15 @@ def main(argv=None) -> int:
     rv.add_argument("--on", default=None, help="add: the date (default: today)")
     rv.add_argument("--as", dest="as_", default=None, help="add: in which role (em-extensions: editor | curator:<id>)")
     rv.add_argument("--note", default=None)
+    sg = add("sign", help="the signature of a repository (X8): minisign over archive_hash")
+    sg.add_argument("action", choices=("keygen", "repo", "archive", "verify", "check"))
+    sg.add_argument("args", nargs="*", help="keygen: <secret.key> · archive/check: <zip>")
+    sg.add_argument("--repo-dir", default=None)
+    sg.add_argument("--key", action="append", default=None,
+                    help="repo/archive: the secret key · verify: a public key (repeatable)")
+    sg.add_argument("--public", default=None, help="keygen: where the public key goes (default: minisign.pub beside)")
+    sg.add_argument("--encrypt", action="store_true", help="keygen: encrypt with S3DGRAPHY_SIGN_PASSWORD")
+    sg.add_argument("--force", action="store_true", help="keygen: over an existing secret key")
     nd = add("node", help="the plugins on the node (X7): the cage, the rooms, the limits")
     nd.add_argument("action", choices=("isolation", "list", "on", "off", "limits", "run"))
     nd.add_argument("args", nargs="*", help="on/off: <room> <id> · limits: KEY=VALUE… · run: <room> <id> <command>")
@@ -354,6 +415,15 @@ def main(argv=None) -> int:
             out = _repo(args)
         elif args.cmd == "review":
             out = _review(args)
+        elif args.cmd == "sign":
+            from .signing import SignatureError
+            try:
+                out = _sign(args)
+            except SignatureError as exc:
+                print(f"{exc.problem.level:7} {exc.problem.text(args.lang)}", file=sys.stderr)
+                return 1
+            _say(out, args.lang)
+            return 0 if out.get("ok", True) else 1
         elif args.cmd == "preview":
             out = store.preview(args.path)
         elif args.cmd in ("install", "update"):

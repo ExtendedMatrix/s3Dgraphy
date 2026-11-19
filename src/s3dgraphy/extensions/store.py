@@ -328,6 +328,46 @@ def _open(source: Any) -> Package:
         raise ExtensionError.of("not_a_package", why=str(exc)) from exc
 
 
+def _signature(pkg: Package) -> Optional[Dict[str, Any]]:
+    """X8 · the ``<archive>.zip.minisig`` beside a zip (from disk, or the copy a
+    repository's download keeps), checked against every public key this
+    machine's repositories carry. ``None``: no signature. ``status``:
+    ``signed`` (``key_id``, ``repos``), ``unknown_key`` (a key nobody here
+    named: said, not refused), ``bad`` (a known key, and the bytes or the
+    comment are not what it signed: refused)."""
+    origin = Path(str(pkg.source.origin or ""))
+    if origin.suffix.lower() != ".zip" or not origin.is_file():
+        return None
+    from . import signing
+    sig_path = origin.with_name(origin.name + signing.SIG_SUFFIX)
+    try:
+        text = sig_path.read_text(encoding="utf-8")
+    except OSError:
+        return None
+    from .remote import signing_keys
+    known = signing_keys()
+    try:
+        sig = signing.parse_signature(text)
+    except signing.SignatureError as exc:
+        return {"status": "bad", "problem": exc.problem.as_dict(), "_problem": exc.problem}
+    repos = sorted({nm for k, nm in known if k.key_id == sig.key_id})
+    if not repos:
+        return {"status": "unknown_key", "key_id": sig.id,
+                "problem": Problem("sign_key_unknown_here", WARNING, "", {"key_id": sig.id}).as_dict()}
+    try:
+        got = signing.check_archive(text, origin, [k for k, _ in known])
+        f = sig.fields()
+        version = str((pkg.envelope or {}).get("version") or pkg.data_version or "")    # as sign_archive names it
+        if f.get("id") != str(pkg.id) or f.get("version") != version:
+            raise signing.SignatureError("sign_entry_other", key_id=sig.id, key="id/version",
+                                         signed=f"{f.get('id')} {f.get('version')}", index=f"{pkg.id} {version}")
+    except signing.SignatureError as exc:
+        return {"status": "bad", "key_id": sig.id, "repos": repos, "problem": exc.problem.as_dict(),
+                "_problem": exc.problem}
+    return {"status": "signed", "key_id": got["key_id"], "repos": repos, "archive_hash": got["archive_hash"],
+            "note": Problem("sign_signed", WARNING, "", {"key_id": got["key_id"], "repos": ", ".join(repos)}).as_dict()}
+
+
 def _preview(source: Any, *, source_name: str = SOURCE_DISK, platform_name: Optional[str] = None,
              review: Any = "auto") -> Dict[str, Any]:
     """What installing this archive would do, section by section, writing
@@ -346,14 +386,19 @@ def _preview(source: Any, *, source_name: str = SOURCE_DISK, platform_name: Opti
     eid = str(pkg.id or "?")
     row = rows.get(eid) or {}
     env = pkg.envelope or {}
+    signature = _signature(pkg)
+    if signature and signature["status"] == "bad":      # X8 · a known key, other bytes: refused
+        archive.append(signature.pop("_problem"))
     out: Dict[str, Any] = {
         "id": eid, "name": env.get("name") or (pkg.profile or {}).get("title"), "version": env.get("version") or pkg.data_version,
         "kind": pkg.kind, "tagline": env.get("tagline"), "maintainer": env.get("maintainer"),
         "license": env.get("license") or (pkg.profile or {}).get("license"), "source": source_name,
         "origin": pkg.source.origin, "archive_hash": archive_hash(pkg), "platform": plat,
         "installed": bool(row), "warnings": [p.as_dict() for p in report.warnings],
-        "errors": [p.as_dict() for p in archive],
+        "errors": [p.as_dict() for p in archive], "signature": signature,
     }
+    if signature and signature["status"] == "unknown_key":
+        out["warnings"].append(signature["problem"])
     # the data panel
     data: Dict[str, Any] = {"present": pkg.has_data}
     if pkg.has_data:
@@ -724,6 +769,10 @@ def install(source: Any, *, parts: str = "all", trust: bool = False, source_name
         "requires": pkg.requires(), "data": data_row, "code": code_row,
         "license": env.get("license") or (pkg.profile or {}).get("license"),
     }
+    sg = pv.get("signature") or {}
+    if sg.get("status") == "signed":     # X8 · who published these bytes (not who read the code)
+        new_row["signed"] = {"key_id": sg["key_id"], "repos": sg["repos"]}
+        warnings.append(sg["note"])
     rows[eid] = new_row
     _save_register(reg)
 

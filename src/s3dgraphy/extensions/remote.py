@@ -40,6 +40,16 @@ does, for the index :func:`server_generate` writes (X1):
   installs without the trust question, and a sync looks again at what is
   installed (a review arrived, a review withdrawn).
 
+* **signed repositories** (X8, :mod:`.signing`): a repository may carry
+  minisign public keys (``keys``, pasted by the person when adding it, as the
+  URL). With keys, its ``index.json`` must come with an ``index.json.minisig``
+  one of them made, and every archive with an ``<archive>.minisig`` whose
+  trusted comment names the entry's ``id``, ``version`` and ``archive_hash``
+  — otherwise the index is not taken (the old copy stays) and the archive is
+  not opened. Without keys, nothing changes (the ``archive_hash`` of an index
+  the person chose, as in Blender). The signature is kept beside the cached
+  archive, so the install says «signed by» too.
+
 Nothing here asks a question: the window (EMStudio) or the command line asks,
 and passes the answers (``trust``, ``parts``, ``with_requires``).
 """
@@ -58,7 +68,7 @@ from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple
 
 from ..profiles import semver
 from ..profiles.problems import ERROR, WARNING, Problem, Report
-from . import store
+from . import signing, store
 from .repository import INDEX_FILE, validate_index, verify_archive
 from .wheels import this_platform
 
@@ -71,6 +81,11 @@ MAX_INDEX = 32 * 1024 * 1024
 MAX_ARCHIVE = 1024 * 1024 * 1024
 #: the repository the ExtendedMatrix CI publishes (em-extensions, PL21) — offered, never added on its own
 OFFICIAL_URL = "https://extendedmatrix.github.io/em-extensions/index.json"
+#: X8 · the official index's minisign public keys, used when the person gives none. Empty until the
+#: ExtendedMatrix key exists (E.D.: ``python -m s3dgraphy.extensions sign keygen``, the secret in the CI)
+OFFICIAL_KEYS: Tuple[str, ...] = ()
+#: a .minisig is four short lines
+MAX_SIGNATURE = 4096
 _NAME_RE = re.compile(r"^[a-z0-9][a-z0-9_-]{0,47}$")
 #: names the plugins' folder already uses for itself
 _RESERVED = {store.SOURCE_DISK, "dev", "profiles", "node", "archives", "repos"}
@@ -86,6 +101,14 @@ class RepoError(store.ExtensionError):
     def of(cls, code: str, **params: Any) -> "RepoError":
         r = Report()
         r.error(code, **params)
+        return cls(str(r.problems[0]), r)
+
+    @classmethod
+    def signed(cls, exc: "signing.SignatureError", where: str = "") -> "RepoError":
+        """X8 · a signature problem, said for the repository or the archive it is about."""
+        r = Report()
+        p = exc.problem
+        r.problems.append(Problem(p.code, ERROR, where or p.where, dict(p.params)))
         return cls(str(r.problems[0]), r)
 
 
@@ -197,9 +220,57 @@ def _trusts_reviews(r: Mapping[str, Any]) -> bool:
     return bool(v)
 
 
+def _key_texts(r: Mapping[str, Any]) -> List[str]:
+    """X8 · the public keys of a repository: the person's, else (the official index) ours."""
+    ks = [str(k) for k in r.get("keys") or [] if k]
+    if not ks and str(r.get("url")) == normalize_url(OFFICIAL_URL):
+        ks = list(OFFICIAL_KEYS)
+    return ks
+
+
+def _keys(r: Mapping[str, Any]) -> List[signing.PublicKey]:
+    out = []
+    for k in _key_texts(r):
+        try:
+            out.append(signing.parse_public_key(k))
+        except signing.SignatureError:
+            continue        # a key that no longer reads verifies nothing; add_repository refused it already
+    return out
+
+
+def _parse_keys(keys: Any) -> List[str]:
+    """What the person pasted (one key, a list, a .pub file's text or path) → the base64 lines."""
+    if keys is None:
+        return []
+    items = [keys] if isinstance(keys, str) else list(keys)
+    out: List[str] = []
+    for k in items:
+        if not str(k or "").strip():
+            continue
+        try:
+            b = signing.parse_public_key(k).b64()
+        except signing.SignatureError as exc:
+            raise RepoError.signed(exc) from exc
+        if b not in out:
+            out.append(b)
+    return out
+
+
+def signing_keys() -> List[Tuple[signing.PublicKey, str]]:
+    """X8 · every public key this machine knows, with the repository that
+    carries it: what an archive from disk is checked against."""
+    out = []
+    for r in _read()["repositories"]:
+        for k in _keys(r):
+            out.append((k, str(r.get("name"))))
+    return out
+
+
 def _public(r: Mapping[str, Any]) -> Dict[str, Any]:
     """A repository as the window sees it: never the token, only whether there is one."""
     out = {k: v for k, v in r.items() if k != "token"}
+    out["keys"] = [signing.describe_key(k) for k in _key_texts(r) if _readable_key(k)]
+    out["signed"] = bool(out["keys"])
     out["trust_reviews"] = _trusts_reviews(r)
     out["official"] = str(r.get("url")) == normalize_url(OFFICIAL_URL)
     out["has_token"] = bool(r.get("token"))
@@ -208,7 +279,16 @@ def _public(r: Mapping[str, Any]) -> Dict[str, Any]:
     out["synced_at"] = cached.get("synced_at")
     out["entries"] = cached.get("entries")
     out["error"] = cached.get("error")
+    out["signed_by"] = cached.get("signed_by")
     return out
+
+
+def _readable_key(k: str) -> bool:
+    try:
+        signing.parse_public_key(k)
+        return True
+    except signing.SignatureError:
+        return False
 
 
 def repositories() -> List[Dict[str, Any]]:
@@ -228,12 +308,15 @@ def get_repository(name: str) -> Dict[str, Any]:
 
 
 def add_repository(url: str, *, name: Optional[str] = None, token: Optional[str] = None,
-                   check_on_startup: bool = False, trust_reviews: Optional[bool] = None) -> Dict[str, Any]:
+                   check_on_startup: bool = False, trust_reviews: Optional[bool] = None,
+                   keys: Any = None) -> Dict[str, Any]:
     """*Repository ▸ +*: the URL normalized, a name (given, or from the URL),
     the token kept for this machine only. The same URL twice is refused, as a
     name already used or reserved. Nothing is read from the network here: the
-    first :func:`sync` does."""
+    first :func:`sync` does. ``keys`` (X8): the repository's minisign public
+    keys; with them, its index and archives must be signed."""
     u = normalize_url(url)
+    ks = _parse_keys(keys)
     doc = _read()
     other = next((r for r in doc["repositories"] if r.get("url") == u), None)
     if other is not None:
@@ -247,6 +330,8 @@ def add_repository(url: str, *, name: Optional[str] = None, token: Optional[str]
            "added_at": store._now()}
     if trust_reviews is not None:
         row["trust_reviews"] = bool(trust_reviews)
+    if ks:
+        row["keys"] = ks
     if token:
         row["token"] = str(token)
     doc["repositories"].append(row)
@@ -257,7 +342,9 @@ def add_repository(url: str, *, name: Optional[str] = None, token: Optional[str]
 def update_repository(name: str, **changes: Any) -> Dict[str, Any]:
     """Change ``url``, ``token`` (``""`` or ``None`` clears it), ``enabled``,
     ``check_on_startup``, ``trust_reviews`` (X4: what is installed is looked
-    at again). A changed URL forgets the cached index."""
+    at again), ``keys`` (X8: the list replaced; ``[]`` = not signed). A
+    changed URL forgets the cached index; changed keys keep it only if its
+    signature verifies with them."""
     doc = _read()
     r = _find(doc, name)
     if r is None:
@@ -277,9 +364,19 @@ def update_repository(name: str, **changes: Any) -> Dict[str, Any]:
     for k in ("enabled", "check_on_startup", "trust_reviews"):
         if k in changes and changes[k] is not None:
             r[k] = bool(changes[k])
+    keys_changed = False
+    if "keys" in changes and changes["keys"] is not None:
+        ks = _parse_keys(changes["keys"])
+        keys_changed = ks != list(r.get("keys") or [])
+        if ks:
+            r["keys"] = ks
+        else:
+            r.pop("keys", None)
     _save(doc)
+    if keys_changed:
+        _recheck_cache(r)
     out = _public(r)
-    if any(changes.get(k) is not None for k in ("trust_reviews", "enabled", "url")):
+    if keys_changed or any(changes.get(k) is not None for k in ("trust_reviews", "enabled", "url")):
         from . import review
         out["reviews"] = review.refresh()
     return out
@@ -372,6 +469,49 @@ def _forget_cache(name: str) -> None:
     shutil.rmtree(_cache_dir(name), ignore_errors=True)
 
 
+def _recheck_cache(r: Mapping[str, Any]) -> None:
+    """X8 · the keys changed: the cached index stays only if its signature
+    verifies with the new keys (no keys: it stays, now unsigned)."""
+    nm = str(r.get("name"))
+    folder = _cache_dir(nm)
+    if not (folder / INDEX_FILE).is_file():
+        return
+    keys = _keys(r)
+    meta = _cache_meta(nm)
+    if not keys:
+        meta.pop("signed_by", None)
+        (folder / "sync.json").write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
+        return
+    try:
+        got = signing.check_index((folder / (INDEX_FILE + signing.SIG_SUFFIX)).read_text(encoding="utf-8"),
+                                  (folder / INDEX_FILE).read_bytes(), keys)
+        meta["signed_by"] = got["key_id"]
+        (folder / "sync.json").write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
+    except (OSError, signing.SignatureError):
+        _forget_cache(nm)
+
+
+def _check_index_signature(r: Mapping[str, Any], url: str, blob: bytes) -> Optional[Tuple[str, str]]:
+    """X8 · with keys, the index's ``.minisig`` read and checked: ``(key id,
+    the signature's text)``; without keys ``None``. Raises :class:`RepoError`."""
+    keys = _keys(r)
+    if not keys:
+        return None
+    nm = str(r.get("name"))
+    try:
+        text = _get(url + signing.SIG_SUFFIX, token=r.get("token"), token_host=urllib.parse.urlsplit(url).netloc,
+                    limit=MAX_SIGNATURE).decode("utf-8", "replace")
+    except RepoError as exc:
+        if exc.report.problems and exc.report.problems[0].code in ("repo_offline",):
+            raise
+        raise RepoError.of("sign_index_missing", name=nm) from exc
+    try:
+        got = signing.check_index(text, blob, keys)
+    except signing.SignatureError as exc:
+        raise RepoError.signed(exc, nm) from exc
+    return got["key_id"], text
+
+
 def cached_index(name: str) -> Optional[Dict[str, Any]]:
     try:
         return json.loads((_cache_dir(name) / INDEX_FILE).read_text(encoding="utf-8"))
@@ -409,11 +549,18 @@ def sync(name: Optional[str] = None, *, startup: bool = False) -> Dict[str, Any]
             if not v.ok:
                 rep.extend(v)
                 raise RepoError.of("repo_index_bad", name=nm, why="; ".join(str(p) for p in v.errors[:3]))
+            signed = _check_index_signature(r, url, blob)      # X8 · before anything is kept
             folder = _cache_dir(nm)
             folder.mkdir(parents=True, exist_ok=True)
             (folder / INDEX_FILE).write_bytes(blob)
+            sig_path = folder / (INDEX_FILE + signing.SIG_SUFFIX)
+            if signed:
+                sig_path.write_text(signed[1], encoding="utf-8")
+            elif sig_path.exists():
+                sig_path.unlink()
             entries = len(idx.get("data") or [])
-            meta = {"url": url, "synced_at": store._now(), "entries": entries, "error": None}
+            meta = {"url": url, "synced_at": store._now(), "entries": entries, "error": None,
+                    **({"signed_by": signed[0]} if signed else {})}
             (folder / "sync.json").write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
         except RepoError as exc:
             rep.problems[:0] = exc.report.problems
@@ -422,6 +569,7 @@ def sync(name: Optional[str] = None, *, startup: bool = False) -> Dict[str, Any]
             folder.mkdir(parents=True, exist_ok=True)
             (folder / "sync.json").write_text(json.dumps(meta, indent=2) + "\n", encoding="utf-8")
         out.append({"name": nm, "ok": entries is not None, "entries": entries,
+                    "signed_by": _cache_meta(nm).get("signed_by") if entries is not None else None,
                     "problems": [p.as_dict() for p in rep.problems]})
     from . import review
     return {"repositories": out, "updates": updates(), "online_access": online_access(),
@@ -477,6 +625,8 @@ def available(name: Optional[str] = None) -> Dict[str, Any]:
     plat = this_platform()
     for r in repos:
         nm = str(r["name"])
+        # X8 · a signed repository: its index was taken only signed, its archives open only signed
+        signed_by = _cache_meta(nm).get("signed_by") if _keys(r) else None
         by_id: Dict[str, List[Dict[str, Any]]] = {}
         for e in _entries(nm):
             by_id.setdefault(str(e["id"]), []).append(e)
@@ -506,6 +656,7 @@ def available(name: Optional[str] = None) -> Dict[str, Any]:
                         "license": newest.get("license"), "maintainer": newest.get("maintainer"),
                         "archive_size": newest.get("archive_size"), "permissions": newest.get("permissions"),
                         "reviewed": newest.get("reviewed"), "verified": _entry_verified(r, newest),
+                        "signed": bool(signed_by), "signed_by": signed_by,
                         "requires": newest.get("requires") or {},
                         "sections": newest.get("sections") or {}, "installed": hv, "update": upd,
                         "same_source": bool(have and have.get("source") == nm)})
@@ -584,23 +735,46 @@ def download(name: str, eid: str, version: Optional[str] = None) -> Dict[str, An
     (nothing kept) when the bytes are not the index's."""
     entry = _entry(name, eid, version)
     repo = _find(_read(), name) or {}
+    keys = _keys(repo)
     dest = _archive_path(name, entry)
+    sig_dest = dest.with_name(dest.name + signing.SIG_SUFFIX)
     if dest.is_file():
         blob = dest.read_bytes()
         if verify_archive(blob, entry).ok:
-            return {"path": str(dest), "entry": entry, "cached": True}
+            if not keys:
+                return {"path": str(dest), "entry": entry, "cached": True, "signed": None}
+            try:
+                got = signing.check_archive(sig_dest.read_text(encoding="utf-8"), blob, keys, entry)
+                return {"path": str(dest), "entry": entry, "cached": True, "signed": got}
+            except (OSError, signing.SignatureError):
+                pass        # signed since, or the copy's signature is gone: read both again
     url = _archive_url(repo, entry)
+    token_host = urllib.parse.urlsplit(str(repo["url"])).netloc
     limit = int(entry.get("archive_size") or 0) or MAX_ARCHIVE
-    blob = _get(url, token=repo.get("token"), token_host=urllib.parse.urlsplit(str(repo["url"])).netloc,
-                limit=min(limit, MAX_ARCHIVE))
+    blob = _get(url, token=repo.get("token"), token_host=token_host, limit=min(limit, MAX_ARCHIVE))
     rep = verify_archive(blob, entry)
     if not rep.ok:
         raise store.ExtensionError(f"{eid}: " + "; ".join(str(p) for p in rep.errors), rep)
+    sig_text, signed = None, None
+    if keys:        # X8 · the archive's signature, over the bytes and the entry's archive_hash
+        try:
+            sig_text = _get(url + signing.SIG_SUFFIX, token=repo.get("token"), token_host=token_host,
+                            limit=MAX_SIGNATURE).decode("utf-8", "replace")
+        except RepoError as exc:
+            raise RepoError.of("sign_archive_unsigned", id=eid, version=str(entry.get("version"))) from exc
+        try:
+            signed = signing.check_archive(sig_text, blob, keys, entry)
+        except signing.SignatureError as exc:
+            raise RepoError.signed(exc, f"{eid} {entry.get('version')}") from exc
     dest.parent.mkdir(parents=True, exist_ok=True)
     tmp = dest.with_name(dest.name + ".tmp")
     tmp.write_bytes(blob)
     tmp.replace(dest)
-    return {"path": str(dest), "entry": entry, "cached": False}
+    if sig_text is not None:
+        sig_dest.write_text(sig_text, encoding="utf-8")
+    elif sig_dest.exists():
+        sig_dest.unlink()
+    return {"path": str(dest), "entry": entry, "cached": False, "signed": signed}
 
 
 # ── [requires] resolved through the repositories ───────────────────────────
@@ -726,6 +900,7 @@ def preview_from(name: str, eid: str, version: Optional[str] = None) -> Dict[str
     pv["repository"] = {"name": name, "url": (_find(_read(), name) or {}).get("url"),
                         "archive_hash": got["entry"].get("archive_hash"),
                         "reviewed": got["entry"].get("reviewed"), "cached": got["cached"],
+                        "signed": got.get("signed"), "signed_repository": bool(_keys(_find(_read(), name) or {})),
                         "trust_reviews": _trusts_reviews(_find(_read(), name) or {})}
     pv["plan"] = plan
     return pv
@@ -909,5 +1084,5 @@ __all__ = [
     "REPOS_FILE", "ONLINE_ENV", "OFFICIAL_URL", "RepoError", "online_access", "online_access_setting",
     "set_online_access", "normalize_url", "is_local", "repositories", "get_repository", "add_repository",
     "update_repository", "remove_repository", "set_fetcher", "sync", "cached_index", "available", "updates",
-    "download", "plan_install", "preview_from", "install_from", "update_from",
+    "download", "plan_install", "preview_from", "install_from", "update_from", "OFFICIAL_KEYS", "signing_keys",
 ]

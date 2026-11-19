@@ -114,12 +114,29 @@ class Extensions:
         return E.repositories()
 
     def add_repository(self, url: str, *, name: Optional[str] = None, token: Optional[str] = None,
-                       check_on_startup: bool = False, trust_reviews: Optional[bool] = None) -> Dict[str, Any]:
+                       check_on_startup: bool = False, trust_reviews: Optional[bool] = None,
+                       keys: Any = None) -> Dict[str, Any]:
         """*Repository ▸ +*: an ``index.json`` by URL, ``file://`` or a folder (a NAS).
-        ``trust_reviews`` (X4): its reviews count here (default: the official index's only)."""
+        ``trust_reviews`` (X4): its reviews count here (default: the official index's only).
+        ``keys`` (X8): its minisign public keys — with them, index and archives signed or refused."""
         from .. import extensions as E
         return E.add_repository(url, name=name, token=token, check_on_startup=check_on_startup,
-                                trust_reviews=trust_reviews)
+                                trust_reviews=trust_reviews, keys=keys)
+
+    # X8 (MICRO-PL28) · the signature of a repository
+    def repository_keys(self, repo: str, keys: Any = None) -> Dict[str, Any]:
+        """The minisign public keys of ``repo``: read (``keys=None``) or replaced
+        (``[]``: no longer signed). The cached index stays only if it verifies."""
+        from .. import extensions as E
+        if keys is None:
+            return E.get_repository(repo)
+        return E.update_repository(repo, keys=keys)
+
+    def verify_signature(self, archive: Any) -> Optional[Dict[str, Any]]:
+        """What the installer says of the ``.minisig`` beside an archive:
+        ``signed`` / ``unknown_key`` / ``bad``, or ``None`` (not signed)."""
+        from ..extensions import store
+        return store._signature(store._open(archive))
 
     # X4 (MICRO-PL24) · the list of the reviewed
     def trust_reviews(self, repo: str, on: bool = True) -> Dict[str, Any]:

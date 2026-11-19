@@ -350,13 +350,16 @@ def dumps_index(doc: Mapping[str, Any]) -> str:
 
 def server_generate(repo_dir: Any, *, base_url: Optional[str] = None, blocklist: Any = None, reviewed: Any = None,
                     output: Any = None, html_page: bool = False, check: bool = False,
-                    dry_run: bool = False) -> Dict[str, Any]:
+                    dry_run: bool = False, sign_key: Any = None, sign_password: Optional[str] = None) -> Dict[str, Any]:
     """Every ``*.zip`` of ``repo_dir`` → ``index.json`` (and ``index.html``
     with ``html_page``). ``blocklist`` and ``reviewed`` default to the files of
     that name in ``repo_dir``. ``archive_url`` is relative (``./<file>``,
     resolved against the index's URL, so ``file://`` works) unless
     ``base_url`` is given. ``check`` compares with the index already written
-    and writes nothing.
+    and writes nothing. ``sign_key`` (X8): a minisign secret key (its file
+    or text); after writing, every listed archive and the index get their
+    ``.minisig`` (:func:`.signing.sign_repository`); never with ``check`` or
+    ``dry_run``, which write nothing.
 
     The answer: ``ok`` (no error anywhere), ``index`` (the document),
     ``listed``/``refused`` (per file, with the problems in EN and IT),
@@ -432,6 +435,14 @@ def server_generate(repo_dir: Any, *, base_url: Optional[str] = None, blocklist:
         page = out_path.with_name(HTML_FILE)
         page.write_text(index_html(doc), encoding="utf-8")
         ans["html"] = str(page)
+    if sign_key is not None:
+        from . import signing
+        try:
+            ans["signature"] = signing.sign_repository(root, sign_key, password=sign_password, index=out_path)
+        except signing.SignatureError as exc:
+            ans["signature"] = {"ok": False, "problems": [exc.problem.as_dict()]}
+        ans["problems"].extend(ans["signature"]["problems"])
+        ans["ok"] = ans["ok"] and ans["signature"]["ok"]
     return ans
 
 
