@@ -48,7 +48,7 @@ FORMAT_VERSION = "1.1"
 #: **Single source of truth for the em.json SCHEMA version.**
 #:
 #: Distinct from ``FORMAT_VERSION`` on purpose, and the two answer different
-#: questions. ``FORMAT_VERSION`` ("1.0") is the frozen shape of the document —
+#: questions. ``FORMAT_VERSION`` ("1.1") is the frozen shape of the document —
 #: header / graph / layout, flat node and edge lists — and its MAJOR gates
 #: whether the importer will read the file at all. ``SCHEMA_VERSION`` is a plain
 #: integer that increments whenever the *content* of that shape evolves in a way
