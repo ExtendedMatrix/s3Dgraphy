@@ -167,6 +167,10 @@ MESSAGES: Dict[str, Tuple[str, str]] = {
                             "[code]: dichiara {platform}, ma nessuna ruota di {dist} gira lì"),
     "code_platforms_undeclared": ("[code]: platform wheels ({dists}) and no platforms — the archive would claim every platform",
                                   "[code]: ruote per piattaforma ({dists}) e nessuna platforms — l'archivio direbbe di girare ovunque"),
+    "code_stamp_advice": ("[code]: {files} file(s) write files and none stamps them — advice, not an error: "
+                          "a derived artifact is better with its stamp beside it (ctx.stamp, SPEC.md «Good practice»)",
+                          "[code]: {files} file scrivono file e nessuno li timbra — un consiglio, non un errore: "
+                          "un elaborato derivato sta meglio col suo timbro accanto (ctx.stamp, SPEC.md «Good practice»)"),
     "code_outside_root": ("[code]: the code root {root} is not in the archive", "[code]: la radice del codice {root} non è nell'archivio"),
     # the index of a repository (X1, python -m s3dgraphy.extensions server-generate)
     "index_no_folder": ("{path}: not a folder", "{path}: non è una cartella"),

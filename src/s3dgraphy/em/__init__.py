@@ -42,13 +42,14 @@ from .graph import AmbiguousNode, EdgeView, GraphView, NodeNotFound, NodeView, P
 from .messages import language, message
 from .vocab import Concept, ConceptNotFound, Profiles, Vocab
 from .write import Transaction, WriteResult, write
+from .stamps import StampError, stamp_artifact as stamp
 
 # the submodule ``graph`` must not hide ``em.graph`` (the host's graph, below)
 del globals()["graph"]
 
 #: the API's own version — what a plugin's ``em_api_min``/``em_api_max`` are read
 #: against (SPEC-plugin §14.7), distinct from s3Dgraphy's and EMStudio's
-API_VERSION = "1.1.0"   # 1.1 (W14, MICRO-PL17): em.ext, em.plugins, document-saved
+API_VERSION = "1.2.0"   # 1.1 (W14, MICRO-PL17): em.ext, em.plugins, document-saved; 1.2 (G-5, MICRO-GEO02): em.stamp, ctx.stamp
 
 vocab = Vocab()
 profiles = Profiles()
@@ -176,6 +177,8 @@ def help(lang: Optional[str] = None) -> str:                # noqa: A001
          "with em.write(\"label\") as tx: … — writing (one act, one step)"),
         ("em.extensions — installa, elenca, attiva da disco" if it else
          "em.extensions — install, list, enable from disk"),
+        ("em.stamp(file, inputs=[…]) — il timbro di un elaborato derivato" if it else
+         "em.stamp(file, inputs=[…]) — the stamp of a derived artifact"),
         ("em.on(evento, fn) — " if it else "em.on(event, fn) — ") + ", ".join(EVENTS),
         ("em.app — selezione, viste, Spazio, comandi" if it else
          "em.app — selection, views, Space, commands")
@@ -200,6 +203,7 @@ def help(lang: Optional[str] = None) -> str:                # noqa: A001
 
 
 __all__ = ["API_VERSION", "EVENTS", "graph", "vocab", "profiles", "extensions", "ext", "plugins", "app", "write",
+           "stamp", "StampError",
            "on", "off", "open", "use", "save", "help", "host", "events", "EmError", "NotAvailable",
            "Refused", "NodeNotFound", "AmbiguousNode", "ConceptNotFound", "GraphView", "NodeView",
            "EdgeView", "PropertyView", "Concept", "Transaction", "WriteResult"]

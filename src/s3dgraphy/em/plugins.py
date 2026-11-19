@@ -404,6 +404,14 @@ class Context:
         """What an exporter returns (``menu.file.export@1``, ``export.narrative@1``)."""
         return ExportFile(str(name), content, mime)
 
+    def stamp(self, artifact: Any, **fields: Any) -> Dict[str, Any]:
+        """G-5 (MICRO-GEO02) · stamp a file this plugin made, in one line:
+        ``<artifact>.stamp.json`` beside it, the plugin as the agent (id and
+        version). ``inputs``, ``parameters``, ``dtc_kind``, ``technique``…:
+        :func:`s3dgraphy.em.stamps.stamp_artifact`. Encouraged, never required."""
+        from .stamps import stamp_artifact
+        return stamp_artifact(artifact, agent=self._p, **fields)
+
     def __repr__(self) -> str:
         return f"<em plugin context {self.id} {self.version} on {self.host}>"
 

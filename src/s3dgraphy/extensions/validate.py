@@ -18,13 +18,16 @@ distribute:
   no ``platforms`` said out loud; the code root exists;
 * what ``build`` would fix, said as a warning: no ``type``, a vocabulary
   file still named in ``qualia_vocabularies[].path``, a bare profile without
-  ``em-extension.toml``.
+  ``em-extension.toml``;
+* a piece of advice (G-5, a warning, never an error): code that writes files
+  and stamps none of them (``ctx.stamp``, SPEC.md of em-profiles).
 
 Nothing here depends on the machine: the platform of THIS machine, what is
 installed, the trust — those are the installer's (W21).
 """
 from __future__ import annotations
 
+import re
 from pathlib import PurePosixPath
 from typing import Any, Dict, List, Mapping, Optional, Set
 
@@ -90,6 +93,36 @@ def _build_would_fix(pkg: Package, r: Report) -> None:
                 r.warn("vocab_path_in_profile", pkg.profile_path or "", scheme=q.get("scheme"))
 
 
+#: G-5 (MICRO-GEO02) · what writes a file in plain Python, and what stamps one
+_WRITES_FILE = re.compile(r"""open\([^)\n]*['"][wax]b?\+?['"]|\.write_bytes\(|\.write_text\(|\.savefig\(|"""
+                          r"""\bshutil\.copy|\.tofile\(|\bnp\.save""")
+_STAMPS = re.compile(r"\bstamp\(|stamp_artifact|\bdtcstamp\b")
+
+
+def _stamp_advice(pkg: Package, r: Report) -> None:
+    """A piece of ADVICE, never an error (G-5): code that writes files and never
+    stamps one. Measured simply, on the ``.py`` text of the code root: a file
+    opened for writing (or ``write_bytes``…) and no ``stamp(`` / ``dtcstamp``
+    anywhere. A plugin that writes nothing, or stamps somewhere, hears nothing."""
+    if not pkg.has_code:
+        return
+    root = (pkg.code_root or "").rstrip("/")
+    writes, stamps = [], False
+    for f in sorted(pkg.source.files()):
+        if not f.endswith(".py") or (root and not f.startswith(root + "/")):
+            continue
+        try:
+            text = pkg.source.read(f).decode("utf-8", "replace")
+        except Exception:                            # noqa: BLE001 — advice never fails
+            continue
+        if _STAMPS.search(text):
+            stamps = True
+        if _WRITES_FILE.search(text):
+            writes.append(f)
+    if writes and not stamps:
+        r.warn("code_stamp_advice", writes[0], files=len(writes))
+
+
 def validate_archive(source: Any) -> Report:
     """Everything wrong with an archive (folder, zip, bytes or an opened
     :class:`~s3dgraphy.profiles.package.Package`), at once, errors and
@@ -106,6 +139,7 @@ def validate_archive(source: Any) -> Report:
     r = validate(pkg)
     _build_would_fix(pkg, r)
     _code_archive(pkg, r)
+    _stamp_advice(pkg, r)
     return r
 
 
