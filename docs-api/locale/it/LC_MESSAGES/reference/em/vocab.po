@@ -1,0 +1,186 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "``em.vocab`` — vocabularies and packages"
+msgstr ""
+
+msgid "Generated for em API |api| from the docstrings of :mod:`s3dgraphy.em.vocab`."
+msgstr ""
+
+msgid "Vocabularies, qualia and community packages — the same everywhere (SPEC-plugin §2.2)."
+msgstr ""
+
+msgid "``em.vocab`` reads the vocabulary MANAGER of this machine (:mod:`s3dgraphy.vocabularies`, W20): a concept by its URI with its labels — in the language asked, else through a VERIFIED alignment (the way stratigraph-templates' renderer does), else none (a label is never invented); a search that proposes candidates and never decides."
+msgstr ""
+
+msgid "``em.profiles`` reads the packages: the ones the open document declares (the host's overlay, ``header.profiles``), the ones installed on the machine, and the merged views of the library (qualia, extractor types with their geometry, landmark sets, combiners)."
+msgstr ""
+
+msgid "Bases: :py:class:`object`"
+msgstr ""
+
+msgid "``em.vocab`` — the vocabularies installed on this machine."
+msgstr ""
+
+msgid "A concept is read by its URI, with its labels; a search proposes candidates. A label is never invented: when no installed vocabulary has it, the answer is None."
+msgstr ""
+
+msgid "The concept with this URI, from the installed vocabularies."
+msgstr ""
+
+msgid "Parameters"
+msgstr ""
+
+msgid "the concept's URI."
+msgstr ""
+
+msgid "look in this vocabulary package first."
+msgstr ""
+
+msgid "with ``vocabulary``, that exact version first."
+msgstr ""
+
+msgid "Returns"
+msgstr ""
+
+msgid "the concept, with its labels."
+msgstr ""
+
+msgid "Return type"
+msgstr ""
+
+msgid "Raises"
+msgstr ""
+
+msgid "no installed vocabulary knows the URI."
+msgstr ""
+
+msgid "Example"
+msgstr ""
+
+msgid "Like :meth:`concept`, but None instead of raising."
+msgstr ""
+
+msgid "``vocabulary`` and ``version``, as in :meth:`concept`."
+msgstr ""
+
+msgid "Candidates — never an identity: a person confirms."
+msgstr ""
+
+msgid "The vocabulary packages installed on this machine (one summary each)."
+msgstr ""
+
+msgid "A concept of an installed vocabulary, read."
+msgstr ""
+
+msgid "Variables"
+msgstr ""
+
+msgid "the id of the vocabulary package it comes from."
+msgstr ""
+
+msgid "the vocabulary's version."
+msgstr ""
+
+msgid "the attribution the vocabulary asks for."
+msgstr ""
+
+msgid "the vocabulary's licence."
+msgstr ""
+
+msgid "The preferred labels, ``{language: label}``."
+msgstr ""
+
+msgid "The URIs of the broader concepts."
+msgstr ""
+
+msgid "The URIs of the narrower concepts."
+msgstr ""
+
+msgid "The preferred label in ``lang`` (or its base language); else, with ``aligned``, the label of a concept verified as the same; else None."
+msgstr ""
+
+msgid "The double value a property carries (``data.concept``): what ``tx.set_property(..., concept=c)`` writes."
+msgstr ""
+
+msgid "Bases: :py:class:`~s3dgraphy.em.errors.EmError`, :py:class:`KeyError`"
+msgstr ""
+
+msgid "No installed vocabulary knows the URI. A ``KeyError`` too."
+msgstr ""
+
+msgid "``em.profiles`` — the community packages (qualia, extractor types, landmark sets, combiners)."
+msgstr ""
+
+msgid "Reads the packages the open document declares and this machine has (the host's overlay), and those installed on the machine."
+msgstr ""
+
+msgid "The packages the open document declares and this machine has: ``[{name, iri, prefix, version, origin}]``."
+msgstr ""
+
+msgid "Declared by the document, not installed here (the file opens all the same)."
+msgstr ""
+
+msgid "The merged view of the active packages (a :class:`~s3dgraphy.profiles.ProfileOverlay`)."
+msgstr ""
+
+msgid "The packages installed on this machine, active or not."
+msgstr ""
+
+msgid "The qualia (property types) of the active packages, by id."
+msgstr ""
+
+msgid "The extractor types of the active packages, by id."
+msgstr ""
+
+msgid "The combiner types of the active packages, by id."
+msgstr ""
+
+msgid "The landmark sets (sets of canonical points) of the active packages, by id."
+msgstr ""
+
+msgid "One extractor type, with its geometry (``.geometry``)."
+msgstr ""
+
+msgid "the prefixed id (``stat:punto_canonico``)."
+msgstr ""
+
+msgid "no active package declares it."
+msgstr ""
+
+msgid "One landmark set (its canonical points)."
+msgstr ""
+
+msgid "the prefixed id (``stat:volto``)."
+msgstr ""
+
+msgid "The label of a package type in ``lang``, or None."
+msgstr ""
+
+msgid "any prefixed id of the active packages."
+msgstr ""
+
+msgid "the language wanted."
+msgstr ""
+
+msgid "Bases: :py:class:`dict`"
+msgstr ""
+
+msgid "An extractor type of the overlay; ``.geometry`` is its 3D component (primitive, vertices, measure, unit) with the SPEC's defaults."
+msgstr ""

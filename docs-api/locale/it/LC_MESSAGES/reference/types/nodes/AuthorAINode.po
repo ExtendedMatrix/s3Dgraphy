@@ -1,0 +1,123 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "AuthorAINode"
+msgstr ""
+
+msgid "Generated from the datamodels (nodes 1.6.51, connections 1.6.55) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``."
+msgstr ""
+
+msgid "*AI agent (model + prompt\\_reference) responsible for asserting or refining one or more nodes.*"
+msgstr ""
+
+msgid "Class"
+msgstr ""
+
+msgid "``AuthorAINode``"
+msgstr ""
+
+msgid "node_type"
+msgstr ""
+
+msgid "``author_ai``"
+msgstr ""
+
+msgid "Parent"
+msgstr ""
+
+msgid ":ref:`AuthorNode <type-AuthorNode>`"
+msgstr ""
+
+msgid "Label (en)"
+msgstr ""
+
+msgid "AI Author"
+msgstr ""
+
+msgid "Label (it)"
+msgstr ""
+
+msgid "Autore IA"
+msgstr ""
+
+msgid "CIDOC"
+msgstr ""
+
+msgid "``E39 Actor``"
+msgstr ""
+
+msgid "Description"
+msgstr ""
+
+msgid "AI agent (model + prompt\\_reference) responsible for asserting or refining one or more nodes. Python: AuthorAINode (node\\_type='author\\_ai'), subclass of AuthorNode. Already referenced as target in connections\\_datamodel.json has\\_author edge. The Python class carries 'model' and 'prompt\\_reference' in node.data for reproducibility."
+msgstr ""
+
+msgid "*Italiano*: Agente di IA (modello + prompt\\_reference) responsabile dell'asserzione o del perfezionamento di uno o più nodi. Python: AuthorAINode (node\\_type='author\\_ai'), sottoclasse di AuthorNode. Già referenziato come destinazione dell'arco has\\_author in connections\\_datamodel.json. La classe Python conserva 'model' e 'prompt\\_reference' in node.data per garantire la riproducibilità."
+msgstr ""
+
+msgid "Fields"
+msgstr ""
+
+msgid "Field"
+msgstr ""
+
+msgid "Mapping / note"
+msgstr ""
+
+msgid "``name``"
+msgstr ""
+
+msgid "P1\\_is\\_identified\\_by"
+msgstr ""
+
+msgid "``orcid``"
+msgstr ""
+
+msgid "P48\\_has\\_preferred\\_identifier"
+msgstr ""
+
+msgid "``verified``"
+msgstr ""
+
+msgid "em:orcidVerified"
+msgstr ""
+
+msgid "``model``"
+msgstr ""
+
+msgid "em:modelIdentifier"
+msgstr ""
+
+msgid "``prompt_reference``"
+msgstr ""
+
+msgid "em:promptReference"
+msgstr ""
+
+msgid "Edges"
+msgstr ""
+
+msgid "**Outgoing** (this node is the source): :ref:`generic_connection <edge-generic_connection>`, :ref:`has_embargo <edge-has_embargo>`, :ref:`has_first_epoch <edge-has_first_epoch>`, :ref:`has_license <edge-has_license>`, :ref:`has_property <edge-has_property>`, :ref:`has_same_time <edge-has_same_time>`, :ref:`has_semantic_shape <edge-has_semantic_shape>`, :ref:`has_translation <edge-has_translation>`, :ref:`is_after <edge-is_after>`, :ref:`is_in_activity <edge-is_in_activity>`, :ref:`is_in_paradata_nodegroup <edge-is_in_paradata_nodegroup>`, :ref:`survive_in_epoch <edge-survive_in_epoch>`"
+msgstr ""
+
+msgid "**Incoming** (this node is the target): :ref:`generic_connection <edge-generic_connection>`, :ref:`has_author <edge-has_author>`, :ref:`has_same_time <edge-has_same_time>`, :ref:`is_after <edge-is_after>`, :ref:`validated_by <edge-validated_by>`"
+msgstr ""
+
+msgid "From em"
+msgstr ""

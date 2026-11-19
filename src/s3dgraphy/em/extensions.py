@@ -35,6 +35,17 @@ class Extensions:
         return E.install(source, parts=parts, trust=trust)
 
     def update(self, source: Any, *, trust: bool = False) -> Dict[str, Any]:
+        """Install a newer archive over an installed extension, section by
+        section: changed code replaces the active one, changed data installs
+        beside the old, an unchanged section is left alone.
+
+        Args:
+            source: a folder or a zip.
+            trust: accept a ``[code]`` section (see :meth:`preview`).
+
+        Returns:
+            dict: the install report.
+        """
         from .. import extensions as E
         return E.update(source, trust=trust)
 
@@ -46,6 +57,7 @@ class Extensions:
     installed = list
 
     def get(self, eid: str) -> Optional[Dict[str, Any]]:
+        """The installed extension ``eid`` (as in :meth:`list`), or None."""
         from .. import extensions as E
         return E.get(eid)
 
@@ -56,6 +68,11 @@ class Extensions:
         return E.enable(eid, version)
 
     def disable(self, eid: str) -> bool:
+        """Turn off the code of ``eid`` (from the host's next start).
+
+        Returns:
+            bool: False when it was not enabled.
+        """
         from .. import extensions as E
         return E.disable(eid)
 
@@ -68,6 +85,9 @@ class Extensions:
         return E.active_code(None if name == "none" else name)
 
     def removal_plan(self, eid: str) -> Dict[str, Any]:
+        """What each kind of removal of ``eid`` would do, before doing it: the
+        code that goes with the data, who requires the data, the vocabularies
+        nobody else brings."""
         from .. import extensions as E
         return E.removal_plan(eid)
 
@@ -150,6 +170,12 @@ class Extensions:
         return E.reviewed_installed()
 
     def remove_repository(self, name: str) -> bool:
+        """Forget a repository and its cached index. What was installed from
+        it stays installed.
+
+        Returns:
+            bool: False when there was no such repository.
+        """
         from .. import extensions as E
         return E.remove_repository(name)
 
@@ -242,3 +268,6 @@ class Extensions:
 
     def __repr__(self) -> str:
         return "<em.extensions: install, list, enable from disk and from repositories, update>"
+
+
+__all__ = ["Extensions"]

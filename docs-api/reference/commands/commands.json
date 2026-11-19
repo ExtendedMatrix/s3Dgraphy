@@ -1,0 +1,6967 @@
+{
+  "generated_from": {
+    "emstudio_sha": "85f69cd",
+    "emstudio_read": "HEAD",
+    "em_api_version": "1.2.0"
+  },
+  "sources": {
+    "menu_table": "frontend/src/menu-table.ts",
+    "menu_ui": "frontend/src/menu-ui.ts",
+    "keymap": "frontend/src/keymap.ts",
+    "i18n": "frontend/src/i18n.ts",
+    "main": "frontend/src/main.ts",
+    "py_session": "frontend/src/py-session.ts",
+    "em_py": "tools/em_py.py"
+  },
+  "library_chain": [
+    {
+      "file": "src/s3dgraphy/em/__init__.py",
+      "line": 233,
+      "what": "em.app.commands.run -> host app run_command"
+    },
+    {
+      "file": "src/s3dgraphy/em/host.py",
+      "line": 147,
+      "what": "NullHost: NotAvailable outside a host"
+    }
+  ],
+  "host_chain": {
+    "complete": true,
+    "reachable_kinds": [
+      "cmd"
+    ],
+    "plugin_prefix": true,
+    "slots_forwarded": false,
+    "button_disabled_fails": true,
+    "steps": [
+      {
+        "key": "em_py.run_command",
+        "file": "tools/em_py.py",
+        "line": 576,
+        "what": "EMStudioApp.run_command asks the page: request kind \"command\" with id and slots"
+      },
+      {
+        "key": "py_session.case_command",
+        "file": "frontend/src/py-session.ts",
+        "line": 364,
+        "what": "PySession answers the request through the page's host.command(id, slots); false -> error py.noCommand"
+      },
+      {
+        "key": "main.host_command",
+        "file": "frontend/src/main.ts",
+        "line": 65807,
+        "what": "the page's host hook: command -> runCommand(id)"
+      },
+      {
+        "key": "menu_ui.runCommand",
+        "file": "frontend/src/menu-ui.ts",
+        "line": 182,
+        "what": "runCommand: plugin:<id>/<cmd> -> plugin invocation; otherwise findRow(id) and click the row's button"
+      },
+      {
+        "key": "menu_ui.findRow",
+        "file": "frontend/src/menu-ui.ts",
+        "line": 201,
+        "what": "findRow: only rows of kind \"cmd\" in MENUS (sub-menus walked)"
+      }
+    ]
+  },
+  "locales": [
+    "en",
+    "it",
+    "de",
+    "el",
+    "he",
+    "es",
+    "pl",
+    "ro",
+    "fr"
+  ],
+  "validated_locales": [
+    "en",
+    "it"
+  ],
+  "submenus": [
+    {
+      "id": "openRecent",
+      "menu": "file",
+      "label": {
+        "en": "Open Recent",
+        "it": "Apri recenti"
+      },
+      "dynamic": "recent",
+      "slot": null,
+      "line": 149
+    },
+    {
+      "id": "import",
+      "menu": "file",
+      "label": {
+        "en": "Import",
+        "it": "Importa",
+        "de": "Importieren"
+      },
+      "dynamic": null,
+      "slot": "menu.file.import@1",
+      "line": 164
+    },
+    {
+      "id": "export",
+      "menu": "file",
+      "label": {
+        "en": "Export",
+        "it": "Esporta",
+        "de": "Exportieren",
+        "el": "Εξαγωγή",
+        "he": "ייצוא",
+        "es": "Exportar",
+        "pl": "Eksport",
+        "ro": "Export",
+        "fr": "Exporter"
+      },
+      "dynamic": null,
+      "slot": "menu.file.export@1",
+      "line": 168
+    }
+  ],
+  "commands": [
+    {
+      "id": "about",
+      "page": "about",
+      "kind": "menu",
+      "command_id": "about",
+      "label_key": "toolbar.about",
+      "label": {
+        "en": "About EMStudio",
+        "it": "Informazioni su EMStudio"
+      },
+      "title_key": null,
+      "title": {},
+      "button": "btn-help-about",
+      "os_item": null,
+      "menu": "app",
+      "menu_path": {
+        "en": "EMStudio ▸ About EMStudio",
+        "it": "EMStudio ▸ Informazioni su EMStudio",
+        "de": "EMStudio ▸ About EMStudio",
+        "el": "EMStudio ▸ About EMStudio",
+        "he": "EMStudio ▸ About EMStudio",
+        "es": "EMStudio ▸ About EMStudio",
+        "pl": "EMStudio ▸ About EMStudio",
+        "ro": "EMStudio ▸ About EMStudio",
+        "fr": "EMStudio ▸ About EMStudio"
+      },
+      "surfaces": {
+        "mac": [
+          "native"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 119
+      },
+      "same_button_as": [
+        "aboutHelp"
+      ]
+    },
+    {
+      "id": "updates",
+      "page": "updates",
+      "kind": "menu",
+      "command_id": "updates",
+      "label_key": "toolbar.updates",
+      "label": {
+        "en": "Check for updates…",
+        "it": "Cerca aggiornamenti…"
+      },
+      "title_key": null,
+      "title": {},
+      "button": "btn-help-updates",
+      "os_item": null,
+      "menu": "app",
+      "menu_path": {
+        "en": "EMStudio ▸ Check for updates…",
+        "it": "EMStudio ▸ Cerca aggiornamenti…",
+        "de": "EMStudio ▸ Check for updates…",
+        "el": "EMStudio ▸ Check for updates…",
+        "he": "EMStudio ▸ Check for updates…",
+        "es": "EMStudio ▸ Check for updates…",
+        "pl": "EMStudio ▸ Check for updates…",
+        "ro": "EMStudio ▸ Check for updates…",
+        "fr": "EMStudio ▸ Check for updates…"
+      },
+      "surfaces": {
+        "mac": [
+          "native"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 120
+      },
+      "same_button_as": [
+        "updatesHelp"
+      ]
+    },
+    {
+      "id": "settings",
+      "page": "settings",
+      "kind": "menu",
+      "command_id": "settings",
+      "label_key": "toolbar.settingsItem",
+      "label": {
+        "en": "Settings…",
+        "it": "Impostazioni…"
+      },
+      "title_key": null,
+      "title": {},
+      "button": "btn-settings",
+      "os_item": null,
+      "menu": "app",
+      "menu_path": {
+        "en": "EMStudio ▸ Settings…",
+        "it": "EMStudio ▸ Impostazioni…",
+        "de": "EMStudio ▸ Settings…",
+        "el": "EMStudio ▸ Settings…",
+        "he": "EMStudio ▸ Settings…",
+        "es": "EMStudio ▸ Settings…",
+        "pl": "EMStudio ▸ Settings…",
+        "ro": "EMStudio ▸ Settings…",
+        "fr": "EMStudio ▸ Settings…"
+      },
+      "surfaces": {
+        "mac": [
+          "native"
+        ]
+      },
+      "accel": "CmdOrCtrl+,",
+      "accel_not_on_web": false,
+      "shortcut": {
+        "mac": "⌘,",
+        "pc": "Ctrl+,"
+      },
+      "keymap": {
+        "id": "settings",
+        "keys": "⌘,",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "app",
+        "label_key": "keys.settings",
+        "label": {
+          "en": "Settings",
+          "it": "Impostazioni",
+          "de": "Einstellungen"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 24
+        }
+      },
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 122
+      },
+      "same_button_as": [
+        "settingsHelp"
+      ]
+    },
+    {
+      "id": "services",
+      "page": "services",
+      "kind": "os",
+      "command_id": null,
+      "label_key": "menu.services",
+      "label": {
+        "en": "Services",
+        "it": "Servizi"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "os_item": "services",
+      "menu": "app",
+      "menu_path": {
+        "en": "EMStudio ▸ Services",
+        "it": "EMStudio ▸ Servizi",
+        "de": "EMStudio ▸ Services",
+        "el": "EMStudio ▸ Services",
+        "he": "EMStudio ▸ Services",
+        "es": "EMStudio ▸ Services",
+        "pl": "EMStudio ▸ Services",
+        "ro": "EMStudio ▸ Services",
+        "fr": "EMStudio ▸ Services"
+      },
+      "surfaces": {
+        "mac": [
+          "native"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 124
+      }
+    },
+    {
+      "id": "hide",
+      "page": "hide",
+      "kind": "os",
+      "command_id": null,
+      "label_key": "menu.hide",
+      "label": {
+        "en": "Hide EMStudio",
+        "it": "Nascondi EMStudio"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "os_item": "hide",
+      "menu": "app",
+      "menu_path": {
+        "en": "EMStudio ▸ Hide EMStudio",
+        "it": "EMStudio ▸ Nascondi EMStudio",
+        "de": "EMStudio ▸ Hide EMStudio",
+        "el": "EMStudio ▸ Hide EMStudio",
+        "he": "EMStudio ▸ Hide EMStudio",
+        "es": "EMStudio ▸ Hide EMStudio",
+        "pl": "EMStudio ▸ Hide EMStudio",
+        "ro": "EMStudio ▸ Hide EMStudio",
+        "fr": "EMStudio ▸ Hide EMStudio"
+      },
+      "surfaces": {
+        "mac": [
+          "native"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 126
+      }
+    },
+    {
+      "id": "hideOthers",
+      "page": "hideOthers",
+      "kind": "os",
+      "command_id": null,
+      "label_key": "menu.hideOthers",
+      "label": {
+        "en": "Hide Others",
+        "it": "Nascondi altre"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "os_item": "hideOthers",
+      "menu": "app",
+      "menu_path": {
+        "en": "EMStudio ▸ Hide Others",
+        "it": "EMStudio ▸ Nascondi altre",
+        "de": "EMStudio ▸ Hide Others",
+        "el": "EMStudio ▸ Hide Others",
+        "he": "EMStudio ▸ Hide Others",
+        "es": "EMStudio ▸ Hide Others",
+        "pl": "EMStudio ▸ Hide Others",
+        "ro": "EMStudio ▸ Hide Others",
+        "fr": "EMStudio ▸ Hide Others"
+      },
+      "surfaces": {
+        "mac": [
+          "native"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 127
+      }
+    },
+    {
+      "id": "showAll",
+      "page": "showAll",
+      "kind": "os",
+      "command_id": null,
+      "label_key": "menu.showAll",
+      "label": {
+        "en": "Show All",
+        "it": "Mostra tutte"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "os_item": "showAll",
+      "menu": "app",
+      "menu_path": {
+        "en": "EMStudio ▸ Show All",
+        "it": "EMStudio ▸ Mostra tutte",
+        "de": "EMStudio ▸ Show All",
+        "el": "EMStudio ▸ Show All",
+        "he": "EMStudio ▸ Show All",
+        "es": "EMStudio ▸ Show All",
+        "pl": "EMStudio ▸ Show All",
+        "ro": "EMStudio ▸ Show All",
+        "fr": "EMStudio ▸ Show All"
+      },
+      "surfaces": {
+        "mac": [
+          "native"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 128
+      }
+    },
+    {
+      "id": "quit",
+      "page": "quit",
+      "kind": "os",
+      "command_id": null,
+      "label_key": "menu.quit",
+      "label": {
+        "en": "Quit EMStudio",
+        "it": "Esci da EMStudio"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "os_item": "quit",
+      "menu": "app",
+      "menu_path": {
+        "en": "EMStudio ▸ Quit EMStudio",
+        "it": "EMStudio ▸ Esci da EMStudio",
+        "de": "EMStudio ▸ Quit EMStudio",
+        "el": "EMStudio ▸ Quit EMStudio",
+        "he": "EMStudio ▸ Quit EMStudio",
+        "es": "EMStudio ▸ Quit EMStudio",
+        "pl": "EMStudio ▸ Quit EMStudio",
+        "ro": "EMStudio ▸ Quit EMStudio",
+        "fr": "EMStudio ▸ Quit EMStudio"
+      },
+      "surfaces": {
+        "mac": [
+          "native"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 130
+      }
+    },
+    {
+      "id": "new",
+      "page": "new",
+      "kind": "menu",
+      "command_id": "new",
+      "label_key": "toolbar.new",
+      "label": {
+        "en": "New",
+        "it": "Nuovo",
+        "de": "Neu",
+        "el": "Νέο",
+        "he": "חדש",
+        "es": "Nuevo",
+        "pl": "Nowy",
+        "ro": "Nou",
+        "fr": "Nouveau"
+      },
+      "title_key": "menu.newTitle",
+      "title": {
+        "en": "New empty .em.json",
+        "it": "Nuovo .em.json vuoto",
+        "de": "Neue leere .em.json"
+      },
+      "button": "btn-new",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ New",
+        "it": "File ▸ Nuovo",
+        "de": "Datei ▸ Neu",
+        "el": "Αρχείο ▸ Νέο",
+        "he": "קובץ ▸ חדש",
+        "es": "Archivo ▸ Nuevo",
+        "pl": "Plik ▸ Nowy",
+        "ro": "Fișier ▸ Nou",
+        "fr": "Fichier ▸ Nouveau"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": "CmdOrCtrl+N",
+      "accel_not_on_web": false,
+      "shortcut": {
+        "mac": "⌘N",
+        "pc": "Ctrl+N"
+      },
+      "keymap": {
+        "id": "new",
+        "keys": "⌘N",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "app",
+        "label_key": "keys.new",
+        "label": {
+          "en": "New graph",
+          "it": "Nuovo grafo",
+          "de": "Neuer Graph"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 21
+        }
+      },
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 138
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "newProject",
+      "page": "newProject",
+      "kind": "menu",
+      "command_id": "newProject",
+      "label_key": "fs.newProject",
+      "label": {
+        "en": "New EM project…",
+        "it": "Nuovo progetto EM…"
+      },
+      "title_key": "fs.newProjectMenuTitle",
+      "title": {
+        "en": "Make the folders of a new EM project (the EM standard tree) in a folder you choose",
+        "it": "Crea le cartelle di un nuovo progetto EM (l'albero standard EM) in una cartella che scegli"
+      },
+      "button": "btn-new-project",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ New EM project…",
+        "it": "File ▸ Nuovo progetto EM…",
+        "de": "Datei ▸ New EM project…",
+        "el": "Αρχείο ▸ New EM project…",
+        "he": "קובץ ▸ New EM project…",
+        "es": "Archivo ▸ New EM project…",
+        "pl": "Plik ▸ New EM project…",
+        "ro": "Fișier ▸ New EM project…",
+        "fr": "Fichier ▸ New EM project…"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 141
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "openProject",
+      "page": "openProject",
+      "kind": "menu",
+      "command_id": "openProject",
+      "label_key": "fs.openProject",
+      "label": {
+        "en": "Open project…",
+        "it": "Apri progetto…"
+      },
+      "title_key": "fs.openProjectTitle",
+      "title": {
+        "en": "Opens a project's folder and the em.json in its EM/",
+        "it": "Apre la cartella di un progetto e l'em.json nella sua EM/"
+      },
+      "button": "btn-open-project",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ Open project…",
+        "it": "File ▸ Apri progetto…",
+        "de": "Datei ▸ Open project…",
+        "el": "Αρχείο ▸ Open project…",
+        "he": "קובץ ▸ Open project…",
+        "es": "Archivo ▸ Open project…",
+        "pl": "Plik ▸ Open project…",
+        "ro": "Fișier ▸ Open project…",
+        "fr": "Fichier ▸ Open project…"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 143
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "reorderProject",
+      "page": "reorderProject",
+      "kind": "menu",
+      "command_id": "reorderProject",
+      "label_key": "fs.reorderItem",
+      "label": {
+        "en": "Reorder by the standard…",
+        "it": "Riordina secondo lo standard…"
+      },
+      "title_key": "fs.reorderItemTitle",
+      "title": {
+        "en": "Shows the plan for the open project's folder (the folders to make, the files to move) and asks",
+        "it": "Mostra il piano per la cartella del progetto aperto (le cartelle da creare, i file da spostare) e chiede"
+      },
+      "button": "btn-reorder-project",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ Reorder by the standard…",
+        "it": "File ▸ Riordina secondo lo standard…",
+        "de": "Datei ▸ Reorder by the standard…",
+        "el": "Αρχείο ▸ Reorder by the standard…",
+        "he": "קובץ ▸ Reorder by the standard…",
+        "es": "Archivo ▸ Reorder by the standard…",
+        "pl": "Plik ▸ Reorder by the standard…",
+        "ro": "Fișier ▸ Reorder by the standard…",
+        "fr": "Fichier ▸ Reorder by the standard…"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 144
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "closeProject",
+      "page": "closeProject",
+      "kind": "menu",
+      "command_id": "closeProject",
+      "label_key": "fs.closeProject",
+      "label": {
+        "en": "Close the project",
+        "it": "Chiudi il progetto"
+      },
+      "title_key": "fs.closeProjectTitle",
+      "title": {
+        "en": "Closes every file of the project: the Shelf goes with it",
+        "it": "Chiude tutti i file del progetto: lo Scaffale va con lui"
+      },
+      "button": "btn-close-project",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ Close the project",
+        "it": "File ▸ Chiudi il progetto",
+        "de": "Datei ▸ Close the project",
+        "el": "Αρχείο ▸ Close the project",
+        "he": "קובץ ▸ Close the project",
+        "es": "Archivo ▸ Close the project",
+        "pl": "Plik ▸ Close the project",
+        "ro": "Fișier ▸ Close the project",
+        "fr": "Fichier ▸ Close the project"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 145
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "revealDoc",
+      "page": "revealDoc",
+      "kind": "menu",
+      "command_id": "revealDoc",
+      "label_key": "fs.revealDoc",
+      "label": {
+        "en": "Open the project folder",
+        "it": "Apri la cartella del progetto"
+      },
+      "title_key": "fs.revealDocTitle",
+      "title": {
+        "en": "Shows the folder of the active .em.json in the Finder / Explorer / file manager, the file selected where the system allows it (in a browser alone: the path, copied)",
+        "it": "Mostra la cartella dell'.em.json attivo nel Finder / Esplora file / gestore dei file, con il file selezionato dove il sistema lo permette (nel solo browser: il percorso, copiato)"
+      },
+      "button": "btn-reveal-doc",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ Open the project folder",
+        "it": "File ▸ Apri la cartella del progetto",
+        "de": "Datei ▸ Open the project folder",
+        "el": "Αρχείο ▸ Open the project folder",
+        "he": "קובץ ▸ Open the project folder",
+        "es": "Archivo ▸ Open the project folder",
+        "pl": "Plik ▸ Open the project folder",
+        "ro": "Fișier ▸ Open the project folder",
+        "fr": "Fichier ▸ Open the project folder"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 147
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "open",
+      "page": "open",
+      "kind": "menu",
+      "command_id": "open",
+      "label_key": "toolbar.open",
+      "label": {
+        "en": "Open…",
+        "it": "Apri…",
+        "de": "Öffnen…",
+        "el": "Άνοιγμα…",
+        "he": "פתיחה…",
+        "es": "Abrir…",
+        "pl": "Otwórz…",
+        "ro": "Deschide…",
+        "fr": "Ouvrir…"
+      },
+      "title_key": "menu.openTitle",
+      "title": {
+        "en": "Open an .em.json file",
+        "it": "Apri un file .em.json",
+        "de": "Eine .em.json-Datei öffnen"
+      },
+      "button": "btn-open",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ Open…",
+        "it": "File ▸ Apri…",
+        "de": "Datei ▸ Öffnen…",
+        "el": "Αρχείο ▸ Άνοιγμα…",
+        "he": "קובץ ▸ פתיחה…",
+        "es": "Archivo ▸ Abrir…",
+        "pl": "Plik ▸ Otwórz…",
+        "ro": "Fișier ▸ Deschide…",
+        "fr": "Fichier ▸ Ouvrir…"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": "CmdOrCtrl+O",
+      "accel_not_on_web": false,
+      "shortcut": {
+        "mac": "⌘O",
+        "pc": "Ctrl+O"
+      },
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 148
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "openReplace",
+      "page": "openReplace",
+      "kind": "menu",
+      "command_id": "openReplace",
+      "label_key": "toolbar.openReplace",
+      "label": {
+        "en": "Open in place of the open files…",
+        "it": "Apri al posto dei file aperti…"
+      },
+      "title_key": "menu.openReplaceTitle",
+      "title": {
+        "en": "Choose a file, then close the open ones (asking for those with unsaved changes) and open it",
+        "it": "Scegli un file, poi chiudi quelli aperti (chiedendo per quelli con modifiche non salvate) e aprilo"
+      },
+      "button": "btn-open-replace",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ Open in place of the open files…",
+        "it": "File ▸ Apri al posto dei file aperti…",
+        "de": "Datei ▸ Open in place of the open files…",
+        "el": "Αρχείο ▸ Open in place of the open files…",
+        "he": "קובץ ▸ Open in place of the open files…",
+        "es": "Archivo ▸ Open in place of the open files…",
+        "pl": "Plik ▸ Open in place of the open files…",
+        "ro": "Fișier ▸ Open in place of the open files…",
+        "fr": "Fichier ▸ Open in place of the open files…"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 150
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "close",
+      "page": "close",
+      "kind": "menu",
+      "command_id": "close",
+      "label_key": "toolbar.close",
+      "label": {
+        "en": "Close",
+        "it": "Chiudi"
+      },
+      "title_key": "menu.closeTitle",
+      "title": {
+        "en": "Close the active document (asking to save it if needed) and go back to the start screen",
+        "it": "Chiudi il documento attivo (chiedendo di salvarlo se serve) e torna alla schermata iniziale"
+      },
+      "button": "btn-close-doc",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ Close",
+        "it": "File ▸ Chiudi",
+        "de": "Datei ▸ Close",
+        "el": "Αρχείο ▸ Close",
+        "he": "קובץ ▸ Close",
+        "es": "Archivo ▸ Close",
+        "pl": "Plik ▸ Close",
+        "ro": "Fișier ▸ Close",
+        "fr": "Fichier ▸ Close"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": "CmdOrCtrl+W",
+      "accel_not_on_web": true,
+      "shortcut": {
+        "mac": "⌘W",
+        "pc": "Ctrl+W"
+      },
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 151
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "save",
+      "page": "save",
+      "kind": "menu",
+      "command_id": "save",
+      "label_key": "toolbar.save",
+      "label": {
+        "en": "Save",
+        "it": "Salva",
+        "de": "Speichern",
+        "el": "Αποθήκευση",
+        "he": "שמירה",
+        "es": "Guardar",
+        "pl": "Zapisz",
+        "ro": "Salvează",
+        "fr": "Enregistrer"
+      },
+      "title_key": "menu.saveTitle",
+      "title": {
+        "en": "Save .em.json (⌘S)",
+        "it": "Salva .em.json (⌘S)",
+        "de": ".em.json speichern (⌘S)"
+      },
+      "button": "btn-save",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ Save",
+        "it": "File ▸ Salva",
+        "de": "Datei ▸ Speichern",
+        "el": "Αρχείο ▸ Αποθήκευση",
+        "he": "קובץ ▸ שמירה",
+        "es": "Archivo ▸ Guardar",
+        "pl": "Plik ▸ Zapisz",
+        "ro": "Fișier ▸ Salvează",
+        "fr": "Fichier ▸ Enregistrer"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": "CmdOrCtrl+S",
+      "accel_not_on_web": false,
+      "shortcut": {
+        "mac": "⌘S",
+        "pc": "Ctrl+S"
+      },
+      "keymap": {
+        "id": "save",
+        "keys": "⌘S",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "app",
+        "label_key": "keys.save",
+        "label": {
+          "en": "Save",
+          "it": "Salva",
+          "de": "Speichern"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 22
+        }
+      },
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 153
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "saveAs",
+      "page": "saveAs",
+      "kind": "menu",
+      "command_id": "saveAs",
+      "label_key": "toolbar.saveAs",
+      "label": {
+        "en": "Save As…",
+        "it": "Salva come…",
+        "de": "Speichern unter…",
+        "el": "Αποθήκευση ως…",
+        "he": "שמירה בשם…",
+        "es": "Guardar como…",
+        "pl": "Zapisz jako…",
+        "ro": "Salvează ca…",
+        "fr": "Enregistrer sous…"
+      },
+      "title_key": "menu.saveAsTitle",
+      "title": {
+        "en": "Save .em.json to a new file (⇧⌘S)",
+        "it": "Salva .em.json in un file nuovo (⇧⌘S)",
+        "de": ".em.json in eine neue Datei speichern (⇧⌘S)"
+      },
+      "button": "btn-save-as",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ Save As…",
+        "it": "File ▸ Salva come…",
+        "de": "Datei ▸ Speichern unter…",
+        "el": "Αρχείο ▸ Αποθήκευση ως…",
+        "he": "קובץ ▸ שמירה בשם…",
+        "es": "Archivo ▸ Guardar como…",
+        "pl": "Plik ▸ Zapisz jako…",
+        "ro": "Fișier ▸ Salvează ca…",
+        "fr": "Fichier ▸ Enregistrer sous…"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": "CmdOrCtrl+Shift+S",
+      "accel_not_on_web": false,
+      "shortcut": {
+        "mac": "⇧⌘S",
+        "pc": "Ctrl+Shift+S"
+      },
+      "keymap": {
+        "id": "saveAs",
+        "keys": "⇧⌘S",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "app",
+        "label_key": "keys.saveAs",
+        "label": {
+          "en": "Save as…",
+          "it": "Salva con nome…",
+          "de": "Speichern unter…"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 23
+        }
+      },
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 154
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "saveAll",
+      "page": "saveAll",
+      "kind": "menu",
+      "command_id": "saveAll",
+      "label_key": "toolbar.saveAll",
+      "label": {
+        "en": "Save all",
+        "it": "Salva tutto"
+      },
+      "title_key": "menu.saveAllTitle",
+      "title": {
+        "en": "Save every file with unsaved changes (⌥⌘S)",
+        "it": "Salva ogni file con modifiche non salvate (⌥⌘S)"
+      },
+      "button": "btn-save-all",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ Save all",
+        "it": "File ▸ Salva tutto",
+        "de": "Datei ▸ Save all",
+        "el": "Αρχείο ▸ Save all",
+        "he": "קובץ ▸ Save all",
+        "es": "Archivo ▸ Save all",
+        "pl": "Plik ▸ Save all",
+        "ro": "Fișier ▸ Save all",
+        "fr": "Fichier ▸ Save all"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": "CmdOrCtrl+Alt+S",
+      "accel_not_on_web": false,
+      "shortcut": {
+        "mac": "⌥⌘S",
+        "pc": "Ctrl+Alt+S"
+      },
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 155
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "pin",
+      "page": "pin",
+      "kind": "menu",
+      "command_id": "pin",
+      "label_key": "version.pin",
+      "label": {
+        "en": "Pin version…",
+        "it": "Fissa versione…"
+      },
+      "title_key": "version.pinTitle",
+      "title": {
+        "en": "Freeze the project as a citable snapshot. The DOI is minted by the Catalog; this is the stable thing it points at.",
+        "it": "Congela il progetto come istantanea citabile. Il DOI lo conia il Catalog; questa è la cosa stabile a cui punta."
+      },
+      "button": "btn-pin-version",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ Pin version…",
+        "it": "File ▸ Fissa versione…",
+        "de": "Datei ▸ Pin version…",
+        "el": "Αρχείο ▸ Pin version…",
+        "he": "קובץ ▸ Pin version…",
+        "es": "Archivo ▸ Pin version…",
+        "pl": "Plik ▸ Pin version…",
+        "ro": "Fișier ▸ Pin version…",
+        "fr": "Fichier ▸ Pin version…"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 156
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "door",
+      "page": "door",
+      "kind": "menu",
+      "command_id": "door",
+      "label_key": "door.menu",
+      "label": {
+        "en": "Porta dentro…",
+        "it": "Porta dentro…"
+      },
+      "title_key": "door.menuHint",
+      "title": {
+        "en": "Bring files into the graph as part of a document: what each is, the document, its date, the epoch it represents",
+        "it": "Porta i file nel grafo come parte di un documento: che cos'è ciascuno, il documento, la sua data, l'epoca che rappresenta"
+      },
+      "button": "btn-porta-dentro",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ Porta dentro…",
+        "it": "File ▸ Porta dentro…",
+        "de": "Datei ▸ Porta dentro…",
+        "el": "Αρχείο ▸ Porta dentro…",
+        "he": "קובץ ▸ Porta dentro…",
+        "es": "Archivo ▸ Porta dentro…",
+        "pl": "Plik ▸ Porta dentro…",
+        "ro": "Fișier ▸ Porta dentro…",
+        "fr": "Fichier ▸ Porta dentro…"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 159
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "doorFolder",
+      "page": "doorFolder",
+      "kind": "menu",
+      "command_id": "doorFolder",
+      "label_key": "door.folderMenu",
+      "label": {
+        "en": "Porta dentro una cartella…",
+        "it": "Porta dentro una cartella…"
+      },
+      "title_key": "door.folderMenuHint",
+      "title": {
+        "en": "Bring a folder in — a stack of geophysical slices, say — through the add-on that reads folders",
+        "it": "Porta dentro una cartella — una pila di fette geofisiche, per esempio — con il componente aggiuntivo che legge le cartelle"
+      },
+      "button": "btn-porta-dentro-cartella",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ Porta dentro una cartella…",
+        "it": "File ▸ Porta dentro una cartella…",
+        "de": "Datei ▸ Porta dentro una cartella…",
+        "el": "Αρχείο ▸ Porta dentro una cartella…",
+        "he": "קובץ ▸ Porta dentro una cartella…",
+        "es": "Archivo ▸ Porta dentro una cartella…",
+        "pl": "Plik ▸ Porta dentro una cartella…",
+        "ro": "Fișier ▸ Porta dentro una cartella…",
+        "fr": "Fichier ▸ Porta dentro una cartella…"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 161
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "georef",
+      "page": "georef",
+      "kind": "menu",
+      "command_id": "georef",
+      "label_key": "gr.menu",
+      "label": {
+        "en": "Georeferencing…",
+        "it": "Georeferenziazione…"
+      },
+      "title_key": "gr.menuTitle",
+      "title": {
+        "en": "The coordinate system of each graph of the file, and of its models",
+        "it": "Il sistema di coordinate di ciascun grafo del file, e dei suoi modelli"
+      },
+      "button": "btn-georef",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ Georeferencing…",
+        "it": "File ▸ Georeferenziazione…",
+        "de": "Datei ▸ Georeferencing…",
+        "el": "Αρχείο ▸ Georeferencing…",
+        "he": "קובץ ▸ Georeferencing…",
+        "es": "Archivo ▸ Georeferencing…",
+        "pl": "Plik ▸ Georeferencing…",
+        "ro": "Fișier ▸ Georeferencing…",
+        "fr": "Fichier ▸ Georeferencing…"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 163
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "importGraphml",
+      "page": "importGraphml",
+      "kind": "menu",
+      "command_id": "importGraphml",
+      "label_key": "toolbar.importGraphmlItem",
+      "label": {
+        "en": "GraphML…",
+        "it": "GraphML…",
+        "de": "GraphML…"
+      },
+      "title_key": "toolbar.importGraphmlTitle",
+      "title": {
+        "en": "Import a yEd GraphML file (needs the local bridge)",
+        "it": "Importa un file GraphML di yEd (serve il bridge locale)",
+        "de": "Eine yEd-GraphML-Datei importieren (benötigt die lokale Bridge)"
+      },
+      "button": "btn-import-graphml",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ Import ▸ GraphML…",
+        "it": "File ▸ Importa ▸ GraphML…",
+        "de": "Datei ▸ Importieren ▸ GraphML…",
+        "el": "Αρχείο ▸ Import ▸ GraphML…",
+        "he": "קובץ ▸ Import ▸ GraphML…",
+        "es": "Archivo ▸ Import ▸ GraphML…",
+        "pl": "Plik ▸ Import ▸ GraphML…",
+        "ro": "Fișier ▸ Import ▸ GraphML…",
+        "fr": "Fichier ▸ Import ▸ GraphML…"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 165
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "importMapping",
+      "page": "importMapping",
+      "kind": "menu",
+      "command_id": "importMapping",
+      "label_key": "impmap.menu",
+      "label": {
+        "en": "Table with a mapping…",
+        "it": "Tabella con mappatura…",
+        "de": "Tabelle mit Zuordnung…"
+      },
+      "title_key": "impmap.menuTitle",
+      "title": {
+        "en": "Read a table or an XML through a mapping: into a new graph, or onto this one",
+        "it": "Leggi una tabella o un XML con una mappatura: in un grafo nuovo, o su questo",
+        "de": "Eine Tabelle oder ein XML über eine Zuordnung lesen: in einen neuen Graphen oder in diesen"
+      },
+      "button": "btn-import-mapping",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ Import ▸ Table with a mapping…",
+        "it": "File ▸ Importa ▸ Tabella con mappatura…",
+        "de": "Datei ▸ Importieren ▸ Tabelle mit Zuordnung…",
+        "el": "Αρχείο ▸ Import ▸ Table with a mapping…",
+        "he": "קובץ ▸ Import ▸ Table with a mapping…",
+        "es": "Archivo ▸ Import ▸ Table with a mapping…",
+        "pl": "Plik ▸ Import ▸ Table with a mapping…",
+        "ro": "Fișier ▸ Import ▸ Table with a mapping…",
+        "fr": "Fichier ▸ Import ▸ Table with a mapping…"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 166
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "exportSvg",
+      "page": "exportSvg",
+      "kind": "menu",
+      "command_id": "exportSvg",
+      "label_key": "menu.svgItem",
+      "label": {
+        "en": "SVG",
+        "it": "SVG"
+      },
+      "title_key": "menu.svgTitle",
+      "title": {
+        "en": "Export the current view as SVG",
+        "it": "Esporta la vista corrente come SVG",
+        "de": "Die aktuelle Ansicht als SVG exportieren"
+      },
+      "button": "btn-svg",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ Export ▸ SVG",
+        "it": "File ▸ Esporta ▸ SVG",
+        "de": "Datei ▸ Exportieren ▸ SVG",
+        "el": "Αρχείο ▸ Εξαγωγή ▸ SVG",
+        "he": "קובץ ▸ ייצוא ▸ SVG",
+        "es": "Archivo ▸ Exportar ▸ SVG",
+        "pl": "Plik ▸ Eksport ▸ SVG",
+        "ro": "Fișier ▸ Export ▸ SVG",
+        "fr": "Fichier ▸ Exporter ▸ SVG"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 169
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "exportTtl",
+      "page": "exportTtl",
+      "kind": "menu",
+      "command_id": "exportTtl",
+      "label_key": "menu.ttlItem",
+      "label": {
+        "en": "Turtle (.ttl)",
+        "it": "Turtle (.ttl)"
+      },
+      "title_key": "menu.ttlTitle",
+      "title": {
+        "en": "Export as RDF/CIDOC Turtle (.ttl) via the s3Dgraphy projection",
+        "it": "Esporta come Turtle RDF/CIDOC (.ttl) con la proiezione di s3Dgraphy",
+        "de": "Als RDF/CIDOC-Turtle (.ttl) über die s3Dgraphy-Projektion exportieren"
+      },
+      "button": "btn-ttl",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ Export ▸ Turtle (.ttl)",
+        "it": "File ▸ Esporta ▸ Turtle (.ttl)",
+        "de": "Datei ▸ Exportieren ▸ Turtle (.ttl)",
+        "el": "Αρχείο ▸ Εξαγωγή ▸ Turtle (.ttl)",
+        "he": "קובץ ▸ ייצוא ▸ Turtle (.ttl)",
+        "es": "Archivo ▸ Exportar ▸ Turtle (.ttl)",
+        "pl": "Plik ▸ Eksport ▸ Turtle (.ttl)",
+        "ro": "Fișier ▸ Export ▸ Turtle (.ttl)",
+        "fr": "Fichier ▸ Exporter ▸ Turtle (.ttl)"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 170
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "printSheets",
+      "page": "printSheets",
+      "kind": "menu",
+      "command_id": "printSheets",
+      "label_key": "skp.menu",
+      "label": {
+        "en": "Print sheets…",
+        "it": "Stampa schede…"
+      },
+      "title_key": "skp.menuTitle",
+      "title": {
+        "en": "Print the recording sheets of the graph: all, the selection, or those the criteria keep (type, epoch, activity, state, numbers, words)",
+        "it": "Stampa le schede di rilevamento del grafo: tutte, la selezione, o quelle che i criteri tengono (tipo, epoca, attività, stato, numeri, parole)"
+      },
+      "button": "btn-print-sheets",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ Print sheets…",
+        "it": "File ▸ Stampa schede…",
+        "de": "Datei ▸ Print sheets…",
+        "el": "Αρχείο ▸ Print sheets…",
+        "he": "קובץ ▸ Print sheets…",
+        "es": "Archivo ▸ Print sheets…",
+        "pl": "Plik ▸ Print sheets…",
+        "ro": "Fișier ▸ Print sheets…",
+        "fr": "Fichier ▸ Print sheets…"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 173
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "integrate",
+      "page": "integrate",
+      "kind": "menu",
+      "command_id": "integrate",
+      "label_key": "container.addToProject",
+      "label": {
+        "en": "Integrate into this file…",
+        "it": "Integra in questo file…"
+      },
+      "title_key": "container.addToProjectTitle",
+      "title": {
+        "en": "Merge another emj's graphs into the active graph's file (shared nodes merge by UUID — offline, no server)",
+        "it": "Fonde i grafi di un altro emj nel file del grafo attivo (i nodi condivisi si fondono per UUID — offline, nessun server)"
+      },
+      "button": "btn-add-project",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ Integrate into this file…",
+        "it": "File ▸ Integra in questo file…",
+        "de": "Datei ▸ Integrate into this file…",
+        "el": "Αρχείο ▸ Integrate into this file…",
+        "he": "קובץ ▸ Integrate into this file…",
+        "es": "Archivo ▸ Integrate into this file…",
+        "pl": "Plik ▸ Integrate into this file…",
+        "ro": "Fișier ▸ Integrate into this file…",
+        "fr": "Fichier ▸ Integrate into this file…"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 174
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "relocate",
+      "page": "relocate",
+      "kind": "menu",
+      "command_id": "relocate",
+      "label_key": "fs.relocate",
+      "label": {
+        "en": "Find missing files…",
+        "it": "Ritrova i file…"
+      },
+      "title_key": "fs.relocateTitle",
+      "title": {
+        "en": "Look in a folder you choose for the files this document cannot find — by their sha256, else by name and size — and rewrite their paths relative to the em.json. One undo.",
+        "it": "Cerca in una cartella che scegli i file che questo documento non trova — per sha256, altrimenti per nome e dimensione — e riscrivi i loro percorsi relativi all'em.json. Un annulla."
+      },
+      "button": "btn-relocate-files",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ Find missing files…",
+        "it": "File ▸ Ritrova i file…",
+        "de": "Datei ▸ Find missing files…",
+        "el": "Αρχείο ▸ Find missing files…",
+        "he": "קובץ ▸ Find missing files…",
+        "es": "Archivo ▸ Find missing files…",
+        "pl": "Plik ▸ Find missing files…",
+        "ro": "Fișier ▸ Find missing files…",
+        "fr": "Fichier ▸ Find missing files…"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 176
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "collect",
+      "page": "collect",
+      "kind": "menu",
+      "command_id": "collect",
+      "label_key": "fs.collect",
+      "label": {
+        "en": "Collect resources…",
+        "it": "Raccogli le risorse…"
+      },
+      "title_key": "fs.collectTitle",
+      "title": {
+        "en": "Copy into the study's folder the files it names outside it (absolute paths, onedrive://, a .blend elsewhere) — only what each needs, every copy checked by sha256 — and rewrite their paths relative to the em.json. Never a move; one undo.",
+        "it": "Copia nella cartella dello studio i file che nomina fuori da essa (percorsi assoluti, onedrive://, un .blend altrove) — solo ciò che serve a ciascuno, ogni copia verificata per sha256 — e riscrivi i loro percorsi relativi all'em.json. Mai uno spostamento; un annulla."
+      },
+      "button": "btn-collect-files",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ Collect resources…",
+        "it": "File ▸ Raccogli le risorse…",
+        "de": "Datei ▸ Collect resources…",
+        "el": "Αρχείο ▸ Collect resources…",
+        "he": "קובץ ▸ Collect resources…",
+        "es": "Archivo ▸ Collect resources…",
+        "pl": "Plik ▸ Collect resources…",
+        "ro": "Fișier ▸ Collect resources…",
+        "fr": "Fichier ▸ Collect resources…"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 178
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "cleanFile",
+      "page": "cleanFile",
+      "kind": "menu",
+      "command_id": "cleanFile",
+      "label_key": "pres.clean",
+      "label": {
+        "en": "Clean the file…",
+        "it": "Pulisci il file…"
+      },
+      "title_key": "pres.cleanTitle",
+      "title": {
+        "en": "Take out of the em.json what is only a way of looking at it (the colour schemes), after showing what goes. The graphs do not change. One undo.",
+        "it": "Togli dall'em.json ciò che è solo un modo di guardarlo (gli schemi colori), dopo aver mostrato cosa va via. I grafi non cambiano. Un annulla."
+      },
+      "button": "btn-clean-file",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ Clean the file…",
+        "it": "File ▸ Pulisci il file…",
+        "de": "Datei ▸ Clean the file…",
+        "el": "Αρχείο ▸ Clean the file…",
+        "he": "קובץ ▸ Clean the file…",
+        "es": "Archivo ▸ Clean the file…",
+        "pl": "Plik ▸ Clean the file…",
+        "ro": "Fișier ▸ Clean the file…",
+        "fr": "Fichier ▸ Clean the file…"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 180
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "createRoom",
+      "page": "createRoom",
+      "kind": "menu",
+      "command_id": "createRoom",
+      "label_key": "room.createItem",
+      "label": {
+        "en": "Create a room…",
+        "it": "Crea una stanza…"
+      },
+      "title_key": "room.createItemTitle",
+      "title": {
+        "en": "A room on this node, yours, empty. Whoever creates it is its owner.",
+        "it": "Una stanza su questo nodo, tua, vuota. Chi la crea ne è proprietario."
+      },
+      "button": "btn-create-room",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ Create a room…",
+        "it": "File ▸ Crea una stanza…",
+        "de": "Datei ▸ Create a room…",
+        "el": "Αρχείο ▸ Create a room…",
+        "he": "קובץ ▸ Create a room…",
+        "es": "Archivo ▸ Create a room…",
+        "pl": "Plik ▸ Create a room…",
+        "ro": "Fișier ▸ Create a room…",
+        "fr": "Fichier ▸ Create a room…"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 182
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "bringIntoRoom",
+      "page": "bringIntoRoom",
+      "kind": "menu",
+      "command_id": "bringIntoRoom",
+      "label_key": "room.bringItem",
+      "label": {
+        "en": "Bring this into a new room…",
+        "it": "Porta questo in una stanza nuova…"
+      },
+      "title_key": "room.bringItemTitle",
+      "title": {
+        "en": "Put the graph you have open on a table on this node. From that moment the live copy is the node's.",
+        "it": "Metti il grafo che hai aperto su un tavolo di questo nodo. Da quel momento la copia viva è quella del nodo."
+      },
+      "button": "btn-bring-into-room",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ Bring this into a new room…",
+        "it": "File ▸ Porta questo in una stanza nuova…",
+        "de": "Datei ▸ Bring this into a new room…",
+        "el": "Αρχείο ▸ Bring this into a new room…",
+        "he": "קובץ ▸ Bring this into a new room…",
+        "es": "Archivo ▸ Bring this into a new room…",
+        "pl": "Plik ▸ Bring this into a new room…",
+        "ro": "Fișier ▸ Bring this into a new room…",
+        "fr": "Fichier ▸ Bring this into a new room…"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 183
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "consolidate",
+      "page": "consolidate",
+      "kind": "menu",
+      "command_id": "consolidate",
+      "label_key": "cons.menu",
+      "label": {
+        "en": "Consolidate for…",
+        "it": "Consolida per…"
+      },
+      "title_key": "cons.menuTitle",
+      "title": {
+        "en": "Archive › Assets for a target: each asset with its versions and textures, what Heriverse, ATON, the web or a phone will load, what is to do, the scene's bars against the bands, the queue. Nothing is written until an action of the queue runs.",
+        "it": "Archivio › Asset per un target: ogni asset con le sue versioni e texture, che cosa caricano Heriverse, ATON, il web o un telefono, che cosa c'è da fare, le barre della scena contro le fasce, la coda. Non scrive nulla finché un'azione della coda non parte."
+      },
+      "button": "btn-consolidate",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ Consolidate for…",
+        "it": "File ▸ Consolida per…",
+        "de": "Datei ▸ Consolidate for…",
+        "el": "Αρχείο ▸ Consolidate for…",
+        "he": "קובץ ▸ Consolidate for…",
+        "es": "Archivo ▸ Consolidate for…",
+        "pl": "Plik ▸ Consolidate for…",
+        "ro": "Fișier ▸ Consolidate for…",
+        "fr": "Fichier ▸ Consolidate for…"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 186
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "composeFromGraph",
+      "page": "composeFromGraph",
+      "kind": "menu",
+      "command_id": "composeFromGraph",
+      "label_key": "gcomp.menu",
+      "label": {
+        "en": "Compose a .blend from the graph…",
+        "it": "Componi un .blend dal grafo…"
+      },
+      "title_key": "gcomp.menuTitle",
+      "title": {
+        "en": "A working .blend for Blender from what there is on the disk or in the room, with no .blend to start from: a working profile, the containers or epochs; each object carries the graph's tags",
+        "it": "Un .blend di lavoro per Blender da ciò che c'è sul disco o nella stanza, senza un .blend di partenza: un profilo di lavoro, i contenitori o le epoche; ogni oggetto porta i tag del grafo"
+      },
+      "button": "btn-compose-graph",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ Compose a .blend from the graph…",
+        "it": "File ▸ Componi un .blend dal grafo…",
+        "de": "Datei ▸ Compose a .blend from the graph…",
+        "el": "Αρχείο ▸ Compose a .blend from the graph…",
+        "he": "קובץ ▸ Compose a .blend from the graph…",
+        "es": "Archivo ▸ Compose a .blend from the graph…",
+        "pl": "Plik ▸ Compose a .blend from the graph…",
+        "ro": "Fișier ▸ Compose a .blend from the graph…",
+        "fr": "Fichier ▸ Compose a .blend from the graph…"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 187
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "quitFile",
+      "page": "quitFile",
+      "kind": "menu",
+      "command_id": "quitFile",
+      "label_key": "menu.quit",
+      "label": {
+        "en": "Quit EMStudio",
+        "it": "Esci da EMStudio"
+      },
+      "title_key": null,
+      "title": {},
+      "button": "btn-quit",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ Quit EMStudio",
+        "it": "File ▸ Esci da EMStudio",
+        "de": "Datei ▸ Quit EMStudio",
+        "el": "Αρχείο ▸ Quit EMStudio",
+        "he": "קובץ ▸ Quit EMStudio",
+        "es": "Archivo ▸ Quit EMStudio",
+        "pl": "Plik ▸ Quit EMStudio",
+        "ro": "Fișier ▸ Quit EMStudio",
+        "fr": "Fichier ▸ Quit EMStudio"
+      },
+      "surfaces": {
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": "CmdOrCtrl+Q",
+      "accel_not_on_web": false,
+      "shortcut": {
+        "mac": "⌘Q",
+        "pc": "Ctrl+Q"
+      },
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 191
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "undo",
+      "page": "undo",
+      "kind": "menu",
+      "command_id": "undo",
+      "label_key": "toolbar.undoItem",
+      "label": {
+        "en": "Undo",
+        "it": "Annulla"
+      },
+      "title_key": "toolbar.undo",
+      "title": {
+        "en": "Undo",
+        "it": "Annulla",
+        "el": "Αναίρεση",
+        "he": "בטל",
+        "es": "Deshacer",
+        "pl": "Cofnij",
+        "ro": "Anulează",
+        "fr": "Annuler"
+      },
+      "button": "btn-undo",
+      "os_item": null,
+      "menu": "edit",
+      "menu_path": {
+        "en": "Edit ▸ Undo",
+        "it": "Modifica ▸ Annulla",
+        "de": "Edit ▸ Undo",
+        "el": "Edit ▸ Undo",
+        "he": "Edit ▸ Undo",
+        "es": "Edit ▸ Undo",
+        "pl": "Edit ▸ Undo",
+        "ro": "Edit ▸ Undo",
+        "fr": "Edit ▸ Undo"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": {
+        "id": "undo",
+        "keys": "⌘Z",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "app",
+        "label_key": "keys.undo",
+        "label": {
+          "en": "Undo",
+          "it": "Annulla",
+          "de": "Rückgängig"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 27
+        }
+      },
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 201
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "redo",
+      "page": "redo",
+      "kind": "menu",
+      "command_id": "redo",
+      "label_key": "toolbar.redoItem",
+      "label": {
+        "en": "Redo",
+        "it": "Ripristina"
+      },
+      "title_key": "toolbar.redo",
+      "title": {
+        "en": "Redo",
+        "it": "Ripeti",
+        "el": "Επανάληψη",
+        "he": "בצע שוב",
+        "es": "Rehacer",
+        "pl": "Ponów",
+        "ro": "Refă",
+        "fr": "Rétablir"
+      },
+      "button": "btn-redo",
+      "os_item": null,
+      "menu": "edit",
+      "menu_path": {
+        "en": "Edit ▸ Redo",
+        "it": "Modifica ▸ Ripristina",
+        "de": "Edit ▸ Redo",
+        "el": "Edit ▸ Redo",
+        "he": "Edit ▸ Redo",
+        "es": "Edit ▸ Redo",
+        "pl": "Edit ▸ Redo",
+        "ro": "Edit ▸ Redo",
+        "fr": "Edit ▸ Redo"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": {
+        "id": "redo",
+        "keys": "⇧⌘Z",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "app",
+        "label_key": "keys.redo",
+        "label": {
+          "en": "Redo",
+          "it": "Ripeti",
+          "de": "Wiederholen"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 28
+        }
+      },
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 202
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "osUndo",
+      "page": "osUndo",
+      "kind": "os",
+      "command_id": null,
+      "label_key": null,
+      "label": {},
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "os_item": "undo",
+      "menu": "edit",
+      "menu_path": {
+        "en": "Edit",
+        "it": "Modifica",
+        "de": "Edit",
+        "el": "Edit",
+        "he": "Edit",
+        "es": "Edit",
+        "pl": "Edit",
+        "ro": "Edit",
+        "fr": "Edit"
+      },
+      "surfaces": {
+        "mac": [
+          "native"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 203
+      }
+    },
+    {
+      "id": "osRedo",
+      "page": "osRedo",
+      "kind": "os",
+      "command_id": null,
+      "label_key": null,
+      "label": {},
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "os_item": "redo",
+      "menu": "edit",
+      "menu_path": {
+        "en": "Edit",
+        "it": "Modifica",
+        "de": "Edit",
+        "el": "Edit",
+        "he": "Edit",
+        "es": "Edit",
+        "pl": "Edit",
+        "ro": "Edit",
+        "fr": "Edit"
+      },
+      "surfaces": {
+        "mac": [
+          "native"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 203
+      }
+    },
+    {
+      "id": "cut",
+      "page": "cut",
+      "kind": "os",
+      "command_id": null,
+      "label_key": null,
+      "label": {},
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "os_item": "cut",
+      "menu": "edit",
+      "menu_path": {
+        "en": "Edit",
+        "it": "Modifica",
+        "de": "Edit",
+        "el": "Edit",
+        "he": "Edit",
+        "es": "Edit",
+        "pl": "Edit",
+        "ro": "Edit",
+        "fr": "Edit"
+      },
+      "surfaces": {
+        "mac": [
+          "native"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 205
+      }
+    },
+    {
+      "id": "copy",
+      "page": "copy",
+      "kind": "os",
+      "command_id": null,
+      "label_key": null,
+      "label": {},
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "os_item": "copy",
+      "menu": "edit",
+      "menu_path": {
+        "en": "Edit",
+        "it": "Modifica",
+        "de": "Edit",
+        "el": "Edit",
+        "he": "Edit",
+        "es": "Edit",
+        "pl": "Edit",
+        "ro": "Edit",
+        "fr": "Edit"
+      },
+      "surfaces": {
+        "mac": [
+          "native"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 205
+      }
+    },
+    {
+      "id": "paste",
+      "page": "paste",
+      "kind": "os",
+      "command_id": null,
+      "label_key": null,
+      "label": {},
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "os_item": "paste",
+      "menu": "edit",
+      "menu_path": {
+        "en": "Edit",
+        "it": "Modifica",
+        "de": "Edit",
+        "el": "Edit",
+        "he": "Edit",
+        "es": "Edit",
+        "pl": "Edit",
+        "ro": "Edit",
+        "fr": "Edit"
+      },
+      "surfaces": {
+        "mac": [
+          "native"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 205
+      }
+    },
+    {
+      "id": "selectAll",
+      "page": "selectAll",
+      "kind": "os",
+      "command_id": null,
+      "label_key": null,
+      "label": {},
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "os_item": "selectAll",
+      "menu": "edit",
+      "menu_path": {
+        "en": "Edit",
+        "it": "Modifica",
+        "de": "Edit",
+        "el": "Edit",
+        "he": "Edit",
+        "es": "Edit",
+        "pl": "Edit",
+        "ro": "Edit",
+        "fr": "Edit"
+      },
+      "surfaces": {
+        "mac": [
+          "native"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 205
+      }
+    },
+    {
+      "id": "minimize",
+      "page": "minimize",
+      "kind": "os",
+      "command_id": null,
+      "label_key": null,
+      "label": {},
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "os_item": "minimize",
+      "menu": "window",
+      "menu_path": {
+        "en": "Window",
+        "it": "Finestra",
+        "de": "Window",
+        "el": "Window",
+        "he": "Window",
+        "es": "Window",
+        "pl": "Window",
+        "ro": "Window",
+        "fr": "Window"
+      },
+      "surfaces": {
+        "mac": [
+          "native"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 212
+      }
+    },
+    {
+      "id": "maximize",
+      "page": "maximize",
+      "kind": "os",
+      "command_id": null,
+      "label_key": null,
+      "label": {},
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "os_item": "maximize",
+      "menu": "window",
+      "menu_path": {
+        "en": "Window",
+        "it": "Finestra",
+        "de": "Window",
+        "el": "Window",
+        "he": "Window",
+        "es": "Window",
+        "pl": "Window",
+        "ro": "Window",
+        "fr": "Window"
+      },
+      "surfaces": {
+        "mac": [
+          "native"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 212
+      }
+    },
+    {
+      "id": "fullscreen",
+      "page": "fullscreen",
+      "kind": "os",
+      "command_id": null,
+      "label_key": null,
+      "label": {},
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "os_item": "fullscreen",
+      "menu": "window",
+      "menu_path": {
+        "en": "Window",
+        "it": "Finestra",
+        "de": "Window",
+        "el": "Window",
+        "he": "Window",
+        "es": "Window",
+        "pl": "Window",
+        "ro": "Window",
+        "fr": "Window"
+      },
+      "surfaces": {
+        "mac": [
+          "native"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 212
+      }
+    },
+    {
+      "id": "workspaces",
+      "page": "workspaces",
+      "kind": "menu",
+      "command_id": "workspaces",
+      "label_key": "ws.helpMenu",
+      "label": {
+        "en": "Workspaces…",
+        "it": "Spazi di lavoro…",
+        "de": "Arbeitsbereiche…"
+      },
+      "title_key": null,
+      "title": {},
+      "button": "btn-help-workspaces",
+      "os_item": null,
+      "menu": "help",
+      "menu_path": {
+        "en": "Help ▸ Workspaces…",
+        "it": "Aiuto ▸ Spazi di lavoro…",
+        "de": "Help ▸ Arbeitsbereiche…",
+        "el": "Help ▸ Workspaces…",
+        "he": "Help ▸ Workspaces…",
+        "es": "Help ▸ Workspaces…",
+        "pl": "Help ▸ Workspaces…",
+        "ro": "Help ▸ Workspaces…",
+        "fr": "Help ▸ Workspaces…"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 219
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "shortcuts",
+      "page": "shortcuts",
+      "kind": "menu",
+      "command_id": "shortcuts",
+      "label_key": "shortcuts.menu",
+      "label": {
+        "en": "Shortcuts",
+        "it": "Scorciatoie",
+        "de": "Tastenkürzel"
+      },
+      "title_key": null,
+      "title": {},
+      "button": "btn-help-shortcuts",
+      "os_item": null,
+      "menu": "help",
+      "menu_path": {
+        "en": "Help ▸ Shortcuts",
+        "it": "Aiuto ▸ Scorciatoie",
+        "de": "Help ▸ Tastenkürzel",
+        "el": "Help ▸ Shortcuts",
+        "he": "Help ▸ Shortcuts",
+        "es": "Help ▸ Shortcuts",
+        "pl": "Help ▸ Shortcuts",
+        "ro": "Help ▸ Shortcuts",
+        "fr": "Help ▸ Shortcuts"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 220
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "legend",
+      "page": "legend",
+      "kind": "menu",
+      "command_id": "legend",
+      "label_key": "legend.full",
+      "label": {
+        "en": "EM legend",
+        "it": "Legenda EM",
+        "de": "EM-Legende"
+      },
+      "title_key": null,
+      "title": {},
+      "button": "btn-help-legend",
+      "os_item": null,
+      "menu": "help",
+      "menu_path": {
+        "en": "Help ▸ EM legend",
+        "it": "Aiuto ▸ Legenda EM",
+        "de": "Help ▸ EM-Legende",
+        "el": "Help ▸ EM legend",
+        "he": "Help ▸ EM legend",
+        "es": "Help ▸ EM legend",
+        "pl": "Help ▸ EM legend",
+        "ro": "Help ▸ EM legend",
+        "fr": "Help ▸ EM legend"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 221
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "aboutHelp",
+      "page": "aboutHelp",
+      "kind": "menu",
+      "command_id": "aboutHelp",
+      "label_key": "toolbar.about",
+      "label": {
+        "en": "About EMStudio",
+        "it": "Informazioni su EMStudio"
+      },
+      "title_key": null,
+      "title": {},
+      "button": "btn-help-about",
+      "os_item": null,
+      "menu": "help",
+      "menu_path": {
+        "en": "Help ▸ About EMStudio",
+        "it": "Aiuto ▸ Informazioni su EMStudio",
+        "de": "Help ▸ About EMStudio",
+        "el": "Help ▸ About EMStudio",
+        "he": "Help ▸ About EMStudio",
+        "es": "Help ▸ About EMStudio",
+        "pl": "Help ▸ About EMStudio",
+        "ro": "Help ▸ About EMStudio",
+        "fr": "Help ▸ About EMStudio"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 223
+      },
+      "same_button_as": [
+        "about"
+      ]
+    },
+    {
+      "id": "settingsHelp",
+      "page": "settingsHelp",
+      "kind": "menu",
+      "command_id": "settingsHelp",
+      "label_key": "toolbar.settingsItem",
+      "label": {
+        "en": "Settings…",
+        "it": "Impostazioni…"
+      },
+      "title_key": null,
+      "title": {},
+      "button": "btn-settings",
+      "os_item": null,
+      "menu": "help",
+      "menu_path": {
+        "en": "Help ▸ Settings…",
+        "it": "Aiuto ▸ Impostazioni…",
+        "de": "Help ▸ Settings…",
+        "el": "Help ▸ Settings…",
+        "he": "Help ▸ Settings…",
+        "es": "Help ▸ Settings…",
+        "pl": "Help ▸ Settings…",
+        "ro": "Help ▸ Settings…",
+        "fr": "Help ▸ Settings…"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": "CmdOrCtrl+,",
+      "accel_not_on_web": false,
+      "shortcut": {
+        "mac": "⌘,",
+        "pc": "Ctrl+,"
+      },
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 224
+      },
+      "same_button_as": [
+        "settings"
+      ]
+    },
+    {
+      "id": "updatesHelp",
+      "page": "updatesHelp",
+      "kind": "menu",
+      "command_id": "updatesHelp",
+      "label_key": "toolbar.updates",
+      "label": {
+        "en": "Check for updates…",
+        "it": "Cerca aggiornamenti…"
+      },
+      "title_key": null,
+      "title": {},
+      "button": "btn-help-updates",
+      "os_item": null,
+      "menu": "help",
+      "menu_path": {
+        "en": "Help ▸ Check for updates…",
+        "it": "Aiuto ▸ Cerca aggiornamenti…",
+        "de": "Help ▸ Check for updates…",
+        "el": "Help ▸ Check for updates…",
+        "he": "Help ▸ Check for updates…",
+        "es": "Help ▸ Check for updates…",
+        "pl": "Help ▸ Check for updates…",
+        "ro": "Help ▸ Check for updates…",
+        "fr": "Help ▸ Check for updates…"
+      },
+      "surfaces": {
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 225
+      },
+      "same_button_as": [
+        "updates"
+      ]
+    },
+    {
+      "id": "keymap:where",
+      "page": "keymap-where",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.where",
+      "label": {
+        "en": "Where you are",
+        "it": "Dove sei"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "where",
+        "keys": "⇧⌘L",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "app",
+        "label_key": "keys.where",
+        "label": {
+          "en": "Where you are",
+          "it": "Dove sei"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 26
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 26
+      }
+    },
+    {
+      "id": "keymap:add",
+      "page": "keymap-add",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.add",
+      "label": {
+        "en": "Add a node where the pointer is",
+        "it": "Aggiungi un nodo dove sta il puntatore",
+        "de": "Knoten am Zeiger hinzufügen"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "add",
+        "keys": "⇧A",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "app",
+        "label_key": "keys.add",
+        "label": {
+          "en": "Add a node where the pointer is",
+          "it": "Aggiungi un nodo dove sta il puntatore",
+          "de": "Knoten am Zeiger hinzufügen"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 29
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 29
+      }
+    },
+    {
+      "id": "keymap:search",
+      "page": "keymap-search",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.search",
+      "label": {
+        "en": "Search the graph",
+        "it": "Cerca nel grafo",
+        "de": "Im Graphen suchen"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "search",
+        "keys": "/",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "app",
+        "label_key": "keys.search",
+        "label": {
+          "en": "Search the graph",
+          "it": "Cerca nel grafo",
+          "de": "Im Graphen suchen"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 30
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 30
+      }
+    },
+    {
+      "id": "keymap:magnify",
+      "page": "keymap-magnify",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.magnify",
+      "label": {
+        "en": "Magnify the window / restore",
+        "it": "Ingrandisci la finestra / ripristina",
+        "de": "Fenster vergrößern / zurück"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "magnify",
+        "keys": "⌃Space",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "app",
+        "label_key": "keys.magnify",
+        "label": {
+          "en": "Magnify the window / restore",
+          "it": "Ingrandisci la finestra / ripristina",
+          "de": "Fenster vergrößern / zurück"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 31
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 31
+      }
+    },
+    {
+      "id": "keymap:esc",
+      "page": "keymap-esc",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.esc",
+      "label": {
+        "en": "Close a menu, leave a group, deselect",
+        "it": "Chiudi un menu, esci da un gruppo, deseleziona",
+        "de": "Menü schließen, Gruppe verlassen, abwählen"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "esc",
+        "keys": "Esc",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "app",
+        "label_key": "keys.esc",
+        "label": {
+          "en": "Close a menu, leave a group, deselect",
+          "it": "Chiudi un menu, esci da un gruppo, deseleziona",
+          "de": "Menü schließen, Gruppe verlassen, abwählen"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 32
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 32
+      }
+    },
+    {
+      "id": "keymap:delete",
+      "page": "keymap-delete",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.delete",
+      "label": {
+        "en": "Delete the selection (a toast gives it back)",
+        "it": "Elimina la selezione (un avviso la restituisce)",
+        "de": "Auswahl löschen (ein Hinweis gibt sie zurück)"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "delete",
+        "keys": "⌫ · Del",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "graph",
+        "label_key": "keys.delete",
+        "label": {
+          "en": "Delete the selection (a toast gives it back)",
+          "it": "Elimina la selezione (un avviso la restituisce)",
+          "de": "Auswahl löschen (ein Hinweis gibt sie zurück)"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 34
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 34
+      }
+    },
+    {
+      "id": "keymap:undoToast",
+      "page": "keymap-undoToast",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.undoToast",
+      "label": {
+        "en": "The toast's «Undo» puts back what was deleted",
+        "it": "«Annulla» nell'avviso rimette ciò che è stato eliminato",
+        "de": "«Rückgängig» im Hinweis stellt Gelöschtes wieder her"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "undoToast",
+        "keys": null,
+        "gesture_key": "gesture.undoButton",
+        "gesture": {
+          "en": "Undo (toast)",
+          "it": "Annulla (avviso)",
+          "de": "Rückgängig (Hinweis)"
+        },
+        "scope": "graph",
+        "label_key": "keys.undoToast",
+        "label": {
+          "en": "The toast's «Undo» puts back what was deleted",
+          "it": "«Annulla» nell'avviso rimette ciò che è stato eliminato",
+          "de": "«Rückgängig» im Hinweis stellt Gelöschtes wieder her"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 35
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 35
+      }
+    },
+    {
+      "id": "keymap:nudge",
+      "page": "keymap-nudge",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.nudge",
+      "label": {
+        "en": "Nudge the selection by 1 px",
+        "it": "Sposta la selezione di 1 px",
+        "de": "Auswahl um 1 px verschieben"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "nudge",
+        "keys": "← → ↑ ↓",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "graph",
+        "label_key": "keys.nudge",
+        "label": {
+          "en": "Nudge the selection by 1 px",
+          "it": "Sposta la selezione di 1 px",
+          "de": "Auswahl um 1 px verschieben"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 36
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 36
+      }
+    },
+    {
+      "id": "keymap:nudge10",
+      "page": "keymap-nudge10",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.nudge10",
+      "label": {
+        "en": "Nudge by 10 px",
+        "it": "Sposta di 10 px",
+        "de": "Um 10 px verschieben"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "nudge10",
+        "keys": "⇧ ← → ↑ ↓",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "graph",
+        "label_key": "keys.nudge10",
+        "label": {
+          "en": "Nudge by 10 px",
+          "it": "Sposta di 10 px",
+          "de": "Um 10 px verschieben"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 37
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 37
+      }
+    },
+    {
+      "id": "keymap:fit",
+      "page": "keymap-fit",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.fit",
+      "label": {
+        "en": "Fit the graph in the window",
+        "it": "Adatta il grafo alla finestra",
+        "de": "Graph ins Fenster einpassen"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "fit",
+        "keys": "0 · ⇧C",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "graph",
+        "label_key": "keys.fit",
+        "label": {
+          "en": "Fit the graph in the window",
+          "it": "Adatta il grafo alla finestra",
+          "de": "Graph ins Fenster einpassen"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 38
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 38
+      }
+    },
+    {
+      "id": "keymap:back",
+      "page": "keymap-back",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.back",
+      "label": {
+        "en": "Back to the view before the last jump",
+        "it": "Indietro, alla vista prima dell'ultimo salto",
+        "de": "Zurück zur Ansicht vor dem letzten Sprung"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "back",
+        "keys": "⌘[ · ⌥←",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "graph",
+        "label_key": "keys.back",
+        "label": {
+          "en": "Back to the view before the last jump",
+          "it": "Indietro, alla vista prima dell'ultimo salto",
+          "de": "Zurück zur Ansicht vor dem letzten Sprung"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 39
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 39
+      }
+    },
+    {
+      "id": "keymap:zoomIn",
+      "page": "keymap-zoomIn",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.zoomIn",
+      "label": {
+        "en": "Zoom in",
+        "it": "Ingrandisci",
+        "de": "Vergrößern"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "zoomIn",
+        "keys": "+ · =",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "graph",
+        "label_key": "keys.zoomIn",
+        "label": {
+          "en": "Zoom in",
+          "it": "Ingrandisci",
+          "de": "Vergrößern"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 40
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 40
+      }
+    },
+    {
+      "id": "keymap:zoomOut",
+      "page": "keymap-zoomOut",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.zoomOut",
+      "label": {
+        "en": "Zoom out",
+        "it": "Riduci",
+        "de": "Verkleinern"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "zoomOut",
+        "keys": "−",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "graph",
+        "label_key": "keys.zoomOut",
+        "label": {
+          "en": "Zoom out",
+          "it": "Riduci",
+          "de": "Verkleinern"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 41
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 41
+      }
+    },
+    {
+      "id": "keymap:pan",
+      "page": "keymap-pan",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.pan",
+      "label": {
+        "en": "Pan",
+        "it": "Sposta la vista",
+        "de": "Ansicht verschieben"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "pan",
+        "keys": null,
+        "gesture_key": "gesture.spaceDrag",
+        "gesture": {
+          "en": "Space + drag",
+          "it": "Spazio + trascina",
+          "de": "Leertaste + ziehen"
+        },
+        "scope": "graph",
+        "label_key": "keys.pan",
+        "label": {
+          "en": "Pan",
+          "it": "Sposta la vista",
+          "de": "Ansicht verschieben"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 42
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 42
+      }
+    },
+    {
+      "id": "keymap:panMiddle",
+      "page": "keymap-panMiddle",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.panMiddle",
+      "label": {
+        "en": "Pan",
+        "it": "Sposta la vista",
+        "de": "Ansicht verschieben"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "panMiddle",
+        "keys": null,
+        "gesture_key": "gesture.middleDrag",
+        "gesture": {
+          "en": "middle button + drag",
+          "it": "tasto centrale + trascina",
+          "de": "Mittlere Taste + ziehen"
+        },
+        "scope": "graph",
+        "label_key": "keys.panMiddle",
+        "label": {
+          "en": "Pan",
+          "it": "Sposta la vista",
+          "de": "Ansicht verschieben"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 43
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 43
+      }
+    },
+    {
+      "id": "keymap:wheel",
+      "page": "keymap-wheel",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.wheel",
+      "label": {
+        "en": "Zoom at the pointer",
+        "it": "Zoom sul puntatore",
+        "de": "Am Zeiger zoomen"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "wheel",
+        "keys": null,
+        "gesture_key": "gesture.wheel",
+        "gesture": {
+          "en": "wheel",
+          "it": "rotella",
+          "de": "Mausrad"
+        },
+        "scope": "graph",
+        "label_key": "keys.wheel",
+        "label": {
+          "en": "Zoom at the pointer",
+          "it": "Zoom sul puntatore",
+          "de": "Am Zeiger zoomen"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 44
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 44
+      }
+    },
+    {
+      "id": "keymap:click",
+      "page": "keymap-click",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.click",
+      "label": {
+        "en": "Select",
+        "it": "Seleziona",
+        "de": "Auswählen"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "click",
+        "keys": null,
+        "gesture_key": "gesture.click",
+        "gesture": {
+          "en": "click",
+          "it": "clic",
+          "de": "Klick"
+        },
+        "scope": "graph",
+        "label_key": "keys.click",
+        "label": {
+          "en": "Select",
+          "it": "Seleziona",
+          "de": "Auswählen"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 45
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 45
+      }
+    },
+    {
+      "id": "keymap:multi",
+      "page": "keymap-multi",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.multi",
+      "label": {
+        "en": "Add to / remove from the selection",
+        "it": "Aggiungi o togli dalla selezione",
+        "de": "Zur Auswahl hinzufügen / entfernen"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "multi",
+        "keys": null,
+        "gesture_key": "gesture.multiClick",
+        "gesture": {
+          "en": "⇧/⌘ click",
+          "it": "⇧/⌘ clic",
+          "de": "⇧/⌘ Klick"
+        },
+        "scope": "graph",
+        "label_key": "keys.multi",
+        "label": {
+          "en": "Add to / remove from the selection",
+          "it": "Aggiungi o togli dalla selezione",
+          "de": "Zur Auswahl hinzufügen / entfernen"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 46
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 46
+      }
+    },
+    {
+      "id": "keymap:marquee",
+      "page": "keymap-marquee",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.marquee",
+      "label": {
+        "en": "Select with a rectangle",
+        "it": "Seleziona con un rettangolo",
+        "de": "Mit Rechteck auswählen"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "marquee",
+        "keys": null,
+        "gesture_key": "gesture.dragEmpty",
+        "gesture": {
+          "en": "drag on the empty canvas",
+          "it": "trascina sul vuoto",
+          "de": "auf der leeren Fläche ziehen"
+        },
+        "scope": "graph",
+        "label_key": "keys.marquee",
+        "label": {
+          "en": "Select with a rectangle",
+          "it": "Seleziona con un rettangolo",
+          "de": "Mit Rechteck auswählen"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 47
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 47
+      }
+    },
+    {
+      "id": "keymap:dblGroup",
+      "page": "keymap-dblGroup",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.dblGroup",
+      "label": {
+        "en": "Enter a group",
+        "it": "Entra in un gruppo",
+        "de": "Gruppe betreten"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "dblGroup",
+        "keys": null,
+        "gesture_key": "gesture.dblclick",
+        "gesture": {
+          "en": "double-click",
+          "it": "doppio clic",
+          "de": "Doppelklick"
+        },
+        "scope": "graph",
+        "label_key": "keys.dblGroup",
+        "label": {
+          "en": "Enter a group",
+          "it": "Entra in un gruppo",
+          "de": "Gruppe betreten"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 48
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 48
+      }
+    },
+    {
+      "id": "keymap:connect",
+      "page": "keymap-connect",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.connect",
+      "label": {
+        "en": "Connect two nodes",
+        "it": "Collega due nodi",
+        "de": "Zwei Knoten verbinden"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "connect",
+        "keys": null,
+        "gesture_key": "gesture.dragHandle",
+        "gesture": {
+          "en": "drag from the handle",
+          "it": "trascina dalla maniglia",
+          "de": "vom Griff ziehen"
+        },
+        "scope": "graph",
+        "label_key": "keys.connect",
+        "label": {
+          "en": "Connect two nodes",
+          "it": "Collega due nodi",
+          "de": "Zwei Knoten verbinden"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 49
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 49
+      }
+    },
+    {
+      "id": "keymap:connectMenu",
+      "page": "keymap-connectMenu",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.connectMenu",
+      "label": {
+        "en": "Release in the void: add a linked node",
+        "it": "Rilascia nel vuoto: aggiungi un nodo collegato",
+        "de": "Im Leeren loslassen: verbundenen Knoten hinzufügen"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "connectMenu",
+        "keys": null,
+        "gesture_key": "gesture.shiftRelease",
+        "gesture": {
+          "en": "⇧/⌥ release",
+          "it": "⇧/⌥ rilascio",
+          "de": "⇧/⌥ loslassen"
+        },
+        "scope": "graph",
+        "label_key": "keys.connectMenu",
+        "label": {
+          "en": "Release in the void: add a linked node",
+          "it": "Rilascia nel vuoto: aggiungi un nodo collegato",
+          "de": "Im Leeren loslassen: verbundenen Knoten hinzufügen"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 50
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 50
+      }
+    },
+    {
+      "id": "keymap:detach",
+      "page": "keymap-detach",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.detach",
+      "label": {
+        "en": "Drag out of its container",
+        "it": "Trascina fuori dal contenitore",
+        "de": "Aus dem Container ziehen"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "detach",
+        "keys": null,
+        "gesture_key": "gesture.shiftDrag",
+        "gesture": {
+          "en": "⇧ drag",
+          "it": "⇧ trascina",
+          "de": "⇧ ziehen"
+        },
+        "scope": "graph",
+        "label_key": "keys.detach",
+        "label": {
+          "en": "Drag out of its container",
+          "it": "Trascina fuori dal contenitore",
+          "de": "Aus dem Container ziehen"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 51
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 51
+      }
+    },
+    {
+      "id": "keymap:laneOnly",
+      "page": "keymap-laneOnly",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.laneOnly",
+      "label": {
+        "en": "Change only the epoch (lane)",
+        "it": "Cambia solo l'epoca (corsia)",
+        "de": "Nur die Epoche (Bahn) ändern"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "laneOnly",
+        "keys": null,
+        "gesture_key": "gesture.altDrop",
+        "gesture": {
+          "en": "⌥ drop",
+          "it": "⌥ rilascio",
+          "de": "⌥ ablegen"
+        },
+        "scope": "graph",
+        "label_key": "keys.laneOnly",
+        "label": {
+          "en": "Change only the epoch (lane)",
+          "it": "Cambia solo l'epoca (corsia)",
+          "de": "Nur die Epoche (Bahn) ändern"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 52
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 52
+      }
+    },
+    {
+      "id": "keymap:dragEsc",
+      "page": "keymap-dragEsc",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.dragEsc",
+      "label": {
+        "en": "Put back what is being dragged",
+        "it": "Rimetti a posto ciò che trascini",
+        "de": "Gezogenes zurücksetzen"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "dragEsc",
+        "keys": null,
+        "gesture_key": "gesture.escDrag",
+        "gesture": {
+          "en": "Esc while dragging",
+          "it": "Esc mentre trascini",
+          "de": "Esc beim Ziehen"
+        },
+        "scope": "graph",
+        "label_key": "keys.dragEsc",
+        "label": {
+          "en": "Put back what is being dragged",
+          "it": "Rimetti a posto ciò che trascini",
+          "de": "Gezogenes zurücksetzen"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 53
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 53
+      }
+    },
+    {
+      "id": "keymap:rclick",
+      "page": "keymap-rclick",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.rclick",
+      "label": {
+        "en": "The menu of a node or of the empty canvas",
+        "it": "Il menu di un nodo o del canvas vuoto",
+        "de": "Das Menü eines Knotens oder der leeren Fläche"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "rclick",
+        "keys": null,
+        "gesture_key": "gesture.rclick",
+        "gesture": {
+          "en": "right click",
+          "it": "tasto destro",
+          "de": "Rechtsklick"
+        },
+        "scope": "graph",
+        "label_key": "keys.rclick",
+        "label": {
+          "en": "The menu of a node or of the empty canvas",
+          "it": "Il menu di un nodo o del canvas vuoto",
+          "de": "Das Menü eines Knotens oder der leeren Fläche"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 54
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 54
+      }
+    },
+    {
+      "id": "keymap:laneMenu",
+      "page": "keymap-laneMenu",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.laneMenu",
+      "label": {
+        "en": "Reflow the lane, new epoch, check the chronology",
+        "it": "Riordina la corsia, nuova epoca, verifica la cronologia",
+        "de": "Bahn neu ordnen, neue Epoche, Chronologie prüfen"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "laneMenu",
+        "keys": null,
+        "gesture_key": "gesture.rclickLane",
+        "gesture": {
+          "en": "right click on a lane",
+          "it": "tasto destro su una corsia",
+          "de": "Rechtsklick auf eine Bahn"
+        },
+        "scope": "graph",
+        "label_key": "keys.laneMenu",
+        "label": {
+          "en": "Reflow the lane, new epoch, check the chronology",
+          "it": "Riordina la corsia, nuova epoca, verifica la cronologia",
+          "de": "Bahn neu ordnen, neue Epoche, Chronologie prüfen"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 55
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 55
+      }
+    },
+    {
+      "id": "keymap:longPress",
+      "page": "keymap-longPress",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.longPress",
+      "label": {
+        "en": "The add menu, on touch",
+        "it": "Il menu Aggiungi, al tocco",
+        "de": "Das Hinzufügen-Menü, per Touch"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "longPress",
+        "keys": null,
+        "gesture_key": "gesture.longPress",
+        "gesture": {
+          "en": "long press",
+          "it": "pressione lunga",
+          "de": "langes Drücken"
+        },
+        "scope": "graph",
+        "label_key": "keys.longPress",
+        "label": {
+          "en": "The add menu, on touch",
+          "it": "Il menu Aggiungi, al tocco",
+          "de": "Das Hinzufügen-Menü, per Touch"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 56
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 56
+      }
+    },
+    {
+      "id": "keymap:layoutFresh",
+      "page": "keymap-layoutFresh",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.layoutFresh",
+      "label": {
+        "en": "Recompute layout from scratch: a fresh arrangement, the manual one dropped (the only command that moves the nodes)",
+        "it": "Ricalcola layout da capo: una disposizione nuova, senza quella fatta a mano (il solo comando che sposta i nodi)",
+        "de": "Neu anordnen"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "layoutFresh",
+        "keys": null,
+        "gesture_key": "gesture.altLayout",
+        "gesture": {
+          "en": "⌥ Layout",
+          "it": "⌥ Layout",
+          "de": "⌥ Layout"
+        },
+        "scope": "graph",
+        "label_key": "keys.layoutFresh",
+        "label": {
+          "en": "Recompute layout from scratch: a fresh arrangement, the manual one dropped (the only command that moves the nodes)",
+          "it": "Ricalcola layout da capo: una disposizione nuova, senza quella fatta a mano (il solo comando che sposta i nodi)",
+          "de": "Neu anordnen"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 57
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 57
+      }
+    },
+    {
+      "id": "keymap:s3pick",
+      "page": "keymap-s3pick",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.s3pick",
+      "label": {
+        "en": "Select the proxy under the cursor (a sketch too)",
+        "it": "Seleziona il proxy sotto il cursore (anche uno schizzo)"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "s3pick",
+        "keys": null,
+        "gesture_key": "gesture.s3Click",
+        "gesture": {
+          "en": "Click",
+          "it": "Clic"
+        },
+        "scope": "space",
+        "label_key": "keys.s3pick",
+        "label": {
+          "en": "Select the proxy under the cursor (a sketch too)",
+          "it": "Seleziona il proxy sotto il cursore (anche uno schizzo)"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 60
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 60
+      }
+    },
+    {
+      "id": "keymap:s3pickRm",
+      "page": "keymap-s3pickRm",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.s3pickRm",
+      "label": {
+        "en": "Select the mesh under the cursor (the representation model, a tileset)",
+        "it": "Seleziona la mesh sotto il cursore (il modello di rappresentazione, un tileset)"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "s3pickRm",
+        "keys": null,
+        "gesture_key": "gesture.s3AltClick",
+        "gesture": {
+          "en": "Alt + click (⌘-click, Ctrl-click on Windows/Linux, too)",
+          "it": "Alt + clic (anche ⌘-clic, Ctrl-clic su Windows/Linux)"
+        },
+        "scope": "space",
+        "label_key": "keys.s3pickRm",
+        "label": {
+          "en": "Select the mesh under the cursor (the representation model, a tileset)",
+          "it": "Seleziona la mesh sotto il cursore (il modello di rappresentazione, un tileset)"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 61
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 61
+      }
+    },
+    {
+      "id": "keymap:s3menu",
+      "page": "keymap-s3menu",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.s3menu",
+      "label": {
+        "en": "The menu of the proxy (or, with ⌘ / Ctrl, of the model): soloing, frame, isolate, show in the graph, select the unit",
+        "it": "Il menu del proxy (o, con ⌘ / Ctrl, del modello): soloing, inquadra, isola, mostra nel grafo, seleziona l'unità"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "s3menu",
+        "keys": null,
+        "gesture_key": "gesture.s3RightClick",
+        "gesture": {
+          "en": "Right click (⌘ / Ctrl: the model's)",
+          "it": "Clic destro (⌘ / Ctrl: del modello)"
+        },
+        "scope": "space",
+        "label_key": "keys.s3menu",
+        "label": {
+          "en": "The menu of the proxy (or, with ⌘ / Ctrl, of the model): soloing, frame, isolate, show in the graph, select the unit",
+          "it": "Il menu del proxy (o, con ⌘ / Ctrl, del modello): soloing, inquadra, isola, mostra nel grafo, seleziona l'unità"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 62
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 62
+      }
+    },
+    {
+      "id": "keymap:s3dbl",
+      "page": "keymap-s3dbl",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.s3dbl",
+      "label": {
+        "en": "Move: the centre of rotation and the zoom go to the point under the cursor; nothing is selected",
+        "it": "Muoversi: il centro di rotazione e lo zoom vanno sul punto sotto il cursore; non seleziona niente"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "s3dbl",
+        "keys": null,
+        "gesture_key": "gesture.dblclick",
+        "gesture": {
+          "en": "double-click",
+          "it": "doppio clic",
+          "de": "Doppelklick"
+        },
+        "scope": "space",
+        "label_key": "keys.s3dbl",
+        "label": {
+          "en": "Move: the centre of rotation and the zoom go to the point under the cursor; nothing is selected",
+          "it": "Muoversi: il centro di rotazione e lo zoom vanno sul punto sotto il cursore; non seleziona niente"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 63
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 63
+      }
+    },
+    {
+      "id": "keymap:s3box",
+      "page": "keymap-s3box",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.s3box",
+      "label": {
+        "en": "Zoom to a box: draw a rectangle and the view fills it",
+        "it": "Zoom a riquadro: traccia un rettangolo e la vista lo riempie"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "s3box",
+        "keys": "⇧B",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "space",
+        "label_key": "keys.s3box",
+        "label": {
+          "en": "Zoom to a box: draw a rectangle and the view fills it",
+          "it": "Zoom a riquadro: traccia un rettangolo e la vista lo riempie"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 64
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 64
+      }
+    },
+    {
+      "id": "keymap:s3cursor",
+      "page": "keymap-s3cursor",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.s3cursor",
+      "label": {
+        "en": "Lay the 3D cursor on the surface under the pointer",
+        "it": "Posa il cursore 3D sulla superficie sotto il puntatore"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "s3cursor",
+        "keys": null,
+        "gesture_key": "gesture.s3ShiftRight",
+        "gesture": {
+          "en": "Shift + right click",
+          "it": "Maiusc + clic destro"
+        },
+        "scope": "space",
+        "label_key": "keys.s3cursor",
+        "label": {
+          "en": "Lay the 3D cursor on the surface under the pointer",
+          "it": "Posa il cursore 3D sulla superficie sotto il puntatore"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 65
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 65
+      }
+    },
+    {
+      "id": "keymap:s3cursorReset",
+      "page": "keymap-s3cursorReset",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.s3cursorReset",
+      "label": {
+        "en": "The 3D cursor to the median of what is drawn, and the view on most of it",
+        "it": "Il cursore 3D al punto mediano di ciò che è disegnato, e la vista sulla gran parte"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "s3cursorReset",
+        "keys": "⇧C",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "space",
+        "label_key": "keys.s3cursorReset",
+        "label": {
+          "en": "The 3D cursor to the median of what is drawn, and the view on most of it",
+          "it": "Il cursore 3D al punto mediano di ciò che è disegnato, e la vista sulla gran parte"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 66
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 66
+      }
+    },
+    {
+      "id": "keymap:s3wheel",
+      "page": "keymap-s3wheel",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.s3wheel",
+      "label": {
+        "en": "Zoom toward the pointer (the orbit centre goes with it)",
+        "it": "Avvicina verso il puntatore (il centro d'orbita lo segue)"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "s3wheel",
+        "keys": null,
+        "gesture_key": "gesture.s3Wheel",
+        "gesture": {
+          "en": "Wheel · pinch · Ctrl + two fingers",
+          "it": "Rotella · pinch · Ctrl + due dita"
+        },
+        "scope": "space",
+        "label_key": "keys.s3wheel",
+        "label": {
+          "en": "Zoom toward the pointer (the orbit centre goes with it)",
+          "it": "Avvicina verso il puntatore (il centro d'orbita lo segue)"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 67
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 67
+      }
+    },
+    {
+      "id": "keymap:s3orbit",
+      "page": "keymap-s3orbit",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.s3orbit",
+      "label": {
+        "en": "Orbit",
+        "it": "Orbita"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "s3orbit",
+        "keys": null,
+        "gesture_key": "gesture.s3Orbit",
+        "gesture": {
+          "en": "Middle drag · two fingers · left drag (while the left does not select)",
+          "it": "Trascinamento col tasto centrale · due dita · trascinamento sinistro (finché il sinistro non seleziona)"
+        },
+        "scope": "space",
+        "label_key": "keys.s3orbit",
+        "label": {
+          "en": "Orbit",
+          "it": "Orbita"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 69
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 69
+      }
+    },
+    {
+      "id": "keymap:s3pan",
+      "page": "keymap-s3pan",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.s3pan",
+      "label": {
+        "en": "Pan",
+        "it": "Panoramica"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "s3pan",
+        "keys": null,
+        "gesture_key": "gesture.s3Pan",
+        "gesture": {
+          "en": "Shift + middle drag · Shift + two fingers · Shift + left drag (while the left does not select)",
+          "it": "Maiusc + centrale · Maiusc + due dita · Maiusc + sinistro (finché il sinistro non seleziona)"
+        },
+        "scope": "space",
+        "label_key": "keys.s3pan",
+        "label": {
+          "en": "Pan",
+          "it": "Panoramica"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 70
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 70
+      }
+    },
+    {
+      "id": "keymap:s3rightDrag",
+      "page": "keymap-s3rightDrag",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.s3rightDrag",
+      "label": {
+        "en": "Pan: the scene follows the pointer",
+        "it": "Panoramica: la scena segue il puntatore"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "s3rightDrag",
+        "keys": null,
+        "gesture_key": "gesture.s3RightDrag",
+        "gesture": {
+          "en": "right drag (two fingers pressed on a trackpad)",
+          "it": "trascinamento destro (due dita premute sul trackpad)"
+        },
+        "scope": "space",
+        "label_key": "keys.s3rightDrag",
+        "label": {
+          "en": "Pan: the scene follows the pointer",
+          "it": "Panoramica: la scena segue il puntatore"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 71
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 71
+      }
+    },
+    {
+      "id": "keymap:s3zoomDrag",
+      "page": "keymap-s3zoomDrag",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.s3zoomDrag",
+      "label": {
+        "en": "Continuous zoom toward the point pressed",
+        "it": "Zoom continuo verso il punto premuto"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "s3zoomDrag",
+        "keys": null,
+        "gesture_key": "gesture.s3ZoomDrag",
+        "gesture": {
+          "en": "Ctrl + middle drag (Mac too)",
+          "it": "Ctrl + trascinamento col centrale (anche su Mac)"
+        },
+        "scope": "space",
+        "label_key": "keys.s3zoomDrag",
+        "label": {
+          "en": "Continuous zoom toward the point pressed",
+          "it": "Zoom continuo verso il punto premuto"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 72
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 72
+      }
+    },
+    {
+      "id": "keymap:s3boxSel",
+      "page": "keymap-s3boxSel",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.s3boxSel",
+      "label": {
+        "en": "Box selection of the proxies (Shift: added to the selection)",
+        "it": "Selezione a riquadro dei proxy (Maiusc: si aggiungono)"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "s3boxSel",
+        "keys": null,
+        "gesture_key": "gesture.s3BoxSel",
+        "gesture": {
+          "en": "Left drag (with a middle button, or «Emulate 3 button mouse»)",
+          "it": "Trascinamento sinistro (con un tasto centrale, o «Emula mouse a 3 tasti»)"
+        },
+        "scope": "space",
+        "label_key": "keys.s3boxSel",
+        "label": {
+          "en": "Box selection of the proxies (Shift: added to the selection)",
+          "it": "Selezione a riquadro dei proxy (Maiusc: si aggiungono)"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 73
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 73
+      }
+    },
+    {
+      "id": "keymap:s3emul3",
+      "page": "keymap-s3emul3",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.s3emul3",
+      "label": {
+        "en": "The middle button, without one",
+        "it": "Il tasto centrale, quando non c'è"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "s3emul3",
+        "keys": null,
+        "gesture_key": "gesture.s3Emul3",
+        "gesture": {
+          "en": "Alt + left drag («Emulate 3 button mouse»)",
+          "it": "Alt + trascinamento sinistro («Emula mouse a 3 tasti»)"
+        },
+        "scope": "space",
+        "label_key": "keys.s3emul3",
+        "label": {
+          "en": "The middle button, without one",
+          "it": "Il tasto centrale, quando non c'è"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 74
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 74
+      }
+    },
+    {
+      "id": "keymap:s3np1",
+      "page": "keymap-s3np1",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.s3np1",
+      "label": {
+        "en": "Front view (with «Emulate numpad»: 1 of the top row)",
+        "it": "Vista frontale (con «Emula tastierino»: 1 della riga in alto)"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "s3np1",
+        "keys": null,
+        "gesture_key": "gesture.s3Np1",
+        "gesture": {
+          "en": "Numpad 1",
+          "it": "Tastierino 1"
+        },
+        "scope": "space",
+        "label_key": "keys.s3np1",
+        "label": {
+          "en": "Front view (with «Emulate numpad»: 1 of the top row)",
+          "it": "Vista frontale (con «Emula tastierino»: 1 della riga in alto)"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 76
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 76
+      }
+    },
+    {
+      "id": "keymap:s3np3",
+      "page": "keymap-s3np3",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.s3np3",
+      "label": {
+        "en": "Right view",
+        "it": "Vista laterale destra"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "s3np3",
+        "keys": null,
+        "gesture_key": "gesture.s3Np3",
+        "gesture": {
+          "en": "Numpad 3",
+          "it": "Tastierino 3"
+        },
+        "scope": "space",
+        "label_key": "keys.s3np3",
+        "label": {
+          "en": "Right view",
+          "it": "Vista laterale destra"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 77
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 77
+      }
+    },
+    {
+      "id": "keymap:s3np7",
+      "page": "keymap-s3np7",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.s3np7",
+      "label": {
+        "en": "Top view",
+        "it": "Vista dall'alto"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "s3np7",
+        "keys": null,
+        "gesture_key": "gesture.s3Np7",
+        "gesture": {
+          "en": "Numpad 7",
+          "it": "Tastierino 7"
+        },
+        "scope": "space",
+        "label_key": "keys.s3np7",
+        "label": {
+          "en": "Top view",
+          "it": "Vista dall'alto"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 78
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 78
+      }
+    },
+    {
+      "id": "keymap:s3npCtrl",
+      "page": "keymap-s3npCtrl",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.s3npCtrl",
+      "label": {
+        "en": "The opposite views: back, left, bottom",
+        "it": "Le viste opposte: retro, sinistra, sotto"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "s3npCtrl",
+        "keys": null,
+        "gesture_key": "gesture.s3NpCtrl",
+        "gesture": {
+          "en": "Ctrl + Numpad 1 · 3 · 7",
+          "it": "Ctrl + tastierino 1 · 3 · 7"
+        },
+        "scope": "space",
+        "label_key": "keys.s3npCtrl",
+        "label": {
+          "en": "The opposite views: back, left, bottom",
+          "it": "Le viste opposte: retro, sinistra, sotto"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 79
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 79
+      }
+    },
+    {
+      "id": "keymap:s3np5",
+      "page": "keymap-s3np5",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.s3np5",
+      "label": {
+        "en": "Perspective ⇄ orthographic",
+        "it": "Prospettiva ⇄ ortometrica"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "s3np5",
+        "keys": null,
+        "gesture_key": "gesture.s3Np5",
+        "gesture": {
+          "en": "Numpad 5",
+          "it": "Tastierino 5"
+        },
+        "scope": "space",
+        "label_key": "keys.s3np5",
+        "label": {
+          "en": "Perspective ⇄ orthographic",
+          "it": "Prospettiva ⇄ ortometrica"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 80
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 80
+      }
+    },
+    {
+      "id": "keymap:s3np0",
+      "page": "keymap-s3np0",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.s3np0",
+      "label": {
+        "en": "The camera view, when there is a camera (none yet: nothing)",
+        "it": "La vista della camera, se c'è una camera (per ora nessuna: nulla)"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "s3np0",
+        "keys": null,
+        "gesture_key": "gesture.s3Np0",
+        "gesture": {
+          "en": "Numpad 0",
+          "it": "Tastierino 0"
+        },
+        "scope": "space",
+        "label_key": "keys.s3np0",
+        "label": {
+          "en": "The camera view, when there is a camera (none yet: nothing)",
+          "it": "La vista della camera, se c'è una camera (per ora nessuna: nulla)"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 81
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 81
+      }
+    },
+    {
+      "id": "keymap:s3npDot",
+      "page": "keymap-s3npDot",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.s3npDot",
+      "label": {
+        "en": "Frame the selection",
+        "it": "Inquadra la selezione"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "s3npDot",
+        "keys": null,
+        "gesture_key": "gesture.s3NpDot",
+        "gesture": {
+          "en": "Numpad .",
+          "it": "Tastierino ."
+        },
+        "scope": "space",
+        "label_key": "keys.s3npDot",
+        "label": {
+          "en": "Frame the selection",
+          "it": "Inquadra la selezione"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 82
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 82
+      }
+    },
+    {
+      "id": "keymap:s3sidebar",
+      "page": "keymap-s3sidebar",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.s3sidebar",
+      "label": {
+        "en": "The «View» panel on the right: 3D cursor, selected object, view",
+        "it": "Il pannello «Vista» a destra: cursore 3D, oggetto selezionato, vista"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "s3sidebar",
+        "keys": "N",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "space",
+        "label_key": "keys.s3sidebar",
+        "label": {
+          "en": "The «View» panel on the right: 3D cursor, selected object, view",
+          "it": "Il pannello «Vista» a destra: cursore 3D, oggetto selezionato, vista"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 83
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 83
+      }
+    },
+    {
+      "id": "keymap:s3frameSel",
+      "page": "keymap-s3frameSel",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.s3frameSel",
+      "label": {
+        "en": "Frame the selection",
+        "it": "Inquadra la selezione"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "s3frameSel",
+        "keys": ". · F",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "space",
+        "label_key": "keys.s3frameSel",
+        "label": {
+          "en": "Frame the selection",
+          "it": "Inquadra la selezione"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 84
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 84
+      }
+    },
+    {
+      "id": "keymap:s3frameAll",
+      "page": "keymap-s3frameAll",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.s3frameAll",
+      "label": {
+        "en": "Frame everything",
+        "it": "Inquadra tutto"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "s3frameAll",
+        "keys": "Home",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "space",
+        "label_key": "keys.s3frameAll",
+        "label": {
+          "en": "Frame everything",
+          "it": "Inquadra tutto"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 85
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 85
+      }
+    },
+    {
+      "id": "keymap:s3outliner",
+      "page": "keymap-s3outliner",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.s3outliner",
+      "label": {
+        "en": "Open and close the Space's Outliner",
+        "it": "Apre e chiude l'Outliner dello Spazio"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "s3outliner",
+        "keys": "T",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "space",
+        "label_key": "keys.s3outliner",
+        "label": {
+          "en": "Open and close the Space's Outliner",
+          "it": "Apre e chiude l'Outliner dello Spazio"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 86
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 86
+      }
+    },
+    {
+      "id": "keymap:s3add",
+      "page": "keymap-s3add",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.s3add",
+      "label": {
+        "en": "Add a base shape at the 3D cursor",
+        "it": "Aggiungi una forma base al cursore 3D"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "s3add",
+        "keys": "⇧A",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "space",
+        "label_key": "keys.s3add",
+        "label": {
+          "en": "Add a base shape at the 3D cursor",
+          "it": "Aggiungi una forma base al cursore 3D"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 87
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 87
+      }
+    },
+    {
+      "id": "keymap:s3grs",
+      "page": "keymap-s3grs",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.s3grs",
+      "label": {
+        "en": "Move, rotate, scale a sketch: then X Y Z, a number, Enter or Esc",
+        "it": "Sposta, ruota, scala un abbozzo: poi X Y Z, un numero, Invio o Esc"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "s3grs",
+        "keys": "G · R · S",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "space",
+        "label_key": "keys.s3grs",
+        "label": {
+          "en": "Move, rotate, scale a sketch: then X Y Z, a number, Enter or Esc",
+          "it": "Sposta, ruota, scala un abbozzo: poi X Y Z, un numero, Invio o Esc"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 88
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 88
+      }
+    },
+    {
+      "id": "keymap:s3axisPlane",
+      "page": "keymap-s3axisPlane",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.s3axisPlane",
+      "label": {
+        "en": "During G / R / S: the axis; Shift + the axis: the plane without it; twice: local; three times: none; middle click: the nearest axis",
+        "it": "Durante G / R / S: l'asse; Maiusc + l'asse: il piano senza di lui; due volte: locale; tre volte: nessuno; clic centrale: l'asse più vicino"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "s3axisPlane",
+        "keys": "X Y Z · ⇧X ⇧Y ⇧Z",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "space",
+        "label_key": "keys.s3axisPlane",
+        "label": {
+          "en": "During G / R / S: the axis; Shift + the axis: the plane without it; twice: local; three times: none; middle click: the nearest axis",
+          "it": "Durante G / R / S: l'asse; Maiusc + l'asse: il piano senza di lui; due volte: locale; tre volte: nessuno; clic centrale: l'asse più vicino"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 89
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 89
+      }
+    },
+    {
+      "id": "keymap:s3snap",
+      "page": "keymap-s3snap",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.s3snap",
+      "label": {
+        "en": "During G: snap to the face under the pointer; during R / S: steps of 5° / 0.1",
+        "it": "Durante G: aggancio alla faccia sotto il puntatore; durante R / S: passi di 5° / 0,1"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "s3snap",
+        "keys": "Ctrl",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "space",
+        "label_key": "keys.s3snap",
+        "label": {
+          "en": "During G: snap to the face under the pointer; during R / S: steps of 5° / 0.1",
+          "it": "Durante G: aggancio alla faccia sotto il puntatore; durante R / S: passi di 5° / 0,1"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 90
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 90
+      }
+    },
+    {
+      "id": "keymap:s3parent",
+      "page": "keymap-s3parent",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.s3parent",
+      "label": {
+        "en": "Associate the selected sketches with the active unit",
+        "it": "Associa gli abbozzi selezionati all'unità attiva"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "s3parent",
+        "keys": "Ctrl+P",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "space",
+        "label_key": "keys.s3parent",
+        "label": {
+          "en": "Associate the selected sketches with the active unit",
+          "it": "Associa gli abbozzi selezionati all'unità attiva"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 91
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 91
+      }
+    },
+    {
+      "id": "keymap:s3delete",
+      "page": "keymap-s3delete",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.s3delete",
+      "label": {
+        "en": "Delete the selected sketch",
+        "it": "Elimina l'abbozzo selezionato"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "s3delete",
+        "keys": "X · ⌫",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "space",
+        "label_key": "keys.s3delete",
+        "label": {
+          "en": "Delete the selected sketch",
+          "it": "Elimina l'abbozzo selezionato"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 92
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 92
+      }
+    },
+    {
+      "id": "keymap:s3back",
+      "page": "keymap-s3back",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.s3back",
+      "label": {
+        "en": "Back to the view before a jump",
+        "it": "Torna alla vista di prima di un salto"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "s3back",
+        "keys": "⌘[ · ⌥←",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "space",
+        "label_key": "keys.s3back",
+        "label": {
+          "en": "Back to the view before a jump",
+          "it": "Torna alla vista di prima di un salto"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 93
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 93
+      }
+    },
+    {
+      "id": "keymap:s3shiftClick",
+      "page": "keymap-s3shiftClick",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.s3shiftClick",
+      "label": {
+        "en": "Add to the selection / make active / remove the active",
+        "it": "Aggiungi alla selezione / rendi attivo / togli l'attivo"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "s3shiftClick",
+        "keys": "⇧ + click",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "space",
+        "label_key": "keys.s3shiftClick",
+        "label": {
+          "en": "Add to the selection / make active / remove the active",
+          "it": "Aggiungi alla selezione / rendi attivo / togli l'attivo"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 95
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 95
+      }
+    },
+    {
+      "id": "keymap:s3selectAll",
+      "page": "keymap-s3selectAll",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.s3selectAll",
+      "label": {
+        "en": "Select everything visible",
+        "it": "Seleziona tutto il visibile"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "s3selectAll",
+        "keys": "A",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "space",
+        "label_key": "keys.s3selectAll",
+        "label": {
+          "en": "Select everything visible",
+          "it": "Seleziona tutto il visibile"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 96
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 96
+      }
+    },
+    {
+      "id": "keymap:s3selectNone",
+      "page": "keymap-s3selectNone",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.s3selectNone",
+      "label": {
+        "en": "Deselect everything",
+        "it": "Deseleziona tutto"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "s3selectNone",
+        "keys": "⌥A",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "space",
+        "label_key": "keys.s3selectNone",
+        "label": {
+          "en": "Deselect everything",
+          "it": "Deseleziona tutto"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 97
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 97
+      }
+    },
+    {
+      "id": "keymap:s3boxSelect",
+      "page": "keymap-s3boxSelect",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.s3boxSelect",
+      "label": {
+        "en": "Box select",
+        "it": "Selezione a riquadro"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "s3boxSelect",
+        "keys": "B",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "space",
+        "label_key": "keys.s3boxSelect",
+        "label": {
+          "en": "Box select",
+          "it": "Selezione a riquadro"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 98
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 98
+      }
+    },
+    {
+      "id": "keymap:s3hide",
+      "page": "keymap-s3hide",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.s3hide",
+      "label": {
+        "en": "Hide the selected",
+        "it": "Nascondi i selezionati"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "s3hide",
+        "keys": "H",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "space",
+        "label_key": "keys.s3hide",
+        "label": {
+          "en": "Hide the selected",
+          "it": "Nascondi i selezionati"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 99
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 99
+      }
+    },
+    {
+      "id": "keymap:s3reveal",
+      "page": "keymap-s3reveal",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.s3reveal",
+      "label": {
+        "en": "Show everything",
+        "it": "Mostra tutto"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "s3reveal",
+        "keys": "⌥H",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "space",
+        "label_key": "keys.s3reveal",
+        "label": {
+          "en": "Show everything",
+          "it": "Mostra tutto"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 100
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 100
+      }
+    },
+    {
+      "id": "keymap:s3hideUnselected",
+      "page": "keymap-s3hideUnselected",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.s3hideUnselected",
+      "label": {
+        "en": "Hide the unselected",
+        "it": "Nascondi i non selezionati"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "s3hideUnselected",
+        "keys": "⇧H",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "space",
+        "label_key": "keys.s3hideUnselected",
+        "label": {
+          "en": "Hide the unselected",
+          "it": "Nascondi i non selezionati"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 101
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 101
+      }
+    },
+    {
+      "id": "keymap:toolEsc",
+      "page": "keymap-toolEsc",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.toolEsc",
+      "label": {
+        "en": "Put the tool down: back to looking",
+        "it": "Posa lo strumento: torna a guardare",
+        "de": "Werkzeug ablegen: zurück zum Betrachten"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "toolEsc",
+        "keys": "Esc",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "trace",
+        "label_key": "keys.toolEsc",
+        "label": {
+          "en": "Put the tool down: back to looking",
+          "it": "Posa lo strumento: torna a guardare",
+          "de": "Werkzeug ablegen: zurück zum Betrachten"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 103
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 103
+      }
+    },
+    {
+      "id": "keymap:polyClose",
+      "page": "keymap-polyClose",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.polyClose",
+      "label": {
+        "en": "Close the polygon / polyline",
+        "it": "Chiudi il poligono / la polilinea",
+        "de": "Polygon / Polylinie schließen"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "polyClose",
+        "keys": null,
+        "gesture_key": "gesture.enterDbl",
+        "gesture": {
+          "en": "Enter · double-click",
+          "it": "Invio · doppio clic",
+          "de": "Enter · Doppelklick"
+        },
+        "scope": "trace",
+        "label_key": "keys.polyClose",
+        "label": {
+          "en": "Close the polygon / polyline",
+          "it": "Chiudi il poligono / la polilinea",
+          "de": "Polygon / Polylinie schließen"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 104
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 104
+      }
+    },
+    {
+      "id": "keymap:polyFirst",
+      "page": "keymap-polyFirst",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.polyFirst",
+      "label": {
+        "en": "Close the polygon",
+        "it": "Chiudi il poligono",
+        "de": "Polygon schließen"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "polyFirst",
+        "keys": null,
+        "gesture_key": "gesture.firstVertex",
+        "gesture": {
+          "en": "click the first vertex",
+          "it": "clic sul primo vertice",
+          "de": "Klick auf den ersten Eckpunkt"
+        },
+        "scope": "trace",
+        "label_key": "keys.polyFirst",
+        "label": {
+          "en": "Close the polygon",
+          "it": "Chiudi il poligono",
+          "de": "Polygon schließen"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 105
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 105
+      }
+    },
+    {
+      "id": "keymap:bubbleArrows",
+      "page": "keymap-bubbleArrows",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.bubbleArrows",
+      "label": {
+        "en": "Pick what you extract",
+        "it": "Scegli cosa estrai",
+        "de": "Wählen, was du entnimmst"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "bubbleArrows",
+        "keys": "↑ ↓ · Enter",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "trace",
+        "label_key": "keys.bubbleArrows",
+        "label": {
+          "en": "Pick what you extract",
+          "it": "Scegli cosa estrai",
+          "de": "Wählen, was du entnimmst"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 106
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 106
+      }
+    },
+    {
+      "id": "keymap:corner",
+      "page": "keymap-corner",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.corner",
+      "label": {
+        "en": "Split or join windows",
+        "it": "Dividi o unisci le finestre",
+        "de": "Fenster teilen oder verbinden"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "corner",
+        "keys": null,
+        "gesture_key": "gesture.dragCorner",
+        "gesture": {
+          "en": "drag a corner",
+          "it": "trascina un angolo",
+          "de": "eine Ecke ziehen"
+        },
+        "scope": "window",
+        "label_key": "keys.corner",
+        "label": {
+          "en": "Split or join windows",
+          "it": "Dividi o unisci le finestre",
+          "de": "Fenster teilen oder verbinden"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 108
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 108
+      }
+    },
+    {
+      "id": "keymap:divider",
+      "page": "keymap-divider",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.divider",
+      "label": {
+        "en": "Resize (to the edge: close)",
+        "it": "Ridimensiona (fino al bordo: chiudi)",
+        "de": "Größe ändern (bis zum Rand: schließen)"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "divider",
+        "keys": null,
+        "gesture_key": "gesture.dragDivider",
+        "gesture": {
+          "en": "drag a divider",
+          "it": "trascina un divisore",
+          "de": "einen Trenner ziehen"
+        },
+        "scope": "window",
+        "label_key": "keys.divider",
+        "label": {
+          "en": "Resize (to the edge: close)",
+          "it": "Ridimensiona (fino al bordo: chiudi)",
+          "de": "Größe ändern (bis zum Rand: schließen)"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 109
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 109
+      }
+    },
+    {
+      "id": "keymap:headerDbl",
+      "page": "keymap-headerDbl",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.headerDbl",
+      "label": {
+        "en": "Magnify the window",
+        "it": "Ingrandisci la finestra",
+        "de": "Fenster vergrößern"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "headerDbl",
+        "keys": null,
+        "gesture_key": "gesture.dblBar",
+        "gesture": {
+          "en": "double-click the bar",
+          "it": "doppio clic sulla barra",
+          "de": "Doppelklick auf die Leiste"
+        },
+        "scope": "window",
+        "label_key": "keys.headerDbl",
+        "label": {
+          "en": "Magnify the window",
+          "it": "Ingrandisci la finestra",
+          "de": "Fenster vergrößern"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 110
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 110
+      }
+    },
+    {
+      "id": "keymap:tabDbl",
+      "page": "keymap-tabDbl",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.tabDbl",
+      "label": {
+        "en": "Rename the space",
+        "it": "Rinomina lo spazio",
+        "de": "Bereich umbenennen"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "tabDbl",
+        "keys": null,
+        "gesture_key": "gesture.dblTab",
+        "gesture": {
+          "en": "double-click a tab",
+          "it": "doppio clic su una scheda",
+          "de": "Doppelklick auf einen Reiter"
+        },
+        "scope": "window",
+        "label_key": "keys.tabDbl",
+        "label": {
+          "en": "Rename the space",
+          "it": "Rinomina lo spazio",
+          "de": "Bereich umbenennen"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 111
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 111
+      }
+    },
+    {
+      "id": "keymap:tabMenu",
+      "page": "keymap-tabMenu",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.tabMenu",
+      "label": {
+        "en": "Rename, reset, remove the space",
+        "it": "Rinomina, ripristina, elimina lo spazio",
+        "de": "Bereich umbenennen, zurücksetzen, entfernen"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "tabMenu",
+        "keys": null,
+        "gesture_key": "gesture.rclickTab",
+        "gesture": {
+          "en": "right click on a tab",
+          "it": "tasto destro su una scheda",
+          "de": "Rechtsklick auf einen Reiter"
+        },
+        "scope": "window",
+        "label_key": "keys.tabMenu",
+        "label": {
+          "en": "Rename, reset, remove the space",
+          "it": "Rinomina, ripristina, elimina lo spazio",
+          "de": "Bereich umbenennen, zurücksetzen, entfernen"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 112
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 112
+      }
+    },
+    {
+      "id": "keymap:storagePick",
+      "page": "keymap-storagePick",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.storagePick",
+      "label": {
+        "en": "Pick several files for one stamp",
+        "it": "Scegli più file per un timbro",
+        "de": "Mehrere Dateien für einen Stempel wählen"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "storagePick",
+        "keys": null,
+        "gesture_key": "gesture.cmdShiftClick",
+        "gesture": {
+          "en": "⌘/⇧ click",
+          "it": "⌘/⇧ clic",
+          "de": "⌘/⇧ Klick"
+        },
+        "scope": "window",
+        "label_key": "keys.storagePick",
+        "label": {
+          "en": "Pick several files for one stamp",
+          "it": "Scegli più file per un timbro",
+          "de": "Mehrere Dateien für einen Stempel wählen"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 113
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 113
+      }
+    },
+    {
+      "id": "keymap:folderClick",
+      "page": "keymap-folderClick",
+      "kind": "gesture",
+      "command_id": null,
+      "label_key": "keys.folderClick",
+      "label": {
+        "en": "Open the folder",
+        "it": "Apri la cartella",
+        "de": "Ordner öffnen"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "folderClick",
+        "keys": null,
+        "gesture_key": "gesture.clickFolder",
+        "gesture": {
+          "en": "click a folder",
+          "it": "clic su una cartella",
+          "de": "Klick auf einen Ordner"
+        },
+        "scope": "window",
+        "label_key": "keys.folderClick",
+        "label": {
+          "en": "Open the folder",
+          "it": "Apri la cartella",
+          "de": "Ordner öffnen"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 114
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 114
+      }
+    },
+    {
+      "id": "keymap:fieldEnter",
+      "page": "keymap-fieldEnter",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.fieldEnter",
+      "label": {
+        "en": "Commit the field",
+        "it": "Conferma il campo",
+        "de": "Feld bestätigen"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "fieldEnter",
+        "keys": "Enter",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "field",
+        "label_key": "keys.fieldEnter",
+        "label": {
+          "en": "Commit the field",
+          "it": "Conferma il campo",
+          "de": "Feld bestätigen"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 116
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 116
+      }
+    },
+    {
+      "id": "keymap:fieldTab",
+      "page": "keymap-fieldTab",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.fieldTab",
+      "label": {
+        "en": "Commit and go to the next field",
+        "it": "Conferma e vai al campo successivo",
+        "de": "Bestätigen und zum nächsten Feld"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "fieldTab",
+        "keys": "Tab",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "field",
+        "label_key": "keys.fieldTab",
+        "label": {
+          "en": "Commit and go to the next field",
+          "it": "Conferma e vai al campo successivo",
+          "de": "Bestätigen und zum nächsten Feld"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 117
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 117
+      }
+    },
+    {
+      "id": "keymap:proseSlash",
+      "page": "keymap-proseSlash",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.proseSlash",
+      "label": {
+        "en": "In an empty paragraph: the Blocks menu",
+        "it": "In un paragrafo vuoto: il menu Blocchi",
+        "de": "In leerem Absatz: das Blöcke-Menü"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "proseSlash",
+        "keys": "/",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "field",
+        "label_key": "keys.proseSlash",
+        "label": {
+          "en": "In an empty paragraph: the Blocks menu",
+          "it": "In un paragrafo vuoto: il menu Blocchi",
+          "de": "In leerem Absatz: das Blöcke-Menü"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 118
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 118
+      }
+    },
+    {
+      "id": "keymap:proseLink",
+      "page": "keymap-proseLink",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.proseLink",
+      "label": {
+        "en": "Mention a node",
+        "it": "Cita un nodo",
+        "de": "Einen Knoten erwähnen"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "proseLink",
+        "keys": "[[",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "field",
+        "label_key": "keys.proseLink",
+        "label": {
+          "en": "Mention a node",
+          "it": "Cita un nodo",
+          "de": "Einen Knoten erwähnen"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 119
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 119
+      }
+    },
+    {
+      "id": "keymap:menuArrows",
+      "page": "keymap-menuArrows",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.menuArrows",
+      "label": {
+        "en": "Move and choose in a menu",
+        "it": "Muoviti e scegli in un menu",
+        "de": "Im Menü bewegen und wählen"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "menuArrows",
+        "keys": "↑ ↓ → ← Enter",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "menu",
+        "label_key": "keys.menuArrows",
+        "label": {
+          "en": "Move and choose in a menu",
+          "it": "Muoviti e scegli in un menu",
+          "de": "Im Menü bewegen und wählen"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 120
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 120
+      }
+    },
+    {
+      "id": "keymap:buttonSpace",
+      "page": "keymap-buttonSpace",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.buttonSpace",
+      "label": {
+        "en": "Press the focused button",
+        "it": "Premi il pulsante con il focus",
+        "de": "Fokussierte Schaltfläche drücken"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "buttonSpace",
+        "keys": "Space · Enter",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "menu",
+        "label_key": "keys.buttonSpace",
+        "label": {
+          "en": "Press the focused button",
+          "it": "Premi il pulsante con il focus",
+          "de": "Fokussierte Schaltfläche drücken"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 121
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 121
+      }
+    }
+  ]
+}

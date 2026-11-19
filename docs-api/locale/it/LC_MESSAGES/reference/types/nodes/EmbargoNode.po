@@ -1,0 +1,117 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "EmbargoNode"
+msgstr ""
+
+msgid "Generated from the datamodels (nodes 1.6.51, connections 1.6.55) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``."
+msgstr ""
+
+msgid "*Represents a temporal embargo on access or distribution of a node, license, or whole graph.*"
+msgstr ""
+
+msgid "Class"
+msgstr ""
+
+msgid "``EmbargoNode``"
+msgstr ""
+
+msgid "node_type"
+msgstr ""
+
+msgid "``embargo``"
+msgstr ""
+
+msgid "Parent"
+msgstr ""
+
+msgid ":ref:`Node <type-Node>`"
+msgstr ""
+
+msgid "Label (en)"
+msgstr ""
+
+msgid "Embargo"
+msgstr ""
+
+msgid "Label (it)"
+msgstr ""
+
+msgid "CIDOC"
+msgstr ""
+
+msgid "``E30 Right``"
+msgstr ""
+
+msgid "Description"
+msgstr ""
+
+msgid "Represents a temporal embargo on access or distribution of a node, license, or whole graph. Carries embargo\\_start, embargo\\_end (optional, indefinite if absent), and reason. Connected via has\\_embargo edge to a Node, LicenseNode, or GraphNode."
+msgstr ""
+
+msgid "*Italiano*: Rappresenta un embargo temporale sull'accesso o sulla diffusione di un nodo, di una licenza o dell'intero grafo. Porta embargo\\_start, embargo\\_end (facoltativo; se assente l'embargo è a tempo indeterminato) e reason. Collegato tramite l'arco has\\_embargo a un Node, a un LicenseNode o a un GraphNode."
+msgstr ""
+
+msgid "Fields"
+msgstr ""
+
+msgid "Field"
+msgstr ""
+
+msgid "Mapping / note"
+msgstr ""
+
+msgid "``name``"
+msgstr ""
+
+msgid "P1\\_is\\_identified\\_by"
+msgstr ""
+
+msgid "``description``"
+msgstr ""
+
+msgid "P3\\_has\\_note"
+msgstr ""
+
+msgid "``embargo_start``"
+msgstr ""
+
+msgid "P82a\\_begin\\_of\\_the\\_begin"
+msgstr ""
+
+msgid "``embargo_end``"
+msgstr ""
+
+msgid "P82b\\_end\\_of\\_the\\_end"
+msgstr ""
+
+msgid "``reason``"
+msgstr ""
+
+msgid "Edges"
+msgstr ""
+
+msgid "**Outgoing** (this node is the source): :ref:`generic_connection <edge-generic_connection>`, :ref:`has_embargo <edge-has_embargo>`, :ref:`has_license <edge-has_license>`, :ref:`has_semantic_shape <edge-has_semantic_shape>`, :ref:`has_translation <edge-has_translation>`, :ref:`is_in_paradata_nodegroup <edge-is_in_paradata_nodegroup>`"
+msgstr ""
+
+msgid "**Incoming** (this node is the target): :ref:`generic_connection <edge-generic_connection>`, :ref:`has_embargo <edge-has_embargo>`"
+msgstr ""
+
+msgid "From em"
+msgstr ""

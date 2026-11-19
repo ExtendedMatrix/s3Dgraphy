@@ -1,0 +1,195 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "``em`` — the module"
+msgstr ""
+
+msgid "``import em`` (or ``from s3dgraphy import em``). Generated for em API |api|."
+msgstr ""
+
+msgid "the API's own version — what a plugin's ``em_api_min``/``em_api_max`` are read against (SPEC-plugin §14.7), distinct from s3Dgraphy's and EMStudio's"
+msgstr ""
+
+msgid "Built-in immutable sequence."
+msgstr ""
+
+msgid "If no argument is given, the constructor returns an empty tuple. If iterable is specified the tuple is initialized from iterable's items."
+msgstr ""
+
+msgid "If the argument is a tuple, the return value is the same object."
+msgstr ""
+
+msgid "The host's current graph, a :class:`GraphView`; read at every access."
+msgstr ""
+
+msgid "The vocabularies, a :class:`~s3dgraphy.em.vocab.Vocab`."
+msgstr ""
+
+msgid "The packages of the document, a :class:`~s3dgraphy.em.vocab.Profiles`."
+msgstr ""
+
+msgid "Install, list, enable from disk: :class:`~s3dgraphy.em.extensions.Extensions`."
+msgstr ""
+
+msgid "What the active plugins expose to the console (``em.ext.<plugin>.<name>``)."
+msgstr ""
+
+msgid "The application half: :doc:`../context`."
+msgstr ""
+
+msgid "Functions"
+msgstr ""
+
+msgid "The command line: open an em.json in the «no application» host."
+msgstr ""
+
+msgid "The file's active graph becomes :data:`em.graph`, and the packages it declares (``header.profiles``) become :data:`em.profiles`. Inside an application the graph is the open document, so there is no ``em.open``."
+msgstr ""
+
+msgid "Parameters"
+msgstr ""
+
+msgid "an ``.em.json`` file (a container or a single graph)."
+msgstr ""
+
+msgid "Returns"
+msgstr ""
+
+msgid "the opened graph."
+msgstr ""
+
+msgid "Return type"
+msgstr ""
+
+msgid "Raises"
+msgstr ""
+
+msgid "inside an application."
+msgstr ""
+
+msgid "Example"
+msgstr ""
+
+msgid "The command line: work on a :class:`~s3dgraphy.graph.Graph` already in memory. ``author`` is the SESSION's identity (as EMStudio's editor hand): set once here, never per write."
+msgstr ""
+
+msgid "a :class:`~s3dgraphy.graph.Graph`."
+msgstr ""
+
+msgid "who is writing (an ORCID, an e-mail…). Without it (and without ``S3DGRAPHY_AUTHOR`` in the environment) every write is refused."
+msgstr ""
+
+msgid "the graph, read-only; also available as :data:`em.graph`."
+msgstr ""
+
+msgid "inside an application, where the graph is the open document."
+msgstr ""
+
+msgid "The command line: save the graph as an em.json."
+msgstr ""
+
+msgid "Writes the container the graph came from (or a new one around it) and emits ``document-saved``."
+msgstr ""
+
+msgid "where to write. Default: the file the graph was opened from."
+msgstr ""
+
+msgid "the path written."
+msgstr ""
+
+msgid "with no ``path`` when the graph did not come from a file."
+msgstr ""
+
+msgid "inside an application (the application saves)."
+msgstr ""
+
+msgid "What there is, in a few lines (and the active plugins' commands when the host has them)."
+msgstr ""
+
+msgid "Prints the summary and returns it."
+msgstr ""
+
+msgid "``\"en\"`` or ``\"it\"``; default: the host's language."
+msgstr ""
+
+msgid "the text printed."
+msgstr ""
+
+msgid "Open an act (``with em.write(\"…\") as tx:``)."
+msgstr ""
+
+msgid "Everything done on ``tx`` inside the block is applied together, as one step with one Log line, when the block ends. If the block raises, nothing is applied. The author is the session's (see :func:`em.use <s3dgraphy.em.use>`), never an argument."
+msgstr ""
+
+msgid "what the act is (shown in the Log and the undo history)."
+msgstr ""
+
+msgid "a proposal: it only adds, marked as volatile."
+msgstr ""
+
+msgid "check the act and return its delta without applying it."
+msgstr ""
+
+msgid "use it as a context manager."
+msgstr ""
+
+msgid "on leaving the block, when the contract refuses the act     (no author, a forbidden relation…). Nothing is applied."
+msgstr ""
+
+msgid "Stamp a file a plugin (or a script) made, in one line."
+msgstr ""
+
+msgid "``agent`` — the plugin (a :class:`~s3dgraphy.em.plugins.Plugin`, its ``ctx`` or ``{\"id\", \"name\", \"version\"}``); inside a plugin's command, the calling plugin when not given. ``inputs`` — paths (hashed) or identities (``{\"resource_id\": …}`` of a graph's resource, ``{\"resource_id\": …, \"kind\": \"acquisition\"}``). ``parameters``, ``dtc_kind`` (the vocabulary of ``dtc_kinds``: ``format_conversion``, ``transformation``, ``export``…), ``technique``, ``label``, ``description``, ``resource_id`` (default: derived from the digest), ``operator``, ``at``, ``tier``, ``software`` (more lines)."
+msgstr ""
+
+msgid "Writes ``<artifact>.stamp.json`` (``write=False``: only returns it) and returns the stamp. Re-stamping the same bytes writes the same record but the instant (the format: the same fact registered twice, deduplicated)."
+msgstr ""
+
+msgid "the artifact or an input path is not a file, or an input     names nothing."
+msgstr ""
+
+msgid "Subscribe ``fn(payload)`` to ``event``; usable as a decorator (``@em.on(\"graph-changed\")``). Returns a :class:`Subscription`, or ``fn`` when used as a decorator."
+msgstr ""
+
+msgid "The payload is a dict with the event's name under ``\"event\"``; for ``graph-changed`` also the step's ``label`` and the ``ids`` it touched."
+msgstr ""
+
+msgid "one of :data:`EVENTS`."
+msgstr ""
+
+msgid "the listener; omit it to use ``on`` as a decorator."
+msgstr ""
+
+msgid "an unknown event."
+msgstr ""
+
+msgid "Unsubscribe ``fn`` from ``event`` (the other way is ``Subscription.off()``)."
+msgstr ""
+
+msgid "the listener given to :func:`on`."
+msgstr ""
+
+msgid "False when ``fn`` was not subscribed."
+msgstr ""
+
+msgid "Errors"
+msgstr ""
+
+msgid ":class:`~s3dgraphy.em.errors.EmError`, :class:`~s3dgraphy.em.errors.NotAvailable`, :class:`~s3dgraphy.em.errors.Refused`, :class:`~s3dgraphy.em.graph.NodeNotFound`, :class:`~s3dgraphy.em.graph.AmbiguousNode`, :class:`~s3dgraphy.em.vocab.ConceptNotFound`, :class:`~s3dgraphy.em.stamps.StampError` — all importable from ``em``."
+msgstr ""

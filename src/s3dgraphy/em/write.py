@@ -131,7 +131,26 @@ def diff(before: Tuple[Dict[str, Dict[str, Any]], Dict[Tuple[str, str, str], str
 
 class WriteResult:
     """What a transaction did (or would do): the delta, the contract's result,
-    ``applied`` (False for a dry run, a deferred write, nothing to write)."""
+    ``applied`` (False for a dry run, a deferred write, nothing to write).
+
+    Read it from ``tx.result`` after the ``with em.write(...)`` block.
+
+    Attributes:
+        label: the act's label.
+        delta: the :class:`~s3dgraphy.contract.Delta` (new nodes, relations, changes).
+        result: the contract's :class:`~s3dgraphy.contract.Result`, or None.
+        applied: the delta reached the graph.
+        dry_run: a proof: checked, not applied.
+        deferred: queued until the current event delivery ends.
+
+    Example:
+        >>> with em.write("Describe US1") as tx:
+        ...     tx.update("US1", "description", "a fill")
+        >>> tx.result
+        <em write 'Describe US1': applied · «Describe US1»: 0 node(s), 0 relation(s), 1 change(s)>
+        >>> tx.result.ok, tx.result.applied
+        (True, True)
+    """
 
     def __init__(self, label: str, delta: Delta, result: Optional[Result], *, applied: bool,
                  dry_run: bool = False, deferred: bool = False):
@@ -140,6 +159,7 @@ class WriteResult:
 
     @property
     def ok(self) -> bool:
+        """True unless the contract's result says otherwise."""
         return self.result is None or bool(self.result.ok)
 
     @property
@@ -150,6 +170,7 @@ class WriteResult:
 
     @property
     def message(self) -> str:
+        """One sentence on what was written (in the host's language)."""
         if not self.delta.writes:
             return message("nothing_to_write", label=self.label)
         if self.refused:
@@ -159,6 +180,7 @@ class WriteResult:
                        edges=len(self.delta.edges), ops=len(self.delta.ops))
 
     def as_dict(self) -> Dict[str, Any]:
+        """The outcome as plain JSON-ready data (label, flags, message, delta, result)."""
         return {"label": self.label, "applied": self.applied, "dry_run": self.dry_run,
                 "deferred": self.deferred, "message": self.message,
                 "delta": self.delta.as_dict(),
@@ -173,7 +195,28 @@ class WriteResult:
 # ── the transaction ─────────────────────────────────────────────────────────
 
 class Transaction:
-    """One act: a label, one step. Use it through :func:`write`."""
+    """One act: a label, one step. Use it through :func:`write`.
+
+    Every operation works on a private copy of the graph; the act is applied
+    as one step when the ``with`` block ends without an exception. Nodes can
+    be given by id, by their only name, or as :class:`~s3dgraphy.em.graph.NodeView`.
+
+    Attributes:
+        label: the act's label (one Log line, one undo step).
+        volatile: the act is a proposal (only additions).
+        dry_run: the act is checked, never applied.
+        result: the :class:`WriteResult`, once the block has ended.
+        warnings: what the core said along the way.
+
+    Example:
+        >>> with em.write("Integrations after US7") as tx:
+        ...     us20 = tx.add_node("US", "US20")
+        ...     _ = tx.add_edge(us20, "is_after", "US7")
+        >>> tx.result.applied
+        True
+        >>> [e.target.name for e in em.graph.node("US20").edges()]
+        ['US7']
+    """
 
     def __init__(self, label: str, *, volatile: bool = False, dry_run: bool = False,
                  host: Any = None):
@@ -208,6 +251,7 @@ class Transaction:
 
     @property
     def overlay(self) -> Any:
+        """The packages in use (the host's profile overlay), as the core's builders read them."""
         return self.host.overlay()
 
     def _author(self) -> Optional[str]:
@@ -235,7 +279,24 @@ class Transaction:
                  description: Optional[str] = None, data: Optional[Dict[str, Any]] = None) -> str:
         """A node of a ``node_type`` the datamodel knows. Its id, when not
         given, is of what the act is about (label, type, name, order): the
-        same script run twice adds nothing the second time."""
+        same script run twice adds nothing the second time.
+
+        Args:
+            node_type: the datamodel's node type (``US``, ``USV``, ``property``…).
+            name: the node's name.
+            id: an explicit id (default: a stable id, see above).
+            description: the node's description.
+            data: the node's data (copied).
+
+        Returns:
+            str: the new node's id.
+
+        Example:
+            >>> with em.write("A new unit") as tx:
+            ...     nid = tx.add_node("US", "US30", description="a cut")
+            >>> em.graph.node(nid).description
+            'a cut'
+        """
         from ..importer.emjson_importer import _instantiate
         self._count += 1
         nid = id or stable_id("em", getattr(self.graph, "graph_id", ""), self.label, node_type,
@@ -255,12 +316,39 @@ class Transaction:
         return nid
 
     def update(self, node: Any, field: str, value: Any) -> None:
-        """``name`` / ``description`` / ``data.<key>`` (a bare key means ``data.<key>``)."""
+        """Change a field of a node.
+
+        Args:
+            node: the node (id, name or view).
+            field: ``name`` / ``description`` / ``data.<key>`` (a bare key
+                means ``data.<key>``).
+            value: the new value.
+
+        Example:
+            >>> with em.write("Colour of US1") as tx:
+            ...     tx.update("US1", "colour", "brown")
+            >>> em.graph.node("US1").data["colour"]
+            'brown'
+        """
         from ..api import set_field
         fld = field if field in ("name", "description") or field.startswith("data.") else f"data.{field}"
         set_field(self._node(node), fld, value, author=self._author())
 
     def clear(self, node: Any, field: str) -> None:
+        """Remove a field of a node (``description``, ``data.<key>`` or a bare key).
+
+        Args:
+            node: the node (id, name or view).
+            field: the field, as in :meth:`update`.
+
+        Example:
+            >>> with em.write("Colour") as tx:
+            ...     tx.update("US1", "colour", "brown")
+            >>> with em.write("No colour") as tx:
+            ...     tx.clear("US1", "colour")
+            >>> "colour" in em.graph.node("US1").data
+            False
+        """
         from ..api import clear_field
         fld = field if field in ("name", "description") or field.startswith("data.") else f"data.{field}"
         clear_field(self._node(node), fld, author=self._author())
@@ -270,6 +358,24 @@ class Transaction:
         self.graph.remove_node(self._id(node))
 
     def add_edge(self, source: Any, edge_type: str, target: Any) -> str:
+        """Add a relation (once: an existing identical relation is reused).
+
+        Whether the EM language allows the relation is checked when the act
+        is applied; a forbidden one refuses the whole act.
+
+        Args:
+            source: the source node (id, name or view).
+            edge_type: the edge type (``is_after``, ``has_property``…).
+            target: the target node.
+
+        Returns:
+            str: the relation's id.
+
+        Example:
+            >>> with em.write("US1 after US7") as tx:   # already there: its id
+            ...     tx.add_edge("US1", "is_after", "US7")
+            'e1'
+        """
         s, t = self._id(source), self._id(target)
         g = self.graph
         for e in g.edges:
@@ -282,7 +388,23 @@ class Transaction:
 
     def remove_edge(self, source: Any, edge_type: Optional[str] = None,
                     target: Any = None) -> bool:
-        """By id (one argument) or by the triple."""
+        """Remove a relation, by id (one argument) or by the triple.
+
+        Args:
+            source: the relation's id, or its source node.
+            edge_type: the edge type (with the triple).
+            target: the target node (with the triple).
+
+        Returns:
+            bool: False when there was no such relation.
+
+        Example:
+            >>> with em.write("Not after") as tx:
+            ...     tx.remove_edge("US1", "is_after", "US7")
+            True
+            >>> em.graph.edges(type="is_after")
+            []
+        """
         g = self.graph
         if edge_type is None and target is None:
             e = g.find_edge_by_id(str(source))
@@ -301,7 +423,24 @@ class Transaction:
         """The property ``quale`` of a unit: written on the one the unit has,
         else a new one (``unit → has_property → property``). ``concept`` (an
         URI or an ``em.vocab`` concept) writes the double value — the term and
-        its label (in ``lang``, else the study's, else English)."""
+        its label (in ``lang``, else the study's, else English).
+
+        Args:
+            unit: the unit (id, name or view).
+            quale: the property's name (``material``, ``stat:fase_di_superficie``).
+            value: the value (with ``concept``: the label to show).
+            concept: a concept URI or an :class:`~s3dgraphy.em.vocab.Concept`.
+            lang: the language of the concept's label.
+
+        Returns:
+            str: the property node's id.
+
+        Example:
+            >>> with em.write("Mortar") as tx:
+            ...     _ = tx.set_property("US7", "material", "mortar")
+            >>> em.graph.node("US7").prop("material")
+            'mortar'
+        """
         from ..nodes.property_node import PropertyNode
         from ..terms import make_term, set_term
         uid = self._id(unit)
@@ -394,12 +533,31 @@ class Transaction:
         return out
 
     def compute_available(self, on: Any, *, subject: Any = None) -> Any:
+        """Run every package combiner that has what it needs on the model ``on``
+        (``annotation.combiners.compute_available``).
+
+        Args:
+            on: the model (id, name or view).
+            subject: the unit the readings are about, when there is one.
+
+        Returns:
+            What the core returns: the combiners computed.
+        """
         from ..annotation.combiners import compute_available
         return compute_available(self.graph, self.overlay, self._id(on),
                                  subject=self._id(subject) if subject is not None else None,
                                  author=self._author())
 
     def recompute(self, extractor_ids: Optional[Iterable[str]] = None) -> Any:
+        """Recompute what reads the given extractors (after a point moved),
+        as field changes (``annotation.combiners.recompute``).
+
+        Args:
+            extractor_ids: the extractors that changed (default: all).
+
+        Returns:
+            What the core returns: the combiners recomputed.
+        """
         from ..annotation.combiners import recompute
         return recompute(self.graph, extractor_ids, author=self._author())
 
@@ -413,6 +571,21 @@ class Transaction:
         return d
 
     def commit(self) -> WriteResult:
+        """End the act and submit it (the ``with`` block does this for you).
+
+        Returns:
+            WriteResult: also stored in :attr:`result`.
+
+        Raises:
+            Refused: the contract refused the act; nothing was applied.
+            RuntimeError: the transaction is already closed.
+
+        Example:
+            >>> tx = em.write("By hand")
+            >>> tx.update("US1", "description", "a layer")
+            >>> tx.commit().applied
+            True
+        """
         if self.closed:
             raise RuntimeError(message("tx_closed"))
         delta = self.delta()
@@ -425,6 +598,15 @@ class Transaction:
         return self.result
 
     def abandon(self) -> None:
+        """Drop the act: nothing is applied and the transaction is closed.
+
+        Example:
+            >>> tx = em.write("Changed my mind")
+            >>> tx.update("US1", "description", "never written")
+            >>> tx.abandon()
+            >>> em.graph.node("US1").description
+            ''
+        """
         self.closed = True
         self._work = None
 
@@ -503,7 +685,39 @@ PROVES_TO_HOST = True
 
 
 def write(label: str = "script", *, volatile: bool = False, dry_run: bool = False) -> Transaction:
-    """Open an act (``with em.write("…") as tx:``)."""
+    """Open an act (``with em.write("…") as tx:``).
+
+    Everything done on ``tx`` inside the block is applied together, as one
+    step with one Log line, when the block ends. If the block raises, nothing
+    is applied. The author is the session's (see :func:`em.use
+    <s3dgraphy.em.use>`), never an argument.
+
+    Args:
+        label: what the act is (shown in the Log and the undo history).
+        volatile: a proposal: it only adds, marked as volatile.
+        dry_run: check the act and return its delta without applying it.
+
+    Returns:
+        Transaction: use it as a context manager.
+
+    Raises:
+        Refused: on leaving the block, when the contract refuses the act
+            (no author, a forbidden relation…). Nothing is applied.
+
+    Example:
+        >>> with em.write("Integrations after US7") as tx:
+        ...     tx.update("US1", "description", "a fill")
+        ...     _ = tx.add_edge("RM1", "is_after", "US7")
+        Traceback (most recent call last):
+        ...
+        s3dgraphy.em.errors.Refused: ...
+        >>> em.graph.node("US1").description   # refused: nothing applied
+        ''
+        >>> with em.write("Proof", dry_run=True) as tx:
+        ...     tx.update("US1", "description", "a fill")
+        >>> tx.result.applied, len(tx.result.delta.ops)
+        (False, 1)
+    """
     return Transaction(label, volatile=volatile, dry_run=dry_run)
 
 

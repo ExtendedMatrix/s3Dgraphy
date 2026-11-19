@@ -1,0 +1,114 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "LandscapeSurfaceNode"
+msgstr ""
+
+msgid "Generated from the datamodels (nodes 1.6.51, connections 1.6.55) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``."
+msgstr ""
+
+msgid "*The ground surface of a landscape: a DEM (a gis\\_layer GeoTIFF of raster.kind dem) drawn as a mesh, and optionally an image (an orthophoto, raster.kind image) draped on it — the two layers reached by has\\_linked\\_resource, the site it is the ground of by is\\_in\\_location.*"
+msgstr ""
+
+msgid "Class"
+msgstr ""
+
+msgid "``LandscapeSurfaceNode``"
+msgstr ""
+
+msgid "node_type"
+msgstr ""
+
+msgid "``landscape_surface``"
+msgstr ""
+
+msgid "Parent"
+msgstr ""
+
+msgid ":ref:`Node <type-Node>`"
+msgstr ""
+
+msgid "Label (en)"
+msgstr ""
+
+msgid "Landscape surface"
+msgstr ""
+
+msgid "Label (it)"
+msgstr ""
+
+msgid "Superficie del paesaggio"
+msgstr ""
+
+msgid "CIDOC"
+msgstr ""
+
+msgid "``crmdig:D1_Digital_Object``"
+msgstr ""
+
+msgid "Description"
+msgstr ""
+
+msgid "The ground surface of a landscape: a DEM (a gis\\_layer GeoTIFF of raster.kind dem) drawn as a mesh, and optionally an image (an orthophoto, raster.kind image) draped on it — the two layers reached by has\\_linked\\_resource, the site it is the ground of by is\\_in\\_location. A GEOMETRY of the place, not its identity (the LocationNodeGroup) and not a representation of a stratigraphic node (the RepresentationModelNode)."
+msgstr ""
+
+msgid "*Italiano*: La superficie del suolo di un paesaggio: un DEM (un gis\\_layer GeoTIFF di raster.kind dem) disegnato come mesh e, se c'è, un'immagine (un'ortofoto, raster.kind image) drappeggiata sopra — i due layer raggiunti con has\\_linked\\_resource, il sito di cui è il suolo con is\\_in\\_location. Una GEOMETRIA del luogo, non la sua identità (il LocationNodeGroup) né la rappresentazione di un nodo stratigrafico (il RepresentationModelNode)."
+msgstr ""
+
+msgid "Fields"
+msgstr ""
+
+msgid "Field"
+msgstr ""
+
+msgid "Mapping / note"
+msgstr ""
+
+msgid "``name``"
+msgstr ""
+
+msgid "P1\\_is\\_identified\\_by"
+msgstr ""
+
+msgid "``description``"
+msgstr ""
+
+msgid "P3\\_has\\_note"
+msgstr ""
+
+msgid "``step_m``"
+msgstr ""
+
+msgid "—"
+msgstr ""
+
+msgid "``vertical_exaggeration``"
+msgstr ""
+
+msgid "Edges"
+msgstr ""
+
+msgid "**Outgoing** (this node is the source): :ref:`generic_connection <edge-generic_connection>`, :ref:`has_embargo <edge-has_embargo>`, :ref:`has_license <edge-has_license>`, :ref:`has_linked_resource <edge-has_linked_resource>`, :ref:`has_semantic_shape <edge-has_semantic_shape>`, :ref:`has_translation <edge-has_translation>`, :ref:`is_in_location <edge-is_in_location>`"
+msgstr ""
+
+msgid "**Incoming** (this node is the target): :ref:`generic_connection <edge-generic_connection>`"
+msgstr ""
+
+msgid "From em"
+msgstr ""

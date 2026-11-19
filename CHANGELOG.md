@@ -5,6 +5,23 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Changed
+- **`import em`, and the EMStudio Python API site** (MICRO-API01, 19 November
+  2026). A top-level package `em` (`src/em/__init__.py`) puts
+  `s3dgraphy.em` under its short name — the same module object, so one host,
+  one set of listeners: `import em` as `import bpy`, and `python -m em run`
+  as `python -m s3dgraphy.em run` (whose imports are now absolute, so
+  `-m em` does not load a second copy). `docs-api/`: a Sphinx site of its own
+  («EMStudio Python API», theme and brand of the EMStudio manual, Italian
+  catalogue), written pages (Quickstart, overview, plugins and slots, best
+  practice, gotchas, change log) and a reference generated from the code:
+  autodoc of every `em` module, `docs-api/_tools/gen_types.py` (a page per
+  node and edge type, from the datamodels), `gen_slots.py` (the slots),
+  `gen_commands.py` (every EMStudio command `em.app.commands.run` reaches,
+  from EMStudio's menu table, keymap and i18n). Every public name of `em`
+  has a docstring (52 with runnable examples); `tests/test_em_docstrings.py`
+  fails when one is missing and runs the examples as doctests;
+  `tests/test_import_em.py`, `tests/test_docs_api.py` (the Quickstart's
+  examples on a copy of Templu Mare). `em.API_VERSION` unchanged.
 - **`space.layer@1`: a layer of the Space a plugin describes** (MICRO-GEO11,
   row G10 of the geophysics plan, decision G-2, 19 November 2026).
   `s3dgraphy.extensions.slots`: `space.layer@1` known (`PHASE2`) and drawn

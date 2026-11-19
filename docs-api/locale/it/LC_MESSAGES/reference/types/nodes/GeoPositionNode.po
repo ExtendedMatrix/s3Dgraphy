@@ -1,0 +1,129 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "GeoPositionNode"
+msgstr ""
+
+msgid "Generated from the datamodels (nodes 1.6.51, connections 1.6.55) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``."
+msgstr ""
+
+msgid "*Class to represent a GeoPosition node in the graph.*"
+msgstr ""
+
+msgid "Class"
+msgstr ""
+
+msgid "``GeoPositionNode``"
+msgstr ""
+
+msgid "node_type"
+msgstr ""
+
+msgid "``geo_position``"
+msgstr ""
+
+msgid "Parent"
+msgstr ""
+
+msgid ":ref:`Node <type-Node>`"
+msgstr ""
+
+msgid "Label (en)"
+msgstr ""
+
+msgid "Geo Position"
+msgstr ""
+
+msgid "Label (it)"
+msgstr ""
+
+msgid "Posizione geografica"
+msgstr ""
+
+msgid "CIDOC"
+msgstr ""
+
+msgid "``E53 Place``"
+msgstr ""
+
+msgid "Description"
+msgstr ""
+
+msgid "Class to represent a GeoPosition node in the graph. Attributes: type (str): Node type, set to 'geo\\_position'. data (dict): Data related to geographic position."
+msgstr ""
+
+msgid "*Italiano*: Classe che rappresenta un nodo GeoPosition nel grafo. Attributi: type (str): tipo di nodo, impostato a 'geo\\_position'. data (dict): dati relativi alla posizione geografica."
+msgstr ""
+
+msgid "Fields"
+msgstr ""
+
+msgid "Field"
+msgstr ""
+
+msgid "Mapping / note"
+msgstr ""
+
+msgid "``name``"
+msgstr ""
+
+msgid "P1\\_is\\_identified\\_by"
+msgstr ""
+
+msgid "``epsg``"
+msgstr ""
+
+msgid "P168\\_place\\_is\\_defined\\_by"
+msgstr ""
+
+msgid "``shift_x``"
+msgstr ""
+
+msgid "Q9\\_is\\_expressed\\_in\\_terms\\_of"
+msgstr ""
+
+msgid "``shift_y``"
+msgstr ""
+
+msgid "``shift_z``"
+msgstr ""
+
+msgid "``rotation``"
+msgstr ""
+
+msgid "``rotation_reference``"
+msgstr ""
+
+msgid "—"
+msgstr ""
+
+msgid "``datum_operation``"
+msgstr ""
+
+msgid "Edges"
+msgstr ""
+
+msgid "**Outgoing** (this node is the source): :ref:`generic_connection <edge-generic_connection>`, :ref:`has_embargo <edge-has_embargo>`, :ref:`has_license <edge-has_license>`, :ref:`has_semantic_shape <edge-has_semantic_shape>`, :ref:`has_translation <edge-has_translation>`, :ref:`is_in_paradata_nodegroup <edge-is_in_paradata_nodegroup>`"
+msgstr ""
+
+msgid "**Incoming** (this node is the target): :ref:`generic_connection <edge-generic_connection>`, :ref:`has_geoposition <edge-has_geoposition>`"
+msgstr ""
+
+msgid "From em"
+msgstr ""

@@ -1,0 +1,66 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Best practice"
+msgstr "Buone pratiche"
+
+msgid "*Short habits that keep a study readable for whoever comes next.*"
+msgstr "*Piccole abitudini che tengono uno studio leggibile per chi viene dopo.*"
+
+msgid "Write through ``em.write``, always"
+msgstr "Scrivi attraverso ``em.write``, sempre"
+
+msgid "One block, one label that says the act in words («Description of SU002», not «fix»). The label is the step of undo and the line of the Log. Do not change ``node.raw``: it writes nothing that counts."
+msgstr "Un blocco, un'etichetta che dice l'atto a parole («Descrizione di SU002», non «fix»). L'etichetta è il passo di annullamento e la riga del Log. Non cambiare ``node.raw``: non scrive nulla che conti."
+
+msgid "One act, one block"
+msgstr "Un atto, un blocco"
+
+msgid "Put in a block what belongs together, and only that. Undo takes the block back whole."
+msgstr "Metti in un blocco ciò che va insieme, e solo quello. Annulla riporta indietro il blocco intero."
+
+msgid "Try before you write"
+msgstr "Prova prima di scrivere"
+
+msgid "In the console, **Try** runs the code as a proof; outside, ``--dry-run``."
+msgstr "Nella console, **Prova** esegue il codice come prova; fuori, ``--dry-run``."
+
+msgid "Stamp what you derive"
+msgstr "Timbra ciò che derivi"
+
+msgid "A picture, a table, a model made from the study carries its stamp: ``em.stamp(path, inputs=[…])`` (in a plugin ``ctx.stamp``). Whoever finds the file knows what it came from and can check it is still true."
+msgstr "Un'immagine, una tabella, un modello fatti dallo studio portano il loro timbro: ``em.stamp(path, inputs=[…])`` (in un plugin ``ctx.stamp``). Chi trova il file sa da dove viene e può verificare che sia ancora vero."
+
+msgid "Find nodes by id in code that lasts"
+msgstr "Nel codice che deve durare, trova i nodi per id"
+
+msgid "Names are for people and may repeat (``node(\"SU1\")`` with two SU1 raises :class:`~s3dgraphy.em.AmbiguousNode`, never returns the first one); ids do not change."
+msgstr "I nomi sono per le persone e possono ripetersi (``node(\"SU1\")`` con due SU1 solleva :class:`~s3dgraphy.em.AmbiguousNode`, non restituisce mai il primo); gli id non cambiano."
+
+msgid "Controlled values"
+msgstr "Valori controllati"
+
+msgid "A property that has a vocabulary takes a **concept**, not a free word: ``tx.set_property(unit, quale, concept=uri)``; ``em.vocab.search`` gives candidates."
+msgstr "Una proprietà che ha un vocabolario prende un **concetto**, non una parola libera: ``tx.set_property(unit, quale, concept=uri)``; ``em.vocab.search`` propone i candidati."
+
+msgid "Declare what a plugin does"
+msgstr "Dichiara che cosa fa un plugin"
+
+msgid "``writes = false`` for a command that only reads, the narrowest slots, the ``em_api_min`` it really needs."
+msgstr "``writes = false`` per un comando che legge soltanto, gli slot più stretti, la versione ``em_api_min`` che gli serve davvero."

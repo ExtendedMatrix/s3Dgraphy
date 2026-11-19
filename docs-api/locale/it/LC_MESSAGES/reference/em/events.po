@@ -1,0 +1,117 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "``em.events`` — events"
+msgstr ""
+
+msgid "Generated for em API |api| from the docstrings of :mod:`s3dgraphy.em.events`."
+msgstr ""
+
+msgid "The events of ``em`` — a closed, small set (SPEC-plugin §2.5)."
+msgstr ""
+
+msgid "Six for 1.6: ``selection-changed``, ``graph-changed`` (after a step was applied, with the ids it touched), ``document-opened``, ``document-saved`` (after the host saved: a listener never changes what is saved, SPEC-plugin §14.5), ``document-closed``, ``locale-changed``. Closed for the same reason the capabilities are: an event nobody emits is a subscription that silently never fires. (``document-saved`` came with W14, MICRO-PL17: the slot ``event@1`` of SPEC-plugin §13.)"
+msgstr ""
+
+msgid "Two tables of listeners. The SCRIPT's (:func:`on`) — which a host may scope to one document's session (:func:`scope`: EMStudio keeps one per page session, so a listener of one document does not fire on another's events) — and the PLUGINS' (:func:`on_owned`), which belong to the process and hear every document: a plugin is loaded once per host, not per document."
+msgstr ""
+
+msgid "The HOST emits (:func:`emit`); a script subscribes (:func:`on`). A listener that raises is caught and said (``em.app.notify`` when the host has one, the returned list otherwise): one bad listener must not take the others down."
+msgstr ""
+
+msgid "**A listener does not write inside the callback.** A write opened while an event is being delivered (``em.write`` inside a listener) is QUEUED and run after the last listener — never a write re-entering the step that caused the event (§2.5). :func:`dispatching` says whether we are inside a delivery; :func:`defer` queues."
+msgstr ""
+
+msgid "Bases: :py:class:`object`"
+msgstr ""
+
+msgid "What :func:`on` returns: ``.off()`` (or ``with``) takes it away."
+msgstr ""
+
+msgid "Parameters"
+msgstr ""
+
+msgid "Unsubscribe (again: nothing happens)."
+msgstr ""
+
+msgid "Return type"
+msgstr ""
+
+msgid "Subscribe ``fn(payload)`` to ``event``; usable as a decorator (``@em.on(\"graph-changed\")``). Returns a :class:`Subscription`, or ``fn`` when used as a decorator."
+msgstr ""
+
+msgid "The payload is a dict with the event's name under ``\"event\"``; for ``graph-changed`` also the step's ``label`` and the ``ids`` it touched."
+msgstr ""
+
+msgid "one of :data:`EVENTS`."
+msgstr ""
+
+msgid "the listener; omit it to use ``on`` as a decorator."
+msgstr ""
+
+msgid "Raises"
+msgstr ""
+
+msgid "an unknown event."
+msgstr ""
+
+msgid "Example"
+msgstr ""
+
+msgid "Unsubscribe ``fn`` from ``event`` (the other way is ``Subscription.off()``)."
+msgstr ""
+
+msgid "the listener given to :func:`on`."
+msgstr ""
+
+msgid "Returns"
+msgstr ""
+
+msgid "False when ``fn`` was not subscribed."
+msgstr ""
+
+msgid "How many listeners per event — the script's and the plugins' — what a bridge reads to decide whether to forward an event at all (SPEC §2.5: only when a Python listener exists)."
+msgstr ""
+
+msgid "The plugins' listeners alone, per event."
+msgstr ""
+
+msgid "A PLUGIN's listener (``ctx.on``): it hears every document, and :func:`off_owner` takes all of an owner's away (a plugin disabled)."
+msgstr ""
+
+msgid "Every listener of ``owner`` off; how many there were."
+msgstr ""
+
+msgid "The script's listeners are ``table`` while the block runs (a host's session: one document, its own listeners), then those of before. The plugins' listeners are not touched: they hear every document."
+msgstr ""
+
+msgid "An empty table of listeners, one list per event (for :func:`scope`)."
+msgstr ""
+
+msgid "Every listener off (a host closing, a test) — the plugins' too."
+msgstr ""
+
+msgid "True while an event is being delivered (a write opened now is queued)."
+msgstr ""
+
+msgid "Run ``fn`` after the delivery in progress (now, if none)."
+msgstr ""
+
+msgid "Deliver ``event`` to its listeners — the HOST's to call. Returns the failures (``[{listener, error}]``); the writes the listeners opened run after the last one, in order."
+msgstr ""

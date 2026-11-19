@@ -1,0 +1,135 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "HorizonNode"
+msgstr ""
+
+msgid "Generated from the datamodels (nodes 1.6.51, connections 1.6.55) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``."
+msgstr ""
+
+msgid "*One span of a periodization: a label, a start and an end in years (negative = BC), a colour and its order in the periodization.*"
+msgstr ""
+
+msgid "Class"
+msgstr ""
+
+msgid "``HorizonNode``"
+msgstr ""
+
+msgid "node_type"
+msgstr ""
+
+msgid "``horizon``"
+msgstr ""
+
+msgid "Parent"
+msgstr ""
+
+msgid ":ref:`Node <type-Node>`"
+msgstr ""
+
+msgid "Label (en)"
+msgstr ""
+
+msgid "Horizon"
+msgstr ""
+
+msgid "Label (it)"
+msgstr ""
+
+msgid "Orizzonte"
+msgstr ""
+
+msgid "CIDOC"
+msgstr ""
+
+msgid "``crmgeo:SP10_Declarative_Time-Span``"
+msgstr ""
+
+msgid "Description"
+msgstr ""
+
+msgid "One span of a periodization: a label, a start and an end in years (negative = BC), a colour and its order in the periodization. A unit, an epoch or a graph is IN the horizon when its absolute interval (Graph.chronology) intersects [start\\_time, end\\_time]: overlap is enough, containment is not required. enabled says whether the horizon is in use (EM Tools' CronoFilter flag, same name)."
+msgstr ""
+
+msgid "*Italiano*: Un intervallo di una periodizzazione: etichetta, inizio e fine in anni (negativi = a.C.), colore e posto nella periodizzazione. Un'unità, un'epoca o un grafo è DENTRO l'orizzonte se il suo intervallo assoluto (Graph.chronology) lo interseca: basta la sovrapposizione. enabled dice se l'orizzonte è in uso (lo stesso flag del CronoFilter di EM Tools)."
+msgstr ""
+
+msgid "Fields"
+msgstr ""
+
+msgid "Field"
+msgstr ""
+
+msgid "Mapping / note"
+msgstr ""
+
+msgid "``name``"
+msgstr ""
+
+msgid "P1\\_is\\_identified\\_by"
+msgstr ""
+
+msgid "``description``"
+msgstr ""
+
+msgid "P3\\_has\\_note"
+msgstr ""
+
+msgid "``start_time``"
+msgstr ""
+
+msgid "P82a\\_begin\\_of\\_the\\_begin"
+msgstr ""
+
+msgid "``end_time``"
+msgstr ""
+
+msgid "P82b\\_end\\_of\\_the\\_end"
+msgstr ""
+
+msgid "``color``"
+msgstr ""
+
+msgid "P90\\_has\\_value (layout that travels with the data)"
+msgstr ""
+
+msgid "``order``"
+msgstr ""
+
+msgid "em:order (its place in the periodization, 0 first)"
+msgstr ""
+
+msgid "``enabled``"
+msgstr ""
+
+msgid "not projected (a working flag of the tools)"
+msgstr ""
+
+msgid "Edges"
+msgstr ""
+
+msgid "**Outgoing** (this node is the source): :ref:`generic_connection <edge-generic_connection>`, :ref:`has_embargo <edge-has_embargo>`, :ref:`has_license <edge-has_license>`, :ref:`has_semantic_shape <edge-has_semantic_shape>`, :ref:`has_translation <edge-has_translation>`, :ref:`is_in_periodization <edge-is_in_periodization>`"
+msgstr ""
+
+msgid "**Incoming** (this node is the target): :ref:`generic_connection <edge-generic_connection>`"
+msgstr ""
+
+msgid "From em"
+msgstr ""

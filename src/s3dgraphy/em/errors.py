@@ -39,3 +39,6 @@ class Refused(EmError):
         super().__init__(messages or {"en": text, "it": text},
                          reason=(getattr(result, "data", None) or {}).get("reason"))
         self.reason = self.data.get("reason")
+
+
+__all__ = ["EmError", "NotAvailable", "Refused"]

@@ -1,0 +1,75 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "API overview"
+msgstr "Panoramica dell'API"
+
+msgid "*Four things: the document, the graph, the selection, and the writes.*"
+msgstr "*Quattro cose: il documento, il grafo, la selezione e le scritture.*"
+
+msgid "The document and the graph"
+msgstr "Il documento e il grafo"
+
+msgid "A study is a **document** (an ``.em.json``) that holds one or more **graphs**. ``em.graph`` is the graph the host shows: in EMStudio the open study, in EM Tools the active graph of EM Setup, in a script the file given to ``em.open``. It is read again at every access, so it is always the current one."
+msgstr "Uno studio è un **documento** (un ``.em.json``) che contiene uno o più **grafi**. ``em.graph`` è il grafo che l'host mostra: in EMStudio lo studio aperto, in EM Tools il grafo attivo di EM Setup, in uno script il file dato a ``em.open``. Viene riletto a ogni accesso, così è sempre quello corrente."
+
+msgid "What ``em.graph`` returns are **views**, read-only:"
+msgstr "Ciò che ``em.graph`` restituisce sono **viste**, in sola lettura:"
+
+msgid ":class:`~s3dgraphy.em.GraphView` — ``node(ref)``, ``nodes(type=, name=, where=)``, ``edges(source=, target=, type=)``, ``chronology()``;"
+msgstr ""
+
+msgid ":class:`~s3dgraphy.em.NodeView` — ``id``, ``name``, ``type``, ``description``, ``data``, ``props()`` and ``property(quale)`` with the chain each value comes from, ``edges()``, ``neighbours()``;"
+msgstr ":class:`~s3dgraphy.em.NodeView` — ``id``, ``name``, ``type``, ``description``, ``data``, ``props()`` e ``property(quale)`` con la catena da cui viene ogni valore, ``edges()``, ``neighbours()``;"
+
+msgid ":class:`~s3dgraphy.em.EdgeView` — ``type``, ``source``, ``target``."
+msgstr ""
+
+msgid "The types of nodes and edges are those of the EM language: :doc:`reference/types/index`."
+msgstr "I tipi di nodi e di archi sono quelli del linguaggio EM: :doc:`reference/types/index`."
+
+msgid "The selection and the application"
+msgstr "La selezione e l'applicazione"
+
+msgid "``em.app`` is the application half (:doc:`reference/context`): the selection (``em.app.selection()``, ``em.app.select(ids)``), the views, the Space and its camera, the commands of the menus (``em.app.commands.run(id)``, the equivalent of ``bpy.ops``: :doc:`reference/commands/index`), and ``em.app.notify``. With no application ``em.app.available`` is ``False`` and its calls say so."
+msgstr "``em.app`` è la metà che spetta all'applicazione (:doc:`reference/context`): la selezione (``em.app.selection()``, ``em.app.select(ids)``), le viste, lo Spazio e la sua camera, i comandi dei menu (``em.app.commands.run(id)``, l'equivalente di ``bpy.ops``: :doc:`reference/commands/index`), e ``em.app.notify``. Senza applicazione ``em.app.available`` è ``False`` e le sue chiamate lo dicono."
+
+msgid "Writing: through the contract"
+msgstr "Scrivere: attraverso il contratto"
+
+msgid "There is one way to change a study:"
+msgstr "C'è un solo modo per cambiare uno studio:"
+
+msgid "The block becomes a **delta** that passes the contract of the connectors: the four refusals (who writes, what is declared, the slots, the author) and the rules of the EM language (an edge the datamodel does not allow is refused). Then the host applies it as **one step** of undo, with one line in the Log and its **DTC** chain: who wrote, when, with which code. If anything is refused, nothing is written and :class:`~s3dgraphy.em.Refused` says why."
+msgstr "Il blocco diventa un **delta** che passa il contratto dei connettori: i quattro rifiuti (chi scrive, che cosa è dichiarato, gli slot, l'autore) e le regole del linguaggio EM (un arco che il datamodel non permette viene rifiutato). Poi l'host lo applica come **un solo passo** di annullamento, con una riga nel Log e la sua catena **DTC**: chi ha scritto, quando, con quale codice. Se qualcosa è rifiutato, non si scrive nulla e :class:`~s3dgraphy.em.Refused` dice perché."
+
+msgid "``node.raw`` gives the s3Dgraphy node itself, for whoever needs it — changing it writes nothing that counts (no step, no Log, no author)."
+msgstr "``node.raw`` dà il nodo s3Dgraphy stesso, per chi ne ha bisogno — cambiarlo non scrive nulla che conti (nessun passo, nessuna riga nel Log, nessun autore)."
+
+msgid "Events"
+msgstr "Eventi"
+
+msgid "``em.on(event, fn)`` listens to the closed set of events in :data:`s3dgraphy.em.EVENTS`: ``selection-changed``, ``graph-changed``, ``document-opened``, ``document-saved``, ``document-closed``, ``locale-changed``. A write opened inside a listener runs after the delivery."
+msgstr "``em.on(event, fn)`` ascolta l'insieme chiuso di eventi in :data:`s3dgraphy.em.EVENTS`: ``selection-changed``, ``graph-changed``, ``document-opened``, ``document-saved``, ``document-closed``, ``locale-changed``. Una scrittura aperta dentro un listener viene eseguita dopo la consegna."
+
+msgid "Derived artifacts"
+msgstr "Artefatti derivati"
+
+msgid "``em.stamp(file, inputs=[…])`` gives a derived file (a picture, a table, a model) its **stamp**: what it was made from, by whom, with which code — the same stamp EMStudio and EM Tools write. See :doc:`info_best_practice`."
+msgstr "``em.stamp(file, inputs=[…])`` dà a un file derivato (un'immagine, una tabella, un modello) il suo **timbro**: da che cosa è stato fatto, da chi, con quale codice — lo stesso timbro che scrivono EMStudio ed EM Tools. Vedi :doc:`info_best_practice`."

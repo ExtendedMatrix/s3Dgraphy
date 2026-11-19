@@ -1,0 +1,162 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "``em.extensions`` — installing and enabling extensions"
+msgstr ""
+
+msgid "Generated for em API |api| from the docstrings of :mod:`s3dgraphy.em.extensions`."
+msgstr ""
+
+msgid "``em.extensions`` — install, list, enable from disk (phase 1, the plan's §5.1)."
+msgstr ""
+
+msgid "The library that does it is :mod:`s3dgraphy.extensions` (W21, W19); this is its face in ``em``, the same in a console, a script and Blender. It never asks a question: the trust of a ``[code]`` section is an argument (``trust=True``), and :func:`preview` says beforehand what an archive is made of and whether the question is needed — a window asks, a script decides with its eyes open."
+msgstr ""
+
+msgid "Bases: :py:class:`object`"
+msgstr ""
+
+msgid "``em.extensions``."
+msgstr ""
+
+msgid "The two panels of the confirmation (data, code), nothing written."
+msgstr ""
+
+msgid "Parameters"
+msgstr ""
+
+msgid "Return type"
+msgstr ""
+
+msgid "Everything wrong with an archive: ``{ok, errors, warnings}``, each problem in English and Italian."
+msgstr ""
+
+msgid "Install from disk (a folder or a zip): data first, code after. A ``[code]`` section needs ``trust=True`` — said by :func:`preview`; ``parts=\"data\"`` is «Data only»."
+msgstr ""
+
+msgid "Install a newer archive over an installed extension, section by section: changed code replaces the active one, changed data installs beside the old, an unchanged section is left alone."
+msgstr ""
+
+msgid "a folder or a zip."
+msgstr ""
+
+msgid "accept a ``[code]`` section (see :meth:`preview`)."
+msgstr ""
+
+msgid "Returns"
+msgstr ""
+
+msgid "the install report."
+msgstr ""
+
+msgid "What is installed on this machine, by parts."
+msgstr ""
+
+msgid "The installed extension ``eid`` (as in :meth:`list`), or None."
+msgstr ""
+
+msgid "Make a code version the active one of its id. It is LOADED by the host at its next start (W14): Python does not unload a module well."
+msgstr ""
+
+msgid "Turn off the code of ``eid`` (from the host's next start)."
+msgstr ""
+
+msgid "False when it was not enabled."
+msgstr ""
+
+msgid "The active code versions for ``host`` (default: the current host; the command line, ``none``, sees them all)."
+msgstr ""
+
+msgid "What each kind of removal of ``eid`` would do, before doing it: the code that goes with the data, who requires the data, the vocabularies nobody else brings."
+msgstr ""
+
+msgid "``part``: ``code`` · ``data`` · ``all``. The vocabularies stay on the machine unless ``purge_vocabularies`` (D-19), the plugin's own state unless ``purge_user_data`` (X3)."
+msgstr ""
+
+msgid "The curator's folder → ``<id>-<version>.zip`` (as the command line)."
+msgstr ""
+
+msgid "W15a · the plugins' development folder as set (``None``: not set)."
+msgstr ""
+
+msgid "W15a · set (or clear, ``None``) the development folder of this machine. Its plugins load where they are, marked «development, not verified», only when the host says so (EMStudio: «Funzioni sperimentali»)."
+msgstr ""
+
+msgid "W15a · the development folder and the plugins in it, with their problems."
+msgstr ""
+
+msgid "The repositories added on this machine (never their tokens)."
+msgstr ""
+
+msgid "*Repository ▸ +*: an ``index.json`` by URL, ``file://`` or a folder (a NAS). ``trust_reviews`` (X4): its reviews count here (default: the official index's only). ``keys`` (X8): its minisign public keys — with them, index and archives signed or refused."
+msgstr ""
+
+msgid "The minisign public keys of ``repo``: read (``keys=None``) or replaced (``[]``: no longer signed). The cached index stays only if it verifies."
+msgstr ""
+
+msgid "What the installer says of the ``.minisig`` beside an archive: ``signed`` / ``unknown_key`` / ``bad``, or ``None`` (not signed)."
+msgstr ""
+
+msgid "Whether the reviews of ``repo`` count on this machine (what is installed is looked at again)."
+msgstr ""
+
+msgid "The installed codes: ``verified``, ``reviewed`` (by, on, as, repo), ``trusted_by``."
+msgstr ""
+
+msgid "Forget a repository and its cached index. What was installed from it stays installed."
+msgstr ""
+
+msgid "False when there was no such repository."
+msgstr ""
+
+msgid "Read the index again (http(s) only with ``online_access``)."
+msgstr ""
+
+msgid "What the repositories offer, with what this machine has."
+msgstr ""
+
+msgid "Install from a repository: the archive checked against the index, the missing requirements first (their code only with ``trust_requires``)."
+msgstr ""
+
+msgid "«Allow online access» (set it in the host's window, or ``s3dgraphy.extensions.set_online_access``)."
+msgstr ""
+
+msgid "«Check for updates»: the indexes read again (https only with ``online_access``), what is newer, and which update would ask the trust again."
+msgstr ""
+
+msgid "«Update all»: an update that would ask the trust question again waits in ``needs_trust`` unless its id is in ``trust``."
+msgstr ""
+
+msgid "The data and code versions of ``eid`` on this machine, side by side."
+msgstr ""
+
+msgid "An older (or newer) code version already on disk made the active one — no download; the host loads it at its next start."
+msgstr ""
+
+msgid "One version of the code (not the one in use) or of the data."
+msgstr ""
+
+msgid "What nothing in the register owns, removed (``dry_run``: said)."
+msgstr ""
+
+msgid "«This file uses stat 1.0.0, 1.1.0 is here»: for the packages the open document declares (or ``declared``), the newer version installed here, how much it changes, and for a major the CHANGELOG."
+msgstr ""
+
+msgid "The answer «yes»: the open document declares ``ref`` at ``version`` (written at the next save; the packages read again now). Returns the new ``header.profiles``."
+msgstr ""

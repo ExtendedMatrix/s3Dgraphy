@@ -77,6 +77,8 @@ States = ("loaded", "failed", "refused", "restart")
 
 
 def plugins_data_dir() -> Path:
+    """The folder of the plugins' own state, kept across updates:
+    ``S3DGRAPHY_PLUGINS_DATA_DIR``, else ``~/.s3dgraphy/plugins-data``."""
     env = os.environ.get(DATA_ENV)
     return Path(env).expanduser() if env else Path.home() / ".s3dgraphy" / "plugins-data"
 
@@ -112,6 +114,7 @@ class CommandDecl:
 
     @property
     def name(self) -> str:
+        """The command's full name, ``<plugin>/<command>``."""
         return f"{self.plugin}/{self.id}"
 
     @property
@@ -120,9 +123,11 @@ class CommandDecl:
         return next((str(s["name"]) for s in self.slots if s.get("kind") == "path"), "path")
 
     def label_in(self, lang: str = "en") -> str:
+        """The command's label in ``lang``, else English, else any, else its id."""
         return self.label.get(lang) or self.label.get("en") or next(iter(self.label.values()), self.id)
 
     def as_dict(self) -> Dict[str, Any]:
+        """The declaration as plain data (what a host draws from)."""
         out = {"plugin": self.plugin, "id": self.id, "name": self.name, "label": dict(self.label),
                "writes": self.writes, "slots": [dict(s) for s in self.slots], "in": list(self.where),
                "off": [dict(o) for o in self.off], "when": self.when, "accept": list(self.accept),
@@ -150,9 +155,11 @@ class PanelDecl:
 
     @property
     def name(self) -> str:
+        """The panel's full name, ``<plugin>/<panel>``."""
         return f"{self.plugin}/{self.id}"
 
     def as_dict(self) -> Dict[str, Any]:
+        """The declaration as plain data (what a host draws from)."""
         return {"plugin": self.plugin, "id": self.id, "name": self.name, "label": dict(self.label),
                 "place": self.place, "when": self.when, "fields": [dict(f) for f in self.fields]}
 
@@ -283,6 +290,14 @@ def _reader_v2(c: Dict[str, Any], pid: str) -> Dict[str, Any]:
 
 @dataclass
 class Plugin:
+    """One plugin found on disk, and what became of it.
+
+    ``state`` is one of ``loaded``, ``failed``, ``refused``, ``restart``;
+    ``problems`` says why (each problem in English and Italian). Once loaded,
+    ``handlers`` are its wired commands and ``exposed`` what it gives the
+    console (``em.ext``).
+    """
+
     id: str
     version: str
     source: str
@@ -306,10 +321,12 @@ class Plugin:
 
     @property
     def name(self) -> str:
+        """The plugin's display name (its id when the manifest gives none)."""
         return str(self.meta.get("name") or self.id)
 
     @property
     def package(self) -> Optional[str]:
+        """The data package of the same envelope (a mixed package), or None."""
         return self.meta.get("package")
 
     @property
@@ -318,9 +335,11 @@ class Plugin:
         return self.source == SOURCE_DEV
 
     def say(self, key: str, **kw: Any) -> None:
+        """Record a problem by its message key (in English and Italian)."""
         self.problems.append({"code": key, **both(key, **kw)})
 
     def as_dict(self) -> Dict[str, Any]:
+        """The plugin's state as plain data (for a host's list of plugins)."""
         return {"id": self.id, "version": self.version, "source": self.source, "name": self.name,
                 "module": self.module, "entry": self.entry, "state": self.state,
                 "problems": [dict(p) for p in self.problems], "package": self.package,
@@ -363,18 +382,23 @@ class PackageView:
         return self.profile is not None
 
     def landmark_set(self, set_id: str) -> Optional[Dict[str, Any]]:
+        """A landmark set of this package, or None."""
         return self.overlay.landmark_set(set_id)
 
     def extractor_types(self) -> Dict[str, Dict[str, Any]]:
+        """The extractor types of this package, by id."""
         return self.overlay.extractor_types()
 
     def combiner_types(self) -> Dict[str, Dict[str, Any]]:
+        """The combiner types of this package, by id."""
         return self.overlay.combiner_types()
 
     def qualia_types(self) -> Dict[str, Dict[str, Any]]:
+        """The qualia (property types) of this package, by id."""
         return self.overlay.qualia_types()
 
     def label(self, type_id: str, lang: str = "en") -> Optional[str]:
+        """The label of a type of this package in ``lang``, or None."""
         return self.overlay.label(type_id, lang)
 
     def __repr__(self) -> str:
@@ -389,6 +413,7 @@ class ExportFile:
     mime: str = "application/octet-stream"
 
     def as_dict(self) -> Dict[str, Any]:
+        """``{name, mime, text}``, or ``{name, mime, b64}`` for bytes."""
         import base64
         if isinstance(self.content, (bytes, bytearray)):
             return {"name": self.name, "mime": self.mime, "b64": base64.b64encode(bytes(self.content)).decode("ascii")}
@@ -453,7 +478,7 @@ class Context:
         return ExportFile(str(name), content, mime)
 
     def stamp(self, artifact: Any, **fields: Any) -> Dict[str, Any]:
-        """G-5 (MICRO-GEO02) · stamp a file this plugin made, in one line:
+        """Stamp a file this plugin made, in one line:
         ``<artifact>.stamp.json`` beside it, the plugin as the agent (id and
         version). ``inputs``, ``parameters``, ``dtc_kind``, ``technique``…:
         :func:`s3dgraphy.em.stamps.stamp_artifact`. Encouraged, never required."""
@@ -468,19 +493,24 @@ class Context:
 
 @dataclass
 class Calling:
+    """The plugin (and command) on whose behalf ``em`` is acting now (see :func:`calling_now`)."""
+
     plugin: Plugin
     command: Optional[CommandDecl]
 
     @property
     def descriptor(self) -> ConnectorDescriptor:
+        """The plugin's descriptor: its declared capabilities are what the seam checks."""
         return self.plugin.descriptor             # type: ignore[return-value]
 
     @property
     def writes(self) -> bool:
+        """Whether the command may write (``writes = false`` in the manifest: no)."""
         return self.command.writes if self.command is not None else True
 
     @property
     def name(self) -> str:
+        """``<plugin>/<command>``, or the plugin's id outside a command."""
         return self.command.name if self.command is not None else self.plugin.id
 
 
@@ -791,10 +821,12 @@ def reload(pid: str, host: str) -> Optional[Plugin]:
 
 
 def loaded() -> List[Plugin]:
+    """Every plugin known to this process (whatever its state), by id."""
     return [_plugins[k] for k in sorted(_plugins)]
 
 
 def get(pid: str) -> Optional[Plugin]:
+    """The plugin ``pid`` known to this process, or None."""
     return _plugins.get(pid)
 
 

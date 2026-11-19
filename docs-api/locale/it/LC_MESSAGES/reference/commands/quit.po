@@ -1,0 +1,108 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "quit"
+msgstr ""
+
+msgid "*Generated from EMStudio 85f69cd for em API 1.2.0.*"
+msgstr ""
+
+msgid "Id"
+msgstr ""
+
+msgid "``quit``"
+msgstr ""
+
+msgid "Label (en)"
+msgstr ""
+
+msgid "Quit EMStudio"
+msgstr ""
+
+msgid "Label (it)"
+msgstr ""
+
+msgid "Esci da EMStudio"
+msgstr ""
+
+msgid "Kind"
+msgstr ""
+
+msgid "Item drawn by the operating system (no page button) — OS item ``quit``"
+msgstr ""
+
+msgid "Reachable from Python"
+msgstr ""
+
+msgid "no"
+msgstr ""
+
+msgid "Writes to the graph"
+msgstr ""
+
+msgid "not declared"
+msgstr ""
+
+msgid "Menu path (en)"
+msgstr ""
+
+msgid "EMStudio ▸ Quit EMStudio"
+msgstr ""
+
+msgid "Menu path (it)"
+msgstr ""
+
+msgid "EMStudio ▸ Esci da EMStudio"
+msgstr ""
+
+msgid "Drawn in"
+msgstr ""
+
+msgid "the system menu bar: macOS desktop"
+msgstr ""
+
+msgid "Shortcut"
+msgstr ""
+
+msgid "none"
+msgstr ""
+
+msgid "Defined in"
+msgstr ""
+
+msgid "``frontend/src/menu-table.ts:130``"
+msgstr ""
+
+msgid "Not yet available from Python"
+msgstr ""
+
+msgid "An item the operating system draws in the macOS menu bar: it has no page button, and ``runCommand`` only finds rows of kind ``cmd`` (``frontend/src/menu-ui.ts:201``), so ``em.app.commands.run`` raises ``em.NotAvailable``."
+msgstr ""
+
+msgid "What it does"
+msgstr ""
+
+msgid "No tooltip or description string in ``i18n.ts``; the label is all the UI says."
+msgstr ""
+
+msgid "Slots"
+msgstr ""
+
+msgid "None."
+msgstr ""

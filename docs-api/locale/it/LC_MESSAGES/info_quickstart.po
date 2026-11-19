@@ -1,0 +1,87 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Quickstart"
+msgstr "Primi passi"
+
+msgid "*Three lines of Python on Templu Mare, in EMStudio and outside it.*"
+msgstr "*Tre righe di Python su Templu Mare, in EMStudio e fuori.*"
+
+msgid "``import em``"
+msgstr ""
+
+msgid "Everything starts with one line, as ``import bpy`` in Blender:"
+msgstr "Tutto comincia con una riga, come ``import bpy`` in Blender:"
+
+msgid "``em`` is the same in the three places it lives:"
+msgstr "``em`` è lo stesso nei tre posti in cui vive:"
+
+msgid "**in EMStudio** — the Python console and the plugins: ``em`` is already imported and its graph is the open study;"
+msgstr "**in EMStudio** — la console Python e i plugin: ``em`` è già importato e il suo grafo è lo studio aperto;"
+
+msgid "**in EM Tools** — Blender's console and scripts, beside ``bpy``: its graph is the active graph of EM Setup;"
+msgstr "**in EM Tools** — la console e gli script di Blender, accanto a ``bpy``: il suo grafo è il grafo attivo di EM Setup;"
+
+msgid "**in a script or a notebook** — with s3dgraphy installed (``pip install s3dgraphy``), on a file: ``em.open(path)``, then ``em.save()``. No application is needed, as Blender «as a module»."
+msgstr "**in uno script o in un notebook** — con s3dgraphy installato (``pip install s3dgraphy``), su un file: ``em.open(path)``, poi ``em.save()``. Non serve nessuna applicazione, come Blender «come modulo»."
+
+msgid "``import em`` and ``from s3dgraphy import em`` are the same module."
+msgstr "``import em`` e ``from s3dgraphy import em`` sono lo stesso modulo."
+
+msgid "Open the console in EMStudio"
+msgstr "Aprire la console in EMStudio"
+
+msgid "``Settings… ▸ Advanced``: tick **Turn on the experimental functions on this machine**, press **Save**, and reload EMStudio when it asks."
+msgstr "``Impostazioni… ▸ Avanzate``: spunta **Accendi le funzioni sperimentali su questa macchina**, premi **Salva**, e ricarica EMStudio quando te lo chiede."
+
+msgid "Open a study — here, Templu Mare."
+msgstr "Apri uno studio — qui, Templu Mare."
+
+msgid "``Tools ▸ Python console…``. The head says **Python · em on «…»**. ``em`` is imported, ``g`` is ``em.graph`` and ``sel`` is the selection."
+msgstr "``Strumenti ▸ Console Python…``. L'intestazione dice **Python · em su «…»**. ``em`` è importato, ``g`` è ``em.graph`` e ``sel`` è la selezione."
+
+msgid "Three first commands"
+msgstr "Tre primi comandi"
+
+msgid "**Read a unit.** A node is found by its name or its id; its edges say what it is connected to."
+msgstr "**Leggere un'unità.** Un nodo si trova per nome o per id; i suoi archi dicono a che cosa è collegato."
+
+msgid "**Look at the whole study.** ``nodes()`` filters by type, name or property."
+msgstr "**Guardare tutto lo studio.** ``nodes()`` filtra per tipo, nome o proprietà."
+
+msgid "**Write.** Every change is a block opened by ``em.write`` with a label: the block is one step of ``Edit ▸ Undo``, one line of the Log, and an act whose chain keeps the code that ran."
+msgstr "**Scrivere.** Ogni modifica è un blocco aperto da ``em.write`` con un'etichetta: il blocco è un passo di ``Modifica ▸ Annulla``, una riga nel Log, e un atto la cui catena conserva il codice che è stato eseguito."
+
+msgid "In the console, press **Try** first: the same code runs as a proof and shows what it would change, applying nothing."
+msgstr "Nella console, premi prima **Prova**: lo stesso codice viene eseguito come prova e mostra che cosa cambierebbe, senza applicare nulla."
+
+msgid "The same, outside EMStudio"
+msgstr "Lo stesso, fuori da EMStudio"
+
+msgid "Save the three blocks as files and run them on a copy of the study:"
+msgstr "Salva i tre blocchi come file ed eseguili su una copia dello studio:"
+
+msgid "``--author`` is who writes (in EMStudio it is the person signed in); ``--save`` writes the file back; ``--dry-run`` turns every write into a proof. Or in a notebook, with the author set once for the session:"
+msgstr "``--author`` è chi scrive (in EMStudio è la persona che ha fatto l'accesso); ``--save`` riscrive il file; ``--dry-run`` fa di ogni scrittura una prova. Oppure in un notebook, con l'autore impostato una volta per la sessione:"
+
+msgid "``em.help()`` prints what ``em`` offers where you are."
+msgstr "``em.help()`` stampa ciò che ``em`` offre dove sei."
+
+msgid "Next: :doc:`info_overview`."
+msgstr "Poi: :doc:`info_overview`."

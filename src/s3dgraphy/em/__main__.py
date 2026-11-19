@@ -22,8 +22,8 @@ import sys
 
 
 def _run(args) -> int:
-    from .. import em
-    from .host import ScriptHost, install
+    from s3dgraphy import em        # absolute: `python -m em` runs this file as em.__main__
+    from s3dgraphy.em.host import ScriptHost, install
 
     if args.lang:
         os.environ["S3DGRAPHY_LANG"] = args.lang
@@ -64,7 +64,7 @@ def main(argv=None) -> int:
     h.add_argument("--lang", choices=("en", "it"))
     args = ap.parse_args(argv)
     if args.cmd == "help":
-        from .. import em
+        from s3dgraphy import em
         em.help(args.lang)
         return 0
     return _run(args)

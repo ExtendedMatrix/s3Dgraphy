@@ -1,0 +1,102 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "LocationNodeGroup"
+msgstr ""
+
+msgid "Generated from the datamodels (nodes 1.6.51, connections 1.6.55) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``."
+msgstr ""
+
+msgid "*Group node for spatial / locational membership of stratigraphic units and paradata.*"
+msgstr ""
+
+msgid "Class"
+msgstr ""
+
+msgid "``LocationNodeGroup``"
+msgstr ""
+
+msgid "node_type"
+msgstr ""
+
+msgid "Parent"
+msgstr ""
+
+msgid ":ref:`GroupNode <type-GroupNode>`"
+msgstr ""
+
+msgid "Label (en)"
+msgstr ""
+
+msgid "Location Node Group"
+msgstr ""
+
+msgid "Label (it)"
+msgstr ""
+
+msgid "Gruppo di luogo"
+msgstr ""
+
+msgid "CIDOC"
+msgstr ""
+
+msgid "``E53 Place``"
+msgstr ""
+
+msgid "Description"
+msgstr ""
+
+msgid "Group node for spatial / locational membership of stratigraphic units and paradata. Orthogonal to ActivityNodeGroup (intention) and EpochNode (time): a Location answers the question 'what (named) place is this in?'. Three required kinds coexist on the same axis: 'toponym' (external/administrative identity, e.g. Pompei), 'study' (operational/procedural identity, e.g. Saggio4/A2) and 'functional' (interpretive/semantic identity, e.g. Casa del Fauno / Room 12). Propagation is additive: multiple memberships compose, none overrides — distinct from EpochNode which is substitutive (finest-grained wins). Membership is m:n via multiple is\\_in\\_location edges; the optional 'is\\_primary: true' attribute on one edge marks the membership rendered as a yEd group folder in em-graph. Locations are hierarchical: a LocationNodeGroup can itself be is\\_in\\_location of another LocationNodeGroup. A Location is identitary, not geometric: for coordinates / EPSG / shifts use GeoPositionNode (linked at the CIDOC level via P161)."
+msgstr ""
+
+msgid "*Italiano*: Nodo di gruppo per l'appartenenza spaziale / di luogo di unità stratigrafiche e paradati. Ortogonale ad ActivityNodeGroup (intenzione) ed EpochNode (tempo): un Luogo risponde alla domanda «in quale luogo (nominato) si trova?». Tre tipi obbligatori coesistono sullo stesso asse: 'toponym' (identità esterna/amministrativa, ad es. Pompei), 'study' (identità operativa/procedurale, ad es. Saggio4/A2) e 'functional' (identità interpretativa/semantica, ad es. Casa del Fauno / Ambiente 12). La propagazione è additiva: più appartenenze si compongono, nessuna prevale — a differenza di EpochNode, che è sostitutivo (vince il livello più fine). L'appartenenza è m:n tramite più archi is\\_in\\_location; l'attributo facoltativo 'is\\_primary: true' su un arco indica l'appartenenza resa come cartella di gruppo yEd in em-graph. I luoghi sono gerarchici: un LocationNodeGroup può a sua volta essere is\\_in\\_location di un altro LocationNodeGroup. Un Luogo è identitario, non geometrico: per coordinate / EPSG / traslazioni si usa GeoPositionNode (collegato a livello CIDOC tramite P161)."
+msgstr ""
+
+msgid "Fields"
+msgstr ""
+
+msgid "Field"
+msgstr ""
+
+msgid "Mapping / note"
+msgstr ""
+
+msgid "``name``"
+msgstr ""
+
+msgid "P1\\_is\\_identified\\_by"
+msgstr ""
+
+msgid "``description``"
+msgstr ""
+
+msgid "P3\\_has\\_note"
+msgstr ""
+
+msgid "Edges"
+msgstr ""
+
+msgid "**Outgoing** (this node is the source): :ref:`changed_from <edge-changed_from>`, :ref:`generic_connection <edge-generic_connection>`, :ref:`has_author <edge-has_author>`, :ref:`has_embargo <edge-has_embargo>`, :ref:`has_license <edge-has_license>`, :ref:`has_linked_resource <edge-has_linked_resource>`, :ref:`has_property <edge-has_property>`, :ref:`has_same_time <edge-has_same_time>`, :ref:`has_semantic_shape <edge-has_semantic_shape>`, :ref:`has_translation <edge-has_translation>`, :ref:`is_after <edge-is_after>`, :ref:`is_in_district <edge-is_in_district>`, :ref:`is_in_location <edge-is_in_location>`"
+msgstr ""
+
+msgid "**Incoming** (this node is the target): :ref:`changed_from <edge-changed_from>`, :ref:`generic_connection <edge-generic_connection>`, :ref:`has_same_time <edge-has_same_time>`, :ref:`is_after <edge-is_after>`, :ref:`is_in_location <edge-is_in_location>`, :ref:`study_took_place_at <edge-study_took_place_at>`"
+msgstr ""
+
+msgid "From em"
+msgstr ""

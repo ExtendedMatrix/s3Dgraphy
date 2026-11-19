@@ -1,0 +1,1704 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "EMStudio commands"
+msgstr ""
+
+msgid "*Generated from EMStudio 85f69cd for em API 1.2.0.*"
+msgstr ""
+
+msgid "Every command of EMStudio's menus (41 rows of the command table, 41 reachable from Python), the items the operating system draws in the macOS menu bar, and the keys and gestures of the key map. ``em.app.commands.run(command_id, **slots)`` reaches a command by the id in the first column."
+msgstr ""
+
+msgid "How ``run_command`` reaches the page"
+msgstr ""
+
+msgid "``src/s3dgraphy/em/__init__.py:233`` — em.app.commands.run -\\> host app run\\_command"
+msgstr ""
+
+msgid "``src/s3dgraphy/em/host.py:147`` — NullHost: NotAvailable outside a host"
+msgstr ""
+
+msgid "``tools/em_py.py:576`` — EMStudioApp.run\\_command asks the page: request kind \"command\" with id and slots"
+msgstr ""
+
+msgid "``frontend/src/py-session.ts:364`` — PySession answers the request through the page's host.command(id, slots); false -\\> error py.noCommand"
+msgstr ""
+
+msgid "``frontend/src/main.ts:65807`` — the page's host hook: command -\\> runCommand(id)"
+msgstr ""
+
+msgid "``frontend/src/menu-ui.ts:182`` — runCommand: plugin:\\<id\\>/\\<cmd\\> -\\> plugin invocation; otherwise findRow(id) and click the row's button"
+msgstr ""
+
+msgid "``frontend/src/menu-ui.ts:201`` — findRow: only rows of kind \"cmd\" in MENUS (sub-menus walked)"
+msgstr ""
+
+msgid "Plugin commands are reachable too, as ``plugin:<plugin>/<command>`` (registered at run time, not listed here; see ``em.plugins``). Slots are accepted by the API but not forwarded to the command by the page. No command declares whether it writes to the graph: the column says ``unknown``."
+msgstr ""
+
+msgid "Menu commands (41)"
+msgstr ""
+
+msgid "Id"
+msgstr ""
+
+msgid "Label (en)"
+msgstr ""
+
+msgid "Label (it)"
+msgstr ""
+
+msgid "Menu path"
+msgstr ""
+
+msgid "Shortcut"
+msgstr ""
+
+msgid "Python"
+msgstr ""
+
+msgid "Writes graph"
+msgstr ""
+
+msgid ":doc:`about <about>`"
+msgstr ""
+
+msgid "About EMStudio"
+msgstr ""
+
+msgid "Informazioni su EMStudio"
+msgstr ""
+
+msgid "EMStudio ▸ About EMStudio"
+msgstr ""
+
+msgid "—"
+msgstr ""
+
+msgid "yes"
+msgstr ""
+
+msgid "unknown"
+msgstr ""
+
+msgid ":doc:`updates <updates>`"
+msgstr ""
+
+msgid "Check for updates…"
+msgstr ""
+
+msgid "Cerca aggiornamenti…"
+msgstr ""
+
+msgid "EMStudio ▸ Check for updates…"
+msgstr ""
+
+msgid ":doc:`settings <settings>`"
+msgstr ""
+
+msgid "Settings…"
+msgstr ""
+
+msgid "Impostazioni…"
+msgstr ""
+
+msgid "EMStudio ▸ Settings…"
+msgstr ""
+
+msgid "``⌘,``"
+msgstr ""
+
+msgid ":doc:`new <new>`"
+msgstr ""
+
+msgid "New"
+msgstr ""
+
+msgid "Nuovo"
+msgstr ""
+
+msgid "File ▸ New"
+msgstr ""
+
+msgid "``⌘N``"
+msgstr ""
+
+msgid ":doc:`newProject <newProject>`"
+msgstr ""
+
+msgid "New EM project…"
+msgstr ""
+
+msgid "Nuovo progetto EM…"
+msgstr ""
+
+msgid "File ▸ New EM project…"
+msgstr ""
+
+msgid ":doc:`openProject <openProject>`"
+msgstr ""
+
+msgid "Open project…"
+msgstr ""
+
+msgid "Apri progetto…"
+msgstr ""
+
+msgid "File ▸ Open project…"
+msgstr ""
+
+msgid ":doc:`reorderProject <reorderProject>`"
+msgstr ""
+
+msgid "Reorder by the standard…"
+msgstr ""
+
+msgid "Riordina secondo lo standard…"
+msgstr ""
+
+msgid "File ▸ Reorder by the standard…"
+msgstr ""
+
+msgid ":doc:`closeProject <closeProject>`"
+msgstr ""
+
+msgid "Close the project"
+msgstr ""
+
+msgid "Chiudi il progetto"
+msgstr ""
+
+msgid "File ▸ Close the project"
+msgstr ""
+
+msgid ":doc:`revealDoc <revealDoc>`"
+msgstr ""
+
+msgid "Open the project folder"
+msgstr ""
+
+msgid "Apri la cartella del progetto"
+msgstr ""
+
+msgid "File ▸ Open the project folder"
+msgstr ""
+
+msgid ":doc:`open <open>`"
+msgstr ""
+
+msgid "Open…"
+msgstr ""
+
+msgid "Apri…"
+msgstr ""
+
+msgid "File ▸ Open…"
+msgstr ""
+
+msgid "``⌘O``"
+msgstr ""
+
+msgid ":doc:`openReplace <openReplace>`"
+msgstr ""
+
+msgid "Open in place of the open files…"
+msgstr ""
+
+msgid "Apri al posto dei file aperti…"
+msgstr ""
+
+msgid "File ▸ Open in place of the open files…"
+msgstr ""
+
+msgid ":doc:`close <close>`"
+msgstr ""
+
+msgid "Close"
+msgstr ""
+
+msgid "Chiudi"
+msgstr ""
+
+msgid "File ▸ Close"
+msgstr ""
+
+msgid "``⌘W``"
+msgstr ""
+
+msgid ":doc:`save <save>`"
+msgstr ""
+
+msgid "Save"
+msgstr ""
+
+msgid "Salva"
+msgstr ""
+
+msgid "File ▸ Save"
+msgstr ""
+
+msgid "``⌘S``"
+msgstr ""
+
+msgid ":doc:`saveAs <saveAs>`"
+msgstr ""
+
+msgid "Save As…"
+msgstr ""
+
+msgid "Salva come…"
+msgstr ""
+
+msgid "File ▸ Save As…"
+msgstr ""
+
+msgid "``⇧⌘S``"
+msgstr ""
+
+msgid ":doc:`saveAll <saveAll>`"
+msgstr ""
+
+msgid "Save all"
+msgstr ""
+
+msgid "Salva tutto"
+msgstr ""
+
+msgid "File ▸ Save all"
+msgstr ""
+
+msgid "``⌥⌘S``"
+msgstr ""
+
+msgid ":doc:`pin <pin>`"
+msgstr ""
+
+msgid "Pin version…"
+msgstr ""
+
+msgid "Fissa versione…"
+msgstr ""
+
+msgid "File ▸ Pin version…"
+msgstr ""
+
+msgid ":doc:`door <door>`"
+msgstr ""
+
+msgid "Porta dentro…"
+msgstr ""
+
+msgid "File ▸ Porta dentro…"
+msgstr ""
+
+msgid ":doc:`doorFolder <doorFolder>`"
+msgstr ""
+
+msgid "Porta dentro una cartella…"
+msgstr ""
+
+msgid "File ▸ Porta dentro una cartella…"
+msgstr ""
+
+msgid ":doc:`georef <georef>`"
+msgstr ""
+
+msgid "Georeferencing…"
+msgstr ""
+
+msgid "Georeferenziazione…"
+msgstr ""
+
+msgid "File ▸ Georeferencing…"
+msgstr ""
+
+msgid ":doc:`importGraphml <importGraphml>`"
+msgstr ""
+
+msgid "GraphML…"
+msgstr ""
+
+msgid "File ▸ Import ▸ GraphML…"
+msgstr ""
+
+msgid ":doc:`importMapping <importMapping>`"
+msgstr ""
+
+msgid "Table with a mapping…"
+msgstr ""
+
+msgid "Tabella con mappatura…"
+msgstr ""
+
+msgid "File ▸ Import ▸ Table with a mapping…"
+msgstr ""
+
+msgid ":doc:`exportSvg <exportSvg>`"
+msgstr ""
+
+msgid "SVG"
+msgstr ""
+
+msgid "File ▸ Export ▸ SVG"
+msgstr ""
+
+msgid ":doc:`exportTtl <exportTtl>`"
+msgstr ""
+
+msgid "Turtle (.ttl)"
+msgstr ""
+
+msgid "File ▸ Export ▸ Turtle (.ttl)"
+msgstr ""
+
+msgid ":doc:`printSheets <printSheets>`"
+msgstr ""
+
+msgid "Print sheets…"
+msgstr ""
+
+msgid "Stampa schede…"
+msgstr ""
+
+msgid "File ▸ Print sheets…"
+msgstr ""
+
+msgid ":doc:`integrate <integrate>`"
+msgstr ""
+
+msgid "Integrate into this file…"
+msgstr ""
+
+msgid "Integra in questo file…"
+msgstr ""
+
+msgid "File ▸ Integrate into this file…"
+msgstr ""
+
+msgid ":doc:`relocate <relocate>`"
+msgstr ""
+
+msgid "Find missing files…"
+msgstr ""
+
+msgid "Ritrova i file…"
+msgstr ""
+
+msgid "File ▸ Find missing files…"
+msgstr ""
+
+msgid ":doc:`collect <collect>`"
+msgstr ""
+
+msgid "Collect resources…"
+msgstr ""
+
+msgid "Raccogli le risorse…"
+msgstr ""
+
+msgid "File ▸ Collect resources…"
+msgstr ""
+
+msgid ":doc:`cleanFile <cleanFile>`"
+msgstr ""
+
+msgid "Clean the file…"
+msgstr ""
+
+msgid "Pulisci il file…"
+msgstr ""
+
+msgid "File ▸ Clean the file…"
+msgstr ""
+
+msgid ":doc:`createRoom <createRoom>`"
+msgstr ""
+
+msgid "Create a room…"
+msgstr ""
+
+msgid "Crea una stanza…"
+msgstr ""
+
+msgid "File ▸ Create a room…"
+msgstr ""
+
+msgid ":doc:`bringIntoRoom <bringIntoRoom>`"
+msgstr ""
+
+msgid "Bring this into a new room…"
+msgstr ""
+
+msgid "Porta questo in una stanza nuova…"
+msgstr ""
+
+msgid "File ▸ Bring this into a new room…"
+msgstr ""
+
+msgid ":doc:`consolidate <consolidate>`"
+msgstr ""
+
+msgid "Consolidate for…"
+msgstr ""
+
+msgid "Consolida per…"
+msgstr ""
+
+msgid "File ▸ Consolidate for…"
+msgstr ""
+
+msgid ":doc:`composeFromGraph <composeFromGraph>`"
+msgstr ""
+
+msgid "Compose a .blend from the graph…"
+msgstr ""
+
+msgid "Componi un .blend dal grafo…"
+msgstr ""
+
+msgid "File ▸ Compose a .blend from the graph…"
+msgstr ""
+
+msgid ":doc:`quitFile <quitFile>`"
+msgstr ""
+
+msgid "Quit EMStudio"
+msgstr ""
+
+msgid "Esci da EMStudio"
+msgstr ""
+
+msgid "File ▸ Quit EMStudio"
+msgstr ""
+
+msgid "``⌘Q``"
+msgstr ""
+
+msgid ":doc:`undo <undo>`"
+msgstr ""
+
+msgid "Undo"
+msgstr ""
+
+msgid "Annulla"
+msgstr ""
+
+msgid "Edit ▸ Undo"
+msgstr ""
+
+msgid "``⌘Z``"
+msgstr ""
+
+msgid ":doc:`redo <redo>`"
+msgstr ""
+
+msgid "Redo"
+msgstr ""
+
+msgid "Ripristina"
+msgstr ""
+
+msgid "Edit ▸ Redo"
+msgstr ""
+
+msgid "``⇧⌘Z``"
+msgstr ""
+
+msgid ":doc:`workspaces <workspaces>`"
+msgstr ""
+
+msgid "Workspaces…"
+msgstr ""
+
+msgid "Spazi di lavoro…"
+msgstr ""
+
+msgid "Help ▸ Workspaces…"
+msgstr ""
+
+msgid ":doc:`shortcuts <shortcuts>`"
+msgstr ""
+
+msgid "Shortcuts"
+msgstr ""
+
+msgid "Scorciatoie"
+msgstr ""
+
+msgid "Help ▸ Shortcuts"
+msgstr ""
+
+msgid ":doc:`legend <legend>`"
+msgstr ""
+
+msgid "EM legend"
+msgstr ""
+
+msgid "Legenda EM"
+msgstr ""
+
+msgid "Help ▸ EM legend"
+msgstr ""
+
+msgid ":doc:`aboutHelp <aboutHelp>`"
+msgstr ""
+
+msgid "Help ▸ About EMStudio"
+msgstr ""
+
+msgid ":doc:`settingsHelp <settingsHelp>`"
+msgstr ""
+
+msgid "Help ▸ Settings…"
+msgstr ""
+
+msgid ":doc:`updatesHelp <updatesHelp>`"
+msgstr ""
+
+msgid "Help ▸ Check for updates…"
+msgstr ""
+
+msgid "Operating-system menu items (macOS menu bar) (14)"
+msgstr ""
+
+msgid ":doc:`services <services>`"
+msgstr ""
+
+msgid "Services"
+msgstr ""
+
+msgid "Servizi"
+msgstr ""
+
+msgid "EMStudio ▸ Services"
+msgstr ""
+
+msgid "no"
+msgstr ""
+
+msgid ":doc:`hide <hide>`"
+msgstr ""
+
+msgid "Hide EMStudio"
+msgstr ""
+
+msgid "Nascondi EMStudio"
+msgstr ""
+
+msgid "EMStudio ▸ Hide EMStudio"
+msgstr ""
+
+msgid ":doc:`hideOthers <hideOthers>`"
+msgstr ""
+
+msgid "Hide Others"
+msgstr ""
+
+msgid "Nascondi altre"
+msgstr ""
+
+msgid "EMStudio ▸ Hide Others"
+msgstr ""
+
+msgid ":doc:`showAll <showAll>`"
+msgstr ""
+
+msgid "Show All"
+msgstr ""
+
+msgid "Mostra tutte"
+msgstr ""
+
+msgid "EMStudio ▸ Show All"
+msgstr ""
+
+msgid ":doc:`quit <quit>`"
+msgstr ""
+
+msgid "EMStudio ▸ Quit EMStudio"
+msgstr ""
+
+msgid ":doc:`osUndo <osUndo>`"
+msgstr ""
+
+msgid "OS: ``undo``"
+msgstr ""
+
+msgid "Edit"
+msgstr ""
+
+msgid ":doc:`osRedo <osRedo>`"
+msgstr ""
+
+msgid "OS: ``redo``"
+msgstr ""
+
+msgid ":doc:`cut <cut>`"
+msgstr ""
+
+msgid "OS: ``cut``"
+msgstr ""
+
+msgid ":doc:`copy <copy>`"
+msgstr ""
+
+msgid "OS: ``copy``"
+msgstr ""
+
+msgid ":doc:`paste <paste>`"
+msgstr ""
+
+msgid "OS: ``paste``"
+msgstr ""
+
+msgid ":doc:`selectAll <selectAll>`"
+msgstr ""
+
+msgid "OS: ``selectAll``"
+msgstr ""
+
+msgid ":doc:`minimize <minimize>`"
+msgstr ""
+
+msgid "OS: ``minimize``"
+msgstr ""
+
+msgid "Window"
+msgstr ""
+
+msgid ":doc:`maximize <maximize>`"
+msgstr ""
+
+msgid "OS: ``maximize``"
+msgstr ""
+
+msgid ":doc:`fullscreen <fullscreen>`"
+msgstr ""
+
+msgid "OS: ``fullscreen``"
+msgstr ""
+
+msgid "Keys of the key map without a command (40)"
+msgstr ""
+
+msgid ":doc:`keymap:where <keymap-where>`"
+msgstr ""
+
+msgid "Where you are"
+msgstr ""
+
+msgid "Dove sei"
+msgstr ""
+
+msgid "``⇧⌘L``"
+msgstr ""
+
+msgid ":doc:`keymap:add <keymap-add>`"
+msgstr ""
+
+msgid "Add a node where the pointer is"
+msgstr ""
+
+msgid "Aggiungi un nodo dove sta il puntatore"
+msgstr ""
+
+msgid "``⇧A``"
+msgstr ""
+
+msgid ":doc:`keymap:search <keymap-search>`"
+msgstr ""
+
+msgid "Search the graph"
+msgstr ""
+
+msgid "Cerca nel grafo"
+msgstr ""
+
+msgid "``/``"
+msgstr ""
+
+msgid ":doc:`keymap:magnify <keymap-magnify>`"
+msgstr ""
+
+msgid "Magnify the window / restore"
+msgstr ""
+
+msgid "Ingrandisci la finestra / ripristina"
+msgstr ""
+
+msgid "``⌃Space``"
+msgstr ""
+
+msgid ":doc:`keymap:esc <keymap-esc>`"
+msgstr ""
+
+msgid "Close a menu, leave a group, deselect"
+msgstr ""
+
+msgid "Chiudi un menu, esci da un gruppo, deseleziona"
+msgstr ""
+
+msgid "``Esc``"
+msgstr ""
+
+msgid ":doc:`keymap:delete <keymap-delete>`"
+msgstr ""
+
+msgid "Delete the selection (a toast gives it back)"
+msgstr ""
+
+msgid "Elimina la selezione (un avviso la restituisce)"
+msgstr ""
+
+msgid "``⌫ · Del``"
+msgstr ""
+
+msgid ":doc:`keymap:nudge <keymap-nudge>`"
+msgstr ""
+
+msgid "Nudge the selection by 1 px"
+msgstr ""
+
+msgid "Sposta la selezione di 1 px"
+msgstr ""
+
+msgid "``← → ↑ ↓``"
+msgstr ""
+
+msgid ":doc:`keymap:nudge10 <keymap-nudge10>`"
+msgstr ""
+
+msgid "Nudge by 10 px"
+msgstr ""
+
+msgid "Sposta di 10 px"
+msgstr ""
+
+msgid "``⇧ ← → ↑ ↓``"
+msgstr ""
+
+msgid ":doc:`keymap:fit <keymap-fit>`"
+msgstr ""
+
+msgid "Fit the graph in the window"
+msgstr ""
+
+msgid "Adatta il grafo alla finestra"
+msgstr ""
+
+msgid "``0 · ⇧C``"
+msgstr ""
+
+msgid ":doc:`keymap:back <keymap-back>`"
+msgstr ""
+
+msgid "Back to the view before the last jump"
+msgstr ""
+
+msgid "Indietro, alla vista prima dell'ultimo salto"
+msgstr ""
+
+msgid "``⌘[ · ⌥←``"
+msgstr ""
+
+msgid ":doc:`keymap:zoomIn <keymap-zoomIn>`"
+msgstr ""
+
+msgid "Zoom in"
+msgstr ""
+
+msgid "Ingrandisci"
+msgstr ""
+
+msgid "``+ · =``"
+msgstr ""
+
+msgid ":doc:`keymap:zoomOut <keymap-zoomOut>`"
+msgstr ""
+
+msgid "Zoom out"
+msgstr ""
+
+msgid "Riduci"
+msgstr ""
+
+msgid "``−``"
+msgstr ""
+
+msgid ":doc:`keymap:s3box <keymap-s3box>`"
+msgstr ""
+
+msgid "Zoom to a box: draw a rectangle and the view fills it"
+msgstr ""
+
+msgid "Zoom a riquadro: traccia un rettangolo e la vista lo riempie"
+msgstr ""
+
+msgid "``⇧B``"
+msgstr ""
+
+msgid ":doc:`keymap:s3cursorReset <keymap-s3cursorReset>`"
+msgstr ""
+
+msgid "The 3D cursor to the median of what is drawn, and the view on most of it"
+msgstr ""
+
+msgid "Il cursore 3D al punto mediano di ciò che è disegnato, e la vista sulla gran parte"
+msgstr ""
+
+msgid "``⇧C``"
+msgstr ""
+
+msgid ":doc:`keymap:s3sidebar <keymap-s3sidebar>`"
+msgstr ""
+
+msgid "The «View» panel on the right: 3D cursor, selected object, view"
+msgstr ""
+
+msgid "Il pannello «Vista» a destra: cursore 3D, oggetto selezionato, vista"
+msgstr ""
+
+msgid "``N``"
+msgstr ""
+
+msgid ":doc:`keymap:s3frameSel <keymap-s3frameSel>`"
+msgstr ""
+
+msgid "Frame the selection"
+msgstr ""
+
+msgid "Inquadra la selezione"
+msgstr ""
+
+msgid "``. · F``"
+msgstr ""
+
+msgid ":doc:`keymap:s3frameAll <keymap-s3frameAll>`"
+msgstr ""
+
+msgid "Frame everything"
+msgstr ""
+
+msgid "Inquadra tutto"
+msgstr ""
+
+msgid "``Home``"
+msgstr ""
+
+msgid ":doc:`keymap:s3outliner <keymap-s3outliner>`"
+msgstr ""
+
+msgid "Open and close the Space's Outliner"
+msgstr ""
+
+msgid "Apre e chiude l'Outliner dello Spazio"
+msgstr ""
+
+msgid "``T``"
+msgstr ""
+
+msgid ":doc:`keymap:s3add <keymap-s3add>`"
+msgstr ""
+
+msgid "Add a base shape at the 3D cursor"
+msgstr ""
+
+msgid "Aggiungi una forma base al cursore 3D"
+msgstr ""
+
+msgid ":doc:`keymap:s3grs <keymap-s3grs>`"
+msgstr ""
+
+msgid "Move, rotate, scale a sketch: then X Y Z, a number, Enter or Esc"
+msgstr ""
+
+msgid "Sposta, ruota, scala un abbozzo: poi X Y Z, un numero, Invio o Esc"
+msgstr ""
+
+msgid "``G · R · S``"
+msgstr ""
+
+msgid ":doc:`keymap:s3axisPlane <keymap-s3axisPlane>`"
+msgstr ""
+
+msgid "During G / R / S: the axis; Shift + the axis: the plane without it; twice: local; three times: none; middle click: the nearest axis"
+msgstr ""
+
+msgid "Durante G / R / S: l'asse; Maiusc + l'asse: il piano senza di lui; due volte: locale; tre volte: nessuno; clic centrale: l'asse più vicino"
+msgstr ""
+
+msgid "``X Y Z · ⇧X ⇧Y ⇧Z``"
+msgstr ""
+
+msgid ":doc:`keymap:s3snap <keymap-s3snap>`"
+msgstr ""
+
+msgid "During G: snap to the face under the pointer; during R / S: steps of 5° / 0.1"
+msgstr ""
+
+msgid "Durante G: aggancio alla faccia sotto il puntatore; durante R / S: passi di 5° / 0,1"
+msgstr ""
+
+msgid "``Ctrl``"
+msgstr ""
+
+msgid ":doc:`keymap:s3parent <keymap-s3parent>`"
+msgstr ""
+
+msgid "Associate the selected sketches with the active unit"
+msgstr ""
+
+msgid "Associa gli abbozzi selezionati all'unità attiva"
+msgstr ""
+
+msgid "``Ctrl+P``"
+msgstr ""
+
+msgid ":doc:`keymap:s3delete <keymap-s3delete>`"
+msgstr ""
+
+msgid "Delete the selected sketch"
+msgstr ""
+
+msgid "Elimina l'abbozzo selezionato"
+msgstr ""
+
+msgid "``X · ⌫``"
+msgstr ""
+
+msgid ":doc:`keymap:s3back <keymap-s3back>`"
+msgstr ""
+
+msgid "Back to the view before a jump"
+msgstr ""
+
+msgid "Torna alla vista di prima di un salto"
+msgstr ""
+
+msgid ":doc:`keymap:s3shiftClick <keymap-s3shiftClick>`"
+msgstr ""
+
+msgid "Add to the selection / make active / remove the active"
+msgstr ""
+
+msgid "Aggiungi alla selezione / rendi attivo / togli l'attivo"
+msgstr ""
+
+msgid "``⇧ + click``"
+msgstr ""
+
+msgid ":doc:`keymap:s3selectAll <keymap-s3selectAll>`"
+msgstr ""
+
+msgid "Select everything visible"
+msgstr ""
+
+msgid "Seleziona tutto il visibile"
+msgstr ""
+
+msgid "``A``"
+msgstr ""
+
+msgid ":doc:`keymap:s3selectNone <keymap-s3selectNone>`"
+msgstr ""
+
+msgid "Deselect everything"
+msgstr ""
+
+msgid "Deseleziona tutto"
+msgstr ""
+
+msgid "``⌥A``"
+msgstr ""
+
+msgid ":doc:`keymap:s3boxSelect <keymap-s3boxSelect>`"
+msgstr ""
+
+msgid "Box select"
+msgstr ""
+
+msgid "Selezione a riquadro"
+msgstr ""
+
+msgid "``B``"
+msgstr ""
+
+msgid ":doc:`keymap:s3hide <keymap-s3hide>`"
+msgstr ""
+
+msgid "Hide the selected"
+msgstr ""
+
+msgid "Nascondi i selezionati"
+msgstr ""
+
+msgid "``H``"
+msgstr ""
+
+msgid ":doc:`keymap:s3reveal <keymap-s3reveal>`"
+msgstr ""
+
+msgid "Show everything"
+msgstr ""
+
+msgid "Mostra tutto"
+msgstr ""
+
+msgid "``⌥H``"
+msgstr ""
+
+msgid ":doc:`keymap:s3hideUnselected <keymap-s3hideUnselected>`"
+msgstr ""
+
+msgid "Hide the unselected"
+msgstr ""
+
+msgid "Nascondi i non selezionati"
+msgstr ""
+
+msgid "``⇧H``"
+msgstr ""
+
+msgid ":doc:`keymap:toolEsc <keymap-toolEsc>`"
+msgstr ""
+
+msgid "Put the tool down: back to looking"
+msgstr ""
+
+msgid "Posa lo strumento: torna a guardare"
+msgstr ""
+
+msgid ":doc:`keymap:bubbleArrows <keymap-bubbleArrows>`"
+msgstr ""
+
+msgid "Pick what you extract"
+msgstr ""
+
+msgid "Scegli cosa estrai"
+msgstr ""
+
+msgid "``↑ ↓ · Enter``"
+msgstr ""
+
+msgid ":doc:`keymap:fieldEnter <keymap-fieldEnter>`"
+msgstr ""
+
+msgid "Commit the field"
+msgstr ""
+
+msgid "Conferma il campo"
+msgstr ""
+
+msgid "``Enter``"
+msgstr ""
+
+msgid ":doc:`keymap:fieldTab <keymap-fieldTab>`"
+msgstr ""
+
+msgid "Commit and go to the next field"
+msgstr ""
+
+msgid "Conferma e vai al campo successivo"
+msgstr ""
+
+msgid "``Tab``"
+msgstr ""
+
+msgid ":doc:`keymap:proseSlash <keymap-proseSlash>`"
+msgstr ""
+
+msgid "In an empty paragraph: the Blocks menu"
+msgstr ""
+
+msgid "In un paragrafo vuoto: il menu Blocchi"
+msgstr ""
+
+msgid ":doc:`keymap:proseLink <keymap-proseLink>`"
+msgstr ""
+
+msgid "Mention a node"
+msgstr ""
+
+msgid "Cita un nodo"
+msgstr ""
+
+msgid "``[[``"
+msgstr ""
+
+msgid ":doc:`keymap:menuArrows <keymap-menuArrows>`"
+msgstr ""
+
+msgid "Move and choose in a menu"
+msgstr ""
+
+msgid "Muoviti e scegli in un menu"
+msgstr ""
+
+msgid "``↑ ↓ → ← Enter``"
+msgstr ""
+
+msgid ":doc:`keymap:buttonSpace <keymap-buttonSpace>`"
+msgstr ""
+
+msgid "Press the focused button"
+msgstr ""
+
+msgid "Premi il pulsante con il focus"
+msgstr ""
+
+msgid "``Space · Enter``"
+msgstr ""
+
+msgid "Gestures of the key map (45)"
+msgstr ""
+
+msgid ":doc:`keymap:undoToast <keymap-undoToast>`"
+msgstr ""
+
+msgid "The toast's «Undo» puts back what was deleted"
+msgstr ""
+
+msgid "«Annulla» nell'avviso rimette ciò che è stato eliminato"
+msgstr ""
+
+msgid "Undo (toast)"
+msgstr ""
+
+msgid ":doc:`keymap:pan <keymap-pan>`"
+msgstr ""
+
+msgid "Pan"
+msgstr ""
+
+msgid "Sposta la vista"
+msgstr ""
+
+msgid "Space + drag"
+msgstr ""
+
+msgid ":doc:`keymap:panMiddle <keymap-panMiddle>`"
+msgstr ""
+
+msgid "middle button + drag"
+msgstr ""
+
+msgid ":doc:`keymap:wheel <keymap-wheel>`"
+msgstr ""
+
+msgid "Zoom at the pointer"
+msgstr ""
+
+msgid "Zoom sul puntatore"
+msgstr ""
+
+msgid "wheel"
+msgstr ""
+
+msgid ":doc:`keymap:click <keymap-click>`"
+msgstr ""
+
+msgid "Select"
+msgstr ""
+
+msgid "Seleziona"
+msgstr ""
+
+msgid "click"
+msgstr ""
+
+msgid ":doc:`keymap:multi <keymap-multi>`"
+msgstr ""
+
+msgid "Add to / remove from the selection"
+msgstr ""
+
+msgid "Aggiungi o togli dalla selezione"
+msgstr ""
+
+msgid "⇧/⌘ click"
+msgstr ""
+
+msgid ":doc:`keymap:marquee <keymap-marquee>`"
+msgstr ""
+
+msgid "Select with a rectangle"
+msgstr ""
+
+msgid "Seleziona con un rettangolo"
+msgstr ""
+
+msgid "drag on the empty canvas"
+msgstr ""
+
+msgid ":doc:`keymap:dblGroup <keymap-dblGroup>`"
+msgstr ""
+
+msgid "Enter a group"
+msgstr ""
+
+msgid "Entra in un gruppo"
+msgstr ""
+
+msgid "double-click"
+msgstr ""
+
+msgid ":doc:`keymap:connect <keymap-connect>`"
+msgstr ""
+
+msgid "Connect two nodes"
+msgstr ""
+
+msgid "Collega due nodi"
+msgstr ""
+
+msgid "drag from the handle"
+msgstr ""
+
+msgid ":doc:`keymap:connectMenu <keymap-connectMenu>`"
+msgstr ""
+
+msgid "Release in the void: add a linked node"
+msgstr ""
+
+msgid "Rilascia nel vuoto: aggiungi un nodo collegato"
+msgstr ""
+
+msgid "⇧/⌥ release"
+msgstr ""
+
+msgid ":doc:`keymap:detach <keymap-detach>`"
+msgstr ""
+
+msgid "Drag out of its container"
+msgstr ""
+
+msgid "Trascina fuori dal contenitore"
+msgstr ""
+
+msgid "⇧ drag"
+msgstr ""
+
+msgid ":doc:`keymap:laneOnly <keymap-laneOnly>`"
+msgstr ""
+
+msgid "Change only the epoch (lane)"
+msgstr ""
+
+msgid "Cambia solo l'epoca (corsia)"
+msgstr ""
+
+msgid "⌥ drop"
+msgstr ""
+
+msgid ":doc:`keymap:dragEsc <keymap-dragEsc>`"
+msgstr ""
+
+msgid "Put back what is being dragged"
+msgstr ""
+
+msgid "Rimetti a posto ciò che trascini"
+msgstr ""
+
+msgid "Esc while dragging"
+msgstr ""
+
+msgid ":doc:`keymap:rclick <keymap-rclick>`"
+msgstr ""
+
+msgid "The menu of a node or of the empty canvas"
+msgstr ""
+
+msgid "Il menu di un nodo o del canvas vuoto"
+msgstr ""
+
+msgid "right click"
+msgstr ""
+
+msgid ":doc:`keymap:laneMenu <keymap-laneMenu>`"
+msgstr ""
+
+msgid "Reflow the lane, new epoch, check the chronology"
+msgstr ""
+
+msgid "Riordina la corsia, nuova epoca, verifica la cronologia"
+msgstr ""
+
+msgid "right click on a lane"
+msgstr ""
+
+msgid ":doc:`keymap:longPress <keymap-longPress>`"
+msgstr ""
+
+msgid "The add menu, on touch"
+msgstr ""
+
+msgid "Il menu Aggiungi, al tocco"
+msgstr ""
+
+msgid "long press"
+msgstr ""
+
+msgid ":doc:`keymap:layoutFresh <keymap-layoutFresh>`"
+msgstr ""
+
+msgid "Recompute layout from scratch: a fresh arrangement, the manual one dropped (the only command that moves the nodes)"
+msgstr ""
+
+msgid "Ricalcola layout da capo: una disposizione nuova, senza quella fatta a mano (il solo comando che sposta i nodi)"
+msgstr ""
+
+msgid "⌥ Layout"
+msgstr ""
+
+msgid ":doc:`keymap:s3pick <keymap-s3pick>`"
+msgstr ""
+
+msgid "Select the proxy under the cursor (a sketch too)"
+msgstr ""
+
+msgid "Seleziona il proxy sotto il cursore (anche uno schizzo)"
+msgstr ""
+
+msgid "Click"
+msgstr ""
+
+msgid ":doc:`keymap:s3pickRm <keymap-s3pickRm>`"
+msgstr ""
+
+msgid "Select the mesh under the cursor (the representation model, a tileset)"
+msgstr ""
+
+msgid "Seleziona la mesh sotto il cursore (il modello di rappresentazione, un tileset)"
+msgstr ""
+
+msgid "Alt + click (⌘-click, Ctrl-click on Windows/Linux, too)"
+msgstr ""
+
+msgid ":doc:`keymap:s3menu <keymap-s3menu>`"
+msgstr ""
+
+msgid "The menu of the proxy (or, with ⌘ / Ctrl, of the model): soloing, frame, isolate, show in the graph, select the unit"
+msgstr ""
+
+msgid "Il menu del proxy (o, con ⌘ / Ctrl, del modello): soloing, inquadra, isola, mostra nel grafo, seleziona l'unità"
+msgstr ""
+
+msgid "Right click (⌘ / Ctrl: the model's)"
+msgstr ""
+
+msgid ":doc:`keymap:s3dbl <keymap-s3dbl>`"
+msgstr ""
+
+msgid "Move: the centre of rotation and the zoom go to the point under the cursor; nothing is selected"
+msgstr ""
+
+msgid "Muoversi: il centro di rotazione e lo zoom vanno sul punto sotto il cursore; non seleziona niente"
+msgstr ""
+
+msgid ":doc:`keymap:s3cursor <keymap-s3cursor>`"
+msgstr ""
+
+msgid "Lay the 3D cursor on the surface under the pointer"
+msgstr ""
+
+msgid "Posa il cursore 3D sulla superficie sotto il puntatore"
+msgstr ""
+
+msgid "Shift + right click"
+msgstr ""
+
+msgid ":doc:`keymap:s3wheel <keymap-s3wheel>`"
+msgstr ""
+
+msgid "Zoom toward the pointer (the orbit centre goes with it)"
+msgstr ""
+
+msgid "Avvicina verso il puntatore (il centro d'orbita lo segue)"
+msgstr ""
+
+msgid "Wheel · pinch · Ctrl + two fingers"
+msgstr ""
+
+msgid ":doc:`keymap:s3orbit <keymap-s3orbit>`"
+msgstr ""
+
+msgid "Orbit"
+msgstr ""
+
+msgid "Orbita"
+msgstr ""
+
+msgid "Middle drag · two fingers · left drag (while the left does not select)"
+msgstr ""
+
+msgid ":doc:`keymap:s3pan <keymap-s3pan>`"
+msgstr ""
+
+msgid "Panoramica"
+msgstr ""
+
+msgid "Shift + middle drag · Shift + two fingers · Shift + left drag (while the left does not select)"
+msgstr ""
+
+msgid ":doc:`keymap:s3rightDrag <keymap-s3rightDrag>`"
+msgstr ""
+
+msgid "Pan: the scene follows the pointer"
+msgstr ""
+
+msgid "Panoramica: la scena segue il puntatore"
+msgstr ""
+
+msgid "right drag (two fingers pressed on a trackpad)"
+msgstr ""
+
+msgid ":doc:`keymap:s3zoomDrag <keymap-s3zoomDrag>`"
+msgstr ""
+
+msgid "Continuous zoom toward the point pressed"
+msgstr ""
+
+msgid "Zoom continuo verso il punto premuto"
+msgstr ""
+
+msgid "Ctrl + middle drag (Mac too)"
+msgstr ""
+
+msgid ":doc:`keymap:s3boxSel <keymap-s3boxSel>`"
+msgstr ""
+
+msgid "Box selection of the proxies (Shift: added to the selection)"
+msgstr ""
+
+msgid "Selezione a riquadro dei proxy (Maiusc: si aggiungono)"
+msgstr ""
+
+msgid "Left drag (with a middle button, or «Emulate 3 button mouse»)"
+msgstr ""
+
+msgid ":doc:`keymap:s3emul3 <keymap-s3emul3>`"
+msgstr ""
+
+msgid "The middle button, without one"
+msgstr ""
+
+msgid "Il tasto centrale, quando non c'è"
+msgstr ""
+
+msgid "Alt + left drag («Emulate 3 button mouse»)"
+msgstr ""
+
+msgid ":doc:`keymap:s3np1 <keymap-s3np1>`"
+msgstr ""
+
+msgid "Front view (with «Emulate numpad»: 1 of the top row)"
+msgstr ""
+
+msgid "Vista frontale (con «Emula tastierino»: 1 della riga in alto)"
+msgstr ""
+
+msgid "Numpad 1"
+msgstr ""
+
+msgid ":doc:`keymap:s3np3 <keymap-s3np3>`"
+msgstr ""
+
+msgid "Right view"
+msgstr ""
+
+msgid "Vista laterale destra"
+msgstr ""
+
+msgid "Numpad 3"
+msgstr ""
+
+msgid ":doc:`keymap:s3np7 <keymap-s3np7>`"
+msgstr ""
+
+msgid "Top view"
+msgstr ""
+
+msgid "Vista dall'alto"
+msgstr ""
+
+msgid "Numpad 7"
+msgstr ""
+
+msgid ":doc:`keymap:s3npCtrl <keymap-s3npCtrl>`"
+msgstr ""
+
+msgid "The opposite views: back, left, bottom"
+msgstr ""
+
+msgid "Le viste opposte: retro, sinistra, sotto"
+msgstr ""
+
+msgid "Ctrl + Numpad 1 · 3 · 7"
+msgstr ""
+
+msgid ":doc:`keymap:s3np5 <keymap-s3np5>`"
+msgstr ""
+
+msgid "Perspective ⇄ orthographic"
+msgstr ""
+
+msgid "Prospettiva ⇄ ortometrica"
+msgstr ""
+
+msgid "Numpad 5"
+msgstr ""
+
+msgid ":doc:`keymap:s3np0 <keymap-s3np0>`"
+msgstr ""
+
+msgid "The camera view, when there is a camera (none yet: nothing)"
+msgstr ""
+
+msgid "La vista della camera, se c'è una camera (per ora nessuna: nulla)"
+msgstr ""
+
+msgid "Numpad 0"
+msgstr ""
+
+msgid ":doc:`keymap:s3npDot <keymap-s3npDot>`"
+msgstr ""
+
+msgid "Numpad ."
+msgstr ""
+
+msgid ":doc:`keymap:polyClose <keymap-polyClose>`"
+msgstr ""
+
+msgid "Close the polygon / polyline"
+msgstr ""
+
+msgid "Chiudi il poligono / la polilinea"
+msgstr ""
+
+msgid "Enter · double-click"
+msgstr ""
+
+msgid ":doc:`keymap:polyFirst <keymap-polyFirst>`"
+msgstr ""
+
+msgid "Close the polygon"
+msgstr ""
+
+msgid "Chiudi il poligono"
+msgstr ""
+
+msgid "click the first vertex"
+msgstr ""
+
+msgid ":doc:`keymap:corner <keymap-corner>`"
+msgstr ""
+
+msgid "Split or join windows"
+msgstr ""
+
+msgid "Dividi o unisci le finestre"
+msgstr ""
+
+msgid "drag a corner"
+msgstr ""
+
+msgid ":doc:`keymap:divider <keymap-divider>`"
+msgstr ""
+
+msgid "Resize (to the edge: close)"
+msgstr ""
+
+msgid "Ridimensiona (fino al bordo: chiudi)"
+msgstr ""
+
+msgid "drag a divider"
+msgstr ""
+
+msgid ":doc:`keymap:headerDbl <keymap-headerDbl>`"
+msgstr ""
+
+msgid "Magnify the window"
+msgstr ""
+
+msgid "Ingrandisci la finestra"
+msgstr ""
+
+msgid "double-click the bar"
+msgstr ""
+
+msgid ":doc:`keymap:tabDbl <keymap-tabDbl>`"
+msgstr ""
+
+msgid "Rename the space"
+msgstr ""
+
+msgid "Rinomina lo spazio"
+msgstr ""
+
+msgid "double-click a tab"
+msgstr ""
+
+msgid ":doc:`keymap:tabMenu <keymap-tabMenu>`"
+msgstr ""
+
+msgid "Rename, reset, remove the space"
+msgstr ""
+
+msgid "Rinomina, ripristina, elimina lo spazio"
+msgstr ""
+
+msgid "right click on a tab"
+msgstr ""
+
+msgid ":doc:`keymap:storagePick <keymap-storagePick>`"
+msgstr ""
+
+msgid "Pick several files for one stamp"
+msgstr ""
+
+msgid "Scegli più file per un timbro"
+msgstr ""
+
+msgid "⌘/⇧ click"
+msgstr ""
+
+msgid ":doc:`keymap:folderClick <keymap-folderClick>`"
+msgstr ""
+
+msgid "Open the folder"
+msgstr ""
+
+msgid "Apri la cartella"
+msgstr ""
+
+msgid "click a folder"
+msgstr ""
+
+msgid "Sub-menus filled at run time"
+msgstr ""
+
+msgid "``openRecent`` — Open Recent: dynamic (recent)"
+msgstr ""
+
+msgid "``import`` — Import: plugin slot ``menu.file.import@1``"
+msgstr ""
+
+msgid "``export`` — Export: plugin slot ``menu.file.export@1``"
+msgstr ""

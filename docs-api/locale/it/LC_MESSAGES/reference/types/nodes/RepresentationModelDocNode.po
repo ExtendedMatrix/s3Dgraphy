@@ -1,0 +1,129 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "RepresentationModelDocNode"
+msgstr ""
+
+msgid "Generated from the datamodels (nodes 1.6.51, connections 1.6.55) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``."
+msgstr ""
+
+msgid "*3D representation of a documentary node — e.g.*"
+msgstr ""
+
+msgid "Class"
+msgstr ""
+
+msgid "``RepresentationModelDocNode``"
+msgstr ""
+
+msgid "node_type"
+msgstr ""
+
+msgid "``representation_model_doc``"
+msgstr ""
+
+msgid "Parent"
+msgstr ""
+
+msgid ":ref:`RepresentationNode <type-RepresentationNode>`"
+msgstr ""
+
+msgid "Label (en)"
+msgstr ""
+
+msgid "Representation Model Document"
+msgstr ""
+
+msgid "Label (it)"
+msgstr ""
+
+msgid "Modello di rappresentazione di documento"
+msgstr ""
+
+msgid "CIDOC"
+msgstr ""
+
+msgid "``D1 Digital Object``"
+msgstr ""
+
+msgid "Description"
+msgstr ""
+
+msgid "3D representation of a documentary node — e.g. a historical photo georeferenced and positioned in 3D space at the location it depicts. Linked via crm:P138\\_represents to a DocumentNode (or ExtractorNode/CombinerNode that uses the document). Specialization of em:RepresentationModel."
+msgstr ""
+
+msgid "*Italiano*: Rappresentazione 3D di un nodo documentario — ad es. una foto storica georeferenziata e posizionata nello spazio 3D nel luogo che raffigura. Collegata tramite crm:P138\\_represents a un DocumentNode (o a un ExtractorNode/CombinerNode che usa il documento). Specializzazione di em:RepresentationModel."
+msgstr ""
+
+msgid "Fields"
+msgstr ""
+
+msgid "Field"
+msgstr ""
+
+msgid "Mapping / note"
+msgstr ""
+
+msgid "``acquired``"
+msgstr ""
+
+msgid "date"
+msgstr ""
+
+msgid "``valid_until``"
+msgstr ""
+
+msgid "``name``"
+msgstr ""
+
+msgid "P1\\_is\\_identified\\_by"
+msgstr ""
+
+msgid "``description``"
+msgstr ""
+
+msgid "P3\\_has\\_note"
+msgstr ""
+
+msgid "``url``"
+msgstr ""
+
+msgid "``type``"
+msgstr ""
+
+msgid "P2\\_has\\_type"
+msgstr ""
+
+msgid "``transform``"
+msgstr ""
+
+msgid "position: em:position, rotation: em:rotationDegrees, rotation\\_order: em:rotationOrder, scale: em:scale, up\\_axis: em:upAxis, pivot: em:pivot"
+msgstr ""
+
+msgid "Edges"
+msgstr ""
+
+msgid "**Outgoing** (this node is the source): :ref:`generic_connection <edge-generic_connection>`, :ref:`has_embargo <edge-has_embargo>`, :ref:`has_first_epoch <edge-has_first_epoch>`, :ref:`has_geoposition <edge-has_geoposition>`, :ref:`has_license <edge-has_license>`, :ref:`has_linked_resource <edge-has_linked_resource>`, :ref:`has_property <edge-has_property>`, :ref:`has_semantic_shape <edge-has_semantic_shape>`, :ref:`has_translation <edge-has_translation>`, :ref:`is_in_paradata_nodegroup <edge-is_in_paradata_nodegroup>`, :ref:`is_in_representation_model_group <edge-is_in_representation_model_group>`, :ref:`survive_in_epoch <edge-survive_in_epoch>`"
+msgstr ""
+
+msgid "**Incoming** (this node is the target): :ref:`generic_connection <edge-generic_connection>`, :ref:`has_digital_object_part <edge-has_digital_object_part>`, :ref:`has_representation_model_doc <edge-has_representation_model_doc>`, :ref:`is_on_resource <edge-is_on_resource>`"
+msgstr ""
+
+msgid "From em"
+msgstr ""

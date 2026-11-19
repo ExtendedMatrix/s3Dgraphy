@@ -1,0 +1,177 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Context — ``em.app`` and ``ctx``"
+msgstr "Contesto — ``em.app`` e ``ctx``"
+
+msgid "*What the host gives: the application, the open document, the plugin's handle.* Generated for em API |api|."
+msgstr "*Ciò che l'host dà: l'applicazione, il documento aperto, il punto d'accesso del plugin.* Generato per l'API di em |api|."
+
+msgid "The open document and graph"
+msgstr "Il documento e il grafo aperti"
+
+msgid "``em.graph`` is the graph the host shows (a :class:`~s3dgraphy.em.GraphView`), read again at every access. In EMStudio it is the open study, in EM Tools the active graph of EM Setup, in a script the one of ``em.open`` / ``em.use``. With none, reading it raises ``AttributeError`` with a sentence that says so."
+msgstr "``em.graph`` è il grafo che l'host mostra (una :class:`~s3dgraphy.em.GraphView`), riletto a ogni accesso. In EMStudio è lo studio aperto, in EM Tools il grafo attivo di EM Setup, in uno script quello di ``em.open`` / ``em.use``. Se non c'è, leggerlo solleva ``AttributeError`` con una frase che lo dice."
+
+msgid "``em.app`` — the application"
+msgstr "``em.app`` — l'applicazione"
+
+msgid "Bases: :py:class:`object`"
+msgstr ""
+
+msgid "``em.app`` — always the CURRENT host's application half."
+msgstr ""
+
+msgid "Selection, views, notifications, the 3D Space and the application's commands. Each call is forwarded to the application that hosts the session (EMStudio, EM Tools in Blender). With no application (a plain Python script) every call raises :class:`~s3dgraphy.em.errors.NotAvailable`, which is also a ``NotImplementedError``; check :attr:`available` first."
+msgstr ""
+
+msgid "Example"
+msgstr ""
+
+msgid "The ids of the nodes selected in the application."
+msgstr ""
+
+msgid "Returns"
+msgstr ""
+
+msgid "the selected node ids, in the application's order."
+msgstr ""
+
+msgid "Return type"
+msgstr ""
+
+msgid "Raises"
+msgstr ""
+
+msgid "with no application."
+msgstr ""
+
+msgid "Select nodes in the application (replacing the selection)."
+msgstr ""
+
+msgid "Parameters"
+msgstr ""
+
+msgid "node ids or :class:`NodeView` objects."
+msgstr ""
+
+msgid "Bring a view of the application to the front (``\"graph\"``, ``\"space\"``…)."
+msgstr ""
+
+msgid "the view's name, as the host knows it."
+msgstr ""
+
+msgid "with no application, or when the host has no such idea     (Blender has no separate graph view)."
+msgstr ""
+
+msgid "Show a short message to the person using the application."
+msgstr ""
+
+msgid "the text to show."
+msgstr ""
+
+msgid "``\"info\"``, ``\"warning\"`` or ``\"error\"``."
+msgstr ""
+
+msgid "The 3D Space of the application (camera, framing, picking)."
+msgstr ""
+
+msgid "The application's commands (:meth:`run <_App._Commands.run>`)."
+msgstr ""
+
+msgid "False with no application (the command line)."
+msgstr ""
+
+msgid "Subscribe to an event — the same as :func:`em.on <s3dgraphy.em.events.on>`."
+msgstr ""
+
+msgid "Works with or without an application."
+msgstr ""
+
+msgid "``em.app.space`` — the 3D Space of the application: camera, framing, picking."
+msgstr ""
+
+msgid "The current camera of the Space, as a dict the host defines (position, target, field of view…)."
+msgstr ""
+
+msgid "Frame the given nodes in the Space (zoom the camera on them)."
+msgstr ""
+
+msgid "Ask the person to place a geometry in the Space and return it."
+msgstr ""
+
+msgid "what to ask (shown by the application)."
+msgstr ""
+
+msgid "what to place: ``\"point\"``, ``\"polyline\"``, ``\"surface\"``…"
+msgstr ""
+
+msgid "The placed geometry, in the host's format."
+msgstr ""
+
+msgid "Move the camera of the Space."
+msgstr ""
+
+msgid "a dict in the shape :meth:`camera` returns."
+msgstr ""
+
+msgid "``em.app.commands`` — the application's own commands."
+msgstr ""
+
+msgid "Run a command of the application by its id."
+msgstr ""
+
+msgid "the command's id (``\"graph.fit\"``, a plugin's ``\"<plugin>/<command>\"``…)."
+msgstr ""
+
+msgid "the command's arguments."
+msgstr ""
+
+msgid "Whatever the command returns."
+msgstr ""
+
+msgid "What a host implements behind ``em.app`` (EMStudio, EM Tools, the «no application» host of a script) is :class:`s3dgraphy.em.host.App`."
+msgstr "Ciò che un host implementa dietro ``em.app`` (EMStudio, EM Tools, l'host «senza applicazione» di uno script) è :class:`s3dgraphy.em.host.App`."
+
+msgid "``ctx`` — in a plugin"
+msgstr "``ctx`` — in un plugin"
+
+msgid "``setup(ctx)`` receives a :class:`s3dgraphy.em.plugins.Context`."
+msgstr "``setup(ctx)`` riceve un :class:`s3dgraphy.em.plugins.Context`."
+
+msgid "``ctx`` — what ``setup(ctx)`` receives."
+msgstr ""
+
+msgid "``~/.s3dgraphy/plugins-data/<id>/`` — the plugin's own state, out of the document, kept across updates (§14.3). Made when asked."
+msgstr ""
+
+msgid "Wire a DECLARED command: ``fn(slots) -> value``. A command not declared in the manifest is refused (a menu entry is a promise of the manifest, not of the code). Usable as a decorator."
+msgstr ""
+
+msgid "Listen to an event of every document (slot ``event@1``). The listener writes AS the plugin: a write it opens runs after the delivery."
+msgstr ""
+
+msgid "A function (or value) for the console: ``em.ext.<id>.<name>`` (slot ``console@1``)."
+msgstr ""
+
+msgid "What an exporter returns (``menu.file.export@1``, ``export.narrative@1``)."
+msgstr ""
+
+msgid "G-5 (MICRO-GEO02) · stamp a file this plugin made, in one line: ``<artifact>.stamp.json`` beside it, the plugin as the agent (id and version). ``inputs``, ``parameters``, ``dtc_kind``, ``technique``…: :func:`s3dgraphy.em.stamps.stamp_artifact`. Encouraged, never required."
+msgstr ""

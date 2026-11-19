@@ -1,0 +1,66 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "``em.messages`` — the sentences, in English and Italian"
+msgstr ""
+
+msgid "Generated for em API |api| from the docstrings of :mod:`s3dgraphy.em.messages`."
+msgstr ""
+
+msgid "The sentences of ``em``, in English and Italian (the interface's two languages)."
+msgstr ""
+
+msgid "One table, so a host that speaks Italian says the same things as one that speaks English. The language is the HOST's (``Host.language()``), else ``S3DGRAPHY_LANG``, else English — the project's reference language."
+msgstr ""
+
+msgid "The language ``em`` speaks: ``\"it\"`` or ``\"en\"``."
+msgstr ""
+
+msgid "Parameters"
+msgstr ""
+
+msgid "a language tag to normalise (``\"it-CH\"`` → ``\"it\"``; anything else → ``\"en\"``). Without it: the host's language, else ``S3DGRAPHY_LANG``, else English."
+msgstr ""
+
+msgid "Return type"
+msgstr ""
+
+msgid "Example"
+msgstr ""
+
+msgid "One sentence of the table, in one language, with its fields filled."
+msgstr ""
+
+msgid "the sentence's key in :data:`MESSAGES`."
+msgstr ""
+
+msgid "the language (default: :func:`language`)."
+msgstr ""
+
+msgid "the fields of the sentence."
+msgstr ""
+
+msgid "Raises"
+msgstr ""
+
+msgid "an unknown key or a missing field."
+msgstr ""
+
+msgid "The sentence in the two languages — what an exception carries, so a host may show the other one."
+msgstr ""

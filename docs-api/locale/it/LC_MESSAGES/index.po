@@ -1,0 +1,42 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "EMStudio Python API"
+msgstr ""
+
+msgid "*The Python of Extended Matrix: one library,* ``em``, *in EMStudio, in EM Tools for Blender and in a script of your own.*"
+msgstr "*Il Python di Extended Matrix: una sola libreria,* ``em``, *in EMStudio, in EM Tools per Blender e in uno script tuo.*"
+
+msgid "This is the reference of ``em`` |api| (s3dgraphy |s3d|). The manual of EMStudio says how to use the application; this site says what Python can do with a study: read its graph, write into it as one step of undo, call the application's commands, and extend it with plugins."
+msgstr "Questo è il riferimento di ``em`` |api| (s3dgraphy |s3d|). Il manuale di EMStudio dice come usare l'applicazione; questo sito dice che cosa Python può fare con uno studio: leggerne il grafo, scriverci come un solo passo di annullamento, chiamare i comandi dell'applicazione ed estenderla con i plugin."
+
+msgid "Documentation"
+msgstr "Documentazione"
+
+msgid "Reference"
+msgstr "Riferimento"
+
+msgid ":ref:`genindex` — every name, as Blender's index"
+msgstr ":ref:`genindex` — ogni nome, come l'indice di Blender"
+
+msgid ":ref:`modindex` — the modules"
+msgstr ":ref:`modindex` — i moduli"
+
+msgid ":ref:`search`"
+msgstr ""

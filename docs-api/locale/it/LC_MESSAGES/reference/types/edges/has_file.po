@@ -1,0 +1,72 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "has_file"
+msgstr ""
+
+msgid "Generated from the datamodels (nodes 1.6.51, connections 1.6.55) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``."
+msgstr ""
+
+msgid "*A RESOURCE (the set, the handle a person stamps, cites and opens) has ONE OF ITS FILES (E.D.*"
+msgstr ""
+
+msgid "Label (en)"
+msgstr ""
+
+msgid "Has file"
+msgstr ""
+
+msgid "Label (it)"
+msgstr ""
+
+msgid "Ha il file"
+msgstr ""
+
+msgid "Reverse"
+msgstr ""
+
+msgid "``is_file_of``"
+msgstr ""
+
+msgid "Source"
+msgstr ""
+
+msgid ":ref:`ResourceNode <type-ResourceNode>`"
+msgstr ""
+
+msgid "Target"
+msgstr ""
+
+msgid ":ref:`ResourceFileNode <type-ResourceFileNode>`"
+msgstr ""
+
+msgid "CIDOC"
+msgstr ""
+
+msgid "``P106_is_composed_of · prov:hadMember``"
+msgstr ""
+
+msgid "Description"
+msgstr ""
+
+msgid "A RESOURCE (the set, the handle a person stamps, cites and opens) has ONE OF ITS FILES (E.D. 2026-09-30, «la risorsa e i suoi file»). The edge — not the file — carries in its \\`attributes\\` the ROLE (\\`entry\\_point\\`: the file a reader opens first, e.g. the obj or tileset.json; \\`member\\`: a file the entry point calls, e.g. the mtl and the textures) and the PATH relative to the entry point's location (\\`path\\`, e.g. 'textures/T\\_OB\\_PODIO\\_LOD1.jpg'), because the same file sits in N resources under N different paths. With ONE file the edge is implicit and not written: the ResourceNode's own url and checksum are that file."
+msgstr ""
+
+msgid "From em"
+msgstr ""

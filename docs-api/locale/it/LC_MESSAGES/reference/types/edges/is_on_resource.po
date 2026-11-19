@@ -1,0 +1,72 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "is_on_resource"
+msgstr ""
+
+msgid "Generated from the datamodels (nodes 1.6.51, connections 1.6.55) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``."
+msgstr ""
+
+msgid "*The place a reading looked at (an AnnotationRegion) is ON something: a region2d on a specific image (or one page of a multi-page resource), a passage on a text document, a point/line/polyline on a 3D model.*"
+msgstr ""
+
+msgid "Label (en)"
+msgstr ""
+
+msgid "Is on resource"
+msgstr ""
+
+msgid "Label (it)"
+msgstr ""
+
+msgid "Sta sulla risorsa"
+msgstr ""
+
+msgid "Reverse"
+msgstr ""
+
+msgid "``has_annotation_region``"
+msgstr ""
+
+msgid "Source"
+msgstr ""
+
+msgid ":ref:`AnnotationRegionNode <type-AnnotationRegionNode>`"
+msgstr ""
+
+msgid "Target"
+msgstr ""
+
+msgid ":ref:`ResourceNode <type-ResourceNode>`, :ref:`DocumentNode <type-DocumentNode>`, :ref:`RepresentationModelNode <type-RepresentationModelNode>`, :ref:`RepresentationModelDocNode <type-RepresentationModelDocNode>`, :ref:`RepresentationModelSpecialFindNode <type-RepresentationModelSpecialFindNode>`, :ref:`ResourceFileNode <type-ResourceFileNode>`"
+msgstr ""
+
+msgid "CIDOC"
+msgstr ""
+
+msgid "``P106i_forms_part_of · em:isOnResource``"
+msgstr ""
+
+msgid "Description"
+msgstr ""
+
+msgid "The place a reading looked at (an AnnotationRegion) is ON something: a region2d on a specific image (or one page of a multi-page resource), a passage on a text document, a point/line/polyline on a 3D model. Region -> ResourceNode/DocumentNode, and (since v1.6.27) -> RepresentationModelNode / RepresentationModelDocNode / RepresentationModelSpecialFindNode for the 3D kinds, and (since v1.6.54) -> ResourceFileNode: the one photograph of a set (a campaign) the region is on. The region also keeps the id in its own data.resource\\_id, so it is readable alone; this edge is the graph's statement of it."
+msgstr ""
+
+msgid "From em"
+msgstr ""

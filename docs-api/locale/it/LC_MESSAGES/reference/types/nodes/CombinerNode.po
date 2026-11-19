@@ -1,0 +1,120 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "CombinerNode"
+msgstr ""
+
+msgid "Generated from the datamodels (nodes 1.6.51, connections 1.6.55) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``."
+msgstr ""
+
+msgid "*Node that represents the act of combining MULTIPLE extracted beliefs into a single conclusion.*"
+msgstr ""
+
+msgid "Class"
+msgstr ""
+
+msgid "``CombinerNode``"
+msgstr ""
+
+msgid "node_type"
+msgstr ""
+
+msgid "``combiner``"
+msgstr ""
+
+msgid "Parent"
+msgstr ""
+
+msgid ":ref:`ParadataNode <type-ParadataNode>`"
+msgstr ""
+
+msgid "Label (en)"
+msgstr ""
+
+msgid "Combiner"
+msgstr ""
+
+msgid "Label (it)"
+msgstr ""
+
+msgid "Combinatore"
+msgstr ""
+
+msgid "CIDOC"
+msgstr ""
+
+msgid "``crminf:I5_Inference_Making``"
+msgstr ""
+
+msgid "Description"
+msgstr ""
+
+msgid "Node that represents the act of combining MULTIPLE extracted beliefs into a single conclusion. The 'X and Y therefore Z' step in the EM paradata chain: combiner takes multiple ExtractorNode inputs and produces a synthesized assertion. Distinct from ExtractorNode (single-source belief adoption)."
+msgstr ""
+
+msgid "*Italiano*: Nodo che rappresenta l'atto di combinare PIÙ convinzioni estratte in un'unica conclusione. È il passaggio «X e Y, quindi Z» nella catena dei paradati di EM: il combinatore riceve più ExtractorNode in ingresso e produce un'asserzione di sintesi. Distinto da ExtractorNode (adozione di una convinzione da una singola fonte)."
+msgstr ""
+
+msgid "Fields"
+msgstr ""
+
+msgid "Field"
+msgstr ""
+
+msgid "Mapping / note"
+msgstr ""
+
+msgid "``act_start``"
+msgstr ""
+
+msgid "—"
+msgstr ""
+
+msgid "``act_end``"
+msgstr ""
+
+msgid "``em_kind``"
+msgstr ""
+
+msgid "``landmark_pose``"
+msgstr ""
+
+msgid "``name``"
+msgstr ""
+
+msgid "P1\\_is\\_identified\\_by"
+msgstr ""
+
+msgid "``description``"
+msgstr ""
+
+msgid "P3\\_has\\_note"
+msgstr ""
+
+msgid "Edges"
+msgstr ""
+
+msgid "**Outgoing** (this node is the source): :ref:`combines <edge-combines>`, :ref:`generic_connection <edge-generic_connection>`, :ref:`has_author <edge-has_author>`, :ref:`has_embargo <edge-has_embargo>`, :ref:`has_first_epoch <edge-has_first_epoch>`, :ref:`has_geoposition <edge-has_geoposition>`, :ref:`has_license <edge-has_license>`, :ref:`has_linked_resource <edge-has_linked_resource>`, :ref:`has_representation_model_doc <edge-has_representation_model_doc>`, :ref:`has_semantic_shape <edge-has_semantic_shape>`, :ref:`has_translation <edge-has_translation>`, :ref:`is_in_activity <edge-is_in_activity>`, :ref:`is_in_location <edge-is_in_location>`, :ref:`is_in_paradata_nodegroup <edge-is_in_paradata_nodegroup>`"
+msgstr ""
+
+msgid "**Incoming** (this node is the target): :ref:`generic_connection <edge-generic_connection>`, :ref:`has_data_provenance <edge-has_data_provenance>`"
+msgstr ""
+
+msgid "From em"
+msgstr ""

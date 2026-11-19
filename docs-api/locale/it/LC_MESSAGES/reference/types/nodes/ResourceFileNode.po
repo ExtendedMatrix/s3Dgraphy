@@ -1,0 +1,126 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "ResourceFileNode"
+msgstr ""
+
+msgid "Generated from the datamodels (nodes 1.6.51, connections 1.6.55) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``."
+msgstr ""
+
+msgid "*ONE FILE of a resource (E.D.*"
+msgstr ""
+
+msgid "Class"
+msgstr ""
+
+msgid "``ResourceFileNode``"
+msgstr ""
+
+msgid "node_type"
+msgstr ""
+
+msgid "``resource_file``"
+msgstr ""
+
+msgid "Parent"
+msgstr ""
+
+msgid ":ref:`Node <type-Node>`"
+msgstr ""
+
+msgid "Label (en)"
+msgstr ""
+
+msgid "Resource file"
+msgstr ""
+
+msgid "Label (it)"
+msgstr ""
+
+msgid "File della risorsa"
+msgstr ""
+
+msgid "CIDOC"
+msgstr ""
+
+msgid "``crmdig:D1_Digital_Object``"
+msgstr ""
+
+msgid "Description"
+msgstr ""
+
+msgid "ONE FILE of a resource (E.D. 2026-09-30, «la risorsa e i suoi file»): the ResourceNode is the SET — the handle a person stamps, cites and opens, with name, kind, scope, residency, role, tier, packaging and rights — and the ResourceFileNode is each member: an obj, its mtl and its textures are three files of one resource. Reached by has\\_file (reverse is\\_file\\_of); the ROLE (entry\\_point \\| member) and the RELATIVE PATH travel on the EDGE, because the same file (a corrected texture) sits in N resources under N paths. With ONE file the node is IMPLICIT: a ResourceNode with url (and checksum) and no has\\_file is a resource of one file, and s3dgraphy.resources.files.resource\\_files shows that file anyway; the node is written only when there are several files or the one file has a stamp or an identity of its own. Fields: url (a path, a file:// / s3:// / http(s):// URI or a blend:// locator), checksum ('sha256:<hex>'; 'emstruct1:<hex>' for a datablock, comparable not verifiable), size\\_bytes, media\\_type. For a datablock blend\\_file and datablock are READ from the blend:// locator (resources/resolver.py, the one place that knows its form), never stored twice. The same file in several resources is ONE node, recognised by its checksum."
+msgstr ""
+
+msgid "*Italiano*: UN FILE di una risorsa (E.D. 30 set 2026, «la risorsa e i suoi file»): il ResourceNode è l'INSIEME — la maniglia che si timbra, si cita e si apre — e il ResourceFileNode è ogni membro: un obj, il suo mtl e le sue texture sono tre file di una risorsa sola. Raggiunto da has\\_file; il RUOLO (entry\\_point \\| member) e il PERCORSO RELATIVO stanno sull'ARCO, perché lo stesso file sta in più risorse con percorsi diversi. Con UN file il nodo è IMPLICITO: url e checksum restano sul ResourceNode. Per un datablock blend\\_file e datablock si leggono dal locator blend://, mai scritti due volte."
+msgstr ""
+
+msgid "Fields"
+msgstr ""
+
+msgid "Field"
+msgstr ""
+
+msgid "Mapping / note"
+msgstr ""
+
+msgid "``media_role``"
+msgstr ""
+
+msgid "—"
+msgstr ""
+
+msgid "``name``"
+msgstr ""
+
+msgid "P1\\_is\\_identified\\_by"
+msgstr ""
+
+msgid "``description``"
+msgstr ""
+
+msgid "P3\\_has\\_note"
+msgstr ""
+
+msgid "``url``"
+msgstr ""
+
+msgid "``checksum``"
+msgstr ""
+
+msgid "em:checksum"
+msgstr ""
+
+msgid "``media_type``"
+msgstr ""
+
+msgid "P2\\_has\\_type"
+msgstr ""
+
+msgid "Edges"
+msgstr ""
+
+msgid "**Outgoing** (this node is the source): :ref:`dtc_derived_from <edge-dtc_derived_from>`, :ref:`generic_connection <edge-generic_connection>`, :ref:`has_embargo <edge-has_embargo>`, :ref:`has_license <edge-has_license>`, :ref:`has_semantic_shape <edge-has_semantic_shape>`, :ref:`has_translation <edge-has_translation>`"
+msgstr ""
+
+msgid "**Incoming** (this node is the target): :ref:`dtc_derived_from <edge-dtc_derived_from>`, :ref:`generic_connection <edge-generic_connection>`, :ref:`has_file <edge-has_file>`, :ref:`is_on_resource <edge-is_on_resource>`"
+msgstr ""
+
+msgid "From em"
+msgstr ""

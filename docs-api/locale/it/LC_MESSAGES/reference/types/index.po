@@ -1,0 +1,1539 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Types — nodes and edges"
+msgstr ""
+
+msgid "Generated from the datamodels (nodes 1.6.51, connections 1.6.55) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``."
+msgstr ""
+
+msgid "The types of the EM language: what ``em.graph`` returns as :class:`~s3dgraphy.em.NodeView` and :class:`~s3dgraphy.em.EdgeView`, and what ``tx.add_node`` / ``tx.add_edge`` accept. The edges a node may have are checked by the contract at every write."
+msgstr ""
+
+msgid "Node types"
+msgstr ""
+
+msgid "Class"
+msgstr ""
+
+msgid "node_type"
+msgstr ""
+
+msgid "Label"
+msgstr ""
+
+msgid "Etichetta (it)"
+msgstr ""
+
+msgid ":ref:`ActivityNodeGroup <type-ActivityNodeGroup>`"
+msgstr ""
+
+msgid "``ActivityNodeGroup``"
+msgstr ""
+
+msgid "Activity Node Group"
+msgstr ""
+
+msgid "Gruppo di attività"
+msgstr ""
+
+msgid ":ref:`AnnotationRegionNode <type-AnnotationRegionNode>`"
+msgstr ""
+
+msgid "``annotation_region``"
+msgstr ""
+
+msgid "Annotation Region"
+msgstr ""
+
+msgid "Regione di annotazione"
+msgstr ""
+
+msgid ":ref:`AuthorAINode <type-AuthorAINode>`"
+msgstr ""
+
+msgid "``author_ai``"
+msgstr ""
+
+msgid "AI Author"
+msgstr ""
+
+msgid "Autore IA"
+msgstr ""
+
+msgid ":ref:`AuthorNode <type-AuthorNode>`"
+msgstr ""
+
+msgid "``author``"
+msgstr ""
+
+msgid "Author (human)"
+msgstr ""
+
+msgid "Autore (umano)"
+msgstr ""
+
+msgid ":ref:`CombinerNode <type-CombinerNode>`"
+msgstr ""
+
+msgid "``combiner``"
+msgstr ""
+
+msgid "Combiner"
+msgstr ""
+
+msgid "Combinatore"
+msgstr ""
+
+msgid ":ref:`ContinuityNode <type-ContinuityNode>`"
+msgstr ""
+
+msgid "``BR``"
+msgstr ""
+
+msgid "continuity node"
+msgstr ""
+
+msgid "Nodo di continuità"
+msgstr ""
+
+msgid ":ref:`DTCAcquisitionNode <type-DTCAcquisitionNode>`"
+msgstr ""
+
+msgid "``dtc_acquisition``"
+msgstr ""
+
+msgid "DTC Acquisition"
+msgstr ""
+
+msgid "Acquisizione DTC"
+msgstr ""
+
+msgid ":ref:`DTCDeviceNode <type-DTCDeviceNode>`"
+msgstr ""
+
+msgid "``dtc_device``"
+msgstr ""
+
+msgid "DTC Device"
+msgstr ""
+
+msgid "Dispositivo DTC"
+msgstr ""
+
+msgid ":ref:`DTCNode <type-DTCNode>`"
+msgstr ""
+
+msgid "—"
+msgstr ""
+
+msgid "DTCNode"
+msgstr ""
+
+msgid ":ref:`DTCProcessNode <type-DTCProcessNode>`"
+msgstr ""
+
+msgid "``dtc_process``"
+msgstr ""
+
+msgid "DTC Process"
+msgstr ""
+
+msgid "Processo DTC"
+msgstr ""
+
+msgid ":ref:`DistrictNode <type-DistrictNode>`"
+msgstr ""
+
+msgid "``district``"
+msgstr ""
+
+msgid "District"
+msgstr ""
+
+msgid "Distretto"
+msgstr ""
+
+msgid ":ref:`DocumentNode <type-DocumentNode>`"
+msgstr ""
+
+msgid "``document``"
+msgstr ""
+
+msgid "Document"
+msgstr ""
+
+msgid "Documento"
+msgstr ""
+
+msgid ":ref:`DocumentaryStratigraphicUnit <type-DocumentaryStratigraphicUnit>`"
+msgstr ""
+
+msgid "``USD``"
+msgstr ""
+
+msgid "USD"
+msgstr ""
+
+msgid ":ref:`EmbargoNode <type-EmbargoNode>`"
+msgstr ""
+
+msgid "``embargo``"
+msgstr ""
+
+msgid "Embargo"
+msgstr ""
+
+msgid ":ref:`EpochNode <type-EpochNode>`"
+msgstr ""
+
+msgid "``EpochNode``"
+msgstr ""
+
+msgid "Epoch"
+msgstr ""
+
+msgid "Epoca"
+msgstr ""
+
+msgid ":ref:`ExtractorNode <type-ExtractorNode>`"
+msgstr ""
+
+msgid "``extractor``"
+msgstr ""
+
+msgid "Extractor"
+msgstr ""
+
+msgid "Estrattore"
+msgstr ""
+
+msgid ":ref:`FunctionalUnitNodeGroup <type-FunctionalUnitNodeGroup>`"
+msgstr ""
+
+msgid "``FunctionalUnitNodeGroup``"
+msgstr ""
+
+msgid "Functional Unit"
+msgstr ""
+
+msgid "Unità funzionale"
+msgstr ""
+
+msgid ":ref:`GCPSetNode <type-GCPSetNode>`"
+msgstr ""
+
+msgid "``gcp_set``"
+msgstr ""
+
+msgid "Ground control points"
+msgstr ""
+
+msgid "Punti di controllo a terra"
+msgstr ""
+
+msgid ":ref:`GeoPositionNode <type-GeoPositionNode>`"
+msgstr ""
+
+msgid "``geo_position``"
+msgstr ""
+
+msgid "Geo Position"
+msgstr ""
+
+msgid "Posizione geografica"
+msgstr ""
+
+msgid ":ref:`GraphNode <type-GraphNode>`"
+msgstr ""
+
+msgid "``graph``"
+msgstr ""
+
+msgid "Graph"
+msgstr ""
+
+msgid "Grafo"
+msgstr ""
+
+msgid ":ref:`GroupNode <type-GroupNode>`"
+msgstr ""
+
+msgid "``Group``"
+msgstr ""
+
+msgid "GroupNode"
+msgstr ""
+
+msgid ":ref:`HDTNode <type-HDTNode>`"
+msgstr ""
+
+msgid "``hdt``"
+msgstr ""
+
+msgid "Heritage Digital Twin"
+msgstr ""
+
+msgid "Gemello digitale del patrimonio"
+msgstr ""
+
+msgid ":ref:`HeritageEntityNode <type-HeritageEntityNode>`"
+msgstr ""
+
+msgid "``heritage_entity``"
+msgstr ""
+
+msgid "Heritage Entity"
+msgstr ""
+
+msgid "Entità patrimoniale"
+msgstr ""
+
+msgid ":ref:`HorizonNode <type-HorizonNode>`"
+msgstr ""
+
+msgid "``horizon``"
+msgstr ""
+
+msgid "Horizon"
+msgstr ""
+
+msgid "Orizzonte"
+msgstr ""
+
+msgid ":ref:`LandscapeSurfaceNode <type-LandscapeSurfaceNode>`"
+msgstr ""
+
+msgid "``landscape_surface``"
+msgstr ""
+
+msgid "Landscape surface"
+msgstr ""
+
+msgid "Superficie del paesaggio"
+msgstr ""
+
+msgid ":ref:`LandscapeUnitNode <type-LandscapeUnitNode>`"
+msgstr ""
+
+msgid "LandscapeUnitNode"
+msgstr ""
+
+msgid ":ref:`LicenseNode <type-LicenseNode>`"
+msgstr ""
+
+msgid "``license``"
+msgstr ""
+
+msgid "License"
+msgstr ""
+
+msgid "Licenza"
+msgstr ""
+
+msgid ":ref:`LocationNodeGroup <type-LocationNodeGroup>`"
+msgstr ""
+
+msgid "``LocationNodeGroup``"
+msgstr ""
+
+msgid "Location Node Group"
+msgstr ""
+
+msgid "Gruppo di luogo"
+msgstr ""
+
+msgid ":ref:`NarrativeNode <type-NarrativeNode>`"
+msgstr ""
+
+msgid "``narrative``"
+msgstr ""
+
+msgid "Narrative"
+msgstr ""
+
+msgid "Narrazione"
+msgstr ""
+
+msgid ":ref:`NegativeStratigraphicUnit <type-NegativeStratigraphicUnit>`"
+msgstr ""
+
+msgid "``USN``"
+msgstr ""
+
+msgid "US-"
+msgstr ""
+
+msgid ":ref:`NegativeTopographicUnitNode <type-NegativeTopographicUnitNode>`"
+msgstr ""
+
+msgid "``UT0``"
+msgstr ""
+
+msgid "−UT"
+msgstr ""
+
+msgid ":ref:`NeutralStratigraphicUnit <type-NeutralStratigraphicUnit>`"
+msgstr ""
+
+msgid "``USNt``"
+msgstr ""
+
+msgid "USNt"
+msgstr ""
+
+msgid ":ref:`Node <type-Node>`"
+msgstr ""
+
+msgid "``Node``"
+msgstr ""
+
+msgid "Node"
+msgstr ""
+
+msgid ":ref:`NonStructuralVirtualStratigraphicUnit <type-NonStructuralVirtualStratigraphicUnit>`"
+msgstr ""
+
+msgid "``USVn``"
+msgstr ""
+
+msgid "USV/n"
+msgstr ""
+
+msgid ":ref:`ParadataNode <type-ParadataNode>`"
+msgstr ""
+
+msgid "``ParadataNode``"
+msgstr ""
+
+msgid "ParadataNode"
+msgstr ""
+
+msgid ":ref:`ParadataNodeGroup <type-ParadataNodeGroup>`"
+msgstr ""
+
+msgid "``ParadataNodeGroup``"
+msgstr ""
+
+msgid "Paradata Node Group"
+msgstr ""
+
+msgid "Gruppo di paradati"
+msgstr ""
+
+msgid ":ref:`PeriodizationNode <type-PeriodizationNode>`"
+msgstr ""
+
+msgid "``periodization``"
+msgstr ""
+
+msgid "Periodization"
+msgstr ""
+
+msgid "Periodizzazione"
+msgstr ""
+
+msgid ":ref:`ProjectNode <type-ProjectNode>`"
+msgstr ""
+
+msgid "``project``"
+msgstr ""
+
+msgid "Project"
+msgstr ""
+
+msgid "Progetto"
+msgstr ""
+
+msgid ":ref:`PropertyNode <type-PropertyNode>`"
+msgstr ""
+
+msgid "``property``"
+msgstr ""
+
+msgid "Property"
+msgstr ""
+
+msgid "Proprietà"
+msgstr ""
+
+msgid ":ref:`RegistrationTransformNode <type-RegistrationTransformNode>`"
+msgstr ""
+
+msgid "``registration_transform``"
+msgstr ""
+
+msgid "Registration transform"
+msgstr ""
+
+msgid "Trasformazione di registrazione"
+msgstr ""
+
+msgid ":ref:`RepresentationModelDocNode <type-RepresentationModelDocNode>`"
+msgstr ""
+
+msgid "``representation_model_doc``"
+msgstr ""
+
+msgid "Representation Model Document"
+msgstr ""
+
+msgid "Modello di rappresentazione di documento"
+msgstr ""
+
+msgid ":ref:`RepresentationModelNode <type-RepresentationModelNode>`"
+msgstr ""
+
+msgid "``representation_model``"
+msgstr ""
+
+msgid "Representation Model"
+msgstr ""
+
+msgid "Modello di rappresentazione"
+msgstr ""
+
+msgid ":ref:`RepresentationModelNodeGroup <type-RepresentationModelNodeGroup>`"
+msgstr ""
+
+msgid "``RepresentationModelNodeGroup``"
+msgstr ""
+
+msgid "RM Container"
+msgstr ""
+
+msgid "Contenitore RM"
+msgstr ""
+
+msgid ":ref:`RepresentationModelSpecialFindNode <type-RepresentationModelSpecialFindNode>`"
+msgstr ""
+
+msgid "``representation_model_sf``"
+msgstr ""
+
+msgid "Representation Model Special Find"
+msgstr ""
+
+msgid "Modello di rappresentazione di reperto"
+msgstr ""
+
+msgid ":ref:`RepresentationNode <type-RepresentationNode>`"
+msgstr ""
+
+msgid "RepresentationNode"
+msgstr ""
+
+msgid ":ref:`ResourceFileNode <type-ResourceFileNode>`"
+msgstr ""
+
+msgid "``resource_file``"
+msgstr ""
+
+msgid "Resource file"
+msgstr ""
+
+msgid "File della risorsa"
+msgstr ""
+
+msgid ":ref:`ResourceNode <type-ResourceNode>`"
+msgstr ""
+
+msgid "``resource``"
+msgstr ""
+
+msgid "Link"
+msgstr ""
+
+msgid "Collegamento"
+msgstr ""
+
+msgid ":ref:`ReusedSpecialFind <type-ReusedSpecialFind>`"
+msgstr ""
+
+msgid "``RSF``"
+msgstr ""
+
+msgid "Repositioned Special Find"
+msgstr ""
+
+msgid "Reperto speciale riposizionato"
+msgstr ""
+
+msgid ":ref:`SemanticShapeNode <type-SemanticShapeNode>`"
+msgstr ""
+
+msgid "``semantic_shape``"
+msgstr ""
+
+msgid "Semantic Shape"
+msgstr ""
+
+msgid "Forma semantica"
+msgstr ""
+
+msgid ":ref:`SeriesOfDocumentaryStratigraphicUnit <type-SeriesOfDocumentaryStratigraphicUnit>`"
+msgstr ""
+
+msgid "``serUSD``"
+msgstr ""
+
+msgid "USD series"
+msgstr ""
+
+msgid "Serie di USD"
+msgstr ""
+
+msgid ":ref:`SeriesOfNonStructuralVirtualStratigraphicUnit <type-SeriesOfNonStructuralVirtualStratigraphicUnit>`"
+msgstr ""
+
+msgid "``serUSVn``"
+msgstr ""
+
+msgid "USVn series"
+msgstr ""
+
+msgid "Serie di USVn"
+msgstr ""
+
+msgid ":ref:`SeriesOfStratigraphicUnit <type-SeriesOfStratigraphicUnit>`"
+msgstr ""
+
+msgid "``serSU``"
+msgstr ""
+
+msgid "US series"
+msgstr ""
+
+msgid "Serie di US"
+msgstr ""
+
+msgid ":ref:`SeriesOfStructuralVirtualStratigraphicUnit <type-SeriesOfStructuralVirtualStratigraphicUnit>`"
+msgstr ""
+
+msgid "``serUSVs``"
+msgstr ""
+
+msgid "USVs series"
+msgstr ""
+
+msgid "Serie di USVs"
+msgstr ""
+
+msgid ":ref:`SeriesOfVirtualSpecialFindUnit <type-SeriesOfVirtualSpecialFindUnit>`"
+msgstr ""
+
+msgid "``serVSF``"
+msgstr ""
+
+msgid "VSF series"
+msgstr ""
+
+msgid "Serie di VSF"
+msgstr ""
+
+msgid ":ref:`SpecialFindUnit <type-SpecialFindUnit>`"
+msgstr ""
+
+msgid "``SF``"
+msgstr ""
+
+msgid "Special Find"
+msgstr ""
+
+msgid "Reperto speciale"
+msgstr ""
+
+msgid ":ref:`StratigraphicEventNode <type-StratigraphicEventNode>`"
+msgstr ""
+
+msgid "``SE``"
+msgstr ""
+
+msgid "stratigraphic event node"
+msgstr ""
+
+msgid "Evento stratigrafico"
+msgstr ""
+
+msgid ":ref:`StratigraphicNode <type-StratigraphicNode>`"
+msgstr ""
+
+msgid "``StratigraphicNode``"
+msgstr ""
+
+msgid "StratigraphicNode"
+msgstr ""
+
+msgid ":ref:`StratigraphicUnit <type-StratigraphicUnit>`"
+msgstr ""
+
+msgid "``US``"
+msgstr ""
+
+msgid "US (or SU)"
+msgstr ""
+
+msgid "US (o UStr)"
+msgstr ""
+
+msgid ":ref:`StructuralVirtualStratigraphicUnit <type-StructuralVirtualStratigraphicUnit>`"
+msgstr ""
+
+msgid "``USVs``"
+msgstr ""
+
+msgid "USV/s"
+msgstr ""
+
+msgid ":ref:`StudyNode <type-StudyNode>`"
+msgstr ""
+
+msgid "``study``"
+msgstr ""
+
+msgid "Study"
+msgstr ""
+
+msgid "Studio"
+msgstr ""
+
+msgid ":ref:`TimeBranchNodeGroup <type-TimeBranchNodeGroup>`"
+msgstr ""
+
+msgid "``TimeBranchNodeGroup``"
+msgstr ""
+
+msgid "Time Branch Node Group"
+msgstr ""
+
+msgid "Gruppo di ramo temporale"
+msgstr ""
+
+msgid ":ref:`TopographicUnitNode <type-TopographicUnitNode>`"
+msgstr ""
+
+msgid "``UT``"
+msgstr ""
+
+msgid "UT"
+msgstr ""
+
+msgid ":ref:`TransformationStratigraphicUnit <type-TransformationStratigraphicUnit>`"
+msgstr ""
+
+msgid "``TSU``"
+msgstr ""
+
+msgid "TSU"
+msgstr ""
+
+msgid ":ref:`TranslationNode <type-TranslationNode>`"
+msgstr ""
+
+msgid "``translation``"
+msgstr ""
+
+msgid "Translation"
+msgstr ""
+
+msgid "Traduzione"
+msgstr ""
+
+msgid ":ref:`UnknownNode <type-UnknownNode>`"
+msgstr ""
+
+msgid "``unknown``"
+msgstr ""
+
+msgid "Unknown node"
+msgstr ""
+
+msgid "Nodo sconosciuto"
+msgstr ""
+
+msgid ":ref:`VirtualSpecialFindUnit <type-VirtualSpecialFindUnit>`"
+msgstr ""
+
+msgid "``VSF``"
+msgstr ""
+
+msgid "Virtual Special Find"
+msgstr ""
+
+msgid "Reperto speciale virtuale"
+msgstr ""
+
+msgid ":ref:`VirtualStratigraphicUnit <type-VirtualStratigraphicUnit>`"
+msgstr ""
+
+msgid "VirtualStratigraphicUnit"
+msgstr ""
+
+msgid ":ref:`WorkingUnit <type-WorkingUnit>`"
+msgstr ""
+
+msgid "``UL``"
+msgstr ""
+
+msgid "UL"
+msgstr ""
+
+msgid "Edge types"
+msgstr ""
+
+msgid "Edge"
+msgstr ""
+
+msgid "Reverse"
+msgstr ""
+
+msgid ":ref:`abuts <edge-abuts>`"
+msgstr ""
+
+msgid "Abuts"
+msgstr ""
+
+msgid "Si appoggia a"
+msgstr ""
+
+msgid "``is_abutted_by``"
+msgstr ""
+
+msgid ":ref:`bonded_to <edge-bonded_to>`"
+msgstr ""
+
+msgid "Bonded to"
+msgstr ""
+
+msgid "In legame con"
+msgstr ""
+
+msgid ":ref:`changed_from <edge-changed_from>`"
+msgstr ""
+
+msgid "Changed from"
+msgstr ""
+
+msgid "Trasformato da"
+msgstr ""
+
+msgid "``changed_to``"
+msgstr ""
+
+msgid ":ref:`combines <edge-combines>`"
+msgstr ""
+
+msgid "Combines"
+msgstr ""
+
+msgid "Combina"
+msgstr ""
+
+msgid "``is_combined_by``"
+msgstr ""
+
+msgid ":ref:`contains_proposition_set <edge-contains_proposition_set>`"
+msgstr ""
+
+msgid "Contains proposition set"
+msgstr ""
+
+msgid "Contiene insieme di proposizioni"
+msgstr ""
+
+msgid "``is_proposition_set_of``"
+msgstr ""
+
+msgid ":ref:`contrasts_with <edge-contrasts_with>`"
+msgstr ""
+
+msgid "Contrasts with"
+msgstr ""
+
+msgid "In contrasto con"
+msgstr ""
+
+msgid ":ref:`cuts <edge-cuts>`"
+msgstr ""
+
+msgid "Cuts"
+msgstr ""
+
+msgid "Taglia"
+msgstr ""
+
+msgid "``is_cut_by``"
+msgstr ""
+
+msgid ":ref:`dtc_derived_from <edge-dtc_derived_from>`"
+msgstr ""
+
+msgid "DTC output derived from input"
+msgstr ""
+
+msgid "L'uscita DTC deriva dall'ingresso"
+msgstr ""
+
+msgid "``dtc_derivation_source_for``"
+msgstr ""
+
+msgid ":ref:`dtc_had_input <edge-dtc_had_input>`"
+msgstr ""
+
+msgid "DTC process had input"
+msgstr ""
+
+msgid "Il processo DTC ha avuto in ingresso"
+msgstr ""
+
+msgid "``dtc_was_input_of``"
+msgstr ""
+
+msgid ":ref:`dtc_had_output <edge-dtc_had_output>`"
+msgstr ""
+
+msgid "DTC process had output"
+msgstr ""
+
+msgid "Il processo DTC ha avuto in uscita"
+msgstr ""
+
+msgid "``dtc_was_output_of``"
+msgstr ""
+
+msgid ":ref:`dtc_happened_on_device <edge-dtc_happened_on_device>`"
+msgstr ""
+
+msgid "Happened on device"
+msgstr ""
+
+msgid "Avvenuto sul dispositivo"
+msgstr ""
+
+msgid "``dtc_was_device_of``"
+msgstr ""
+
+msgid ":ref:`equals <edge-equals>`"
+msgstr ""
+
+msgid "Equals"
+msgstr ""
+
+msgid "Uguale a"
+msgstr ""
+
+msgid ":ref:`extracted_from <edge-extracted_from>`"
+msgstr ""
+
+msgid "Extracted from"
+msgstr ""
+
+msgid "Estratto da"
+msgstr ""
+
+msgid "``is_source_for_extraction``"
+msgstr ""
+
+msgid ":ref:`fills <edge-fills>`"
+msgstr ""
+
+msgid "Fills"
+msgstr ""
+
+msgid "Riempie"
+msgstr ""
+
+msgid "``is_filled_by``"
+msgstr ""
+
+msgid ":ref:`generic_connection <edge-generic_connection>`"
+msgstr ""
+
+msgid "Generic connection"
+msgstr ""
+
+msgid "Connessione generica"
+msgstr ""
+
+msgid ":ref:`has_author <edge-has_author>`"
+msgstr ""
+
+msgid "Has author"
+msgstr ""
+
+msgid "Ha autore"
+msgstr ""
+
+msgid "``is_author_of``"
+msgstr ""
+
+msgid ":ref:`has_data_provenance <edge-has_data_provenance>`"
+msgstr ""
+
+msgid "Has data provenance"
+msgstr ""
+
+msgid "Ha provenienza del dato"
+msgstr ""
+
+msgid "``is_data_provenance_of``"
+msgstr ""
+
+msgid ":ref:`has_digital_object_part <edge-has_digital_object_part>`"
+msgstr ""
+
+msgid "Has digital object part"
+msgstr ""
+
+msgid "Ha parte di oggetto digitale"
+msgstr ""
+
+msgid "``is_digital_object_part_of``"
+msgstr ""
+
+msgid ":ref:`has_digital_twin <edge-has_digital_twin>`"
+msgstr ""
+
+msgid "Has digital twin"
+msgstr ""
+
+msgid "Ha gemello digitale"
+msgstr ""
+
+msgid "``is_digital_twin_of``"
+msgstr ""
+
+msgid ":ref:`has_digital_twin_component <edge-has_digital_twin_component>`"
+msgstr ""
+
+msgid "Has digital twin component"
+msgstr ""
+
+msgid "Ha componente del gemello digitale"
+msgstr ""
+
+msgid "``is_digital_twin_component_of``"
+msgstr ""
+
+msgid ":ref:`has_documentation <edge-has_documentation>`"
+msgstr ""
+
+msgid "Has documentation"
+msgstr ""
+
+msgid "Ha documentazione"
+msgstr ""
+
+msgid "``is_documentation_of``"
+msgstr ""
+
+msgid ":ref:`has_embargo <edge-has_embargo>`"
+msgstr ""
+
+msgid "Has embargo"
+msgstr ""
+
+msgid "Ha embargo"
+msgstr ""
+
+msgid "``is_embargo_of``"
+msgstr ""
+
+msgid ":ref:`has_file <edge-has_file>`"
+msgstr ""
+
+msgid "Has file"
+msgstr ""
+
+msgid "Ha il file"
+msgstr ""
+
+msgid "``is_file_of``"
+msgstr ""
+
+msgid ":ref:`has_first_epoch <edge-has_first_epoch>`"
+msgstr ""
+
+msgid "Has first epoch"
+msgstr ""
+
+msgid "Ha come prima epoca"
+msgstr ""
+
+msgid "``is_first_epoch_of``"
+msgstr ""
+
+msgid ":ref:`has_gcp_set <edge-has_gcp_set>`"
+msgstr ""
+
+msgid "Solved from control points"
+msgstr ""
+
+msgid "Risolto da punti di controllo"
+msgstr ""
+
+msgid "``controlled_registration``"
+msgstr ""
+
+msgid ":ref:`has_geoposition <edge-has_geoposition>`"
+msgstr ""
+
+msgid "Has geoposition"
+msgstr ""
+
+msgid "Ha posizione geografica"
+msgstr ""
+
+msgid "``is_geoposition_of``"
+msgstr ""
+
+msgid ":ref:`has_license <edge-has_license>`"
+msgstr ""
+
+msgid "Has license"
+msgstr ""
+
+msgid "Ha licenza"
+msgstr ""
+
+msgid "``is_license_of``"
+msgstr ""
+
+msgid ":ref:`has_linked_resource <edge-has_linked_resource>`"
+msgstr ""
+
+msgid "Has linked resource"
+msgstr ""
+
+msgid "Ha collegamento"
+msgstr ""
+
+msgid "``is_linked_resource_of``"
+msgstr ""
+
+msgid ":ref:`has_paradata_nodegroup <edge-has_paradata_nodegroup>`"
+msgstr ""
+
+msgid "Has paradata nodegroup"
+msgstr ""
+
+msgid "Ha gruppo di paradati"
+msgstr ""
+
+msgid "``is_paradata_nodegroup_of``"
+msgstr ""
+
+msgid ":ref:`has_property <edge-has_property>`"
+msgstr ""
+
+msgid "Has property"
+msgstr ""
+
+msgid "Ha la proprietà"
+msgstr ""
+
+msgid "``is_property_of``"
+msgstr ""
+
+msgid ":ref:`has_registration_transform <edge-has_registration_transform>`"
+msgstr ""
+
+msgid "Placed by"
+msgstr ""
+
+msgid "Posizionato da"
+msgstr ""
+
+msgid "``places``"
+msgstr ""
+
+msgid ":ref:`has_representation_model <edge-has_representation_model>`"
+msgstr ""
+
+msgid "Has representation model"
+msgstr ""
+
+msgid "Ha modello di rappresentazione"
+msgstr ""
+
+msgid "``is_representation_model_of``"
+msgstr ""
+
+msgid ":ref:`has_representation_model_doc <edge-has_representation_model_doc>`"
+msgstr ""
+
+msgid "Has document representation model"
+msgstr ""
+
+msgid "Ha modello di rappresentazione di documento"
+msgstr ""
+
+msgid "``is_doc_representation_model_of``"
+msgstr ""
+
+msgid ":ref:`has_representation_model_sf <edge-has_representation_model_sf>`"
+msgstr ""
+
+msgid "Has special find representation model"
+msgstr ""
+
+msgid "Ha modello di rappresentazione di reperto"
+msgstr ""
+
+msgid "``is_sf_representation_model_of``"
+msgstr ""
+
+msgid ":ref:`has_same_time <edge-has_same_time>`"
+msgstr ""
+
+msgid "Has same time"
+msgstr ""
+
+msgid "Contemporaneo a"
+msgstr ""
+
+msgid ":ref:`has_semantic_shape <edge-has_semantic_shape>`"
+msgstr ""
+
+msgid "Has semantic shape"
+msgstr ""
+
+msgid "Ha forma semantica"
+msgstr ""
+
+msgid "``is_semantic_shape_of``"
+msgstr ""
+
+msgid ":ref:`has_sub_epoch <edge-has_sub_epoch>`"
+msgstr ""
+
+msgid "Has sub-epoch"
+msgstr ""
+
+msgid "Ha come sotto-epoca"
+msgstr ""
+
+msgid "``is_in_epoch``"
+msgstr ""
+
+msgid ":ref:`has_sub_resource <edge-has_sub_resource>`"
+msgstr ""
+
+msgid "Has sub-resource"
+msgstr ""
+
+msgid "Ha come parte l'insieme"
+msgstr ""
+
+msgid "``is_sub_resource_of``"
+msgstr ""
+
+msgid ":ref:`has_timebranch <edge-has_timebranch>`"
+msgstr ""
+
+msgid "Has timebranch"
+msgstr ""
+
+msgid "Ha il ramo temporale"
+msgstr ""
+
+msgid "``is_timebranch_of``"
+msgstr ""
+
+msgid ":ref:`has_translation <edge-has_translation>`"
+msgstr ""
+
+msgid "Has translation"
+msgstr ""
+
+msgid "Ha la traduzione"
+msgstr ""
+
+msgid "``is_translation_of``"
+msgstr ""
+
+msgid ":ref:`has_visual_reference <edge-has_visual_reference>`"
+msgstr ""
+
+msgid "Has visual reference"
+msgstr ""
+
+msgid "Ha riferimento visivo"
+msgstr ""
+
+msgid "``is_visual_reference_of``"
+msgstr ""
+
+msgid ":ref:`heritage_part_of <edge-heritage_part_of>`"
+msgstr ""
+
+msgid "Is part of heritage entity"
+msgstr ""
+
+msgid "Fa parte dell'entità patrimoniale"
+msgstr ""
+
+msgid "``heritage_has_part``"
+msgstr ""
+
+msgid ":ref:`includes_study <edge-includes_study>`"
+msgstr ""
+
+msgid "Includes study"
+msgstr ""
+
+msgid "Include lo studio"
+msgstr ""
+
+msgid "``is_study_of_project``"
+msgstr ""
+
+msgid ":ref:`is_after <edge-is_after>`"
+msgstr ""
+
+msgid "Is after"
+msgstr ""
+
+msgid "È posteriore a"
+msgstr ""
+
+msgid "``is_before``"
+msgstr ""
+
+msgid ":ref:`is_bonded_to <edge-is_bonded_to>`"
+msgstr ""
+
+msgid "Is bonded to"
+msgstr ""
+
+msgid "Si lega a"
+msgstr ""
+
+msgid ":ref:`is_in_activity <edge-is_in_activity>`"
+msgstr ""
+
+msgid "Is in activity"
+msgstr ""
+
+msgid "È nell'attività"
+msgstr ""
+
+msgid "``includes_in_activity``"
+msgstr ""
+
+msgid ":ref:`is_in_district <edge-is_in_district>`"
+msgstr ""
+
+msgid "Is in district"
+msgstr ""
+
+msgid "È nel distretto"
+msgstr ""
+
+msgid "``includes_in_district``"
+msgstr ""
+
+msgid ":ref:`is_in_functional_unit <edge-is_in_functional_unit>`"
+msgstr ""
+
+msgid "Is in functional unit"
+msgstr ""
+
+msgid "È nell'unità funzionale"
+msgstr ""
+
+msgid "``includes_in_functional_unit``"
+msgstr ""
+
+msgid ":ref:`is_in_location <edge-is_in_location>`"
+msgstr ""
+
+msgid "Is in location"
+msgstr ""
+
+msgid "È nel luogo"
+msgstr ""
+
+msgid "``includes_location``"
+msgstr ""
+
+msgid ":ref:`is_in_paradata_nodegroup <edge-is_in_paradata_nodegroup>`"
+msgstr ""
+
+msgid "Is in paradata nodegroup"
+msgstr ""
+
+msgid "È nel gruppo di paradati"
+msgstr ""
+
+msgid "``contains_paradata_node``"
+msgstr ""
+
+msgid ":ref:`is_in_periodization <edge-is_in_periodization>`"
+msgstr ""
+
+msgid "Is in periodization"
+msgstr ""
+
+msgid "È nella periodizzazione"
+msgstr ""
+
+msgid "``lists_horizon``"
+msgstr ""
+
+msgid ":ref:`is_in_representation_model_group <edge-is_in_representation_model_group>`"
+msgstr ""
+
+msgid "Is in representation model group"
+msgstr ""
+
+msgid "È nel contenitore RM"
+msgstr ""
+
+msgid "``includes_representation_model``"
+msgstr ""
+
+msgid ":ref:`is_in_timebranch <edge-is_in_timebranch>`"
+msgstr ""
+
+msgid "Is in timebranch"
+msgstr ""
+
+msgid "È nel ramo temporale"
+msgstr ""
+
+msgid "``contains_in_timebranch``"
+msgstr ""
+
+msgid ":ref:`is_on_resource <edge-is_on_resource>`"
+msgstr ""
+
+msgid "Is on resource"
+msgstr ""
+
+msgid "Sta sulla risorsa"
+msgstr ""
+
+msgid "``has_annotation_region``"
+msgstr ""
+
+msgid ":ref:`is_part_of <edge-is_part_of>`"
+msgstr ""
+
+msgid "Is part of"
+msgstr ""
+
+msgid "Fa parte di"
+msgstr ""
+
+msgid "``has_part``"
+msgstr ""
+
+msgid ":ref:`is_physically_equal_to <edge-is_physically_equal_to>`"
+msgstr ""
+
+msgid "Is physically equal to"
+msgstr ""
+
+msgid "È fisicamente uguale a"
+msgstr ""
+
+msgid ":ref:`overlies <edge-overlies>`"
+msgstr ""
+
+msgid "Overlies"
+msgstr ""
+
+msgid "Copre"
+msgstr ""
+
+msgid "``is_overlain_by``"
+msgstr ""
+
+msgid ":ref:`study_about_heritage <edge-study_about_heritage>`"
+msgstr ""
+
+msgid "Study is about heritage entity"
+msgstr ""
+
+msgid "Lo studio riguarda l'entità patrimoniale"
+msgstr ""
+
+msgid "``was_subject_of_study``"
+msgstr ""
+
+msgid ":ref:`study_produced_proposition_set <edge-study_produced_proposition_set>`"
+msgstr ""
+
+msgid "Study produced proposition set"
+msgstr ""
+
+msgid "Lo studio ha prodotto un insieme di proposizioni"
+msgstr ""
+
+msgid "``was_created_by_study``"
+msgstr ""
+
+msgid ":ref:`study_took_place_at <edge-study_took_place_at>`"
+msgstr ""
+
+msgid "Study took place at"
+msgstr ""
+
+msgid "Lo studio si è svolto in"
+msgstr ""
+
+msgid "``was_place_of_study``"
+msgstr ""
+
+msgid ":ref:`survive_in_epoch <edge-survive_in_epoch>`"
+msgstr ""
+
+msgid "Survives in epoch"
+msgstr ""
+
+msgid "Sopravvive nell'epoca"
+msgstr ""
+
+msgid "``contains_surviving``"
+msgstr ""
+
+msgid ":ref:`validated_by <edge-validated_by>`"
+msgstr ""
+
+msgid "Validated by"
+msgstr ""
+
+msgid "Validato da"
+msgstr ""
+
+msgid "``validated``"
+msgstr ""
+
+msgid ":ref:`was_revision_of <edge-was_revision_of>`"
+msgstr ""
+
+msgid "Was revision of"
+msgstr ""
+
+msgid "È una revisione di"
+msgstr ""
+
+msgid "``had_revision``"
+msgstr ""

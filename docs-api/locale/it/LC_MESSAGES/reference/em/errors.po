@@ -1,0 +1,48 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "``em.errors`` — errors"
+msgstr ""
+
+msgid "Generated for em API |api| from the docstrings of :mod:`s3dgraphy.em.errors`."
+msgstr ""
+
+msgid "The two things ``em`` raises (SPEC-plugin §2.3, §11)."
+msgstr ""
+
+msgid "Bases: :py:class:`Exception`"
+msgstr ""
+
+msgid "Base: carries the sentence in EN and IT (``.messages``); ``str()`` is the host's language."
+msgstr ""
+
+msgid "Parameters"
+msgstr ""
+
+msgid "Bases: :py:class:`~s3dgraphy.em.errors.EmError`, :py:class:`NotImplementedError`"
+msgstr ""
+
+msgid "``em.app`` asked for something this host does not have — every call with no application (the command line), ``view`` in Blender. A ``NotImplementedError`` too, so ``except NotImplementedError`` keeps working."
+msgstr ""
+
+msgid "Bases: :py:class:`~s3dgraphy.em.errors.EmError`"
+msgstr ""
+
+msgid "The contract said no — and NOTHING was applied. ``.result`` is the contract's :class:`~s3dgraphy.contract.Result` (``.data[\"reason\"]``: the refusal's name: ``no-author``, ``capability-not-declared``, ``connection-not-allowed``, ``ops-in-proposal``…)."
+msgstr ""

@@ -135,6 +135,17 @@ MESSAGES: Dict[str, Dict[str, str]] = {
 
 
 def language(lang: Optional[str] = None) -> str:
+    """The language ``em`` speaks: ``"it"`` or ``"en"``.
+
+    Args:
+        lang: a language tag to normalise (``"it-CH"`` → ``"it"``; anything
+            else → ``"en"``). Without it: the host's language, else
+            ``S3DGRAPHY_LANG``, else English.
+
+    Example:
+        >>> language("it-CH"), language("de")
+        ('it', 'en')
+    """
     if lang:
         return "it" if str(lang).lower().startswith("it") else "en"
     try:
@@ -150,6 +161,20 @@ def _env_language() -> str:
 
 
 def message(key: str, lang: Optional[str] = None, **kw: Any) -> str:
+    """One sentence of the table, in one language, with its fields filled.
+
+    Args:
+        key: the sentence's key in :data:`MESSAGES`.
+        lang: the language (default: :func:`language`).
+        **kw: the fields of the sentence.
+
+    Raises:
+        KeyError: an unknown key or a missing field.
+
+    Example:
+        >>> message("no_node", "en", ref="US404")
+        'no node «US404» in the graph'
+    """
     table = MESSAGES[key]
     return table[language(lang)].format(**kw)
 
@@ -158,3 +183,6 @@ def both(key: str, **kw: Any) -> Dict[str, str]:
     """The sentence in the two languages — what an exception carries, so a host
     may show the other one."""
     return {lang: text.format(**kw) for lang, text in MESSAGES[key].items()}
+
+
+__all__ = ["MESSAGES", "language", "message", "both"]

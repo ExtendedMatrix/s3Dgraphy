@@ -1,0 +1,198 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Slots"
+msgstr ""
+
+msgid "Generated from ``s3dgraphy.extensions.slots`` for em API 1.2.0 by ``docs-api/_tools/gen_slots.py``."
+msgstr ""
+
+msgid "A **slot** is a place of the interface or of the flow where a host accepts something from a plugin, with a name and a version: ``in = [\"context.node@1\", \"menu.tools@1\"]`` in the plugin's manifest. A slot newer than the host's turns that entry off, not the plugin."
+msgstr ""
+
+msgid "Slot"
+msgstr ""
+
+msgid "State"
+msgstr ""
+
+msgid "Where"
+msgstr ""
+
+msgid "Notes"
+msgstr ""
+
+msgid "``check@1``"
+msgstr ""
+
+msgid "drawn"
+msgstr ""
+
+msgid "a read-only check that returns warnings"
+msgstr ""
+
+msgid "takes a command, read only (``writes = false``)"
+msgstr ""
+
+msgid "``console@1``"
+msgstr ""
+
+msgid "functions exposed to the console as ``em.ext.<id>``"
+msgstr ""
+
+msgid "—"
+msgstr ""
+
+msgid "``context.edge@1``"
+msgstr ""
+
+msgid "declared, not drawn yet"
+msgstr ""
+
+msgid "the context menu of an edge"
+msgstr ""
+
+msgid "``context.node@1``"
+msgstr ""
+
+msgid "the context menu of a node or of the selection (Matrix, Space); offered by ``when``"
+msgstr ""
+
+msgid "takes a command"
+msgstr ""
+
+msgid "``context.outliner@1``"
+msgstr ""
+
+msgid "the context menu of the Outliner"
+msgstr ""
+
+msgid "``door.reader@2``"
+msgstr ""
+
+msgid "«Bring in…»: a reader of a kind of file or of a folder; may claim known extensions"
+msgstr ""
+
+msgid "``event@1``"
+msgstr ""
+
+msgid "listening to the events (``ctx.on``)"
+msgstr ""
+
+msgid "``export.narrative@1``"
+msgstr ""
+
+msgid "Narrative ▸ Export (the command returns a file)"
+msgstr ""
+
+msgid "takes a command, returns a file (``ctx.file``)"
+msgstr ""
+
+msgid "``inspector.section@1``"
+msgstr ""
+
+msgid "a section of the Inspector for a type of node: values (read only) and buttons"
+msgstr ""
+
+msgid "``keymap@1``"
+msgstr ""
+
+msgid "a keyboard shortcut"
+msgstr ""
+
+msgid "``menu.file.export@1``"
+msgstr ""
+
+msgid "File ▸ Export ▸ … (the command returns a file)"
+msgstr ""
+
+msgid "``menu.file.import@1``"
+msgstr ""
+
+msgid "File ▸ Import ▸ …"
+msgstr ""
+
+msgid "``menu.tools@1``"
+msgstr ""
+
+msgid "Tools ▸ Plugin ▸ <plugin> ▸ <command>"
+msgstr ""
+
+msgid "``palette@1``"
+msgstr ""
+
+msgid "the command palette"
+msgstr ""
+
+msgid "``panel@1``"
+msgstr ""
+
+msgid "a declarative panel (``[[code.panels]]``): fields, values, buttons — never HTML"
+msgstr ""
+
+msgid "``space.layer@1``"
+msgstr ""
+
+msgid "a layer of the Space described by a read-only command, drawn by the host"
+msgstr ""
+
+msgid "``space.pick@1``"
+msgstr ""
+
+msgid "asking the person to place a point in the Space (``em.app.space.pick``)"
+msgstr ""
+
+msgid "``space.tool@1``"
+msgstr ""
+
+msgid "a tool of the Space's bar: a primitive placed, then the command with the geometry"
+msgstr ""
+
+msgid "``statusbar@1``"
+msgstr ""
+
+msgid "a zone of text in the status bar"
+msgstr ""
+
+msgid "``tabular.column@1``"
+msgstr ""
+
+msgid "a computed, read-only column of a sheet of the Tabular"
+msgstr ""
+
+msgid "``workspace@1``"
+msgstr ""
+
+msgid "a workspace"
+msgstr ""
+
+msgid "Kinds of a command's slot (what the host fills, never invents): ``id``, ``ids``, ``string``, ``number``, ``path``, ``geometry``, ``bool``."
+msgstr ""
+
+msgid "Kinds of a panel's field: ``number``, ``text``, ``choice``, ``node``, ``check``, ``value``, ``button``; at most 40 fields. Panels open at: ``right``, ``left``, ``below``, ``window``."
+msgstr ""
+
+msgid "Primitives of ``space.tool``: ``point`` (1–1 clicks), ``line`` (2–2 clicks), ``polyline`` (2–n clicks), ``surface`` (3–n clicks)."
+msgstr ""
+
+msgid "Sheets a ``tabular.column`` may join: ``Units``, ``Epochs``, ``Documents``, ``Claims``, ``Authors``."
+msgstr ""
+
+msgid "When a ``context.node`` command is offered (``when``)"
+msgstr ""

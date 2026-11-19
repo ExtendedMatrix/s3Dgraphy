@@ -59,60 +59,230 @@ ext = plugins.Ext()
 
 
 class _App:
-    """``em.app`` — always the CURRENT host's application half."""
+    """``em.app`` — always the CURRENT host's application half.
+
+    Selection, views, notifications, the 3D Space and the application's
+    commands. Each call is forwarded to the application that hosts the
+    session (EMStudio, EM Tools in Blender). With no application (a plain
+    Python script) every call raises :class:`~s3dgraphy.em.errors.NotAvailable`,
+    which is also a ``NotImplementedError``; check :attr:`available` first.
+
+    Example:
+        >>> em.app.available
+        False
+        >>> em.app
+        <em.app: no application>
+    """
 
     def _a(self) -> Any:
         return host.current().app
 
     def selection(self):
+        """The ids of the nodes selected in the application.
+
+        Returns:
+            list[str]: the selected node ids, in the application's order.
+
+        Raises:
+            NotAvailable: with no application.
+
+        Example:
+            >>> em.app.selection()
+            Traceback (most recent call last):
+            ...
+            s3dgraphy.em.errors.NotAvailable: no application: «selection» needs EMStudio or Blender (this is none)
+        """
         return self._a().selection()
 
     def select(self, ids):
+        """Select nodes in the application (replacing the selection).
+
+        Args:
+            ids: node ids or :class:`NodeView` objects.
+
+        Raises:
+            NotAvailable: with no application.
+
+        Example:
+            >>> em.app.select([em.graph.node("US1")])
+            Traceback (most recent call last):
+            ...
+            s3dgraphy.em.errors.NotAvailable: no application: «select» needs EMStudio or Blender (this is none)
+        """
         return self._a().select([getattr(i, "id", i) for i in ids])
 
     def view(self, name: str):
+        """Bring a view of the application to the front (``"graph"``, ``"space"``…).
+
+        Args:
+            name: the view's name, as the host knows it.
+
+        Raises:
+            NotAvailable: with no application, or when the host has no such idea
+                (Blender has no separate graph view).
+
+        Example:
+            >>> em.app.view("graph")
+            Traceback (most recent call last):
+            ...
+            s3dgraphy.em.errors.NotAvailable: no application: «view» needs EMStudio or Blender (this is none)
+        """
         return self._a().view(name)
 
     def notify(self, msg: str, level: str = "info"):
+        """Show a short message to the person using the application.
+
+        Args:
+            msg: the text to show.
+            level: ``"info"``, ``"warning"`` or ``"error"``.
+
+        Raises:
+            NotAvailable: with no application.
+
+        Example:
+            >>> em.app.notify("Done")
+            Traceback (most recent call last):
+            ...
+            s3dgraphy.em.errors.NotAvailable: no application: «notify» needs EMStudio or Blender (this is none)
+        """
         return self._a().notify(msg, level)
 
     class _Space:
+        """``em.app.space`` — the 3D Space of the application: camera, framing, picking."""
+
         def __init__(self, app: "_App"):
             self._app = app
 
         def camera(self):
+            """The current camera of the Space, as a dict the host defines
+            (position, target, field of view…).
+
+            Raises:
+                NotAvailable: with no application.
+
+            Example:
+                >>> em.app.space.camera()
+                Traceback (most recent call last):
+                ...
+                s3dgraphy.em.errors.NotAvailable: no application: «space.camera» needs EMStudio or Blender (this is none)
+            """
             return self._app._a().camera()
 
         def set_camera(self, camera):
+            """Move the camera of the Space.
+
+            Args:
+                camera: a dict in the shape :meth:`camera` returns.
+
+            Raises:
+                NotAvailable: with no application.
+
+            Example:
+                >>> em.app.space.set_camera({"position": [0, 0, 10]})
+                Traceback (most recent call last):
+                ...
+                s3dgraphy.em.errors.NotAvailable: no application: «space.set_camera» needs EMStudio or Blender (this is none)
+            """
             return self._app._a().set_camera(camera)
 
         def frame(self, ids):
+            """Frame the given nodes in the Space (zoom the camera on them).
+
+            Args:
+                ids: node ids or :class:`NodeView` objects.
+
+            Raises:
+                NotAvailable: with no application.
+
+            Example:
+                >>> em.app.space.frame(["US1"])
+                Traceback (most recent call last):
+                ...
+                s3dgraphy.em.errors.NotAvailable: no application: «space.frame» needs EMStudio or Blender (this is none)
+            """
             return self._app._a().frame([getattr(i, "id", i) for i in ids])
 
         def pick(self, prompt: str, primitive: str = "point"):
+            """Ask the person to place a geometry in the Space and return it.
+
+            Args:
+                prompt: what to ask (shown by the application).
+                primitive: what to place: ``"point"``, ``"polyline"``,
+                    ``"surface"``…
+
+            Returns:
+                The placed geometry, in the host's format.
+
+            Raises:
+                NotAvailable: with no application.
+
+            Example:
+                >>> em.app.space.pick("Click the nasion")
+                Traceback (most recent call last):
+                ...
+                s3dgraphy.em.errors.NotAvailable: no application: «space.pick» needs EMStudio or Blender (this is none)
+            """
             return self._app._a().pick(prompt, primitive)
 
     class _Commands:
+        """``em.app.commands`` — the application's own commands."""
+
         def __init__(self, app: "_App"):
             self._app = app
 
         def run(self, command_id: str, **slots: Any):
+            """Run a command of the application by its id.
+
+            Args:
+                command_id: the command's id (``"graph.fit"``, a plugin's
+                    ``"<plugin>/<command>"``…).
+                **slots: the command's arguments.
+
+            Returns:
+                Whatever the command returns.
+
+            Raises:
+                NotAvailable: with no application.
+
+            Example:
+                >>> em.app.commands.run("graph.fit")
+                Traceback (most recent call last):
+                ...
+                s3dgraphy.em.errors.NotAvailable: no application: «commands.run» needs EMStudio or Blender (this is none)
+            """
             return self._app._a().run_command(command_id, **slots)
 
     @property
     def space(self) -> "_App._Space":
+        """The 3D Space of the application (camera, framing, picking)."""
         return _App._Space(self)
 
     @property
     def commands(self) -> "_App._Commands":
+        """The application's commands (:meth:`run <_App._Commands.run>`)."""
         return _App._Commands(self)
 
     @property
     def available(self) -> bool:
-        """False with no application (the command line)."""
+        """False with no application (the command line).
+
+        Example:
+            >>> em.app.available
+            False
+        """
         return host.current().name != "none"
 
     def on(self, event: str, fn=None):
+        """Subscribe to an event — the same as :func:`em.on <s3dgraphy.em.events.on>`.
+
+        Works with or without an application.
+
+        Example:
+            >>> sub = em.app.on("graph-changed", print)
+            >>> sub
+            <em subscription graph-changed on>
+            >>> sub.off()
+        """
         return events.on(event, fn)
 
     def __repr__(self) -> str:
@@ -134,7 +304,29 @@ def __getattr__(name: str) -> Any:
 
 
 def open(path: str) -> GraphView:                    # noqa: A001 — em.open is the verb
-    """The command line: open an em.json in the «no application» host."""
+    """The command line: open an em.json in the «no application» host.
+
+    The file's active graph becomes :data:`em.graph`, and the packages it
+    declares (``header.profiles``) become :data:`em.profiles`. Inside an
+    application the graph is the open document, so there is no ``em.open``.
+
+    Args:
+        path: an ``.em.json`` file (a container or a single graph).
+
+    Returns:
+        GraphView: the opened graph.
+
+    Raises:
+        NotAvailable: inside an application.
+
+    Example:
+        >>> import os, tempfile
+        >>> path = em.save(os.path.join(tempfile.mkdtemp(), "demo.em.json"))
+        >>> em.open(path)
+        <em graph 'demo': 5 nodes, 2 edges>
+        >>> em.graph.node("US1").type
+        'US'
+    """
     h = host.current()
     if not hasattr(h, "open"):
         raise NotAvailable("open", h.name)
@@ -144,7 +336,30 @@ def open(path: str) -> GraphView:                    # noqa: A001 — em.open is
 def use(graph: Any, *, author: Optional[str] = None) -> GraphView:
     """The command line: work on a :class:`~s3dgraphy.graph.Graph` already in
     memory. ``author`` is the SESSION's identity (as EMStudio's editor hand):
-    set once here, never per write."""
+    set once here, never per write.
+
+    Args:
+        graph: a :class:`~s3dgraphy.graph.Graph`.
+        author: who is writing (an ORCID, an e-mail…). Without it (and without
+            ``S3DGRAPHY_AUTHOR`` in the environment) every write is refused.
+
+    Returns:
+        GraphView: the graph, read-only; also available as :data:`em.graph`.
+
+    Raises:
+        NotAvailable: inside an application, where the graph is the open document.
+
+    Example:
+        >>> from s3dgraphy.graph import Graph
+        >>> from s3dgraphy.nodes.stratigraphic_node import StratigraphicUnit
+        >>> g = Graph(graph_id="trench-A")
+        >>> _ = g.add_node(StratigraphicUnit("US1", "US1"))
+        >>> view = em.use(g, author="0000-0002-1825-0097")
+        >>> view.id, [n.name for n in view.nodes(type="US")]
+        ('trench-A', ['US1'])
+        >>> em.graph.node("US1")
+        <em node US 'US1'>
+    """
     h = host.current()
     if not hasattr(h, "use"):
         raise NotAvailable("use", h.name)
@@ -154,6 +369,27 @@ def use(graph: Any, *, author: Optional[str] = None) -> GraphView:
 
 
 def save(path: Optional[str] = None) -> str:
+    """The command line: save the graph as an em.json.
+
+    Writes the container the graph came from (or a new one around it) and
+    emits ``document-saved``.
+
+    Args:
+        path: where to write. Default: the file the graph was opened from.
+
+    Returns:
+        str: the path written.
+
+    Raises:
+        ValueError: with no ``path`` when the graph did not come from a file.
+        NotAvailable: inside an application (the application saves).
+
+    Example:
+        >>> import os, tempfile
+        >>> path = em.save(os.path.join(tempfile.mkdtemp(), "demo.em.json"))
+        >>> os.path.basename(path)
+        'demo.em.json'
+    """
     h = host.current()
     if not hasattr(h, "save"):
         raise NotAvailable("save", h.name)
@@ -162,7 +398,24 @@ def save(path: Optional[str] = None) -> str:
 
 def help(lang: Optional[str] = None) -> str:                # noqa: A001
     """What there is, in a few lines (and the active plugins' commands when
-    the host has them)."""
+    the host has them).
+
+    Prints the summary and returns it.
+
+    Args:
+        lang: ``"en"`` or ``"it"``; default: the host's language.
+
+    Returns:
+        str: the text printed.
+
+    Example:
+        >>> text = em.help()  # doctest: +ELLIPSIS
+        em ... · host: none
+        em.graph — the graph (node, nodes, edges, chronology)
+        ...
+        >>> "em.write" in text
+        True
+    """
     it = language(lang) == "it"
     h = host.current()
     lines = [

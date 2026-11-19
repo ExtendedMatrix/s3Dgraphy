@@ -1,0 +1,105 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "HDTNode"
+msgstr ""
+
+msgid "Generated from the datamodels (nodes 1.6.51, connections 1.6.55) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``."
+msgstr ""
+
+msgid "*Represents an HC2 Heritage Digital Twin (HDT-O, ECHOES D7.1).*"
+msgstr ""
+
+msgid "Class"
+msgstr ""
+
+msgid "``HDTNode``"
+msgstr ""
+
+msgid "node_type"
+msgstr ""
+
+msgid "``hdt``"
+msgstr ""
+
+msgid "Parent"
+msgstr ""
+
+msgid ":ref:`Node <type-Node>`"
+msgstr ""
+
+msgid "Label (en)"
+msgstr ""
+
+msgid "Heritage Digital Twin"
+msgstr ""
+
+msgid "Label (it)"
+msgstr ""
+
+msgid "Gemello digitale del patrimonio"
+msgstr ""
+
+msgid "CIDOC"
+msgstr ""
+
+msgid "``hdto:HC2_Heritage_Digital_Twin``"
+msgstr ""
+
+msgid "Description"
+msgstr ""
+
+msgid "Represents an HC2 Heritage Digital Twin (HDT-O, ECHOES D7.1). An HDT is a named container that aggregates Heritage Proposition Sets (em:EMGraph instances) about a heritage entity (HC1). HDTs can be nested hierarchically via has\\_digital\\_twin\\_component (HP3 inverse) — e.g. Colosseo\\_HDT\\_overall has component Colosseo\\_HDT\\_Flavian. An EM graph attaches to an HDT via contains\\_proposition\\_set (HP33). The HDT is linked to its real-world heritage entity (HC1) via has\\_digital\\_twin (HP1)."
+msgstr ""
+
+msgid "*Italiano*: Rappresenta un HC2 Heritage Digital Twin (HDT-O, ECHOES D7.1). Un HDT è un contenitore nominato che aggrega Heritage Proposition Set (istanze di em:EMGraph) relativi a un'entità patrimoniale (HC1). Gli HDT possono essere annidati gerarchicamente tramite has\\_digital\\_twin\\_component (inverso di HP3) — ad es. Colosseo\\_HDT\\_overall ha come componente Colosseo\\_HDT\\_Flavian. Un grafo EM si collega a un HDT tramite contains\\_proposition\\_set (HP33). L'HDT è collegato alla sua entità patrimoniale reale (HC1) tramite has\\_digital\\_twin (HP1)."
+msgstr ""
+
+msgid "Fields"
+msgstr ""
+
+msgid "Field"
+msgstr ""
+
+msgid "Mapping / note"
+msgstr ""
+
+msgid "``name``"
+msgstr ""
+
+msgid "P1\\_is\\_identified\\_by"
+msgstr ""
+
+msgid "``description``"
+msgstr ""
+
+msgid "P3\\_has\\_note"
+msgstr ""
+
+msgid "Edges"
+msgstr ""
+
+msgid "**Outgoing** (this node is the source): :ref:`contains_proposition_set <edge-contains_proposition_set>`, :ref:`generic_connection <edge-generic_connection>`, :ref:`has_digital_object_part <edge-has_digital_object_part>`, :ref:`has_digital_twin_component <edge-has_digital_twin_component>`, :ref:`has_embargo <edge-has_embargo>`, :ref:`has_license <edge-has_license>`, :ref:`has_semantic_shape <edge-has_semantic_shape>`, :ref:`has_translation <edge-has_translation>`"
+msgstr ""
+
+msgid "**Incoming** (this node is the target): :ref:`generic_connection <edge-generic_connection>`, :ref:`has_digital_twin <edge-has_digital_twin>`, :ref:`has_digital_twin_component <edge-has_digital_twin_component>`"
+msgstr ""
+
+msgid "From em"
+msgstr ""

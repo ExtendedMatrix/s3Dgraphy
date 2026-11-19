@@ -1,0 +1,222 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "``em.host`` — the hosts (EMStudio, EM Tools, a script)"
+msgstr ""
+
+msgid "Generated for em API |api| from the docstrings of :mod:`s3dgraphy.em.host`."
+msgstr ""
+
+msgid "The host — what EMStudio and Blender implement, and the one with no application."
+msgstr ""
+
+msgid "``em`` imports neither ``bpy`` nor anything of EMStudio: the host REGISTERS (:func:`install`). It gives the common half what only an application knows — which graph is open, who is working, which caller is writing, how a delta becomes a step — and the application half, ``em.app`` (SPEC-plugin §2.4)."
+msgstr ""
+
+msgid "Without a host (``python -c …``, a script, a test) the current host is a :class:`ScriptHost`: the «no application» host of the command line. Its graph is the one a script opened (``em.open(path)``) or handed over (``em.use(g)``); it applies a delta with :func:`s3dgraphy.contract.apply_delta_to_graph`, the same seam as everywhere; its ``app`` answers every call with :class:`~s3dgraphy.em.errors.NotAvailable` («no application»)."
+msgstr ""
+
+msgid "**Who writes is the host's to say, never the script's**: :meth:`Host.author` is the identity of the session (``editorHand()`` in EMStudio, EM Tools' in Blender; for the command line the ``author=`` the session was opened with, or ``S3DGRAPHY_AUTHOR``); :meth:`Host.caller` is the descriptor of whoever is calling (the console, a plugin's command). ``em.write`` takes neither."
+msgstr ""
+
+msgid "Bases: :py:class:`~typing.Protocol`"
+msgstr ""
+
+msgid "The application half (``em.app``). A host that lacks an idea raises :class:`NotAvailable` for it — the same shape where the idea exists in both applications, absent where it does not (SPEC §2.4)."
+msgstr ""
+
+msgid "The ids of the selected nodes."
+msgstr ""
+
+msgid "Return type"
+msgstr ""
+
+msgid "Replace the selection with these node ids."
+msgstr ""
+
+msgid "Parameters"
+msgstr ""
+
+msgid "Bring the view ``name`` to the front."
+msgstr ""
+
+msgid "Show a message (``level``: ``info``, ``warning``, ``error``)."
+msgstr ""
+
+msgid "Run an application command; returns what it returns."
+msgstr ""
+
+msgid "The camera of the 3D Space."
+msgstr ""
+
+msgid "Move the camera of the 3D Space."
+msgstr ""
+
+msgid "Frame these nodes in the 3D Space."
+msgstr ""
+
+msgid "Ask the person to place a ``primitive`` in the Space; return its geometry."
+msgstr ""
+
+msgid "What an application implements to give ``em`` a home."
+msgstr ""
+
+msgid "``emstudio`` · ``blender`` · ``none`` (the command line)"
+msgstr ""
+
+msgid "The open :class:`~s3dgraphy.graph.Graph`, or None."
+msgstr ""
+
+msgid "The packages of the open document (a profile overlay)."
+msgstr ""
+
+msgid "Who is working in this session (an ORCID…), or None."
+msgstr ""
+
+msgid "The descriptor of whoever is calling ``em`` (the console, a script)."
+msgstr ""
+
+msgid "The interface language (``\"en\"``, ``\"it\"``), or None."
+msgstr ""
+
+msgid "Apply a delta that passed ``invoke`` as ONE step (one undo, one Log line, the DTC process of the act) — through the seam (``guard_write``) again, since the host is the one that owns the graph."
+msgstr ""
+
+msgid "Bases: :py:class:`object`"
+msgstr ""
+
+msgid "``em.app`` with no application: every call says so."
+msgstr ""
+
+msgid "Raises :class:`NotAvailable` (``selection``): there is no application."
+msgstr ""
+
+msgid "Raises :class:`NotAvailable` (``select``): there is no application."
+msgstr ""
+
+msgid "Raises :class:`NotAvailable` (``view``): there is no application."
+msgstr ""
+
+msgid "Raises :class:`NotAvailable` (``notify``): there is no application."
+msgstr ""
+
+msgid "Raises :class:`NotAvailable` (``commands.run``): there is no application."
+msgstr ""
+
+msgid "Raises :class:`NotAvailable` (``space.camera``): there is no application."
+msgstr ""
+
+msgid "Raises :class:`NotAvailable` (``space.set_camera``): there is no application."
+msgstr ""
+
+msgid "Raises :class:`NotAvailable` (``space.frame``): there is no application."
+msgstr ""
+
+msgid "Raises :class:`NotAvailable` (``space.pick``): there is no application."
+msgstr ""
+
+msgid "The host of the command line — «no application»."
+msgstr ""
+
+msgid "Holds one graph (and the container it came from, when it came from a file); applies a delta through the contract on the live graph; keeps the steps it applied (:attr:`steps`: label, author, what changed) — there is no undo here: the file on disk is the record, and ``em.save`` writes it."
+msgstr ""
+
+msgid "every em.write a proof (``python -m s3dgraphy.em run --dry-run``)"
+msgstr ""
+
+msgid "The graph of the session, or None before :meth:`use` / :meth:`open`."
+msgstr ""
+
+msgid "The packages in use: the overlay given, else the container's (``header.profiles``), else an empty one."
+msgstr ""
+
+msgid "The session's author (``author=``), else ``S3DGRAPHY_AUTHOR``, else None."
+msgstr ""
+
+msgid "The caller given, else a script's descriptor (:func:`script_caller`)."
+msgstr ""
+
+msgid "The language given, else ``S3DGRAPHY_LANG``, else None (English)."
+msgstr ""
+
+msgid "Make ``graph`` the session's graph (closing the previous one)."
+msgstr ""
+
+msgid "Emits ``document-closed`` for the previous graph, then ``document-opened``. Returns ``graph``."
+msgstr ""
+
+msgid "An em.json (a container or a single graph) — its active graph, and its packages (``header.profiles``) as the overlay."
+msgstr ""
+
+msgid "Write the graph's container to ``path`` (default: where it came from), emit ``document-saved`` and return the path written."
+msgstr ""
+
+msgid "Raises"
+msgstr ""
+
+msgid "no path, and the graph did not come from a file."
+msgstr ""
+
+msgid "Forget the graph (emits ``document-closed``)."
+msgstr ""
+
+msgid "Apply a delta to the live graph through the contract, as one step."
+msgstr ""
+
+msgid "Records the step in :attr:`steps` and emits ``graph-changed``."
+msgstr ""
+
+msgid "Returns"
+msgstr ""
+
+msgid "the contract's result (``ok=False`` with no graph)."
+msgstr ""
+
+msgid "Make ``host`` the one ``em`` talks to; returns the previous one. An application calls this once (EMStudio's bridge for a Python session, EM Tools when it registers)."
+msgstr ""
+
+msgid "Back to the command line host (a fresh one)."
+msgstr ""
+
+msgid "The host ``em`` talks to now; a fresh :class:`ScriptHost` when none was installed."
+msgstr ""
+
+msgid "Example"
+msgstr ""
+
+msgid "The descriptor of a script with no application behind it: it reads, writes and proposes, speaks this build's versions (so ``ops`` pass)."
+msgstr ""
+
+msgid "The act's process (``crmdig:D7``) as the delta carries it: the tool and its version as the INSTRUMENT, the label — written by the host, never by the plugin (SPEC §2.3)."
+msgstr ""
+
+msgid "The ids of the nodes a delta touches (new, joined, changed, removed), in order, each once — the ``ids`` of a ``graph-changed`` payload."
+msgstr ""
+
+msgid "The three version strings that decide whether two peers understand each other. Absent (``None``) means *not declared*, which the handshake treats as unknown rather than as compatible."
+msgstr ""
+
+msgid "em.json schema (the document's own format)"
+msgstr ""
+
+msgid "the connections datamodel — the EM language itself"
+msgstr ""
+
+msgid "this connector API (the shape of a descriptor + the wire)"
+msgstr ""

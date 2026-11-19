@@ -1,0 +1,72 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Gotchas"
+msgstr "Insidie"
+
+msgid "*Things that surprise once.*"
+msgstr "*Cose che sorprendono una volta sola.*"
+
+msgid "``em.graph`` is read each time"
+msgstr "``em.graph`` si legge ogni volta"
+
+msgid "It is the host's current graph. A variable ``g = em.graph`` keeps the view of that moment; after a write or a change of study, read ``em.graph`` again."
+msgstr "È il grafo corrente dell'host. Una variabile ``g = em.graph`` conserva la vista di quel momento; dopo una scrittura o un cambio di studio, rileggi ``em.graph``."
+
+msgid "Views are not nodes"
+msgstr "Le viste non sono nodi"
+
+msgid "``NodeView`` and ``PropertyView`` are read-only; the values they return are copies. Changing them changes nothing."
+msgstr "``NodeView`` e ``PropertyView`` sono in sola lettura; i valori che restituiscono sono copie. Cambiarli non cambia nulla."
+
+msgid "A refused write writes nothing"
+msgstr "Una scrittura rifiutata non scrive nulla"
+
+msgid "One refusal in a block and the whole block is refused (:class:`~s3dgraphy.em.Refused`, with the sentence of the contract). An edge the EM language does not allow between two types is a refusal, not a warning."
+msgstr "Basta un rifiuto in un blocco e tutto il blocco è rifiutato (:class:`~s3dgraphy.em.Refused`, con la frase del contratto). Un arco che il linguaggio EM non permette tra due tipi è un rifiuto, non un avviso."
+
+msgid "No author, no write"
+msgstr "Senza autore, nessuna scrittura"
+
+msgid "Outside an application, set the author once: ``em.use(graph, author=…)`` or ``--author`` (or ``S3DGRAPHY_AUTHOR``). The author is the session's, never an argument of a write."
+msgstr "Fuori da un'applicazione, imposta l'autore una volta: ``em.use(graph, author=…)`` o ``--author`` (oppure ``S3DGRAPHY_AUTHOR``). L'autore è quello della sessione, mai un argomento di una scrittura."
+
+msgid "``em.app`` with no application"
+msgstr "``em.app`` senza applicazione"
+
+msgid "In a script ``em.app.available`` is ``False``; its calls raise :class:`~s3dgraphy.em.NotAvailable`. Check before using it in code meant to run everywhere."
+msgstr "In uno script ``em.app.available`` è ``False``; le sue chiamate sollevano :class:`~s3dgraphy.em.NotAvailable`. Controllalo prima di usarlo in codice pensato per girare ovunque."
+
+msgid "``em.app.commands.run`` clicks the menu"
+msgstr "``em.app.commands.run`` fa clic sul menu"
+
+msgid "A command runs only when its entry is enabled at that moment (a document open, a selection…). Slots passed to an EMStudio menu command are not used yet: see :doc:`reference/commands/index`."
+msgstr "Un comando viene eseguito solo quando la sua voce è abilitata in quel momento (un documento aperto, una selezione…). Gli slot passati a un comando di menu di EMStudio non sono ancora usati: vedi :doc:`reference/commands/index`."
+
+msgid "A write inside a listener comes after"
+msgstr "Una scrittura dentro un listener arriva dopo"
+
+msgid "``em.write`` opened in an ``em.on`` listener is deferred until the event is delivered."
+msgstr "Un ``em.write`` aperto in un listener di ``em.on`` è rimandato finché l'evento non è stato consegnato."
+
+msgid "Two ``em`` on PyPI"
+msgstr "Due ``em`` su PyPI"
+
+msgid "``import em`` is s3dgraphy's. An unrelated package also called ``em`` exists; if both are installed, ``import s3dgraphy.em as em`` is the sure form."
+msgstr "``import em`` è quello di s3dgraphy. Esiste anche un altro pacchetto, che non c'entra, chiamato ``em``; se sono installati entrambi, ``import s3dgraphy.em as em`` è la forma sicura."

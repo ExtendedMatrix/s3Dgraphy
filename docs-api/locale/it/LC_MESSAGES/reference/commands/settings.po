@@ -1,0 +1,117 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "settings"
+msgstr ""
+
+msgid "*Generated from EMStudio 85f69cd for em API 1.2.0.*"
+msgstr ""
+
+msgid "Id"
+msgstr ""
+
+msgid "``settings``"
+msgstr ""
+
+msgid "Label (en)"
+msgstr ""
+
+msgid "Settings…"
+msgstr ""
+
+msgid "Label (it)"
+msgstr ""
+
+msgid "Impostazioni…"
+msgstr ""
+
+msgid "Kind"
+msgstr ""
+
+msgid "Menu command — presses the page button ``btn-settings``"
+msgstr ""
+
+msgid "Reachable from Python"
+msgstr ""
+
+msgid "yes — ``em.app.commands.run(\"settings\")``"
+msgstr ""
+
+msgid "Writes to the graph"
+msgstr ""
+
+msgid "not declared"
+msgstr ""
+
+msgid "Menu path (en)"
+msgstr ""
+
+msgid "EMStudio ▸ Settings…"
+msgstr ""
+
+msgid "Menu path (it)"
+msgstr ""
+
+msgid "EMStudio ▸ Impostazioni…"
+msgstr ""
+
+msgid "Drawn in"
+msgstr ""
+
+msgid "the system menu bar: macOS desktop"
+msgstr ""
+
+msgid "Shortcut"
+msgstr ""
+
+msgid "``⌘,`` (macOS) / ``Ctrl+,`` (Windows, Linux)"
+msgstr ""
+
+msgid "Same button as"
+msgstr ""
+
+msgid ":doc:`settingsHelp <settingsHelp>`"
+msgstr ""
+
+msgid "Defined in"
+msgstr ""
+
+msgid "``frontend/src/menu-table.ts:122``"
+msgstr ""
+
+msgid "What it does"
+msgstr ""
+
+msgid "**en** (key map) — Settings"
+msgstr ""
+
+msgid "**it** (key map) — Impostazioni"
+msgstr ""
+
+msgid "Slots"
+msgstr ""
+
+msgid "None declared: the command table (``CommandRow`` in ``menu-table.ts``) declares no slots, types or defaults. Keyword slots passed to ``em.app.commands.run`` reach the page but are dropped by the host hook (``frontend/src/main.ts:65807``), which calls ``runCommand(id)`` only."
+msgstr ""
+
+msgid "From Python"
+msgstr ""
+
+msgid "The page presses the command's button, as a click would: whatever dialog the command opens, opens. If the button is disabled at that moment (or the id is unknown) the call raises ``em.NotAvailable`` (``py.noCommand``). Outside EMStudio (no host) the call raises ``em.NotAvailable``."
+msgstr ""

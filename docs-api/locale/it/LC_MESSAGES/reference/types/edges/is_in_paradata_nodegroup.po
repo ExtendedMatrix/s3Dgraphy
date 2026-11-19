@@ -1,0 +1,72 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "is_in_paradata_nodegroup"
+msgstr ""
+
+msgid "Generated from the datamodels (nodes 1.6.51, connections 1.6.55) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``."
+msgstr ""
+
+msgid "*Indicates that a node is included into a paradata node group.*"
+msgstr ""
+
+msgid "Label (en)"
+msgstr ""
+
+msgid "Is in paradata nodegroup"
+msgstr ""
+
+msgid "Label (it)"
+msgstr ""
+
+msgid "È nel gruppo di paradati"
+msgstr ""
+
+msgid "Reverse"
+msgstr ""
+
+msgid "``contains_paradata_node``"
+msgstr ""
+
+msgid "Source"
+msgstr ""
+
+msgid ":ref:`PropertyNode <type-PropertyNode>`, :ref:`DocumentNode <type-DocumentNode>`, :ref:`ExtractorNode <type-ExtractorNode>`, :ref:`CombinerNode <type-CombinerNode>`, :ref:`ParadataNode <type-ParadataNode>`, :ref:`GeoPositionNode <type-GeoPositionNode>`, :ref:`AuthorNode <type-AuthorNode>`, :ref:`LicenseNode <type-LicenseNode>`, :ref:`EmbargoNode <type-EmbargoNode>`, :ref:`RepresentationModelDocNode <type-RepresentationModelDocNode>`"
+msgstr ""
+
+msgid "Target"
+msgstr ""
+
+msgid ":ref:`ParadataNodeGroup <type-ParadataNodeGroup>`"
+msgstr ""
+
+msgid "CIDOC"
+msgstr ""
+
+msgid "``P106i_forms_part_of``"
+msgstr ""
+
+msgid "Description"
+msgstr ""
+
+msgid "Indicates that a node is included into a paradata node group. Standard members are the paradata-chain nodes (PropertyNode/DocumentNode/ExtractorNode/CombinerNode/ParadataNode); GeoPositionNode is additionally admitted so the per-graph georeferencing shift can be a member of the graph-scope ParadataNodeGroup (DP-65) — semantically valid only at graph scope. v1.6.8 (MIG1-A): source widened further with AuthorNode/LicenseNode/EmbargoNode so the graph-scope rights metadata (author/license/embargo) live as first-class member nodes of the graph-scope ParadataNodeGroup (DP-65), replacing the legacy graph.data['author\\_name'/'license'/'embargo'] fields — again meaningful at graph scope (anchored on the GraphNode via has\\_paradata\\_nodegroup)."
+msgstr ""
+
+msgid "From em"
+msgstr ""
