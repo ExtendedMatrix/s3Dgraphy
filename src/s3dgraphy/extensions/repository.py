@@ -258,22 +258,31 @@ def repository_checks(entries: Iterable[Mapping[str, Any]]) -> Report:
 
     r = Report()
     rows = list(entries)
-    seen: Dict[Tuple[str, str], Mapping[str, Any]] = {}
-    sections: Dict[Tuple[str, str, str], Tuple[str, str]] = {}
+    seen: Dict[Tuple[str, str], List[Mapping[str, Any]]] = {}
+    sections: Dict[Tuple[str, str, str, Tuple[str, ...]], Tuple[str, str]] = {}
     vocabs: Dict[Tuple[str, str], Tuple[str, str]] = {}
     ids = {str(e.get("id")) for e in rows}
 
     def at(e: Mapping[str, Any]) -> str:
         return str(e.get("where") or f"{e.get('id')}-{e.get('version')}")
 
+    def plats(e: Mapping[str, Any]) -> Tuple[str, ...]:
+        return tuple(sorted(str(p) for p in e.get("platforms") or []))
+
     for e in rows:
         eid, ver = str(e.get("id")), str(e.get("version"))
-        if (eid, ver) in seen:
-            r.error("index_duplicate", at(e), id=eid, version=ver, other=at(seen[(eid, ver)]))
+        # X3 · one archive per platform of the same id and version (build
+        # --split-platforms, as Blender's): allowed when their platforms do
+        # not overlap; an archive for every platform beside them is a twin
+        twin = next((o for o in seen.get((eid, ver), [])
+                     if not plats(o) or not plats(e) or set(plats(o)) & set(plats(e))), None)
+        if twin is not None:
+            r.error("index_duplicate", at(e), id=eid, version=ver, other=at(twin))
             continue
-        seen[(eid, ver)] = e
+        seen.setdefault((eid, ver), []).append(e)
         for name, sec in sorted((e.get("sections") or {}).items()):
-            key = (eid, name, str(sec.get("version")))
+            # the code of a split archive differs by its wheels: compared per platform set
+            key = (eid, name, str(sec.get("version")), plats(e) if name == "code" else ())
             was = sections.get(key)
             if was and was[0] != sec.get("digest"):
                 r.error("index_section_reused", at(e), id=eid, section=name, version=key[2], other=was[1])
@@ -376,6 +385,8 @@ def server_generate(repo_dir: Any, *, base_url: Optional[str] = None, blocklist:
                             "warnings": [Problem("index_blocked", WARNING, f.name, {"id": entry["id"]}).as_dict()]})
             continue
         want = f"{entry['id']}-{entry['version']}.zip"
+        if f.name != want and len(entry.get("platforms") or []) == 1:
+            want = f"{entry['id']}-{entry['version']}-{entry['platforms'][0]}.zip"     # X3 · a split archive
         if f.name != want:
             rep.warn("index_file_name", f.name, want=want)
         review = _review_for(entry, reviews)

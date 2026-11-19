@@ -432,20 +432,43 @@ def _code_meta(folder: Path) -> Dict[str, Any]:
         return {}
 
 
-def _write_code(pkg: Package, eid: str, source_name: str, trust: Mapping[str, Any]) -> Tuple[Path, str]:
+def _wheel_file(root: str, wheel: Any) -> str:
+    rel = str(wheel or "").replace("\\", "/")
+    while rel.startswith("./"):
+        rel = rel[2:]
+    return f"{root}/{rel}" if root else rel
+
+
+def _other_platform_wheels(pkg: Package, platform_name: str) -> List[str]:
+    """X3 · the archive's files that are wheels for another platform: they
+    stay out of the plugin's folder, as Blender installs only the wheels of
+    the machine (a pure wheel, ``…-none-any``, always goes in)."""
+    root = (pkg.code_root or "").rstrip("/")
+    out = []
+    for w in _code(pkg).get("wheels") or []:
+        plats = wheel_platforms(str(w))
+        if plats is not None and platform_name not in plats:
+            out.append(_wheel_file(root, w))
+    return out
+
+
+def _write_code(pkg: Package, eid: str, source_name: str, trust: Mapping[str, Any],
+                platform_name: Optional[str] = None) -> Tuple[Path, str]:
     cv = str(pkg.code_version or "")
     base = plugins_dir() / source_name / eid
     dest = base / cv
     digest = content_digest(pkg, section="code")
     if (dest / CODE_META).is_file():
         return dest, "unchanged"
+    plat = platform_name or this_platform()
+    skipped = set(_other_platform_wheels(pkg, plat))
     root = (pkg.code_root or "").rstrip("/")
     data_root = (pkg.data_root or "").rstrip("/") if pkg.has_data else None
     base.mkdir(parents=True, exist_ok=True)
     tmp = Path(tempfile.mkdtemp(prefix=f".{cv}-", dir=str(base)))
     try:
         for f in pkg.source.files():
-            if f == ENVELOPE:
+            if f == ENVELOPE or f in skipped:
                 continue
             if root and not f.startswith(root + "/"):
                 continue
@@ -464,7 +487,9 @@ def _write_code(pkg: Package, eid: str, source_name: str, trust: Mapping[str, An
                 # W14 (MICRO-PL17) · what the loader checks against em.API_VERSION
                 "em_api_min": (pkg.envelope or {}).get("em_api_min"),
                 "em_api_max": (pkg.envelope or {}).get("em_api_max"),
-                "name": (pkg.envelope or {}).get("name")}
+                "name": (pkg.envelope or {}).get("name"),
+                # X3 (MICRO-PL23) · only this machine's wheels came in
+                "platform": plat, "wheels_skipped": sorted(Path(f).name for f in skipped)}
         (tmp / CODE_META).write_text(json.dumps(meta, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
                                      encoding="utf-8")
         tmp.replace(dest)
@@ -629,7 +654,7 @@ def install(source: Any, *, parts: str = "all", trust: bool = False, source_name
                 warnings.append(pv["code"]["trust_question"])
         else:
             old_version = code_row.get("version") if code_row.get("status") == "installed" else None
-            folder, status = _write_code(pkg, eid, source_name, pv["code"]["trust"])
+            folder, status = _write_code(pkg, eid, source_name, pv["code"]["trust"], pv["platform"])
             versions = set(code_row.get("versions") or []) | {cv}
             code_row = {"status": "installed", "version": cv, "versions": sorted(versions, key=semver.parse),
                         "path": f"plugins/{source_name}/{eid}/{cv}", "digest": content_digest(pkg, section="code"),
@@ -790,11 +815,94 @@ def removal_plan(eid: str) -> Dict[str, Any]:
     return plan
 
 
-def remove_code(eid: str) -> Dict[str, Any]:
-    """*Remove the code*: disable it and delete every code version of the id;
-    the data stay and the package becomes «data only». No question about
-    documents: a file never depends on code. A plugin with no data leaves
-    the register."""
+#: the plugins' folder's own sub-folders, never a source (X3)
+_NOT_SOURCES = {".dev-wheels"}
+
+
+def code_folders(eid: str) -> List[Path]:
+    """X3 · every code version of ``eid`` on this machine, under every source
+    (``plugins/<source>/<id>/<version>/`` with its ``.install.json``): a
+    package installed from disk and later from a repository has both."""
+    base = plugins_dir()
+    out: List[Path] = []
+    if not base.is_dir():
+        return out
+    for src in sorted(base.iterdir()):
+        if not src.is_dir() or src.name in _NOT_SOURCES or src.name.startswith("."):
+            continue
+        d = src / eid
+        if d.is_dir():
+            out.extend(v for v in sorted(d.iterdir()) if v.is_dir() and (v / CODE_META).is_file())
+    return out
+
+
+def _archive_re(eid: str) -> "re.Pattern[str]":
+    slug = (re.sub(r"[^a-z0-9_-]+", "-", eid.lower()).strip("-_") or "repo")[:48]   # remote._slug
+    return re.compile(rf"^{re.escape(slug)}-\d+\.\d+\.\d+[^/]*\.zip$")
+
+
+def _forget_downloads(eid: str) -> List[str]:
+    """The archives downloaded for ``eid`` (``archives/<repo>/<id>-<v>….zip``)."""
+    base = extensions_dir() / "archives"
+    gone: List[str] = []
+    if not base.is_dir():
+        return gone
+    pat = _archive_re(eid)
+    for repo in sorted(base.iterdir()):
+        if not repo.is_dir():
+            continue
+        for f in sorted(repo.iterdir()):
+            if f.is_file() and pat.match(f.name):
+                f.unlink()
+                gone.append(f"{repo.name}/{f.name}")
+        if not any(repo.iterdir()):
+            repo.rmdir()
+    return gone
+
+
+def _user_data_dir(eid: str) -> Path:
+    from ..em.plugins import plugins_data_dir
+    return plugins_data_dir() / eid
+
+
+def _remove_code_folders(eid: str) -> List[str]:
+    gone = []
+    for v in code_folders(eid):
+        shutil.rmtree(v, ignore_errors=True)
+        gone.append(f"{v.parent.parent.name}/{v.name}")
+    base = plugins_dir()
+    if base.is_dir():
+        for src in base.iterdir():
+            d = src / eid
+            if src.is_dir() and src.name not in _NOT_SOURCES and d.is_dir():
+                shutil.rmtree(d, ignore_errors=True)      # what an interrupted install left there
+                if not any(src.iterdir()):
+                    src.rmdir()
+    return gone
+
+
+def _left_register(eid: str, purge_user_data: bool) -> Dict[str, Any]:
+    """X3 · a package left the register: nothing of it stays but what the
+    person keeps — its downloaded archives go; the plugin's own state
+    (``plugins-data/<id>``) stays unless ``purge_user_data`` (an unticked box,
+    as for the vocabularies)."""
+    out: Dict[str, Any] = {"archives_removed": _forget_downloads(eid), "user_data": None}
+    ud = _user_data_dir(eid)
+    if ud.is_dir():
+        if purge_user_data:
+            shutil.rmtree(ud, ignore_errors=True)
+            out["user_data"] = {"path": str(ud), "removed": True}
+        else:
+            out["user_data"] = {"path": str(ud), "removed": False}
+    return out
+
+
+def remove_code(eid: str, *, purge_user_data: bool = False) -> Dict[str, Any]:
+    """*Remove the code*: disable it and delete every code version of the id,
+    under every source; the data stay and the package becomes «data only».
+    No question about documents: a file never depends on code. A plugin with
+    no data leaves the register (and its downloaded archives with it; its
+    own state only with ``purge_user_data``)."""
     reg = read_register()
     rows = reg.get("extensions") or {}
     row = rows.get(eid)
@@ -802,11 +910,12 @@ def remove_code(eid: str) -> Dict[str, Any]:
         raise ExtensionError.of("ext_not_installed", id=f"{eid} (code)")
     code = dict(row["code"])
     disable(eid)
-    folder = plugins_dir() / str(row.get("source") or SOURCE_DISK) / eid
-    shutil.rmtree(folder, ignore_errors=True)
     removed = list(code.get("versions") or [code.get("version")])
+    folders = _remove_code_folders(eid)
+    extra: Dict[str, Any] = {}
     if (row.get("data") or {}).get("status") != "installed":
         rows.pop(eid, None)
+        extra = _left_register(eid, purge_user_data)
     else:
         row["code"] = {"status": "not_installed", "version": code.get("version"),
                        "reason": Problem("code_removed", WARNING).as_dict(),
@@ -814,11 +923,11 @@ def remove_code(eid: str) -> Dict[str, Any]:
                        "installable_from": row.get("origin")}
         row["updated_at"] = _now()
     _save_register(reg)
-    return {"id": eid, "code_removed": removed}
+    return dict({"id": eid, "code_removed": removed, "folders_removed": folders}, **extra)
 
 
 def remove_data(eid: str, *, version: Optional[str] = None, confirm: bool = False,
-                purge_vocabularies: bool = False) -> Dict[str, Any]:
+                purge_vocabularies: bool = False, purge_user_data: bool = False) -> Dict[str, Any]:
     """*Remove the data* (all versions, or one): the code of the package goes
     too when its last data version goes. When another installed package
     requires these data, :class:`ExtensionError` ``required_by`` unless
@@ -841,7 +950,7 @@ def remove_data(eid: str, *, version: Optional[str] = None, confirm: bool = Fals
     answer: Dict[str, Any] = {"id": eid, "data_removed": [], "code_removed": [], "vocabularies": None,
                               "required_by": deps}
     if last and (row.get("code") or {}).get("status") == "installed":
-        answer["code_removed"] = remove_code(eid)["code_removed"]
+        answer["code_removed"] = remove_code(eid, purge_user_data=purge_user_data)["code_removed"]
         reg = read_register()
         rows = reg.get("extensions") or {}
         row = rows.get(eid) or row
@@ -852,6 +961,8 @@ def remove_data(eid: str, *, version: Optional[str] = None, confirm: bool = Fals
         from ..vocabularies import vocab_release
         answer["vocabularies"] = vocab_release(_carrier(eid), purge=purge_vocabularies)
         rows.pop(eid, None)
+        _remove_code_folders(eid)       # X3 · code left on disk by a code not installed now
+        answer.update(_left_register(eid, purge_user_data))
     else:
         left = [v for v in versions if v not in gone_versions]
         data = dict(data, versions=left, version=semver.newest(left))
@@ -862,16 +973,29 @@ def remove_data(eid: str, *, version: Optional[str] = None, confirm: bool = Fals
     return answer
 
 
-def remove(eid: str, *, confirm: bool = False, purge_vocabularies: bool = False) -> Dict[str, Any]:
+def remove(eid: str, *, confirm: bool = False, purge_vocabularies: bool = False,
+           purge_user_data: bool = False) -> Dict[str, Any]:
     """*Remove the package*: the code, then the data; the vocabularies stay
-    unless ``purge_vocabularies``."""
+    unless ``purge_vocabularies``, the plugin's own state unless
+    ``purge_user_data`` (X3: nothing else of it stays — every code version
+    under every source, its downloaded archives)."""
     reg = read_register()
     row = (reg.get("extensions") or {}).get(eid)
     if not row:
         raise ExtensionError.of("ext_not_installed", id=eid)
     if (row.get("data") or {}).get("status") == "installed":
-        return remove_data(eid, confirm=confirm, purge_vocabularies=purge_vocabularies)
-    return dict(remove_code(eid), data_removed=[], vocabularies=None, required_by=[])
+        return remove_data(eid, confirm=confirm, purge_vocabularies=purge_vocabularies,
+                           purge_user_data=purge_user_data)
+    if (row.get("code") or {}).get("status") != "installed":
+        # neither section in (a plugin whose code fell): the row and what is on disk go
+        rows = reg.get("extensions") or {}
+        rows.pop(eid, None)
+        _save_register(reg)
+        return dict({"id": eid, "code_removed": [], "folders_removed": _remove_code_folders(eid),
+                     "data_removed": [], "vocabularies": None, "required_by": []},
+                    **_left_register(eid, purge_user_data))
+    return dict(remove_code(eid, purge_user_data=purge_user_data), data_removed=[], vocabularies=None,
+                required_by=[])
 
 
 __all__ = [
@@ -879,5 +1003,5 @@ __all__ = [
     "ExtensionError", "extensions_dir", "plugins_dir", "read_register", "read_enabled", "this_platform",
     "wheel_platforms", "archive_hash", "find_cycle", "requirements", "preview", "install", "update",
     "install_code", "installed", "get", "enable", "disable", "active_code", "removal_plan", "remove_code",
-    "remove_data", "remove",
+    "remove_data", "remove", "code_folders",
 ]

@@ -400,14 +400,42 @@ def _profile_bytes(prof: Mapping[str, Any]) -> bytes:
     return (json.dumps(prof, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
 
 
-def build(source: Any, *, output_dir: Any = None, dry_run: bool = False) -> Dict[str, Any]:
+def _split(env: Mapping[str, Any], files: Mapping[str, bytes], code_root: str, platform: str
+           ) -> Tuple[Dict[str, Any], Dict[str, bytes]]:
+    """X3 · the envelope and the files of the archive for ONE platform: its
+    wheels and the pure ones, ``platforms = [platform]``."""
+    from .store import _wheel_file
+    from .wheels import wheel_platforms
+    e = copy.deepcopy(dict(env))
+    code = e["code"]
+    keep, drop = [], set()
+    for w in code.get("wheels") or []:
+        plats = wheel_platforms(str(w))
+        if plats is None or platform in plats:
+            keep.append(w)
+        else:
+            drop.add(_wheel_file(code_root, w))
+    if "wheels" in code:
+        code["wheels"] = keep
+    code["platforms"] = [platform]
+    out = {f: b for f, b in files.items() if f not in drop and f != ENVELOPE}
+    out[ENVELOPE] = dump_toml(_ordered(e)).encode("utf-8")
+    return e, out
+
+
+def build(source: Any, *, output_dir: Any = None, dry_run: bool = False,
+          split_platforms: bool = False) -> Dict[str, Any]:
     """Build the archive of the folder ``source``; returns ``{ok, path, file,
     id, version, kind, type, size, files, archive_hash, digests, changes,
     errors, warnings}`` (every message as ``{code, level, where, en, it}``).
     ``output_dir`` defaults to the folder itself (as Blender; the archives
     already there are not taken, ``/*.zip``). ``dry_run`` builds and validates
-    in memory and writes nothing. Raises :class:`ExtensionError` when there
-    is nothing to build (not a folder, not a package)."""
+    in memory and writes nothing. ``split_platforms`` (X3, as Blender's
+    ``extension build --split-platforms``): one ``<id>-<version>-<platform>.zip``
+    per platform of ``[code].platforms``, each with only its own wheels (and
+    the pure ones), in ``split`` — the archive for every platform is not
+    written then. Raises :class:`ExtensionError` when there is nothing to
+    build (not a folder, not a package)."""
     p = Path(str(source)).expanduser()
     if not p.is_dir():
         raise ExtensionError.of("build_folder", what=str(p))
@@ -458,6 +486,34 @@ def build(source: Any, *, output_dir: Any = None, dry_run: bool = False) -> Dict
     name = f"{env.get('id')}-{env.get('version')}.zip"
     out = Path(str(output_dir)).expanduser() if output_dir else p
     path = out / name
+    plats = [str(x) for x in ((env.get("code") or {}).get("platforms") or [])] if has_code else []
+    if split_platforms and len(plats) > 1:
+        parts = []
+        all_ok = True
+        for plat in plats:
+            e_p, f_p = _split(env, files, (built.code_root or "").rstrip("/"), plat)
+            blob_p = _zip(f_p)
+            pkg_p = open_package(blob_p)
+            rep_p = validate_archive(pkg_p)
+            name_p = f"{env.get('id')}-{env.get('version')}-{plat}.zip"
+            path_p = out / name_p
+            if rep_p.ok and not dry_run:
+                out.mkdir(parents=True, exist_ok=True)
+                tmp = path_p.with_name(path_p.name + ".tmp")
+                tmp.write_bytes(blob_p)
+                tmp.replace(path_p)
+            all_ok &= rep_p.ok
+            parts.append({"platform": plat, "ok": rep_p.ok, "file": name_p,
+                          "path": str(path_p) if rep_p.ok and not dry_run else None, "size": len(blob_p),
+                          "files": len(f_p), "archive_hash": archive_hash(pkg_p),
+                          "wheels": [str(w) for w in e_p["code"].get("wheels") or []],
+                          "digests": {"code": content_digest(pkg_p, section="code")},
+                          "errors": [x.as_dict() for x in rep_p.errors]})
+        res = _answer(all_ok, None, built, blob, changes, errors, None, files)
+        res.update(split=parts, written=all_ok and not dry_run and any(x["path"] for x in parts))
+        return res
+    if split_platforms:
+        changes.append(Problem("build_split_none", WARNING, ENVELOPE, {"count": len(plats)}))
     if not dry_run:
         out.mkdir(parents=True, exist_ok=True)
         tmp = path.with_name(path.name + ".tmp")

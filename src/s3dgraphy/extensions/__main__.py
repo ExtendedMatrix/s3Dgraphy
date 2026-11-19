@@ -27,6 +27,17 @@ repo-add|repo-list|repo-remove|sync|install``:
     repo preview <name> <id> [--version V]
     repo install <name> <id> [--version V] [--data-only] [--trust] [--no-requires] [--trust-requires]
 
+Updates (X3), as Blender's «Check for updates» / «Update all»:
+
+    updates [--read]                          what the repositories offer newer (--read: read the indexes first)
+    update-all [--read] [--trust ID…]         every update; one that asks the trust again only with --trust ID
+    versions <id>                             the versions side by side (data, code under every source)
+    use <id> <version> [--source S] [--trust] an older code version active again, no download
+    remove <id> --code|--data --version V     one version; prune <id>: the old code versions
+    clean [--dry-run]                         what nothing in the register owns
+    document <file.em.json>                   «this file uses 1.0.0, 1.1.0 is here»
+    build <folder> --split-platforms          one <id>-<version>-<platform>.zip per platform
+
 ``--lang it`` says everything in Italian.
 """
 from __future__ import annotations
@@ -66,7 +77,7 @@ def _validate(args) -> int:
 
 
 def _build(args) -> int:
-    res = build(args.path, output_dir=args.output_dir, dry_run=args.dry_run)
+    res = build(args.path, output_dir=args.output_dir, dry_run=args.dry_run, split_platforms=args.split_platforms)
     if args.json:
         _say(res, args.lang)
         return 0 if res["ok"] else 1
@@ -77,9 +88,21 @@ def _build(args) -> int:
     for key in ("changes", "warnings", "errors"):
         for p in res[key]:
             print(_line(p, args.lang))
-    if res["ok"]:
+    for x in res.get("split") or []:
+        print(f"{'OK ' if x['ok'] else 'NO '} {x['path'] or x['file']}  {x['platform']} · {x['size']} bytes")
+        for p in x["errors"]:
+            print(_line(p, args.lang))
+    if res["ok"] and not res.get("split"):
         print(f"  {res['kind']} · {res['files']} files · {res['size']} bytes · {res['archive_hash']}")
     return 0 if res["ok"] else 1
+
+
+def _document(path: str):
+    from .lifecycle import document_updates
+    doc = json.loads(open(path, encoding="utf-8").read())
+    header = doc.get("header") if isinstance(doc, dict) else None
+    return {"path": path, "declared": (header or {}).get("profiles") or [],
+            "updates": document_updates((header or {}).get("profiles"))}
 
 
 def _server_generate(args) -> int:
@@ -158,6 +181,8 @@ def main(argv=None) -> int:
     b.add_argument("path")
     b.add_argument("--output-dir", default=None, help="where the zip goes (default: the folder itself)")
     b.add_argument("--dry-run", action="store_true", help="build and validate in memory, write nothing")
+    b.add_argument("--split-platforms", action="store_true",
+                   help="one <id>-<version>-<platform>.zip per platform, each with its own wheels only")
     b.add_argument("--json", action="store_true")
     s = add("server-generate", help="the index.json of a folder of archives (Listing API v1)")
     s.add_argument("--repo-dir", required=True, help="the folder with the *.zip archives")
@@ -185,7 +210,30 @@ def main(argv=None) -> int:
     r.add_argument("--confirm", action="store_true", help="remove data another package requires")
     r.add_argument("--purge-vocabularies", action="store_true",
                    help="remove also the vocabularies nobody else brings (off by default)")
+    r.add_argument("--purge-user-data", action="store_true",
+                   help="remove also the plugin's own state, plugins-data/<id> (off by default)")
+    r.add_argument("--version", default=None, help="with --code or --data: that version only")
+    r.add_argument("--source", default=None, help="with --code --version: the source folder")
     add("list", help="the installed extensions")
+    u = add("updates", help="what the repositories offer newer than what is installed")
+    u.add_argument("--read", action="store_true", help="read the indexes first (https only when online)")
+    ua = add("update-all", help="update every installed extension a repository offers newer")
+    ua.add_argument("--read", action="store_true")
+    ua.add_argument("--trust", nargs="*", default=[], metavar="ID",
+                    help="the ids whose update may ask the trust question again: the answer is yes")
+    ve = add("versions", help="the versions of an extension side by side")
+    ve.add_argument("id")
+    us = add("use", help="make a code version already on disk the active one")
+    us.add_argument("id")
+    us.add_argument("version")
+    us.add_argument("--source", default=None)
+    us.add_argument("--trust", action="store_true")
+    pr = add("prune", help="remove the old code versions of an extension (the active one stays)")
+    pr.add_argument("id")
+    cl = add("clean", help="remove what nothing in the register owns")
+    cl.add_argument("--dry-run", action="store_true")
+    dc = add("document", help="the packages an em.json declares that have a newer version here")
+    dc.add_argument("path")
     rp = add("repo", help="the repositories of this machine (X2)")
     rp.add_argument("action", choices=("list", "add", "remove", "sync", "available", "online", "preview", "install"))
     rp.add_argument("args", nargs="*", help="add: <url> · remove/sync/available: <name> · online: on|off · "
@@ -214,12 +262,28 @@ def main(argv=None) -> int:
             fn = store.install if args.cmd == "install" else store.update
             out = fn(args.path, parts="data" if args.data_only else "all", trust=args.trust)
         elif args.cmd == "remove":
-            if args.code:
-                out = store.remove_code(args.id)
+            from . import lifecycle as U
+            if args.version and (args.code or args.data):
+                out = U.remove_version(args.id, "code" if args.code else "data", args.version,
+                                       source=args.source, confirm=args.confirm)
+            elif args.code:
+                out = store.remove_code(args.id, purge_user_data=args.purge_user_data)
             elif args.data:
-                out = store.remove_data(args.id, confirm=args.confirm, purge_vocabularies=args.purge_vocabularies)
+                out = store.remove_data(args.id, confirm=args.confirm, purge_vocabularies=args.purge_vocabularies,
+                                        purge_user_data=args.purge_user_data)
             else:
-                out = store.remove(args.id, confirm=args.confirm, purge_vocabularies=args.purge_vocabularies)
+                out = store.remove(args.id, confirm=args.confirm, purge_vocabularies=args.purge_vocabularies,
+                                   purge_user_data=args.purge_user_data)
+        elif args.cmd == "updates":
+            out = remote.check_updates(read=args.read)
+        elif args.cmd == "update-all":
+            out = remote.update_all(trust=args.trust, read=args.read)
+        elif args.cmd in ("versions", "use", "prune", "clean", "document"):
+            from . import lifecycle as U
+            out = (U.versions(args.id) if args.cmd == "versions" else
+                   U.use_code(args.id, args.version, source=args.source, trust=args.trust) if args.cmd == "use" else
+                   U.prune_code(args.id) if args.cmd == "prune" else
+                   U.clean(dry_run=args.dry_run) if args.cmd == "clean" else _document(args.path))
         else:
             out = store.installed()
     except store.ExtensionError as exc:

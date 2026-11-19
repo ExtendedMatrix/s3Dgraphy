@@ -36,6 +36,14 @@ SPEC-pacchetto §16.3–§16.7, SPEC-plugin §17.
   ``[requires]`` resolved, tier C fetched; :func:`online_access` — «Allow
   online access», off by default, one switch for the machine.
 
+* :func:`versions` / :func:`use_code` — the versions side by side, and
+  going back to an older code without a download; :func:`check_updates` /
+  :func:`update_all` — «Update all»; :func:`document_updates` /
+  :func:`redeclare` — «this file uses 1.0.0, 1.1.0 is here»;
+  :func:`remove_version` / :func:`prune_code` / :func:`leftovers` /
+  :func:`clean` — clean removal; ``build(split_platforms=True)`` — one
+  archive per platform with its wheels only (X3).
+
 * :func:`dev_dir` / :func:`set_dev_dir` / :func:`dev_code` — the plugins'
   development folder (``plugins_dev_dir``, W15a): loaded where they are,
   marked ``dev``, never installed; the host decides when it counts.
@@ -47,7 +55,7 @@ from .store import (ENABLED_FILE, EXTENSIONS_ENV, PARTS, PLUGINS_ENV, REGISTER_F
                     ExtensionError, active_code, archive_hash, disable, enable, extensions_dir, find_cycle, get,
                     install, install_code, installed, plugins_dir, preview, read_enabled, read_register,
                     removal_plan, remove, remove_code, remove_data, requirements, this_platform, update,
-                    wheel_platforms)
+                    wheel_platforms, code_folders)
 from .build import DEFAULT_EXCLUDES, build, dump_toml, select_files
 from .validate import ARCHIVE_CODE_PROBLEMS, validate_archive
 from .dev import DEV_ENV, SOURCE_DEV, describe_dev, dev_code, dev_dir, dev_dir_setting, set_dev_dir
@@ -57,7 +65,9 @@ from .repository import (INDEX_FILE, INDEX_VERSION, index_entry, repository_chec
 from .remote import (OFFICIAL_URL, ONLINE_ENV, RepoError, add_repository, available, cached_index, download,
                      get_repository, install_from, normalize_url, online_access, online_access_setting,
                      plan_install, preview_from, remove_repository, repositories, set_online_access, sync,
-                     update_from, update_repository, updates)
+                     update_from, update_repository, updates, check_updates, update_all, for_platform)
+from .lifecycle import (changelog, clean, document_updates, leftovers, prune_code, redeclare, remove_version,
+                      use_code, versions)
 
 __all__ = [
     "EXTENSIONS_ENV", "PLUGINS_ENV", "REGISTER_FILE", "ENABLED_FILE", "SOURCE_DISK", "PARTS", "TRUST_KEYS",
@@ -72,5 +82,7 @@ __all__ = [
     "normalize_url", "repositories", "get_repository", "add_repository", "update_repository", "remove_repository",
     "sync", "cached_index", "available", "updates", "download", "plan_install", "preview_from", "install_from",
     "update_from",
+    "check_updates", "update_all", "for_platform", "code_folders", "versions", "use_code", "remove_version",
+    "prune_code", "leftovers", "clean", "changelog", "document_updates", "redeclare",
     "DEV_ENV", "SOURCE_DEV", "dev_dir", "dev_dir_setting", "set_dev_dir", "dev_code", "describe_dev",
 ]

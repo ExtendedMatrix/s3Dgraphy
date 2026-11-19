@@ -225,6 +225,10 @@ def install(source: Any, *, vocabularies: bool = True, origin: Optional[str] = N
             out = tmp / rel
             out.parent.mkdir(parents=True, exist_ok=True)
             out.write_bytes(pkg.source.read(f))
+        # X3 (MICRO-PL23) · the archive's CHANGELOG beside the data, for the
+        # question «this file uses 1.0.0, 1.1.0 is here» (a major shows it)
+        if root and pkg.source.exists("CHANGELOG.md") and not (tmp / "CHANGELOG.md").exists():
+            (tmp / "CHANGELOG.md").write_bytes(pkg.source.read("CHANGELOG.md"))
         code = None
         if pkg.has_code:
             code = {"version": pkg.code_version, "status": "not_installed",

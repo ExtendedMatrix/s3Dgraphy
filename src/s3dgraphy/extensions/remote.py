@@ -54,6 +54,7 @@ from ..profiles import semver
 from ..profiles.problems import ERROR, WARNING, Problem, Report
 from . import store
 from .repository import INDEX_FILE, validate_index, verify_archive
+from .wheels import this_platform
 
 REPOS_FILE = "repositories.json"
 REPOS_FORMAT = "em-extensions-repositories/1"
@@ -406,12 +407,24 @@ def _blocked(name: str) -> Dict[str, Dict[str, Any]]:
     return {str(b.get("id")): dict(b) for b in idx.get("blocklist") or [] if isinstance(b, Mapping) and b.get("id")}
 
 
-def _entries(name: str) -> List[Dict[str, Any]]:
+def for_platform(entry: Mapping[str, Any], platform_name: Optional[str] = None) -> bool:
+    """X3 · an entry is for this machine when it names no ``platforms`` (pure
+    Python, or data) or names this one — as Blender lists only the archives
+    of the running platform (a repository may carry one archive per platform
+    of the same id and version, ``build --split-platforms``)."""
+    plats = entry.get("platforms")
+    return not plats or (platform_name or this_platform()) in [str(p) for p in plats]
+
+
+def _entries(name: str, *, any_platform: bool = False) -> List[Dict[str, Any]]:
     idx = cached_index(name) or {}
     blocked = _blocked(name)
     out = []
+    plat = this_platform()
     for e in idx.get("data") or []:
         if not isinstance(e, Mapping) or not e.get("id") or str(e["id"]) in blocked:
+            continue
+        if not any_platform and not for_platform(e, plat):
             continue
         out.append(dict(e))
     return out
@@ -432,11 +445,23 @@ def available(name: Optional[str] = None) -> Dict[str, Any]:
     rows = {r["id"]: r for r in store.installed() if r.get("id")}
     out: List[Dict[str, Any]] = []
     blocked: List[Dict[str, Any]] = []
+    elsewhere: List[Dict[str, Any]] = []
+    plat = this_platform()
     for r in repos:
         nm = str(r["name"])
         by_id: Dict[str, List[Dict[str, Any]]] = {}
         for e in _entries(nm):
             by_id.setdefault(str(e["id"]), []).append(e)
+        # X3 · what this repository has only for other machines: said, not offered
+        others: Dict[str, set] = {}
+        for e in _entries(nm, any_platform=True):
+            if str(e["id"]) not in by_id:
+                others.setdefault(str(e["id"]), set()).update(str(p) for p in e.get("platforms") or [])
+        for oid, plats in sorted(others.items()):
+            elsewhere.append({"repo": nm, "id": oid, "platforms": sorted(plats), "platform": plat,
+                              "problem": Problem("repo_other_platforms", WARNING, "",
+                                                 {"id": oid, "repo": nm, "platforms": ", ".join(sorted(plats)),
+                                                  "platform": plat}).as_dict()})
         for eid, es in sorted(by_id.items()):
             es = sorted((e for e in es if semver.is_semver(str(e.get("version")))),
                         key=lambda e: semver.parse(str(e["version"])), reverse=True)
@@ -461,7 +486,8 @@ def available(name: Optional[str] = None) -> Dict[str, Any]:
                                 "problem": Problem("repo_blocked_installed", WARNING, "",
                                                    {"id": bid, "repo": nm,
                                                     "reason": b.get("reason") or ""}).as_dict()})
-    return {"available": out, "blocked": blocked, "online_access": online_access()}
+    return {"available": out, "blocked": blocked, "other_platforms": elsewhere, "platform": plat,
+            "online_access": online_access()}
 
 
 def updates() -> List[Dict[str, Any]]:
@@ -489,6 +515,11 @@ def _entry(name: str, eid: str, version: Optional[str] = None) -> Dict[str, Any]
         raise RepoError.of("repo_blocked", id=eid, repo=name, reason=b.get("reason") or "")
     es = [e for e in _entries(name) if e.get("id") == eid and (version is None or str(e.get("version")) == version)]
     if not es:
+        other = sorted({str(p) for e in _entries(name, any_platform=True) if e.get("id") == eid
+                        and (version is None or str(e.get("version")) == version) for p in e.get("platforms") or []})
+        if other:
+            raise RepoError.of("repo_other_platforms", id=eid, repo=name, platforms=", ".join(other),
+                               platform=this_platform())
         raise RepoError.of("repo_no_entry", id=eid, version=version or "*", repo=name)
     return max(es, key=lambda e: semver.parse(str(e["version"])) if semver.is_semver(str(e["version"])) else (0,))
 
@@ -500,7 +531,9 @@ def _archive_url(repo: Mapping[str, Any], entry: Mapping[str, Any]) -> str:
 
 
 def _archive_path(name: str, entry: Mapping[str, Any]) -> Path:
-    fname = f"{_slug(str(entry['id']))}-{entry['version']}.zip"
+    plats = [str(p) for p in entry.get("platforms") or []]
+    # X3 · an archive of one platform (build --split-platforms) keeps its platform in the name
+    fname = f"{_slug(str(entry['id']))}-{entry['version']}" + (f"-{plats[0]}" if len(plats) == 1 else "") + ".zip"
     return store.extensions_dir() / "archives" / name / fname
 
 
@@ -748,7 +781,85 @@ def update_from(name: str, eid: str, **kw: Any) -> Dict[str, Any]:
     return install_from(name, eid, None, **kw)
 
 
+# ── X3 · «Update all» ──────────────────────────────────────────────────────
+
+def check_updates(*, read: bool = True, startup: bool = False) -> Dict[str, Any]:
+    """«Check for updates»: the indexes read again (``read``; http(s) only
+    with the switch on — a repository not read keeps its copy and says why),
+    then what is newer than what is installed, each with whether «Update»
+    would ask the trust question again (permissions, capabilities or source
+    changed, SPEC-plugin §17.3), so the window can say it BEFORE «Update all»."""
+    synced = sync(startup=startup)["repositories"] if read else []
+    rows = {str(r.get("id")): r for r in store.installed() if r.get("id")}
+    out = []
+    for u in updates():
+        e = _entry(u["repo"], u["id"], u["version"])
+        row = rows.get(u["id"]) or {}
+        out.append(dict(u, **_trust_ahead(u["repo"], e, row)))
+    return {"repositories": synced, "updates": out, "online_access": online_access()}
+
+
+def _trust_ahead(repo: str, entry: Mapping[str, Any], row: Mapping[str, Any]) -> Dict[str, Any]:
+    """From the index alone (nothing downloaded): would the update of
+    ``row`` to ``entry`` ask the trust question again, and why."""
+    new_code = (entry.get("sections") or {}).get("code")
+    old_code = row.get("code") or {}
+    if not new_code:
+        return {"code": False, "trust_needed": False, "trust_changes": []}
+    old = old_code.get("trusted") if old_code.get("status") == "installed" else None
+    new = {"permissions": dict(new_code.get("permissions") or {}),
+           "capabilities": sorted(new_code.get("capabilities") or []), "source": repo}
+    if old_code.get("status") != "installed":
+        # the person left the code out («Data only», no trust): an update keeps it out
+        return {"code": True, "trust_needed": False, "trust_changes": [], "code_left_out": True}
+    changes = store._trust_changes(old, new)
+    return {"code": True, "trust_needed": changes is None or bool(changes), "trust_changes": changes or []}
+
+
+def update_all(*, trust: Optional[List[str]] = None, read: bool = False,
+               only: Optional[List[str]] = None, platform_name: Optional[str] = None) -> Dict[str, Any]:
+    """«Update all»: every installed extension a repository offers newer, one
+    after the other (each its own :func:`update_from`; one that fails does not
+    stop the others). An update whose code would ask the trust question again
+    is NOT installed unless its id is in ``trust`` (the person said yes to the
+    list the window showed): it is returned in ``needs_trust``, nothing of it
+    written — its data are not updated alone either, because «Update all»
+    never changes half a package behind the person's back. A code the person
+    left out stays out (the data are updated). Data install BESIDE the old
+    version (W-4): no document changes its declaration here.
+
+    Returns ``{updated, needs_trust, failed, up_to_date}``."""
+    plan = check_updates(read=read)["updates"]
+    if only is not None:
+        plan = [u for u in plan if u["id"] in set(only)]
+    ok_trust = set(trust or [])
+    updated: List[Dict[str, Any]] = []
+    needs: List[Dict[str, Any]] = []
+    failed: List[Dict[str, Any]] = []
+    for u in plan:
+        if u.get("trust_needed") and u["id"] not in ok_trust:
+            needs.append(dict(u, problem=Problem("update_needs_trust", WARNING, "",
+                                                 {"id": u["id"], "version": u["version"],
+                                                  "changes": ", ".join(u.get("trust_changes") or []) or "source"}
+                                                 ).as_dict()))
+            continue
+        parts = "data" if u.get("code_left_out") else "all"
+        try:
+            got = update_from(u["repo"], u["id"], parts=parts, trust=u["id"] in ok_trust,
+                              platform_name=platform_name)
+            top = got.get("installed") or {}
+            updated.append({"id": u["id"], "repo": u["repo"], "from": u["installed"], "to": u["version"],
+                            "status": top.get("status"), "data": (top.get("data") or {}).get("status"),
+                            "code": (top.get("code") or {}).get("status"), "warnings": got.get("warnings") or []})
+        except store.ExtensionError as exc:
+            failed.append({"id": u["id"], "repo": u["repo"], "version": u["version"],
+                           "problems": [p.as_dict() for p in exc.report.problems]})
+    return {"updated": updated, "needs_trust": needs, "failed": failed,
+            "up_to_date": not plan, "online_access": online_access()}
+
+
 __all__ = [
+    "check_updates", "update_all", "for_platform",
     "REPOS_FILE", "ONLINE_ENV", "OFFICIAL_URL", "RepoError", "online_access", "online_access_setting",
     "set_online_access", "normalize_url", "is_local", "repositories", "get_repository", "add_repository",
     "update_repository", "remove_repository", "set_fetcher", "sync", "cached_index", "available", "updates",
