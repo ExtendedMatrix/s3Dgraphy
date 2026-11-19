@@ -166,7 +166,8 @@ def test_the_five_are_drawn_the_others_wait():
     assert S.default_writes({"in": ["statusbar@1"]}) is False
     assert S.default_writes({"in": ["space.tool@1"]}) is True
     assert S.default_writes({"in": ["tabular.column@1"], "writes": True}) is True
-    assert set(S.DRAWN2) == {"inspector.section", "tabular.column", "statusbar", "space.tool", "panel"}
+    assert set(S.DRAWN2) == {"inspector.section", "tabular.column", "statusbar", "space.tool", "panel",
+                             "space.layer"}                 # MICRO-GEO11
 
 
 def test_validator_says_what_is_wrong_with_phase_2(tmp_path):
@@ -432,3 +433,126 @@ def test_readers_for_a_folder_a_claim_and_a_file(tmp_path):
     r = PL.invoke(pid, "stack", {"folder": str(stack), "method": "ert"}, author=ORCID)
     assert r.ok, r.message
     assert em.graph.node("US1").description == f"stack {stack} ert" and len(h.steps) == 1
+
+
+# ── space.layer@1 (MICRO-GEO11, row G10 of the geophysics plan) ────────────
+
+LAYERS = '''
+  [[code.commands]]
+  id = "stacks"
+  label = { it = "Pile", en = "Stacks" }
+  in = ["space.layer@1"]
+  layer = "raster_stack"
+  slots = [{ name = "stack", kind = "string", required = false }]
+'''
+
+LAYERS_MODULE = '''
+def stacks(slots):
+    items = [{"id": f"D.{i:02d}", "label": {"en": f"slice {i}", "it": f"fetta {i}"},
+              "image": f"cache/k/slice_{i:03d}.png", "stamp": f"cache/k/slice_{i:03d}.png.stamp.json",
+              "extent": [0, 0, 92, 50], "depth_top": i * 0.5, "depth_bottom": i * 0.5 + 0.5}
+             for i in range(int(slots.get("stack") or 3))]
+    return {"kind": "raster_stack", "id": "ert:b", "name": {"en": "ERT stack b", "it": "Pila ERT b"},
+            "frame": {"epsg": 25830, "origin": [701806.741, 4234824.081]}, "items": items}
+
+
+def setup(ctx):
+    ctx.command("stacks", stacks)
+
+
+plugin = type("Plugin", (), {"setup": staticmethod(setup)})
+'''
+
+
+def test_space_layer_is_drawn_read_only_and_said_in_two_languages(tmp_path):
+    assert S.slot_status("space.layer@1") == "ok" and S.slot_status("space.layer@2") == "newer"
+    assert "space.layer" in S.READ_ONLY_SLOTS and "space.layer" in S.COMMAND_SLOTS
+    assert S.default_writes({"in": ["space.layer@1"]}) is False
+    assert S.check_commands([{"id": "l", "label": "L", "in": ["space.layer@1"], "layer": "raster_stack"}]) == []
+    bad = LAYERS + '''
+  [[code.commands]]
+  id = "odd"
+  label = "Odd"
+  in = ["space.layer@1"]
+  layer = "voxels"
+  writes = true
+'''
+    r = X.validate_archive(write_plugin(tmp_path, commands=bad, body=LAYERS_MODULE))
+    assert {"code_layer_kind", "code_shows_writes"} <= set(r.codes("error"))
+    it = {p.code: p.text("it") for p in r.problems}
+    en = {p.code: p.text("en") for p in r.problems}
+    assert "uno strato dello Spazio" in it["code_layer_kind"] and "'voxels'" in it["code_layer_kind"]
+    assert "a layer of the Space" in en["code_layer_kind"] and "raster_stack" in en["code_layer_kind"]
+    from s3dgraphy.profiles.package import is_code_problem
+    assert all(is_code_problem(p) for p in r.problems if p.code.startswith("code_"))
+
+
+def test_a_layer_is_loaded_and_computed_in_its_shape(tmp_path):
+    pid = install(write_plugin(tmp_path, commands=LAYERS, body=LAYERS_MODULE))["id"]
+    got = PL.sync("emstudio")
+    assert got[0].state == "loaded", got[0].problems
+    c = PL.get(pid).commands
+    assert c["stacks"].where == ["space.layer@1"] and c["stacks"].layer == "raster_stack"
+    assert c["stacks"].writes is False and c["stacks"].as_dict()["layer"] == "raster_stack"
+    # a kind the host does not know (refused by the validator; a loader reading it anyway): that entry
+    # off, the rest of the command stays
+    (odd,) = PL.read_commands(pid, {"commands": [{"id": "odd", "label": "Odd", "layer": "voxels",
+                                                  "in": ["space.layer@1", "menu.tools@1"]}]})
+    assert odd.where == ["menu.tools@1"] and {"slot": "space.layer@1", "why": "layer"} in odd.off
+    assert "layer" not in odd.as_dict() and "layer" not in c["stacks"].as_dict().get("off", [])
+    assert [x.id for x in PL.layers()] == ["stacks"]
+    host()
+    (v,) = PL.compute([{"key": "L", "plugin": pid, "command": "stacks", "slot": "space.layer@1",
+                        "slots": {"stack": 4}}], lang="it")
+    assert v["ok"], v
+    (layer,) = v["value"]
+    assert layer["name"] == "Pila ERT b" and layer["frame"] == {
+        "epsg": 25830, "origin": [701806.741, 4234824.081], "rotation": 0.0, "local": True}
+    assert layer["ground"] == {"mode": "flat", "z": 0.0, "surface": None}
+    assert len(layer["items"]) == 4 and layer["items"][1]["label"] == "fetta 1"
+    assert layer["items"][1]["image"] == "cache/k/slice_001.png" and layer["items"][1]["depth_top"] == 0.5
+    assert layer["display"] == {"mode": "all", "index": 0} and layer["opacity"] == 1.0
+    # over 60 horizontal planes: one at a time
+    (v,) = PL.compute([{"key": "L", "plugin": pid, "command": "stacks", "slot": "space.layer@1",
+                        "slots": {"stack": 61}}])
+    assert v["value"][0]["display"]["mode"] == "one"
+
+
+def test_the_shape_of_a_layer():
+    item = {"id": "D.01", "image": "cache/k/a.png", "extent": [0, 0, 1, 1]}
+    ok, (l,) = PL.shape("space.layer@1", {"kind": "raster_stack", "id": "s", "items": [item]})
+    assert ok and l["name"] == "s" and l["frame"]["origin"] is None and l["items"][0]["stamp"] is None
+    assert PL.shape("space.layer@1", None) == (True, [])
+    assert PL.shape("space.layer@1", "no") == (False, None)
+    assert PL.shape("space.layer@1", [{"kind": "voxels", "id": "v"}]) == (False, None)
+    # a picture outside the plugin's folder is never named: the plane is dropped
+    for bad in ("/etc/passwd", "../x.png", "cache/../../x.png", "C:/x.png", "cache\\x.png", "https://h/x.png", ""):
+        ok, (l,) = PL.shape("space.layer", {"kind": "raster_stack", "id": "s",
+                                             "items": [dict(item, image=bad), item]})
+        assert [i["image"] for i in l["items"]] == ["cache/k/a.png"], bad
+    # no picture on this machine: the plane is kept, without one
+    ok, (l,) = PL.shape("space.layer", {"kind": "raster_stack", "id": "s", "items": [dict(item, image=None)]})
+    assert l["items"][0]["image"] is None
+    # a plane without a real rectangle is dropped; numbers that are not are said as none
+    ok, (l,) = PL.shape("space.layer", {
+        "kind": "raster_stack", "id": "s", "opacity": 3, "display": {"mode": "up_to", "index": 99},
+        "ground": {"mode": "surface", "surface": "LS1", "z": float("nan")},
+        "frame": {"epsg": True, "origin": [1, "x"], "rotation": 12.5},
+        "items": [dict(item, extent=[0, 0, 0, 1]), dict(item, extent=[0, 0, 1]),
+                  dict(item, id="S1", orientation="vertical", extent=[0, -8, 92, 0], depth_top=0, depth_bottom=8,
+                       line=[[0, 0], [92, 0]]),
+                  dict(item, id="S2", orientation="sideways", depth_top=float("inf"), line=[[0, 0]])]})
+    assert [i["id"] for i in l["items"]] == ["S1", "S2"]
+    assert l["items"][0]["line"] == [[0.0, 0.0], [92.0, 0.0]] and l["items"][0]["orientation"] == "vertical"
+    assert l["items"][1]["orientation"] == "horizontal" and l["items"][1]["depth_top"] is None
+    assert l["items"][1]["line"] is None
+    assert l["opacity"] == 1.0 and l["display"] == {"mode": "up_to", "index": 1}
+    assert l["ground"] == {"mode": "surface", "z": 0.0, "surface": "LS1"}
+    assert l["frame"] == {"epsg": None, "origin": None, "rotation": 12.5, "local": True}
+    # a surface without its node is flat; at most LAYERS_MAX layers, LAYER_ITEMS_MAX planes
+    ok, (l,) = PL.shape("space.layer", {"kind": "raster_stack", "id": "s", "ground": {"mode": "surface"}})
+    assert l["ground"]["mode"] == "flat"
+    many = [{"kind": "raster_stack", "id": f"s{i}", "items": [item] * (PL.LAYER_ITEMS_MAX + 5)} for i in range(20)]
+    ok, out = PL.shape("space.layer", many)
+    assert len(out) == PL.LAYERS_MAX and len(out[0]["items"]) == PL.LAYER_ITEMS_MAX
+    assert out[0]["display"]["mode"] == "one"

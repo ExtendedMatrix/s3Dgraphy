@@ -41,6 +41,13 @@ the shape the host draws, :func:`shape`) and ``space.tool@1`` (its
 person placed). ``[[code.panels]]`` are the declarative panels (``panel@1``):
 :class:`PanelDecl`, fields the host draws, values computed by read-only
 commands, buttons that invoke commands.
+
+MICRO-GEO11 (row G10 of the geophysics plan) · ``space.layer@1``: a read-only
+command (``layer = "raster_stack"``) describes a layer of the Space — planes
+with a picture in a frame of their own — and the host draws it; :func:`shape`
+gives the one description a host reads (:func:`_shape_layer`), the pictures
+named by a path INSIDE the plugin's own data folder (``plugins-data/<id>/``),
+the only place a host serves them from.
 """
 from __future__ import annotations
 
@@ -100,6 +107,8 @@ class CommandDecl:
     claims: List[str] = field(default_factory=list)
     folders: bool = False
     panel: str = ""
+    #: MICRO-GEO11 · space.layer@1: the kind of layer the command describes
+    layer: str = ""
 
     @property
     def name(self) -> str:
@@ -122,6 +131,9 @@ class CommandDecl:
         # (only when it does: the other commands' description is as before)
         if self.claims or self.folders or self.panel:
             out.update({"claims": list(self.claims), "folders": self.folders, "panel": self.panel})
+        # MICRO-GEO11 · a layer of the Space says its kind (only when it is one)
+        if self.layer:
+            out["layer"] = self.layer
         return out
 
 
@@ -208,7 +220,8 @@ def _label(raw: Any, fallback: str) -> Dict[str, str]:
 def read_commands(pid: str, code: Dict[str, Any]) -> List[CommandDecl]:
     """The commands of a ``[code]`` section; a command with an entry the host
     cannot draw keeps the others (§14.7: the entry, not the plugin)."""
-    from ..extensions.slots import COMMAND_SLOTS, TABULAR_VIEWS, TOOL_PRIMITIVES, default_writes, parse_slot, slot_status
+    from ..extensions.slots import (COMMAND_SLOTS, LAYER_KINDS, TABULAR_VIEWS, TOOL_PRIMITIVES, default_writes,
+                                    parse_slot, slot_status)
     out: List[CommandDecl] = []
     for c in code.get("commands") or []:
         if not isinstance(c, dict) or not c.get("id"):
@@ -226,6 +239,11 @@ def read_commands(pid: str, code: Dict[str, Any]) -> List[CommandDecl]:
         if "space.tool" in names and str(c.get("primitive") or "") not in TOOL_PRIMITIVES:
             where = [w for w in where if not w.startswith("space.tool@")]
             off.append({"slot": "space.tool@1", "why": "primitive"})
+        # MICRO-GEO11 · a layer of a kind the host does not know is not drawn
+        layer = str(c.get("layer") or "")
+        if "space.layer" in names and layer not in LAYER_KINDS:
+            where = [w for w in where if not w.startswith("space.layer@")]
+            off.append({"slot": "space.layer@1", "why": "layer"})
         view = str(c.get("view") or "Units")
         if "tabular.column" in names and view not in TABULAR_VIEWS:
             where = [w for w in where if not w.startswith("tabular.column@")]
@@ -244,6 +262,7 @@ def read_commands(pid: str, code: Dict[str, Any]) -> List[CommandDecl]:
             buttons=[str(b) for b in (c.get("buttons") or []) if isinstance(b, str)]
             if isinstance(c.get("buttons"), list) else [],
             view=view if "tabular.column" in names else "",
+            layer=layer if any(w.startswith("space.layer@") for w in where) else "",
             # MICRO-GEO09 · door.reader@2 (an @1 reader never says them: they are not read)
             **(_reader_v2(c, pid) if any(w.startswith("door.reader@") and w != "door.reader@1" for w in where)
                else {})))
@@ -807,6 +826,11 @@ def tools() -> List[CommandDecl]:
     return [c for c in commands("space.tool") if _plugins[c.plugin].state == "loaded"]
 
 
+def layers() -> List[CommandDecl]:
+    """MICRO-GEO11 · the layers of the Space of the loaded plugins (``space.layer@1``)."""
+    return [c for c in commands("space.layer") if _plugins[c.plugin].state == "loaded"]
+
+
 def describe(lang: str = "en") -> Dict[str, Any]:
     """Everything a host draws: the plugins (state, problems in EN and IT,
     commands with their slots), and how many listeners per event."""
@@ -1000,6 +1024,115 @@ def _one_line(text: str, limit: int) -> str:
     return t if len(t) <= limit else t[: limit - 1] + "…"
 
 
+# ── space.layer@1 (MICRO-GEO11, row G10 of the geophysics plan) ─────────────
+
+#: the layers one command may describe, the planes of one layer
+LAYERS_MAX = 16
+LAYER_ITEMS_MAX = 2000
+#: over this many horizontal planes a layer is shown one at a time (plan §2.4)
+LAYER_ALL_MAX = 60
+LAYER_DISPLAY = ("all", "one", "up_to")
+LAYER_ORIENTATIONS = ("horizontal", "vertical")
+
+
+def _num(v: Any) -> Optional[float]:
+    """A finite number (never a bool), or None."""
+    if isinstance(v, bool) or not isinstance(v, (int, float)):
+        return None
+    f = float(v)
+    return f if f == f and f not in (float("inf"), float("-inf")) else None
+
+
+def _inner_path(v: Any) -> Optional[str]:
+    """A path INSIDE the plugin's data folder: relative, ``/``-separated, no
+    ``..``, no drive, no scheme; None for anything else."""
+    if not isinstance(v, str):
+        return None
+    t = v.strip()
+    if not t or "\\" in t or "\x00" in t or t.startswith("/") or ":" in t:
+        return None
+    parts = t.split("/")
+    if any(p in ("", ".", "..") for p in parts):
+        return None
+    return t
+
+
+def _point2(v: Any) -> Optional[List[float]]:
+    if isinstance(v, (list, tuple)) and len(v) == 2:
+        a, b = _num(v[0]), _num(v[1])
+        if a is not None and b is not None:
+            return [a, b]
+    return None
+
+
+def _shape_layer(v: Any, lang: str) -> Optional[Dict[str, Any]]:
+    """One layer of ``space.layer@1`` as every host reads it, or None::
+
+        {kind: "raster_stack", id, name,
+         frame: {epsg|null, origin: [E, N]|null (doubles), rotation (degrees), local: true},
+         ground: {mode: "flat"|"surface", z, surface: <landscape_surface id>|null},
+         items: [{id, label, image|null, stamp|null, extent: [x0, y0, x1, y1],
+                  orientation: "horizontal"|"vertical", depth_top, depth_bottom,
+                  line: [[x, y], [x, y]]|null}],
+         display: {mode: "all"|"one"|"up_to", index}, opacity: 0…1}
+
+    ``items`` are planes in the layer's LOCAL frame (metres; a vertical one's
+    extent runs along its line and down, ``y`` = −depth); ``image`` and
+    ``stamp`` are paths inside the plugin's data folder (an item naming one
+    elsewhere is dropped: a host serves nothing outside it), ``image`` null
+    when the picture is not on this machine. ``origin`` null: the layer is not
+    placed in the world (the scene's frame is its frame). Over
+    :data:`LAYER_ALL_MAX` horizontal planes ``all`` becomes ``one``."""
+    if not isinstance(v, dict) or v.get("kind") not in ("raster_stack",):
+        return None
+    lid = str(v.get("id") or "").strip()
+    if not lid:
+        return None
+    fr = v.get("frame") if isinstance(v.get("frame"), dict) else {}
+    epsg = fr.get("epsg")
+    epsg = int(epsg) if isinstance(epsg, int) and not isinstance(epsg, bool) and epsg > 0 else \
+        (int(epsg) if isinstance(epsg, str) and epsg.isdigit() and int(epsg) > 0 else None)
+    gr = v.get("ground") if isinstance(v.get("ground"), dict) else {}
+    surface = str(gr.get("surface") or "").strip() or None
+    mode = "surface" if gr.get("mode") == "surface" and surface else "flat"
+    items: List[Dict[str, Any]] = []
+    raw = v.get("items") if isinstance(v.get("items"), (list, tuple)) else []
+    for it in list(raw)[:LAYER_ITEMS_MAX]:
+        if not isinstance(it, dict) or not str(it.get("id") or "").strip():
+            continue
+        ext = it.get("extent")
+        ext = [_num(x) for x in ext] if isinstance(ext, (list, tuple)) and len(ext) == 4 else None
+        if not ext or None in ext or not (ext[0] < ext[2] and ext[1] < ext[3]):
+            continue
+        image = _inner_path(it.get("image"))
+        if it.get("image") is not None and image is None:
+            continue                                  # a picture outside the plugin's folder: never
+        line = it.get("line")
+        line = [_point2(line[0]), _point2(line[1])] if isinstance(line, (list, tuple)) and len(line) == 2 else None
+        iid = str(it["id"]).strip()
+        items.append({
+            "id": iid, "label": _one_line(_text(it.get("label") or iid, lang), CELL_MAX),
+            "image": image, "stamp": _inner_path(it.get("stamp")) if image else None,
+            "extent": ext,
+            "orientation": it.get("orientation") if it.get("orientation") in LAYER_ORIENTATIONS else "horizontal",
+            "depth_top": _num(it.get("depth_top")), "depth_bottom": _num(it.get("depth_bottom")),
+            "line": line if line and None not in line else None})
+    flat = sum(1 for i in items if i["orientation"] == "horizontal")
+    di = v.get("display") if isinstance(v.get("display"), dict) else {}
+    dmode = di.get("mode") if di.get("mode") in LAYER_DISPLAY else "all"
+    if dmode == "all" and flat > LAYER_ALL_MAX:
+        dmode = "one"
+    index = _num(di.get("index"))
+    index = min(max(int(index or 0), 0), max(len(items) - 1, 0))
+    opacity = _num(v.get("opacity"))
+    return {"kind": v["kind"], "id": lid, "name": _one_line(_text(v.get("name") or lid, lang), CELL_MAX),
+            "frame": {"epsg": epsg, "origin": _point2(fr.get("origin")),
+                      "rotation": _num(fr.get("rotation")) or 0.0, "local": True},
+            "ground": {"mode": mode, "z": _num(gr.get("z")) or 0.0, "surface": surface if mode == "surface" else None},
+            "items": items, "display": {"mode": dmode, "index": index},
+            "opacity": 1.0 if opacity is None else min(max(opacity, 0.0), 1.0)}
+
+
 def shape(slot: str, value: Any, *, lang: str = "en") -> Tuple[bool, Any]:
     """What a host draws of a read-only command's ``value`` in ``slot``:
 
@@ -1007,10 +1140,23 @@ def shape(slot: str, value: Any, *, lang: str = "en") -> Tuple[bool, Any]:
     * ``tabular.column`` — ``{id: text}`` (each ≤ :data:`CELL_MAX`);
     * ``inspector.section`` and a panel's ``value`` — rows ``[{label, value}]``
       (≤ :data:`ROWS_MAX`) from a dict (label → value), a list of
-      ``{label, value}`` or of pairs, or a text (one row without a label).
+      ``{label, value}`` or of pairs, or a text (one row without a label);
+    * ``space.layer`` (MICRO-GEO11) — a list of layers (≤ :data:`LAYERS_MAX`)
+      from a layer or a list of layers, each as :func:`_shape_layer` gives it.
 
     ``(False, None)`` when the value has another shape (said by the caller)."""
     name = slot.split("@")[0]
+    if name == "space.layer":
+        if value is None:
+            return True, []
+        if isinstance(value, dict):
+            value = [value]
+        if not isinstance(value, (list, tuple)):
+            return False, None
+        layers = [x for x in (_shape_layer(v, lang) for v in list(value)[:LAYERS_MAX]) if x is not None]
+        if value and not layers:
+            return False, None                        # nothing a host can draw: the plugin's mistake, said
+        return True, layers
     if name == "statusbar":
         if isinstance(value, (list, tuple)):
             return False, None

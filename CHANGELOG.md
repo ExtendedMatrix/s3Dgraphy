@@ -5,6 +5,24 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Changed
+- **`space.layer@1`: a layer of the Space a plugin describes** (MICRO-GEO11,
+  row G10 of the geophysics plan, decision G-2, 19 November 2026).
+  `s3dgraphy.extensions.slots`: `space.layer@1` known (`PHASE2`) and drawn
+  (`DRAWN2`), a slot that only shows (`READ_ONLY_SLOTS`: `writes = false`, a
+  write refused like a section's) and a command slot; the command says
+  `layer = "raster_stack"` (`LAYER_KINDS`), else the validator's error
+  `code_layer_kind` (EN + IT, a problem of the code alone) and the loader
+  turns that entry off (`why: layer`). `em.plugins`: `CommandDecl.layer`
+  (in `as_dict` only for a layer), `layers()`, and `shape("space.layer@1",
+  value)` — the one description a host draws: `{kind, id, name, frame
+  {epsg, origin [E, N] doubles | null, rotation, local}, ground {flat |
+  surface, z, surface}, items [{id, label, image, stamp, extent,
+  orientation, depth_top, depth_bottom, line}], display {all | one | up_to,
+  index}, opacity}`; a picture is a path INSIDE the plugin's data folder (a
+  plane naming one elsewhere — absolute, `..`, a drive, a scheme — is
+  dropped), `image` null when it is not on this machine; over 60 horizontal
+  planes `all` becomes `one`; at most 16 layers of 2000 planes.
+  `em.API_VERSION` unchanged. `tests/test_em_plugins_phase2.py` +3.
 - **A plugin's refusal keeps its two languages** (MICRO-GEO10, row G9 of the
   geophysics plan, T-6 of PL20, 19 November 2026). `em.plugins.invoke`: when
   a command's handler raises an `em.EmError`, the `messages` of the result

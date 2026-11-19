@@ -32,6 +32,12 @@ release to the next. A command of a plugin says in ``in`` the slots it uses
   door opens it with the path, instead of reading straight away). ``accept``
   keeps its meaning (the extensions the host does not know: taken). A host of
   ``door.reader@1`` turns a ``@2`` entry off (it would not know a folder).
+* ``space.layer@1`` — MICRO-GEO11 (row G10 of the geophysics plan, E.D. 19
+  Nov 2026, G-2): a LAYER of the Space the host draws from what a read-only
+  command returns (``layer = "raster_stack"``: planes with a picture — slices
+  under the ground, sections standing on a line — in a frame of their own).
+  Nothing of the plugin is drawn by the plugin: it describes, the host draws
+  (``em.plugins.shape`` gives the one shape). Read only, like a section.
 
 ``when`` — when a command of ``context.node@1`` is offered — is a small,
 closed grammar (no expression language: nothing to evaluate but this)::
@@ -68,7 +74,7 @@ PHASE1: Dict[str, int] = {
 PHASE2: Dict[str, int] = {
     "context.outliner": 1, "context.edge": 1, "palette": 1, "keymap": 1, "panel": 1,
     "workspace": 1, "inspector.section": 1, "tabular.column": 1, "space.tool": 1,
-    "statusbar": 1,
+    "statusbar": 1, "space.layer": 1,
 }
 
 #: MICRO-PL25 (X5) · the slots of phase 2 a host draws now: name → version
@@ -78,9 +84,12 @@ DRAWN2: Dict[str, int] = {
     "statusbar": 1,           # a zone of text only in the status bar
     "space.tool": 1,          # a tool of the Space's bar: a primitive placed → the command
     "panel": 1,               # a declarative panel ([[code.panels]]): fields, values, buttons
+    "space.layer": 1,         # MICRO-GEO11 · a layer of the Space described by the command, drawn by the host
 }
 #: the slots that SHOW what a command returns: it only reads (writes = false)
-READ_ONLY_SLOTS: Tuple[str, ...] = ("check", "inspector.section", "tabular.column", "statusbar")
+READ_ONLY_SLOTS: Tuple[str, ...] = ("check", "inspector.section", "tabular.column", "statusbar", "space.layer")
+#: MICRO-GEO11 · what a layer of the Space (``space.layer@1``) may be: planes with a picture
+LAYER_KINDS: Tuple[str, ...] = ("raster_stack",)
 #: the sheets of the Tabular a column may join (EMStudio's editable sheets)
 TABULAR_VIEWS: Tuple[str, ...] = ("Units", "Epochs", "Documents", "Claims", "Authors")
 #: what a tool of the Space lays (SPEC-pacchetto §5.2) → its clicks (min, max; None = open)
@@ -98,7 +107,9 @@ PANEL_FIELDS_MAX = 40
 COMMAND_SLOTS: Tuple[str, ...] = ("menu.tools", "menu.file.import", "menu.file.export",
                                   "export.narrative", "context.node", "door.reader", "check",
                                   # MICRO-PL25 (X5) · phase 2
-                                  "inspector.section", "tabular.column", "statusbar", "space.tool")
+                                  "inspector.section", "tabular.column", "statusbar", "space.tool",
+                                  # MICRO-GEO11 · a layer of the Space
+                                  "space.layer")
 #: a command in these returns a FILE (``ctx.file(...)``) the host saves
 FILE_SLOTS: Tuple[str, ...] = ("menu.file.export", "export.narrative")
 #: the kinds of a command's slot: what the host fills, never invents
@@ -255,6 +266,8 @@ def check_commands(commands: Any) -> List[Tuple[str, str, Dict[str, Any]]]:
                                                                  known=", ".join(TOOL_PRIMITIVES))))
             if not any(isinstance(s, dict) and s.get("kind") == "geometry" for s in (slots or []) if isinstance(slots, list)):
                 out.append(("error", "code_tool_geometry", at))
+        if "space.layer" in names and str(c.get("layer") or "") not in LAYER_KINDS:
+            out.append(("error", "code_layer_kind", dict(at, value=c.get("layer"), known=", ".join(LAYER_KINDS))))
         if c.get("icon") is not None and not _icon_ok(c.get("icon")):
             out.append(("error", "code_icon", dict(at, value=c.get("icon"))))
         buttons = c.get("buttons")
@@ -409,7 +422,7 @@ def check_panels(panels: Any, commands: Any) -> List[Tuple[str, str, Dict[str, A
     return out
 
 
-__all__ = ["PHASE1", "PHASE2", "DRAWN2", "COMMAND_SLOTS", "FILE_SLOTS", "SLOT_KINDS", "SELECTION_WORDS",
+__all__ = ["PHASE1", "PHASE2", "DRAWN2", "LAYER_KINDS", "COMMAND_SLOTS", "FILE_SLOTS", "SLOT_KINDS", "SELECTION_WORDS",
            "READ_ONLY_SLOTS", "TABULAR_VIEWS", "TOOL_PRIMITIVES", "PANEL_FIELD_KINDS", "PANEL_PLACES",
            "PANEL_FIELDS_MAX", "parse_slot", "slot_status", "parse_when", "when_holds", "check_commands",
            "check_panels", "default_writes", "reader_version"]

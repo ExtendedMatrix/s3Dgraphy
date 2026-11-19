@@ -394,6 +394,8 @@ MESSAGES: Dict[str, Tuple[str, str]] = {
                             "[[code.commands]] {id}: uno strumento dello Spazio (space.tool@1) dichiara primitive = uno tra {known} (non {value!r})"),
     "code_tool_geometry": ("[[code.commands]] {id}: a tool of the Space receives what was placed: a slot of kind \"geometry\"",
                            "[[code.commands]] {id}: uno strumento dello Spazio riceve ciò che è stato posato: uno slot di tipo \"geometry\""),
+    "code_layer_kind": ("[[code.commands]] {id}: a layer of the Space (space.layer@1) declares layer = one of {known} (not {value!r})",
+                        "[[code.commands]] {id}: uno strato dello Spazio (space.layer@1) dichiara layer = uno tra {known} (non {value!r})"),
     "code_icon": ("[[code.commands]] {id}: icon {value!r} is one or two characters of text",
                   "[[code.commands]] {id}: icon {value!r} è uno o due caratteri di testo"),
     "code_section_buttons": ("[[code.commands]] {id}: buttons is a list of command ids, not {value!r}",
