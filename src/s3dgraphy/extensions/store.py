@@ -460,7 +460,11 @@ def _write_code(pkg: Package, eid: str, source_name: str, trust: Mapping[str, An
                 "source": source_name, "digest": digest, "installed_at": _now(), "origin": pkg.source.origin,
                 "entry": c.get("entry"), "module": _module(c.get("entry")), "hosts": list(c.get("hosts") or []),
                 "trusted": dict(trust), "verified": False, "package": eid if pkg.has_data else None,
-                "data_version": pkg.data_version if pkg.has_data else None, "code": c}
+                "data_version": pkg.data_version if pkg.has_data else None, "code": c,
+                # W14 (MICRO-PL17) · what the loader checks against em.API_VERSION
+                "em_api_min": (pkg.envelope or {}).get("em_api_min"),
+                "em_api_max": (pkg.envelope or {}).get("em_api_max"),
+                "name": (pkg.envelope or {}).get("name")}
         (tmp / CODE_META).write_text(json.dumps(meta, ensure_ascii=False, indent=2, sort_keys=True) + "\n",
                                      encoding="utf-8")
         tmp.replace(dest)

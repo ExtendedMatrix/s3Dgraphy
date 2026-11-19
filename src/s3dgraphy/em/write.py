@@ -451,9 +451,17 @@ def submit(host: Any, label: str, delta: Delta, *, dry_run: bool = False) -> Wri
     """A delta through the contract, to the host. ``invoke`` (the author is the
     host's), ``guard_write`` (in EN and IT), then ``host.apply`` — or, inside an
     event's delivery, after it (never a write inside the step that caused it)."""
-    caller = host.caller()
+    from . import plugins as _plugins
+    calling = _plugins.calling_now()
+    # a plugin's command writes as the PLUGIN (its declared capabilities are
+    # the seam's), never as the console or the script that hosts it (W14)
+    caller = calling.descriptor if calling is not None else host.caller()
     author = host.author()
     capability = "ingest-batch" if delta.volatile else "write-graph"
+    if calling is not None and not calling.writes:
+        from .messages import both
+        msgs = both("read_only_command", command=calling.name)
+        raise Refused(Result(ok=False, message=msgs["en"], data={"reason": "read-only-command"}), msgs)
     res = invoke(_caller_desc(caller, delta, label), {}, author, refusals=REFUSALS)
     if not res.ok:
         res_it = invoke(_caller_desc(caller, delta, label), {}, author, refusals=REFUSALS_IT)
@@ -466,7 +474,15 @@ def submit(host: Any, label: str, delta: Delta, *, dry_run: bool = False) -> Wri
         it = guard_write(caller, capability, delta, node_types=types, phrases=SEAM_IT)
         raise Refused(verdict, {"en": verdict.message, "it": it.message})
     if dry_run:
-        return WriteResult(label, delta, verdict, applied=False, dry_run=True)
+        out = WriteResult(label, delta, verdict, applied=False, dry_run=True)
+        proved = getattr(host, "proved", None)
+        if callable(proved):
+            # MICRO-PL17 · the hook EMStudio's console wrapped in (PL16 S-3), now here
+            try:
+                proved(out)
+            except Exception:                        # noqa: BLE001 — a proof never breaks the script
+                pass
+        return out
     if events.dispatching():
         out = WriteResult(label, delta, None, applied=False, deferred=True)
 
@@ -479,6 +495,11 @@ def submit(host: Any, label: str, delta: Delta, *, dry_run: bool = False) -> Wri
     if not applied.ok:
         raise Refused(applied)
     return WriteResult(label, delta, applied, applied=True)
+
+
+#: MICRO-PL17 · :func:`submit` gives every proof to a host with ``proved`` (a
+#: host that wrapped ``submit`` to do it — EMStudio's bridge 82 — checks this)
+PROVES_TO_HOST = True
 
 
 def write(label: str = "script", *, volatile: bool = False, dry_run: bool = False) -> Transaction:

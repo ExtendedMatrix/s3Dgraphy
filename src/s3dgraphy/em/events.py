@@ -1,9 +1,18 @@
 """The events of ``em`` — a closed, small set (SPEC-plugin §2.5).
 
-Five for 1.6: ``selection-changed``, ``graph-changed`` (after a step was
-applied, with the ids it touched), ``document-opened``, ``document-closed``,
-``locale-changed``. Closed for the same reason the capabilities are: an event
-nobody emits is a subscription that silently never fires.
+Six for 1.6: ``selection-changed``, ``graph-changed`` (after a step was
+applied, with the ids it touched), ``document-opened``, ``document-saved``
+(after the host saved: a listener never changes what is saved, SPEC-plugin
+§14.5), ``document-closed``, ``locale-changed``. Closed for the same reason
+the capabilities are: an event nobody emits is a subscription that silently
+never fires. (``document-saved`` came with W14, MICRO-PL17: the slot
+``event@1`` of SPEC-plugin §13.)
+
+Two tables of listeners. The SCRIPT's (:func:`on`) — which a host may scope
+to one document's session (:func:`scope`: EMStudio keeps one per page
+session, so a listener of one document does not fire on another's events) —
+and the PLUGINS' (:func:`on_owned`), which belong to the process and hear
+every document: a plugin is loaded once per host, not per document.
 
 The HOST emits (:func:`emit`); a script subscribes (:func:`on`). A listener
 that raises is caught and said (``em.app.notify`` when the host has one, the
@@ -17,16 +26,19 @@ event (§2.5). :func:`dispatching` says whether we are inside a delivery;
 """
 from __future__ import annotations
 
-from typing import Any, Callable, Dict, List, Optional
+import contextlib
+from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple
 
 from .messages import message
 
-EVENTS = ("selection-changed", "graph-changed", "document-opened",
+EVENTS = ("selection-changed", "graph-changed", "document-opened", "document-saved",
           "document-closed", "locale-changed")
 
 Listener = Callable[[Dict[str, Any]], Any]
 
 _listeners: Dict[str, List[Listener]] = {name: [] for name in EVENTS}
+#: the plugins' listeners: (owner, fn) per event — they hear every document
+_owned: Dict[str, List[Tuple[str, Listener]]] = {name: [] for name in EVENTS}
 _depth = 0
 _deferred: List[Callable[[], Any]] = []
 
@@ -84,17 +96,70 @@ def off(event: str, fn: Listener) -> bool:
 
 
 def listeners(event: Optional[str] = None) -> Dict[str, int]:
-    """How many listeners per event — what a bridge reads to decide whether to
-    forward an event at all (SPEC §2.5: only when a Python listener exists)."""
+    """How many listeners per event — the script's and the plugins' — what a
+    bridge reads to decide whether to forward an event at all (SPEC §2.5:
+    only when a Python listener exists)."""
     if event is not None:
         _check(event)
-        return {event: len(_listeners[event])}
-    return {name: len(fns) for name, fns in _listeners.items()}
+        return {event: len(_listeners.get(event, ())) + len(_owned[event])}
+    return {name: len(_listeners.get(name, ())) + len(_owned[name]) for name in EVENTS}
+
+
+def owned_counts() -> Dict[str, int]:
+    """The plugins' listeners alone, per event."""
+    return {name: len(_owned[name]) for name in EVENTS}
+
+
+def on_owned(owner: str, event: str, fn: Listener) -> Subscription:
+    """A PLUGIN's listener (``ctx.on``): it hears every document, and
+    :func:`off_owner` takes all of an owner's away (a plugin disabled)."""
+    _check(event)
+    _owned[event].append((owner, fn))
+    sub = Subscription(event, fn)
+
+    def off() -> None:
+        if sub.active:
+            _owned[event][:] = [(o, f) for o, f in _owned[event] if not (o == owner and f is fn)]
+            sub.active = False
+    sub.off = off                                   # type: ignore[method-assign]
+    return sub
+
+
+def off_owner(owner: str) -> int:
+    """Every listener of ``owner`` off; how many there were."""
+    n = 0
+    for name in EVENTS:
+        before = len(_owned[name])
+        _owned[name][:] = [(o, f) for o, f in _owned[name] if o != owner]
+        n += before - len(_owned[name])
+    return n
+
+
+@contextlib.contextmanager
+def scope(table: Dict[str, List[Listener]]) -> Iterator[Dict[str, List[Listener]]]:
+    """The script's listeners are ``table`` while the block runs (a host's
+    session: one document, its own listeners), then those of before. The
+    plugins' listeners are not touched: they hear every document."""
+    global _listeners
+    for name in EVENTS:
+        table.setdefault(name, [])
+    previous, _listeners = _listeners, table
+    try:
+        yield table
+    finally:
+        _listeners = previous
+
+
+def new_table() -> Dict[str, List[Listener]]:
+    """An empty table of listeners, one list per event (for :func:`scope`)."""
+    return {name: [] for name in EVENTS}
 
 
 def clear() -> None:
-    """Every listener off (a host closing, a test)."""
+    """Every listener off (a host closing, a test) — the plugins' too."""
     for fns in _listeners.values():
+        fns.clear()
+    for fns in _owned.values():
         fns.clear()
     _deferred.clear()
 
@@ -121,7 +186,7 @@ def emit(event: str, payload: Optional[Dict[str, Any]] = None) -> List[Dict[str,
     failures: List[Dict[str, Any]] = []
     _depth += 1
     try:
-        for fn in list(_listeners[event]):
+        for fn in list(_listeners.get(event, ())) + [f for _o, f in list(_owned[event])]:
             try:
                 fn(body)
             except Exception as exc:                 # noqa: BLE001 — said, not raised

@@ -72,6 +72,10 @@ class Host(Protocol):
         again, since the host is the one that owns the graph."""
         ...
 
+    # Optional (MICRO-PL17): ``proved(result)`` — told of every ``em.write``
+    # that ended as a proof (``dry_run``), so a console can show what it would
+    # have written. A host without it sees nothing new.
+
 
 # ── no application ──────────────────────────────────────────────────────────
 
@@ -206,6 +210,7 @@ class ScriptHost:
         container = self.container or container_of(self._graph)
         out = save_container_file(container, str(target))
         self.container, self.path = container, out
+        events.emit("document-saved", {"graph_id": getattr(self._graph, "graph_id", None), "path": out})
         return out
 
     def close(self) -> None:

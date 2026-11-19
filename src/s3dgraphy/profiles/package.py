@@ -763,6 +763,25 @@ def _check_code(pkg: Package, r: Report) -> None:
             r.error("permission_reason", ENVELOPE, name=name)
     if code.get("version") is not None and not semver.is_semver(str(code["version"])):
         r.error("version_bad", ENVELOPE, key="[code].version", value=code["version"])
+    # W14 (MICRO-PL17) · the commands, their slots and ``when``; the descriptor
+    from ..extensions.slots import check_commands
+    for level, pcode, params in check_commands(code.get("commands")):
+        (r.error if level == "error" else r.warn)(pcode, ENVELOPE, **params)
+    desc = code.get("descriptor")
+    if desc is not None:
+        from ..contract.connector import CAPABILITIES, WRITING_CAPABILITIES
+        caps = desc.get("capabilities") if isinstance(desc, Mapping) else None
+        if not isinstance(desc, Mapping) or not isinstance(caps, list):
+            r.error("code_descriptor", ENVELOPE)
+        else:
+            for c in caps:
+                if c not in CAPABILITIES:
+                    r.error("code_capability_unknown", ENVELOPE, value=c, known=", ".join(CAPABILITIES))
+            writing = [c for c in caps if c in WRITING_CAPABILITIES]
+            for c in code.get("commands") or []:
+                if isinstance(c, Mapping) and c.get("writes", True) is True and not writing \
+                        and "check@1" not in (c.get("in") or []):
+                    r.warn("code_writes_no_capability", ENVELOPE, id=c.get("id"))
 
 
 def _check_carried_entries(pkg: Package, carried: List[Dict[str, Any]], r: Report) -> Set[int]:
@@ -923,7 +942,13 @@ def validate(source: Any) -> Report:
 
 
 #: the validator's codes about the code section alone: they never keep the data out (SPEC-pacchetto §16.3)
-CODE_PROBLEMS = ("code_entry", "code_hosts", "permission_reason", "permission_unknown")
+CODE_PROBLEMS = ("code_entry", "code_hosts", "permission_reason", "permission_unknown",
+                 # W14 (MICRO-PL17) · the commands and the descriptor
+                 "code_commands_shape", "code_command_id", "code_command_twice", "code_command_label",
+                 "code_command_writes", "code_command_slots", "code_command_in", "code_command_when",
+                 "code_reader_accept", "code_check_writes", "code_slot_unknown", "code_slot_phase2",
+                 "code_slot_newer", "code_slot_not_command", "code_descriptor", "code_capability_unknown",
+                 "code_writes_no_capability")
 
 
 def is_code_problem(p: Problem) -> bool:

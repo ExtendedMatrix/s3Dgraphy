@@ -5,6 +5,28 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Changed
+- **The plugins loaded from disk, and the slots of phase 1** (MICRO-PL17,
+  row W14 of the extensions plan, 18 November 2026). New `s3dgraphy.em.plugins`:
+  `sync(host)` loads the code active for a host in `enabled.json` (W21) —
+  checks first (the folder, `em_api_min`/`max` against `em.API_VERSION`, the
+  wheels' Python, the descriptor, a module that would hide one of the
+  program's; another version of a loaded module asks for a restart), then the
+  folder and its wheels on `sys.path`, the module imported, `setup(ctx)`:
+  `ctx.command` wires a DECLARED command, `ctx.on` listens to every document,
+  `ctx.expose` reaches the console (`em.ext`), `ctx.file` is an exporter's
+  answer, `ctx.package` the data of the same envelope (`None` for a pure
+  plugin), `ctx.data_dir` the plugin's own state. A command is a contract
+  `Descriptor` (`invoke`: the four refusals, in EN and IT); inside it
+  `em.write` writes AS THE PLUGIN (its declared capabilities are the seam's)
+  and a command declared `writes = false` cannot write. `run_checks` (check@1),
+  `readers_for` (door.reader@1), `describe`, `unload` (teardown, listeners
+  off). New `s3dgraphy.extensions.slots`: the slots of phase 1 and 2 with their
+  versions and `when`'s closed grammar; the validator checks
+  `[[code.commands]]` and `[code.descriptor]` (code problems only: the data
+  stay). `em.events`: `document-saved`, the plugins' listeners (`on_owned`,
+  `off_owner`) and `scope` for a host's sessions; `write.submit` gives a proof
+  to a host with `proved`. `em.API_VERSION` 1.1.0. `.install.json` keeps
+  `em_api_min`/`max`. No datamodel change.
 - **`em`, the scripting API** (MICRO-PL14-API-EM, row W11 of the extensions
   plan, 18 November 2026). New package **`s3dgraphy.em`** (`from s3dgraphy
   import em`), the same in EMStudio, EM Tools and a script: `em.graph`

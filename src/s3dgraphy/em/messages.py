@@ -66,6 +66,58 @@ MESSAGES: Dict[str, Dict[str, str]] = {
         "en": "«{label}»: {nodes} node(s), {edges} relation(s), {ops} change(s)",
         "it": "«{label}»: {nodes} nodo/i, {edges} relazione/i, {ops} modifica/he",
     },
+    "read_only_command": {
+        "en": "«{command}» is declared read-only (writes = false): it cannot write",
+        "it": "«{command}» è dichiarato di sola lettura (writes = false): non può scrivere",
+    },
+    "no_plugin": {
+        "en": "no plugin «{plugin}» is active here",
+        "it": "nessun plugin «{plugin}» è attivo qui",
+    },
+    "plugin_not_loaded": {
+        "en": "the plugin «{plugin}» is not loaded: {why}",
+        "it": "il plugin «{plugin}» non è caricato: {why}",
+    },
+    "plugin_failed": {
+        "en": "the plugin «{plugin}» failed to start: {error}",
+        "it": "il plugin «{plugin}» non è partito: {error}",
+    },
+    "plugin_em_api": {
+        "en": "it needs em {range}; this host has em {version}",
+        "it": "chiede em {range}; qui c'è em {version}",
+    },
+    "plugin_python": {
+        "en": "its wheel {wheel} is for Python {wanted}; this host runs Python {have}",
+        "it": "la sua ruota {wheel} è per Python {wanted}; qui gira Python {have}",
+    },
+    "plugin_shadow": {
+        "en": "its module {module} is already a module of this program ({path}): it would hide it",
+        "it": "il suo modulo {module} è già un modulo di questo programma ({path}): lo nasconderebbe",
+    },
+    "plugin_restart": {
+        "en": "version {version} is active: restart to load it (Python does not unload {loaded})",
+        "it": "è attiva la versione {version}: riavvia per caricarla (Python non scarica la {loaded})",
+    },
+    "plugin_missing": {
+        "en": "its folder is not on this machine ({folder})",
+        "it": "la sua cartella non è su questa macchina ({folder})",
+    },
+    "plugin_descriptor": {
+        "en": "its [code.descriptor] does not hold: {why}",
+        "it": "il suo [code.descriptor] non regge: {why}",
+    },
+    "command_unknown": {
+        "en": "«{plugin}» declares no command «{command}»",
+        "it": "«{plugin}» non dichiara un comando «{command}»",
+    },
+    "check_failed": {
+        "en": "the check «{command}» of {plugin} failed: {error}",
+        "it": "il controllo «{command}» di {plugin} è fallito: {error}",
+    },
+    "check_bad": {
+        "en": "the check «{command}» of {plugin} returned something that is not a list of warnings",
+        "it": "il controllo «{command}» di {plugin} ha restituito qualcosa che non è un elenco di avvisi",
+    },
     "raw_warning": {
         "en": "node.raw is the live node: changing it writes NOTHING (no undo, no Log, no author) — use em.write",
         "it": "node.raw è il nodo vero: cambiarlo NON scrive niente (né annulla, né Log, né autore): usa em.write",

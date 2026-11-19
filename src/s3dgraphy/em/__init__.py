@@ -34,7 +34,7 @@ from __future__ import annotations
 
 from typing import Any, Optional
 
-from . import events, host
+from . import events, host, plugins
 from .errors import EmError, NotAvailable, Refused
 from .events import EVENTS, on, off
 from .extensions import Extensions
@@ -48,11 +48,13 @@ del globals()["graph"]
 
 #: the API's own version — what a plugin's ``em_api_min``/``em_api_max`` are read
 #: against (SPEC-plugin §14.7), distinct from s3Dgraphy's and EMStudio's
-API_VERSION = "1.0.0"
+API_VERSION = "1.1.0"   # 1.1 (W14, MICRO-PL17): em.ext, em.plugins, document-saved
 
 vocab = Vocab()
 profiles = Profiles()
 extensions = Extensions()
+#: what the loaded plugins expose to the console (slot ``console@1``, W14)
+ext = plugins.Ext()
 
 
 class _App:
@@ -180,18 +182,24 @@ def help(lang: Optional[str] = None) -> str:                # noqa: A001
         + ("" if h.name != "none" else (" (nessuna applicazione)" if it else " (no application)")),
     ]
     commands = getattr(h, "commands", None)
-    if callable(commands):
-        try:
-            for c in commands():
-                lines.append(f"  · {c}")
-        except Exception:                            # noqa: BLE001 — help never fails
-            pass
+    try:
+        listed = list(commands()) if callable(commands) else []
+        if not listed:
+            # the plugins loaded in this process (W14): «plugin/command — label»
+            lang_ = "it" if it else "en"
+            listed = [f"{c.name} — {c.label_in(lang_)}" for c in plugins.commands()]
+        if listed:
+            lines.append("em.ext — " + ("i comandi dei plugin attivi:" if it else "the active plugins' commands:"))
+        for c in listed:
+            lines.append(f"  · {c}")
+    except Exception:                                # noqa: BLE001 — help never fails
+        pass
     text = "\n".join(lines)
     print(text)
     return text
 
 
-__all__ = ["API_VERSION", "EVENTS", "graph", "vocab", "profiles", "extensions", "app", "write",
+__all__ = ["API_VERSION", "EVENTS", "graph", "vocab", "profiles", "extensions", "ext", "plugins", "app", "write",
            "on", "off", "open", "use", "save", "help", "host", "events", "EmError", "NotAvailable",
            "Refused", "NodeNotFound", "AmbiguousNode", "ConceptNotFound", "GraphView", "NodeView",
            "EdgeView", "PropertyView", "Concept", "Transaction", "WriteResult"]
