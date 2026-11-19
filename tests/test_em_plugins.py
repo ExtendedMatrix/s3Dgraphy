@@ -116,6 +116,8 @@ def read(slots):
 
 
 def boom(slots):
+    if slots.get("said"):
+        raise em.EmError({"en": "the stack cannot be read", "it": "la pila non si legge"})
     raise RuntimeError("the plugin broke")
 
 
@@ -303,6 +305,20 @@ def test_the_four_refusals_and_the_handler(tmp_path):
     assert not r.ok and r.data["reason"] == "handler-failed" and "non è riuscito" in r.data["messages"]["it"]
     r = PL.invoke("ghost", "x", {})
     assert not r.ok and "nessun plugin" in r.data["messages"]["it"]
+
+
+def test_a_plugin_refusal_keeps_its_two_languages(tmp_path, monkeypatch):
+    # T-6 of PL20: an em.EmError said in EN and IT reaches the host whole,
+    # whatever the host's language when it was raised
+    monkeypatch.setenv("S3DGRAPHY_LANG", "it")
+    pid = install(write_plugin(tmp_path))["id"]
+    PL.sync("emstudio")
+    host()
+    r = PL.invoke(pid, "boom", {"said": True})
+    assert not r.ok and r.data["reason"] == "handler-failed"
+    assert r.data["messages"]["en"] == f"«{pid}/boom» did not succeed: the stack cannot be read"
+    assert r.data["messages"]["it"] == f"«{pid}/boom» non è riuscito: la pila non si legge"
+    assert r.message == r.data["messages"]["en"]
 
 
 def test_writes_as_the_plugin(tmp_path):

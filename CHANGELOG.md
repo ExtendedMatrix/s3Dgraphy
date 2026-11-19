@@ -5,6 +5,13 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Changed
+- **A plugin's refusal keeps its two languages** (MICRO-GEO10, row G9 of the
+  geophysics plan, T-6 of PL20, 19 November 2026). `em.plugins.invoke`: when
+  a command's handler raises an `em.EmError`, the `messages` of the result
+  carry the error's own EN and IT inside «… did not succeed: …» / «… non è
+  riuscito: …» (before, both sentences held `str(exc)`, in the host's
+  language only); `result.message` is the EN one. `em.API_VERSION`
+  unchanged. `tests/test_em_plugins.py` +1.
 - **`door.reader@2`: a folder, a claim, a panel** (MICRO-GEO09, row G8 of
   the geophysics plan, 19 November 2026). `s3dgraphy.extensions.slots`:
   `door.reader` goes to version 2 (a host of `@1` turns an `@2` entry off).

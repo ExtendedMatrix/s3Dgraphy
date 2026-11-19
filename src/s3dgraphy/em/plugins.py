@@ -59,6 +59,7 @@ from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple
 from ..contract import Descriptor, Registry, Result, Slot, invoke as contract_invoke
 from ..contract.connector import ConnectorDescriptor, current_versions
 from . import events
+from .errors import EmError
 from .messages import both
 from ..extensions.dev import SOURCE_DEV
 
@@ -875,9 +876,15 @@ def invoke(plugin_id: str, command_id: str, slots: Optional[Dict[str, Any]] = No
         en.data["messages"] = {"en": en.message, "it": it.message}
         return en
 
+    said: Dict[str, Dict[str, str]] = {}
+
     def handler(s: Dict[str, Any], a: Optional[str]) -> Result:
         with _as_caller(p, cmd):
-            value = fn(dict(s))                      # type: ignore[misc]
+            try:
+                value = fn(dict(s))                  # type: ignore[misc]
+            except EmError as exc:                   # its two languages, kept whole
+                said["messages"] = dict(exc.messages)
+                raise
         data: Dict[str, Any] = {}
         if isinstance(value, ExportFile):
             data["file"] = value.as_dict()
@@ -888,7 +895,14 @@ def invoke(plugin_id: str, command_id: str, slots: Optional[Dict[str, Any]] = No
     res = contract_invoke(descriptor_of(cmd, handler), slots, author, refusals=REFUSALS)
     if not res.ok and res.data.get("reason") == "handler-failed":
         err = res.data.get("error", "")
-        res.data["messages"] = {"en": res.message, "it": REFUSALS_IT.failed.format(name=cmd.name, error=err)}
+        own = said.get("messages")
+        if own:
+            en_err = own.get("en") or err
+            it_err = own.get("it") or en_err
+            res.message = REFUSALS.failed.format(name=cmd.name, error=en_err)
+            res.data["messages"] = {"en": res.message, "it": REFUSALS_IT.failed.format(name=cmd.name, error=it_err)}
+        else:
+            res.data["messages"] = {"en": res.message, "it": REFUSALS_IT.failed.format(name=cmd.name, error=err)}
     return res
 
 
