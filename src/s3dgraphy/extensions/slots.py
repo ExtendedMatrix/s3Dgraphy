@@ -23,6 +23,15 @@ release to the next. A command of a plugin says in ``in`` the slots it uses
   there is ``writes = false``, and a write is refused like a check's.
 * a slot with a version higher than the host's is the entry the host turns off
   (§14.7: the entry, not the plugin), said in the window.
+* ``door.reader@2`` — MICRO-GEO09 (row G8 of the geophysics plan, E.D. 19 Nov
+  2026): a reader of «Porta dentro…» that may take a FOLDER (``folders =
+  true``: a stack of slices is a folder, not a file) and CLAIM extensions the
+  host already knows (``claims = [".tif", …]``: never taken from the host,
+  offered as «Read as: …» beside the host's own reading); ``panel`` names a
+  panel of the same plugin where the person says what the files do not (the
+  door opens it with the path, instead of reading straight away). ``accept``
+  keeps its meaning (the extensions the host does not know: taken). A host of
+  ``door.reader@1`` turns a ``@2`` entry off (it would not know a folder).
 
 ``when`` — when a command of ``context.node@1`` is offered — is a small,
 closed grammar (no expression language: nothing to evaluate but this)::
@@ -47,7 +56,8 @@ PHASE1: Dict[str, int] = {
     "menu.file.export": 1,    # File ▸ Export ▸ … (the command returns a file)
     "export.narrative": 1,    # Narrative ▸ Export ▾ (the command returns a file)
     "context.node": 1,        # the context menu of a node / the selection (Matrix, Space)
-    "door.reader": 1,         # «Porta dentro…»: a reader of a kind of file (a proposal)
+    "door.reader": 2,         # «Porta dentro…»: a reader of a kind of file (a proposal);
+                              # @2 (MICRO-GEO09): folders, claims, a panel
     "check": 1,               # a read-only check that returns warnings
     "event": 1,               # listening to the events (ctx.on)
     "space.pick": 1,          # asking the user to place a point… (em.app.space.pick)
@@ -229,9 +239,7 @@ def check_commands(commands: Any) -> List[Tuple[str, str, Dict[str, Any]]]:
         if c.get("when") is not None and parse_when(c.get("when")) is None:
             out.append(("error", "code_command_when", dict(at, value=c.get("when"))))
         if "door.reader" in names:
-            acc = c.get("accept")
-            if not (isinstance(acc, list) and acc and all(isinstance(a, str) and a.startswith(".") for a in acc)):
-                out.append(("error", "code_reader_accept", at))
+            out.extend(_check_reader(c, at, where))
         if "check" in names and c.get("writes") is True:
             out.append(("error", "code_check_writes", at))
         # MICRO-PL25 (X5) · the slots of phase 2
@@ -265,6 +273,53 @@ def check_commands(commands: Any) -> List[Tuple[str, str, Dict[str, Any]]]:
     return out
 
 
+def _exts_ok(v: Any) -> bool:
+    return isinstance(v, list) and all(isinstance(a, str) and len(a) > 1 and a.startswith(".") for a in v)
+
+
+def reader_version(where: Sequence[Any]) -> int:
+    """The version of ``door.reader`` a command's ``in`` asks (0: none)."""
+    for w in where or []:
+        p = parse_slot(w)
+        if p and p[0] == "door.reader":
+            return p[1]
+    return 0
+
+
+def _check_reader(c: Dict[str, Any], at: Dict[str, Any], where: Sequence[Any]) -> List[Tuple[str, str, Dict[str, Any]]]:
+    """A reader of «Porta dentro…»: ``@1`` takes files by ``accept``; ``@2``
+    (MICRO-GEO09) also ``claims`` (offered, never taken), ``folders`` and a
+    ``panel`` — at least one of accept, claims, folders."""
+    out: List[Tuple[str, str, Dict[str, Any]]] = []
+    version = reader_version(where)
+    acc, claims, folders = c.get("accept"), c.get("claims"), c.get("folders")
+    if version < 2:
+        if not (_exts_ok(acc) and acc):
+            out.append(("error", "code_reader_accept", at))
+        for k in ("claims", "folders", "panel"):
+            if c.get(k) is not None:
+                out.append(("warning", "code_reader_v2_field", dict(at, field=k)))
+        return out
+    if acc is not None and not _exts_ok(acc):
+        out.append(("error", "code_reader_accept", at))
+    if claims is not None and not _exts_ok(claims):
+        out.append(("error", "code_reader_claims", at))
+    if folders is not None and not isinstance(folders, bool):
+        out.append(("error", "code_reader_folders", at))
+    if not (acc or claims or folders is True):
+        out.append(("error", "code_reader_nothing", at))
+    both_ = sorted(set(a.lower() for a in (acc if _exts_ok(acc) else []))
+                   & set(a.lower() for a in (claims if _exts_ok(claims) else [])))
+    if both_:
+        out.append(("warning", "code_reader_both", dict(at, value=", ".join(both_))))
+    if c.get("panel") is not None and not (isinstance(c.get("panel"), str) and c["panel"].strip()):
+        out.append(("error", "code_reader_panel", dict(at, value=c.get("panel"))))
+    if not any(isinstance(s, dict) and str(s.get("kind") or "string") == "path" for s in (c.get("slots") or [])
+               if isinstance(c.get("slots"), list)):
+        out.append(("warning", "code_reader_path", at))
+    return out
+
+
 def _icon_ok(icon: Any) -> bool:
     """A tool's icon is TEXT, one or two characters (a glyph of the bar), never
     markup: the host draws it as text (SPEC-plugin §14.8)."""
@@ -288,10 +343,16 @@ def check_panels(panels: Any, commands: Any) -> List[Tuple[str, str, Dict[str, A
     ``options``; ``value`` and ``button`` name a command of the plugin — a
     ``value``'s only reads."""
     out: List[Tuple[str, str, Dict[str, Any]]] = []
+    # MICRO-GEO09 · a reader's panel (door.reader@2) is a panel of this plugin
+    pids = {str(p.get("id")) for p in (panels if isinstance(panels, list) else []) if isinstance(p, dict)}
+    for c in (commands if isinstance(commands, list) else []):
+        if isinstance(c, dict) and isinstance(c.get("panel"), str) and c["panel"].strip() \
+                and c["panel"] not in pids:
+            out.append(("error", "code_reader_panel", {"id": str(c.get("id") or ""), "value": c["panel"]}))
     if panels is None:
         return out
     if not isinstance(panels, list):
-        return [("error", "code_panels_shape", {})]
+        return out + [("error", "code_panels_shape", {})]
     cmds = {str(c.get("id")): c for c in (commands or []) if isinstance(c, dict)} if isinstance(commands, list) else {}
     seen = set()
     for i, p in enumerate(panels, 1):
@@ -351,4 +412,4 @@ def check_panels(panels: Any, commands: Any) -> List[Tuple[str, str, Dict[str, A
 __all__ = ["PHASE1", "PHASE2", "DRAWN2", "COMMAND_SLOTS", "FILE_SLOTS", "SLOT_KINDS", "SELECTION_WORDS",
            "READ_ONLY_SLOTS", "TABULAR_VIEWS", "TOOL_PRIMITIVES", "PANEL_FIELD_KINDS", "PANEL_PLACES",
            "PANEL_FIELDS_MAX", "parse_slot", "slot_status", "parse_when", "when_holds", "check_commands",
-           "check_panels", "default_writes"]
+           "check_panels", "default_writes", "reader_version"]

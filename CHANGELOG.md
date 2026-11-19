@@ -5,6 +5,21 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Changed
+- **`door.reader@2`: a folder, a claim, a panel** (MICRO-GEO09, row G8 of
+  the geophysics plan, 19 November 2026). `s3dgraphy.extensions.slots`:
+  `door.reader` goes to version 2 (a host of `@1` turns an `@2` entry off).
+  A reader may say `folders = true` (it reads a FOLDER: a stack of slices),
+  `claims = [".tif", …]` (extensions the host already reads: never taken,
+  offered as «Read as: …» beside the host's own reading) and `panel = "<id>"`
+  (a panel of the same plugin the door opens with the path, where the person
+  says what the files do not, instead of reading straight away); `accept`
+  keeps its meaning. `reader_version`; 7 problem codes EN + IT
+  (`code_reader_claims`, `_folders`, `_nothing`, `_both`, `_panel`, `_path`,
+  `_v2_field`). `em.plugins`: `CommandDecl.claims/folders/panel/path_slot`
+  (in `as_dict`, so the page has them), `readers_for(path, is_dir=None, *,
+  claimed=False)` — a folder → the readers of folders; a file → those that
+  accept it, or with `claimed=True` those that only claim it. `em.API_VERSION`
+  unchanged (the slot's version moves, not the API). No datamodel change.
 - **The slots of phase 2** (MICRO-PL25, row X5 of the extensions plan,
   19 November 2026). `s3dgraphy.extensions.slots`: `DRAWN2` — the five slots
   of phase 2 a host now draws are `ok`: `inspector.section@1` (a section of

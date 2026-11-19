@@ -321,3 +321,114 @@ def test_a_panel_button_takes_the_fields(tmp_path):
     host()
     r = PL.invoke(pid, "mark", {"id": "US2", "tol": 0.25}, author=ORCID)
     assert r.ok and em.graph.node("US2").description == "marked 0.25"
+
+
+# ── MICRO-GEO09 · door.reader@2: folders, claims, a panel ───────────────────
+
+READERS = '''
+  [[code.commands]]
+  id = "stack"
+  label = { it = "Pila", en = "Stack" }
+  in = ["door.reader@2"]
+  accept = [".asc"]
+  claims = [".tif", ".JPG"]
+  folders = true
+  panel = "opts"
+  writes = true
+  slots = [{ name = "folder", kind = "path" }, { name = "method", kind = "string", required = false }]
+  [[code.commands]]
+  id = "old"
+  label = "Old"
+  in = ["door.reader@1"]
+  accept = [".units"]
+  slots = [{ name = "path", kind = "path" }]
+  [[code.panels]]
+  id = "opts"
+  label = { it = "Opzioni", en = "Options" }
+  place = "window"
+    [[code.panels.fields]]
+    kind = "text"
+    name = "folder"
+    [[code.panels.fields]]
+    kind = "button"
+    command = "stack"
+'''
+
+READERS_MODULE = '''
+from s3dgraphy import em
+
+
+def stack(slots):
+    with em.write("Stack") as tx:
+        tx.update("US1", "description", "stack " + slots["folder"] + " " + str(slots.get("method", "")))
+    return slots["folder"]
+
+
+def setup(ctx):
+    ctx.command("stack", stack)
+    ctx.command("old", lambda slots: 0)
+
+
+plugin = type("Plugin", (), {"setup": staticmethod(setup)})
+'''
+
+
+def test_door_reader_2_is_known_and_said():
+    assert S.slot_status("door.reader@2") == "ok" and S.slot_status("door.reader@1") == "ok"
+    assert S.slot_status("door.reader@3") == "newer"
+    assert S.reader_version(["menu.tools@1", "door.reader@2"]) == 2 and S.reader_version([]) == 0
+    ok = S.check_commands([{"id": "r", "label": "R", "in": ["door.reader@2"], "folders": True,
+                            "slots": [{"name": "folder", "kind": "path"}]}])
+    assert ok == []
+    bad = S.check_commands([
+        {"id": "a", "label": "A", "in": ["door.reader@2"]},
+        {"id": "b", "label": "B", "in": ["door.reader@2"], "claims": ["tif"], "folders": "yes"},
+        {"id": "c", "label": "C", "in": ["door.reader@2"], "accept": [".tif"], "claims": [".TIF"],
+         "slots": [{"name": "p", "kind": "path"}]},
+        {"id": "d", "label": "D", "in": ["door.reader@1"], "accept": [".x"], "folders": True}])
+    got = {(lv, code, p.get("id")) for lv, code, p in bad}
+    assert ("error", "code_reader_nothing", "a") in got and ("warning", "code_reader_path", "a") in got
+    assert ("error", "code_reader_claims", "b") in got and ("error", "code_reader_folders", "b") in got
+    assert ("warning", "code_reader_both", "c") in got
+    assert ("warning", "code_reader_v2_field", "d") in got
+    # a reader's panel is a panel of the plugin
+    cmds = [{"id": "r", "label": "R", "in": ["door.reader@2"], "folders": True, "panel": "nowhere"}]
+    assert ("error", "code_reader_panel", {"id": "r", "value": "nowhere"}) in S.check_panels([], cmds)
+    assert S.check_panels([{"id": "nowhere", "label": "N"}], cmds) == []
+
+
+def test_the_validator_says_door_reader_2_in_two_languages(tmp_path):
+    bad = READERS.replace('panel = "opts"', 'panel = "ghost"').replace('folders = true', 'folders = 1')
+    r = X.validate_archive(write_plugin(tmp_path, commands=bad, body=READERS_MODULE))
+    assert {"code_reader_panel", "code_reader_folders"} <= set(r.codes("error"))
+    it = {p.code: p.text("it") for p in r.problems}
+    assert "non è un pannello" in it["code_reader_panel"] and "true o false" in it["code_reader_folders"]
+    good = X.validate_archive(write_plugin(tmp_path / "g", commands=READERS, body=READERS_MODULE))
+    assert not good.errors, [p.text("en") for p in good.errors]
+
+
+def test_readers_for_a_folder_a_claim_and_a_file(tmp_path):
+    pid = install(write_plugin(tmp_path, commands=READERS, body=READERS_MODULE))["id"]
+    got = PL.sync("emstudio")
+    assert got[0].state == "loaded", got[0].problems
+    c = PL.get(pid).commands
+    assert c["stack"].claims == [".tif", ".jpg"] and c["stack"].folders is True
+    assert c["stack"].panel == f"{pid}/opts" and c["stack"].path_slot == "folder"
+    assert c["old"].claims == [] and c["old"].folders is False and c["old"].panel == ""
+    d = c["stack"].as_dict()
+    assert d["claims"] == [".tif", ".jpg"] and d["folders"] is True and d["panel"] == f"{pid}/opts"
+    stack = tmp_path / "Sector 1"
+    stack.mkdir()
+    (stack / "mean.TIF").write_bytes(b"II*\0")
+    assert [x.id for x in PL.readers_for(str(stack))] == ["stack"]                # a folder (asked of the disk)
+    assert [x.id for x in PL.readers_for("/no/where", is_dir=True)] == ["stack"]
+    assert PL.readers_for(str(stack / "mean.TIF")) == []                          # claimed, not taken
+    assert [x.id for x in PL.readers_for(str(stack / "mean.TIF"), claimed=True)] == ["stack"]
+    assert [x.id for x in PL.readers_for("/x/a.ASC")] == ["stack"]                 # accepted: taken
+    assert PL.readers_for("/x/a.ASC", claimed=True) == []
+    assert [x.id for x in PL.readers_for("/x/list.units")] == ["old"]
+    # the reader writes as the plugin, its path slot filled with the folder
+    h = host()
+    r = PL.invoke(pid, "stack", {"folder": str(stack), "method": "ert"}, author=ORCID)
+    assert r.ok, r.message
+    assert em.graph.node("US1").description == f"stack {stack} ert" and len(h.steps) == 1

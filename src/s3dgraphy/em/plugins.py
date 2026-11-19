@@ -94,19 +94,34 @@ class CommandDecl:
     buttons: List[str] = field(default_factory=list)
     #: a column's sheet of the Tabular
     view: str = ""
+    #: MICRO-GEO09 · door.reader@2: extensions offered as «Read as» (never
+    #: taken), whether it reads a folder, the panel the door opens instead
+    claims: List[str] = field(default_factory=list)
+    folders: bool = False
+    panel: str = ""
 
     @property
     def name(self) -> str:
         return f"{self.plugin}/{self.id}"
 
+    @property
+    def path_slot(self) -> str:
+        """The name of the slot a reader's file or folder fills (the first of kind path)."""
+        return next((str(s["name"]) for s in self.slots if s.get("kind") == "path"), "path")
+
     def label_in(self, lang: str = "en") -> str:
         return self.label.get(lang) or self.label.get("en") or next(iter(self.label.values()), self.id)
 
     def as_dict(self) -> Dict[str, Any]:
-        return {"plugin": self.plugin, "id": self.id, "name": self.name, "label": dict(self.label),
-                "writes": self.writes, "slots": [dict(s) for s in self.slots], "in": list(self.where),
-                "off": [dict(o) for o in self.off], "when": self.when, "accept": list(self.accept),
-                "primitive": self.primitive, "icon": self.icon, "buttons": list(self.buttons), "view": self.view}
+        out = {"plugin": self.plugin, "id": self.id, "name": self.name, "label": dict(self.label),
+               "writes": self.writes, "slots": [dict(s) for s in self.slots], "in": list(self.where),
+               "off": [dict(o) for o in self.off], "when": self.when, "accept": list(self.accept),
+               "primitive": self.primitive, "icon": self.icon, "buttons": list(self.buttons), "view": self.view}
+        # MICRO-GEO09 · a reader of door.reader@2 says what it reads besides accept
+        # (only when it does: the other commands' description is as before)
+        if self.claims or self.folders or self.panel:
+            out.update({"claims": list(self.claims), "folders": self.folders, "panel": self.panel})
+        return out
 
 
 @dataclass
@@ -227,8 +242,21 @@ def read_commands(pid: str, code: Dict[str, Any]) -> List[CommandDecl]:
             primitive=str(c.get("primitive") or "") if "space.tool" in names else "", icon=str(icon or ""),
             buttons=[str(b) for b in (c.get("buttons") or []) if isinstance(b, str)]
             if isinstance(c.get("buttons"), list) else [],
-            view=view if "tabular.column" in names else ""))
+            view=view if "tabular.column" in names else "",
+            # MICRO-GEO09 · door.reader@2 (an @1 reader never says them: they are not read)
+            **(_reader_v2(c, pid) if any(w.startswith("door.reader@") and w != "door.reader@1" for w in where)
+               else {})))
     return out
+
+
+def _reader_v2(c: Dict[str, Any], pid: str) -> Dict[str, Any]:
+    claims = c.get("claims") if isinstance(c.get("claims"), list) else []
+    accept = {str(a).lower() for a in (c.get("accept") or []) if isinstance(a, str)}
+    panel = c.get("panel") if isinstance(c.get("panel"), str) else ""
+    return {"claims": [str(a).lower() for a in claims if isinstance(a, str) and a.startswith(".")
+                       and str(a).lower() not in accept],
+            "folders": c.get("folders") is True,
+            "panel": f"{pid}/{panel.strip()}" if panel.strip() else ""}
 
 
 # ── a plugin, loaded ────────────────────────────────────────────────────────
@@ -1029,10 +1057,25 @@ def compute(items: List[Dict[str, Any]], *, lang: str = "en", author: Optional[s
     return out
 
 
-def readers_for(path: str) -> List[CommandDecl]:
-    """The ``door.reader@1`` commands that accept this file (by its extension)."""
-    name = Path(str(path)).name.lower()
-    return [c for c in commands("door.reader") if any(name.endswith(a) for a in c.accept)]
+def readers_for(path: str, is_dir: Optional[bool] = None, *, claimed: bool = False) -> List[CommandDecl]:
+    """The readers of «Porta dentro…» (``door.reader``) for this file or folder.
+
+    A file: those that ACCEPT it by its extension (taken from the host); with
+    ``claimed=True`` those that only CLAIM it (``door.reader@2``: offered as
+    «Read as: …» beside the host's own reading, never taken). A folder
+    (``is_dir``; None = ask the disk): the ``@2`` readers with ``folders =
+    true``."""
+    p = Path(str(path))
+    if is_dir is None:
+        is_dir = p.is_dir()
+    readers = commands("door.reader")
+    if is_dir:
+        return [c for c in readers if c.folders]
+    name = p.name.lower()
+    if claimed:
+        return [c for c in readers if any(name.endswith(a) for a in c.claims)
+                and not any(name.endswith(a) for a in c.accept)]
+    return [c for c in readers if any(name.endswith(a) for a in c.accept)]
 
 
 # ── the console (console@1) ─────────────────────────────────────────────────
