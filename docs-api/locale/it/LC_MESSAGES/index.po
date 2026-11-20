@@ -26,6 +26,15 @@ msgstr "*Il Python di Extended Matrix: una sola libreria,* ``em``, *in EMStudio,
 msgid "This is the reference of ``em`` |api| (s3dgraphy |s3d|). The manual of EMStudio says how to use the application; this site says what Python can do with a study: read its graph, write into it as one step of undo, call the application's commands, and extend it with plugins."
 msgstr "Questo è il riferimento di ``em`` |api| (s3dgraphy |s3d|). Il manuale di EMStudio dice come usare l'applicazione; questo sito dice che cosa Python può fare con uno studio: leggerne il grafo, scriverci come un solo passo di annullamento, chiamare i comandi dell'applicazione ed estenderla con i plugin."
 
+msgid "`The EMStudio manual <https://docs.extendedmatrix.org/projects/emstudio-doc/en/1.6/>`__ — how to use the application, the Python console included."
+msgstr "`Il manuale di EMStudio <https://docs.extendedmatrix.org/projects/emstudio-doc/it/1.6/>`__ — come si usa l'applicazione, console Python compresa."
+
+msgid "`Extending EMStudio <https://docs.extendedmatrix.org/projects/emstudio-doc/en/1.6/extending/index.html>`__ — the guide for whoever builds a package: data first, then commands in Python through ``em``."
+msgstr "`Estendere EMStudio <https://docs.extendedmatrix.org/projects/emstudio-doc/it/1.6/extending/index.html>`__ — la guida per chi costruisce un pacchetto: prima i dati, poi i comandi in Python attraverso ``em``."
+
+msgid "`docs.extendedmatrix.org <https://docs.extendedmatrix.org>`__ — all the documentation of the Extended Matrix."
+msgstr "`docs.extendedmatrix.org <https://docs.extendedmatrix.org>`__ — tutta la documentazione dell'Extended Matrix."
+
 msgid "Documentation"
 msgstr "Documentazione"
 

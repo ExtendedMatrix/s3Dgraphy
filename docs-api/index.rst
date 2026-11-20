@@ -17,6 +17,18 @@ application's commands, and extend it with plugins.
    for su in em.graph.nodes(type="US"):
        print(su.name, su.description)
 
+.. seealso::
+
+   - `The EMStudio manual
+     <https://docs.extendedmatrix.org/projects/emstudio-doc/en/1.6/>`__ — how
+     to use the application, the Python console included.
+   - `Extending EMStudio
+     <https://docs.extendedmatrix.org/projects/emstudio-doc/en/1.6/extending/index.html>`__
+     — the guide for whoever builds a package: data first, then commands in
+     Python through ``em``.
+   - `docs.extendedmatrix.org <https://docs.extendedmatrix.org>`__ — all the
+     documentation of the Extended Matrix.
+
 Documentation
 -------------
 

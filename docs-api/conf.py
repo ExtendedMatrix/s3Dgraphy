@@ -91,4 +91,10 @@ html_css_files = ["brand/stratigraph-theme.css", "brand/skins.css", "brand/sphin
     ["rtl.css"] if rtl else [])
 html_js_files = ["brand/brand-theme-toggle.js"]
 html_theme_options = {"navigation_depth": 3, "collapse_navigation": False}
+# MICRO-TIL00 · the site is a sub-project of docs.extendedmatrix.org: every page
+# names its canonical address there (Read the Docs gives the version's own;
+# a local build points at «latest»).
+html_baseurl = os.environ.get(
+    "READTHEDOCS_CANONICAL_URL",
+    "https://docs.extendedmatrix.org/projects/emstudio-python-api/en/latest/")
 suppress_warnings = ["epub.unknown_project_files"]
