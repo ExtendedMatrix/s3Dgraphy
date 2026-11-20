@@ -58,6 +58,7 @@ import uuid
 from typing import Any, Dict, List, Optional, Sequence
 
 from .files import (EDGE_REVISION_OF, _data, _is_resource, _locator, _node,
+                    edges_from, edges_to,
                     add_resource, resource_files, revisions_of)
 
 #: The computed level of a version: ``lod0`` (the first workable version), ``lod1``…
@@ -116,14 +117,11 @@ def _level_key(level: Optional[str]):
 def _lod_process_of(graph, res_id: str):
     """The ``lod_generation`` step that made ``res_id``, with its input, or
     ``(None, None)``."""
-    for e in graph.edges:
-        if e.edge_type != EDGE_HAD_OUTPUT or e.edge_target != res_id:
-            continue
+    for e in edges_to(graph, EDGE_HAD_OUTPUT, res_id):
         proc = _node(graph, e.edge_source)
         if proc is None or _data(proc).get("dtc_kind") != DTC_KIND:
             continue
-        inputs = [x.edge_target for x in graph.edges
-                  if x.edge_type == EDGE_HAD_INPUT and x.edge_source == proc.node_id]
+        inputs = [x.edge_target for x in edges_from(graph, EDGE_HAD_INPUT, proc.node_id)]
         res_inputs = [i for i in inputs
                       if _node(graph, i) is not None and _is_resource(_node(graph, i))]
         return proc, (sorted(res_inputs)[0] if res_inputs else None)
@@ -292,18 +290,14 @@ def versions_of(graph, asset_id: str) -> List[Dict[str, Any]]:
     asset = asset_of(graph, asset_id)
     kids: List[Dict[str, Any]] = []
     master_levels = set()
-    for e in graph.edges:
-        if e.edge_type != EDGE_HAD_INPUT or e.edge_target != asset:
-            continue
+    for e in edges_to(graph, EDGE_HAD_INPUT, asset):
         proc = _node(graph, e.edge_source)
         if proc is None or _data(proc).get("dtc_kind") != DTC_KIND:
             continue
         params = _data(proc).get("parameters") or {}
         if params.get("source_level"):
             master_levels.add(str(params["source_level"]))
-        for o in graph.edges:
-            if o.edge_type != EDGE_HAD_OUTPUT or o.edge_source != proc.node_id:
-                continue
+        for o in edges_from(graph, EDGE_HAD_OUTPUT, proc.node_id):
             out = _node(graph, o.edge_target)
             if out is None or not _is_resource(out):
                 continue
@@ -337,16 +331,12 @@ def _descendants(graph, res_id: str) -> List[Dict[str, Any]]:
     """The versions made FROM ``res_id`` (a LOD1 from LOD0…), recursively."""
     out: List[Dict[str, Any]] = []
     for rid in revisions_of_safe(graph, res_id):
-        for e in graph.edges:
-            if e.edge_type != EDGE_HAD_INPUT or e.edge_target != rid:
-                continue
+        for e in edges_to(graph, EDGE_HAD_INPUT, rid):
             proc = _node(graph, e.edge_source)
             if proc is None or _data(proc).get("dtc_kind") != DTC_KIND:
                 continue
             params = _data(proc).get("parameters") or {}
-            for o in graph.edges:
-                if o.edge_type != EDGE_HAD_OUTPUT or o.edge_source != proc.node_id:
-                    continue
+            for o in edges_from(graph, EDGE_HAD_OUTPUT, proc.node_id):
                 child = _node(graph, o.edge_target)
                 if child is None or not _is_resource(child):
                     continue

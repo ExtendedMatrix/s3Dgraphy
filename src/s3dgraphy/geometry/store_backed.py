@@ -113,6 +113,38 @@ def _alive_edges(graph: Any) -> List[Any]:
     return [e for e in getattr(graph, "edges", []) or [] if _alive(e)]
 
 
+class _AliveView:
+    """The living part of a graph, read ONCE for one call (MICRO-TIL02).
+
+    ``_binds`` used to walk every living edge for every record, and decide
+    every time whether each was a tombstone: on TempluMare v11 that was 1293
+    walks of 4738 edges, 6.1 M tombstone checks, 7 s of the bridge with the
+    GIL held. Here each edge is judged once and filed under the nodes it
+    touches, in the graph's order, so a walk of "the edges of this node" sees
+    the same edges in the same order as the full walk did."""
+
+    __slots__ = ("nodes", "edges", "by_id", "touching", "to_by_type")
+
+    def __init__(self, graph: Any) -> None:
+        self.nodes = _alive_nodes(graph)
+        self.edges = _alive_edges(graph)
+        self.by_id = {n.node_id: n for n in self.nodes}
+        self.touching: Dict[Any, List[Any]] = {}
+        self.to_by_type: Dict[Any, List[Any]] = {}
+        for edge in self.edges:
+            source = getattr(edge, "edge_source", None)
+            target = getattr(edge, "edge_target", None)
+            self.touching.setdefault(source, []).append(edge)
+            if target != source:
+                self.touching.setdefault(target, []).append(edge)
+            key = (str(getattr(edge, "edge_type", "") or ""), str(target))
+            self.to_by_type.setdefault(key, []).append(edge)
+
+    def edges_to(self, edge_type: str, target: Any) -> List[Any]:
+        """Living edges of ``edge_type`` whose target reads as ``target``."""
+        return self.to_by_type.get((edge_type, str(target)), [])
+
+
 def is_geometry(node: Any) -> bool:
     """Is this resource three-dimensional, as RECORDED?
 
@@ -151,13 +183,16 @@ def is_resident(node: Any) -> bool:
     return False
 
 
-def _binds(graph: Any, node_id: str, by_id: Dict[str, Any]) -> List[Dict[str, str]]:
+def _binds(graph: Any, node_id: str, by_id: Dict[str, Any],
+           view: Optional[_AliveView] = None) -> List[Dict[str, str]]:
     """What this geometry is FOR: the epochs it depicts, the unit it proxies, the
     document it illustrates. Deduplicated, in edge order, each with its type so a
-    consumer can tell an epoch from a unit without a second lookup."""
+    consumer can tell an epoch from a unit without a second lookup. ``view``,
+    when the caller has one, spares the walk of every edge (same answer)."""
     out: List[Dict[str, str]] = []
     seen = set()
-    for edge in _alive_edges(graph):
+    for edge in (view.touching.get(node_id, []) if view is not None
+                 else _alive_edges(graph)):
         etype = str(getattr(edge, "edge_type", "") or "")
         direction = _BIND_EDGES.get(etype)
         if not direction:
@@ -188,7 +223,8 @@ def _binds(graph: Any, node_id: str, by_id: Dict[str, Any]) -> List[Dict[str, st
     for bind in list(out):
         if bind["node_type"] != "property" or bind["via"] != "has_semantic_shape":
             continue
-        for edge in _alive_edges(graph):
+        for edge in (view.edges_to("has_property", bind["id"]) if view is not None
+                     else _alive_edges(graph)):
             if str(getattr(edge, "edge_type", "")) != "has_property" \
                     or getattr(edge, "edge_target", None) != bind["id"]:
                 continue
@@ -244,8 +280,15 @@ def store_backed_geometry(graph: Any) -> List[Dict[str, Any]]:
     Sorted by (kind, name, node_id): two runs read the same, which is what makes
     "materialise" idempotent from the caller's side as well.
     """
-    by_id = {n.node_id: n for n in _alive_nodes(graph)}
-    resources = [n for n in _alive_nodes(graph)
+    from ..resources.files import edge_index
+
+    with edge_index(graph):
+        return _store_backed_geometry(graph, _AliveView(graph))
+
+
+def _store_backed_geometry(graph: Any, view: _AliveView) -> List[Dict[str, Any]]:
+    by_id = view.by_id
+    resources = [n for n in view.nodes
                  if getattr(n, "node_type", "") == "resource"
                  and is_resident(n) and is_geometry(n)]
     records: List[Dict[str, Any]] = []
@@ -253,7 +296,7 @@ def store_backed_geometry(graph: Any) -> List[Dict[str, Any]]:
         data = _data(resource)
         facets = [
             by_id[str(getattr(e, "edge_source", ""))]
-            for e in _alive_edges(graph)
+            for e in view.edges_to(EDGE_HAS_LINKED, resource.node_id)
             if str(getattr(e, "edge_type", "")) == EDGE_HAS_LINKED
             and str(getattr(e, "edge_target", "")) == resource.node_id
             and str(getattr(e, "edge_source", "")) in by_id
@@ -265,7 +308,8 @@ def store_backed_geometry(graph: Any) -> List[Dict[str, Any]]:
         #: it is listed where the asset goes, with its level beside it
         version = _version_of(graph, resource.node_id)
         if not facets and version and version.get("asset_id") != resource.node_id:
-            facets = [by_id[str(e.edge_source)] for e in _alive_edges(graph)
+            facets = [by_id[str(e.edge_source)]
+                      for e in view.edges_to(EDGE_HAS_LINKED, version["asset_id"])
                       if str(getattr(e, "edge_type", "")) == EDGE_HAS_LINKED
                       and str(getattr(e, "edge_target", "")) == version["asset_id"]
                       and str(getattr(e, "edge_source", "")) in by_id
@@ -282,7 +326,7 @@ def store_backed_geometry(graph: Any) -> List[Dict[str, Any]]:
                 "resource_id": resource.node_id,
                 "checksum": str(data.get("checksum") or ""),
                 "kind": _KIND.get(node_type, node_type or "resource"),
-                "bind": _binds(graph, carrier.node_id, by_id),
+                "bind": _binds(graph, carrier.node_id, by_id, view),
                 "residency": "resident",
                 "name": str(getattr(carrier, "name", "") or resource.name or ""),
                 "media_type": str(data.get("media_type") or ""),
@@ -296,9 +340,13 @@ def geometry_summary(graph: Any) -> Dict[str, Any]:
     """What a panel says before anybody presses anything: how much is fetchable,
     and how much the graph describes that is NOT (so the number on screen is not
     silently the smaller half of the truth)."""
-    fetchable = store_backed_geometry(graph)
+    from ..resources.files import edge_index
+
+    with edge_index(graph):
+        view = _AliveView(graph)
+        fetchable = _store_backed_geometry(graph, view)
     elsewhere: List[Dict[str, Any]] = []
-    for node in _alive_nodes(graph):
+    for node in view.nodes:
         if getattr(node, "node_type", "") != "resource" or not is_geometry(node):
             continue
         if is_resident(node):

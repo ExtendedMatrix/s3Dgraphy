@@ -49,9 +49,11 @@ read the chain.
 
 from __future__ import annotations
 
+import contextvars
 import posixpath
 import uuid
-from typing import Any, Dict, Iterable, List, Optional, Sequence
+from contextlib import contextmanager
+from typing import Any, Dict, Iterable, Iterator, List, Optional, Sequence
 
 EDGE_HAS_FILE = "has_file"
 EDGE_DERIVED_FROM = "dtc_derived_from"
@@ -83,6 +85,91 @@ _MEMBER_FACTS = ("media_role", "taken_at", "camera_label", "sensor_label",
                  "enabled", "aligned", "missing")
 
 
+# ── one index of the edges, for the length of one read (MICRO-TIL02) ───────
+#
+# The readers of this module and of :mod:`.versions` ask the same questions
+# over and over — «the edges of type T leaving X», «the revisions of R» — and
+# each answered by walking ``graph.edges`` again. Asked once that is nothing;
+# asked by ``geometry_summary`` for every resident model it was quadratic
+# (TempluMare v11: 9053 walks of 4738 edges). Inside :func:`edge_index` the
+# answers come from maps built once, in the order of ``graph.edges``, so they
+# are the same answers. Outside it nothing changes. The index is the graph's
+# only while the graph has the edges it was built on: an edge added or removed
+# during the read (a count that no longer matches) sends every question back
+# to the walk.
+
+
+class _EdgeIndex:
+    __slots__ = ("graph", "count", "by_source", "by_target", "older", "newer")
+
+    def __init__(self, graph) -> None:
+        self.graph = graph
+        edges = list(getattr(graph, "edges", None) or [])
+        self.count = len(edges)
+        self.by_source: Dict[Any, List[Any]] = {}
+        self.by_target: Dict[Any, List[Any]] = {}
+        self.older: Dict[Any, set] = {}
+        self.newer: Dict[Any, set] = {}
+        for e in edges:
+            etype = getattr(e, "edge_type", None)
+            self.by_source.setdefault((etype, getattr(e, "edge_source", None)), []).append(e)
+            self.by_target.setdefault((etype, getattr(e, "edge_target", None)), []).append(e)
+            if etype == EDGE_REVISION_OF:
+                self.older.setdefault(e.edge_source, set()).add(e.edge_target)
+                self.newer.setdefault(e.edge_target, set()).add(e.edge_source)
+
+
+_EDGE_INDEX: "contextvars.ContextVar[Optional[_EdgeIndex]]" = \
+    contextvars.ContextVar("s3d_edge_index", default=None)
+
+
+@contextmanager
+def edge_index(graph) -> Iterator[None]:
+    """Read ``graph`` with its edges indexed once (see above). Nested calls on
+    the same graph keep the index already built; the graph must not change
+    inside — and if it does, the readers notice and walk."""
+    current = _EDGE_INDEX.get()
+    if current is not None and current.graph is graph and _live(current):
+        yield
+        return
+    token = _EDGE_INDEX.set(_EdgeIndex(graph))
+    try:
+        yield
+    finally:
+        _EDGE_INDEX.reset(token)
+
+
+def _live(index: _EdgeIndex) -> bool:
+    try:
+        return len(index.graph.edges) == index.count
+    except TypeError:      # pragma: no cover — edges without a length
+        return False
+
+
+def _indexed(graph) -> Optional[_EdgeIndex]:
+    """The index of ``graph`` when one is open for it and still true."""
+    index = _EDGE_INDEX.get()
+    if index is None or index.graph is not graph or not _live(index):
+        return None
+    return index
+
+
+def edges_from(graph, edge_type: str, source) -> List[Any]:
+    """The edges of ``edge_type`` leaving ``source``, in the graph's order."""
+    index = _indexed(graph)
+    if index is not None:
+        return list(index.by_source.get((edge_type, source), ()))
+    return [e for e in graph.edges if e.edge_type == edge_type and e.edge_source == source]
+
+
+def edges_to(graph, edge_type: str, target) -> List[Any]:
+    """The edges of ``edge_type`` reaching ``target``, in the graph's order."""
+    index = _indexed(graph)
+    if index is not None:
+        return list(index.by_target.get((edge_type, target), ()))
+    return [e for e in graph.edges if e.edge_type == edge_type and e.edge_target == target]
+
+
 def _node(graph, node_id):
     return graph.find_node_by_id(node_id) if graph is not None else None
 
@@ -100,8 +187,7 @@ def _is_resource(node) -> bool:
 
 
 def _file_edges(graph, res_id) -> List[Any]:
-    return [e for e in graph.edges
-            if e.edge_type == EDGE_HAS_FILE and e.edge_source == res_id]
+    return edges_from(graph, EDGE_HAS_FILE, res_id)
 
 
 def _leaf(url: str) -> str:
@@ -1010,11 +1096,15 @@ def revisions_of(graph, res_id: str) -> List[str]:
     start = _node(graph, res_id)
     if start is None or not _is_resource(start):
         raise ValueError(f"{res_id!r} is not a resource of this graph")
-    newer, older = {}, {}
-    for e in graph.edges:
-        if e.edge_type == EDGE_REVISION_OF:
-            older.setdefault(e.edge_source, set()).add(e.edge_target)
-            newer.setdefault(e.edge_target, set()).add(e.edge_source)
+    index = _indexed(graph)
+    if index is not None:
+        newer, older = index.newer, index.older
+    else:
+        newer, older = {}, {}
+        for e in graph.edges:
+            if e.edge_type == EDGE_REVISION_OF:
+                older.setdefault(e.edge_source, set()).add(e.edge_target)
+                newer.setdefault(e.edge_target, set()).add(e.edge_source)
     chain, seen = [res_id], {res_id}
     for steps, before in ((older, True), (newer, False)):
         cur = res_id
