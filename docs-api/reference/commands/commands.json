@@ -1,6 +1,6 @@
 {
   "generated_from": {
-    "emstudio_sha": "8b211e8",
+    "emstudio_sha": "9274372",
     "emstudio_read": "HEAD",
     "em_api_version": "1.2.0"
   },
@@ -49,19 +49,19 @@
       {
         "key": "main.host_command",
         "file": "frontend/src/main.ts",
-        "line": 66523,
+        "line": 66534,
         "what": "the page's host hook: command -> runCommand(id)"
       },
       {
         "key": "menu_ui.runCommand",
         "file": "frontend/src/menu-ui.ts",
-        "line": 182,
+        "line": 214,
         "what": "runCommand: plugin:<id>/<cmd> -> plugin invocation; otherwise findRow(id) and click the row's button"
       },
       {
         "key": "menu_ui.findRow",
         "file": "frontend/src/menu-ui.ts",
-        "line": 201,
+        "line": 233,
         "what": "findRow: only rows of kind \"cmd\" in MENUS (sub-menus walked)"
       }
     ]
@@ -91,7 +91,7 @@
       },
       "dynamic": "recent",
       "slot": null,
-      "line": 149
+      "line": 173
     },
     {
       "id": "import",
@@ -103,7 +103,7 @@
       },
       "dynamic": null,
       "slot": "menu.file.import@1",
-      "line": 166
+      "line": 191
     },
     {
       "id": "export",
@@ -121,7 +121,40 @@
       },
       "dynamic": null,
       "slot": "menu.file.export@1",
-      "line": 170
+      "line": 195
+    },
+    {
+      "id": "externalData",
+      "menu": "file",
+      "label": {
+        "en": "External data",
+        "it": "File esterni"
+      },
+      "dynamic": null,
+      "slot": null,
+      "line": 207
+    },
+    {
+      "id": "cleanUp",
+      "menu": "file",
+      "label": {
+        "en": "Clean up",
+        "it": "Pulizia"
+      },
+      "dynamic": null,
+      "slot": null,
+      "line": 216
+    },
+    {
+      "id": "room",
+      "menu": "file",
+      "label": {
+        "en": "Room",
+        "it": "Stanza"
+      },
+      "dynamic": null,
+      "slot": null,
+      "line": 222
     }
   ],
   "commands": [
@@ -165,7 +198,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 119
+        "line": 138
       },
       "same_button_as": [
         "aboutHelp"
@@ -211,7 +244,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 120
+        "line": 139
       },
       "same_button_as": [
         "updatesHelp"
@@ -276,7 +309,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 122
+        "line": 141
       },
       "same_button_as": [
         "settingsHelp"
@@ -322,7 +355,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 124
+        "line": 143
       }
     },
     {
@@ -365,7 +398,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 126
+        "line": 145
       }
     },
     {
@@ -408,7 +441,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 127
+        "line": 146
       }
     },
     {
@@ -451,7 +484,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 128
+        "line": 147
       }
     },
     {
@@ -494,7 +527,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 130
+        "line": 149
       }
     },
     {
@@ -577,7 +610,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 138
+        "line": 163
       },
       "same_button_as": []
     },
@@ -634,235 +667,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 141
-      },
-      "same_button_as": []
-    },
-    {
-      "id": "openProject",
-      "page": "openProject",
-      "kind": "menu",
-      "command_id": "openProject",
-      "label_key": "fs.openProject",
-      "label": {
-        "en": "Open project…",
-        "it": "Apri progetto…"
-      },
-      "title_key": "fs.openProjectTitle",
-      "title": {
-        "en": "Opens a project's folder and the em.json in its EM/",
-        "it": "Apre la cartella di un progetto e l'em.json nella sua EM/"
-      },
-      "button": "btn-open-project",
-      "os_item": null,
-      "menu": "file",
-      "menu_path": {
-        "en": "File ▸ Open project…",
-        "it": "File ▸ Apri progetto…",
-        "de": "Datei ▸ Open project…",
-        "el": "Αρχείο ▸ Open project…",
-        "he": "קובץ ▸ Open project…",
-        "es": "Archivo ▸ Open project…",
-        "pl": "Plik ▸ Open project…",
-        "ro": "Fișier ▸ Open project…",
-        "fr": "Fichier ▸ Open project…"
-      },
-      "surfaces": {
-        "web": [
-          "internal"
-        ],
-        "mac": [
-          "internal",
-          "native"
-        ],
-        "win": [
-          "internal"
-        ],
-        "linux": [
-          "internal"
-        ]
-      },
-      "accel": null,
-      "accel_not_on_web": false,
-      "shortcut": null,
-      "keymap": null,
-      "reachable_from_python": "yes",
-      "writes_graph": "unknown",
-      "slots": [],
-      "source": {
-        "file": "frontend/src/menu-table.ts",
-        "line": 143
-      },
-      "same_button_as": []
-    },
-    {
-      "id": "reorderProject",
-      "page": "reorderProject",
-      "kind": "menu",
-      "command_id": "reorderProject",
-      "label_key": "fs.reorderItem",
-      "label": {
-        "en": "Reorder by the standard…",
-        "it": "Riordina secondo lo standard…"
-      },
-      "title_key": "fs.reorderItemTitle",
-      "title": {
-        "en": "Shows the plan for the open project's folder (the folders to make, the files to move) and asks",
-        "it": "Mostra il piano per la cartella del progetto aperto (le cartelle da creare, i file da spostare) e chiede"
-      },
-      "button": "btn-reorder-project",
-      "os_item": null,
-      "menu": "file",
-      "menu_path": {
-        "en": "File ▸ Reorder by the standard…",
-        "it": "File ▸ Riordina secondo lo standard…",
-        "de": "Datei ▸ Reorder by the standard…",
-        "el": "Αρχείο ▸ Reorder by the standard…",
-        "he": "קובץ ▸ Reorder by the standard…",
-        "es": "Archivo ▸ Reorder by the standard…",
-        "pl": "Plik ▸ Reorder by the standard…",
-        "ro": "Fișier ▸ Reorder by the standard…",
-        "fr": "Fichier ▸ Reorder by the standard…"
-      },
-      "surfaces": {
-        "web": [
-          "internal"
-        ],
-        "mac": [
-          "internal",
-          "native"
-        ],
-        "win": [
-          "internal"
-        ],
-        "linux": [
-          "internal"
-        ]
-      },
-      "accel": null,
-      "accel_not_on_web": false,
-      "shortcut": null,
-      "keymap": null,
-      "reachable_from_python": "yes",
-      "writes_graph": "unknown",
-      "slots": [],
-      "source": {
-        "file": "frontend/src/menu-table.ts",
-        "line": 144
-      },
-      "same_button_as": []
-    },
-    {
-      "id": "closeProject",
-      "page": "closeProject",
-      "kind": "menu",
-      "command_id": "closeProject",
-      "label_key": "fs.closeProject",
-      "label": {
-        "en": "Close the project",
-        "it": "Chiudi il progetto"
-      },
-      "title_key": "fs.closeProjectTitle",
-      "title": {
-        "en": "Closes every file of the project: the Shelf goes with it",
-        "it": "Chiude tutti i file del progetto: lo Scaffale va con lui"
-      },
-      "button": "btn-close-project",
-      "os_item": null,
-      "menu": "file",
-      "menu_path": {
-        "en": "File ▸ Close the project",
-        "it": "File ▸ Chiudi il progetto",
-        "de": "Datei ▸ Close the project",
-        "el": "Αρχείο ▸ Close the project",
-        "he": "קובץ ▸ Close the project",
-        "es": "Archivo ▸ Close the project",
-        "pl": "Plik ▸ Close the project",
-        "ro": "Fișier ▸ Close the project",
-        "fr": "Fichier ▸ Close the project"
-      },
-      "surfaces": {
-        "web": [
-          "internal"
-        ],
-        "mac": [
-          "internal",
-          "native"
-        ],
-        "win": [
-          "internal"
-        ],
-        "linux": [
-          "internal"
-        ]
-      },
-      "accel": null,
-      "accel_not_on_web": false,
-      "shortcut": null,
-      "keymap": null,
-      "reachable_from_python": "yes",
-      "writes_graph": "unknown",
-      "slots": [],
-      "source": {
-        "file": "frontend/src/menu-table.ts",
-        "line": 145
-      },
-      "same_button_as": []
-    },
-    {
-      "id": "revealDoc",
-      "page": "revealDoc",
-      "kind": "menu",
-      "command_id": "revealDoc",
-      "label_key": "fs.revealDoc",
-      "label": {
-        "en": "Open the project folder",
-        "it": "Apri la cartella del progetto"
-      },
-      "title_key": "fs.revealDocTitle",
-      "title": {
-        "en": "Opens the root of the active .em.json's project (the folder that holds EM/) in the Finder / Explorer / file manager (in a browser alone: the path, copied)",
-        "it": "Apre la radice del progetto dell'.em.json attivo (la cartella che contiene EM/) nel Finder / Esplora file / gestore dei file (nel solo browser: il percorso, copiato)"
-      },
-      "button": "btn-reveal-doc",
-      "os_item": null,
-      "menu": "file",
-      "menu_path": {
-        "en": "File ▸ Open the project folder",
-        "it": "File ▸ Apri la cartella del progetto",
-        "de": "Datei ▸ Open the project folder",
-        "el": "Αρχείο ▸ Open the project folder",
-        "he": "קובץ ▸ Open the project folder",
-        "es": "Archivo ▸ Open the project folder",
-        "pl": "Plik ▸ Open the project folder",
-        "ro": "Fișier ▸ Open the project folder",
-        "fr": "Fichier ▸ Open the project folder"
-      },
-      "surfaces": {
-        "web": [
-          "internal"
-        ],
-        "mac": [
-          "internal",
-          "native"
-        ],
-        "win": [
-          "internal"
-        ],
-        "linux": [
-          "internal"
-        ]
-      },
-      "accel": null,
-      "accel_not_on_web": false,
-      "shortcut": null,
-      "keymap": null,
-      "reachable_from_python": "yes",
-      "writes_graph": "unknown",
-      "slots": [],
-      "source": {
-        "file": "frontend/src/menu-table.ts",
-        "line": 147
+        "line": 165
       },
       "same_button_as": []
     },
@@ -930,7 +735,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 148
+        "line": 166
       },
       "same_button_as": []
     },
@@ -963,6 +768,49 @@
         "ro": "Fișier ▸ Open in place of the open files…",
         "fr": "Fichier ▸ Open in place of the open files…"
       },
+      "surfaces": {},
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 170
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "openProject",
+      "page": "openProject",
+      "kind": "menu",
+      "command_id": "openProject",
+      "label_key": "fs.openProject",
+      "label": {
+        "en": "Open project…",
+        "it": "Apri progetto…"
+      },
+      "title_key": "fs.openProjectTitle",
+      "title": {
+        "en": "Opens a project's folder and the em.json in its EM/",
+        "it": "Apre la cartella di un progetto e l'em.json nella sua EM/"
+      },
+      "button": "btn-open-project",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ Open project…",
+        "it": "File ▸ Apri progetto…",
+        "de": "Datei ▸ Open project…",
+        "el": "Αρχείο ▸ Open project…",
+        "he": "קובץ ▸ Open project…",
+        "es": "Archivo ▸ Open project…",
+        "pl": "Plik ▸ Open project…",
+        "ro": "Fișier ▸ Open project…",
+        "fr": "Fichier ▸ Open project…"
+      },
       "surfaces": {
         "web": [
           "internal"
@@ -987,67 +835,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 150
-      },
-      "same_button_as": []
-    },
-    {
-      "id": "close",
-      "page": "close",
-      "kind": "menu",
-      "command_id": "close",
-      "label_key": "toolbar.close",
-      "label": {
-        "en": "Close",
-        "it": "Chiudi"
-      },
-      "title_key": "menu.closeTitle",
-      "title": {
-        "en": "Close the active document (asking to save it if needed) and go back to the start screen",
-        "it": "Chiudi il documento attivo (chiedendo di salvarlo se serve) e torna alla schermata iniziale"
-      },
-      "button": "btn-close-doc",
-      "os_item": null,
-      "menu": "file",
-      "menu_path": {
-        "en": "File ▸ Close",
-        "it": "File ▸ Chiudi",
-        "de": "Datei ▸ Close",
-        "el": "Αρχείο ▸ Close",
-        "he": "קובץ ▸ Close",
-        "es": "Archivo ▸ Close",
-        "pl": "Plik ▸ Close",
-        "ro": "Fișier ▸ Close",
-        "fr": "Fichier ▸ Close"
-      },
-      "surfaces": {
-        "web": [
-          "internal"
-        ],
-        "mac": [
-          "internal",
-          "native"
-        ],
-        "win": [
-          "internal"
-        ],
-        "linux": [
-          "internal"
-        ]
-      },
-      "accel": "CmdOrCtrl+W",
-      "accel_not_on_web": true,
-      "shortcut": {
-        "mac": "⌘W",
-        "pc": "Ctrl+W"
-      },
-      "keymap": null,
-      "reachable_from_python": "yes",
-      "writes_graph": "unknown",
-      "slots": [],
-      "source": {
-        "file": "frontend/src/menu-table.ts",
-        "line": 151
+        "line": 172
       },
       "same_button_as": []
     },
@@ -1131,7 +919,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 153
+        "line": 175
       },
       "same_button_as": []
     },
@@ -1215,7 +1003,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 154
+        "line": 176
       },
       "same_button_as": []
     },
@@ -1275,7 +1063,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 155
+        "line": 177
       },
       "same_button_as": []
     },
@@ -1332,26 +1120,26 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 156
+        "line": 178
       },
       "same_button_as": []
     },
     {
-      "id": "door",
-      "page": "door",
+      "id": "bringIn",
+      "page": "bringIn",
       "kind": "menu",
-      "command_id": "door",
+      "command_id": "bringIn",
       "label_key": "door.menu",
       "label": {
         "en": "Bring in…",
         "it": "Porta dentro…"
       },
-      "title_key": "door.menuHint",
+      "title_key": "door.bringInHint",
       "title": {
-        "en": "Bring in — files into the study as documents: what each is, the document, its date, the epoch it represents",
-        "it": "Porta i file nel grafo come parte di un documento: che cos'è ciascuno, il documento, la sua data, l'epoca che rappresenta"
+        "en": "Bring in — files, a folder, or a folder read as DosCo: one window, the choice in it",
+        "it": "Porta dentro — dei file, una cartella, o una cartella letta come DosCo: una finestra, la scelta dentro"
       },
-      "button": "btn-porta-dentro",
+      "button": "btn-bring-in",
       "os_item": null,
       "menu": "file",
       "menu_path": {
@@ -1389,7 +1177,50 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 159
+        "line": 182
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "door",
+      "page": "door",
+      "kind": "menu",
+      "command_id": "door",
+      "label_key": "door.menu",
+      "label": {
+        "en": "Bring in…",
+        "it": "Porta dentro…"
+      },
+      "title_key": "door.menuHint",
+      "title": {
+        "en": "Bring in — files into the study as documents: what each is, the document, its date, the epoch it represents",
+        "it": "Porta i file nel grafo come parte di un documento: che cos'è ciascuno, il documento, la sua data, l'epoca che rappresenta"
+      },
+      "button": "btn-porta-dentro",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ Bring in…",
+        "it": "File ▸ Porta dentro…",
+        "de": "Datei ▸ Bring in…",
+        "el": "Αρχείο ▸ Bring in…",
+        "he": "קובץ ▸ Bring in…",
+        "es": "Archivo ▸ Bring in…",
+        "pl": "Plik ▸ Bring in…",
+        "ro": "Fișier ▸ Bring in…",
+        "fr": "Fichier ▸ Bring in…"
+      },
+      "surfaces": {},
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 184
       },
       "same_button_as": []
     },
@@ -1422,21 +1253,7 @@
         "ro": "Fișier ▸ Bring in a folder…",
         "fr": "Fichier ▸ Bring in a folder…"
       },
-      "surfaces": {
-        "web": [
-          "internal"
-        ],
-        "mac": [
-          "internal",
-          "native"
-        ],
-        "win": [
-          "internal"
-        ],
-        "linux": [
-          "internal"
-        ]
-      },
+      "surfaces": {},
       "accel": null,
       "accel_not_on_web": false,
       "shortcut": null,
@@ -1446,7 +1263,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 161
+        "line": 186
       },
       "same_button_as": []
     },
@@ -1479,21 +1296,7 @@
         "ro": "Fișier ▸ Read as DosCo…",
         "fr": "Fichier ▸ Read as DosCo…"
       },
-      "surfaces": {
-        "web": [
-          "internal"
-        ],
-        "mac": [
-          "internal",
-          "native"
-        ],
-        "win": [
-          "internal"
-        ],
-        "linux": [
-          "internal"
-        ]
-      },
+      "surfaces": {},
       "accel": null,
       "accel_not_on_web": false,
       "shortcut": null,
@@ -1503,38 +1306,38 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 163
+        "line": 188
       },
       "same_button_as": []
     },
     {
-      "id": "georef",
-      "page": "georef",
+      "id": "integrate",
+      "page": "integrate",
       "kind": "menu",
-      "command_id": "georef",
-      "label_key": "gr.menu",
+      "command_id": "integrate",
+      "label_key": "container.addToProject",
       "label": {
-        "en": "Georeferencing…",
-        "it": "Georeferenziazione…"
+        "en": "Integrate into this file…",
+        "it": "Integra in questo file…"
       },
-      "title_key": "gr.menuTitle",
+      "title_key": "container.addToProjectTitle",
       "title": {
-        "en": "The coordinate system of each graph of the file, and of its models",
-        "it": "Il sistema di coordinate di ciascun grafo del file, e dei suoi modelli"
+        "en": "Merge another emj's graphs into the active graph's file (shared nodes merge by UUID — offline, no server)",
+        "it": "Fonde i grafi di un altro emj nel file del grafo attivo (i nodi condivisi si fondono per UUID — offline, nessun server)"
       },
-      "button": "btn-georef",
+      "button": "btn-add-project",
       "os_item": null,
       "menu": "file",
       "menu_path": {
-        "en": "File ▸ Georeferencing…",
-        "it": "File ▸ Georeferenziazione…",
-        "de": "Datei ▸ Georeferencing…",
-        "el": "Αρχείο ▸ Georeferencing…",
-        "he": "קובץ ▸ Georeferencing…",
-        "es": "Archivo ▸ Georeferencing…",
-        "pl": "Plik ▸ Georeferencing…",
-        "ro": "Fișier ▸ Georeferencing…",
-        "fr": "Fichier ▸ Georeferencing…"
+        "en": "File ▸ Integrate into this file…",
+        "it": "File ▸ Integra in questo file…",
+        "de": "Datei ▸ Integrate into this file…",
+        "el": "Αρχείο ▸ Integrate into this file…",
+        "he": "קובץ ▸ Integrate into this file…",
+        "es": "Archivo ▸ Integrate into this file…",
+        "pl": "Plik ▸ Integrate into this file…",
+        "ro": "Fișier ▸ Integrate into this file…",
+        "fr": "Fichier ▸ Integrate into this file…"
       },
       "surfaces": {
         "web": [
@@ -1560,7 +1363,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 165
+        "line": 190
       },
       "same_button_as": []
     },
@@ -1619,7 +1422,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 167
+        "line": 192
       },
       "same_button_as": []
     },
@@ -1678,7 +1481,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 168
+        "line": 193
       },
       "same_button_as": []
     },
@@ -1736,7 +1539,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 171
+        "line": 196
       },
       "same_button_as": []
     },
@@ -1794,38 +1597,38 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 172
+        "line": 197
       },
       "same_button_as": []
     },
     {
-      "id": "printSheets",
-      "page": "printSheets",
+      "id": "composeFromGraph",
+      "page": "composeFromGraph",
       "kind": "menu",
-      "command_id": "printSheets",
-      "label_key": "skp.menu",
+      "command_id": "composeFromGraph",
+      "label_key": "menu.blendItem",
       "label": {
-        "en": "Print sheets…",
-        "it": "Stampa schede…"
+        "en": "Blender scene (.blend)…",
+        "it": "Scena Blender (.blend)…"
       },
-      "title_key": "skp.menuTitle",
+      "title_key": "gcomp.menuTitle",
       "title": {
-        "en": "Print the recording sheets of the graph: all, the selection, or those the criteria keep (type, epoch, activity, state, numbers, words)",
-        "it": "Stampa le schede di rilevamento del grafo: tutte, la selezione, o quelle che i criteri tengono (tipo, epoca, attività, stato, numeri, parole)"
+        "en": "A working .blend for Blender from what there is on the disk or in the room, with no .blend to start from: a working profile, the containers or epochs; each object carries the graph's tags",
+        "it": "Un .blend di lavoro per Blender da ciò che c'è sul disco o nella stanza, senza un .blend di partenza: un profilo di lavoro, i contenitori o le epoche; ogni oggetto porta i tag del grafo"
       },
-      "button": "btn-print-sheets",
+      "button": "btn-compose-graph",
       "os_item": null,
       "menu": "file",
       "menu_path": {
-        "en": "File ▸ Print sheets…",
-        "it": "File ▸ Stampa schede…",
-        "de": "Datei ▸ Print sheets…",
-        "el": "Αρχείο ▸ Print sheets…",
-        "he": "קובץ ▸ Print sheets…",
-        "es": "Archivo ▸ Print sheets…",
-        "pl": "Plik ▸ Print sheets…",
-        "ro": "Fișier ▸ Print sheets…",
-        "fr": "Fichier ▸ Print sheets…"
+        "en": "File ▸ Export ▸ Blender scene (.blend)…",
+        "it": "File ▸ Esporta ▸ Scena Blender (.blend)…",
+        "de": "Datei ▸ Exportieren ▸ Blender scene (.blend)…",
+        "el": "Αρχείο ▸ Εξαγωγή ▸ Blender scene (.blend)…",
+        "he": "קובץ ▸ ייצוא ▸ Blender scene (.blend)…",
+        "es": "Archivo ▸ Exportar ▸ Blender scene (.blend)…",
+        "pl": "Plik ▸ Eksport ▸ Blender scene (.blend)…",
+        "ro": "Fișier ▸ Export ▸ Blender scene (.blend)…",
+        "fr": "Fichier ▸ Exporter ▸ Blender scene (.blend)…"
       },
       "surfaces": {
         "web": [
@@ -1851,349 +1654,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 175
-      },
-      "same_button_as": []
-    },
-    {
-      "id": "integrate",
-      "page": "integrate",
-      "kind": "menu",
-      "command_id": "integrate",
-      "label_key": "container.addToProject",
-      "label": {
-        "en": "Integrate into this file…",
-        "it": "Integra in questo file…"
-      },
-      "title_key": "container.addToProjectTitle",
-      "title": {
-        "en": "Merge another emj's graphs into the active graph's file (shared nodes merge by UUID — offline, no server)",
-        "it": "Fonde i grafi di un altro emj nel file del grafo attivo (i nodi condivisi si fondono per UUID — offline, nessun server)"
-      },
-      "button": "btn-add-project",
-      "os_item": null,
-      "menu": "file",
-      "menu_path": {
-        "en": "File ▸ Integrate into this file…",
-        "it": "File ▸ Integra in questo file…",
-        "de": "Datei ▸ Integrate into this file…",
-        "el": "Αρχείο ▸ Integrate into this file…",
-        "he": "קובץ ▸ Integrate into this file…",
-        "es": "Archivo ▸ Integrate into this file…",
-        "pl": "Plik ▸ Integrate into this file…",
-        "ro": "Fișier ▸ Integrate into this file…",
-        "fr": "Fichier ▸ Integrate into this file…"
-      },
-      "surfaces": {
-        "web": [
-          "internal"
-        ],
-        "mac": [
-          "internal",
-          "native"
-        ],
-        "win": [
-          "internal"
-        ],
-        "linux": [
-          "internal"
-        ]
-      },
-      "accel": null,
-      "accel_not_on_web": false,
-      "shortcut": null,
-      "keymap": null,
-      "reachable_from_python": "yes",
-      "writes_graph": "unknown",
-      "slots": [],
-      "source": {
-        "file": "frontend/src/menu-table.ts",
-        "line": 176
-      },
-      "same_button_as": []
-    },
-    {
-      "id": "relocate",
-      "page": "relocate",
-      "kind": "menu",
-      "command_id": "relocate",
-      "label_key": "fs.relocate",
-      "label": {
-        "en": "Find missing files…",
-        "it": "Ritrova i file…"
-      },
-      "title_key": "fs.relocateTitle",
-      "title": {
-        "en": "Look in a folder you choose for the files this document cannot find — by their sha256, else by name and size — and rewrite their paths relative to the em.json. One undo.",
-        "it": "Cerca in una cartella che scegli i file che questo documento non trova — per sha256, altrimenti per nome e dimensione — e riscrivi i loro percorsi relativi all'em.json. Un annulla."
-      },
-      "button": "btn-relocate-files",
-      "os_item": null,
-      "menu": "file",
-      "menu_path": {
-        "en": "File ▸ Find missing files…",
-        "it": "File ▸ Ritrova i file…",
-        "de": "Datei ▸ Find missing files…",
-        "el": "Αρχείο ▸ Find missing files…",
-        "he": "קובץ ▸ Find missing files…",
-        "es": "Archivo ▸ Find missing files…",
-        "pl": "Plik ▸ Find missing files…",
-        "ro": "Fișier ▸ Find missing files…",
-        "fr": "Fichier ▸ Find missing files…"
-      },
-      "surfaces": {
-        "web": [
-          "internal"
-        ],
-        "mac": [
-          "internal",
-          "native"
-        ],
-        "win": [
-          "internal"
-        ],
-        "linux": [
-          "internal"
-        ]
-      },
-      "accel": null,
-      "accel_not_on_web": false,
-      "shortcut": null,
-      "keymap": null,
-      "reachable_from_python": "yes",
-      "writes_graph": "unknown",
-      "slots": [],
-      "source": {
-        "file": "frontend/src/menu-table.ts",
-        "line": 178
-      },
-      "same_button_as": []
-    },
-    {
-      "id": "collect",
-      "page": "collect",
-      "kind": "menu",
-      "command_id": "collect",
-      "label_key": "fs.collect",
-      "label": {
-        "en": "Collect resources…",
-        "it": "Raccogli le risorse…"
-      },
-      "title_key": "fs.collectTitle",
-      "title": {
-        "en": "Copy into the study's folder the files it names outside it (absolute paths, onedrive://, a .blend elsewhere) — only what each needs, every copy checked by sha256 — and rewrite their paths relative to the em.json. Never a move; one undo.",
-        "it": "Copia nella cartella dello studio i file che nomina fuori da essa (percorsi assoluti, onedrive://, un .blend altrove) — solo ciò che serve a ciascuno, ogni copia verificata per sha256 — e riscrivi i loro percorsi relativi all'em.json. Mai uno spostamento; un annulla."
-      },
-      "button": "btn-collect-files",
-      "os_item": null,
-      "menu": "file",
-      "menu_path": {
-        "en": "File ▸ Collect resources…",
-        "it": "File ▸ Raccogli le risorse…",
-        "de": "Datei ▸ Collect resources…",
-        "el": "Αρχείο ▸ Collect resources…",
-        "he": "קובץ ▸ Collect resources…",
-        "es": "Archivo ▸ Collect resources…",
-        "pl": "Plik ▸ Collect resources…",
-        "ro": "Fișier ▸ Collect resources…",
-        "fr": "Fichier ▸ Collect resources…"
-      },
-      "surfaces": {
-        "web": [
-          "internal"
-        ],
-        "mac": [
-          "internal",
-          "native"
-        ],
-        "win": [
-          "internal"
-        ],
-        "linux": [
-          "internal"
-        ]
-      },
-      "accel": null,
-      "accel_not_on_web": false,
-      "shortcut": null,
-      "keymap": null,
-      "reachable_from_python": "yes",
-      "writes_graph": "unknown",
-      "slots": [],
-      "source": {
-        "file": "frontend/src/menu-table.ts",
-        "line": 180
-      },
-      "same_button_as": []
-    },
-    {
-      "id": "cleanFile",
-      "page": "cleanFile",
-      "kind": "menu",
-      "command_id": "cleanFile",
-      "label_key": "pres.clean",
-      "label": {
-        "en": "Clean the file…",
-        "it": "Pulisci il file…"
-      },
-      "title_key": "pres.cleanTitle",
-      "title": {
-        "en": "Take out of the em.json what is only a way of looking at it (the colour schemes), after showing what goes. The graphs do not change. One undo.",
-        "it": "Togli dall'em.json ciò che è solo un modo di guardarlo (gli schemi colori), dopo aver mostrato cosa va via. I grafi non cambiano. Un annulla."
-      },
-      "button": "btn-clean-file",
-      "os_item": null,
-      "menu": "file",
-      "menu_path": {
-        "en": "File ▸ Clean the file…",
-        "it": "File ▸ Pulisci il file…",
-        "de": "Datei ▸ Clean the file…",
-        "el": "Αρχείο ▸ Clean the file…",
-        "he": "קובץ ▸ Clean the file…",
-        "es": "Archivo ▸ Clean the file…",
-        "pl": "Plik ▸ Clean the file…",
-        "ro": "Fișier ▸ Clean the file…",
-        "fr": "Fichier ▸ Clean the file…"
-      },
-      "surfaces": {
-        "web": [
-          "internal"
-        ],
-        "mac": [
-          "internal",
-          "native"
-        ],
-        "win": [
-          "internal"
-        ],
-        "linux": [
-          "internal"
-        ]
-      },
-      "accel": null,
-      "accel_not_on_web": false,
-      "shortcut": null,
-      "keymap": null,
-      "reachable_from_python": "yes",
-      "writes_graph": "unknown",
-      "slots": [],
-      "source": {
-        "file": "frontend/src/menu-table.ts",
-        "line": 182
-      },
-      "same_button_as": []
-    },
-    {
-      "id": "createRoom",
-      "page": "createRoom",
-      "kind": "menu",
-      "command_id": "createRoom",
-      "label_key": "room.createItem",
-      "label": {
-        "en": "Create a room…",
-        "it": "Crea una stanza…"
-      },
-      "title_key": "room.createItemTitle",
-      "title": {
-        "en": "A room on this node, yours, empty. Whoever creates it is its owner.",
-        "it": "Una stanza su questo nodo, tua, vuota. Chi la crea ne è proprietario."
-      },
-      "button": "btn-create-room",
-      "os_item": null,
-      "menu": "file",
-      "menu_path": {
-        "en": "File ▸ Create a room…",
-        "it": "File ▸ Crea una stanza…",
-        "de": "Datei ▸ Create a room…",
-        "el": "Αρχείο ▸ Create a room…",
-        "he": "קובץ ▸ Create a room…",
-        "es": "Archivo ▸ Create a room…",
-        "pl": "Plik ▸ Create a room…",
-        "ro": "Fișier ▸ Create a room…",
-        "fr": "Fichier ▸ Create a room…"
-      },
-      "surfaces": {
-        "web": [
-          "internal"
-        ],
-        "mac": [
-          "internal",
-          "native"
-        ],
-        "win": [
-          "internal"
-        ],
-        "linux": [
-          "internal"
-        ]
-      },
-      "accel": null,
-      "accel_not_on_web": false,
-      "shortcut": null,
-      "keymap": null,
-      "reachable_from_python": "yes",
-      "writes_graph": "unknown",
-      "slots": [],
-      "source": {
-        "file": "frontend/src/menu-table.ts",
-        "line": 184
-      },
-      "same_button_as": []
-    },
-    {
-      "id": "bringIntoRoom",
-      "page": "bringIntoRoom",
-      "kind": "menu",
-      "command_id": "bringIntoRoom",
-      "label_key": "room.bringItem",
-      "label": {
-        "en": "Bring this into a new room…",
-        "it": "Porta questo in una stanza nuova…"
-      },
-      "title_key": "room.bringItemTitle",
-      "title": {
-        "en": "Put the graph you have open on a table on this node. From that moment the live copy is the node's.",
-        "it": "Metti il grafo che hai aperto su un tavolo di questo nodo. Da quel momento la copia viva è quella del nodo."
-      },
-      "button": "btn-bring-into-room",
-      "os_item": null,
-      "menu": "file",
-      "menu_path": {
-        "en": "File ▸ Bring this into a new room…",
-        "it": "File ▸ Porta questo in una stanza nuova…",
-        "de": "Datei ▸ Bring this into a new room…",
-        "el": "Αρχείο ▸ Bring this into a new room…",
-        "he": "קובץ ▸ Bring this into a new room…",
-        "es": "Archivo ▸ Bring this into a new room…",
-        "pl": "Plik ▸ Bring this into a new room…",
-        "ro": "Fișier ▸ Bring this into a new room…",
-        "fr": "Fichier ▸ Bring this into a new room…"
-      },
-      "surfaces": {
-        "web": [
-          "internal"
-        ],
-        "mac": [
-          "internal",
-          "native"
-        ],
-        "win": [
-          "internal"
-        ],
-        "linux": [
-          "internal"
-        ]
-      },
-      "accel": null,
-      "accel_not_on_web": false,
-      "shortcut": null,
-      "keymap": null,
-      "reachable_from_python": "yes",
-      "writes_graph": "unknown",
-      "slots": [],
-      "source": {
-        "file": "frontend/src/menu-table.ts",
-        "line": 185
+        "line": 201
       },
       "same_button_as": []
     },
@@ -2216,15 +1677,15 @@
       "os_item": null,
       "menu": "file",
       "menu_path": {
-        "en": "File ▸ Consolidate for…",
-        "it": "File ▸ Consolida per…",
-        "de": "Datei ▸ Consolidate for…",
-        "el": "Αρχείο ▸ Consolidate for…",
-        "he": "קובץ ▸ Consolidate for…",
-        "es": "Archivo ▸ Consolidate for…",
-        "pl": "Plik ▸ Consolidate for…",
-        "ro": "Fișier ▸ Consolidate for…",
-        "fr": "Fichier ▸ Consolidate for…"
+        "en": "File ▸ Export ▸ Consolidate for…",
+        "it": "File ▸ Esporta ▸ Consolida per…",
+        "de": "Datei ▸ Exportieren ▸ Consolidate for…",
+        "el": "Αρχείο ▸ Εξαγωγή ▸ Consolidate for…",
+        "he": "קובץ ▸ ייצוא ▸ Consolidate for…",
+        "es": "Archivo ▸ Exportar ▸ Consolidate for…",
+        "pl": "Plik ▸ Eksport ▸ Consolidate for…",
+        "ro": "Fișier ▸ Export ▸ Consolidate for…",
+        "fr": "Fichier ▸ Exporter ▸ Consolidate for…"
       },
       "surfaces": {
         "web": [
@@ -2250,38 +1711,38 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 188
+        "line": 202
       },
       "same_button_as": []
     },
     {
-      "id": "composeFromGraph",
-      "page": "composeFromGraph",
+      "id": "printSheets",
+      "page": "printSheets",
       "kind": "menu",
-      "command_id": "composeFromGraph",
-      "label_key": "gcomp.menu",
+      "command_id": "printSheets",
+      "label_key": "skp.menu",
       "label": {
-        "en": "Compose a .blend from the graph…",
-        "it": "Componi un .blend dal grafo…"
+        "en": "Print sheets…",
+        "it": "Stampa schede…"
       },
-      "title_key": "gcomp.menuTitle",
+      "title_key": "skp.menuTitle",
       "title": {
-        "en": "A working .blend for Blender from what there is on the disk or in the room, with no .blend to start from: a working profile, the containers or epochs; each object carries the graph's tags",
-        "it": "Un .blend di lavoro per Blender da ciò che c'è sul disco o nella stanza, senza un .blend di partenza: un profilo di lavoro, i contenitori o le epoche; ogni oggetto porta i tag del grafo"
+        "en": "Print the recording sheets of the graph: all, the selection, or those the criteria keep (type, epoch, activity, state, numbers, words)",
+        "it": "Stampa le schede di rilevamento del grafo: tutte, la selezione, o quelle che i criteri tengono (tipo, epoca, attività, stato, numeri, parole)"
       },
-      "button": "btn-compose-graph",
+      "button": "btn-print-sheets",
       "os_item": null,
       "menu": "file",
       "menu_path": {
-        "en": "File ▸ Compose a .blend from the graph…",
-        "it": "File ▸ Componi un .blend dal grafo…",
-        "de": "Datei ▸ Compose a .blend from the graph…",
-        "el": "Αρχείο ▸ Compose a .blend from the graph…",
-        "he": "קובץ ▸ Compose a .blend from the graph…",
-        "es": "Archivo ▸ Compose a .blend from the graph…",
-        "pl": "Plik ▸ Compose a .blend from the graph…",
-        "ro": "Fișier ▸ Compose a .blend from the graph…",
-        "fr": "Fichier ▸ Compose a .blend from the graph…"
+        "en": "File ▸ Export ▸ Print sheets…",
+        "it": "File ▸ Esporta ▸ Stampa schede…",
+        "de": "Datei ▸ Exportieren ▸ Print sheets…",
+        "el": "Αρχείο ▸ Εξαγωγή ▸ Print sheets…",
+        "he": "קובץ ▸ ייצוא ▸ Print sheets…",
+        "es": "Archivo ▸ Exportar ▸ Print sheets…",
+        "pl": "Plik ▸ Eksport ▸ Print sheets…",
+        "ro": "Fișier ▸ Export ▸ Print sheets…",
+        "fr": "Fichier ▸ Exporter ▸ Print sheets…"
       },
       "surfaces": {
         "web": [
@@ -2307,7 +1768,523 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 189
+        "line": 203
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "relocate",
+      "page": "relocate",
+      "kind": "menu",
+      "command_id": "relocate",
+      "label_key": "fs.relocate",
+      "label": {
+        "en": "Find missing files…",
+        "it": "Ritrova i file…"
+      },
+      "title_key": "fs.relocateTitle",
+      "title": {
+        "en": "Look in a folder you choose for the files this document cannot find — by their sha256, else by name and size — and rewrite their paths relative to the em.json. One undo.",
+        "it": "Cerca in una cartella che scegli i file che questo documento non trova — per sha256, altrimenti per nome e dimensione — e riscrivi i loro percorsi relativi all'em.json. Un annulla."
+      },
+      "button": "btn-relocate-files",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ External data ▸ Find missing files…",
+        "it": "File ▸ File esterni ▸ Ritrova i file…",
+        "de": "Datei ▸ External data ▸ Find missing files…",
+        "el": "Αρχείο ▸ External data ▸ Find missing files…",
+        "he": "קובץ ▸ External data ▸ Find missing files…",
+        "es": "Archivo ▸ External data ▸ Find missing files…",
+        "pl": "Plik ▸ External data ▸ Find missing files…",
+        "ro": "Fișier ▸ External data ▸ Find missing files…",
+        "fr": "Fichier ▸ External data ▸ Find missing files…"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 209
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "collect",
+      "page": "collect",
+      "kind": "menu",
+      "command_id": "collect",
+      "label_key": "fs.collect",
+      "label": {
+        "en": "Collect resources…",
+        "it": "Raccogli le risorse…"
+      },
+      "title_key": "fs.collectTitle",
+      "title": {
+        "en": "Copy into the study's folder the files it names outside it (absolute paths, onedrive://, a .blend elsewhere) — only what each needs, every copy checked by sha256 — and rewrite their paths relative to the em.json. Never a move; one undo.",
+        "it": "Copia nella cartella dello studio i file che nomina fuori da essa (percorsi assoluti, onedrive://, un .blend altrove) — solo ciò che serve a ciascuno, ogni copia verificata per sha256 — e riscrivi i loro percorsi relativi all'em.json. Mai uno spostamento; un annulla."
+      },
+      "button": "btn-collect-files",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ External data ▸ Collect resources…",
+        "it": "File ▸ File esterni ▸ Raccogli le risorse…",
+        "de": "Datei ▸ External data ▸ Collect resources…",
+        "el": "Αρχείο ▸ External data ▸ Collect resources…",
+        "he": "קובץ ▸ External data ▸ Collect resources…",
+        "es": "Archivo ▸ External data ▸ Collect resources…",
+        "pl": "Plik ▸ External data ▸ Collect resources…",
+        "ro": "Fișier ▸ External data ▸ Collect resources…",
+        "fr": "Fichier ▸ External data ▸ Collect resources…"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 211
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "revealDoc",
+      "page": "revealDoc",
+      "kind": "menu",
+      "command_id": "revealDoc",
+      "label_key": "fs.revealDoc",
+      "label": {
+        "en": "Open the project folder",
+        "it": "Apri la cartella del progetto"
+      },
+      "title_key": "fs.revealDocTitle",
+      "title": {
+        "en": "Opens the root of the active .em.json's project (the folder that holds EM/) in the Finder / Explorer / file manager (in a browser alone: the path, copied)",
+        "it": "Apre la radice del progetto dell'.em.json attivo (la cartella che contiene EM/) nel Finder / Esplora file / gestore dei file (nel solo browser: il percorso, copiato)"
+      },
+      "button": "btn-reveal-doc",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ External data ▸ Open the project folder",
+        "it": "File ▸ File esterni ▸ Apri la cartella del progetto",
+        "de": "Datei ▸ External data ▸ Open the project folder",
+        "el": "Αρχείο ▸ External data ▸ Open the project folder",
+        "he": "קובץ ▸ External data ▸ Open the project folder",
+        "es": "Archivo ▸ External data ▸ Open the project folder",
+        "pl": "Plik ▸ External data ▸ Open the project folder",
+        "ro": "Fișier ▸ External data ▸ Open the project folder",
+        "fr": "Fichier ▸ External data ▸ Open the project folder"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 213
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "cleanFile",
+      "page": "cleanFile",
+      "kind": "menu",
+      "command_id": "cleanFile",
+      "label_key": "pres.clean",
+      "label": {
+        "en": "Clean the file…",
+        "it": "Pulisci il file…"
+      },
+      "title_key": "pres.cleanTitle",
+      "title": {
+        "en": "Take out of the em.json what is only a way of looking at it (the colour schemes), after showing what goes. The graphs do not change. One undo.",
+        "it": "Togli dall'em.json ciò che è solo un modo di guardarlo (gli schemi colori), dopo aver mostrato cosa va via. I grafi non cambiano. Un annulla."
+      },
+      "button": "btn-clean-file",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ Clean up ▸ Clean the file…",
+        "it": "File ▸ Pulizia ▸ Pulisci il file…",
+        "de": "Datei ▸ Clean up ▸ Clean the file…",
+        "el": "Αρχείο ▸ Clean up ▸ Clean the file…",
+        "he": "קובץ ▸ Clean up ▸ Clean the file…",
+        "es": "Archivo ▸ Clean up ▸ Clean the file…",
+        "pl": "Plik ▸ Clean up ▸ Clean the file…",
+        "ro": "Fișier ▸ Clean up ▸ Clean the file…",
+        "fr": "Fichier ▸ Clean up ▸ Clean the file…"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 218
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "reorderProject",
+      "page": "reorderProject",
+      "kind": "menu",
+      "command_id": "reorderProject",
+      "label_key": "fs.reorderItem",
+      "label": {
+        "en": "Reorder by the standard…",
+        "it": "Riordina secondo lo standard…"
+      },
+      "title_key": "fs.reorderItemTitle",
+      "title": {
+        "en": "Shows the plan for the open project's folder (the folders to make, the files to move) and asks",
+        "it": "Mostra il piano per la cartella del progetto aperto (le cartelle da creare, i file da spostare) e chiede"
+      },
+      "button": "btn-reorder-project",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ Clean up ▸ Reorder by the standard…",
+        "it": "File ▸ Pulizia ▸ Riordina secondo lo standard…",
+        "de": "Datei ▸ Clean up ▸ Reorder by the standard…",
+        "el": "Αρχείο ▸ Clean up ▸ Reorder by the standard…",
+        "he": "קובץ ▸ Clean up ▸ Reorder by the standard…",
+        "es": "Archivo ▸ Clean up ▸ Reorder by the standard…",
+        "pl": "Plik ▸ Clean up ▸ Reorder by the standard…",
+        "ro": "Fișier ▸ Clean up ▸ Reorder by the standard…",
+        "fr": "Fichier ▸ Clean up ▸ Reorder by the standard…"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 219
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "createRoom",
+      "page": "createRoom",
+      "kind": "menu",
+      "command_id": "createRoom",
+      "label_key": "room.createItem",
+      "label": {
+        "en": "Create a room…",
+        "it": "Crea una stanza…"
+      },
+      "title_key": "room.createItemTitle",
+      "title": {
+        "en": "A room on this node, yours, empty. Whoever creates it is its owner.",
+        "it": "Una stanza su questo nodo, tua, vuota. Chi la crea ne è proprietario."
+      },
+      "button": "btn-create-room",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ Room ▸ Create a room…",
+        "it": "File ▸ Stanza ▸ Crea una stanza…",
+        "de": "Datei ▸ Room ▸ Create a room…",
+        "el": "Αρχείο ▸ Room ▸ Create a room…",
+        "he": "קובץ ▸ Room ▸ Create a room…",
+        "es": "Archivo ▸ Room ▸ Create a room…",
+        "pl": "Plik ▸ Room ▸ Create a room…",
+        "ro": "Fișier ▸ Room ▸ Create a room…",
+        "fr": "Fichier ▸ Room ▸ Create a room…"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 223
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "bringIntoRoom",
+      "page": "bringIntoRoom",
+      "kind": "menu",
+      "command_id": "bringIntoRoom",
+      "label_key": "room.bringItem",
+      "label": {
+        "en": "Bring this into a new room…",
+        "it": "Porta questo in una stanza nuova…"
+      },
+      "title_key": "room.bringItemTitle",
+      "title": {
+        "en": "Put the graph you have open on a table on this node. From that moment the live copy is the node's.",
+        "it": "Metti il grafo che hai aperto su un tavolo di questo nodo. Da quel momento la copia viva è quella del nodo."
+      },
+      "button": "btn-bring-into-room",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ Room ▸ Bring this into a new room…",
+        "it": "File ▸ Stanza ▸ Porta questo in una stanza nuova…",
+        "de": "Datei ▸ Room ▸ Bring this into a new room…",
+        "el": "Αρχείο ▸ Room ▸ Bring this into a new room…",
+        "he": "קובץ ▸ Room ▸ Bring this into a new room…",
+        "es": "Archivo ▸ Room ▸ Bring this into a new room…",
+        "pl": "Plik ▸ Room ▸ Bring this into a new room…",
+        "ro": "Fișier ▸ Room ▸ Bring this into a new room…",
+        "fr": "Fichier ▸ Room ▸ Bring this into a new room…"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 224
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "close",
+      "page": "close",
+      "kind": "menu",
+      "command_id": "close",
+      "label_key": "toolbar.close",
+      "label": {
+        "en": "Close",
+        "it": "Chiudi"
+      },
+      "title_key": "menu.closeTitle",
+      "title": {
+        "en": "Close the active document (asking to save it if needed) and go back to the start screen",
+        "it": "Chiudi il documento attivo (chiedendo di salvarlo se serve) e torna alla schermata iniziale"
+      },
+      "button": "btn-close-doc",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ Close",
+        "it": "File ▸ Chiudi",
+        "de": "Datei ▸ Close",
+        "el": "Αρχείο ▸ Close",
+        "he": "קובץ ▸ Close",
+        "es": "Archivo ▸ Close",
+        "pl": "Plik ▸ Close",
+        "ro": "Fișier ▸ Close",
+        "fr": "Fichier ▸ Close"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": "CmdOrCtrl+W",
+      "accel_not_on_web": true,
+      "shortcut": {
+        "mac": "⌘W",
+        "pc": "Ctrl+W"
+      },
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 227
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "closeProject",
+      "page": "closeProject",
+      "kind": "menu",
+      "command_id": "closeProject",
+      "label_key": "fs.closeProject",
+      "label": {
+        "en": "Close the project",
+        "it": "Chiudi il progetto"
+      },
+      "title_key": "fs.closeProjectTitle",
+      "title": {
+        "en": "Closes every file of the project: the Shelf goes with it",
+        "it": "Chiude tutti i file del progetto: lo Scaffale va con lui"
+      },
+      "button": "btn-close-project",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ Close the project",
+        "it": "File ▸ Chiudi il progetto",
+        "de": "Datei ▸ Close the project",
+        "el": "Αρχείο ▸ Close the project",
+        "he": "קובץ ▸ Close the project",
+        "es": "Archivo ▸ Close the project",
+        "pl": "Plik ▸ Close the project",
+        "ro": "Fișier ▸ Close the project",
+        "fr": "Fichier ▸ Close the project"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 228
       },
       "same_button_as": []
     },
@@ -2357,7 +2334,63 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 193
+        "line": 234
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "georef",
+      "page": "georef",
+      "kind": "menu",
+      "command_id": "georef",
+      "label_key": "gr.menu",
+      "label": {
+        "en": "Georeferencing…",
+        "it": "Georeferenziazione…"
+      },
+      "title_key": "gr.menuTitle",
+      "title": {
+        "en": "The coordinate system of each graph of the file, and of its models",
+        "it": "Il sistema di coordinate di ciascun grafo del file, e dei suoi modelli"
+      },
+      "button": "btn-georef",
+      "os_item": null,
+      "menu": "tools",
+      "menu_path": {
+        "en": "Tools ▸ Georeferencing…",
+        "it": "Strumenti ▸ Georeferenziazione…",
+        "de": "Tools ▸ Georeferencing…",
+        "el": "Tools ▸ Georeferencing…",
+        "he": "Tools ▸ Georeferencing…",
+        "es": "Tools ▸ Georeferencing…",
+        "pl": "Tools ▸ Georeferencing…",
+        "ro": "Tools ▸ Georeferencing…",
+        "fr": "Tools ▸ Georeferencing…"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 247
       },
       "same_button_as": []
     },
@@ -2435,7 +2468,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 203
+        "line": 257
       },
       "same_button_as": []
     },
@@ -2513,7 +2546,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 204
+        "line": 258
       },
       "same_button_as": []
     },
@@ -2554,7 +2587,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 205
+        "line": 259
       }
     },
     {
@@ -2594,7 +2627,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 205
+        "line": 259
       }
     },
     {
@@ -2634,7 +2667,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 207
+        "line": 261
       }
     },
     {
@@ -2674,7 +2707,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 207
+        "line": 261
       }
     },
     {
@@ -2714,7 +2747,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 207
+        "line": 261
       }
     },
     {
@@ -2754,7 +2787,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 207
+        "line": 261
       }
     },
     {
@@ -2794,7 +2827,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 214
+        "line": 268
       }
     },
     {
@@ -2834,7 +2867,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 214
+        "line": 268
       }
     },
     {
@@ -2874,7 +2907,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 214
+        "line": 268
       }
     },
     {
@@ -2928,7 +2961,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 221
+        "line": 275
       },
       "same_button_as": []
     },
@@ -2983,7 +3016,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 222
+        "line": 276
       },
       "same_button_as": []
     },
@@ -3038,7 +3071,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 223
+        "line": 277
       },
       "same_button_as": []
     },
@@ -3093,7 +3126,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 225
+        "line": 279
       },
       "same_button_as": []
     },
@@ -3143,7 +3176,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 227
+        "line": 281
       },
       "same_button_as": [
         "about"
@@ -3198,7 +3231,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 228
+        "line": 282
       },
       "same_button_as": [
         "settings"
@@ -3247,7 +3280,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 229
+        "line": 283
       },
       "same_button_as": [
         "updates"

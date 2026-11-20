@@ -5,9 +5,9 @@
 EMStudio commands
 =================
 
-*Generated from EMStudio 8b211e8 for em API 1.2.0.*
+*Generated from EMStudio 9274372 for em API 1.2.0.*
 
-Every command of EMStudio's menus (43 rows of the command table, 43 reachable from Python), the items the operating system draws in the macOS menu bar, and the keys and gestures of the key map. ``em.app.commands.run(command_id, **slots)`` reaches a command by the id in the first column.
+Every command of EMStudio's menus (44 rows of the command table, 44 reachable from Python), the items the operating system draws in the macOS menu bar, and the keys and gestures of the key map. ``em.app.commands.run(command_id, **slots)`` reaches a command by the id in the first column.
 
 How ``run_command`` reaches the page
 ------------------------------------
@@ -16,13 +16,13 @@ How ``run_command`` reaches the page
 #. ``src/s3dgraphy/em/host.py:147`` — NullHost: NotAvailable outside a host
 #. ``tools/em_py.py:581`` — EMStudioApp.run\_command asks the page: request kind "command" with id and slots
 #. ``frontend/src/py-session.ts:364`` — PySession answers the request through the page's host.command(id, slots); false -\> error py.noCommand
-#. ``frontend/src/main.ts:66523`` — the page's host hook: command -\> runCommand(id)
-#. ``frontend/src/menu-ui.ts:182`` — runCommand: plugin:\<id\>/\<cmd\> -\> plugin invocation; otherwise findRow(id) and click the row's button
-#. ``frontend/src/menu-ui.ts:201`` — findRow: only rows of kind "cmd" in MENUS (sub-menus walked)
+#. ``frontend/src/main.ts:66534`` — the page's host hook: command -\> runCommand(id)
+#. ``frontend/src/menu-ui.ts:214`` — runCommand: plugin:\<id\>/\<cmd\> -\> plugin invocation; otherwise findRow(id) and click the row's button
+#. ``frontend/src/menu-ui.ts:233`` — findRow: only rows of kind "cmd" in MENUS (sub-menus walked)
 
 Plugin commands are reachable too, as ``plugin:<plugin>/<command>`` (registered at run time, not listed here; see ``em.plugins``). Slots are accepted by the API but not forwarded to the command by the page. No command declares whether it writes to the graph: the column says ``unknown``.
 
-Menu commands (43)
+Menu commands (44)
 ------------------
 
 .. list-table::
@@ -71,34 +71,6 @@ Menu commands (43)
      - —
      - yes
      - unknown
-   * - :doc:`openProject <openProject>`
-     - Open project…
-     - Apri progetto…
-     - File ▸ Open project…
-     - —
-     - yes
-     - unknown
-   * - :doc:`reorderProject <reorderProject>`
-     - Reorder by the standard…
-     - Riordina secondo lo standard…
-     - File ▸ Reorder by the standard…
-     - —
-     - yes
-     - unknown
-   * - :doc:`closeProject <closeProject>`
-     - Close the project
-     - Chiudi il progetto
-     - File ▸ Close the project
-     - —
-     - yes
-     - unknown
-   * - :doc:`revealDoc <revealDoc>`
-     - Open the project folder
-     - Apri la cartella del progetto
-     - File ▸ Open the project folder
-     - —
-     - yes
-     - unknown
    * - :doc:`open <open>`
      - Open…
      - Apri…
@@ -113,11 +85,11 @@ Menu commands (43)
      - —
      - yes
      - unknown
-   * - :doc:`close <close>`
-     - Close
-     - Chiudi
-     - File ▸ Close
-     - ``⌘W``
+   * - :doc:`openProject <openProject>`
+     - Open project…
+     - Apri progetto…
+     - File ▸ Open project…
+     - —
      - yes
      - unknown
    * - :doc:`save <save>`
@@ -148,6 +120,13 @@ Menu commands (43)
      - —
      - yes
      - unknown
+   * - :doc:`bringIn <bringIn>`
+     - Bring in…
+     - Porta dentro…
+     - File ▸ Bring in…
+     - —
+     - yes
+     - unknown
    * - :doc:`door <door>`
      - Bring in…
      - Porta dentro…
@@ -169,10 +148,10 @@ Menu commands (43)
      - —
      - yes
      - unknown
-   * - :doc:`georef <georef>`
-     - Georeferencing…
-     - Georeferenziazione…
-     - File ▸ Georeferencing…
+   * - :doc:`integrate <integrate>`
+     - Integrate into this file…
+     - Integra in questo file…
+     - File ▸ Integrate into this file…
      - —
      - yes
      - unknown
@@ -204,66 +183,87 @@ Menu commands (43)
      - —
      - yes
      - unknown
-   * - :doc:`printSheets <printSheets>`
-     - Print sheets…
-     - Stampa schede…
-     - File ▸ Print sheets…
-     - —
-     - yes
-     - unknown
-   * - :doc:`integrate <integrate>`
-     - Integrate into this file…
-     - Integra in questo file…
-     - File ▸ Integrate into this file…
-     - —
-     - yes
-     - unknown
-   * - :doc:`relocate <relocate>`
-     - Find missing files…
-     - Ritrova i file…
-     - File ▸ Find missing files…
-     - —
-     - yes
-     - unknown
-   * - :doc:`collect <collect>`
-     - Collect resources…
-     - Raccogli le risorse…
-     - File ▸ Collect resources…
-     - —
-     - yes
-     - unknown
-   * - :doc:`cleanFile <cleanFile>`
-     - Clean the file…
-     - Pulisci il file…
-     - File ▸ Clean the file…
-     - —
-     - yes
-     - unknown
-   * - :doc:`createRoom <createRoom>`
-     - Create a room…
-     - Crea una stanza…
-     - File ▸ Create a room…
-     - —
-     - yes
-     - unknown
-   * - :doc:`bringIntoRoom <bringIntoRoom>`
-     - Bring this into a new room…
-     - Porta questo in una stanza nuova…
-     - File ▸ Bring this into a new room…
+   * - :doc:`composeFromGraph <composeFromGraph>`
+     - Blender scene (.blend)…
+     - Scena Blender (.blend)…
+     - File ▸ Export ▸ Blender scene (.blend)…
      - —
      - yes
      - unknown
    * - :doc:`consolidate <consolidate>`
      - Consolidate for…
      - Consolida per…
-     - File ▸ Consolidate for…
+     - File ▸ Export ▸ Consolidate for…
      - —
      - yes
      - unknown
-   * - :doc:`composeFromGraph <composeFromGraph>`
-     - Compose a .blend from the graph…
-     - Componi un .blend dal grafo…
-     - File ▸ Compose a .blend from the graph…
+   * - :doc:`printSheets <printSheets>`
+     - Print sheets…
+     - Stampa schede…
+     - File ▸ Export ▸ Print sheets…
+     - —
+     - yes
+     - unknown
+   * - :doc:`relocate <relocate>`
+     - Find missing files…
+     - Ritrova i file…
+     - File ▸ External data ▸ Find missing files…
+     - —
+     - yes
+     - unknown
+   * - :doc:`collect <collect>`
+     - Collect resources…
+     - Raccogli le risorse…
+     - File ▸ External data ▸ Collect resources…
+     - —
+     - yes
+     - unknown
+   * - :doc:`revealDoc <revealDoc>`
+     - Open the project folder
+     - Apri la cartella del progetto
+     - File ▸ External data ▸ Open the project folder
+     - —
+     - yes
+     - unknown
+   * - :doc:`cleanFile <cleanFile>`
+     - Clean the file…
+     - Pulisci il file…
+     - File ▸ Clean up ▸ Clean the file…
+     - —
+     - yes
+     - unknown
+   * - :doc:`reorderProject <reorderProject>`
+     - Reorder by the standard…
+     - Riordina secondo lo standard…
+     - File ▸ Clean up ▸ Reorder by the standard…
+     - —
+     - yes
+     - unknown
+   * - :doc:`createRoom <createRoom>`
+     - Create a room…
+     - Crea una stanza…
+     - File ▸ Room ▸ Create a room…
+     - —
+     - yes
+     - unknown
+   * - :doc:`bringIntoRoom <bringIntoRoom>`
+     - Bring this into a new room…
+     - Porta questo in una stanza nuova…
+     - File ▸ Room ▸ Bring this into a new room…
+     - —
+     - yes
+     - unknown
+   * - :doc:`close <close>`
+     - Close
+     - Chiudi
+     - File ▸ Close
+     - ``⌘W``
+     - yes
+     - unknown
+   * - :doc:`closeProject <closeProject>`
+     - Close the project
+     - Chiudi il progetto
+     - File ▸ Close the project
      - —
      - yes
      - unknown
@@ -272,6 +272,13 @@ Menu commands (43)
      - Esci da EMStudio
      - File ▸ Quit EMStudio
      - ``⌘Q``
+     - yes
+     - unknown
+   * - :doc:`georef <georef>`
+     - Georeferencing…
+     - Georeferenziazione…
+     - Tools ▸ Georeferencing…
+     - —
      - yes
      - unknown
    * - :doc:`undo <undo>`
@@ -1089,6 +1096,7 @@ Sub-menus filled at run time
 
    about
    aboutHelp
+   bringIn
    bringIntoRoom
    cleanFile
    close

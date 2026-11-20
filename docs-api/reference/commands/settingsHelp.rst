@@ -5,7 +5,7 @@
 settingsHelp
 ============
 
-*Generated from EMStudio 8b211e8 for em API 1.2.0.*
+*Generated from EMStudio 9274372 for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -34,7 +34,7 @@ settingsHelp
    * - Same button as
      - :doc:`settings <settings>`
    * - Defined in
-     - ``frontend/src/menu-table.ts:228``
+     - ``frontend/src/menu-table.ts:282``
 
 What it does
 ------------
@@ -45,7 +45,7 @@ Slots
 -----
 
 None declared: the command table (``CommandRow`` in ``menu-table.ts``) declares no slots, types or defaults.
-Keyword slots passed to ``em.app.commands.run`` reach the page but are dropped by the host hook (``frontend/src/main.ts:66523``), which calls ``runCommand(id)`` only.
+Keyword slots passed to ``em.app.commands.run`` reach the page but are dropped by the host hook (``frontend/src/main.ts:66534``), which calls ``runCommand(id)`` only.
 
 From Python
 -----------

@@ -5,7 +5,7 @@
 collect
 =======
 
-*Generated from EMStudio 8b211e8 for em API 1.2.0.*
+*Generated from EMStudio 9274372 for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -24,15 +24,15 @@ collect
    * - Writes to the graph
      - not declared
    * - Menu path (en)
-     - File ▸ Collect resources…
+     - File ▸ External data ▸ Collect resources…
    * - Menu path (it)
-     - File ▸ Raccogli le risorse…
+     - File ▸ File esterni ▸ Raccogli le risorse…
    * - Drawn in
      - the page's menu bar: web, macOS desktop, Windows desktop, Linux desktop; the system menu bar: macOS desktop
    * - Shortcut
      - none
    * - Defined in
-     - ``frontend/src/menu-table.ts:180``
+     - ``frontend/src/menu-table.ts:211``
 
 What it does
 ------------
@@ -45,7 +45,7 @@ Slots
 -----
 
 None declared: the command table (``CommandRow`` in ``menu-table.ts``) declares no slots, types or defaults.
-Keyword slots passed to ``em.app.commands.run`` reach the page but are dropped by the host hook (``frontend/src/main.ts:66523``), which calls ``runCommand(id)`` only.
+Keyword slots passed to ``em.app.commands.run`` reach the page but are dropped by the host hook (``frontend/src/main.ts:66534``), which calls ``runCommand(id)`` only.
 
 From Python
 -----------

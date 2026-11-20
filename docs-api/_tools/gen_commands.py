@@ -453,7 +453,9 @@ def surfaces_of(menu: Dict[str, Any], row: Dict[str, Any]) -> Dict[str, List[str
     out: Dict[str, List[str]] = {}
     only = row.get("only")
     for pf in PLATFORMS:
-        if only and pf not in only:
+        # ``only: []`` (NOWHERE, MICRO-TIL003) = drawn on no platform: an empty
+        # list is not «absent»
+        if only is not None and pf not in only:
             continue
         surf = []
         for s in (menu.get("surfaces") or {}).get(pf) or []:
@@ -705,10 +707,15 @@ def page_for(c: Dict[str, Any], data: Dict[str, Any], meta: Dict[str, Any]) -> s
         ["Reachable from Python", reach_text],
         ["Writes to the graph", "not declared"],
     ]
-    if c.get("menu_path"):
+    if c.get("menu_path") and c.get("surfaces"):
         rows.append(["Menu path (en)", esc(c["menu_path"].get("en", ""))])
         rows.append(["Menu path (it)", esc(c["menu_path"].get("it", ""))])
         rows.append(["Drawn in", esc(where_text(c)) or "—"])
+    elif c["kind"] == "menu":
+        # MICRO-TIL003 · a command kept without an item (``only: []``): its
+        # button waits hidden in the page, the command id still runs it
+        rows.append(["Drawn in", "no menu — the command is kept for Python and the keys; "
+                                 "its item was replaced by another entry"])
     rows.append(["Shortcut", shortcut_text(c) or "none"])
     if c.get("same_button_as"):
         rows.append(["Same button as", ", ".join(f":doc:`{i} <{i}>`" for i in c["same_button_as"])])
