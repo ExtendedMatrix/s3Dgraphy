@@ -101,6 +101,18 @@ def test_preview_shows_both_panels_and_writes_nothing():
     assert nothing_written()
 
 
+def test_the_panel_says_the_tier_written_as_tier(tmp_path):
+    """MICRO-COR12 · ``tier`` and ``fascia`` are one key (SPEC.md §6.3): an
+    envelope that writes ``tier`` (as the guide teaches) shows its tier in the
+    Data panel, not «?»."""
+    pkg = copy(MIXED, tmp_path)
+    set_toml(pkg, r'^(\s*)fascia = ', r'\1tier = ', count=0)
+    assert "fascia" not in (pkg / "em-extension.toml").read_text(encoding="utf-8")
+    pv = X.preview(pkg)
+    assert pv["ok"], pv["errors"]
+    assert [v["fascia"] for v in pv["data"]["summary"]["vocabularies"]] == ["A", "A", "A"]
+
+
 def test_archive_hash_is_the_same_for_a_folder_and_its_zip(tmp_path):
     assert X.preview(MIXED)["archive_hash"] == X.preview(zip_of(MIXED, tmp_path))["archive_hash"]
 

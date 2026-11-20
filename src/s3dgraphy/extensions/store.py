@@ -300,6 +300,8 @@ def _data_summary(pkg: Package) -> Dict[str, Any]:
                     and isinstance(x.get("geometry"), Mapping)})
     vocabs = []
     for v in pkg.carried_vocabularies():
+        # ``tier`` and ``fascia`` are one key (SPEC.md §6.3): the panel says it either way
+        v = dict(v, fascia=v.get("fascia") or v.get("tier"))
         vocabs.append({k: v.get(k) for k in ("scheme", "version", "license", "fascia", "path") if v.get(k) is not None}
                       | ({"fetch": dict(v["fetch"])} if isinstance(v.get("fetch"), Mapping) else {}))
     return {"vocabularies": vocabs, "qualia": n("qualia"), "extractors": n("extractor_types"),
