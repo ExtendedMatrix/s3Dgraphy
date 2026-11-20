@@ -86,7 +86,47 @@ rtl = language in RTL_LANGUAGES
 html_theme = "sphinx_rtd_theme"
 html_title = f"EMStudio Python API {API_VERSION}"
 html_static_path = ["_assets"]
-html_context = {"rtl": rtl}
+# MICRO-TIL004 · the foot of every page (_templates/footer.html, vendored from
+# stratigraph-brand): the EMStudio manual, and the small block of the funding,
+# whose full page (logos, the other funders) is in the manual. No line of the
+# rights: this reference has not declared a licence for its text.
+_MANUAL = f"https://docs.extendedmatrix.org/projects/emstudio-doc/{'it' if language == 'it' else 'en'}/1.6/"
+_FOOT = {
+    "en": {
+        "manual": "EMStudio manual",
+        "text": "EMStudio, whose scripting API this reference describes, is developed within "
+                "StratiGraph, a Horizon Europe Innovation Action (grant agreement 101232855).",
+        "disclaimer": "Funded by the European Union. Views and opinions expressed are however "
+                      "those of the author(s) only and do not necessarily reflect those of the "
+                      "European Union or the European Research Executive Agency (REA). Neither "
+                      "the European Union nor the granting authority can be held responsible "
+                      "for them.",
+        "more": "Acknowledgements and funding",
+    },
+    "it": {
+        "manual": "Manuale di EMStudio",
+        "text": "EMStudio, di cui questo riferimento descrive l'API di scripting, è sviluppato "
+                "nell'ambito di StratiGraph, un'Innovation Action di Horizon Europe "
+                "(grant agreement 101232855).",
+        "disclaimer": "Finanziato dall'Unione europea. I punti di vista e le opinioni espressi "
+                      "sono tuttavia esclusivamente quelli degli autori e non riflettono "
+                      "necessariamente quelli dell'Unione europea o dell'Agenzia esecutiva "
+                      "europea per la ricerca (REA). Né l'Unione europea né l'autorità che "
+                      "concede il finanziamento possono esserne ritenute responsabili.",
+        "more": "Ringraziamenti e finanziamenti",
+    },
+}
+_foot = _FOOT.get(language, _FOOT["en"])
+html_context = {
+    "rtl": rtl,
+    "sg_footer_links": [(_foot["manual"], _MANUAL)],
+    "sg_funding": {
+        "text": _foot["text"],
+        "disclaimer": _foot["disclaimer"],
+        "more": (_foot["more"], _MANUAL + "acknowledgements.html"),
+    },
+    "sg_rights": False,
+}
 html_css_files = ["brand/stratigraph-theme.css", "brand/skins.css", "brand/sphinx-rtd-bridge.css"] + (
     ["rtl.css"] if rtl else [])
 html_js_files = ["brand/brand-theme-toggle.js"]

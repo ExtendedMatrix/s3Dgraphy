@@ -1,0 +1,65 @@
+{% extends "!footer.html" %}
+{#
+   The foot of an Extended Matrix manual. Vendored from stratigraph-brand by
+   sync-brand-docs.sh — change it there, never here.
+
+   By default: rights, and nothing else. The Extended Matrix manuals predate
+   StratiGraph, and a manual claims a funding only when it says so itself, in
+   its conf.py, through html_context:
+
+     sg_footer_links   [(label, target), …] — a line of links above the
+                       rights. A target with "://" is an address; any other
+                       is a page of the manual (its docname: «acknowledgements»).
+     sg_funding        {"text": "…", "disclaimer": "…", "more": (label, target)}
+                       — the small block with the EU emblem (the official
+                       «Funded by the European Union» file, positive on the
+                       light face, negative on the dark one). Only for a manual
+                       whose work that funding paid for.
+
+     sg_rights         False to leave out the line of the rights (CC BY 4.0
+                       for text and images), for a manual that has not
+                       declared that licence. Default: the line is there.
+
+   Labels come from conf.py, which knows the language of the build.
+#}
+{% block extrafooter %}
+{{ super() }}
+{%- macro sg_href(target) -%}
+  {%- if "://" in target -%}{{ target }}{%- else -%}{{ pathto(target) }}{%- endif -%}
+{%- endmacro -%}
+{%- set sg_eu = "_static/brand/eu/" ~ ("it/" if language == "it" else "") -%}
+{%- if sg_funding %}
+<div class="sg-provenance sg-funding" role="complementary" aria-label="Funding">
+  <span class="sg-funding-emblem">
+    <img class="sg-on-light" src="{{ pathto(sg_eu ~ 'funded-by-eu-pos.png', 1) }}" alt="Funded by the European Union" width="180" height="40">
+    <img class="sg-on-dark" src="{{ pathto(sg_eu ~ 'funded-by-eu-neg.png', 1) }}" alt="Funded by the European Union" width="180" height="40">
+  </span>
+  <div class="sg-provenance-text">
+    <p>{{ sg_funding.text }}</p>
+    {%- if sg_funding.disclaimer %}
+    <p class="sg-funding-disclaimer">{{ sg_funding.disclaimer }}</p>
+    {%- endif %}
+    {%- if sg_funding.more %}
+    <p><a href="{{ sg_href(sg_funding.more[1]) }}">{{ sg_funding.more[0] }}</a></p>
+    {%- endif %}
+  </div>
+</div>
+{%- endif %}
+<div class="sg-provenance sg-provenance--rights-only" role="complementary" aria-label="Rights">
+  <div class="sg-provenance-text">
+    {%- if sg_footer_links %}
+    <p class="sg-provenance-links">
+      {%- for label, target in sg_footer_links %}
+      <a href="{{ sg_href(target) }}">{{ label }}</a>{% if not loop.last %}<span aria-hidden="true"> · </span>{% endif %}
+      {%- endfor %}
+    </p>
+    {%- endif %}
+    {%- if sg_rights is not defined or sg_rights %}
+    <p class="sg-provenance-rights">Text and images:
+    <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. The software
+    described here carries its own licence. Extended Matrix is used by, and older than,
+    the <a href="https://stratigraph-eccch.eu">StratiGraph</a> project.</p>
+    {%- endif %}
+  </div>
+</div>
+{% endblock %}

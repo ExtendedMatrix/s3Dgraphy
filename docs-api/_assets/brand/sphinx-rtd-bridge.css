@@ -26,6 +26,59 @@
    the roles, so both faces come out right.
    ══════════════════════════════════════════════════════════════════════════ */
 
+/* ── the bridge's own roles, one value per face ──────────────────────────────
+   The theme's roles are colours of the brand; a few places of the Read the
+   Docs frame need a role the brand does not name (the ink of a link on a dark
+   ground, the open branch of the side column, a key, the band of a box).
+   They are said here once, as variables, for the light face and for the dark
+   one, and only out of the brand's roles: nothing below invents a colour.
+   Every pair is measured by check-contrast.mjs (WCAG AA, 4.5:1 for text). */
+:root {
+  --sgb-link:          var(--sg-accent);
+  --sgb-link-hover:    var(--sg-accent-quiet);
+  --sgb-nav-open-bg:   var(--sg-surface-sunk);   /* the open branch of the side column */
+  --sgb-nav-open-fg:   var(--sg-muted);
+  --sgb-nav-here-fg:   var(--sg-text);           /* the page being read */
+  --sgb-nav-hover-bg:  var(--sg-line);
+  --sgb-kbd-bg:        var(--sg-surface);
+  --sgb-kbd-fg:        var(--sg-text);
+  --sgb-kbd-edge:      var(--sg-muted);
+  --sgb-band-info:     var(--sg-info-ink);       /* the title band of a box */
+  --sgb-band-warn:     var(--sg-warn);
+  --sgb-band-danger:   var(--sg-accent);
+  --sgb-band-tip:      var(--sg-ok-ink);
+  --sgb-on-band:       #fff;
+  --sgb-on-danger:     #fff;
+  --sgb-sig-bg:        var(--sg-surface-sunk);   /* the signature of a function */
+  --sgb-sig-edge:      var(--sg-info-ink);
+  --sgb-tok-keyword:   var(--sg-info-ink);       /* code: Pygments, by role */
+  --sgb-tok-string:    var(--sg-ok-ink);
+  --sgb-tok-number:    var(--sg-accent-quiet);
+  --sgb-tok-name:      var(--sg-info-ink);
+  --sgb-tok-comment:   var(--sg-muted);
+  --sgb-tok-plain:     var(--sg-text);
+  --sgb-code-fg:       var(--sg-accent-quiet);   /* ``code`` in a sentence */
+}
+/* the dark face, chosen by the reader (the switch) or by the system */
+:root[data-sg-theme="dark"] {
+  --sgb-link:          var(--sg-info-ink);
+  --sgb-band-warn:     var(--sg-quiet);
+  --sgb-band-danger:   var(--sg-warn);
+  --sgb-on-band:       var(--sg-bg);
+  --sgb-code-fg:       var(--sg-quiet);
+  --sgb-tok-number:    var(--sg-quiet);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-sg-theme="light"]) {
+    --sgb-link:          var(--sg-info-ink);
+    --sgb-band-warn:     var(--sg-quiet);
+    --sgb-band-danger:   var(--sg-warn);
+    --sgb-on-band:       var(--sg-bg);
+    --sgb-code-fg:       var(--sg-quiet);
+    --sgb-tok-number:    var(--sg-quiet);
+  }
+}
+
 /* ── the page ───────────────────────────────────────────────────────────── */
 body,
 .wy-body-for-nav {
@@ -58,8 +111,8 @@ h3, h4, h5, h6 { font-weight: var(--sg-weight-subtitle); }
 }
 
 /* ── links ──────────────────────────────────────────────────────────────── */
-a, a:visited { color: var(--sg-accent); }
-a:hover, a:focus { color: var(--sg-accent-quiet); }
+a, a:visited { color: var(--sgb-link); }
+a:hover, a:focus { color: var(--sgb-link-hover); }
 .rst-content a:not(.headerlink):hover { text-decoration: underline; }
 .rst-content .headerlink { color: var(--sg-muted); }
 
@@ -101,10 +154,26 @@ a:hover, a:focus { color: var(--sg-accent-quiet); }
   color: var(--sg-text);
   border-color: var(--sg-line);
 }
-.wy-menu-vertical li.current a { color: var(--sg-muted); border-right: none; }
-.wy-menu-vertical li.current a:hover { background: var(--sg-surface-sunk); color: var(--sg-text); }
-.wy-menu-vertical li.toctree-l2.current > a,
-.wy-menu-vertical li.toctree-l3.current > a { background: var(--sg-surface-sunk); }
+.wy-menu-vertical li.current a { color: var(--sgb-nav-open-fg); border-right: none; }
+/* The open branch, at every depth. The theme paints each level its own grey
+   (#c9c9c9, #bdbdbd, …) with selectors four classes deep, under the theme's
+   own pale text in the dark face: the children could not be read. One
+   ground and one ink for the whole branch, the page being read in full ink. */
+.wy-menu-vertical li.current li > a {
+  background: var(--sgb-nav-open-bg) !important;
+  color: var(--sgb-nav-open-fg) !important;
+}
+.wy-menu-vertical li.current li.current > a,
+.wy-menu-vertical li.current a.current {
+  color: var(--sgb-nav-here-fg) !important;
+  font-weight: 600;
+}
+.wy-menu-vertical li.current a:hover,
+.wy-menu-vertical li.current li > a:hover {
+  background: var(--sgb-nav-hover-bg) !important;
+  color: var(--sg-text) !important;
+}
+.wy-menu-vertical li.current button.toctree-expand { color: var(--sgb-nav-open-fg); }
 
 /* ── code, identifiers, numbers ─────────────────────────────────────────── */
 code, .rst-content code, .rst-content tt, kbd, pre, .rst-content pre.literal-block {
@@ -114,7 +183,7 @@ code, .rst-content code, .rst-content tt, kbd, pre, .rst-content pre.literal-blo
   background: var(--sg-surface-sunk);
   border: 1px solid var(--sg-line);
   border-radius: var(--sg-radius-sm);
-  color: var(--sg-accent-quiet);
+  color: var(--sgb-code-fg);
 }
 .highlight, div[class^="highlight"] {
   background: var(--sg-surface-sunk);
@@ -126,6 +195,56 @@ code, .rst-content code, .rst-content tt, kbd, pre, .rst-content pre.literal-blo
   color: var(--sg-text);
   border: none;
 }
+.rst-content code.xref, .rst-content a code { color: inherit; }
+
+/* A key. The theme draws it white on white with a grey shadow, whatever the
+   face: same selector here (same weight, loaded later), with the roles. A
+   combination (Shift+A) is a kbd holding kbds: only the inner ones are keys. */
+.rst-content :not(dl.option-list)>:not(dt):not(kbd):not(.kbd)>kbd,
+.rst-content :not(dl.option-list)>:not(dt):not(kbd):not(.kbd)>.kbd,
+.rst-content kbd kbd {
+  background-color: var(--sgb-kbd-bg);
+  color: var(--sgb-kbd-fg);
+  border: 1px solid var(--sgb-kbd-edge);
+  box-shadow: 0 2px 0 var(--sgb-kbd-edge);
+}
+.rst-content kbd.compound {
+  background: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  color: var(--sg-text) !important;
+}
+
+/* The signature of a function in the reference (autodoc): the theme's pale
+   blue band with blue letters, the same in the dark. */
+.rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.citation):not(.glossary):not(.simple) > dt.sig,
+.rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.citation):not(.glossary):not(.simple) dl > dt.sig {
+  background: var(--sgb-sig-bg) !important;
+  color: var(--sg-text) !important;
+  border-color: var(--sgb-sig-edge) !important;
+}
+.rst-content dt.sig .sig-name, .rst-content dt.sig .descname,
+.rst-content dt.sig .sig-prename, .rst-content dt.sig .descclassname,
+.rst-content dt.sig .sig-paren, .rst-content dt.sig em, .rst-content dt.sig .n,
+.rst-content dt.sig .o, .rst-content dt.sig .p { color: var(--sg-text) !important; }
+.rst-content dt.sig .property, .rst-content dt.sig .k { color: var(--sgb-tok-keyword) !important; }
+.rst-content dt.sig a, .rst-content dt.sig .viewcode-link { color: var(--sgb-link) !important; }
+.rst-content dl dt .headerlink { color: var(--sg-muted); }
+
+/* Pygments, by role. The default style (green keywords, navy prompts, grey
+   output) was written for a white page: on the sunk ground it is under 4.5:1
+   in the light face and near 1:1 in the dark. Each family of tokens takes a
+   role, so both faces follow. */
+.highlight { color: var(--sgb-tok-plain); }
+.highlight .hll { background-color: var(--sg-line); }
+.highlight :is(.k, .kc, .kd, .kn, .kp, .kr, .kt, .ow, .bp, .nb, .nt, .sx, .gh, .gp, .gu) { color: var(--sgb-tok-keyword); }
+.highlight :is(.s, .sa, .sb, .sc, .dl, .sd, .s1, .s2, .se, .sh, .si, .sr, .ss) { color: var(--sgb-tok-string); }
+.highlight :is(.m, .mb, .mf, .mh, .mi, .mo, .il, .cp, .no, .nd, .na, .nl, .gi) { color: var(--sgb-tok-number); }
+.highlight :is(.nf, .fm, .nc, .nn, .ne, .nv, .vc, .vg, .vi, .vm, .gt) { color: var(--sgb-tok-name); }
+.highlight :is(.c, .ch, .cm, .cpf, .c1, .cs, .go, .ni, .w) { color: var(--sgb-tok-comment); }
+.highlight :is(.o, .p, .n, .x, .err, .gd, .gr) { color: var(--sgb-tok-plain); }
+.highlight .err { border: none; }
 
 /* ── the boxes that say «careful» and «by the way» ──────────────────────── */
 .rst-content .admonition, .rst-content .note, .rst-content .warning,
@@ -138,18 +257,27 @@ code, .rst-content code, .rst-content tt, kbd, pre, .rst-content pre.literal-blo
   box-shadow: var(--sg-shadow);
   overflow: hidden;
 }
-.rst-content .admonition-title {
+/* The band of a box. The theme gives each kind its own light colour under
+   white letters (2.4:1 on the pale blue of «See also»): the band takes the ink
+   of its role, and the letters the colour that reads on it, per face. The
+   selectors carry the kind, as the theme's do, so they weigh the same. */
+.rst-content .admonition-title,
+.rst-content .admonition .admonition-title,
+.rst-content :is(.note, .seealso, .important) .admonition-title {
   font-family: var(--sg-font-display);
-  background: var(--sg-info);
-  color: #fff;
+  background: var(--sgb-band-info);
+  color: var(--sgb-on-band);
 }
-.rst-content .warning .admonition-title,
-.rst-content .caution .admonition-title,
-.rst-content .attention .admonition-title { background: var(--sg-warn); }
-.rst-content .danger .admonition-title,
-.rst-content .error .admonition-title { background: var(--sg-accent); }
-.rst-content .tip .admonition-title,
-.rst-content .hint .admonition-title { background: var(--sg-ok-ink); }
+.rst-content :is(.warning, .caution, .attention) .admonition-title {
+  background: var(--sgb-band-warn); color: var(--sgb-on-band);
+}
+.rst-content :is(.danger, .error) .admonition-title {
+  background: var(--sgb-band-danger); color: var(--sgb-on-danger);
+}
+.rst-content :is(.tip, .hint) .admonition-title {
+  background: var(--sgb-band-tip); color: var(--sgb-on-band);
+}
+.rst-content .admonition-title::before { color: inherit; }
 .rst-content blockquote {
   border-left: 3px solid var(--sg-quiet);
   color: var(--sg-muted);
@@ -267,3 +395,85 @@ hr, .rst-content hr { border-color: var(--sg-line); }
 .sg-theme-toggle:hover { background: rgba(255, 255, 255, .26); }
 .sg-theme-toggle:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 .sg-theme-toggle svg { flex: none; }
+
+/* ── la provenienza, in fondo a ogni pagina ──────────────────────────────────
+   Chi arriva da una ricerca atterra in mezzo a un manuale, non sull'indice:
+   il finanziamento, il progetto e la licenza stanno dove la pagina finisce,
+   qualunque pagina sia. Il blocco lo mette `footer.html`, vendorizzato da
+   sync-brand-docs.sh; l'emblema è un SVG, quindi non pesa e non sgrana. */
+.sg-provenance {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sg-space-4);
+  margin-top: var(--sg-space-5);
+  padding-top: var(--sg-space-4);
+  border-top: 1px solid var(--sg-line);
+  font-family: var(--sg-font-sans);
+  font-size: var(--sg-text-sm);
+  line-height: 1.65;
+  color: var(--sg-muted);
+  text-align: left;
+  /* Il riquadro delle versioni di Read the Docs sta fisso in basso a destra:
+     questo spazio lascia che l'ultima riga gli scorra sopra invece di finirci
+     sotto. */
+  padding-bottom: 3.5rem;
+}
+.sg-provenance-emblem {
+  flex: none;
+  width: 81px;
+  height: 54px;
+  margin-top: 2px;
+  border-radius: 2px;
+}
+.sg-provenance-text { max-width: 62ch; }
+.sg-provenance p { margin: 0 0 var(--sg-space-2); }
+.sg-provenance p:last-child { margin-bottom: 0; }
+.sg-provenance strong { color: var(--sg-text); font-weight: var(--sg-weight-subtitle); }
+.sg-provenance a { color: var(--sgb-link); text-decoration: underline; }
+.sg-provenance-rights { color: var(--sg-muted); }
+.sg-provenance--rights-only { border-top: 1px solid var(--sg-line); }
+
+/* Links in the foot (the manual's own: its acknowledgements, a reference). */
+.sg-provenance-links { color: var(--sg-muted); }
+.sg-provenance-links a { font-weight: var(--sg-weight-subtitle); }
+
+/* The small funding block, above the rights, when a manual asks for it
+   (html_context["sg_funding"]). The emblem is the official file, one for
+   each face; it keeps its height (40 px: over the EU minimum of 1 cm for
+   the flag) and is never scaled under it. */
+.sg-funding { padding-bottom: 0; align-items: center; }
+.sg-funding + .sg-provenance { border-top: none; margin-top: var(--sg-space-3); }
+.sg-funding-emblem { flex: none; line-height: 0; }
+.sg-funding-emblem img { height: 40px; width: auto; max-width: none; }
+.sg-funding-disclaimer { color: var(--sg-muted); font-size: var(--sg-text-xs); }
+
+@media (max-width: 600px) {
+  .sg-provenance { flex-direction: column; gap: var(--sg-space-3); }
+}
+
+/* ── one picture per face ────────────────────────────────────────────────────
+   A logo drawn for a light ground and its twin for a dark one: both are in
+   the page, the face shows one. `:class: sg-on-light` / `sg-on-dark` on an
+   image in a page, the same classes in a template. */
+.sg-on-dark { display: none !important; }
+:root[data-sg-theme="dark"] .sg-on-light { display: none !important; }
+:root[data-sg-theme="dark"] .sg-on-dark { display: inline-block !important; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-sg-theme="light"]) .sg-on-light { display: none !important; }
+  :root:not([data-sg-theme="light"]) .sg-on-dark { display: inline-block !important; }
+}
+
+/* ── the page of acknowledgements ────────────────────────────────────────────
+   A row of logos for each funder: same height for all, the EU emblem never
+   smaller than the others (the rule of the emblem). Images in a manual's
+   page are drawn on the page's own ground, so a transparent logo must come
+   in two faces (above). */
+.rst-content .sg-logos { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sg-space-4) var(--sg-space-5); margin: var(--sg-space-3) 0 var(--sg-space-4); }
+.rst-content .sg-logos img { height: 56px; width: auto; max-width: 100%; margin: 0; }
+.rst-content .sg-logos img.sg-logo-eu { height: 64px; }
+/* The official StratiGraph SVGs (logo/full-*.svg) keep a wide margin inside
+   their own box (655×380, the drawing in the middle third): they are shown
+   unaltered and taller, so that the drawing comes to the height of the others,
+   never above the EU emblem. */
+.rst-content .sg-logos img.sg-logo-boxed { height: 100px; margin: -22px -20px; }
+.rst-content .sg-logos p { margin: 0; }
