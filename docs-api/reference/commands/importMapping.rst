@@ -5,7 +5,7 @@
 importMapping
 =============
 
-*Generated from EMStudio 9274372 for em API 1.2.0.*
+*Generated from EMStudio 17797d8 for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -21,6 +21,8 @@ importMapping
      - Menu command — presses the page button ``btn-import-mapping``
    * - Reachable from Python
      - yes — ``em.app.commands.run("importMapping")``
+   * - Script form
+     - a window a person answers — no script form yet (a table and its mapping are chosen and checked in the mapping editor; no script form yet (s3Dgraphy's importers are reachable from Python directly))
    * - Writes to the graph
      - not declared
    * - Menu path (en)
@@ -41,6 +43,8 @@ What it does
 
 **it** — Leggi una tabella o un XML con una mappatura: in un grafo nuovo, o su questo
 
+**script** — Import a table with a mapping.
+
 Label in the other languages
 ----------------------------
 
@@ -55,11 +59,10 @@ AI drafts, not yet validated by a person (see ``isValidated`` in ``i18n.ts``).
    * - ``de``
      - Tabelle mit Zuordnung…
 
-Slots
------
+Parameters
+----------
 
-None declared: the command table (``CommandRow`` in ``menu-table.ts``) declares no slots, types or defaults.
-Keyword slots passed to ``em.app.commands.run`` reach the page but are dropped by the host hook (``frontend/src/main.ts:66534``), which calls ``runCommand(id)`` only.
+None: ``em.app.commands.run`` refuses a parameter given to it.
 
 From Python
 -----------
@@ -70,4 +73,4 @@ From Python
 
    em.app.commands.run("importMapping")
 
-The page presses the command's button, as a click would: whatever dialog the command opens, opens. If the button is disabled at that moment (or the id is unknown) the call raises ``em.NotAvailable`` (``py.noCommand``). Outside EMStudio (no host) the call raises ``em.NotAvailable``.
+The page presses the command's button, as a click would: its window opens and waits for a person. If the command is not possible at that moment (its button disabled) the call raises ``em.NotAvailable`` (``py.noCommand``). Outside EMStudio (no host) the call raises ``em.NotAvailable``.

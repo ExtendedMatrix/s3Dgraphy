@@ -11,7 +11,10 @@ As Blender's ``bpy.ops``, ``bpy.types`` and ``bpy.context``:
    :widths: 30 70
 
    * - :doc:`commands/index`
-     - ``em.app.commands.run(id)`` — every command of EMStudio (our ``bpy.ops``)
+     - ``em.app.commands.run(id, **params)`` — every command of EMStudio and
+       the named actions, with their parameters (our ``bpy.ops``)
+   * - :doc:`app/space`, :doc:`app/workspaces`, :doc:`app/windows`
+     - the Space, the workspaces and the windows of EMStudio as objects
    * - :doc:`types/index`
      - the types of nodes and edges of the EM language (our ``bpy.types``)
    * - :doc:`context`
@@ -41,5 +44,8 @@ The modules:
 
    context
    commands/index
+   app/space
+   app/workspaces
+   app/windows
    types/index
    slots

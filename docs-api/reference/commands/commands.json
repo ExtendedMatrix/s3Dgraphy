@@ -1,6 +1,6 @@
 {
   "generated_from": {
-    "emstudio_sha": "9274372",
+    "emstudio_sha": "17797d8",
     "emstudio_read": "HEAD",
     "em_api_version": "1.2.0"
   },
@@ -11,7 +11,8 @@
     "i18n": "frontend/src/i18n.ts",
     "main": "frontend/src/main.ts",
     "py_session": "frontend/src/py-session.ts",
-    "em_py": "tools/em_py.py"
+    "em_py": "tools/em_py.py",
+    "script_commands": "frontend/src/script-commands.json"
   },
   "library_chain": [
     {
@@ -31,37 +32,43 @@
       "cmd"
     ],
     "plugin_prefix": true,
-    "slots_forwarded": false,
+    "slots_forwarded": true,
     "button_disabled_fails": true,
     "steps": [
       {
         "key": "em_py.run_command",
         "file": "tools/em_py.py",
-        "line": 581,
+        "line": 764,
         "what": "EMStudioApp.run_command asks the page: request kind \"command\" with id and slots"
       },
       {
         "key": "py_session.case_command",
         "file": "frontend/src/py-session.ts",
-        "line": 364,
+        "line": 386,
         "what": "PySession answers the request through the page's host.command(id, slots); false -> error py.noCommand"
       },
       {
         "key": "main.host_command",
         "file": "frontend/src/main.ts",
-        "line": 66534,
-        "what": "the page's host hook: command -> runCommand(id)"
+        "line": 66633,
+        "what": "the page's host hook: command -> runScriptCommand(id, params)"
+      },
+      {
+        "key": "main.runScriptCommand",
+        "file": "frontend/src/main.ts",
+        "line": 66700,
+        "what": "runScriptCommand: the params checked against script-commands.json (refused in the page's words); an action runs its handler; a command with a script form runs it (no window when its values are given); otherwise runCommand(id)"
       },
       {
         "key": "menu_ui.runCommand",
         "file": "frontend/src/menu-ui.ts",
-        "line": 214,
+        "line": 216,
         "what": "runCommand: plugin:<id>/<cmd> -> plugin invocation; otherwise findRow(id) and click the row's button"
       },
       {
         "key": "menu_ui.findRow",
         "file": "frontend/src/menu-ui.ts",
-        "line": 233,
+        "line": 237,
         "what": "findRow: only rows of kind \"cmd\" in MENUS (sub-menus walked)"
       }
     ]
@@ -200,6 +207,17 @@
         "file": "frontend/src/menu-table.ts",
         "line": 138
       },
+      "script": {
+        "form": "exec",
+        "exec_when": [],
+        "why": null,
+        "doc": "Show the About window.",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 4
+        }
+      },
       "same_button_as": [
         "aboutHelp"
       ]
@@ -245,6 +263,17 @@
       "source": {
         "file": "frontend/src/menu-table.ts",
         "line": 139
+      },
+      "script": {
+        "form": "exec",
+        "exec_when": [],
+        "why": null,
+        "doc": "Ask whether a newer EMStudio exists (desktop).",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 6
+        }
       },
       "same_button_as": [
         "updatesHelp"
@@ -302,6 +331,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 24
+        },
+        "script": {
+          "command": "settings"
         }
       },
       "reachable_from_python": "yes",
@@ -310,6 +342,17 @@
       "source": {
         "file": "frontend/src/menu-table.ts",
         "line": 141
+      },
+      "script": {
+        "form": "exec",
+        "exec_when": [],
+        "why": null,
+        "doc": "Show the Settings window.",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 8
+        }
       },
       "same_button_as": [
         "settingsHelp"
@@ -603,6 +646,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 21
+        },
+        "script": {
+          "command": "new"
         }
       },
       "reachable_from_python": "yes",
@@ -611,6 +657,17 @@
       "source": {
         "file": "frontend/src/menu-table.ts",
         "line": 163
+      },
+      "script": {
+        "form": "exec",
+        "exec_when": [],
+        "why": null,
+        "doc": "A new empty document. The script goes on reading the document it started on (``g``); the next run sees the new one.",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 14
+        }
       },
       "same_button_as": []
     },
@@ -668,6 +725,17 @@
       "source": {
         "file": "frontend/src/menu-table.ts",
         "line": 165
+      },
+      "script": {
+        "form": "window",
+        "exec_when": [],
+        "why": "asks where the folders of a new EM project go and how they are named: a person's answer, no script form yet",
+        "doc": "Make the folders of a new EM project.",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 15
+        }
       },
       "same_button_as": []
     },
@@ -732,10 +800,36 @@
       "keymap": null,
       "reachable_from_python": "yes",
       "writes_graph": "unknown",
-      "slots": [],
+      "slots": [
+        {
+          "name": "path",
+          "type": "str",
+          "default": null,
+          "doc": "the file to open (absolute path)"
+        },
+        {
+          "name": "replace",
+          "type": "bool",
+          "default": false,
+          "doc": "close the open files first (asking for their unsaved work), as the box «Replace the open files»"
+        }
+      ],
       "source": {
         "file": "frontend/src/menu-table.ts",
         "line": 166
+      },
+      "script": {
+        "form": "invoke",
+        "exec_when": [
+          "path"
+        ],
+        "why": null,
+        "doc": "Open an em.json (or a GraphML, through the importer). With ``path`` no file picker opens; the question about unsaved work is still asked.",
+        "returns": "the path opened",
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 16
+        }
       },
       "same_button_as": []
     },
@@ -775,10 +869,30 @@
       "keymap": null,
       "reachable_from_python": "yes",
       "writes_graph": "unknown",
-      "slots": [],
+      "slots": [
+        {
+          "name": "path",
+          "type": "str",
+          "default": null,
+          "doc": "the file to open (absolute path)"
+        }
+      ],
       "source": {
         "file": "frontend/src/menu-table.ts",
         "line": 170
+      },
+      "script": {
+        "form": "invoke",
+        "exec_when": [
+          "path"
+        ],
+        "why": null,
+        "doc": "Open a file in place of the open ones (= ``open`` with ``replace=True``).",
+        "returns": "the path opened",
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 21
+        }
       },
       "same_button_as": []
     },
@@ -836,6 +950,17 @@
       "source": {
         "file": "frontend/src/menu-table.ts",
         "line": 172
+      },
+      "script": {
+        "form": "window",
+        "exec_when": [],
+        "why": "a project is a folder chosen in the folder picker; no script form yet (open its em.json with ``open``)",
+        "doc": "Open an EM project (its folder).",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 23
+        }
       },
       "same_button_as": []
     },
@@ -912,6 +1037,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 22
+        },
+        "script": {
+          "command": "save"
         }
       },
       "reachable_from_python": "yes",
@@ -920,6 +1048,17 @@
       "source": {
         "file": "frontend/src/menu-table.ts",
         "line": 175
+      },
+      "script": {
+        "form": "exec",
+        "exec_when": [],
+        "why": null,
+        "doc": "Save the active document where it is. A graph that has no file yet asks where (Save As).",
+        "returns": "true when saved",
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 24
+        }
       },
       "same_button_as": []
     },
@@ -996,14 +1135,37 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 23
+        },
+        "script": {
+          "command": "saveAs"
         }
       },
       "reachable_from_python": "yes",
       "writes_graph": "unknown",
-      "slots": [],
+      "slots": [
+        {
+          "name": "path",
+          "type": "str",
+          "default": null,
+          "doc": "where to write the em.json (absolute path)"
+        }
+      ],
       "source": {
         "file": "frontend/src/menu-table.ts",
         "line": 176
+      },
+      "script": {
+        "form": "invoke",
+        "exec_when": [
+          "path"
+        ],
+        "why": null,
+        "doc": "Save the active document under another name. With ``path`` no save picker opens: the file is written there (over a file already there) and becomes the document's file.",
+        "returns": "the path written",
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 25
+        }
       },
       "same_button_as": []
     },
@@ -1065,6 +1227,17 @@
         "file": "frontend/src/menu-table.ts",
         "line": 177
       },
+      "script": {
+        "form": "exec",
+        "exec_when": [],
+        "why": null,
+        "doc": "Save every file with unsaved work.",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 27
+        }
+      },
       "same_button_as": []
     },
     {
@@ -1122,6 +1295,17 @@
         "file": "frontend/src/menu-table.ts",
         "line": 178
       },
+      "script": {
+        "form": "exec",
+        "exec_when": [],
+        "why": null,
+        "doc": "Pin a version of the project: a snapshot downloaded beside the work.",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 28
+        }
+      },
       "same_button_as": []
     },
     {
@@ -1174,10 +1358,59 @@
       "keymap": null,
       "reachable_from_python": "yes",
       "writes_graph": "unknown",
-      "slots": [],
+      "slots": [
+        {
+          "name": "paths",
+          "type": "list[str]",
+          "default": null,
+          "doc": "the files, or one folder (absolute paths)"
+        },
+        {
+          "name": "mode",
+          "type": "enum",
+          "choices": [
+            "files",
+            "folder",
+            "dosco"
+          ],
+          "default": "files",
+          "doc": "files: the files themselves; folder: a folder read by a reader of folders; dosco: a folder read as DosCo"
+        },
+        {
+          "name": "date",
+          "type": "str",
+          "default": null,
+          "doc": "the date of the document the files make (the door's field)"
+        },
+        {
+          "name": "epoch",
+          "type": "str",
+          "default": null,
+          "doc": "the epoch a model is placed in (id)"
+        },
+        {
+          "name": "confirm",
+          "type": "bool",
+          "default": false,
+          "doc": "press the door's OK: the files come in with what the door proposes (refused, the door stays open for a person)"
+        }
+      ],
       "source": {
         "file": "frontend/src/menu-table.ts",
         "line": 182
+      },
+      "script": {
+        "form": "invoke",
+        "exec_when": [
+          "paths"
+        ],
+        "why": null,
+        "doc": "Bring files or a folder into the document. With ``paths`` the window of the three choices does not open: ``mode`` says which road (as ``door``).",
+        "returns": "how many files or folders were given",
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 29
+        }
       },
       "same_button_as": []
     },
@@ -1217,10 +1450,60 @@
       "keymap": null,
       "reachable_from_python": "yes",
       "writes_graph": "unknown",
-      "slots": [],
+      "slots": [
+        {
+          "name": "paths",
+          "type": "list[str]",
+          "default": null,
+          "doc": "the files (absolute paths)"
+        },
+        {
+          "name": "mode",
+          "type": "enum",
+          "choices": [
+            "files",
+            "folder",
+            "dosco"
+          ],
+          "default": "files",
+          "doc": "files: the files themselves; folder: each path a folder read by a reader of folders; dosco: a folder read as DosCo"
+        },
+        {
+          "name": "date",
+          "type": "str",
+          "default": null,
+          "doc": "the date of the document the files make (the door's field)"
+        },
+        {
+          "name": "epoch",
+          "type": "str",
+          "default": null,
+          "doc": "the epoch a model is placed in (id)"
+        },
+        {
+          "name": "confirm",
+          "type": "bool",
+          "default": false,
+          "doc": "press the door's OK (refused, the door stays open for a person)"
+        }
+      ],
       "source": {
         "file": "frontend/src/menu-table.ts",
         "line": 184
+      },
+      "script": {
+        "form": "invoke",
+        "exec_when": [
+          "paths",
+          "confirm"
+        ],
+        "why": null,
+        "doc": "The door: files into the document. With ``paths`` no file picker opens and the door opens with them; with ``confirm=True`` (and ``date`` when the door wants one) its OK is pressed and no window stays open.",
+        "returns": "how many files or folders were given",
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 37
+        }
       },
       "same_button_as": []
     },
@@ -1260,10 +1543,30 @@
       "keymap": null,
       "reachable_from_python": "yes",
       "writes_graph": "unknown",
-      "slots": [],
+      "slots": [
+        {
+          "name": "path",
+          "type": "str",
+          "default": null,
+          "doc": "the folder (absolute path)"
+        }
+      ],
       "source": {
         "file": "frontend/src/menu-table.ts",
         "line": 186
+      },
+      "script": {
+        "form": "invoke",
+        "exec_when": [
+          "path"
+        ],
+        "why": null,
+        "doc": "A folder (a stack of slices) to a reader of folders, or read as DosCo.",
+        "returns": "true when given",
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 45
+        }
       },
       "same_button_as": []
     },
@@ -1303,10 +1606,30 @@
       "keymap": null,
       "reachable_from_python": "yes",
       "writes_graph": "unknown",
-      "slots": [],
+      "slots": [
+        {
+          "name": "path",
+          "type": "str",
+          "default": null,
+          "doc": "the DosCo folder (absolute path)"
+        }
+      ],
       "source": {
         "file": "frontend/src/menu-table.ts",
         "line": 188
+      },
+      "script": {
+        "form": "invoke",
+        "exec_when": [
+          "path"
+        ],
+        "why": null,
+        "doc": "Read a folder as DosCo: each file with an EM id becomes the document of that id. With ``path`` the folder picker does not open; the door shows what it found.",
+        "returns": "true when given",
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 47
+        }
       },
       "same_button_as": []
     },
@@ -1365,6 +1688,17 @@
         "file": "frontend/src/menu-table.ts",
         "line": 190
       },
+      "script": {
+        "form": "window",
+        "exec_when": [],
+        "why": "chooses, graph by graph, what of another file comes in: a person's choice, no script form yet",
+        "doc": "Integrate another file into this one (Blender's Append).",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 49
+        }
+      },
       "same_button_as": []
     },
     {
@@ -1419,10 +1753,30 @@
       "keymap": null,
       "reachable_from_python": "yes",
       "writes_graph": "unknown",
-      "slots": [],
+      "slots": [
+        {
+          "name": "path",
+          "type": "str",
+          "default": null,
+          "doc": "the .graphml file (absolute path)"
+        }
+      ],
       "source": {
         "file": "frontend/src/menu-table.ts",
         "line": 192
+      },
+      "script": {
+        "form": "invoke",
+        "exec_when": [
+          "path"
+        ],
+        "why": null,
+        "doc": "Import a yEd GraphML (through s3Dgraphy's importer). With ``path`` neither the picker nor the question of the em.json's name opens: the graph stays without a file until ``saveAs(path=…)``.",
+        "returns": "the path imported",
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 50
+        }
       },
       "same_button_as": []
     },
@@ -1483,6 +1837,17 @@
         "file": "frontend/src/menu-table.ts",
         "line": 193
       },
+      "script": {
+        "form": "window",
+        "exec_when": [],
+        "why": "a table and its mapping are chosen and checked in the mapping editor; no script form yet (s3Dgraphy's importers are reachable from Python directly)",
+        "doc": "Import a table with a mapping.",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 52
+        }
+      },
       "same_button_as": []
     },
     {
@@ -1536,10 +1901,28 @@
       "keymap": null,
       "reachable_from_python": "yes",
       "writes_graph": "unknown",
-      "slots": [],
+      "slots": [
+        {
+          "name": "path",
+          "type": "str",
+          "default": null,
+          "doc": "where to write the .svg (absolute path)"
+        }
+      ],
       "source": {
         "file": "frontend/src/menu-table.ts",
         "line": 196
+      },
+      "script": {
+        "form": "exec",
+        "exec_when": [],
+        "why": null,
+        "doc": "The graph window's drawing as SVG. Without ``path`` it is downloaded; with ``path`` it is written there.",
+        "returns": "the file name or path",
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 53
+        }
       },
       "same_button_as": []
     },
@@ -1594,10 +1977,28 @@
       "keymap": null,
       "reachable_from_python": "yes",
       "writes_graph": "unknown",
-      "slots": [],
+      "slots": [
+        {
+          "name": "path",
+          "type": "str",
+          "default": null,
+          "doc": "where to write the .ttl (absolute path)"
+        }
+      ],
       "source": {
         "file": "frontend/src/menu-table.ts",
         "line": 197
+      },
+      "script": {
+        "form": "exec",
+        "exec_when": [],
+        "why": null,
+        "doc": "The RDF/CIDOC projection as Turtle (s3Dgraphy). Without ``path``: the save picker on the desktop, a download on the web; with ``path`` it is written there.",
+        "returns": "the file name or path",
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 55
+        }
       },
       "same_button_as": []
     },
@@ -1656,6 +2057,17 @@
         "file": "frontend/src/menu-table.ts",
         "line": 201
       },
+      "script": {
+        "form": "window",
+        "exec_when": [],
+        "why": "the .blend is composed in a window that chooses epochs, versions and Blender: no script form yet",
+        "doc": "A Blender scene (.blend) composed from the graph.",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 57
+        }
+      },
       "same_button_as": []
     },
     {
@@ -1712,6 +2124,17 @@
       "source": {
         "file": "frontend/src/menu-table.ts",
         "line": 202
+      },
+      "script": {
+        "form": "window",
+        "exec_when": [],
+        "why": "opens Archive › Assets, where the target is chosen: no script form yet",
+        "doc": "Consolidate for a viewer.",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 58
+        }
       },
       "same_button_as": []
     },
@@ -1770,6 +2193,17 @@
         "file": "frontend/src/menu-table.ts",
         "line": 203
       },
+      "script": {
+        "form": "window",
+        "exec_when": [],
+        "why": "the sheets, their scope and the printer are chosen in the print window: no script form yet",
+        "doc": "Print the recording sheets.",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 59
+        }
+      },
       "same_button_as": []
     },
     {
@@ -1822,10 +2256,36 @@
       "keymap": null,
       "reachable_from_python": "yes",
       "writes_graph": "unknown",
-      "slots": [],
+      "slots": [
+        {
+          "name": "folder",
+          "type": "str",
+          "default": null,
+          "doc": "the folder to search (absolute path)"
+        },
+        {
+          "name": "apply",
+          "type": "bool",
+          "default": false,
+          "doc": "rewrite the paths found without doubt"
+        }
+      ],
       "source": {
         "file": "frontend/src/menu-table.ts",
         "line": 209
+      },
+      "script": {
+        "form": "invoke",
+        "exec_when": [
+          "folder"
+        ],
+        "why": null,
+        "doc": "Find missing files. With ``folder`` there is no folder picker and no window: the search's tally comes back; with ``apply=True`` the paths found without doubt are rewritten (the ambiguous ones stay for a person, in the window).",
+        "returns": "{found, ambiguous, missing, link, applied}",
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 60
+        }
       },
       "same_button_as": []
     },
@@ -1884,6 +2344,17 @@
         "file": "frontend/src/menu-table.ts",
         "line": 211
       },
+      "script": {
+        "form": "window",
+        "exec_when": [],
+        "why": "says what will be copied where and asks: a person's answer, no script form yet",
+        "doc": "Collect the resources beside the project.",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 65
+        }
+      },
       "same_button_as": []
     },
     {
@@ -1940,6 +2411,17 @@
       "source": {
         "file": "frontend/src/menu-table.ts",
         "line": 213
+      },
+      "script": {
+        "form": "exec",
+        "exec_when": [],
+        "why": null,
+        "doc": "Open the project folder in the system's file manager.",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 66
+        }
       },
       "same_button_as": []
     },
@@ -1998,6 +2480,17 @@
         "file": "frontend/src/menu-table.ts",
         "line": 218
       },
+      "script": {
+        "form": "window",
+        "exec_when": [],
+        "why": "says what the presentation section holds before taking it out: a person's answer",
+        "doc": "Take the presentation section out of the file.",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 67
+        }
+      },
       "same_button_as": []
     },
     {
@@ -2054,6 +2547,17 @@
       "source": {
         "file": "frontend/src/menu-table.ts",
         "line": 219
+      },
+      "script": {
+        "form": "window",
+        "exec_when": [],
+        "why": "shows the moves before doing them: a person's answer",
+        "doc": "Reorder the project by the standard.",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 68
+        }
       },
       "same_button_as": []
     },
@@ -2112,6 +2616,17 @@
         "file": "frontend/src/menu-table.ts",
         "line": 223
       },
+      "script": {
+        "form": "window",
+        "exec_when": [],
+        "why": "a room is made on a node with a name and an invitation: a person's answer",
+        "doc": "Create a room.",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 69
+        }
+      },
       "same_button_as": []
     },
     {
@@ -2168,6 +2683,17 @@
       "source": {
         "file": "frontend/src/menu-table.ts",
         "line": 224
+      },
+      "script": {
+        "form": "window",
+        "exec_when": [],
+        "why": "a room is made on a node with a name and an invitation: a person's answer",
+        "doc": "Bring this into a new room.",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 70
+        }
       },
       "same_button_as": []
     },
@@ -2229,6 +2755,17 @@
         "file": "frontend/src/menu-table.ts",
         "line": 227
       },
+      "script": {
+        "form": "exec",
+        "exec_when": [],
+        "why": null,
+        "doc": "Close the active document (asking for its unsaved work).",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 71
+        }
+      },
       "same_button_as": []
     },
     {
@@ -2286,6 +2823,17 @@
         "file": "frontend/src/menu-table.ts",
         "line": 228
       },
+      "script": {
+        "form": "exec",
+        "exec_when": [],
+        "why": null,
+        "doc": "Close the project (asking for unsaved work).",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 72
+        }
+      },
       "same_button_as": []
     },
     {
@@ -2329,12 +2877,23 @@
         "pc": "Ctrl+Q"
       },
       "keymap": null,
-      "reachable_from_python": "yes",
+      "reachable_from_python": "no",
       "writes_graph": "unknown",
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
         "line": 234
+      },
+      "script": {
+        "form": "none",
+        "exec_when": [],
+        "why": "quitting the application from a script would end the script's own session",
+        "doc": "Quit EMStudio.",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 73
+        }
       },
       "same_button_as": []
     },
@@ -2391,6 +2950,17 @@
       "source": {
         "file": "frontend/src/menu-table.ts",
         "line": 247
+      },
+      "script": {
+        "form": "window",
+        "exec_when": [],
+        "why": "the card of each graph's system is answered in its window: no script form yet",
+        "doc": "Georeferencing.",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 74
+        }
       },
       "same_button_as": []
     },
@@ -2461,14 +3031,35 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 27
+        },
+        "script": {
+          "command": "undo"
         }
       },
       "reachable_from_python": "yes",
       "writes_graph": "unknown",
-      "slots": [],
+      "slots": [
+        {
+          "name": "steps",
+          "type": "int",
+          "default": 1,
+          "doc": "how many steps"
+        }
+      ],
       "source": {
         "file": "frontend/src/menu-table.ts",
         "line": 257
+      },
+      "script": {
+        "form": "exec",
+        "exec_when": [],
+        "why": null,
+        "doc": "Undo.",
+        "returns": "how many steps were undone",
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 75
+        }
       },
       "same_button_as": []
     },
@@ -2539,14 +3130,35 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 28
+        },
+        "script": {
+          "command": "redo"
         }
       },
       "reachable_from_python": "yes",
       "writes_graph": "unknown",
-      "slots": [],
+      "slots": [
+        {
+          "name": "steps",
+          "type": "int",
+          "default": 1,
+          "doc": "how many steps"
+        }
+      ],
       "source": {
         "file": "frontend/src/menu-table.ts",
         "line": 258
+      },
+      "script": {
+        "form": "exec",
+        "exec_when": [],
+        "why": null,
+        "doc": "Redo.",
+        "returns": "how many steps were redone",
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 77
+        }
       },
       "same_button_as": []
     },
@@ -2963,6 +3575,17 @@
         "file": "frontend/src/menu-table.ts",
         "line": 275
       },
+      "script": {
+        "form": "exec",
+        "exec_when": [],
+        "why": null,
+        "doc": "Show the window that says what each workspace is for.",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 10
+        }
+      },
       "same_button_as": []
     },
     {
@@ -3017,6 +3640,17 @@
       "source": {
         "file": "frontend/src/menu-table.ts",
         "line": 276
+      },
+      "script": {
+        "form": "exec",
+        "exec_when": [],
+        "why": null,
+        "doc": "Show the keys and gestures.",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 11
+        }
       },
       "same_button_as": []
     },
@@ -3073,6 +3707,17 @@
         "file": "frontend/src/menu-table.ts",
         "line": 277
       },
+      "script": {
+        "form": "exec",
+        "exec_when": [],
+        "why": null,
+        "doc": "Show the EM legend.",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 12
+        }
+      },
       "same_button_as": []
     },
     {
@@ -3128,6 +3773,17 @@
         "file": "frontend/src/menu-table.ts",
         "line": 279
       },
+      "script": {
+        "form": "exec",
+        "exec_when": [],
+        "why": null,
+        "doc": "Open this reference in the browser.",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 13
+        }
+      },
       "same_button_as": []
     },
     {
@@ -3177,6 +3833,17 @@
       "source": {
         "file": "frontend/src/menu-table.ts",
         "line": 281
+      },
+      "script": {
+        "form": "exec",
+        "exec_when": [],
+        "why": null,
+        "doc": "Show the About window (Help menu).",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 5
+        }
       },
       "same_button_as": [
         "about"
@@ -3233,6 +3900,17 @@
         "file": "frontend/src/menu-table.ts",
         "line": 282
       },
+      "script": {
+        "form": "exec",
+        "exec_when": [],
+        "why": null,
+        "doc": "Show the Settings window (Help menu).",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 9
+        }
+      },
       "same_button_as": [
         "settings"
       ]
@@ -3282,6 +3960,17 @@
         "file": "frontend/src/menu-table.ts",
         "line": 283
       },
+      "script": {
+        "form": "exec",
+        "exec_when": [],
+        "why": null,
+        "doc": "Ask whether a newer EMStudio exists (Help menu, Windows and Linux).",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 7
+        }
+      },
       "same_button_as": [
         "updates"
       ]
@@ -3318,6 +4007,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 26
+        },
+        "script": {
+          "why": "opens the chip's menu, which a person reads: a script reads the author and the node through em"
         }
       },
       "reachable_from_python": "no",
@@ -3362,9 +4054,12 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 29
+        },
+        "script": {
+          "action": "addNode"
         }
       },
-      "reachable_from_python": "no",
+      "reachable_from_python": "via",
       "writes_graph": "unknown",
       "slots": [],
       "source": {
@@ -3406,6 +4101,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 30
+        },
+        "script": {
+          "why": "the search field is typed by a person: a script searches the graph with ``g`` (em.graph)"
         }
       },
       "reachable_from_python": "no",
@@ -3450,9 +4148,12 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 31
+        },
+        "script": {
+          "action": "magnify"
         }
       },
-      "reachable_from_python": "no",
+      "reachable_from_python": "via",
       "writes_graph": "unknown",
       "slots": [],
       "source": {
@@ -3494,9 +4195,12 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 32
+        },
+        "script": {
+          "action": "leaveGroup"
         }
       },
-      "reachable_from_python": "no",
+      "reachable_from_python": "via",
       "writes_graph": "unknown",
       "slots": [],
       "source": {
@@ -3538,9 +4242,12 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 34
+        },
+        "script": {
+          "action": "deleteNodes"
         }
       },
-      "reachable_from_python": "no",
+      "reachable_from_python": "via",
       "writes_graph": "unknown",
       "slots": [],
       "source": {
@@ -3586,9 +4293,12 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 35
+        },
+        "script": {
+          "command": "undo"
         }
       },
-      "reachable_from_python": "no",
+      "reachable_from_python": "via",
       "writes_graph": "unknown",
       "slots": [],
       "source": {
@@ -3630,9 +4340,12 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 36
+        },
+        "script": {
+          "action": "nudge"
         }
       },
-      "reachable_from_python": "no",
+      "reachable_from_python": "via",
       "writes_graph": "unknown",
       "slots": [],
       "source": {
@@ -3674,9 +4387,12 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 37
+        },
+        "script": {
+          "action": "nudge"
         }
       },
-      "reachable_from_python": "no",
+      "reachable_from_python": "via",
       "writes_graph": "unknown",
       "slots": [],
       "source": {
@@ -3718,9 +4434,12 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 38
+        },
+        "script": {
+          "action": "fit"
         }
       },
-      "reachable_from_python": "no",
+      "reachable_from_python": "via",
       "writes_graph": "unknown",
       "slots": [],
       "source": {
@@ -3762,9 +4481,12 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 39
+        },
+        "script": {
+          "action": "back"
         }
       },
-      "reachable_from_python": "no",
+      "reachable_from_python": "via",
       "writes_graph": "unknown",
       "slots": [],
       "source": {
@@ -3806,9 +4528,12 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 40
+        },
+        "script": {
+          "action": "zoomIn"
         }
       },
-      "reachable_from_python": "no",
+      "reachable_from_python": "via",
       "writes_graph": "unknown",
       "slots": [],
       "source": {
@@ -3850,9 +4575,12 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 41
+        },
+        "script": {
+          "action": "zoomOut"
         }
       },
-      "reachable_from_python": "no",
+      "reachable_from_python": "via",
       "writes_graph": "unknown",
       "slots": [],
       "source": {
@@ -3898,6 +4626,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 42
+        },
+        "script": {
+          "why": "a pure gesture of the pointer: a script moves the view with frameNode or em.app.space.set_camera"
         }
       },
       "reachable_from_python": "no",
@@ -3946,6 +4677,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 43
+        },
+        "script": {
+          "why": "a pure gesture of the pointer: a script moves the view with frameNode"
         }
       },
       "reachable_from_python": "no",
@@ -3994,6 +4728,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 44
+        },
+        "script": {
+          "why": "a pure gesture (zoom at the pointer): a script zooms with zoomIn / zoomOut"
         }
       },
       "reachable_from_python": "no",
@@ -4042,6 +4779,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 45
+        },
+        "script": {
+          "why": "a pure gesture: a script selects with em.app.select"
         }
       },
       "reachable_from_python": "no",
@@ -4090,6 +4830,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 46
+        },
+        "script": {
+          "why": "a pure gesture: a script selects several with em.app.select"
         }
       },
       "reachable_from_python": "no",
@@ -4138,6 +4881,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 47
+        },
+        "script": {
+          "why": "a pure gesture: a script selects with em.app.select"
         }
       },
       "reachable_from_python": "no",
@@ -4186,9 +4932,12 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 48
+        },
+        "script": {
+          "action": "enterGroup"
         }
       },
-      "reachable_from_python": "no",
+      "reachable_from_python": "via",
       "writes_graph": "unknown",
       "slots": [],
       "source": {
@@ -4234,9 +4983,12 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 49
+        },
+        "script": {
+          "action": "connect"
         }
       },
-      "reachable_from_python": "no",
+      "reachable_from_python": "via",
       "writes_graph": "unknown",
       "slots": [],
       "source": {
@@ -4282,9 +5034,12 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 50
+        },
+        "script": {
+          "action": "addUnitBelow"
         }
       },
-      "reachable_from_python": "no",
+      "reachable_from_python": "via",
       "writes_graph": "unknown",
       "slots": [],
       "source": {
@@ -4330,6 +5085,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 51
+        },
+        "script": {
+          "why": "a drag out of a container: a script removes the membership edge with em.write"
         }
       },
       "reachable_from_python": "no",
@@ -4378,9 +5136,12 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 52
+        },
+        "script": {
+          "action": "moveToEpoch"
         }
       },
-      "reachable_from_python": "no",
+      "reachable_from_python": "via",
       "writes_graph": "unknown",
       "slots": [],
       "source": {
@@ -4426,6 +5187,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 53
+        },
+        "script": {
+          "why": "puts back what is being dragged: there is no drag in a script"
         }
       },
       "reachable_from_python": "no",
@@ -4474,6 +5238,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 54
+        },
+        "script": {
+          "why": "opens a menu a person reads: its items are commands and actions of this list"
         }
       },
       "reachable_from_python": "no",
@@ -4522,6 +5289,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 55
+        },
+        "script": {
+          "why": "opens a menu a person reads: reflow, a new epoch (em.write), the chronology check"
         }
       },
       "reachable_from_python": "no",
@@ -4570,6 +5340,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 56
+        },
+        "script": {
+          "why": "the add menu on touch: a script uses addNode"
         }
       },
       "reachable_from_python": "no",
@@ -4618,9 +5391,12 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 57
+        },
+        "script": {
+          "action": "layoutFresh"
         }
       },
-      "reachable_from_python": "no",
+      "reachable_from_python": "via",
       "writes_graph": "unknown",
       "slots": [],
       "source": {
@@ -4663,6 +5439,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 60
+        },
+        "script": {
+          "why": "a pure gesture in the Space: a script asks a point with em.app.space.pick"
         }
       },
       "reachable_from_python": "no",
@@ -4708,6 +5487,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 61
+        },
+        "script": {
+          "why": "a pure gesture in the Space: a script reads the models with em.app.space.layers"
         }
       },
       "reachable_from_python": "no",
@@ -4753,6 +5535,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 62
+        },
+        "script": {
+          "why": "opens a menu a person reads"
         }
       },
       "reachable_from_python": "no",
@@ -4799,6 +5584,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 63
+        },
+        "script": {
+          "why": "a pure gesture (the centre of rotation under the cursor): a script sets the camera with em.app.space.set_camera"
         }
       },
       "reachable_from_python": "no",
@@ -4841,6 +5629,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 64
+        },
+        "script": {
+          "why": "waits for a rectangle drawn by a person"
         }
       },
       "reachable_from_python": "no",
@@ -4886,6 +5677,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 65
+        },
+        "script": {
+          "why": "a pure gesture (the 3D cursor on the surface under the pointer)"
         }
       },
       "reachable_from_python": "no",
@@ -4928,9 +5722,12 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 66
+        },
+        "script": {
+          "action": "spaceCursorReset"
         }
       },
-      "reachable_from_python": "no",
+      "reachable_from_python": "via",
       "writes_graph": "unknown",
       "slots": [],
       "source": {
@@ -4973,6 +5770,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 67
+        },
+        "script": {
+          "why": "a pure gesture: a script sets the camera with em.app.space.set_camera"
         }
       },
       "reachable_from_python": "no",
@@ -5018,6 +5818,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 69
+        },
+        "script": {
+          "why": "a pure gesture: a script sets the camera with em.app.space.set_camera"
         }
       },
       "reachable_from_python": "no",
@@ -5063,6 +5866,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 70
+        },
+        "script": {
+          "why": "a pure gesture: a script sets the camera with em.app.space.set_camera"
         }
       },
       "reachable_from_python": "no",
@@ -5108,6 +5914,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 71
+        },
+        "script": {
+          "why": "a pure gesture: a script sets the camera with em.app.space.set_camera"
         }
       },
       "reachable_from_python": "no",
@@ -5153,6 +5962,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 72
+        },
+        "script": {
+          "why": "a pure gesture: a script sets the camera with em.app.space.set_camera"
         }
       },
       "reachable_from_python": "no",
@@ -5198,6 +6010,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 73
+        },
+        "script": {
+          "why": "a pure gesture: a script selects with em.app.select"
         }
       },
       "reachable_from_python": "no",
@@ -5243,6 +6058,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 74
+        },
+        "script": {
+          "why": "a setting of the mouse, not an act"
         }
       },
       "reachable_from_python": "no",
@@ -5288,9 +6106,12 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 76
+        },
+        "script": {
+          "action": "spaceView"
         }
       },
-      "reachable_from_python": "no",
+      "reachable_from_python": "via",
       "writes_graph": "unknown",
       "slots": [],
       "source": {
@@ -5333,9 +6154,12 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 77
+        },
+        "script": {
+          "action": "spaceView"
         }
       },
-      "reachable_from_python": "no",
+      "reachable_from_python": "via",
       "writes_graph": "unknown",
       "slots": [],
       "source": {
@@ -5378,9 +6202,12 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 78
+        },
+        "script": {
+          "action": "spaceView"
         }
       },
-      "reachable_from_python": "no",
+      "reachable_from_python": "via",
       "writes_graph": "unknown",
       "slots": [],
       "source": {
@@ -5423,9 +6250,12 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 79
+        },
+        "script": {
+          "action": "spaceView"
         }
       },
-      "reachable_from_python": "no",
+      "reachable_from_python": "via",
       "writes_graph": "unknown",
       "slots": [],
       "source": {
@@ -5468,9 +6298,12 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 80
+        },
+        "script": {
+          "action": "spaceToggleOrtho"
         }
       },
-      "reachable_from_python": "no",
+      "reachable_from_python": "via",
       "writes_graph": "unknown",
       "slots": [],
       "source": {
@@ -5513,6 +6346,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 81
+        },
+        "script": {
+          "why": "the camera view: the Space has no camera object yet"
         }
       },
       "reachable_from_python": "no",
@@ -5558,9 +6394,12 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 82
+        },
+        "script": {
+          "action": "spaceFrameSelected"
         }
       },
-      "reachable_from_python": "no",
+      "reachable_from_python": "via",
       "writes_graph": "unknown",
       "slots": [],
       "source": {
@@ -5600,6 +6439,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 83
+        },
+        "script": {
+          "why": "opens a panel a person reads: a script reads the cursor and the camera through em.app.space"
         }
       },
       "reachable_from_python": "no",
@@ -5642,9 +6484,12 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 84
+        },
+        "script": {
+          "action": "spaceFrameSelected"
         }
       },
-      "reachable_from_python": "no",
+      "reachable_from_python": "via",
       "writes_graph": "unknown",
       "slots": [],
       "source": {
@@ -5684,9 +6529,12 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 85
+        },
+        "script": {
+          "action": "spaceFrameAll"
         }
       },
-      "reachable_from_python": "no",
+      "reachable_from_python": "via",
       "writes_graph": "unknown",
       "slots": [],
       "source": {
@@ -5726,6 +6574,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 86
+        },
+        "script": {
+          "why": "opens a panel: a script opens windows with em.app.windows.open"
         }
       },
       "reachable_from_python": "no",
@@ -5768,6 +6619,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 87
+        },
+        "script": {
+          "why": "a base shape is placed with the 3D cursor by a person; no script form yet"
         }
       },
       "reachable_from_python": "no",
@@ -5810,6 +6664,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 88
+        },
+        "script": {
+          "why": "a modal transform driven by the pointer; a model's placement is written with em.write"
         }
       },
       "reachable_from_python": "no",
@@ -5852,6 +6709,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 89
+        },
+        "script": {
+          "why": "a key inside the modal transform (G R S)"
         }
       },
       "reachable_from_python": "no",
@@ -5894,6 +6754,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 90
+        },
+        "script": {
+          "why": "a key inside the modal transform (G R S)"
         }
       },
       "reachable_from_python": "no",
@@ -5936,6 +6799,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 91
+        },
+        "script": {
+          "why": "no script form yet: the parent is an edge written with em.write"
         }
       },
       "reachable_from_python": "no",
@@ -5978,6 +6844,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 92
+        },
+        "script": {
+          "why": "no script form yet: a proxy is removed with em.write"
         }
       },
       "reachable_from_python": "no",
@@ -6020,9 +6889,12 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 93
+        },
+        "script": {
+          "action": "back"
         }
       },
-      "reachable_from_python": "no",
+      "reachable_from_python": "via",
       "writes_graph": "unknown",
       "slots": [],
       "source": {
@@ -6062,6 +6934,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 95
+        },
+        "script": {
+          "why": "a pure gesture: a script selects with em.app.select"
         }
       },
       "reachable_from_python": "no",
@@ -6104,6 +6979,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 96
+        },
+        "script": {
+          "why": "the Space's own selection of objects is not reachable from Python yet: em.app.select selects nodes"
         }
       },
       "reachable_from_python": "no",
@@ -6146,6 +7024,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 97
+        },
+        "script": {
+          "why": "the Space's own selection of objects is not reachable from Python yet: em.app.select([]) clears the nodes'"
         }
       },
       "reachable_from_python": "no",
@@ -6188,6 +7069,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 98
+        },
+        "script": {
+          "why": "waits for a rectangle drawn by a person"
         }
       },
       "reachable_from_python": "no",
@@ -6230,6 +7114,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 99
+        },
+        "script": {
+          "why": "hides the selected objects: a script hides a layer with em.app.space.layers (visible)"
         }
       },
       "reachable_from_python": "no",
@@ -6272,6 +7159,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 100
+        },
+        "script": {
+          "why": "reveals the hidden objects: a script shows a layer with em.app.space.layers (visible)"
         }
       },
       "reachable_from_python": "no",
@@ -6314,6 +7204,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 101
+        },
+        "script": {
+          "why": "hides the others: a script hides layers with em.app.space.layers (visible)"
         }
       },
       "reachable_from_python": "no",
@@ -6358,6 +7251,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 103
+        },
+        "script": {
+          "why": "a key of the tracing tool, driven by the pointer"
         }
       },
       "reachable_from_python": "no",
@@ -6406,6 +7302,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 104
+        },
+        "script": {
+          "why": "a key of the tracing tool, driven by the pointer"
         }
       },
       "reachable_from_python": "no",
@@ -6454,6 +7353,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 105
+        },
+        "script": {
+          "why": "a gesture of the tracing tool"
         }
       },
       "reachable_from_python": "no",
@@ -6498,6 +7400,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 106
+        },
+        "script": {
+          "why": "keys of a suggestion bubble a person reads"
         }
       },
       "reachable_from_python": "no",
@@ -6546,6 +7451,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 108
+        },
+        "script": {
+          "why": "a pure gesture of the windows: a script opens windows with em.app.windows.open"
         }
       },
       "reachable_from_python": "no",
@@ -6594,6 +7502,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 109
+        },
+        "script": {
+          "why": "a pure gesture of the windows (the size of the areas)"
         }
       },
       "reachable_from_python": "no",
@@ -6642,9 +7553,12 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 110
+        },
+        "script": {
+          "action": "magnify"
         }
       },
-      "reachable_from_python": "no",
+      "reachable_from_python": "via",
       "writes_graph": "unknown",
       "slots": [],
       "source": {
@@ -6690,6 +7604,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 111
+        },
+        "script": {
+          "why": "renames a workspace: a person's word"
         }
       },
       "reachable_from_python": "no",
@@ -6738,6 +7655,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 112
+        },
+        "script": {
+          "why": "opens a menu a person reads"
         }
       },
       "reachable_from_python": "no",
@@ -6786,6 +7706,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 113
+        },
+        "script": {
+          "why": "a pure gesture in the File window"
         }
       },
       "reachable_from_python": "no",
@@ -6834,6 +7757,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 114
+        },
+        "script": {
+          "why": "a pure gesture in the File window"
         }
       },
       "reachable_from_python": "no",
@@ -6878,6 +7804,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 116
+        },
+        "script": {
+          "why": "a key of a text field"
         }
       },
       "reachable_from_python": "no",
@@ -6922,6 +7851,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 117
+        },
+        "script": {
+          "why": "a key of a text field"
         }
       },
       "reachable_from_python": "no",
@@ -6966,6 +7898,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 118
+        },
+        "script": {
+          "why": "a key of the narrative's text"
         }
       },
       "reachable_from_python": "no",
@@ -7010,6 +7945,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 119
+        },
+        "script": {
+          "why": "a key of the narrative's text"
         }
       },
       "reachable_from_python": "no",
@@ -7054,6 +7992,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 120
+        },
+        "script": {
+          "why": "keys of a menu a person reads"
         }
       },
       "reachable_from_python": "no",
@@ -7098,6 +8039,9 @@
         "source": {
           "file": "frontend/src/keymap.ts",
           "line": 121
+        },
+        "script": {
+          "why": "keys of a button"
         }
       },
       "reachable_from_python": "no",
@@ -7106,6 +8050,1172 @@
       "source": {
         "file": "frontend/src/keymap.ts",
         "line": 121
+      }
+    },
+    {
+      "id": "addNode",
+      "page": "addNode",
+      "kind": "action",
+      "command_id": "addNode",
+      "label_key": null,
+      "label": {},
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": null,
+      "keys_of": [
+        "add"
+      ],
+      "scope": "graph",
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [
+        {
+          "name": "type",
+          "type": "str",
+          "default": "US",
+          "doc": "the node type (US, USVs, document, property…)"
+        },
+        {
+          "name": "name",
+          "type": "str",
+          "default": null,
+          "doc": "its name (default: the next free one)"
+        },
+        {
+          "name": "epoch",
+          "type": "str",
+          "default": null,
+          "doc": "its first epoch (id or name)"
+        }
+      ],
+      "script": {
+        "form": "action",
+        "doc": "A new node of ``type`` in the active graph window (the Matrix places it in ``epoch``'s lane). One undo step.",
+        "returns": "the new node's id",
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 81
+        }
+      },
+      "source": {
+        "file": "frontend/src/script-commands.json",
+        "line": 81
+      }
+    },
+    {
+      "id": "addUnitAbove",
+      "page": "addUnitAbove",
+      "kind": "action",
+      "command_id": "addUnitAbove",
+      "label_key": null,
+      "label": {},
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": null,
+      "keys_of": [],
+      "scope": "graph",
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [
+        {
+          "name": "of",
+          "type": "str",
+          "default": null,
+          "required": true,
+          "doc": "the unit it sits on (id or name)"
+        },
+        {
+          "name": "type",
+          "type": "str",
+          "default": null,
+          "doc": "its type (default: the type of ``of``)"
+        },
+        {
+          "name": "name",
+          "type": "str",
+          "default": null,
+          "doc": "its name (default: the next free one)"
+        }
+      ],
+      "script": {
+        "form": "action",
+        "doc": "A new unit ABOVE ``of`` (the new one is later: new is_after of), as «US above X» of the add menu. One undo step.",
+        "returns": "the new unit's id",
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 87
+        }
+      },
+      "source": {
+        "file": "frontend/src/script-commands.json",
+        "line": 87
+      }
+    },
+    {
+      "id": "addUnitBelow",
+      "page": "addUnitBelow",
+      "kind": "action",
+      "command_id": "addUnitBelow",
+      "label_key": null,
+      "label": {},
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": null,
+      "keys_of": [
+        "connectMenu"
+      ],
+      "scope": "graph",
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [
+        {
+          "name": "of",
+          "type": "str",
+          "default": null,
+          "required": true,
+          "doc": "the unit above it (id or name)"
+        },
+        {
+          "name": "type",
+          "type": "str",
+          "default": null,
+          "doc": "its type (default: the type of ``of``)"
+        },
+        {
+          "name": "name",
+          "type": "str",
+          "default": null,
+          "doc": "its name (default: the next free one)"
+        }
+      ],
+      "script": {
+        "form": "action",
+        "doc": "A new unit BELOW ``of`` (the new one is earlier: of is_after new). One undo step.",
+        "returns": "the new unit's id",
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 93
+        }
+      },
+      "source": {
+        "file": "frontend/src/script-commands.json",
+        "line": 93
+      }
+    },
+    {
+      "id": "connect",
+      "page": "connect",
+      "kind": "action",
+      "command_id": "connect",
+      "label_key": null,
+      "label": {},
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": null,
+      "keys_of": [
+        "connect"
+      ],
+      "scope": "graph",
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [
+        {
+          "name": "source",
+          "type": "str",
+          "default": null,
+          "required": true,
+          "doc": "the source node (id or name)"
+        },
+        {
+          "name": "target",
+          "type": "str",
+          "default": null,
+          "required": true,
+          "doc": "the target node (id or name)"
+        },
+        {
+          "name": "edge_type",
+          "type": "str",
+          "default": null,
+          "doc": "the EM relation (default: the datamodel's first)"
+        }
+      ],
+      "script": {
+        "form": "action",
+        "doc": "Connect two nodes, as the drag from a node's handle: ``edge_type`` default is the first the datamodel allows between their types (is_after for two units). One undo step.",
+        "returns": "the edge type used",
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 99
+        }
+      },
+      "source": {
+        "file": "frontend/src/script-commands.json",
+        "line": 99
+      }
+    },
+    {
+      "id": "moveToEpoch",
+      "page": "moveToEpoch",
+      "kind": "action",
+      "command_id": "moveToEpoch",
+      "label_key": null,
+      "label": {},
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": null,
+      "keys_of": [
+        "laneOnly"
+      ],
+      "scope": "graph",
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [
+        {
+          "name": "ids",
+          "type": "list[str]",
+          "default": null,
+          "required": true,
+          "doc": "the units (ids or names)"
+        },
+        {
+          "name": "epoch",
+          "type": "str",
+          "default": null,
+          "required": true,
+          "doc": "the epoch (id or name)"
+        }
+      ],
+      "script": {
+        "form": "action",
+        "doc": "Move units to an epoch, as dropping them in its lane: the epoch they were in is left. One undo step per unit.",
+        "returns": "how many moved",
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 105
+        }
+      },
+      "source": {
+        "file": "frontend/src/script-commands.json",
+        "line": 105
+      }
+    },
+    {
+      "id": "extendToEpoch",
+      "page": "extendToEpoch",
+      "kind": "action",
+      "command_id": "extendToEpoch",
+      "label_key": null,
+      "label": {},
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": null,
+      "keys_of": [],
+      "scope": "graph",
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [
+        {
+          "name": "ids",
+          "type": "list[str]",
+          "default": null,
+          "required": true,
+          "doc": "the units (ids or names)"
+        },
+        {
+          "name": "epoch",
+          "type": "str",
+          "default": null,
+          "required": true,
+          "doc": "the epoch (id or name)"
+        }
+      ],
+      "script": {
+        "form": "action",
+        "doc": "Units that also survive into an epoch (the epochs they are in are kept).",
+        "returns": "how many changed",
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 110
+        }
+      },
+      "source": {
+        "file": "frontend/src/script-commands.json",
+        "line": 110
+      }
+    },
+    {
+      "id": "fold",
+      "page": "fold",
+      "kind": "action",
+      "command_id": "fold",
+      "label_key": null,
+      "label": {},
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": null,
+      "keys_of": [],
+      "scope": "graph",
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [
+        {
+          "name": "id",
+          "type": "str",
+          "default": null,
+          "required": true,
+          "doc": "the group (id or name)"
+        }
+      ],
+      "script": {
+        "form": "action",
+        "doc": "Fold a group (its members hidden in it).",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 115
+        }
+      },
+      "source": {
+        "file": "frontend/src/script-commands.json",
+        "line": 115
+      }
+    },
+    {
+      "id": "unfold",
+      "page": "unfold",
+      "kind": "action",
+      "command_id": "unfold",
+      "label_key": null,
+      "label": {},
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": null,
+      "keys_of": [],
+      "scope": "graph",
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [
+        {
+          "name": "id",
+          "type": "str",
+          "default": null,
+          "required": true,
+          "doc": "the group (id or name)"
+        }
+      ],
+      "script": {
+        "form": "action",
+        "doc": "Open a folded group.",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 116
+        }
+      },
+      "source": {
+        "file": "frontend/src/script-commands.json",
+        "line": 116
+      }
+    },
+    {
+      "id": "enterGroup",
+      "page": "enterGroup",
+      "kind": "action",
+      "command_id": "enterGroup",
+      "label_key": null,
+      "label": {},
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": null,
+      "keys_of": [
+        "dblGroup"
+      ],
+      "scope": "graph",
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [
+        {
+          "name": "id",
+          "type": "str",
+          "default": null,
+          "required": true,
+          "doc": "the group (id or name)"
+        }
+      ],
+      "script": {
+        "form": "action",
+        "doc": "Enter a group (the double click): the canvas shows its inside.",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 117
+        }
+      },
+      "source": {
+        "file": "frontend/src/script-commands.json",
+        "line": 117
+      }
+    },
+    {
+      "id": "leaveGroup",
+      "page": "leaveGroup",
+      "kind": "action",
+      "command_id": "leaveGroup",
+      "label_key": null,
+      "label": {},
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": null,
+      "keys_of": [
+        "esc"
+      ],
+      "scope": "graph",
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "script": {
+        "form": "action",
+        "doc": "Leave the group the canvas is in (Esc).",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 118
+        }
+      },
+      "source": {
+        "file": "frontend/src/script-commands.json",
+        "line": 118
+      }
+    },
+    {
+      "id": "frameNode",
+      "page": "frameNode",
+      "kind": "action",
+      "command_id": "frameNode",
+      "label_key": null,
+      "label": {},
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": null,
+      "keys_of": [],
+      "scope": "graph",
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [
+        {
+          "name": "id",
+          "type": "str",
+          "default": null,
+          "required": true,
+          "doc": "the node (id or name)"
+        }
+      ],
+      "script": {
+        "form": "action",
+        "doc": "Centre the graph window on a node and select it (a jump: ``back`` returns).",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 119
+        }
+      },
+      "source": {
+        "file": "frontend/src/script-commands.json",
+        "line": 119
+      }
+    },
+    {
+      "id": "fit",
+      "page": "fit",
+      "kind": "action",
+      "command_id": "fit",
+      "label_key": null,
+      "label": {},
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": null,
+      "keys_of": [
+        "fit"
+      ],
+      "scope": "graph",
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "script": {
+        "form": "action",
+        "doc": "Fit the graph in the window (0, ⇧C).",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 120
+        }
+      },
+      "source": {
+        "file": "frontend/src/script-commands.json",
+        "line": 120
+      }
+    },
+    {
+      "id": "zoomIn",
+      "page": "zoomIn",
+      "kind": "action",
+      "command_id": "zoomIn",
+      "label_key": null,
+      "label": {},
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": null,
+      "keys_of": [
+        "zoomIn"
+      ],
+      "scope": "graph",
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [
+        {
+          "name": "factor",
+          "type": "float",
+          "default": 1.25,
+          "doc": "how much (> 1)"
+        }
+      ],
+      "script": {
+        "form": "action",
+        "doc": "Zoom in (+).",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 121
+        }
+      },
+      "source": {
+        "file": "frontend/src/script-commands.json",
+        "line": 121
+      }
+    },
+    {
+      "id": "zoomOut",
+      "page": "zoomOut",
+      "kind": "action",
+      "command_id": "zoomOut",
+      "label_key": null,
+      "label": {},
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": null,
+      "keys_of": [
+        "zoomOut"
+      ],
+      "scope": "graph",
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [
+        {
+          "name": "factor",
+          "type": "float",
+          "default": 1.25,
+          "doc": "how much (> 1)"
+        }
+      ],
+      "script": {
+        "form": "action",
+        "doc": "Zoom out (−).",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 122
+        }
+      },
+      "source": {
+        "file": "frontend/src/script-commands.json",
+        "line": 122
+      }
+    },
+    {
+      "id": "back",
+      "page": "back",
+      "kind": "action",
+      "command_id": "back",
+      "label_key": null,
+      "label": {},
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": null,
+      "keys_of": [
+        "back",
+        "s3back"
+      ],
+      "scope": "graph",
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "script": {
+        "form": "action",
+        "doc": "Back to the view before the last jump (⌘[).",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 123
+        }
+      },
+      "source": {
+        "file": "frontend/src/script-commands.json",
+        "line": 123
+      }
+    },
+    {
+      "id": "deleteNodes",
+      "page": "deleteNodes",
+      "kind": "action",
+      "command_id": "deleteNodes",
+      "label_key": null,
+      "label": {},
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": null,
+      "keys_of": [
+        "delete"
+      ],
+      "scope": "graph",
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [
+        {
+          "name": "ids",
+          "type": "list[str]",
+          "default": null,
+          "doc": "the nodes (ids or names); default: the selection"
+        }
+      ],
+      "script": {
+        "form": "action",
+        "doc": "Delete nodes, as ⌫ on the selection (one undo step; the toast gives them back).",
+        "returns": "how many were deleted",
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 124
+        }
+      },
+      "source": {
+        "file": "frontend/src/script-commands.json",
+        "line": 124
+      }
+    },
+    {
+      "id": "nudge",
+      "page": "nudge",
+      "kind": "action",
+      "command_id": "nudge",
+      "label_key": null,
+      "label": {},
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": null,
+      "keys_of": [
+        "nudge",
+        "nudge10"
+      ],
+      "scope": "graph",
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [
+        {
+          "name": "dx",
+          "type": "int",
+          "default": 0,
+          "doc": "pixels to the right"
+        },
+        {
+          "name": "dy",
+          "type": "int",
+          "default": 0,
+          "doc": "pixels down"
+        }
+      ],
+      "script": {
+        "form": "action",
+        "doc": "Nudge the selection by screen pixels (the arrows).",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 126
+        }
+      },
+      "source": {
+        "file": "frontend/src/script-commands.json",
+        "line": 126
+      }
+    },
+    {
+      "id": "reflow",
+      "page": "reflow",
+      "kind": "action",
+      "command_id": "reflow",
+      "label_key": null,
+      "label": {},
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": null,
+      "keys_of": [],
+      "scope": "graph",
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [
+        {
+          "name": "ids",
+          "type": "list[str]",
+          "default": null,
+          "doc": "the nodes to rearrange; default: all"
+        },
+        {
+          "name": "reduce_crossings",
+          "type": "bool",
+          "default": false,
+          "doc": "«Arrange reducing the crossings»"
+        }
+      ],
+      "script": {
+        "form": "action",
+        "doc": "Rearrange (Disponi): the nodes given, or the whole Matrix.",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 129
+        }
+      },
+      "source": {
+        "file": "frontend/src/script-commands.json",
+        "line": 129
+      }
+    },
+    {
+      "id": "layoutFresh",
+      "page": "layoutFresh",
+      "kind": "action",
+      "command_id": "layoutFresh",
+      "label_key": null,
+      "label": {},
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": null,
+      "keys_of": [
+        "layoutFresh"
+      ],
+      "scope": "graph",
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "script": {
+        "form": "action",
+        "doc": "Recompute the layout from scratch (⌥ + Arrange): the manual arrangement is dropped.",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 132
+        }
+      },
+      "source": {
+        "file": "frontend/src/script-commands.json",
+        "line": 132
+      }
+    },
+    {
+      "id": "compact",
+      "page": "compact",
+      "kind": "action",
+      "command_id": "compact",
+      "label_key": null,
+      "label": {},
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": null,
+      "keys_of": [],
+      "scope": "graph",
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "script": {
+        "form": "action",
+        "doc": "Compact the Matrix (the units closer, the order kept).",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 133
+        }
+      },
+      "source": {
+        "file": "frontend/src/script-commands.json",
+        "line": 133
+      }
+    },
+    {
+      "id": "magnify",
+      "page": "magnify",
+      "kind": "action",
+      "command_id": "magnify",
+      "label_key": null,
+      "label": {},
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": null,
+      "keys_of": [
+        "magnify",
+        "headerDbl"
+      ],
+      "scope": "window",
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [
+        {
+          "name": "window",
+          "type": "str",
+          "default": null,
+          "doc": "the window id (em.app.windows); default: the active one"
+        }
+      ],
+      "script": {
+        "form": "action",
+        "doc": "Magnify a window to the whole workspace, or put it back (⌃Space).",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 134
+        }
+      },
+      "source": {
+        "file": "frontend/src/script-commands.json",
+        "line": 134
+      }
+    },
+    {
+      "id": "spaceView",
+      "page": "spaceView",
+      "kind": "action",
+      "command_id": "spaceView",
+      "label_key": null,
+      "label": {},
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": null,
+      "keys_of": [
+        "s3np1",
+        "s3np3",
+        "s3np7",
+        "s3npCtrl"
+      ],
+      "scope": "space",
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [
+        {
+          "name": "side",
+          "type": "enum",
+          "choices": [
+            "front",
+            "back",
+            "right",
+            "left",
+            "top",
+            "bottom"
+          ],
+          "default": "front",
+          "doc": "which side"
+        }
+      ],
+      "script": {
+        "form": "action",
+        "doc": "An aligned view of the Space (the numeric keypad).",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 135
+        }
+      },
+      "source": {
+        "file": "frontend/src/script-commands.json",
+        "line": 135
+      }
+    },
+    {
+      "id": "spaceToggleOrtho",
+      "page": "spaceToggleOrtho",
+      "kind": "action",
+      "command_id": "spaceToggleOrtho",
+      "label_key": null,
+      "label": {},
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": null,
+      "keys_of": [
+        "s3np5"
+      ],
+      "scope": "space",
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "script": {
+        "form": "action",
+        "doc": "Perspective ⇄ orthographic (keypad 5).",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 136
+        }
+      },
+      "source": {
+        "file": "frontend/src/script-commands.json",
+        "line": 136
+      }
+    },
+    {
+      "id": "spaceFrameSelected",
+      "page": "spaceFrameSelected",
+      "kind": "action",
+      "command_id": "spaceFrameSelected",
+      "label_key": null,
+      "label": {},
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": null,
+      "keys_of": [
+        "s3npDot",
+        "s3frameSel"
+      ],
+      "scope": "space",
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "script": {
+        "form": "action",
+        "doc": "Frame the selection in the Space (. or F).",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 137
+        }
+      },
+      "source": {
+        "file": "frontend/src/script-commands.json",
+        "line": 137
+      }
+    },
+    {
+      "id": "spaceFrameAll",
+      "page": "spaceFrameAll",
+      "kind": "action",
+      "command_id": "spaceFrameAll",
+      "label_key": null,
+      "label": {},
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": null,
+      "keys_of": [
+        "s3frameAll"
+      ],
+      "scope": "space",
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "script": {
+        "form": "action",
+        "doc": "Frame everything the Space draws (Home).",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 138
+        }
+      },
+      "source": {
+        "file": "frontend/src/script-commands.json",
+        "line": 138
+      }
+    },
+    {
+      "id": "spaceCursorReset",
+      "page": "spaceCursorReset",
+      "kind": "action",
+      "command_id": "spaceCursorReset",
+      "label_key": null,
+      "label": {},
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": null,
+      "keys_of": [
+        "s3cursorReset"
+      ],
+      "scope": "space",
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "script": {
+        "form": "action",
+        "doc": "The 3D cursor to the median of what is drawn, and the view on most of it (⇧C).",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 139
+        }
+      },
+      "source": {
+        "file": "frontend/src/script-commands.json",
+        "line": 139
       }
     }
   ]

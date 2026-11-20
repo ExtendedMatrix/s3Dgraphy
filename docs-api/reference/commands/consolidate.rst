@@ -5,7 +5,7 @@
 consolidate
 ===========
 
-*Generated from EMStudio 9274372 for em API 1.2.0.*
+*Generated from EMStudio 17797d8 for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -21,6 +21,8 @@ consolidate
      - Menu command — presses the page button ``btn-consolidate``
    * - Reachable from Python
      - yes — ``em.app.commands.run("consolidate")``
+   * - Script form
+     - a window a person answers — no script form yet (opens Archive › Assets, where the target is chosen: no script form yet)
    * - Writes to the graph
      - not declared
    * - Menu path (en)
@@ -41,11 +43,12 @@ What it does
 
 **it** — Archivio › Asset per un target: ogni asset con le sue versioni e texture, che cosa caricano Heriverse, ATON, il web o un telefono, che cosa c'è da fare, le barre della scena contro le fasce, la coda. Non scrive nulla finché un'azione della coda non parte.
 
-Slots
------
+**script** — Consolidate for a viewer.
 
-None declared: the command table (``CommandRow`` in ``menu-table.ts``) declares no slots, types or defaults.
-Keyword slots passed to ``em.app.commands.run`` reach the page but are dropped by the host hook (``frontend/src/main.ts:66534``), which calls ``runCommand(id)`` only.
+Parameters
+----------
+
+None: ``em.app.commands.run`` refuses a parameter given to it.
 
 From Python
 -----------
@@ -56,4 +59,4 @@ From Python
 
    em.app.commands.run("consolidate")
 
-The page presses the command's button, as a click would: whatever dialog the command opens, opens. If the button is disabled at that moment (or the id is unknown) the call raises ``em.NotAvailable`` (``py.noCommand``). Outside EMStudio (no host) the call raises ``em.NotAvailable``.
+The page presses the command's button, as a click would: its window opens and waits for a person. If the command is not possible at that moment (its button disabled) the call raises ``em.NotAvailable`` (``py.noCommand``). Outside EMStudio (no host) the call raises ``em.NotAvailable``.

@@ -5,7 +5,7 @@
 quitFile
 ========
 
-*Generated from EMStudio 9274372 for em API 1.2.0.*
+*Generated from EMStudio 17797d8 for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -20,7 +20,9 @@ quitFile
    * - Kind
      - Menu command — presses the page button ``btn-quit``
    * - Reachable from Python
-     - yes — ``em.app.commands.run("quitFile")``
+     - no
+   * - Script form
+     - not run from a script (quitting the application from a script would end the script's own session)
    * - Writes to the graph
      - not declared
    * - Menu path (en)
@@ -34,24 +36,17 @@ quitFile
    * - Defined in
      - ``frontend/src/menu-table.ts:234``
 
+.. admonition:: Not available from Python
+   :class: warning
+
+   quitting the application from a script would end the script's own session.
+
 What it does
 ------------
 
-No tooltip or description string in ``i18n.ts``; the label is all the UI says.
+**script** — Quit EMStudio.
 
-Slots
------
+Parameters
+----------
 
-None declared: the command table (``CommandRow`` in ``menu-table.ts``) declares no slots, types or defaults.
-Keyword slots passed to ``em.app.commands.run`` reach the page but are dropped by the host hook (``frontend/src/main.ts:66534``), which calls ``runCommand(id)`` only.
-
-From Python
------------
-
-.. code-block:: python
-
-   from s3dgraphy import em
-
-   em.app.commands.run("quitFile")
-
-The page presses the command's button, as a click would: whatever dialog the command opens, opens. If the button is disabled at that moment (or the id is unknown) the call raises ``em.NotAvailable`` (``py.noCommand``). Outside EMStudio (no host) the call raises ``em.NotAvailable``.
+None: ``em.app.commands.run`` refuses a parameter given to it.

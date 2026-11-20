@@ -5,7 +5,7 @@
 relocate
 ========
 
-*Generated from EMStudio 9274372 for em API 1.2.0.*
+*Generated from EMStudio 17797d8 for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -21,6 +21,10 @@ relocate
      - Menu command — presses the page button ``btn-relocate-files``
    * - Reachable from Python
      - yes — ``em.app.commands.run("relocate")``
+   * - Script form
+     - opens its window, filled with the parameters given; runs WITHOUT it when ``folder`` is given (Blender's EXEC / INVOKE)
+   * - Returns
+     - {found, ambiguous, missing, link, applied}
    * - Writes to the graph
      - not declared
    * - Menu path (en)
@@ -41,11 +45,29 @@ What it does
 
 **it** — Cerca in una cartella che scegli i file che questo documento non trova — per sha256, altrimenti per nome e dimensione — e riscrivi i loro percorsi relativi all'em.json. Un annulla.
 
-Slots
------
+**script** — Find missing files. With ``folder`` there is no folder picker and no window: the search's tally comes back; with ``apply=True`` the paths found without doubt are rewritten (the ambiguous ones stay for a person, in the window).
 
-None declared: the command table (``CommandRow`` in ``menu-table.ts``) declares no slots, types or defaults.
-Keyword slots passed to ``em.app.commands.run`` reach the page but are dropped by the host hook (``frontend/src/main.ts:66534``), which calls ``runCommand(id)`` only.
+Parameters
+----------
+
+.. list-table::
+   :header-rows: 1
+   :widths: 16 22 14 48
+
+   * - Name
+     - Type
+     - Default
+     - What it is
+   * - ``folder``
+     - ``str``
+     - ``None``
+     - the folder to search (absolute path)
+   * - ``apply``
+     - ``bool``
+     - ``False``
+     - rewrite the paths found without doubt
+
+Declared in ``frontend/src/script-commands.json:60`` — the one place the console's completion and this page read. A name the command does not take, a wrong type, a value not among the choices are refused with ``em.NotAvailable`` in the page's language, never dropped.
 
 From Python
 -----------
@@ -54,6 +76,6 @@ From Python
 
    from s3dgraphy import em
 
-   em.app.commands.run("relocate")
+   em.app.commands.run("relocate", folder="…")
 
-The page presses the command's button, as a click would: whatever dialog the command opens, opens. If the button is disabled at that moment (or the id is unknown) the call raises ``em.NotAvailable`` (``py.noCommand``). Outside EMStudio (no host) the call raises ``em.NotAvailable``.
+With the values above it runs without a window; without them its window opens, filled with what was given (the question about unsaved work, when there is one, is still asked). If the command is not possible at that moment (its button disabled) the call raises ``em.NotAvailable`` (``py.noCommand``). Outside EMStudio (no host) the call raises ``em.NotAvailable``.

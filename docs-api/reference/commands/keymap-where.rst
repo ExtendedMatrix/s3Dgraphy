@@ -5,7 +5,7 @@
 keymap:where
 ============
 
-*Generated from EMStudio 9274372 for em API 1.2.0.*
+*Generated from EMStudio 17797d8 for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -28,17 +28,17 @@ keymap:where
    * - Defined in
      - ``frontend/src/keymap.ts:26``
 
-.. admonition:: Not yet available from Python
+.. admonition:: Not available from Python
    :class: warning
 
-   A key or gesture handled directly by the page, not a row of the command table (``frontend/src/menu-table.ts``): ``em.app.commands.run`` has no id to reach it.
+   No id on purpose: opens the chip's menu, which a person reads: a script reads the author and the node through em.
 
 What it does
 ------------
 
 No tooltip or description string in ``i18n.ts``; the label is all the UI says.
 
-Slots
------
+Parameters
+----------
 
 None.

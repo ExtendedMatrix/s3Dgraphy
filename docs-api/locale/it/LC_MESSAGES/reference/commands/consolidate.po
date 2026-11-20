@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: EMStudio Python API 1.2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"POT-Creation-Date: 2026-11-20 18:23+0100\n"
 "PO-Revision-Date: 2026-11-19 21:17+0100\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: it <LL@li.org>\n"
@@ -20,7 +20,7 @@ msgstr ""
 msgid "consolidate"
 msgstr ""
 
-msgid "*Generated from EMStudio 85f69cd for em API 1.2.0.*"
+msgid "*Generated from EMStudio 17797d8 for em API 1.2.0.*"
 msgstr ""
 
 msgid "Id"
@@ -53,6 +53,12 @@ msgstr ""
 msgid "yes — ``em.app.commands.run(\"consolidate\")``"
 msgstr ""
 
+msgid "Script form"
+msgstr ""
+
+msgid "a window a person answers — no script form yet (opens Archive › Assets, where the target is chosen: no script form yet)"
+msgstr ""
+
 msgid "Writes to the graph"
 msgstr ""
 
@@ -62,13 +68,13 @@ msgstr ""
 msgid "Menu path (en)"
 msgstr ""
 
-msgid "File ▸ Consolidate for…"
+msgid "File ▸ Export ▸ Consolidate for…"
 msgstr ""
 
 msgid "Menu path (it)"
 msgstr ""
 
-msgid "File ▸ Consolida per…"
+msgid "File ▸ Esporta ▸ Consolida per…"
 msgstr ""
 
 msgid "Drawn in"
@@ -86,7 +92,7 @@ msgstr ""
 msgid "Defined in"
 msgstr ""
 
-msgid "``frontend/src/menu-table.ts:186``"
+msgid "``frontend/src/menu-table.ts:202``"
 msgstr ""
 
 msgid "What it does"
@@ -98,14 +104,17 @@ msgstr ""
 msgid "**it** — Archivio › Asset per un target: ogni asset con le sue versioni e texture, che cosa caricano Heriverse, ATON, il web o un telefono, che cosa c'è da fare, le barre della scena contro le fasce, la coda. Non scrive nulla finché un'azione della coda non parte."
 msgstr ""
 
-msgid "Slots"
+msgid "**script** — Consolidate for a viewer."
 msgstr ""
 
-msgid "None declared: the command table (``CommandRow`` in ``menu-table.ts``) declares no slots, types or defaults. Keyword slots passed to ``em.app.commands.run`` reach the page but are dropped by the host hook (``frontend/src/main.ts:65807``), which calls ``runCommand(id)`` only."
+msgid "Parameters"
+msgstr ""
+
+msgid "None: ``em.app.commands.run`` refuses a parameter given to it."
 msgstr ""
 
 msgid "From Python"
 msgstr ""
 
-msgid "The page presses the command's button, as a click would: whatever dialog the command opens, opens. If the button is disabled at that moment (or the id is unknown) the call raises ``em.NotAvailable`` (``py.noCommand``). Outside EMStudio (no host) the call raises ``em.NotAvailable``."
+msgid "The page presses the command's button, as a click would: its window opens and waits for a person. If the command is not possible at that moment (its button disabled) the call raises ``em.NotAvailable`` (``py.noCommand``). Outside EMStudio (no host) the call raises ``em.NotAvailable``."
 msgstr ""

@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: EMStudio Python API 1.2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"POT-Creation-Date: 2026-11-20 18:23+0100\n"
 "PO-Revision-Date: 2026-11-19 21:17+0100\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: it <LL@li.org>\n"
@@ -20,7 +20,7 @@ msgstr ""
 msgid "saveAs"
 msgstr ""
 
-msgid "*Generated from EMStudio 85f69cd for em API 1.2.0.*"
+msgid "*Generated from EMStudio 17797d8 for em API 1.2.0.*"
 msgstr ""
 
 msgid "Id"
@@ -38,7 +38,7 @@ msgstr ""
 msgid "Label (it)"
 msgstr ""
 
-msgid "Salva come…"
+msgid "Salva con nome…"
 msgstr ""
 
 msgid "Kind"
@@ -51,6 +51,18 @@ msgid "Reachable from Python"
 msgstr ""
 
 msgid "yes — ``em.app.commands.run(\"saveAs\")``"
+msgstr ""
+
+msgid "Script form"
+msgstr ""
+
+msgid "opens its window, filled with the parameters given; runs WITHOUT it when ``path`` is given (Blender's EXEC / INVOKE)"
+msgstr ""
+
+msgid "Returns"
+msgstr ""
+
+msgid "the path written"
 msgstr ""
 
 msgid "Writes to the graph"
@@ -68,7 +80,7 @@ msgstr ""
 msgid "Menu path (it)"
 msgstr ""
 
-msgid "File ▸ Salva come…"
+msgid "File ▸ Salva con nome…"
 msgstr ""
 
 msgid "Drawn in"
@@ -86,7 +98,7 @@ msgstr ""
 msgid "Defined in"
 msgstr ""
 
-msgid "``frontend/src/menu-table.ts:154``"
+msgid "``frontend/src/menu-table.ts:176``"
 msgstr ""
 
 msgid "What it does"
@@ -98,10 +110,13 @@ msgstr ""
 msgid "**it** — Salva .em.json in un file nuovo (⇧⌘S)"
 msgstr ""
 
-msgid "**en** (key map) — Save as…"
+msgid "**en** (key map) — Save As…"
 msgstr ""
 
 msgid "**it** (key map) — Salva con nome…"
+msgstr ""
+
+msgid "**script** — Save the active document under another name. With ``path`` no save picker opens: the file is written there (over a file already there) and becomes the document's file."
 msgstr ""
 
 msgid "Label in the other languages"
@@ -158,14 +173,38 @@ msgstr ""
 msgid "Enregistrer sous…"
 msgstr ""
 
-msgid "Slots"
+msgid "Parameters"
 msgstr ""
 
-msgid "None declared: the command table (``CommandRow`` in ``menu-table.ts``) declares no slots, types or defaults. Keyword slots passed to ``em.app.commands.run`` reach the page but are dropped by the host hook (``frontend/src/main.ts:65807``), which calls ``runCommand(id)`` only."
+msgid "Name"
+msgstr ""
+
+msgid "Type"
+msgstr ""
+
+msgid "Default"
+msgstr ""
+
+msgid "What it is"
+msgstr ""
+
+msgid "``path``"
+msgstr ""
+
+msgid "``str``"
+msgstr ""
+
+msgid "``None``"
+msgstr ""
+
+msgid "where to write the em.json (absolute path)"
+msgstr ""
+
+msgid "Declared in ``frontend/src/script-commands.json:25`` — the one place the console's completion and this page read. A name the command does not take, a wrong type, a value not among the choices are refused with ``em.NotAvailable`` in the page's language, never dropped."
 msgstr ""
 
 msgid "From Python"
 msgstr ""
 
-msgid "The page presses the command's button, as a click would: whatever dialog the command opens, opens. If the button is disabled at that moment (or the id is unknown) the call raises ``em.NotAvailable`` (``py.noCommand``). Outside EMStudio (no host) the call raises ``em.NotAvailable``."
+msgid "With the values above it runs without a window; without them its window opens, filled with what was given (the question about unsaved work, when there is one, is still asked). If the command is not possible at that moment (its button disabled) the call raises ``em.NotAvailable`` (``py.noCommand``). Outside EMStudio (no host) the call raises ``em.NotAvailable``."
 msgstr ""

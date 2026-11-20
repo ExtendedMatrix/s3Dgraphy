@@ -38,6 +38,7 @@ Documentation
    info_quickstart
    info_overview
    info_plugins
+   info_console
    info_best_practice
    info_gotchas
    change_log

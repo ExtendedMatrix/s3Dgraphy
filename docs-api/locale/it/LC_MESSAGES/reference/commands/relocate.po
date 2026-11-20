@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: EMStudio Python API 1.2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"POT-Creation-Date: 2026-11-20 18:23+0100\n"
 "PO-Revision-Date: 2026-11-19 21:17+0100\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: it <LL@li.org>\n"
@@ -20,7 +20,7 @@ msgstr ""
 msgid "relocate"
 msgstr ""
 
-msgid "*Generated from EMStudio 85f69cd for em API 1.2.0.*"
+msgid "*Generated from EMStudio 17797d8 for em API 1.2.0.*"
 msgstr ""
 
 msgid "Id"
@@ -53,6 +53,18 @@ msgstr ""
 msgid "yes — ``em.app.commands.run(\"relocate\")``"
 msgstr ""
 
+msgid "Script form"
+msgstr ""
+
+msgid "opens its window, filled with the parameters given; runs WITHOUT it when ``folder`` is given (Blender's EXEC / INVOKE)"
+msgstr ""
+
+msgid "Returns"
+msgstr ""
+
+msgid "{found, ambiguous, missing, link, applied}"
+msgstr ""
+
 msgid "Writes to the graph"
 msgstr ""
 
@@ -62,13 +74,13 @@ msgstr ""
 msgid "Menu path (en)"
 msgstr ""
 
-msgid "File ▸ Find missing files…"
+msgid "File ▸ External data ▸ Find missing files…"
 msgstr ""
 
 msgid "Menu path (it)"
 msgstr ""
 
-msgid "File ▸ Ritrova i file…"
+msgid "File ▸ File esterni ▸ Ritrova i file…"
 msgstr ""
 
 msgid "Drawn in"
@@ -86,7 +98,7 @@ msgstr ""
 msgid "Defined in"
 msgstr ""
 
-msgid "``frontend/src/menu-table.ts:176``"
+msgid "``frontend/src/menu-table.ts:209``"
 msgstr ""
 
 msgid "What it does"
@@ -98,14 +110,53 @@ msgstr ""
 msgid "**it** — Cerca in una cartella che scegli i file che questo documento non trova — per sha256, altrimenti per nome e dimensione — e riscrivi i loro percorsi relativi all'em.json. Un annulla."
 msgstr ""
 
-msgid "Slots"
+msgid "**script** — Find missing files. With ``folder`` there is no folder picker and no window: the search's tally comes back; with ``apply=True`` the paths found without doubt are rewritten (the ambiguous ones stay for a person, in the window)."
 msgstr ""
 
-msgid "None declared: the command table (``CommandRow`` in ``menu-table.ts``) declares no slots, types or defaults. Keyword slots passed to ``em.app.commands.run`` reach the page but are dropped by the host hook (``frontend/src/main.ts:65807``), which calls ``runCommand(id)`` only."
+msgid "Parameters"
+msgstr ""
+
+msgid "Name"
+msgstr ""
+
+msgid "Type"
+msgstr ""
+
+msgid "Default"
+msgstr ""
+
+msgid "What it is"
+msgstr ""
+
+msgid "``folder``"
+msgstr ""
+
+msgid "``str``"
+msgstr ""
+
+msgid "``None``"
+msgstr ""
+
+msgid "the folder to search (absolute path)"
+msgstr ""
+
+msgid "``apply``"
+msgstr ""
+
+msgid "``bool``"
+msgstr ""
+
+msgid "``False``"
+msgstr ""
+
+msgid "rewrite the paths found without doubt"
+msgstr ""
+
+msgid "Declared in ``frontend/src/script-commands.json:60`` — the one place the console's completion and this page read. A name the command does not take, a wrong type, a value not among the choices are refused with ``em.NotAvailable`` in the page's language, never dropped."
 msgstr ""
 
 msgid "From Python"
 msgstr ""
 
-msgid "The page presses the command's button, as a click would: whatever dialog the command opens, opens. If the button is disabled at that moment (or the id is unknown) the call raises ``em.NotAvailable`` (``py.noCommand``). Outside EMStudio (no host) the call raises ``em.NotAvailable``."
+msgid "With the values above it runs without a window; without them its window opens, filled with what was given (the question about unsaved work, when there is one, is still asked). If the command is not possible at that moment (its button disabled) the call raises ``em.NotAvailable`` (``py.noCommand``). Outside EMStudio (no host) the call raises ``em.NotAvailable``."
 msgstr ""

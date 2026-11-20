@@ -5,7 +5,7 @@
 updatesHelp
 ===========
 
-*Generated from EMStudio 9274372 for em API 1.2.0.*
+*Generated from EMStudio 17797d8 for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -21,6 +21,8 @@ updatesHelp
      - Menu command — presses the page button ``btn-help-updates``
    * - Reachable from Python
      - yes — ``em.app.commands.run("updatesHelp")``
+   * - Script form
+     - runs without a window
    * - Writes to the graph
      - not declared
    * - Menu path (en)
@@ -39,13 +41,12 @@ updatesHelp
 What it does
 ------------
 
-No tooltip or description string in ``i18n.ts``; the label is all the UI says.
+**script** — Ask whether a newer EMStudio exists (Help menu, Windows and Linux).
 
-Slots
------
+Parameters
+----------
 
-None declared: the command table (``CommandRow`` in ``menu-table.ts``) declares no slots, types or defaults.
-Keyword slots passed to ``em.app.commands.run`` reach the page but are dropped by the host hook (``frontend/src/main.ts:66534``), which calls ``runCommand(id)`` only.
+None: ``em.app.commands.run`` refuses a parameter given to it.
 
 From Python
 -----------
@@ -56,4 +57,4 @@ From Python
 
    em.app.commands.run("updatesHelp")
 
-The page presses the command's button, as a click would: whatever dialog the command opens, opens. If the button is disabled at that moment (or the id is unknown) the call raises ``em.NotAvailable`` (``py.noCommand``). Outside EMStudio (no host) the call raises ``em.NotAvailable``.
+Runs without a window. If the command is not possible at that moment (its button disabled) the call raises ``em.NotAvailable`` (``py.noCommand``). Outside EMStudio (no host) the call raises ``em.NotAvailable``.

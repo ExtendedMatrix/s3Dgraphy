@@ -5,7 +5,7 @@
 keymap:s3npCtrl
 ===============
 
-*Generated from EMStudio 9274372 for em API 1.2.0.*
+*Generated from EMStudio 17797d8 for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -20,7 +20,7 @@ keymap:s3npCtrl
    * - Kind
      - Gesture of the key map (no command id)
    * - Reachable from Python
-     - no
+     - yes, as the action :doc:`spaceView <spaceView>` — ``em.app.commands.run("spaceView")``
    * - Writes to the graph
      - not declared
    * - Shortcut
@@ -28,17 +28,12 @@ keymap:s3npCtrl
    * - Defined in
      - ``frontend/src/keymap.ts:79``
 
-.. admonition:: Not yet available from Python
-   :class: warning
-
-   A key or gesture handled directly by the page, not a row of the command table (``frontend/src/menu-table.ts``): ``em.app.commands.run`` has no id to reach it.
-
 What it does
 ------------
 
 No tooltip or description string in ``i18n.ts``; the label is all the UI says.
 
-Slots
------
+Parameters
+----------
 
 None.

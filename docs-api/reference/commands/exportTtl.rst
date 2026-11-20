@@ -5,7 +5,7 @@
 exportTtl
 =========
 
-*Generated from EMStudio 9274372 for em API 1.2.0.*
+*Generated from EMStudio 17797d8 for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -21,6 +21,10 @@ exportTtl
      - Menu command — presses the page button ``btn-ttl``
    * - Reachable from Python
      - yes — ``em.app.commands.run("exportTtl")``
+   * - Script form
+     - runs without a window
+   * - Returns
+     - the file name or path
    * - Writes to the graph
      - not declared
    * - Menu path (en)
@@ -41,11 +45,25 @@ What it does
 
 **it** — Esporta come Turtle RDF/CIDOC (.ttl) con la proiezione di s3Dgraphy
 
-Slots
------
+**script** — The RDF/CIDOC projection as Turtle (s3Dgraphy). Without ``path``: the save picker on the desktop, a download on the web; with ``path`` it is written there.
 
-None declared: the command table (``CommandRow`` in ``menu-table.ts``) declares no slots, types or defaults.
-Keyword slots passed to ``em.app.commands.run`` reach the page but are dropped by the host hook (``frontend/src/main.ts:66534``), which calls ``runCommand(id)`` only.
+Parameters
+----------
+
+.. list-table::
+   :header-rows: 1
+   :widths: 16 22 14 48
+
+   * - Name
+     - Type
+     - Default
+     - What it is
+   * - ``path``
+     - ``str``
+     - ``None``
+     - where to write the .ttl (absolute path)
+
+Declared in ``frontend/src/script-commands.json:55`` — the one place the console's completion and this page read. A name the command does not take, a wrong type, a value not among the choices are refused with ``em.NotAvailable`` in the page's language, never dropped.
 
 From Python
 -----------
@@ -56,4 +74,4 @@ From Python
 
    em.app.commands.run("exportTtl")
 
-The page presses the command's button, as a click would: whatever dialog the command opens, opens. If the button is disabled at that moment (or the id is unknown) the call raises ``em.NotAvailable`` (``py.noCommand``). Outside EMStudio (no host) the call raises ``em.NotAvailable``.
+Runs without a window. If the command is not possible at that moment (its button disabled) the call raises ``em.NotAvailable`` (``py.noCommand``). Outside EMStudio (no host) the call raises ``em.NotAvailable``.

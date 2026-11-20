@@ -1,0 +1,126 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-20 18:23+0100\n"
+"PO-Revision-Date: 2026-11-20 18:23+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "``em.app.space`` — the Space"
+msgstr "``em.app.space`` — lo Spazio"
+
+msgid "*The 3D Space of EMStudio as an object: what it shows, the epoch, the hardware profile, the camera.* EMStudio only (in EM Tools and in a script with no application, ``em.app.space`` has the four calls of every host — ``camera``, ``set_camera``, ``frame``, ``pick`` — and nothing else)."
+msgstr "*Lo Spazio 3D di EMStudio come oggetto: che cosa mostra, l'epoca, il profilo hardware, la camera.* Solo EMStudio (in EM Tools e in uno script senza applicazione ``em.app.space`` ha le quattro chiamate di ogni host — ``camera``, ``set_camera``, ``frame``, ``pick`` — e nient'altro)."
+
+msgid "Every reading asks the page: the Space is the one in front of the person, read when the line runs (nothing is cached in Python). A reading that needs a Space with none open answers what there is (``[]`` for the layers) or raises ``em.NotAvailable`` with the page's words."
+msgstr "Ogni lettura chiede alla pagina: lo Spazio è quello davanti alla persona, letto quando la riga si esegue (niente resta in memoria in Python). Una lettura che chiede uno Spazio quando nessuno è aperto risponde ciò che c'è (``[]`` per i livelli) o solleva ``em.NotAvailable`` con le parole della pagina."
+
+msgid "Name"
+msgstr "Nome"
+
+msgid "What it is"
+msgstr "Che cos'è"
+
+msgid "``layers``"
+msgstr ""
+
+msgid "the models and tilesets of the Space, a list of ``Layer``"
+msgstr "i modelli e i tileset dello Spazio, un elenco di ``Layer``"
+
+msgid "``layer(ref)``"
+msgstr ""
+
+msgid "one layer by its id or its name (``None``: not in the Space)"
+msgstr "un livello per id o per nome (``None``: non è nello Spazio)"
+
+msgid "``epochs``"
+msgstr ""
+
+msgid "the epochs the Space can show: ``{id, name, start, end}``"
+msgstr "le epoche che lo Spazio può mostrare: ``{id, name, start, end}``"
+
+msgid "``epoch``"
+msgstr ""
+
+msgid "the epoch shown, ``{id, name}``; **set** it with an id or a name"
+msgstr "l'epoca mostrata, ``{id, name}``; **impostala** con un id o un nome"
+
+msgid "``profile``"
+msgstr ""
+
+msgid "the hardware profile the Space loads for: ``{profile, chosen, read, why}`` (``desktop``, ``web``, ``mobile``); **set** it, or ``None`` to read it from the machine again"
+msgstr "il profilo hardware per cui lo Spazio carica: ``{profile, chosen, read, why}`` (``desktop``, ``web``, ``mobile``); **impostalo**, o ``None`` per rileggerlo dalla macchina"
+
+msgid "``camera()``"
+msgstr ""
+
+msgid "the camera of the first Space open: ``{pos, target, …}``"
+msgstr "la camera del primo Spazio aperto: ``{pos, target, …}``"
+
+msgid "``set_camera(camera)``"
+msgstr ""
+
+msgid "move it (the shape ``camera()`` returns)"
+msgstr "spostala (nella forma che ``camera()`` restituisce)"
+
+msgid "``frame(ids)``"
+msgstr ""
+
+msgid "frame these nodes (their proxies, their models)"
+msgstr "inquadra questi nodi (i loro proxy, i loro modelli)"
+
+msgid "``pick(prompt, primitive=\"point\")``"
+msgstr ""
+
+msgid "ask the person for a point in the Space"
+msgstr "chiede alla persona un punto nello Spazio"
+
+msgid "``Layer``"
+msgstr ""
+
+msgid "``name``, ``id``, ``key``"
+msgstr ""
+
+msgid "its name, the id of its model node, its key in the Space (``rm:<id>``)"
+msgstr "il suo nome, l'id del nodo del modello, la sua chiave nello Spazio (``rm:<id>``)"
+
+msgid "``kind``"
+msgstr ""
+
+msgid "``model`` or ``tileset``"
+msgstr "``model`` o ``tileset``"
+
+msgid "``visible``"
+msgstr ""
+
+msgid "shown or hidden; **set** it to hide or show the layer (the eye of the Outliner)"
+msgstr "mostrato o nascosto; **impostalo** per nascondere o mostrare il livello (l'occhio dell'Outliner)"
+
+msgid "the names of the epochs it depicts"
+msgstr "i nomi delle epoche che rappresenta"
+
+msgid "``bytes``"
+msgstr ""
+
+msgid "the weight of its file, when known (``None`` otherwise)"
+msgstr "il peso del suo file, quando è noto (``None`` altrimenti)"
+
+msgid "``file``"
+msgstr ""
+
+msgid "its file's address"
+msgstr "l'indirizzo del suo file"
+
+msgid "The commands of the Space with an id of their own — the aligned views, the orthographic switch, framing the selection or everything, the 3D cursor — are actions: :doc:`../commands/spaceView`, :doc:`../commands/spaceToggleOrtho`, :doc:`../commands/spaceFrameSelected`, :doc:`../commands/spaceFrameAll`, :doc:`../commands/spaceCursorReset`."
+msgstr "I comandi dello Spazio con un id proprio — le viste allineate, il passaggio all'ortografica, inquadrare la selezione o tutto, il cursore 3D — sono azioni: :doc:`../commands/spaceView`, :doc:`../commands/spaceToggleOrtho`, :doc:`../commands/spaceFrameSelected`, :doc:`../commands/spaceFrameAll`, :doc:`../commands/spaceCursorReset`."

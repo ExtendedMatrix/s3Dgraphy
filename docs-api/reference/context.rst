@@ -30,7 +30,12 @@ With none, reading it raises ``AttributeError`` with a sentence that says so.
    :no-index:
 
 What a host implements behind ``em.app`` (EMStudio, EM Tools, the «no
-application» host of a script) is :class:`s3dgraphy.em.host.App`.
+application» host of a script) is :class:`s3dgraphy.em.host.App`. A host may
+give more: ``em.app.space`` is then the host's own, and ``em.app.<name>``
+reaches what its application adds — in EMStudio :doc:`app/space` (layers,
+epoch, profile), :doc:`app/workspaces` and :doc:`app/windows`; ``dir(em.app)``
+lists them, and ``em.app.commands.list()`` the commands and actions with their
+parameters.
 
 ``ctx`` — in a plugin
 ---------------------

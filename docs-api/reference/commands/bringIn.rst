@@ -5,7 +5,7 @@
 bringIn
 =======
 
-*Generated from EMStudio 9274372 for em API 1.2.0.*
+*Generated from EMStudio 17797d8 for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -21,6 +21,10 @@ bringIn
      - Menu command — presses the page button ``btn-bring-in``
    * - Reachable from Python
      - yes — ``em.app.commands.run("bringIn")``
+   * - Script form
+     - opens its window, filled with the parameters given; runs WITHOUT it when ``paths`` is given (Blender's EXEC / INVOKE)
+   * - Returns
+     - how many files or folders were given
    * - Writes to the graph
      - not declared
    * - Menu path (en)
@@ -41,11 +45,41 @@ What it does
 
 **it** — Porta dentro — dei file, una cartella, o una cartella letta come DosCo: una finestra, la scelta dentro
 
-Slots
------
+**script** — Bring files or a folder into the document. With ``paths`` the window of the three choices does not open: ``mode`` says which road (as ``door``).
 
-None declared: the command table (``CommandRow`` in ``menu-table.ts``) declares no slots, types or defaults.
-Keyword slots passed to ``em.app.commands.run`` reach the page but are dropped by the host hook (``frontend/src/main.ts:66534``), which calls ``runCommand(id)`` only.
+Parameters
+----------
+
+.. list-table::
+   :header-rows: 1
+   :widths: 16 22 14 48
+
+   * - Name
+     - Type
+     - Default
+     - What it is
+   * - ``paths``
+     - ``list[str]``
+     - ``None``
+     - the files, or one folder (absolute paths)
+   * - ``mode``
+     - ``enum``: ``files``, ``folder``, ``dosco``
+     - ``"files"``
+     - files: the files themselves; folder: a folder read by a reader of folders; dosco: a folder read as DosCo
+   * - ``date``
+     - ``str``
+     - ``None``
+     - the date of the document the files make (the door's field)
+   * - ``epoch``
+     - ``str``
+     - ``None``
+     - the epoch a model is placed in (id)
+   * - ``confirm``
+     - ``bool``
+     - ``False``
+     - press the door's OK: the files come in with what the door proposes (refused, the door stays open for a person)
+
+Declared in ``frontend/src/script-commands.json:29`` — the one place the console's completion and this page read. A name the command does not take, a wrong type, a value not among the choices are refused with ``em.NotAvailable`` in the page's language, never dropped.
 
 From Python
 -----------
@@ -54,6 +88,6 @@ From Python
 
    from s3dgraphy import em
 
-   em.app.commands.run("bringIn")
+   em.app.commands.run("bringIn", paths=["…"])
 
-The page presses the command's button, as a click would: whatever dialog the command opens, opens. If the button is disabled at that moment (or the id is unknown) the call raises ``em.NotAvailable`` (``py.noCommand``). Outside EMStudio (no host) the call raises ``em.NotAvailable``.
+With the values above it runs without a window; without them its window opens, filled with what was given (the question about unsaved work, when there is one, is still asked). If the command is not possible at that moment (its button disabled) the call raises ``em.NotAvailable`` (``py.noCommand``). Outside EMStudio (no host) the call raises ``em.NotAvailable``.

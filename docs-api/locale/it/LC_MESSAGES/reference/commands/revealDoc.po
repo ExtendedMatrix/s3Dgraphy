@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: EMStudio Python API 1.2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"POT-Creation-Date: 2026-11-20 18:23+0100\n"
 "PO-Revision-Date: 2026-11-19 21:17+0100\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: it <LL@li.org>\n"
@@ -20,7 +20,7 @@ msgstr ""
 msgid "revealDoc"
 msgstr ""
 
-msgid "*Generated from EMStudio 85f69cd for em API 1.2.0.*"
+msgid "*Generated from EMStudio 17797d8 for em API 1.2.0.*"
 msgstr ""
 
 msgid "Id"
@@ -53,6 +53,12 @@ msgstr ""
 msgid "yes — ``em.app.commands.run(\"revealDoc\")``"
 msgstr ""
 
+msgid "Script form"
+msgstr ""
+
+msgid "runs without a window"
+msgstr ""
+
 msgid "Writes to the graph"
 msgstr ""
 
@@ -62,13 +68,13 @@ msgstr ""
 msgid "Menu path (en)"
 msgstr ""
 
-msgid "File ▸ Open the project folder"
+msgid "File ▸ External data ▸ Open the project folder"
 msgstr ""
 
 msgid "Menu path (it)"
 msgstr ""
 
-msgid "File ▸ Apri la cartella del progetto"
+msgid "File ▸ File esterni ▸ Apri la cartella del progetto"
 msgstr ""
 
 msgid "Drawn in"
@@ -86,26 +92,29 @@ msgstr ""
 msgid "Defined in"
 msgstr ""
 
-msgid "``frontend/src/menu-table.ts:147``"
+msgid "``frontend/src/menu-table.ts:213``"
 msgstr ""
 
 msgid "What it does"
 msgstr ""
 
-msgid "**en** — Shows the folder of the active .em.json in the Finder / Explorer / file manager, the file selected where the system allows it (in a browser alone: the path, copied)"
+msgid "**en** — Opens the root of the active .em.json's project (the folder that holds EM/) in the Finder / Explorer / file manager (in a browser alone: the path, copied)"
 msgstr ""
 
-msgid "**it** — Mostra la cartella dell'.em.json attivo nel Finder / Esplora file / gestore dei file, con il file selezionato dove il sistema lo permette (nel solo browser: il percorso, copiato)"
+msgid "**it** — Apre la radice del progetto dell'.em.json attivo (la cartella che contiene EM/) nel Finder / Esplora file / gestore dei file (nel solo browser: il percorso, copiato)"
 msgstr ""
 
-msgid "Slots"
+msgid "**script** — Open the project folder in the system's file manager."
 msgstr ""
 
-msgid "None declared: the command table (``CommandRow`` in ``menu-table.ts``) declares no slots, types or defaults. Keyword slots passed to ``em.app.commands.run`` reach the page but are dropped by the host hook (``frontend/src/main.ts:65807``), which calls ``runCommand(id)`` only."
+msgid "Parameters"
+msgstr ""
+
+msgid "None: ``em.app.commands.run`` refuses a parameter given to it."
 msgstr ""
 
 msgid "From Python"
 msgstr ""
 
-msgid "The page presses the command's button, as a click would: whatever dialog the command opens, opens. If the button is disabled at that moment (or the id is unknown) the call raises ``em.NotAvailable`` (``py.noCommand``). Outside EMStudio (no host) the call raises ``em.NotAvailable``."
+msgid "Runs without a window. If the command is not possible at that moment (its button disabled) the call raises ``em.NotAvailable`` (``py.noCommand``). Outside EMStudio (no host) the call raises ``em.NotAvailable``."
 msgstr ""

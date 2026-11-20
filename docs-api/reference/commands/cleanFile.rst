@@ -5,7 +5,7 @@
 cleanFile
 =========
 
-*Generated from EMStudio 9274372 for em API 1.2.0.*
+*Generated from EMStudio 17797d8 for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -21,6 +21,8 @@ cleanFile
      - Menu command — presses the page button ``btn-clean-file``
    * - Reachable from Python
      - yes — ``em.app.commands.run("cleanFile")``
+   * - Script form
+     - a window a person answers — no script form yet (says what the presentation section holds before taking it out: a person's answer)
    * - Writes to the graph
      - not declared
    * - Menu path (en)
@@ -41,11 +43,12 @@ What it does
 
 **it** — Togli dall'em.json ciò che è solo un modo di guardarlo (gli schemi colori), dopo aver mostrato cosa va via. I grafi non cambiano. Un annulla.
 
-Slots
------
+**script** — Take the presentation section out of the file.
 
-None declared: the command table (``CommandRow`` in ``menu-table.ts``) declares no slots, types or defaults.
-Keyword slots passed to ``em.app.commands.run`` reach the page but are dropped by the host hook (``frontend/src/main.ts:66534``), which calls ``runCommand(id)`` only.
+Parameters
+----------
+
+None: ``em.app.commands.run`` refuses a parameter given to it.
 
 From Python
 -----------
@@ -56,4 +59,4 @@ From Python
 
    em.app.commands.run("cleanFile")
 
-The page presses the command's button, as a click would: whatever dialog the command opens, opens. If the button is disabled at that moment (or the id is unknown) the call raises ``em.NotAvailable`` (``py.noCommand``). Outside EMStudio (no host) the call raises ``em.NotAvailable``.
+The page presses the command's button, as a click would: its window opens and waits for a person. If the command is not possible at that moment (its button disabled) the call raises ``em.NotAvailable`` (``py.noCommand``). Outside EMStudio (no host) the call raises ``em.NotAvailable``.

@@ -5,7 +5,7 @@
 keymap:s3outliner
 =================
 
-*Generated from EMStudio 9274372 for em API 1.2.0.*
+*Generated from EMStudio 17797d8 for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -28,17 +28,17 @@ keymap:s3outliner
    * - Defined in
      - ``frontend/src/keymap.ts:86``
 
-.. admonition:: Not yet available from Python
+.. admonition:: Not available from Python
    :class: warning
 
-   A key or gesture handled directly by the page, not a row of the command table (``frontend/src/menu-table.ts``): ``em.app.commands.run`` has no id to reach it.
+   No id on purpose: opens a panel: a script opens windows with em.app.windows.open.
 
 What it does
 ------------
 
 No tooltip or description string in ``i18n.ts``; the label is all the UI says.
 
-Slots
------
+Parameters
+----------
 
 None.

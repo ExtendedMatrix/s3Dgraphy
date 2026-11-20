@@ -5,7 +5,7 @@
 cut
 ====
 
-*Generated from EMStudio 9274372 for em API 1.2.0.*
+*Generated from EMStudio 17797d8 for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -34,17 +34,17 @@ cut
    * - Defined in
      - ``frontend/src/menu-table.ts:261``
 
-.. admonition:: Not yet available from Python
+.. admonition:: Not available from Python
    :class: warning
 
-   An item the operating system draws in the macOS menu bar: it has no page button, and ``runCommand`` only finds rows of kind ``cmd`` (``frontend/src/menu-ui.ts:233``), so ``em.app.commands.run`` raises ``em.NotAvailable``.
+   An item the operating system draws in the macOS menu bar: it has no page button, and ``runCommand`` only finds rows of kind ``cmd`` (``frontend/src/menu-ui.ts:237``), so ``em.app.commands.run`` raises ``em.NotAvailable``.
 
 What it does
 ------------
 
 No label, tooltip or description string in ``i18n.ts`` (the operating system names it).
 
-Slots
------
+Parameters
+----------
 
 None.

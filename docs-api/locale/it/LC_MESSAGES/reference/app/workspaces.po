@@ -1,0 +1,45 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-20 18:23+0100\n"
+"PO-Revision-Date: 2026-11-20 18:23+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "``em.app.workspaces`` — the workspaces"
+msgstr "``em.app.workspaces`` — gli spazi di lavoro"
+
+msgid "*The tabs of EMStudio's bar.* EMStudio only."
+msgstr "*Le schede della barra di EMStudio.* Solo EMStudio."
+
+msgid "Name"
+msgstr "Nome"
+
+msgid "What it is"
+msgstr "Che cos'è"
+
+msgid "``list()``"
+msgstr ""
+
+msgid "every workspace: ``{id, label, builtin, active}``, in the bar's order"
+msgstr "ogni spazio di lavoro: ``{id, label, builtin, active}``, nell'ordine della barra"
+
+msgid "``active``"
+msgstr ""
+
+msgid "the id of the workspace in front; **set** it (an id or a label) to switch"
+msgstr "l'id dello spazio di lavoro davanti; **impostalo** (un id o un'etichetta) per cambiarlo"
+
+msgid "The seven built-in workspaces are ``canvas`` (Stratigraphy), ``provenance`` (Sources), ``assets`` (Contents), ``narrative``, ``space``, ``sheets`` and ``scripting`` — the Script Editor, the Python console under it and the Matrix beside them. The person's own workspaces follow, with their own ids."
+msgstr "I sette spazi di lavoro predefiniti sono ``canvas`` (Stratigrafia), ``provenance`` (Fonti), ``assets`` (Contenuti), ``narrative``, ``space``, ``sheets`` e ``scripting`` — l'Editor di script, la console Python sotto e la Matrix accanto. Seguono quelli della persona, con i loro id."

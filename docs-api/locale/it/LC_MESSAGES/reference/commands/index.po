@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: EMStudio Python API 1.2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"POT-Creation-Date: 2026-11-20 18:23+0100\n"
 "PO-Revision-Date: 2026-11-19 21:17+0100\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: it <LL@li.org>\n"
@@ -20,10 +20,13 @@ msgstr ""
 msgid "EMStudio commands"
 msgstr ""
 
-msgid "*Generated from EMStudio 85f69cd for em API 1.2.0.*"
+msgid "*Generated from EMStudio 17797d8 for em API 1.2.0.*"
 msgstr ""
 
-msgid "Every command of EMStudio's menus (41 rows of the command table, 41 reachable from Python), the items the operating system draws in the macOS menu bar, and the keys and gestures of the key map. ``em.app.commands.run(command_id, **slots)`` reaches a command by the id in the first column."
+msgid "Every command of EMStudio's menus (44 rows of the command table, 30 with a script form), the 26 named actions (keys and gestures given an id for scripts), the items the operating system draws in the macOS menu bar, and the keys and gestures of the key map. ``em.app.commands.run(command_id, **params)`` reaches a command or an action by the id in the first column (69 in all); 58 keys and gestures have no id, each page says why."
+msgstr ""
+
+msgid "As Blender's operators: a command whose values are all given runs WITHOUT its window (``EXEC_DEFAULT``); with values missing its window opens, filled with what was given (``INVOKE_DEFAULT``). The parameters of each command are declared once, in ``frontend/src/script-commands.json``: these pages, ``em.app.commands.list()`` and the console's Tab read them."
 msgstr ""
 
 msgid "How ``run_command`` reaches the page"
@@ -35,25 +38,28 @@ msgstr ""
 msgid "``src/s3dgraphy/em/host.py:147`` — NullHost: NotAvailable outside a host"
 msgstr ""
 
-msgid "``tools/em_py.py:576`` — EMStudioApp.run\\_command asks the page: request kind \"command\" with id and slots"
+msgid "``tools/em_py.py:764`` — EMStudioApp.run\\_command asks the page: request kind \"command\" with id and slots"
 msgstr ""
 
-msgid "``frontend/src/py-session.ts:364`` — PySession answers the request through the page's host.command(id, slots); false -\\> error py.noCommand"
+msgid "``frontend/src/py-session.ts:386`` — PySession answers the request through the page's host.command(id, slots); false -\\> error py.noCommand"
 msgstr ""
 
-msgid "``frontend/src/main.ts:65807`` — the page's host hook: command -\\> runCommand(id)"
+msgid "``frontend/src/main.ts:66633`` — the page's host hook: command -\\> runScriptCommand(id, params)"
 msgstr ""
 
-msgid "``frontend/src/menu-ui.ts:182`` — runCommand: plugin:\\<id\\>/\\<cmd\\> -\\> plugin invocation; otherwise findRow(id) and click the row's button"
+msgid "``frontend/src/main.ts:66700`` — runScriptCommand: the params checked against script-commands.json (refused in the page's words); an action runs its handler; a command with a script form runs it (no window when its values are given); otherwise runCommand(id)"
 msgstr ""
 
-msgid "``frontend/src/menu-ui.ts:201`` — findRow: only rows of kind \"cmd\" in MENUS (sub-menus walked)"
+msgid "``frontend/src/menu-ui.ts:216`` — runCommand: plugin:\\<id\\>/\\<cmd\\> -\\> plugin invocation; otherwise findRow(id) and click the row's button"
 msgstr ""
 
-msgid "Plugin commands are reachable too, as ``plugin:<plugin>/<command>`` (registered at run time, not listed here; see ``em.plugins``). Slots are accepted by the API but not forwarded to the command by the page. No command declares whether it writes to the graph: the column says ``unknown``."
+msgid "``frontend/src/menu-ui.ts:237`` — findRow: only rows of kind \"cmd\" in MENUS (sub-menus walked)"
 msgstr ""
 
-msgid "Menu commands (41)"
+msgid "Plugin commands are reachable too, as ``plugin:<plugin>/<command>`` (registered at run time, not listed here; see ``em.plugins``). No command declares whether it writes to the graph: the column says ``unknown``."
+msgstr ""
+
+msgid "Menu commands (44)"
 msgstr ""
 
 msgid "Id"
@@ -74,7 +80,7 @@ msgstr ""
 msgid "Python"
 msgstr ""
 
-msgid "Writes graph"
+msgid "Form"
 msgstr ""
 
 msgid ":doc:`about <about>`"
@@ -95,7 +101,7 @@ msgstr ""
 msgid "yes"
 msgstr ""
 
-msgid "unknown"
+msgid "exec"
 msgstr ""
 
 msgid ":doc:`updates <updates>`"
@@ -152,52 +158,7 @@ msgstr ""
 msgid "File ▸ New EM project…"
 msgstr ""
 
-msgid ":doc:`openProject <openProject>`"
-msgstr ""
-
-msgid "Open project…"
-msgstr ""
-
-msgid "Apri progetto…"
-msgstr ""
-
-msgid "File ▸ Open project…"
-msgstr ""
-
-msgid ":doc:`reorderProject <reorderProject>`"
-msgstr ""
-
-msgid "Reorder by the standard…"
-msgstr ""
-
-msgid "Riordina secondo lo standard…"
-msgstr ""
-
-msgid "File ▸ Reorder by the standard…"
-msgstr ""
-
-msgid ":doc:`closeProject <closeProject>`"
-msgstr ""
-
-msgid "Close the project"
-msgstr ""
-
-msgid "Chiudi il progetto"
-msgstr ""
-
-msgid "File ▸ Close the project"
-msgstr ""
-
-msgid ":doc:`revealDoc <revealDoc>`"
-msgstr ""
-
-msgid "Open the project folder"
-msgstr ""
-
-msgid "Apri la cartella del progetto"
-msgstr ""
-
-msgid "File ▸ Open the project folder"
+msgid "window"
 msgstr ""
 
 msgid ":doc:`open <open>`"
@@ -215,6 +176,9 @@ msgstr ""
 msgid "``⌘O``"
 msgstr ""
 
+msgid "invoke"
+msgstr ""
+
 msgid ":doc:`openReplace <openReplace>`"
 msgstr ""
 
@@ -227,19 +191,16 @@ msgstr ""
 msgid "File ▸ Open in place of the open files…"
 msgstr ""
 
-msgid ":doc:`close <close>`"
+msgid ":doc:`openProject <openProject>`"
 msgstr ""
 
-msgid "Close"
+msgid "Open project…"
 msgstr ""
 
-msgid "Chiudi"
+msgid "Apri progetto…"
 msgstr ""
 
-msgid "File ▸ Close"
-msgstr ""
-
-msgid "``⌘W``"
+msgid "File ▸ Open project…"
 msgstr ""
 
 msgid ":doc:`save <save>`"
@@ -263,7 +224,7 @@ msgstr ""
 msgid "Save As…"
 msgstr ""
 
-msgid "Salva come…"
+msgid "Salva con nome…"
 msgstr ""
 
 msgid "File ▸ Save As…"
@@ -299,34 +260,55 @@ msgstr ""
 msgid "File ▸ Pin version…"
 msgstr ""
 
-msgid ":doc:`door <door>`"
+msgid ":doc:`bringIn <bringIn>`"
+msgstr ""
+
+msgid "Bring in…"
 msgstr ""
 
 msgid "Porta dentro…"
 msgstr ""
 
-msgid "File ▸ Porta dentro…"
+msgid "File ▸ Bring in…"
+msgstr ""
+
+msgid ":doc:`door <door>`"
 msgstr ""
 
 msgid ":doc:`doorFolder <doorFolder>`"
 msgstr ""
 
+msgid "Bring in a folder…"
+msgstr ""
+
 msgid "Porta dentro una cartella…"
 msgstr ""
 
-msgid "File ▸ Porta dentro una cartella…"
+msgid "File ▸ Bring in a folder…"
 msgstr ""
 
-msgid ":doc:`georef <georef>`"
+msgid ":doc:`doorDosco <doorDosco>`"
 msgstr ""
 
-msgid "Georeferencing…"
+msgid "Read as DosCo…"
 msgstr ""
 
-msgid "Georeferenziazione…"
+msgid "Leggi come DosCo…"
 msgstr ""
 
-msgid "File ▸ Georeferencing…"
+msgid "File ▸ Read as DosCo…"
+msgstr ""
+
+msgid ":doc:`integrate <integrate>`"
+msgstr ""
+
+msgid "Integrate into this file…"
+msgstr ""
+
+msgid "Integra in questo file…"
+msgstr ""
+
+msgid "File ▸ Integrate into this file…"
 msgstr ""
 
 msgid ":doc:`importGraphml <importGraphml>`"
@@ -368,88 +350,16 @@ msgstr ""
 msgid "File ▸ Export ▸ Turtle (.ttl)"
 msgstr ""
 
-msgid ":doc:`printSheets <printSheets>`"
+msgid ":doc:`composeFromGraph <composeFromGraph>`"
 msgstr ""
 
-msgid "Print sheets…"
+msgid "Blender scene (.blend)…"
 msgstr ""
 
-msgid "Stampa schede…"
+msgid "Scena Blender (.blend)…"
 msgstr ""
 
-msgid "File ▸ Print sheets…"
-msgstr ""
-
-msgid ":doc:`integrate <integrate>`"
-msgstr ""
-
-msgid "Integrate into this file…"
-msgstr ""
-
-msgid "Integra in questo file…"
-msgstr ""
-
-msgid "File ▸ Integrate into this file…"
-msgstr ""
-
-msgid ":doc:`relocate <relocate>`"
-msgstr ""
-
-msgid "Find missing files…"
-msgstr ""
-
-msgid "Ritrova i file…"
-msgstr ""
-
-msgid "File ▸ Find missing files…"
-msgstr ""
-
-msgid ":doc:`collect <collect>`"
-msgstr ""
-
-msgid "Collect resources…"
-msgstr ""
-
-msgid "Raccogli le risorse…"
-msgstr ""
-
-msgid "File ▸ Collect resources…"
-msgstr ""
-
-msgid ":doc:`cleanFile <cleanFile>`"
-msgstr ""
-
-msgid "Clean the file…"
-msgstr ""
-
-msgid "Pulisci il file…"
-msgstr ""
-
-msgid "File ▸ Clean the file…"
-msgstr ""
-
-msgid ":doc:`createRoom <createRoom>`"
-msgstr ""
-
-msgid "Create a room…"
-msgstr ""
-
-msgid "Crea una stanza…"
-msgstr ""
-
-msgid "File ▸ Create a room…"
-msgstr ""
-
-msgid ":doc:`bringIntoRoom <bringIntoRoom>`"
-msgstr ""
-
-msgid "Bring this into a new room…"
-msgstr ""
-
-msgid "Porta questo in una stanza nuova…"
-msgstr ""
-
-msgid "File ▸ Bring this into a new room…"
+msgid "File ▸ Export ▸ Blender scene (.blend)…"
 msgstr ""
 
 msgid ":doc:`consolidate <consolidate>`"
@@ -461,19 +371,130 @@ msgstr ""
 msgid "Consolida per…"
 msgstr ""
 
-msgid "File ▸ Consolidate for…"
+msgid "File ▸ Export ▸ Consolidate for…"
 msgstr ""
 
-msgid ":doc:`composeFromGraph <composeFromGraph>`"
+msgid ":doc:`printSheets <printSheets>`"
 msgstr ""
 
-msgid "Compose a .blend from the graph…"
+msgid "Print sheets…"
 msgstr ""
 
-msgid "Componi un .blend dal grafo…"
+msgid "Stampa schede…"
 msgstr ""
 
-msgid "File ▸ Compose a .blend from the graph…"
+msgid "File ▸ Export ▸ Print sheets…"
+msgstr ""
+
+msgid ":doc:`relocate <relocate>`"
+msgstr ""
+
+msgid "Find missing files…"
+msgstr ""
+
+msgid "Ritrova i file…"
+msgstr ""
+
+msgid "File ▸ External data ▸ Find missing files…"
+msgstr ""
+
+msgid ":doc:`collect <collect>`"
+msgstr ""
+
+msgid "Collect resources…"
+msgstr ""
+
+msgid "Raccogli le risorse…"
+msgstr ""
+
+msgid "File ▸ External data ▸ Collect resources…"
+msgstr ""
+
+msgid ":doc:`revealDoc <revealDoc>`"
+msgstr ""
+
+msgid "Open the project folder"
+msgstr ""
+
+msgid "Apri la cartella del progetto"
+msgstr ""
+
+msgid "File ▸ External data ▸ Open the project folder"
+msgstr ""
+
+msgid ":doc:`cleanFile <cleanFile>`"
+msgstr ""
+
+msgid "Clean the file…"
+msgstr ""
+
+msgid "Pulisci il file…"
+msgstr ""
+
+msgid "File ▸ Clean up ▸ Clean the file…"
+msgstr ""
+
+msgid ":doc:`reorderProject <reorderProject>`"
+msgstr ""
+
+msgid "Reorder by the standard…"
+msgstr ""
+
+msgid "Riordina secondo lo standard…"
+msgstr ""
+
+msgid "File ▸ Clean up ▸ Reorder by the standard…"
+msgstr ""
+
+msgid ":doc:`createRoom <createRoom>`"
+msgstr ""
+
+msgid "Create a room…"
+msgstr ""
+
+msgid "Crea una stanza…"
+msgstr ""
+
+msgid "File ▸ Room ▸ Create a room…"
+msgstr ""
+
+msgid ":doc:`bringIntoRoom <bringIntoRoom>`"
+msgstr ""
+
+msgid "Bring this into a new room…"
+msgstr ""
+
+msgid "Porta questo in una stanza nuova…"
+msgstr ""
+
+msgid "File ▸ Room ▸ Bring this into a new room…"
+msgstr ""
+
+msgid ":doc:`close <close>`"
+msgstr ""
+
+msgid "Close"
+msgstr ""
+
+msgid "Chiudi"
+msgstr ""
+
+msgid "File ▸ Close"
+msgstr ""
+
+msgid "``⌘W``"
+msgstr ""
+
+msgid ":doc:`closeProject <closeProject>`"
+msgstr ""
+
+msgid "Close the project"
+msgstr ""
+
+msgid "Chiudi il progetto"
+msgstr ""
+
+msgid "File ▸ Close the project"
 msgstr ""
 
 msgid ":doc:`quitFile <quitFile>`"
@@ -489,6 +510,24 @@ msgid "File ▸ Quit EMStudio"
 msgstr ""
 
 msgid "``⌘Q``"
+msgstr ""
+
+msgid "no"
+msgstr ""
+
+msgid "none"
+msgstr ""
+
+msgid ":doc:`georef <georef>`"
+msgstr ""
+
+msgid "Georeferencing…"
+msgstr ""
+
+msgid "Georeferenziazione…"
+msgstr ""
+
+msgid "Tools ▸ Georeferencing…"
 msgstr ""
 
 msgid ":doc:`undo <undo>`"
@@ -557,6 +596,18 @@ msgstr ""
 msgid "Help ▸ EM legend"
 msgstr ""
 
+msgid ":doc:`pythonApi <pythonApi>`"
+msgstr ""
+
+msgid "Python API reference"
+msgstr ""
+
+msgid "Riferimento API Python"
+msgstr ""
+
+msgid "Help ▸ Python API reference"
+msgstr ""
+
 msgid ":doc:`aboutHelp <aboutHelp>`"
 msgstr ""
 
@@ -575,6 +626,168 @@ msgstr ""
 msgid "Help ▸ Check for updates…"
 msgstr ""
 
+msgid "Named actions (for scripts) (26)"
+msgstr ""
+
+msgid ":doc:`addNode <addNode>`"
+msgstr ""
+
+msgid "A new node of type in the active graph window (the Matrix places it in epoch's lane)"
+msgstr ""
+
+msgid "action"
+msgstr ""
+
+msgid ":doc:`addUnitAbove <addUnitAbove>`"
+msgstr ""
+
+msgid "A new unit ABOVE of (the new one is later: new is\\_after of), as «US above X» of the add menu"
+msgstr ""
+
+msgid ":doc:`addUnitBelow <addUnitBelow>`"
+msgstr ""
+
+msgid "A new unit BELOW of (the new one is earlier: of is\\_after new)"
+msgstr ""
+
+msgid ":doc:`connect <connect>`"
+msgstr ""
+
+msgid "Connect two nodes, as the drag from a node's handle: edge\\_type default is the first the datamodel allows between their types (is\\_after for two units)"
+msgstr ""
+
+msgid ":doc:`moveToEpoch <moveToEpoch>`"
+msgstr ""
+
+msgid "Move units to an epoch, as dropping them in its lane: the epoch they were in is left"
+msgstr ""
+
+msgid ":doc:`extendToEpoch <extendToEpoch>`"
+msgstr ""
+
+msgid "Units that also survive into an epoch (the epochs they are in are kept)."
+msgstr ""
+
+msgid ":doc:`fold <fold>`"
+msgstr ""
+
+msgid "Fold a group (its members hidden in it)."
+msgstr ""
+
+msgid ":doc:`unfold <unfold>`"
+msgstr ""
+
+msgid "Open a folded group."
+msgstr ""
+
+msgid ":doc:`enterGroup <enterGroup>`"
+msgstr ""
+
+msgid "Enter a group (the double click): the canvas shows its inside."
+msgstr ""
+
+msgid ":doc:`leaveGroup <leaveGroup>`"
+msgstr ""
+
+msgid "Leave the group the canvas is in (Esc)."
+msgstr ""
+
+msgid ":doc:`frameNode <frameNode>`"
+msgstr ""
+
+msgid "Centre the graph window on a node and select it (a jump: back returns)."
+msgstr ""
+
+msgid ":doc:`fit <fit>`"
+msgstr ""
+
+msgid "Fit the graph in the window (0, ⇧C)."
+msgstr ""
+
+msgid ":doc:`zoomIn <zoomIn>`"
+msgstr ""
+
+msgid "Zoom in (+)."
+msgstr ""
+
+msgid ":doc:`zoomOut <zoomOut>`"
+msgstr ""
+
+msgid "Zoom out (−)."
+msgstr ""
+
+msgid ":doc:`back <back>`"
+msgstr ""
+
+msgid "Back to the view before the last jump (⌘\\[)."
+msgstr ""
+
+msgid ":doc:`deleteNodes <deleteNodes>`"
+msgstr ""
+
+msgid "Delete nodes, as ⌫ on the selection (one undo step; the toast gives them back)."
+msgstr ""
+
+msgid ":doc:`nudge <nudge>`"
+msgstr ""
+
+msgid "Nudge the selection by screen pixels (the arrows)."
+msgstr ""
+
+msgid ":doc:`reflow <reflow>`"
+msgstr ""
+
+msgid "Rearrange (Disponi): the nodes given, or the whole Matrix."
+msgstr ""
+
+msgid ":doc:`layoutFresh <layoutFresh>`"
+msgstr ""
+
+msgid "Recompute the layout from scratch (⌥ + Arrange): the manual arrangement is dropped."
+msgstr ""
+
+msgid ":doc:`compact <compact>`"
+msgstr ""
+
+msgid "Compact the Matrix (the units closer, the order kept)."
+msgstr ""
+
+msgid ":doc:`magnify <magnify>`"
+msgstr ""
+
+msgid "Magnify a window to the whole workspace, or put it back (⌃Space)."
+msgstr ""
+
+msgid ":doc:`spaceView <spaceView>`"
+msgstr ""
+
+msgid "An aligned view of the Space (the numeric keypad)."
+msgstr ""
+
+msgid ":doc:`spaceToggleOrtho <spaceToggleOrtho>`"
+msgstr ""
+
+msgid "Perspective ⇄ orthographic (keypad 5)."
+msgstr ""
+
+msgid ":doc:`spaceFrameSelected <spaceFrameSelected>`"
+msgstr ""
+
+msgid "Frame the selection in the Space ("
+msgstr ""
+
+msgid ":doc:`spaceFrameAll <spaceFrameAll>`"
+msgstr ""
+
+msgid "Frame everything the Space draws (Home)."
+msgstr ""
+
+msgid ":doc:`spaceCursorReset <spaceCursorReset>`"
+msgstr ""
+
+msgid "The 3D cursor to the median of what is drawn, and the view on most of it (⇧C)."
+msgstr ""
+
 msgid "Operating-system menu items (macOS menu bar) (14)"
 msgstr ""
 
@@ -588,9 +801,6 @@ msgid "Servizi"
 msgstr ""
 
 msgid "EMStudio ▸ Services"
-msgstr ""
-
-msgid "no"
 msgstr ""
 
 msgid ":doc:`hide <hide>`"
@@ -701,10 +911,10 @@ msgstr ""
 msgid ":doc:`keymap:where <keymap-where>`"
 msgstr ""
 
-msgid "Where you are"
+msgid "The chip's menu: author, node, where you work"
 msgstr ""
 
-msgid "Dove sei"
+msgid "Il menu del chip: autore, nodo, dove lavori"
 msgstr ""
 
 msgid "``⇧⌘L``"
@@ -720,6 +930,12 @@ msgid "Aggiungi un nodo dove sta il puntatore"
 msgstr ""
 
 msgid "``⇧A``"
+msgstr ""
+
+msgid "via"
+msgstr ""
+
+msgid "→ addNode"
 msgstr ""
 
 msgid ":doc:`keymap:search <keymap-search>`"
@@ -746,6 +962,9 @@ msgstr ""
 msgid "``⌃Space``"
 msgstr ""
 
+msgid "→ magnify"
+msgstr ""
+
 msgid ":doc:`keymap:esc <keymap-esc>`"
 msgstr ""
 
@@ -756,6 +975,9 @@ msgid "Chiudi un menu, esci da un gruppo, deseleziona"
 msgstr ""
 
 msgid "``Esc``"
+msgstr ""
+
+msgid "→ leaveGroup"
 msgstr ""
 
 msgid ":doc:`keymap:delete <keymap-delete>`"
@@ -770,6 +992,9 @@ msgstr ""
 msgid "``⌫ · Del``"
 msgstr ""
 
+msgid "→ deleteNodes"
+msgstr ""
+
 msgid ":doc:`keymap:nudge <keymap-nudge>`"
 msgstr ""
 
@@ -780,6 +1005,9 @@ msgid "Sposta la selezione di 1 px"
 msgstr ""
 
 msgid "``← → ↑ ↓``"
+msgstr ""
+
+msgid "→ nudge"
 msgstr ""
 
 msgid ":doc:`keymap:nudge10 <keymap-nudge10>`"
@@ -806,6 +1034,9 @@ msgstr ""
 msgid "``0 · ⇧C``"
 msgstr ""
 
+msgid "→ fit"
+msgstr ""
+
 msgid ":doc:`keymap:back <keymap-back>`"
 msgstr ""
 
@@ -818,16 +1049,22 @@ msgstr ""
 msgid "``⌘[ · ⌥←``"
 msgstr ""
 
+msgid "→ back"
+msgstr ""
+
 msgid ":doc:`keymap:zoomIn <keymap-zoomIn>`"
 msgstr ""
 
 msgid "Zoom in"
 msgstr ""
 
-msgid "Ingrandisci"
+msgid "Zoom avanti"
 msgstr ""
 
 msgid "``+ · =``"
+msgstr ""
+
+msgid "→ zoomIn"
 msgstr ""
 
 msgid ":doc:`keymap:zoomOut <keymap-zoomOut>`"
@@ -836,10 +1073,13 @@ msgstr ""
 msgid "Zoom out"
 msgstr ""
 
-msgid "Riduci"
+msgid "Zoom indietro"
 msgstr ""
 
 msgid "``−``"
+msgstr ""
+
+msgid "→ zoomOut"
 msgstr ""
 
 msgid ":doc:`keymap:s3box <keymap-s3box>`"
@@ -866,6 +1106,9 @@ msgstr ""
 msgid "``⇧C``"
 msgstr ""
 
+msgid "→ spaceCursorReset"
+msgstr ""
+
 msgid ":doc:`keymap:s3sidebar <keymap-s3sidebar>`"
 msgstr ""
 
@@ -890,6 +1133,9 @@ msgstr ""
 msgid "``. · F``"
 msgstr ""
 
+msgid "→ spaceFrameSelected"
+msgstr ""
+
 msgid ":doc:`keymap:s3frameAll <keymap-s3frameAll>`"
 msgstr ""
 
@@ -900,6 +1146,9 @@ msgid "Inquadra tutto"
 msgstr ""
 
 msgid "``Home``"
+msgstr ""
+
+msgid "→ spaceFrameAll"
 msgstr ""
 
 msgid ":doc:`keymap:s3outliner <keymap-s3outliner>`"
@@ -926,10 +1175,10 @@ msgstr ""
 msgid ":doc:`keymap:s3grs <keymap-s3grs>`"
 msgstr ""
 
-msgid "Move, rotate, scale a sketch: then X Y Z, a number, Enter or Esc"
+msgid "Move, rotate, scale the selection (proxies, models, sketched shapes; not a tileset, nor what is locked): then X Y Z, a number, Enter or Esc"
 msgstr ""
 
-msgid "Sposta, ruota, scala un abbozzo: poi X Y Z, un numero, Invio o Esc"
+msgid "Sposta, ruota, scala la selezione (proxy, modelli, forme abbozzate; non un tileset, né ciò che è bloccato): poi X Y Z, un numero, Invio o Esc"
 msgstr ""
 
 msgid "``G · R · S``"
@@ -1181,6 +1430,9 @@ msgstr ""
 msgid "Undo (toast)"
 msgstr ""
 
+msgid "→ undo"
+msgstr ""
+
 msgid ":doc:`keymap:pan <keymap-pan>`"
 msgstr ""
 
@@ -1259,6 +1511,9 @@ msgstr ""
 msgid "double-click"
 msgstr ""
 
+msgid "→ enterGroup"
+msgstr ""
+
 msgid ":doc:`keymap:connect <keymap-connect>`"
 msgstr ""
 
@@ -1271,6 +1526,9 @@ msgstr ""
 msgid "drag from the handle"
 msgstr ""
 
+msgid "→ connect"
+msgstr ""
+
 msgid ":doc:`keymap:connectMenu <keymap-connectMenu>`"
 msgstr ""
 
@@ -1281,6 +1539,9 @@ msgid "Rilascia nel vuoto: aggiungi un nodo collegato"
 msgstr ""
 
 msgid "⇧/⌥ release"
+msgstr ""
+
+msgid "→ addUnitBelow"
 msgstr ""
 
 msgid ":doc:`keymap:detach <keymap-detach>`"
@@ -1305,6 +1566,9 @@ msgid "Cambia solo l'epoca (corsia)"
 msgstr ""
 
 msgid "⌥ drop"
+msgstr ""
+
+msgid "→ moveToEpoch"
 msgstr ""
 
 msgid ":doc:`keymap:dragEsc <keymap-dragEsc>`"
@@ -1367,13 +1631,16 @@ msgstr ""
 msgid "⌥ Layout"
 msgstr ""
 
+msgid "→ layoutFresh"
+msgstr ""
+
 msgid ":doc:`keymap:s3pick <keymap-s3pick>`"
 msgstr ""
 
-msgid "Select the proxy under the cursor (a sketch too)"
+msgid "Select the object under the cursor: a proxy, a model, a sketched shape"
 msgstr ""
 
-msgid "Seleziona il proxy sotto il cursore (anche uno schizzo)"
+msgid "Seleziona l'oggetto sotto il cursore: un proxy, un modello, una forma abbozzata"
 msgstr ""
 
 msgid "Click"
@@ -1517,6 +1784,9 @@ msgstr ""
 msgid "Numpad 1"
 msgstr ""
 
+msgid "→ spaceView"
+msgstr ""
+
 msgid ":doc:`keymap:s3np3 <keymap-s3np3>`"
 msgstr ""
 
@@ -1563,6 +1833,9 @@ msgid "Prospettiva ⇄ ortometrica"
 msgstr ""
 
 msgid "Numpad 5"
+msgstr ""
+
+msgid "→ spaceToggleOrtho"
 msgstr ""
 
 msgid ":doc:`keymap:s3np0 <keymap-s3np0>`"

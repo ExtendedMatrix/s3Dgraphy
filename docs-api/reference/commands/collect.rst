@@ -5,7 +5,7 @@
 collect
 =======
 
-*Generated from EMStudio 9274372 for em API 1.2.0.*
+*Generated from EMStudio 17797d8 for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -21,6 +21,8 @@ collect
      - Menu command — presses the page button ``btn-collect-files``
    * - Reachable from Python
      - yes — ``em.app.commands.run("collect")``
+   * - Script form
+     - a window a person answers — no script form yet (says what will be copied where and asks: a person's answer, no script form yet)
    * - Writes to the graph
      - not declared
    * - Menu path (en)
@@ -41,11 +43,12 @@ What it does
 
 **it** — Copia nella cartella dello studio i file che nomina fuori da essa (percorsi assoluti, onedrive://, un .blend altrove) — solo ciò che serve a ciascuno, ogni copia verificata per sha256 — e riscrivi i loro percorsi relativi all'em.json. Mai uno spostamento; un annulla.
 
-Slots
------
+**script** — Collect the resources beside the project.
 
-None declared: the command table (``CommandRow`` in ``menu-table.ts``) declares no slots, types or defaults.
-Keyword slots passed to ``em.app.commands.run`` reach the page but are dropped by the host hook (``frontend/src/main.ts:66534``), which calls ``runCommand(id)`` only.
+Parameters
+----------
+
+None: ``em.app.commands.run`` refuses a parameter given to it.
 
 From Python
 -----------
@@ -56,4 +59,4 @@ From Python
 
    em.app.commands.run("collect")
 
-The page presses the command's button, as a click would: whatever dialog the command opens, opens. If the button is disabled at that moment (or the id is unknown) the call raises ``em.NotAvailable`` (``py.noCommand``). Outside EMStudio (no host) the call raises ``em.NotAvailable``.
+The page presses the command's button, as a click would: its window opens and waits for a person. If the command is not possible at that moment (its button disabled) the call raises ``em.NotAvailable`` (``py.noCommand``). Outside EMStudio (no host) the call raises ``em.NotAvailable``.

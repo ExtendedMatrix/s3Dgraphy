@@ -5,22 +5,25 @@
 EMStudio commands
 =================
 
-*Generated from EMStudio 9274372 for em API 1.2.0.*
+*Generated from EMStudio 17797d8 for em API 1.2.0.*
 
-Every command of EMStudio's menus (44 rows of the command table, 44 reachable from Python), the items the operating system draws in the macOS menu bar, and the keys and gestures of the key map. ``em.app.commands.run(command_id, **slots)`` reaches a command by the id in the first column.
+Every command of EMStudio's menus (44 rows of the command table, 30 with a script form), the 26 named actions (keys and gestures given an id for scripts), the items the operating system draws in the macOS menu bar, and the keys and gestures of the key map. ``em.app.commands.run(command_id, **params)`` reaches a command or an action by the id in the first column (69 in all); 58 keys and gestures have no id, each page says why.
+
+As Blender's operators: a command whose values are all given runs WITHOUT its window (``EXEC_DEFAULT``); with values missing its window opens, filled with what was given (``INVOKE_DEFAULT``). The parameters of each command are declared once, in ``frontend/src/script-commands.json``: these pages, ``em.app.commands.list()`` and the console's Tab read them.
 
 How ``run_command`` reaches the page
 ------------------------------------
 
 #. ``src/s3dgraphy/em/__init__.py:233`` — em.app.commands.run -\> host app run\_command
 #. ``src/s3dgraphy/em/host.py:147`` — NullHost: NotAvailable outside a host
-#. ``tools/em_py.py:581`` — EMStudioApp.run\_command asks the page: request kind "command" with id and slots
-#. ``frontend/src/py-session.ts:364`` — PySession answers the request through the page's host.command(id, slots); false -\> error py.noCommand
-#. ``frontend/src/main.ts:66534`` — the page's host hook: command -\> runCommand(id)
-#. ``frontend/src/menu-ui.ts:214`` — runCommand: plugin:\<id\>/\<cmd\> -\> plugin invocation; otherwise findRow(id) and click the row's button
-#. ``frontend/src/menu-ui.ts:233`` — findRow: only rows of kind "cmd" in MENUS (sub-menus walked)
+#. ``tools/em_py.py:764`` — EMStudioApp.run\_command asks the page: request kind "command" with id and slots
+#. ``frontend/src/py-session.ts:386`` — PySession answers the request through the page's host.command(id, slots); false -\> error py.noCommand
+#. ``frontend/src/main.ts:66633`` — the page's host hook: command -\> runScriptCommand(id, params)
+#. ``frontend/src/main.ts:66700`` — runScriptCommand: the params checked against script-commands.json (refused in the page's words); an action runs its handler; a command with a script form runs it (no window when its values are given); otherwise runCommand(id)
+#. ``frontend/src/menu-ui.ts:216`` — runCommand: plugin:\<id\>/\<cmd\> -\> plugin invocation; otherwise findRow(id) and click the row's button
+#. ``frontend/src/menu-ui.ts:237`` — findRow: only rows of kind "cmd" in MENUS (sub-menus walked)
 
-Plugin commands are reachable too, as ``plugin:<plugin>/<command>`` (registered at run time, not listed here; see ``em.plugins``). Slots are accepted by the API but not forwarded to the command by the page. No command declares whether it writes to the graph: the column says ``unknown``.
+Plugin commands are reachable too, as ``plugin:<plugin>/<command>`` (registered at run time, not listed here; see ``em.plugins``). No command declares whether it writes to the graph: the column says ``unknown``.
 
 Menu commands (44)
 ------------------
@@ -35,315 +38,512 @@ Menu commands (44)
      - Menu path
      - Shortcut
      - Python
-     - Writes graph
+     - Form
    * - :doc:`about <about>`
      - About EMStudio
      - Informazioni su EMStudio
      - EMStudio ▸ About EMStudio
      - —
      - yes
-     - unknown
+     - exec
    * - :doc:`updates <updates>`
      - Check for updates…
      - Cerca aggiornamenti…
      - EMStudio ▸ Check for updates…
      - —
      - yes
-     - unknown
+     - exec
    * - :doc:`settings <settings>`
      - Settings…
      - Impostazioni…
      - EMStudio ▸ Settings…
      - ``⌘,``
      - yes
-     - unknown
+     - exec
    * - :doc:`new <new>`
      - New
      - Nuovo
      - File ▸ New
      - ``⌘N``
      - yes
-     - unknown
+     - exec
    * - :doc:`newProject <newProject>`
      - New EM project…
      - Nuovo progetto EM…
      - File ▸ New EM project…
      - —
      - yes
-     - unknown
+     - window
    * - :doc:`open <open>`
      - Open…
      - Apri…
      - File ▸ Open…
      - ``⌘O``
      - yes
-     - unknown
+     - invoke
    * - :doc:`openReplace <openReplace>`
      - Open in place of the open files…
      - Apri al posto dei file aperti…
      - File ▸ Open in place of the open files…
      - —
      - yes
-     - unknown
+     - invoke
    * - :doc:`openProject <openProject>`
      - Open project…
      - Apri progetto…
      - File ▸ Open project…
      - —
      - yes
-     - unknown
+     - window
    * - :doc:`save <save>`
      - Save
      - Salva
      - File ▸ Save
      - ``⌘S``
      - yes
-     - unknown
+     - exec
    * - :doc:`saveAs <saveAs>`
      - Save As…
      - Salva con nome…
      - File ▸ Save As…
      - ``⇧⌘S``
      - yes
-     - unknown
+     - invoke
    * - :doc:`saveAll <saveAll>`
      - Save all
      - Salva tutto
      - File ▸ Save all
      - ``⌥⌘S``
      - yes
-     - unknown
+     - exec
    * - :doc:`pin <pin>`
      - Pin version…
      - Fissa versione…
      - File ▸ Pin version…
      - —
      - yes
-     - unknown
+     - exec
    * - :doc:`bringIn <bringIn>`
      - Bring in…
      - Porta dentro…
      - File ▸ Bring in…
      - —
      - yes
-     - unknown
+     - invoke
    * - :doc:`door <door>`
      - Bring in…
      - Porta dentro…
      - File ▸ Bring in…
      - —
      - yes
-     - unknown
+     - invoke
    * - :doc:`doorFolder <doorFolder>`
      - Bring in a folder…
      - Porta dentro una cartella…
      - File ▸ Bring in a folder…
      - —
      - yes
-     - unknown
+     - invoke
    * - :doc:`doorDosco <doorDosco>`
      - Read as DosCo…
      - Leggi come DosCo…
      - File ▸ Read as DosCo…
      - —
      - yes
-     - unknown
+     - invoke
    * - :doc:`integrate <integrate>`
      - Integrate into this file…
      - Integra in questo file…
      - File ▸ Integrate into this file…
      - —
      - yes
-     - unknown
+     - window
    * - :doc:`importGraphml <importGraphml>`
      - GraphML…
      - GraphML…
      - File ▸ Import ▸ GraphML…
      - —
      - yes
-     - unknown
+     - invoke
    * - :doc:`importMapping <importMapping>`
      - Table with a mapping…
      - Tabella con mappatura…
      - File ▸ Import ▸ Table with a mapping…
      - —
      - yes
-     - unknown
+     - window
    * - :doc:`exportSvg <exportSvg>`
      - SVG
      - SVG
      - File ▸ Export ▸ SVG
      - —
      - yes
-     - unknown
+     - exec
    * - :doc:`exportTtl <exportTtl>`
      - Turtle (.ttl)
      - Turtle (.ttl)
      - File ▸ Export ▸ Turtle (.ttl)
      - —
      - yes
-     - unknown
+     - exec
    * - :doc:`composeFromGraph <composeFromGraph>`
      - Blender scene (.blend)…
      - Scena Blender (.blend)…
      - File ▸ Export ▸ Blender scene (.blend)…
      - —
      - yes
-     - unknown
+     - window
    * - :doc:`consolidate <consolidate>`
      - Consolidate for…
      - Consolida per…
      - File ▸ Export ▸ Consolidate for…
      - —
      - yes
-     - unknown
+     - window
    * - :doc:`printSheets <printSheets>`
      - Print sheets…
      - Stampa schede…
      - File ▸ Export ▸ Print sheets…
      - —
      - yes
-     - unknown
+     - window
    * - :doc:`relocate <relocate>`
      - Find missing files…
      - Ritrova i file…
      - File ▸ External data ▸ Find missing files…
      - —
      - yes
-     - unknown
+     - invoke
    * - :doc:`collect <collect>`
      - Collect resources…
      - Raccogli le risorse…
      - File ▸ External data ▸ Collect resources…
      - —
      - yes
-     - unknown
+     - window
    * - :doc:`revealDoc <revealDoc>`
      - Open the project folder
      - Apri la cartella del progetto
      - File ▸ External data ▸ Open the project folder
      - —
      - yes
-     - unknown
+     - exec
    * - :doc:`cleanFile <cleanFile>`
      - Clean the file…
      - Pulisci il file…
      - File ▸ Clean up ▸ Clean the file…
      - —
      - yes
-     - unknown
+     - window
    * - :doc:`reorderProject <reorderProject>`
      - Reorder by the standard…
      - Riordina secondo lo standard…
      - File ▸ Clean up ▸ Reorder by the standard…
      - —
      - yes
-     - unknown
+     - window
    * - :doc:`createRoom <createRoom>`
      - Create a room…
      - Crea una stanza…
      - File ▸ Room ▸ Create a room…
      - —
      - yes
-     - unknown
+     - window
    * - :doc:`bringIntoRoom <bringIntoRoom>`
      - Bring this into a new room…
      - Porta questo in una stanza nuova…
      - File ▸ Room ▸ Bring this into a new room…
      - —
      - yes
-     - unknown
+     - window
    * - :doc:`close <close>`
      - Close
      - Chiudi
      - File ▸ Close
      - ``⌘W``
      - yes
-     - unknown
+     - exec
    * - :doc:`closeProject <closeProject>`
      - Close the project
      - Chiudi il progetto
      - File ▸ Close the project
      - —
      - yes
-     - unknown
+     - exec
    * - :doc:`quitFile <quitFile>`
      - Quit EMStudio
      - Esci da EMStudio
      - File ▸ Quit EMStudio
      - ``⌘Q``
-     - yes
-     - unknown
+     - no
+     - none
    * - :doc:`georef <georef>`
      - Georeferencing…
      - Georeferenziazione…
      - Tools ▸ Georeferencing…
      - —
      - yes
-     - unknown
+     - window
    * - :doc:`undo <undo>`
      - Undo
      - Annulla
      - Edit ▸ Undo
      - ``⌘Z``
      - yes
-     - unknown
+     - exec
    * - :doc:`redo <redo>`
      - Redo
      - Ripristina
      - Edit ▸ Redo
      - ``⇧⌘Z``
      - yes
-     - unknown
+     - exec
    * - :doc:`workspaces <workspaces>`
      - Workspaces…
      - Spazi di lavoro…
      - Help ▸ Workspaces…
      - —
      - yes
-     - unknown
+     - exec
    * - :doc:`shortcuts <shortcuts>`
      - Shortcuts
      - Scorciatoie
      - Help ▸ Shortcuts
      - —
      - yes
-     - unknown
+     - exec
    * - :doc:`legend <legend>`
      - EM legend
      - Legenda EM
      - Help ▸ EM legend
      - —
      - yes
-     - unknown
+     - exec
    * - :doc:`pythonApi <pythonApi>`
      - Python API reference
      - Riferimento API Python
      - Help ▸ Python API reference
      - —
      - yes
-     - unknown
+     - exec
    * - :doc:`aboutHelp <aboutHelp>`
      - About EMStudio
      - Informazioni su EMStudio
      - Help ▸ About EMStudio
      - —
      - yes
-     - unknown
+     - exec
    * - :doc:`settingsHelp <settingsHelp>`
      - Settings…
      - Impostazioni…
      - Help ▸ Settings…
      - ``⌘,``
      - yes
-     - unknown
+     - exec
    * - :doc:`updatesHelp <updatesHelp>`
      - Check for updates…
      - Cerca aggiornamenti…
      - Help ▸ Check for updates…
      - —
      - yes
-     - unknown
+     - exec
+
+Named actions (for scripts) (26)
+--------------------------------
+
+.. list-table::
+   :header-rows: 1
+   :widths: 16 18 18 22 12 7 7
+
+   * - Id
+     - Label (en)
+     - Label (it)
+     - Menu path
+     - Shortcut
+     - Python
+     - Form
+   * - :doc:`addNode <addNode>`
+     - A new node of type in the active graph window (the Matrix places it in epoch's lane)
+     - —
+     - —
+     - —
+     - yes
+     - action
+   * - :doc:`addUnitAbove <addUnitAbove>`
+     - A new unit ABOVE of (the new one is later: new is\_after of), as «US above X» of the add menu
+     - —
+     - —
+     - —
+     - yes
+     - action
+   * - :doc:`addUnitBelow <addUnitBelow>`
+     - A new unit BELOW of (the new one is earlier: of is\_after new)
+     - —
+     - —
+     - —
+     - yes
+     - action
+   * - :doc:`connect <connect>`
+     - Connect two nodes, as the drag from a node's handle: edge\_type default is the first the datamodel allows between their types (is\_after for two units)
+     - —
+     - —
+     - —
+     - yes
+     - action
+   * - :doc:`moveToEpoch <moveToEpoch>`
+     - Move units to an epoch, as dropping them in its lane: the epoch they were in is left
+     - —
+     - —
+     - —
+     - yes
+     - action
+   * - :doc:`extendToEpoch <extendToEpoch>`
+     - Units that also survive into an epoch (the epochs they are in are kept).
+     - —
+     - —
+     - —
+     - yes
+     - action
+   * - :doc:`fold <fold>`
+     - Fold a group (its members hidden in it).
+     - —
+     - —
+     - —
+     - yes
+     - action
+   * - :doc:`unfold <unfold>`
+     - Open a folded group.
+     - —
+     - —
+     - —
+     - yes
+     - action
+   * - :doc:`enterGroup <enterGroup>`
+     - Enter a group (the double click): the canvas shows its inside.
+     - —
+     - —
+     - —
+     - yes
+     - action
+   * - :doc:`leaveGroup <leaveGroup>`
+     - Leave the group the canvas is in (Esc).
+     - —
+     - —
+     - —
+     - yes
+     - action
+   * - :doc:`frameNode <frameNode>`
+     - Centre the graph window on a node and select it (a jump: back returns).
+     - —
+     - —
+     - —
+     - yes
+     - action
+   * - :doc:`fit <fit>`
+     - Fit the graph in the window (0, ⇧C).
+     - —
+     - —
+     - —
+     - yes
+     - action
+   * - :doc:`zoomIn <zoomIn>`
+     - Zoom in (+).
+     - —
+     - —
+     - —
+     - yes
+     - action
+   * - :doc:`zoomOut <zoomOut>`
+     - Zoom out (−).
+     - —
+     - —
+     - —
+     - yes
+     - action
+   * - :doc:`back <back>`
+     - Back to the view before the last jump (⌘\[).
+     - —
+     - —
+     - —
+     - yes
+     - action
+   * - :doc:`deleteNodes <deleteNodes>`
+     - Delete nodes, as ⌫ on the selection (one undo step; the toast gives them back).
+     - —
+     - —
+     - —
+     - yes
+     - action
+   * - :doc:`nudge <nudge>`
+     - Nudge the selection by screen pixels (the arrows).
+     - —
+     - —
+     - —
+     - yes
+     - action
+   * - :doc:`reflow <reflow>`
+     - Rearrange (Disponi): the nodes given, or the whole Matrix.
+     - —
+     - —
+     - —
+     - yes
+     - action
+   * - :doc:`layoutFresh <layoutFresh>`
+     - Recompute the layout from scratch (⌥ + Arrange): the manual arrangement is dropped.
+     - —
+     - —
+     - —
+     - yes
+     - action
+   * - :doc:`compact <compact>`
+     - Compact the Matrix (the units closer, the order kept).
+     - —
+     - —
+     - —
+     - yes
+     - action
+   * - :doc:`magnify <magnify>`
+     - Magnify a window to the whole workspace, or put it back (⌃Space).
+     - —
+     - —
+     - —
+     - yes
+     - action
+   * - :doc:`spaceView <spaceView>`
+     - An aligned view of the Space (the numeric keypad).
+     - —
+     - —
+     - —
+     - yes
+     - action
+   * - :doc:`spaceToggleOrtho <spaceToggleOrtho>`
+     - Perspective ⇄ orthographic (keypad 5).
+     - —
+     - —
+     - —
+     - yes
+     - action
+   * - :doc:`spaceFrameSelected <spaceFrameSelected>`
+     - Frame the selection in the Space (
+     - —
+     - —
+     - —
+     - yes
+     - action
+   * - :doc:`spaceFrameAll <spaceFrameAll>`
+     - Frame everything the Space draws (Home).
+     - —
+     - —
+     - —
+     - yes
+     - action
+   * - :doc:`spaceCursorReset <spaceCursorReset>`
+     - The 3D cursor to the median of what is drawn, and the view on most of it (⇧C).
+     - —
+     - —
+     - —
+     - yes
+     - action
 
 Operating-system menu items (macOS menu bar) (14)
 -------------------------------------------------
@@ -358,105 +558,105 @@ Operating-system menu items (macOS menu bar) (14)
      - Menu path
      - Shortcut
      - Python
-     - Writes graph
+     - Form
    * - :doc:`services <services>`
      - Services
      - Servizi
      - EMStudio ▸ Services
      - —
      - no
-     - unknown
+     - —
    * - :doc:`hide <hide>`
      - Hide EMStudio
      - Nascondi EMStudio
      - EMStudio ▸ Hide EMStudio
      - —
      - no
-     - unknown
+     - —
    * - :doc:`hideOthers <hideOthers>`
      - Hide Others
      - Nascondi altre
      - EMStudio ▸ Hide Others
      - —
      - no
-     - unknown
+     - —
    * - :doc:`showAll <showAll>`
      - Show All
      - Mostra tutte
      - EMStudio ▸ Show All
      - —
      - no
-     - unknown
+     - —
    * - :doc:`quit <quit>`
      - Quit EMStudio
      - Esci da EMStudio
      - EMStudio ▸ Quit EMStudio
      - —
      - no
-     - unknown
+     - —
    * - :doc:`osUndo <osUndo>`
      - OS: ``undo``
      - —
      - Edit
      - —
      - no
-     - unknown
+     - —
    * - :doc:`osRedo <osRedo>`
      - OS: ``redo``
      - —
      - Edit
      - —
      - no
-     - unknown
+     - —
    * - :doc:`cut <cut>`
      - OS: ``cut``
      - —
      - Edit
      - —
      - no
-     - unknown
+     - —
    * - :doc:`copy <copy>`
      - OS: ``copy``
      - —
      - Edit
      - —
      - no
-     - unknown
+     - —
    * - :doc:`paste <paste>`
      - OS: ``paste``
      - —
      - Edit
      - —
      - no
-     - unknown
+     - —
    * - :doc:`selectAll <selectAll>`
      - OS: ``selectAll``
      - —
      - Edit
      - —
      - no
-     - unknown
+     - —
    * - :doc:`minimize <minimize>`
      - OS: ``minimize``
      - —
      - Window
      - —
      - no
-     - unknown
+     - —
    * - :doc:`maximize <maximize>`
      - OS: ``maximize``
      - —
      - Window
      - —
      - no
-     - unknown
+     - —
    * - :doc:`fullscreen <fullscreen>`
      - OS: ``fullscreen``
      - —
      - Window
      - —
      - no
-     - unknown
+     - —
 
 Keys of the key map without a command (40)
 ------------------------------------------
@@ -471,287 +671,287 @@ Keys of the key map without a command (40)
      - Menu path
      - Shortcut
      - Python
-     - Writes graph
+     - Form
    * - :doc:`keymap:where <keymap-where>`
      - The chip's menu: author, node, where you work
      - Il menu del chip: autore, nodo, dove lavori
      - —
      - ``⇧⌘L``
      - no
-     - unknown
+     - —
    * - :doc:`keymap:add <keymap-add>`
      - Add a node where the pointer is
      - Aggiungi un nodo dove sta il puntatore
      - —
      - ``⇧A``
-     - no
-     - unknown
+     - via
+     - → addNode
    * - :doc:`keymap:search <keymap-search>`
      - Search the graph
      - Cerca nel grafo
      - —
      - ``/``
      - no
-     - unknown
+     - —
    * - :doc:`keymap:magnify <keymap-magnify>`
      - Magnify the window / restore
      - Ingrandisci la finestra / ripristina
      - —
      - ``⌃Space``
-     - no
-     - unknown
+     - via
+     - → magnify
    * - :doc:`keymap:esc <keymap-esc>`
      - Close a menu, leave a group, deselect
      - Chiudi un menu, esci da un gruppo, deseleziona
      - —
      - ``Esc``
-     - no
-     - unknown
+     - via
+     - → leaveGroup
    * - :doc:`keymap:delete <keymap-delete>`
      - Delete the selection (a toast gives it back)
      - Elimina la selezione (un avviso la restituisce)
      - —
      - ``⌫ · Del``
-     - no
-     - unknown
+     - via
+     - → deleteNodes
    * - :doc:`keymap:nudge <keymap-nudge>`
      - Nudge the selection by 1 px
      - Sposta la selezione di 1 px
      - —
      - ``← → ↑ ↓``
-     - no
-     - unknown
+     - via
+     - → nudge
    * - :doc:`keymap:nudge10 <keymap-nudge10>`
      - Nudge by 10 px
      - Sposta di 10 px
      - —
      - ``⇧ ← → ↑ ↓``
-     - no
-     - unknown
+     - via
+     - → nudge
    * - :doc:`keymap:fit <keymap-fit>`
      - Fit the graph in the window
      - Adatta il grafo alla finestra
      - —
      - ``0 · ⇧C``
-     - no
-     - unknown
+     - via
+     - → fit
    * - :doc:`keymap:back <keymap-back>`
      - Back to the view before the last jump
      - Indietro, alla vista prima dell'ultimo salto
      - —
      - ``⌘[ · ⌥←``
-     - no
-     - unknown
+     - via
+     - → back
    * - :doc:`keymap:zoomIn <keymap-zoomIn>`
      - Zoom in
      - Zoom avanti
      - —
      - ``+ · =``
-     - no
-     - unknown
+     - via
+     - → zoomIn
    * - :doc:`keymap:zoomOut <keymap-zoomOut>`
      - Zoom out
      - Zoom indietro
      - —
      - ``−``
-     - no
-     - unknown
+     - via
+     - → zoomOut
    * - :doc:`keymap:s3box <keymap-s3box>`
      - Zoom to a box: draw a rectangle and the view fills it
      - Zoom a riquadro: traccia un rettangolo e la vista lo riempie
      - —
      - ``⇧B``
      - no
-     - unknown
+     - —
    * - :doc:`keymap:s3cursorReset <keymap-s3cursorReset>`
      - The 3D cursor to the median of what is drawn, and the view on most of it
      - Il cursore 3D al punto mediano di ciò che è disegnato, e la vista sulla gran parte
      - —
      - ``⇧C``
-     - no
-     - unknown
+     - via
+     - → spaceCursorReset
    * - :doc:`keymap:s3sidebar <keymap-s3sidebar>`
      - The «View» panel on the right: 3D cursor, selected object, view
      - Il pannello «Vista» a destra: cursore 3D, oggetto selezionato, vista
      - —
      - ``N``
      - no
-     - unknown
+     - —
    * - :doc:`keymap:s3frameSel <keymap-s3frameSel>`
      - Frame the selection
      - Inquadra la selezione
      - —
      - ``. · F``
-     - no
-     - unknown
+     - via
+     - → spaceFrameSelected
    * - :doc:`keymap:s3frameAll <keymap-s3frameAll>`
      - Frame everything
      - Inquadra tutto
      - —
      - ``Home``
-     - no
-     - unknown
+     - via
+     - → spaceFrameAll
    * - :doc:`keymap:s3outliner <keymap-s3outliner>`
      - Open and close the Space's Outliner
      - Apre e chiude l'Outliner dello Spazio
      - —
      - ``T``
      - no
-     - unknown
+     - —
    * - :doc:`keymap:s3add <keymap-s3add>`
      - Add a base shape at the 3D cursor
      - Aggiungi una forma base al cursore 3D
      - —
      - ``⇧A``
      - no
-     - unknown
+     - —
    * - :doc:`keymap:s3grs <keymap-s3grs>`
      - Move, rotate, scale the selection (proxies, models, sketched shapes; not a tileset, nor what is locked): then X Y Z, a number, Enter or Esc
      - Sposta, ruota, scala la selezione (proxy, modelli, forme abbozzate; non un tileset, né ciò che è bloccato): poi X Y Z, un numero, Invio o Esc
      - —
      - ``G · R · S``
      - no
-     - unknown
+     - —
    * - :doc:`keymap:s3axisPlane <keymap-s3axisPlane>`
      - During G / R / S: the axis; Shift + the axis: the plane without it; twice: local; three times: none; middle click: the nearest axis
      - Durante G / R / S: l'asse; Maiusc + l'asse: il piano senza di lui; due volte: locale; tre volte: nessuno; clic centrale: l'asse più vicino
      - —
      - ``X Y Z · ⇧X ⇧Y ⇧Z``
      - no
-     - unknown
+     - —
    * - :doc:`keymap:s3snap <keymap-s3snap>`
      - During G: snap to the face under the pointer; during R / S: steps of 5° / 0.1
      - Durante G: aggancio alla faccia sotto il puntatore; durante R / S: passi di 5° / 0,1
      - —
      - ``Ctrl``
      - no
-     - unknown
+     - —
    * - :doc:`keymap:s3parent <keymap-s3parent>`
      - Associate the selected sketches with the active unit
      - Associa gli abbozzi selezionati all'unità attiva
      - —
      - ``Ctrl+P``
      - no
-     - unknown
+     - —
    * - :doc:`keymap:s3delete <keymap-s3delete>`
      - Delete the selected sketch
      - Elimina l'abbozzo selezionato
      - —
      - ``X · ⌫``
      - no
-     - unknown
+     - —
    * - :doc:`keymap:s3back <keymap-s3back>`
      - Back to the view before a jump
      - Torna alla vista di prima di un salto
      - —
      - ``⌘[ · ⌥←``
-     - no
-     - unknown
+     - via
+     - → back
    * - :doc:`keymap:s3shiftClick <keymap-s3shiftClick>`
      - Add to the selection / make active / remove the active
      - Aggiungi alla selezione / rendi attivo / togli l'attivo
      - —
      - ``⇧ + click``
      - no
-     - unknown
+     - —
    * - :doc:`keymap:s3selectAll <keymap-s3selectAll>`
      - Select everything visible
      - Seleziona tutto il visibile
      - —
      - ``A``
      - no
-     - unknown
+     - —
    * - :doc:`keymap:s3selectNone <keymap-s3selectNone>`
      - Deselect everything
      - Deseleziona tutto
      - —
      - ``⌥A``
      - no
-     - unknown
+     - —
    * - :doc:`keymap:s3boxSelect <keymap-s3boxSelect>`
      - Box select
      - Selezione a riquadro
      - —
      - ``B``
      - no
-     - unknown
+     - —
    * - :doc:`keymap:s3hide <keymap-s3hide>`
      - Hide the selected
      - Nascondi i selezionati
      - —
      - ``H``
      - no
-     - unknown
+     - —
    * - :doc:`keymap:s3reveal <keymap-s3reveal>`
      - Show everything
      - Mostra tutto
      - —
      - ``⌥H``
      - no
-     - unknown
+     - —
    * - :doc:`keymap:s3hideUnselected <keymap-s3hideUnselected>`
      - Hide the unselected
      - Nascondi i non selezionati
      - —
      - ``⇧H``
      - no
-     - unknown
+     - —
    * - :doc:`keymap:toolEsc <keymap-toolEsc>`
      - Put the tool down: back to looking
      - Posa lo strumento: torna a guardare
      - —
      - ``Esc``
      - no
-     - unknown
+     - —
    * - :doc:`keymap:bubbleArrows <keymap-bubbleArrows>`
      - Pick what you extract
      - Scegli cosa estrai
      - —
      - ``↑ ↓ · Enter``
      - no
-     - unknown
+     - —
    * - :doc:`keymap:fieldEnter <keymap-fieldEnter>`
      - Commit the field
      - Conferma il campo
      - —
      - ``Enter``
      - no
-     - unknown
+     - —
    * - :doc:`keymap:fieldTab <keymap-fieldTab>`
      - Commit and go to the next field
      - Conferma e vai al campo successivo
      - —
      - ``Tab``
      - no
-     - unknown
+     - —
    * - :doc:`keymap:proseSlash <keymap-proseSlash>`
      - In an empty paragraph: the Blocks menu
      - In un paragrafo vuoto: il menu Blocchi
      - —
      - ``/``
      - no
-     - unknown
+     - —
    * - :doc:`keymap:proseLink <keymap-proseLink>`
      - Mention a node
      - Cita un nodo
      - —
      - ``[[``
      - no
-     - unknown
+     - —
    * - :doc:`keymap:menuArrows <keymap-menuArrows>`
      - Move and choose in a menu
      - Muoviti e scegli in un menu
      - —
      - ``↑ ↓ → ← Enter``
      - no
-     - unknown
+     - —
    * - :doc:`keymap:buttonSpace <keymap-buttonSpace>`
      - Press the focused button
      - Premi il pulsante con il focus
      - —
      - ``Space · Enter``
      - no
-     - unknown
+     - —
 
 Gestures of the key map (45)
 ----------------------------
@@ -766,322 +966,322 @@ Gestures of the key map (45)
      - Menu path
      - Shortcut
      - Python
-     - Writes graph
+     - Form
    * - :doc:`keymap:undoToast <keymap-undoToast>`
      - The toast's «Undo» puts back what was deleted
      - «Annulla» nell'avviso rimette ciò che è stato eliminato
      - —
      - Undo (toast)
-     - no
-     - unknown
+     - via
+     - → undo
    * - :doc:`keymap:pan <keymap-pan>`
      - Pan
      - Sposta la vista
      - —
      - Space + drag
      - no
-     - unknown
+     - —
    * - :doc:`keymap:panMiddle <keymap-panMiddle>`
      - Pan
      - Sposta la vista
      - —
      - middle button + drag
      - no
-     - unknown
+     - —
    * - :doc:`keymap:wheel <keymap-wheel>`
      - Zoom at the pointer
      - Zoom sul puntatore
      - —
      - wheel
      - no
-     - unknown
+     - —
    * - :doc:`keymap:click <keymap-click>`
      - Select
      - Seleziona
      - —
      - click
      - no
-     - unknown
+     - —
    * - :doc:`keymap:multi <keymap-multi>`
      - Add to / remove from the selection
      - Aggiungi o togli dalla selezione
      - —
      - ⇧/⌘ click
      - no
-     - unknown
+     - —
    * - :doc:`keymap:marquee <keymap-marquee>`
      - Select with a rectangle
      - Seleziona con un rettangolo
      - —
      - drag on the empty canvas
      - no
-     - unknown
+     - —
    * - :doc:`keymap:dblGroup <keymap-dblGroup>`
      - Enter a group
      - Entra in un gruppo
      - —
      - double-click
-     - no
-     - unknown
+     - via
+     - → enterGroup
    * - :doc:`keymap:connect <keymap-connect>`
      - Connect two nodes
      - Collega due nodi
      - —
      - drag from the handle
-     - no
-     - unknown
+     - via
+     - → connect
    * - :doc:`keymap:connectMenu <keymap-connectMenu>`
      - Release in the void: add a linked node
      - Rilascia nel vuoto: aggiungi un nodo collegato
      - —
      - ⇧/⌥ release
-     - no
-     - unknown
+     - via
+     - → addUnitBelow
    * - :doc:`keymap:detach <keymap-detach>`
      - Drag out of its container
      - Trascina fuori dal contenitore
      - —
      - ⇧ drag
      - no
-     - unknown
+     - —
    * - :doc:`keymap:laneOnly <keymap-laneOnly>`
      - Change only the epoch (lane)
      - Cambia solo l'epoca (corsia)
      - —
      - ⌥ drop
-     - no
-     - unknown
+     - via
+     - → moveToEpoch
    * - :doc:`keymap:dragEsc <keymap-dragEsc>`
      - Put back what is being dragged
      - Rimetti a posto ciò che trascini
      - —
      - Esc while dragging
      - no
-     - unknown
+     - —
    * - :doc:`keymap:rclick <keymap-rclick>`
      - The menu of a node or of the empty canvas
      - Il menu di un nodo o del canvas vuoto
      - —
      - right click
      - no
-     - unknown
+     - —
    * - :doc:`keymap:laneMenu <keymap-laneMenu>`
      - Reflow the lane, new epoch, check the chronology
      - Riordina la corsia, nuova epoca, verifica la cronologia
      - —
      - right click on a lane
      - no
-     - unknown
+     - —
    * - :doc:`keymap:longPress <keymap-longPress>`
      - The add menu, on touch
      - Il menu Aggiungi, al tocco
      - —
      - long press
      - no
-     - unknown
+     - —
    * - :doc:`keymap:layoutFresh <keymap-layoutFresh>`
      - Recompute layout from scratch: a fresh arrangement, the manual one dropped (the only command that moves the nodes)
      - Ricalcola layout da capo: una disposizione nuova, senza quella fatta a mano (il solo comando che sposta i nodi)
      - —
      - ⌥ Layout
-     - no
-     - unknown
+     - via
+     - → layoutFresh
    * - :doc:`keymap:s3pick <keymap-s3pick>`
      - Select the object under the cursor: a proxy, a model, a sketched shape
      - Seleziona l'oggetto sotto il cursore: un proxy, un modello, una forma abbozzata
      - —
      - Click
      - no
-     - unknown
+     - —
    * - :doc:`keymap:s3pickRm <keymap-s3pickRm>`
      - Select the mesh under the cursor (the representation model, a tileset)
      - Seleziona la mesh sotto il cursore (il modello di rappresentazione, un tileset)
      - —
      - Alt + click (⌘-click, Ctrl-click on Windows/Linux, too)
      - no
-     - unknown
+     - —
    * - :doc:`keymap:s3menu <keymap-s3menu>`
      - The menu of the proxy (or, with ⌘ / Ctrl, of the model): soloing, frame, isolate, show in the graph, select the unit
      - Il menu del proxy (o, con ⌘ / Ctrl, del modello): soloing, inquadra, isola, mostra nel grafo, seleziona l'unità
      - —
      - Right click (⌘ / Ctrl: the model's)
      - no
-     - unknown
+     - —
    * - :doc:`keymap:s3dbl <keymap-s3dbl>`
      - Move: the centre of rotation and the zoom go to the point under the cursor; nothing is selected
      - Muoversi: il centro di rotazione e lo zoom vanno sul punto sotto il cursore; non seleziona niente
      - —
      - double-click
      - no
-     - unknown
+     - —
    * - :doc:`keymap:s3cursor <keymap-s3cursor>`
      - Lay the 3D cursor on the surface under the pointer
      - Posa il cursore 3D sulla superficie sotto il puntatore
      - —
      - Shift + right click
      - no
-     - unknown
+     - —
    * - :doc:`keymap:s3wheel <keymap-s3wheel>`
      - Zoom toward the pointer (the orbit centre goes with it)
      - Avvicina verso il puntatore (il centro d'orbita lo segue)
      - —
      - Wheel · pinch · Ctrl + two fingers
      - no
-     - unknown
+     - —
    * - :doc:`keymap:s3orbit <keymap-s3orbit>`
      - Orbit
      - Orbita
      - —
      - Middle drag · two fingers · left drag (while the left does not select)
      - no
-     - unknown
+     - —
    * - :doc:`keymap:s3pan <keymap-s3pan>`
      - Pan
      - Panoramica
      - —
      - Shift + middle drag · Shift + two fingers · Shift + left drag (while the left does not select)
      - no
-     - unknown
+     - —
    * - :doc:`keymap:s3rightDrag <keymap-s3rightDrag>`
      - Pan: the scene follows the pointer
      - Panoramica: la scena segue il puntatore
      - —
      - right drag (two fingers pressed on a trackpad)
      - no
-     - unknown
+     - —
    * - :doc:`keymap:s3zoomDrag <keymap-s3zoomDrag>`
      - Continuous zoom toward the point pressed
      - Zoom continuo verso il punto premuto
      - —
      - Ctrl + middle drag (Mac too)
      - no
-     - unknown
+     - —
    * - :doc:`keymap:s3boxSel <keymap-s3boxSel>`
      - Box selection of the proxies (Shift: added to the selection)
      - Selezione a riquadro dei proxy (Maiusc: si aggiungono)
      - —
      - Left drag (with a middle button, or «Emulate 3 button mouse»)
      - no
-     - unknown
+     - —
    * - :doc:`keymap:s3emul3 <keymap-s3emul3>`
      - The middle button, without one
      - Il tasto centrale, quando non c'è
      - —
      - Alt + left drag («Emulate 3 button mouse»)
      - no
-     - unknown
+     - —
    * - :doc:`keymap:s3np1 <keymap-s3np1>`
      - Front view (with «Emulate numpad»: 1 of the top row)
      - Vista frontale (con «Emula tastierino»: 1 della riga in alto)
      - —
      - Numpad 1
-     - no
-     - unknown
+     - via
+     - → spaceView
    * - :doc:`keymap:s3np3 <keymap-s3np3>`
      - Right view
      - Vista laterale destra
      - —
      - Numpad 3
-     - no
-     - unknown
+     - via
+     - → spaceView
    * - :doc:`keymap:s3np7 <keymap-s3np7>`
      - Top view
      - Vista dall'alto
      - —
      - Numpad 7
-     - no
-     - unknown
+     - via
+     - → spaceView
    * - :doc:`keymap:s3npCtrl <keymap-s3npCtrl>`
      - The opposite views: back, left, bottom
      - Le viste opposte: retro, sinistra, sotto
      - —
      - Ctrl + Numpad 1 · 3 · 7
-     - no
-     - unknown
+     - via
+     - → spaceView
    * - :doc:`keymap:s3np5 <keymap-s3np5>`
      - Perspective ⇄ orthographic
      - Prospettiva ⇄ ortometrica
      - —
      - Numpad 5
-     - no
-     - unknown
+     - via
+     - → spaceToggleOrtho
    * - :doc:`keymap:s3np0 <keymap-s3np0>`
      - The camera view, when there is a camera (none yet: nothing)
      - La vista della camera, se c'è una camera (per ora nessuna: nulla)
      - —
      - Numpad 0
      - no
-     - unknown
+     - —
    * - :doc:`keymap:s3npDot <keymap-s3npDot>`
      - Frame the selection
      - Inquadra la selezione
      - —
      - Numpad .
-     - no
-     - unknown
+     - via
+     - → spaceFrameSelected
    * - :doc:`keymap:polyClose <keymap-polyClose>`
      - Close the polygon / polyline
      - Chiudi il poligono / la polilinea
      - —
      - Enter · double-click
      - no
-     - unknown
+     - —
    * - :doc:`keymap:polyFirst <keymap-polyFirst>`
      - Close the polygon
      - Chiudi il poligono
      - —
      - click the first vertex
      - no
-     - unknown
+     - —
    * - :doc:`keymap:corner <keymap-corner>`
      - Split or join windows
      - Dividi o unisci le finestre
      - —
      - drag a corner
      - no
-     - unknown
+     - —
    * - :doc:`keymap:divider <keymap-divider>`
      - Resize (to the edge: close)
      - Ridimensiona (fino al bordo: chiudi)
      - —
      - drag a divider
      - no
-     - unknown
+     - —
    * - :doc:`keymap:headerDbl <keymap-headerDbl>`
      - Magnify the window
      - Ingrandisci la finestra
      - —
      - double-click the bar
-     - no
-     - unknown
+     - via
+     - → magnify
    * - :doc:`keymap:tabDbl <keymap-tabDbl>`
      - Rename the space
      - Rinomina lo spazio
      - —
      - double-click a tab
      - no
-     - unknown
+     - —
    * - :doc:`keymap:tabMenu <keymap-tabMenu>`
      - Rename, reset, remove the space
      - Rinomina, ripristina, elimina lo spazio
      - —
      - right click on a tab
      - no
-     - unknown
+     - —
    * - :doc:`keymap:storagePick <keymap-storagePick>`
      - Pick several files for one stamp
      - Scegli più file per un timbro
      - —
      - ⌘/⇧ click
      - no
-     - unknown
+     - —
    * - :doc:`keymap:folderClick <keymap-folderClick>`
      - Open the folder
      - Apri la cartella
      - —
      - click a folder
      - no
-     - unknown
+     - —
 
 Sub-menus filled at run time
 ----------------------------
@@ -1096,22 +1296,34 @@ Sub-menus filled at run time
 
    about
    aboutHelp
+   addNode
+   addUnitAbove
+   addUnitBelow
+   back
    bringIn
    bringIntoRoom
    cleanFile
    close
    closeProject
    collect
+   compact
    composeFromGraph
+   connect
    consolidate
    copy
    createRoom
    cut
+   deleteNodes
    door
    doorDosco
    doorFolder
+   enterGroup
    exportSvg
    exportTtl
+   extendToEpoch
+   fit
+   fold
+   frameNode
    fullscreen
    georef
    hide
@@ -1204,11 +1416,16 @@ Sub-menus filled at run time
    keymap-where
    keymap-zoomIn
    keymap-zoomOut
+   layoutFresh
+   leaveGroup
    legend
+   magnify
    maximize
    minimize
+   moveToEpoch
    new
    newProject
+   nudge
    open
    openProject
    openReplace
@@ -1221,6 +1438,7 @@ Sub-menus filled at run time
    quit
    quitFile
    redo
+   reflow
    relocate
    reorderProject
    revealDoc
@@ -1233,7 +1451,15 @@ Sub-menus filled at run time
    settingsHelp
    shortcuts
    showAll
+   spaceCursorReset
+   spaceFrameAll
+   spaceFrameSelected
+   spaceToggleOrtho
+   spaceView
    undo
+   unfold
    updates
    updatesHelp
    workspaces
+   zoomIn
+   zoomOut

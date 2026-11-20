@@ -5,7 +5,7 @@
 keymap:fieldEnter
 =================
 
-*Generated from EMStudio 9274372 for em API 1.2.0.*
+*Generated from EMStudio 17797d8 for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -28,10 +28,10 @@ keymap:fieldEnter
    * - Defined in
      - ``frontend/src/keymap.ts:116``
 
-.. admonition:: Not yet available from Python
+.. admonition:: Not available from Python
    :class: warning
 
-   A key or gesture handled directly by the page, not a row of the command table (``frontend/src/menu-table.ts``): ``em.app.commands.run`` has no id to reach it.
+   No id on purpose: a key of a text field.
 
 What it does
 ------------
@@ -52,7 +52,7 @@ AI drafts, not yet validated by a person (see ``isValidated`` in ``i18n.ts``).
    * - ``de``
      - Feld bestätigen
 
-Slots
------
+Parameters
+----------
 
 None.

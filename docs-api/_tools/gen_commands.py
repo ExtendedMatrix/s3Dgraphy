@@ -6,6 +6,9 @@ Reads EMStudio's TypeScript sources (light parsing, not a TS compiler):
 * ``frontend/src/menu-table.ts`` -- the one table of menu commands (``MENUS``);
 * ``frontend/src/keymap.ts``     -- every key and gesture (``KEYMAP``);
 * ``frontend/src/i18n.ts``       -- the labels, one dictionary per locale;
+* ``frontend/src/script-commands.json`` -- what a script may give each command
+  (its params, its form: EXEC / INVOKE / a window), the named actions and,
+  for every key and gesture, its action or why it has none (MICRO-SEG02);
 * the host chain of ``run_command`` (``tools/em_py.py`` -> ``py-session.ts`` ->
   ``main.ts`` -> ``menu-ui.ts``), to decide what Python can reach;
 
@@ -48,6 +51,7 @@ SRC = {
     "main": "frontend/src/main.ts",
     "py_session": "frontend/src/py-session.ts",
     "em_py": "tools/em_py.py",
+    "script_commands": "frontend/src/script-commands.json",
 }
 PLATFORMS = ["web", "mac", "win", "linux"]
 PLATFORM_NAMES = {"web": "web", "mac": "macOS desktop", "win": "Windows desktop", "linux": "Linux desktop"}
@@ -390,7 +394,7 @@ def host_chain(tree: Tree) -> Dict[str, Any]:
     pys = tree.read(SRC["py_session"])
     main = tree.read(SRC["main"])
     mui = tree.read(SRC["menu_ui"])
-    hook = re.search(r"command:\s*\((\w+)(?:\s*,\s*(\w+))?\)\s*=>\s*runCommand\(([^)]*)\)", main or "")
+    hook = re.search(r"command:\s*\((\w+)(?:\s*,\s*(\w+))?\)\s*=>\s*(?:runScriptCommand|runCommand)\(([^)]*)\)", main or "")
     find_row = re.search(r"function findRow\b.*?\n}\n", mui or "", re.S)
     cmd_only = bool(find_row and re.search(r'r\.kind\s*===\s*"cmd"\s*&&\s*r\.id\s*===\s*id', find_row.group()))
     steps = [
@@ -398,14 +402,19 @@ def host_chain(tree: Tree) -> Dict[str, Any]:
          "EMStudioApp.run_command asks the page: request kind \"command\" with id and slots"),
         ("py_session.case_command", SRC["py_session"], line_of(pys, r'case "command":'),
          "PySession answers the request through the page's host.command(id, slots); false -> error py.noCommand"),
-        ("main.host_command", SRC["main"], line_of(main, r"command:\s*\(\w+(?:\s*,\s*\w+)?\)\s*=>\s*runCommand\("),
-         "the page's host hook: command -> runCommand(id)"),
+        ("main.host_command", SRC["main"], line_of(main, r"command:\s*\(\w+(?:\s*,\s*\w+)?\)\s*=>\s*(?:runScriptCommand|runCommand)\("),
+         "the page's host hook: command -> runScriptCommand(id, params)"),
+        ("main.runScriptCommand", SRC["main"], line_of(main, r"async function runScriptCommand\("),
+         "runScriptCommand: the params checked against script-commands.json (refused in the page's words); "
+         "an action runs its handler; a command with a script form runs it (no window when its values are given); "
+         "otherwise runCommand(id)"),
         ("menu_ui.runCommand", SRC["menu_ui"], line_of(mui, r"export function runCommand\("),
          "runCommand: plugin:<id>/<cmd> -> plugin invocation; otherwise findRow(id) and click the row's button"),
         ("menu_ui.findRow", SRC["menu_ui"], line_of(mui, r"function findRow\("),
          "findRow: only rows of kind \"cmd\" in MENUS (sub-menus walked)"),
     ]
-    ok = all(s[2] for s in steps) and bool(hook)
+    ok = all(s[2] for s in steps if s[0] != "main.runScriptCommand" or "runScriptCommand" in (main or "")) and bool(hook)
+    steps = [s for s in steps if s[2] or s[0] != "main.runScriptCommand"]
     slots_forwarded = bool(hook and hook.group(2) and hook.group(2) in (hook.group(3) or ""))
     return {
         "complete": ok,
@@ -474,6 +483,19 @@ def build_commands(tree: Tree) -> Dict[str, Any]:
     menus, mlines = parse_menus(tree.read(SRC["menu_table"]) or "")
     keymap, klines = parse_keymap(tree.read(SRC["keymap"]) or "")
     chain = host_chain(tree)
+    try:
+        table = json.loads(tree.read(SRC["script_commands"]) or "{}")
+    except ValueError:
+        table = {}
+    decls: Dict[str, Any] = table.get("commands") or {}
+    actions: Dict[str, Any] = table.get("actions") or {}
+    links: Dict[str, Any] = table.get("keymap") or {}
+    tlines = {}
+    tsrc = tree.read(SRC["script_commands"]) or ""
+    for i, line in enumerate(tsrc.splitlines(), 1):
+        m = re.match(r'\s*"([A-Za-z0-9]+)": \{', line)
+        if m and m.group(1) not in tlines:
+            tlines[m.group(1)] = i
 
     def tr(key: Optional[str]) -> Dict[str, str]:
         if not key:
@@ -529,6 +551,14 @@ def build_commands(tree: Tree) -> Dict[str, Any]:
                 "slots": [],
                 "source": {"file": SRC["menu_table"], "line": mlines.get(row["id"])},
             }
+            d = decls.get(row["id"]) if kind == "cmd" else None
+            if d:
+                c["script"] = {"form": d.get("form"), "exec_when": d.get("exec_when") or [], "why": d.get("why"),
+                               "doc": d.get("doc"), "returns": d.get("returns"),
+                               "source": {"file": SRC["script_commands"], "line": tlines.get(row["id"])}}
+                c["slots"] = list(d.get("params") or [])
+                if d.get("form") == "none":
+                    c["reachable_from_python"] = "no"
             if not row.get("label") and kind == "os":
                 c["label"] = {}
             if row.get("button"):
@@ -551,6 +581,7 @@ def build_commands(tree: Tree) -> Dict[str, Any]:
               "gesture": tr(keys[1:]) if gesture else {},
               "scope": row.get("scope"), "label_key": f"keys.{kid}", "label": tr(f"keys.{kid}"),
               "source": {"file": SRC["keymap"], "line": klines.get(kid)}}
+        km["script"] = links.get(kid) or None
         if kid in by_id:                       # a menu command's key, written in the key map too
             by_id[kid]["keymap"] = km
             continue
@@ -570,10 +601,26 @@ def build_commands(tree: Tree) -> Dict[str, Any]:
             "accel": None,
             "shortcut": None,
             "keymap": km,
-            "reachable_from_python": "no" if chain["complete"] else "unknown",
+            "reachable_from_python": ("via" if (links.get(kid) or {}).get("action") or (links.get(kid) or {}).get("command")
+                                      else "no") if chain["complete"] else "unknown",
             "writes_graph": "unknown",
             "slots": [],
             "source": km["source"],
+        })
+
+    # MICRO-SEG02 · the named actions: keys and gestures given an id of their own
+    for aid, d in actions.items():
+        keys = [k for k, l in links.items() if (l or {}).get("action") == aid]
+        commands.append({
+            "id": aid, "page": None, "kind": "action", "command_id": aid,
+            "label_key": None, "label": {}, "title_key": None, "title": {}, "button": None,
+            "menu": None, "menu_path": {}, "surfaces": {}, "accel": None, "shortcut": None, "keymap": None,
+            "keys_of": keys, "scope": d.get("scope"),
+            "reachable_from_python": "yes" if chain["complete"] else "unknown",
+            "writes_graph": "unknown", "slots": list(d.get("params") or []),
+            "script": {"form": "action", "doc": d.get("doc"), "returns": d.get("returns"),
+                       "source": {"file": SRC["script_commands"], "line": tlines.get(aid)}},
+            "source": {"file": SRC["script_commands"], "line": tlines.get(aid)},
         })
 
     # file-safe, case-insensitively unique page names
@@ -603,6 +650,17 @@ def esc(text: Any) -> str:
     if re.match(r"^([-+•]|\d+[.)]|#\.)(\s|$)", s):
         s = "\\" + s
     return s
+
+
+def doc_text(text: Any) -> str:
+    """A docstring of the table: RST-safe, its ````literal```` spans kept."""
+    parts = re.split(r"(``[^`]+``)", str(text or ""))
+    def one(p: str) -> str:
+        if p.startswith("``") and p.endswith("``") and len(p) > 4:
+            return p
+        e = esc(p)
+        return (" " if p[:1].isspace() else "") + e + (" " if p[-1:].isspace() and e else "")
+    return "".join(one(p) for p in parts)
 
 
 def lit(text: Any) -> str:
@@ -690,23 +748,47 @@ def page_for(c: Dict[str, Any], data: Dict[str, Any], meta: Dict[str, Any]) -> s
     out += [gen_line(meta), ""]
 
     kinds = {"menu": "Menu command", "os": "Item drawn by the operating system (no page button)",
-             "shortcut": "Key of the key map (no command id)", "gesture": "Gesture of the key map (no command id)"}
+             "shortcut": "Key of the key map (no command id)", "gesture": "Gesture of the key map (no command id)",
+             "action": "Named action — a key or a gesture given an id of its own, for scripts"}
     kind_text = kinds[c["kind"]]
     if c.get("button"):
         kind_text += f" — presses the page button {lit(c['button'])}"
     if c.get("os_item"):
         kind_text += f" — OS item {lit(c['os_item'])}"
     reach = c["reachable_from_python"]
+    link = ((c.get("keymap") or {}).get("script") or {}) if c["kind"] in ("shortcut", "gesture") else {}
+    via = link.get("action") or link.get("command")
     reach_text = {"yes": f"yes — ``em.app.commands.run(\"{c['command_id']}\")``" if c.get("command_id") else "yes",
+                  "via": f"yes, as the {'action' if link.get('action') else 'command'} :doc:`{via} <{via}>` — "
+                         f"``em.app.commands.run(\"{via}\")``" if via else "no",
                   "no": "no", "unknown": "unknown (the host chain was not found in the sources)"}[reach]
+    sc = c.get("script") or {}
+    form_text = {
+        "exec": "runs without a window",
+        "invoke": ("opens its window, filled with the parameters given; runs WITHOUT it when "
+                   + ", ".join(f"``{n}``" for n in sc.get("exec_when") or []) + " " +
+                   ("is" if len(sc.get("exec_when") or []) == 1 else "are") + " given (Blender's EXEC / INVOKE)"),
+        "window": "a window a person answers — no script form yet",
+        "none": "not run from a script",
+        "action": "runs without a window",
+    }.get(sc.get("form") or "", "")
     rows = [
         ["Id", lit(c["id"])],
         ["Label (en)", esc(lab.get("en", "")) or "—"],
         ["Label (it)", esc(lab.get("it", "")) or "—"],
         ["Kind", kind_text],
         ["Reachable from Python", reach_text],
-        ["Writes to the graph", "not declared"],
     ]
+    if form_text:
+        rows.append(["Script form", form_text + (f" ({doc_text(sc['why'])})" if sc.get("why") and sc.get("form") in ("window", "none") else "")])
+    if sc.get("returns"):
+        rows.append(["Returns", doc_text(sc["returns"])])
+    if c["kind"] == "action":
+        rows.append(["Acts on", {"graph": "the active graph window (else the first)", "space": "the first Space open",
+                                 "window": "the windows of the workspace in front", "app": "the application"}.get(c.get("scope") or "", "—")])
+        if c.get("keys_of"):
+            rows.append(["The keys and gestures it names", ", ".join(f":doc:`{k} <keymap-{k}>`" for k in c["keys_of"])])
+    rows.append(["Writes to the graph", "not declared"])
     if c.get("menu_path") and c.get("surfaces"):
         rows.append(["Menu path (en)", esc(c["menu_path"].get("en", ""))])
         rows.append(["Menu path (it)", esc(c["menu_path"].get("it", ""))])
@@ -723,16 +805,20 @@ def page_for(c: Dict[str, Any], data: Dict[str, Any], meta: Dict[str, Any]) -> s
     rows.append(["Defined in", lit(f"{src['file']}:{src['line']}") if src.get("line") else lit(src["file"])])
     out += table(rows, widths=[25, 75], stub=True)
 
-    if reach != "yes":
-        out += [".. admonition:: Not yet available from Python", "   :class: warning", ""]
+    if reach not in ("yes", "via"):
+        out += [".. admonition:: Not available from Python", "   :class: warning", ""]
         if c["kind"] == "os":
             out.append("   An item the operating system draws in the macOS menu bar: it has no page button, "
                        "and ``runCommand`` only finds rows of kind ``cmd`` "
                        f"(``{steps['menu_ui.findRow']['file']}:{steps['menu_ui.findRow']['line']}``), so "
                        "``em.app.commands.run`` raises ``em.NotAvailable``.")
+        elif c["kind"] in ("shortcut", "gesture") and link.get("why"):
+            out.append(f"   No id on purpose: {doc_text(link['why'])}.")
         elif c["kind"] in ("shortcut", "gesture"):
             out.append("   A key or gesture handled directly by the page, not a row of the command table "
                        f"(``{SRC['menu_table']}``): ``em.app.commands.run`` has no id to reach it.")
+        elif sc.get("form") == "none":
+            out.append(f"   {doc_text(sc.get('why') or '')}.")
         else:
             out.append("   The host chain of ``run_command`` could not be confirmed in the EMStudio sources.")
         out.append("")
@@ -750,6 +836,9 @@ def page_for(c: Dict[str, Any], data: Dict[str, Any], meta: Dict[str, Any]) -> s
             if km["label"].get(lc):
                 out += [f"**{lc}** (key map) — {esc(km['label'][lc])}", ""]
                 said = True
+    if sc.get("doc"):
+        out += [f"**script** — {doc_text(sc['doc'])}", ""]
+        said = True
     if not said:
         if lab.get("en") or lab.get("it"):
             out += ["No tooltip or description string in ``i18n.ts``; the label is all the UI says.", ""]
@@ -762,26 +851,46 @@ def page_for(c: Dict[str, Any], data: Dict[str, Any], meta: Dict[str, Any]) -> s
         out += ["AI drafts, not yet validated by a person (see ``isValidated`` in ``i18n.ts``)." , ""]
         out += table([[lit(lc), esc(lab[lc])] for lc in others], header=["Locale", "Label"], widths=[15, 85])
 
-    out += heading("Slots", "-")
-    if c["kind"] == "menu":
-        out.append("None declared: the command table (``CommandRow`` in ``menu-table.ts``) declares no slots, "
-                   "types or defaults.")
-        if not chain["slots_forwarded"]:
-            h = steps["main.host_command"]
-            out.append(f"Keyword slots passed to ``em.app.commands.run`` reach the page but are dropped by the "
-                       f"host hook (``{h['file']}:{h['line']}``), which calls ``runCommand(id)`` only.")
+    out += heading("Parameters", "-")
+    params = c.get("slots") or []
+    if params:
+        def pydef(p: Dict[str, Any]) -> str:
+            if p.get("required"):
+                return "required"
+            v = p.get("default")
+            return lit("None" if v is None else "True" if v is True else "False" if v is False
+                       else json.dumps(v) if isinstance(v, str) else str(v))
+        ptype = lambda p: lit(p["type"]) + (": " + ", ".join(lit(x) for x in p.get("choices") or []) if p.get("choices") else "")  # noqa: E731
+        out += table([[lit(p["name"]), ptype(p), pydef(p), doc_text(p.get("doc", ""))] for p in params],
+                     header=["Name", "Type", "Default", "What it is"], widths=[16, 22, 14, 48])
+        src = (c.get("script") or {}).get("source") or {}
+        out += [f"Declared in ``{src.get('file')}:{src.get('line')}`` — the one place the console's completion "
+                "and this page read. A name the command does not take, a wrong type, a value not among the "
+                "choices are refused with ``em.NotAvailable`` in the page's language, never dropped.", ""]
+    elif c["kind"] in ("menu", "action"):
+        out += ["None: ``em.app.commands.run`` refuses a parameter given to it.", ""]
     else:
-        out.append("None.")
-    out.append("")
+        out += ["None.", ""]
 
-    if reach == "yes":
+    if reach in ("yes",) and sc.get("form") != "none":
         out += heading("From Python", "-")
+        sample = {"str": '"…"', "int": "1", "float": "1.5", "bool": "True", "list[str]": '["…"]'}
+        given = [p for p in params if p.get("required") or p["name"] in (sc.get("exec_when") or [])]
+        args = "".join(f", {p['name']}={json.dumps(p['choices'][0]) if p.get('choices') else sample.get(p['type'], 'None')}"
+                       for p in given)
         out += [".. code-block:: python", "", "   from s3dgraphy import em", "",
-                f"   em.app.commands.run(\"{c['command_id']}\")", ""]
-        notes = ["The page presses the command's button, as a click would: whatever dialog the command opens, "
-                 "opens."]
-        if chain["button_disabled_fails"]:
-            notes.append("If the button is disabled at that moment (or the id is unknown) the call raises "
+                f"   em.app.commands.run(\"{c['command_id']}\"{args})", ""]
+        if sc.get("form") in ("exec", "action"):
+            notes = ["Runs without a window."]
+        elif sc.get("form") == "invoke":
+            notes = ["With the values above it runs without a window; without them its window opens, "
+                     "filled with what was given (the question about unsaved work, when there is one, is "
+                     "still asked)."]
+        else:
+            notes = ["The page presses the command's button, as a click would: its window opens and waits "
+                     "for a person."]
+        if chain["button_disabled_fails"] and c["kind"] == "menu":
+            notes.append("If the command is not possible at that moment (its button disabled) the call raises "
                          "``em.NotAvailable`` (``py.noCommand``).")
         notes.append("Outside EMStudio (no host) the call raises ``em.NotAvailable``.")
         out += [" ".join(notes), ""]
@@ -795,11 +904,20 @@ def index_page(data: Dict[str, Any], meta: Dict[str, Any]) -> str:
     out += heading("EMStudio commands", "=")
     out += [gen_line(meta), ""]
     n_menu = sum(1 for c in cmds if c["kind"] == "menu")
+    n_act = sum(1 for c in cmds if c["kind"] == "action")
     n_yes = sum(1 for c in cmds if c["reachable_from_python"] == "yes")
-    out += [f"Every command of EMStudio's menus ({n_menu} rows of the command table, {n_yes} reachable from "
-            "Python), the items the operating system draws in the macOS menu bar, and the keys and gestures "
-            "of the key map. ``em.app.commands.run(command_id, **slots)`` reaches a command by the id in the "
-            "first column.", ""]
+    n_noid = sum(1 for c in cmds if c["kind"] in ("shortcut", "gesture") and c["reachable_from_python"] == "no")
+    n_form = sum(1 for c in cmds if c["kind"] == "menu" and (c.get("script") or {}).get("form") in ("exec", "invoke"))
+    out += [f"Every command of EMStudio's menus ({n_menu} rows of the command table, {n_form} with a script "
+            f"form), the {n_act} named actions (keys and gestures given an id for scripts), the items the "
+            "operating system draws in the macOS menu bar, and the keys and gestures of the key map. "
+            "``em.app.commands.run(command_id, **params)`` reaches a command or an action by the id in the "
+            f"first column ({n_yes} in all); {n_noid} keys and gestures have no id, each page says why.", ""]
+    out += ["As Blender's operators: a command whose values are all given runs WITHOUT its window "
+            "(``EXEC_DEFAULT``); with values missing its window opens, filled with what was given "
+            "(``INVOKE_DEFAULT``). The parameters of each command are declared once, in "
+            f"``{SRC['script_commands']}``: these pages, ``em.app.commands.list()`` and the console's Tab "
+            "read them.", ""]
     out += heading("How ``run_command`` reaches the page", "-")
     for s in library_chain():
         out.append(f"#. ``{s['file']}:{s['line']}`` — {esc(s['what'])}")
@@ -811,25 +929,31 @@ def index_page(data: Dict[str, Any], meta: Dict[str, Any]) -> str:
         extra.append("Plugin commands are reachable too, as ``plugin:<plugin>/<command>`` (registered at run "
                      "time, not listed here; see ``em.plugins``).")
     if not chain["slots_forwarded"]:
-        extra.append("Slots are accepted by the API but not forwarded to the command by the page.")
+        extra.append("Parameters are accepted by the API but not forwarded to the command by the page.")
     extra.append("No command declares whether it writes to the graph: the column says ``unknown``.")
     out += [" ".join(extra), ""]
 
-    header = ["Id", "Label (en)", "Label (it)", "Menu path", "Shortcut", "Python", "Writes graph"]
+    header = ["Id", "Label (en)", "Label (it)", "Menu path", "Shortcut", "Python", "Form"]
 
     def rows_of(kind: str) -> List[List[str]]:
         rows = []
         for c in cmds:
             if c["kind"] != kind:
                 continue
-            rows.append([f":doc:`{c['id']} <{c['page']}>`",
-                         esc(c["label"].get("en", "")) or (f"OS: {lit(c['os_item'])}" if c.get("os_item") else ""),
+            link = ((c.get("keymap") or {}).get("script") or {})
+            form = (c.get("script") or {}).get("form") or (f"→ {link.get('action') or link.get('command')}"
+                                                            if link.get("action") or link.get("command") else "—")
+            first = esc(c["label"].get("en", "")) or (f"OS: {lit(c['os_item'])}" if c.get("os_item") else "")
+            if c["kind"] == "action":
+                first = esc(((c.get("script") or {}).get("doc") or "").split(". ")[0].replace("``", ""))
+            rows.append([f":doc:`{c['id']} <{c['page']}>`", first,
                          esc(c["label"].get("it", "")),
                          esc(c["menu_path"].get("en", "")), short_shortcut(c),
-                         c["reachable_from_python"], c["writes_graph"]])
+                         c["reachable_from_python"], esc(form)])
         return rows
 
-    sections = [("menu", "Menu commands"), ("os", "Operating-system menu items (macOS menu bar)"),
+    sections = [("menu", "Menu commands"), ("action", "Named actions (for scripts)"),
+                ("os", "Operating-system menu items (macOS menu bar)"),
                 ("shortcut", "Keys of the key map without a command"),
                 ("gesture", "Gestures of the key map")]
     for kind, title in sections:
@@ -900,7 +1024,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     print(f"gen_commands: EMStudio {meta['emstudio_sha']} ({meta['emstudio_read']}), em API {meta['em_api_version']}: "
           f"{sum(1 for c in cmds if c['kind'] == 'menu')} menu commands, "
           f"{sum(1 for c in cmds if c['reachable_from_python'] == 'yes')} reachable from Python; "
-          f"{len(gap)} menu items not reachable; {len(cmds)} pages -> {out_dir}")
+          f"{len(gap)} menu items not reachable; {sum(1 for c in cmds if c['kind'] == 'action')} actions; "
+          f"{len(cmds)} pages -> {out_dir}")
     return 0
 
 

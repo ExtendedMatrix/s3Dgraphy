@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: EMStudio Python API 1.2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"POT-Creation-Date: 2026-11-20 18:23+0100\n"
 "PO-Revision-Date: 2026-11-19 21:17+0100\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: it <LL@li.org>\n"
@@ -20,7 +20,7 @@ msgstr ""
 msgid "copy"
 msgstr ""
 
-msgid "*Generated from EMStudio 85f69cd for em API 1.2.0.*"
+msgid "*Generated from EMStudio 17797d8 for em API 1.2.0.*"
 msgstr ""
 
 msgid "Id"
@@ -83,13 +83,13 @@ msgstr ""
 msgid "Defined in"
 msgstr ""
 
-msgid "``frontend/src/menu-table.ts:205``"
+msgid "``frontend/src/menu-table.ts:261``"
 msgstr ""
 
-msgid "Not yet available from Python"
+msgid "Not available from Python"
 msgstr ""
 
-msgid "An item the operating system draws in the macOS menu bar: it has no page button, and ``runCommand`` only finds rows of kind ``cmd`` (``frontend/src/menu-ui.ts:201``), so ``em.app.commands.run`` raises ``em.NotAvailable``."
+msgid "An item the operating system draws in the macOS menu bar: it has no page button, and ``runCommand`` only finds rows of kind ``cmd`` (``frontend/src/menu-ui.ts:237``), so ``em.app.commands.run`` raises ``em.NotAvailable``."
 msgstr ""
 
 msgid "What it does"
@@ -98,7 +98,7 @@ msgstr ""
 msgid "No label, tooltip or description string in ``i18n.ts`` (the operating system names it)."
 msgstr ""
 
-msgid "Slots"
+msgid "Parameters"
 msgstr ""
 
 msgid "None."

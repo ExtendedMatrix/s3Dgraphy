@@ -5,7 +5,7 @@
 importGraphml
 =============
 
-*Generated from EMStudio 9274372 for em API 1.2.0.*
+*Generated from EMStudio 17797d8 for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -21,6 +21,10 @@ importGraphml
      - Menu command — presses the page button ``btn-import-graphml``
    * - Reachable from Python
      - yes — ``em.app.commands.run("importGraphml")``
+   * - Script form
+     - opens its window, filled with the parameters given; runs WITHOUT it when ``path`` is given (Blender's EXEC / INVOKE)
+   * - Returns
+     - the path imported
    * - Writes to the graph
      - not declared
    * - Menu path (en)
@@ -41,6 +45,8 @@ What it does
 
 **it** — Importa un file GraphML di yEd (serve il bridge locale)
 
+**script** — Import a yEd GraphML (through s3Dgraphy's importer). With ``path`` neither the picker nor the question of the em.json's name opens: the graph stays without a file until ``saveAs(path=…)``.
+
 Label in the other languages
 ----------------------------
 
@@ -55,11 +61,23 @@ AI drafts, not yet validated by a person (see ``isValidated`` in ``i18n.ts``).
    * - ``de``
      - GraphML…
 
-Slots
------
+Parameters
+----------
 
-None declared: the command table (``CommandRow`` in ``menu-table.ts``) declares no slots, types or defaults.
-Keyword slots passed to ``em.app.commands.run`` reach the page but are dropped by the host hook (``frontend/src/main.ts:66534``), which calls ``runCommand(id)`` only.
+.. list-table::
+   :header-rows: 1
+   :widths: 16 22 14 48
+
+   * - Name
+     - Type
+     - Default
+     - What it is
+   * - ``path``
+     - ``str``
+     - ``None``
+     - the .graphml file (absolute path)
+
+Declared in ``frontend/src/script-commands.json:50`` — the one place the console's completion and this page read. A name the command does not take, a wrong type, a value not among the choices are refused with ``em.NotAvailable`` in the page's language, never dropped.
 
 From Python
 -----------
@@ -68,6 +86,6 @@ From Python
 
    from s3dgraphy import em
 
-   em.app.commands.run("importGraphml")
+   em.app.commands.run("importGraphml", path="…")
 
-The page presses the command's button, as a click would: whatever dialog the command opens, opens. If the button is disabled at that moment (or the id is unknown) the call raises ``em.NotAvailable`` (``py.noCommand``). Outside EMStudio (no host) the call raises ``em.NotAvailable``.
+With the values above it runs without a window; without them its window opens, filled with what was given (the question about unsaved work, when there is one, is still asked). If the command is not possible at that moment (its button disabled) the call raises ``em.NotAvailable`` (``py.noCommand``). Outside EMStudio (no host) the call raises ``em.NotAvailable``.
