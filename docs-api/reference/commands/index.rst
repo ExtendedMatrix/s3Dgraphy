@@ -5,7 +5,7 @@
 EMStudio commands
 =================
 
-*Generated from EMStudio 17797d8 for em API 1.2.0.*
+*Generated from EMStudio 1217b52 for em API 1.2.0.*
 
 Every command of EMStudio's menus (44 rows of the command table, 30 with a script form), the 26 named actions (keys and gestures given an id for scripts), the items the operating system draws in the macOS menu bar, and the keys and gestures of the key map. ``em.app.commands.run(command_id, **params)`` reaches a command or an action by the id in the first column (69 in all); 58 keys and gestures have no id, each page says why.
 
@@ -18,8 +18,8 @@ How ``run_command`` reaches the page
 #. ``src/s3dgraphy/em/host.py:147`` — NullHost: NotAvailable outside a host
 #. ``tools/em_py.py:764`` — EMStudioApp.run\_command asks the page: request kind "command" with id and slots
 #. ``frontend/src/py-session.ts:386`` — PySession answers the request through the page's host.command(id, slots); false -\> error py.noCommand
-#. ``frontend/src/main.ts:66633`` — the page's host hook: command -\> runScriptCommand(id, params)
-#. ``frontend/src/main.ts:66700`` — runScriptCommand: the params checked against script-commands.json (refused in the page's words); an action runs its handler; a command with a script form runs it (no window when its values are given); otherwise runCommand(id)
+#. ``frontend/src/main.ts:66702`` — the page's host hook: command -\> runScriptCommand(id, params)
+#. ``frontend/src/main.ts:66769`` — runScriptCommand: the params checked against script-commands.json (refused in the page's words); an action runs its handler; a command with a script form runs it (no window when its values are given); otherwise runCommand(id)
 #. ``frontend/src/menu-ui.ts:216`` — runCommand: plugin:\<id\>/\<cmd\> -\> plugin invocation; otherwise findRow(id) and click the row's button
 #. ``frontend/src/menu-ui.ts:237`` — findRow: only rows of kind "cmd" in MENUS (sub-menus walked)
 

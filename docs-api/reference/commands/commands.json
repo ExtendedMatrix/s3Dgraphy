@@ -1,6 +1,6 @@
 {
   "generated_from": {
-    "emstudio_sha": "17797d8",
+    "emstudio_sha": "1217b52",
     "emstudio_read": "HEAD",
     "em_api_version": "1.2.0"
   },
@@ -50,13 +50,13 @@
       {
         "key": "main.host_command",
         "file": "frontend/src/main.ts",
-        "line": 66633,
+        "line": 66702,
         "what": "the page's host hook: command -> runScriptCommand(id, params)"
       },
       {
         "key": "main.runScriptCommand",
         "file": "frontend/src/main.ts",
-        "line": 66700,
+        "line": 66769,
         "what": "runScriptCommand: the params checked against script-commands.json (refused in the page's words); an action runs its handler; a command with a script form runs it (no window when its values are given); otherwise runCommand(id)"
       },
       {
