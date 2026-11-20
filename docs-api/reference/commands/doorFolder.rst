@@ -5,7 +5,7 @@
 doorFolder
 ==========
 
-*Generated from EMStudio 141c8f9 for em API 1.2.0.*
+*Generated from EMStudio 8b211e8 for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -14,7 +14,7 @@ doorFolder
    * - Id
      - ``doorFolder``
    * - Label (en)
-     - Porta dentro una cartella…
+     - Bring in a folder…
    * - Label (it)
      - Porta dentro una cartella…
    * - Kind
@@ -24,7 +24,7 @@ doorFolder
    * - Writes to the graph
      - not declared
    * - Menu path (en)
-     - File ▸ Porta dentro una cartella…
+     - File ▸ Bring in a folder…
    * - Menu path (it)
      - File ▸ Porta dentro una cartella…
    * - Drawn in
@@ -45,7 +45,7 @@ Slots
 -----
 
 None declared: the command table (``CommandRow`` in ``menu-table.ts``) declares no slots, types or defaults.
-Keyword slots passed to ``em.app.commands.run`` reach the page but are dropped by the host hook (``frontend/src/main.ts:66015``), which calls ``runCommand(id)`` only.
+Keyword slots passed to ``em.app.commands.run`` reach the page but are dropped by the host hook (``frontend/src/main.ts:66523``), which calls ``runCommand(id)`` only.
 
 From Python
 -----------

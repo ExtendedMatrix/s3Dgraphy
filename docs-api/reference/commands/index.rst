@@ -5,7 +5,7 @@
 EMStudio commands
 =================
 
-*Generated from EMStudio 141c8f9 for em API 1.2.0.*
+*Generated from EMStudio 8b211e8 for em API 1.2.0.*
 
 Every command of EMStudio's menus (43 rows of the command table, 43 reachable from Python), the items the operating system draws in the macOS menu bar, and the keys and gestures of the key map. ``em.app.commands.run(command_id, **slots)`` reaches a command by the id in the first column.
 
@@ -14,9 +14,9 @@ How ``run_command`` reaches the page
 
 #. ``src/s3dgraphy/em/__init__.py:233`` — em.app.commands.run -\> host app run\_command
 #. ``src/s3dgraphy/em/host.py:147`` — NullHost: NotAvailable outside a host
-#. ``tools/em_py.py:576`` — EMStudioApp.run\_command asks the page: request kind "command" with id and slots
+#. ``tools/em_py.py:581`` — EMStudioApp.run\_command asks the page: request kind "command" with id and slots
 #. ``frontend/src/py-session.ts:364`` — PySession answers the request through the page's host.command(id, slots); false -\> error py.noCommand
-#. ``frontend/src/main.ts:66015`` — the page's host hook: command -\> runCommand(id)
+#. ``frontend/src/main.ts:66523`` — the page's host hook: command -\> runCommand(id)
 #. ``frontend/src/menu-ui.ts:182`` — runCommand: plugin:\<id\>/\<cmd\> -\> plugin invocation; otherwise findRow(id) and click the row's button
 #. ``frontend/src/menu-ui.ts:201`` — findRow: only rows of kind "cmd" in MENUS (sub-menus walked)
 
@@ -149,16 +149,16 @@ Menu commands (43)
      - yes
      - unknown
    * - :doc:`door <door>`
+     - Bring in…
      - Porta dentro…
-     - Porta dentro…
-     - File ▸ Porta dentro…
+     - File ▸ Bring in…
      - —
      - yes
      - unknown
    * - :doc:`doorFolder <doorFolder>`
+     - Bring in a folder…
      - Porta dentro una cartella…
-     - Porta dentro una cartella…
-     - File ▸ Porta dentro una cartella…
+     - File ▸ Bring in a folder…
      - —
      - yes
      - unknown

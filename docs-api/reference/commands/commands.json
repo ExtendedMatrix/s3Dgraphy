@@ -1,6 +1,6 @@
 {
   "generated_from": {
-    "emstudio_sha": "141c8f9",
+    "emstudio_sha": "8b211e8",
     "emstudio_read": "HEAD",
     "em_api_version": "1.2.0"
   },
@@ -37,7 +37,7 @@
       {
         "key": "em_py.run_command",
         "file": "tools/em_py.py",
-        "line": 576,
+        "line": 581,
         "what": "EMStudioApp.run_command asks the page: request kind \"command\" with id and slots"
       },
       {
@@ -49,7 +49,7 @@
       {
         "key": "main.host_command",
         "file": "frontend/src/main.ts",
-        "line": 66015,
+        "line": 66523,
         "what": "the page's host hook: command -> runCommand(id)"
       },
       {
@@ -1343,27 +1343,27 @@
       "command_id": "door",
       "label_key": "door.menu",
       "label": {
-        "en": "Porta dentro…",
+        "en": "Bring in…",
         "it": "Porta dentro…"
       },
       "title_key": "door.menuHint",
       "title": {
-        "en": "Porta dentro — bring files in as documents: what each is, the document, its date, the epoch it represents",
+        "en": "Bring in — files into the study as documents: what each is, the document, its date, the epoch it represents",
         "it": "Porta i file nel grafo come parte di un documento: che cos'è ciascuno, il documento, la sua data, l'epoca che rappresenta"
       },
       "button": "btn-porta-dentro",
       "os_item": null,
       "menu": "file",
       "menu_path": {
-        "en": "File ▸ Porta dentro…",
+        "en": "File ▸ Bring in…",
         "it": "File ▸ Porta dentro…",
-        "de": "Datei ▸ Porta dentro…",
-        "el": "Αρχείο ▸ Porta dentro…",
-        "he": "קובץ ▸ Porta dentro…",
-        "es": "Archivo ▸ Porta dentro…",
-        "pl": "Plik ▸ Porta dentro…",
-        "ro": "Fișier ▸ Porta dentro…",
-        "fr": "Fichier ▸ Porta dentro…"
+        "de": "Datei ▸ Bring in…",
+        "el": "Αρχείο ▸ Bring in…",
+        "he": "קובץ ▸ Bring in…",
+        "es": "Archivo ▸ Bring in…",
+        "pl": "Plik ▸ Bring in…",
+        "ro": "Fișier ▸ Bring in…",
+        "fr": "Fichier ▸ Bring in…"
       },
       "surfaces": {
         "web": [
@@ -1400,7 +1400,7 @@
       "command_id": "doorFolder",
       "label_key": "door.folderMenu",
       "label": {
-        "en": "Porta dentro una cartella…",
+        "en": "Bring in a folder…",
         "it": "Porta dentro una cartella…"
       },
       "title_key": "door.folderMenuHint",
@@ -1412,15 +1412,15 @@
       "os_item": null,
       "menu": "file",
       "menu_path": {
-        "en": "File ▸ Porta dentro una cartella…",
+        "en": "File ▸ Bring in a folder…",
         "it": "File ▸ Porta dentro una cartella…",
-        "de": "Datei ▸ Porta dentro una cartella…",
-        "el": "Αρχείο ▸ Porta dentro una cartella…",
-        "he": "קובץ ▸ Porta dentro una cartella…",
-        "es": "Archivo ▸ Porta dentro una cartella…",
-        "pl": "Plik ▸ Porta dentro una cartella…",
-        "ro": "Fișier ▸ Porta dentro una cartella…",
-        "fr": "Fichier ▸ Porta dentro una cartella…"
+        "de": "Datei ▸ Bring in a folder…",
+        "el": "Αρχείο ▸ Bring in a folder…",
+        "he": "קובץ ▸ Bring in a folder…",
+        "es": "Archivo ▸ Bring in a folder…",
+        "pl": "Plik ▸ Bring in a folder…",
+        "ro": "Fișier ▸ Bring in a folder…",
+        "fr": "Fichier ▸ Bring in a folder…"
       },
       "surfaces": {
         "web": [
@@ -1462,7 +1462,7 @@
       },
       "title_key": "door.doscoMenuHint",
       "title": {
-        "en": "Porta dentro a DosCo folder: each file with an EM id (D.12…) becomes the document of that id — its date, its licence, its role asked in one block",
+        "en": "Bring in a DosCo folder: each file with an EM id (D.12…) becomes the document of that id — its date, its licence, its role asked in one block",
         "it": "Porta dentro una cartella DosCo: ogni file con un id EM (D.12…) diventa il documento di quell'id — data, licenza e ruolo chiesti in blocco"
       },
       "button": "btn-door-dosco",
