@@ -16,6 +16,7 @@ Every tool of the two families keeps its manual beside its code, and publishes i
 | **Extended Matrix** | | | |
 | Extended Matrix (the language) | [`zalmoxes-laran/ExtendedMatrix`](https://github.com/zalmoxes-laran/ExtendedMatrix) | [`zalmoxes-laran/ExtendedMatrix-doc`](https://github.com/zalmoxes-laran/ExtendedMatrix-doc) | <https://docs.extendedmatrix.org/en/1.5/> |
 | EMStudio (editor) | [`ExtendedMatrix/EMStudio`](https://github.com/ExtendedMatrix/EMStudio) | [`ExtendedMatrix/EMStudio-doc`](https://github.com/ExtendedMatrix/EMStudio-doc) | <https://docs.extendedmatrix.org/projects/emstudio-doc/en/1.6/> |
+| EMStudio Python API (`import em`) | [`ExtendedMatrix/s3Dgraphy`](https://github.com/ExtendedMatrix/s3Dgraphy) (`src/s3dgraphy/em`) | same repository, branch `api-docs`, `docs-api/` | <https://docs.extendedmatrix.org/projects/emstudio-python-api/en/latest/> |
 | EM Tools (Blender add-on) | [`zalmoxes-laran/EM-blender-tools`](https://github.com/zalmoxes-laran/EM-blender-tools) | [`zalmoxes-laran/EM-blender-tools-doc`](https://github.com/zalmoxes-laran/EM-blender-tools-doc) | <https://docs.extendedmatrix.org/projects/EM-tools/en/1.5/> |
 | s3Dgraphy (library) | [`ExtendedMatrix/s3Dgraphy`](https://github.com/ExtendedMatrix/s3Dgraphy) | same repository, `docs/` | <https://docs.extendedmatrix.org/projects/s3dgraphy/en/v1.5/> |
 | 3D Survey Collection | [`zalmoxes-laran/3D-survey-collection`](https://github.com/zalmoxes-laran/3D-survey-collection) | [`zalmoxes-laran/3D-survey-collection-doc`](https://github.com/zalmoxes-laran/3D-survey-collection-doc) | <https://docs.extendedmatrix.org/projects/3DSC/en/1.7.0/> |
@@ -206,6 +207,7 @@ match exactly and case-sensitively. The same flow applies to
 
 - **[User Guide](https://docs.extendedmatrix.org/projects/s3dgraphy/)** - Complete documentation
 - **[API Reference](https://docs.extendedmatrix.org/projects/s3dgraphy/api.html)** - Detailed API docs
+- **[EMStudio Python API](https://docs.extendedmatrix.org/projects/emstudio-python-api/en/latest/)** - The reference of `import em`, the scripting API used by EMStudio's console, its plugins and EM Tools
 - **[Examples](https://github.com/ExtendedMatrix/s3Dgraphy/tree/main/examples)** - Code examples and tutorials
 - **[Extended Matrix](https://www.extendedmatrix.org)** - Framework overview
 
