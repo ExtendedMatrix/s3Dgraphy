@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.abspath('../src'))
 
 # -- Project information -----------------------------------------------------
 project = 's3dgraphy'
-copyright = f'2024-{datetime.datetime.now().year}, Emanuel Demetrescu'
+copyright = f'2024-{datetime.datetime.now().year}, Consiglio Nazionale delle Ricerche (CNR) — Istituto di Scienze del Patrimonio Culturale'
 author = 'Emanuel Demetrescu'
 
 # Read version from package or pyproject.toml.

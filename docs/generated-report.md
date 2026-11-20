@@ -10,7 +10,7 @@ Every figure on this page is read off the datamodels and the installed package a
 
 | Component | Version |
 | --- | --- |
-| s3dgraphy (library) | 1.6.0.dev128 |
+| s3dgraphy (library) | 1.6.0.dev130 |
 | nodes datamodel | 1.6.51 |
 | connections datamodel | 1.6.55 |
 | qualia datamodel | 1.6.13 |
