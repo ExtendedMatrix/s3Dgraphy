@@ -1,0 +1,117 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "ActivityNodeGroup"
+msgstr ""
+
+msgid "Generated from the datamodels (nodes 1.6.51, connections 1.6.55) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``."
+msgstr ""
+
+msgid "*Group node for activities.*"
+msgstr ""
+
+msgid "Class"
+msgstr ""
+
+msgid "``ActivityNodeGroup``"
+msgstr ""
+
+msgid "node_type"
+msgstr ""
+
+msgid "Parent"
+msgstr ""
+
+msgid ":ref:`GroupNode <type-GroupNode>`"
+msgstr ""
+
+msgid "Label (en)"
+msgstr ""
+
+msgid "Activity Node Group"
+msgstr ""
+
+msgid "Label (it)"
+msgstr ""
+
+msgid "Gruppo di attività"
+msgstr ""
+
+msgid "CIDOC"
+msgstr ""
+
+msgid "``E7 Activity``"
+msgstr ""
+
+msgid "Description"
+msgstr ""
+
+msgid "Group node for activities. An activity is a logical group of actions that are kept together for a narrative purpose and information order (e.g., construction of a room of a building in year x, restoration activities of various parts of that room 20 years later)."
+msgstr ""
+
+msgid "*Italiano*: Nodo di gruppo per le attività. Un'attività è un raggruppamento logico di azioni tenute insieme per uno scopo narrativo e per l'ordinamento dell'informazione (ad es. la costruzione di un ambiente di un edificio nell'anno x, gli interventi di restauro su varie parti dello stesso ambiente 20 anni dopo)."
+msgstr ""
+
+msgid "Fields"
+msgstr ""
+
+msgid "Field"
+msgstr ""
+
+msgid "Mapping / note"
+msgstr ""
+
+msgid "``name``"
+msgstr ""
+
+msgid "P1\\_is\\_identified\\_by"
+msgstr ""
+
+msgid "``description``"
+msgstr ""
+
+msgid "P3\\_has\\_note"
+msgstr ""
+
+msgid "``act_kind``"
+msgstr ""
+
+msgid "key"
+msgstr ""
+
+msgid "``act_start``"
+msgstr ""
+
+msgid "date"
+msgstr ""
+
+msgid "``act_end``"
+msgstr ""
+
+msgid "Edges"
+msgstr ""
+
+msgid "**Outgoing** (this node is the source): :ref:`generic_connection <edge-generic_connection>`, :ref:`has_author <edge-has_author>`, :ref:`has_embargo <edge-has_embargo>`, :ref:`has_first_epoch <edge-has_first_epoch>`, :ref:`has_license <edge-has_license>`, :ref:`has_semantic_shape <edge-has_semantic_shape>`, :ref:`has_translation <edge-has_translation>`"
+msgstr ""
+
+msgid "**Incoming** (this node is the target): :ref:`generic_connection <edge-generic_connection>`, :ref:`is_in_activity <edge-is_in_activity>`"
+msgstr ""
+
+msgid "From em"
+msgstr ""

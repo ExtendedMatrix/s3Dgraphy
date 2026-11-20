@@ -1,0 +1,60 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-20 18:23+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Reference"
+msgstr "Riferimento"
+
+msgid "*Every public name of* ``em`` |api|, *generated from the code.*"
+msgstr "*Ogni nome pubblico di* ``em`` |api|, *generato dal codice.*"
+
+msgid "As Blender's ``bpy.ops``, ``bpy.types`` and ``bpy.context``:"
+msgstr "Come ``bpy.ops``, ``bpy.types`` e ``bpy.context`` di Blender:"
+
+msgid ":doc:`commands/index`"
+msgstr ""
+
+msgid "``em.app.commands.run(id, **params)`` — every command of EMStudio and the named actions, with their parameters (our ``bpy.ops``)"
+msgstr "``em.app.commands.run(id, **params)`` — ogni comando di EMStudio e le azioni con nome, con i loro parametri (il nostro ``bpy.ops``)"
+
+msgid ":doc:`app/space`, :doc:`app/workspaces`, :doc:`app/windows`"
+msgstr ""
+
+msgid "the Space, the workspaces and the windows of EMStudio as objects"
+msgstr "lo Spazio, gli spazi di lavoro e le finestre di EMStudio come oggetti"
+
+msgid ":doc:`types/index`"
+msgstr ""
+
+msgid "the types of nodes and edges of the EM language (our ``bpy.types``)"
+msgstr "i tipi di nodi e di archi del linguaggio EM (il nostro ``bpy.types``)"
+
+msgid ":doc:`context`"
+msgstr ""
+
+msgid "``em.app``, ``ctx`` in a plugin, the open document and graph (our ``bpy.context``)"
+msgstr "``em.app``, ``ctx`` in un plugin, il documento e il grafo aperti (il nostro ``bpy.context``)"
+
+msgid ":doc:`slots`"
+msgstr ""
+
+msgid "where a plugin's command is drawn"
+msgstr "dove viene disegnato il comando di un plugin"
+
+msgid "The modules:"
+msgstr "I moduli:"

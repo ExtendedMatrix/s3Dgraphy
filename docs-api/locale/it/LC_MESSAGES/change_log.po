@@ -1,0 +1,66 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Change log"
+msgstr "Registro delle modifiche"
+
+msgid "*What changed in* ``em`` *between versions.* A plugin reads these numbers through ``em_api_min`` / ``em_api_max`` in its manifest; they are the API's own, distinct from s3dgraphy's and EMStudio's."
+msgstr "*Che cosa è cambiato in* ``em`` *da una versione all'altra.* Un plugin legge questi numeri attraverso ``em_api_min`` / ``em_api_max`` nel suo manifest; sono quelli dell'API, distinti da quelli di s3dgraphy e di EMStudio."
+
+msgid "1.2.0 — 19 November 2026"
+msgstr "1.2.0 — 19 novembre 2026"
+
+msgid "``em.stamp(artifact, inputs=[…])`` and, in plugins, ``ctx.stamp``: the stamp of a derived artifact (:mod:`s3dgraphy.em.stamps`), the same in every host."
+msgstr "``em.stamp(artifact, inputs=[…])`` e, nei plugin, ``ctx.stamp``: il timbro di un artefatto derivato (:mod:`s3dgraphy.em.stamps`), lo stesso in ogni host."
+
+msgid "Slots ``door.reader@2`` (folders, claimed extensions, a panel) and ``space.layer@1`` (a layer of the Space described by a read-only command). Slots have their own versions: a plugin for a newer slot sees that entry off, not itself."
+msgstr "Slot ``door.reader@2`` (cartelle, estensioni rivendicate, un pannello) e ``space.layer@1`` (un livello dello Spazio descritto da un comando in sola lettura). Gli slot hanno versioni proprie: un plugin per uno slot più recente vede spenta quella voce, non sé stesso."
+
+msgid "A plugin that uses ``ctx.stamp`` declares ``em_api_min = \"1.2\"``."
+msgstr "Un plugin che usa ``ctx.stamp`` dichiara ``em_api_min = \"1.2\"``."
+
+msgid "1.1.0 — 18 November 2026"
+msgstr "1.1.0 — 18 novembre 2026"
+
+msgid "``em.plugins``: plugins loaded from disk, checked before running (``em_api_min``/``max``, the wheels' Python, the descriptor), ``setup(ctx)`` / ``teardown(ctx)``."
+msgstr "``em.plugins``: plugin caricati dal disco, controllati prima di girare (``em_api_min``/``max``, il Python delle wheel, il descrittore), ``setup(ctx)`` / ``teardown(ctx)``."
+
+msgid "``em.ext``: what the active plugins expose to the console (slot ``console@1``); ``em.help()`` lists their commands."
+msgstr "``em.ext``: ciò che i plugin attivi espongono alla console (slot ``console@1``); ``em.help()`` elenca i loro comandi."
+
+msgid "The event ``document-saved``."
+msgstr "L'evento ``document-saved``."
+
+msgid "Phase 2 slots drawn: ``inspector.section@1``, ``tabular.column@1``, ``statusbar@1``, ``space.tool@1``, ``panel@1`` (no change of the API number: slots have their own versions)."
+msgstr "Disegnati gli slot della fase 2: ``inspector.section@1``, ``tabular.column@1``, ``statusbar@1``, ``space.tool@1``, ``panel@1`` (il numero dell'API non cambia: gli slot hanno versioni proprie)."
+
+msgid "EM Tools becomes a host: ``em`` in Blender reads EM Setup's active graph."
+msgstr "EM Tools diventa un host: ``em`` in Blender legge il grafo attivo di EM Setup."
+
+msgid "1.0.0 — 18 November 2026"
+msgstr "1.0.0 — 18 novembre 2026"
+
+msgid "``em``: ``em.graph`` (views), ``em.vocab``, ``em.profiles``, ``em.write`` (one act, one step, through the contract), ``em.extensions``, ``em.on`` / ``em.off``, ``em.app`` (selection, views, Space, commands, notify), ``em.open`` / ``em.use`` / ``em.save`` and ``python -m s3dgraphy.em run``."
+msgstr "``em``: ``em.graph`` (viste), ``em.vocab``, ``em.profiles``, ``em.write`` (un atto, un passo, attraverso il contratto), ``em.extensions``, ``em.on`` / ``em.off``, ``em.app`` (selezione, viste, Spazio, comandi, notifiche), ``em.open`` / ``em.use`` / ``em.save`` e ``python -m s3dgraphy.em run``."
+
+msgid "Not yet numbered (this site)"
+msgstr "Non ancora numerato (questo sito)"
+
+msgid "``import em`` works as ``from s3dgraphy import em``, and ``python -m em`` as ``python -m s3dgraphy.em``."
+msgstr "``import em`` funziona come ``from s3dgraphy import em``, e ``python -m em`` come ``python -m s3dgraphy.em``."

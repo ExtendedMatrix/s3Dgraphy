@@ -166,7 +166,26 @@ def stamp_artifact(artifact: PathLike, *, agent: Any = None, write: bool = True,
 
     Writes ``<artifact>.stamp.json`` (``write=False``: only returns it) and
     returns the stamp. Re-stamping the same bytes writes the same record but
-    the instant (the format: the same fact registered twice, deduplicated)."""
+    the instant (the format: the same fact registered twice, deduplicated).
+
+    Raises:
+        StampError: the artifact or an input path is not a file, or an input
+            names nothing.
+
+    Example:
+        >>> import os, tempfile
+        >>> folder = tempfile.mkdtemp()
+        >>> src, png = os.path.join(folder, "slice.dat"), os.path.join(folder, "slice.png")
+        >>> _ = open(src, "wb").write(b"raw")
+        >>> _ = open(png, "wb").write(b"picture")
+        >>> stamp = em.stamp(png, inputs=[src], parameters={"colormap": "viridis"},
+        ...                  dtc_kind="format_conversion",
+        ...                  agent={"id": "demo", "name": "Demo", "version": "1.0"})
+        >>> stamp["how"]["dtc_kind"], stamp["self"]["format"], len(stamp["from"])
+        ('format_conversion', 'png', 1)
+        >>> os.path.exists(png + ".stamp.json")
+        True
+    """
     if agent is None:
         from .plugins import calling_now
         calling = calling_now()

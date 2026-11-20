@@ -1,0 +1,10 @@
+# Read the Docs builds the API site from this checkout's src/ (conf.py puts it
+# on sys.path), so the library's runtime dependencies come from here.
+sphinx>=7
+sphinx_rtd_theme
+sphinx-intl
+pandas>=2.0.0
+lxml>=4.9.0
+openpyxl>=3.0.0
+networkx>=3.0
+dtcstamp>=0.1.5

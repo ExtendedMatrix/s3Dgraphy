@@ -1,0 +1,72 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "is_part_of"
+msgstr ""
+
+msgid "Generated from the datamodels (nodes 1.6.51, connections 1.6.55) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``."
+msgstr ""
+
+msgid "*Mereological (part–whole) PHYSICAL containment, not chronological or stratigraphic: a Special Find reused inside a wall, tile fragments inside a reconstructed roof (DP-36).*"
+msgstr ""
+
+msgid "Label (en)"
+msgstr ""
+
+msgid "Is part of"
+msgstr ""
+
+msgid "Label (it)"
+msgstr ""
+
+msgid "Fa parte di"
+msgstr ""
+
+msgid "Reverse"
+msgstr ""
+
+msgid "``has_part``"
+msgstr ""
+
+msgid "Source"
+msgstr ""
+
+msgid ":ref:`SpecialFindUnit <type-SpecialFindUnit>`, :ref:`VirtualSpecialFindUnit <type-VirtualSpecialFindUnit>`, :ref:`SeriesOfVirtualSpecialFindUnit <type-SeriesOfVirtualSpecialFindUnit>`, :ref:`ReusedSpecialFind <type-ReusedSpecialFind>`, :ref:`StratigraphicUnit <type-StratigraphicUnit>`, :ref:`DocumentaryStratigraphicUnit <type-DocumentaryStratigraphicUnit>`, :ref:`VirtualStratigraphicUnit <type-VirtualStratigraphicUnit>`, :ref:`FunctionalUnitNodeGroup <type-FunctionalUnitNodeGroup>`"
+msgstr ""
+
+msgid "Target"
+msgstr ""
+
+msgid ":ref:`StratigraphicUnit <type-StratigraphicUnit>`, :ref:`DocumentaryStratigraphicUnit <type-DocumentaryStratigraphicUnit>`, :ref:`VirtualSpecialFindUnit <type-VirtualSpecialFindUnit>`, :ref:`SeriesOfVirtualSpecialFindUnit <type-SeriesOfVirtualSpecialFindUnit>`"
+msgstr ""
+
+msgid "CIDOC"
+msgstr ""
+
+msgid "``P46i_forms_part_of · AP21i_is_contained_in``"
+msgstr ""
+
+msgid "Description"
+msgstr ""
+
+msgid "Mereological (part–whole) PHYSICAL containment, not chronological or stratigraphic: a Special Find reused inside a wall, tile fragments inside a reconstructed roof (DP-36). Containment is a relationship, not a change in node type: a US that contains elements is still a US, and the presence of is\\_part\\_of edges is the only discriminant that identifies it as a container. This is the NESTING axis — one primary parent, drawn as a box around its members — so a FunctionalUnitNodeGroup is NOT a target here (its membership is the m:n tag axis is\\_in\\_functional\\_unit, DP-72). A Functional Unit may however be a SOURCE: a whole component physically embedded in a stratigraphic unit (a column engaged in a later wall)."
+msgstr ""
+
+msgid "From em"
+msgstr ""

@@ -1,0 +1,315 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "``em.write`` — writing, one act one step"
+msgstr ""
+
+msgid "Generated for em API |api| from the docstrings of :mod:`s3dgraphy.em.write`."
+msgstr ""
+
+msgid "Writing — Transaction → Delta → invoke → guard_write → host.apply (SPEC-plugin §2.3)."
+msgstr ""
+
+msgid "**How a transaction makes its delta.** It works on a COPY of the host's graph (made at its first operation) and, at the end, says what changed between the graph and the copy: the new nodes and relations (``nodes``/``edges``), the changed fields (``update_field``), what went away (``remove_node``, ``remove_edge``) — the CRDT's own operations, connector API 1.1. That is what lets the high-level builders CALL THE CORE (``place_landmark``, ``place_extractor``, ``place_reading``, ``combiners.compute``…) instead of rewriting a chain by hand: the core writes on the copy, exactly as it writes everywhere, and the difference is the act. A plugin never writes the chain."
+msgstr ""
+
+msgid "Nothing touches the host's graph until the end, and nothing at all when:"
+msgstr ""
+
+msgid "the block raises (the exception goes on; nothing applied);"
+msgstr ""
+
+msgid "``invoke`` refuses (no author: the host's identity, never an argument);"
+msgstr ""
+
+msgid "``guard_write`` refuses (a capability the caller did not declare, a relation the EM language does not allow, a change inside a proposal…) — :class:`~s3dgraphy.em.errors.Refused`, the contract's sentence in EN and IT;"
+msgstr ""
+
+msgid "``dry_run=True`` — the delta and the verdict come back, nothing applied."
+msgstr ""
+
+msgid "``volatile=True`` is a PROPOSAL (``ingest-batch``): it enters marked ``aux_volatile`` and stays out of the saved document until a person bakes it. A proposal only adds — a change or a removal in it is refused by the seam."
+msgstr ""
+
+msgid "Bases: :py:class:`object`"
+msgstr ""
+
+msgid "One act: a label, one step. Use it through :func:`write`."
+msgstr ""
+
+msgid "Every operation works on a private copy of the graph; the act is applied as one step when the ``with`` block ends without an exception. Nodes can be given by id, by their only name, or as :class:`~s3dgraphy.em.graph.NodeView`."
+msgstr ""
+
+msgid "Variables"
+msgstr ""
+
+msgid "the act's label (one Log line, one undo step)."
+msgstr ""
+
+msgid "the act is a proposal (only additions)."
+msgstr ""
+
+msgid "the act is checked, never applied."
+msgstr ""
+
+msgid "the :class:`WriteResult`, once the block has ended."
+msgstr ""
+
+msgid "what the core said along the way."
+msgstr ""
+
+msgid "Parameters"
+msgstr ""
+
+msgid "Example"
+msgstr ""
+
+msgid "what came of it, after the block (a :class:`WriteResult`)"
+msgstr ""
+
+msgid "what the core said along the way (combiners, placements)"
+msgstr ""
+
+msgid "The working copy (the core's functions write here)."
+msgstr ""
+
+msgid "The packages in use (the host's profile overlay), as the core's builders read them."
+msgstr ""
+
+msgid "A node of a ``node_type`` the datamodel knows. Its id, when not given, is of what the act is about (label, type, name, order): the same script run twice adds nothing the second time."
+msgstr ""
+
+msgid "the datamodel's node type (``US``, ``USV``, ``property``…)."
+msgstr ""
+
+msgid "the node's name."
+msgstr ""
+
+msgid "an explicit id (default: a stable id, see above)."
+msgstr ""
+
+msgid "the node's description."
+msgstr ""
+
+msgid "the node's data (copied)."
+msgstr ""
+
+msgid "Returns"
+msgstr ""
+
+msgid "the new node's id."
+msgstr ""
+
+msgid "Return type"
+msgstr ""
+
+msgid "Change a field of a node."
+msgstr ""
+
+msgid "the node (id, name or view)."
+msgstr ""
+
+msgid "``name`` / ``description`` / ``data.<key>`` (a bare key means ``data.<key>``)."
+msgstr ""
+
+msgid "the new value."
+msgstr ""
+
+msgid "Remove a field of a node (``description``, ``data.<key>`` or a bare key)."
+msgstr ""
+
+msgid "the field, as in :meth:`update`."
+msgstr ""
+
+msgid "Remove a node (and its relations)."
+msgstr ""
+
+msgid "Add a relation (once: an existing identical relation is reused)."
+msgstr ""
+
+msgid "Whether the EM language allows the relation is checked when the act is applied; a forbidden one refuses the whole act."
+msgstr ""
+
+msgid "the source node (id, name or view)."
+msgstr ""
+
+msgid "the edge type (``is_after``, ``has_property``…)."
+msgstr ""
+
+msgid "the target node."
+msgstr ""
+
+msgid "the relation's id."
+msgstr ""
+
+msgid "Remove a relation, by id (one argument) or by the triple."
+msgstr ""
+
+msgid "the relation's id, or its source node."
+msgstr ""
+
+msgid "the edge type (with the triple)."
+msgstr ""
+
+msgid "the target node (with the triple)."
+msgstr ""
+
+msgid "False when there was no such relation."
+msgstr ""
+
+msgid "The property ``quale`` of a unit: written on the one the unit has, else a new one (``unit → has_property → property``). ``concept`` (an URI or an ``em.vocab`` concept) writes the double value — the term and its label (in ``lang``, else the study's, else English)."
+msgstr ""
+
+msgid "the unit (id, name or view)."
+msgstr ""
+
+msgid "the property's name (``material``, ``stat:fase_di_superficie``)."
+msgstr ""
+
+msgid "the value (with ``concept``: the label to show)."
+msgstr ""
+
+msgid "a concept URI or an :class:`~s3dgraphy.em.vocab.Concept`."
+msgstr ""
+
+msgid "the language of the concept's label."
+msgstr ""
+
+msgid "the property node's id."
+msgstr ""
+
+msgid "The act of placing a set of canonical points (its CombinerNode)."
+msgstr ""
+
+msgid "One extractor on the model ``on``: a canonical point (``landmark=(set, point)``, with ``point=[x, y, z]``) or a package type's geometry (``kind`` with ``point`` or ``vertices``). The core checks the primitive and the vertices before anything is written."
+msgstr ""
+
+msgid "Where a reading looked (``annotation.reading.place_reading``)."
+msgstr ""
+
+msgid "A package's combiner on what is placed (``annotation.combiners.compute``)."
+msgstr ""
+
+msgid "Run every package combiner that has what it needs on the model ``on`` (``annotation.combiners.compute_available``)."
+msgstr ""
+
+msgid "the model (id, name or view)."
+msgstr ""
+
+msgid "the unit the readings are about, when there is one."
+msgstr ""
+
+msgid "the combiners computed."
+msgstr ""
+
+msgid "Recompute what reads the given extractors (after a point moved), as field changes (``annotation.combiners.recompute``)."
+msgstr ""
+
+msgid "the extractors that changed (default: all)."
+msgstr ""
+
+msgid "the combiners recomputed."
+msgstr ""
+
+msgid "The act so far, as the contract will see it."
+msgstr ""
+
+msgid "End the act and submit it (the ``with`` block does this for you)."
+msgstr ""
+
+msgid "also stored in :attr:`result`."
+msgstr ""
+
+msgid "Raises"
+msgstr ""
+
+msgid "the contract refused the act; nothing was applied."
+msgstr ""
+
+msgid "the transaction is already closed."
+msgstr ""
+
+msgid "Drop the act: nothing is applied and the transaction is closed."
+msgstr ""
+
+msgid "What a transaction did (or would do): the delta, the contract's result, ``applied`` (False for a dry run, a deferred write, nothing to write)."
+msgstr ""
+
+msgid "Read it from ``tx.result`` after the ``with em.write(...)`` block."
+msgstr ""
+
+msgid "the act's label."
+msgstr ""
+
+msgid "the :class:`~s3dgraphy.contract.Delta` (new nodes, relations, changes)."
+msgstr ""
+
+msgid "the contract's :class:`~s3dgraphy.contract.Result`, or None."
+msgstr ""
+
+msgid "the delta reached the graph."
+msgstr ""
+
+msgid "a proof: checked, not applied."
+msgstr ""
+
+msgid "queued until the current event delivery ends."
+msgstr ""
+
+msgid "True unless the contract's result says otherwise."
+msgstr ""
+
+msgid "The parts the graph could not take (an edge to a node not there…), when the act was otherwise applied."
+msgstr ""
+
+msgid "One sentence on what was written (in the host's language)."
+msgstr ""
+
+msgid "The outcome as plain JSON-ready data (label, flags, message, delta, result)."
+msgstr ""
+
+msgid "Open an act (``with em.write(\"…\") as tx:``)."
+msgstr ""
+
+msgid "Everything done on ``tx`` inside the block is applied together, as one step with one Log line, when the block ends. If the block raises, nothing is applied. The author is the session's (see :func:`em.use <s3dgraphy.em.use>`), never an argument."
+msgstr ""
+
+msgid "what the act is (shown in the Log and the undo history)."
+msgstr ""
+
+msgid "a proposal: it only adds, marked as volatile."
+msgstr ""
+
+msgid "check the act and return its delta without applying it."
+msgstr ""
+
+msgid "use it as a context manager."
+msgstr ""
+
+msgid "on leaving the block, when the contract refuses the act     (no author, a forbidden relation…). Nothing is applied."
+msgstr ""
+
+msgid "A delta through the contract, to the host. ``invoke`` (the author is the host's), ``guard_write`` (in EN and IT), then ``host.apply`` — or, inside an event's delivery, after it (never a write inside the step that caused it)."
+msgstr ""
+
+msgid "The act that turns the graph ``before`` (a snapshot) into ``after_graph``, in the contract's words. A new node keeps the ``data.author`` the core gave it; every other stamp is the seam's."
+msgstr ""
+
+msgid "The four refusals of the core, in Italian (the interface's second language)."
+msgstr ""

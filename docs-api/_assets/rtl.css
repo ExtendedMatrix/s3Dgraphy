@@ -1,0 +1,18 @@
+/* A language written from right to left (Hebrew): the text runs from the right
+   and the frame of the Read the Docs theme is mirrored — the menu on the right,
+   the page at its left. Code, keys, file names and paths stay left to right. */
+html { direction: rtl; }
+.wy-nav-side { left: auto; right: 0; }
+.wy-nav-content-wrap { margin-left: 0; margin-right: 300px; }
+.rst-versions { left: auto; right: 0; }
+.wy-breadcrumbs li.wy-breadcrumbs-aside { float: left; }
+.rst-content .headerlink { margin-left: 0; margin-right: .3em; }
+@media screen and (max-width: 768px) {
+  .wy-nav-side { right: -300px; }
+  .wy-nav-side.shift { right: 0; left: auto; }
+  .wy-nav-content-wrap { margin-right: 0; }
+  .wy-nav-content-wrap.shift { left: auto; right: 85%; }
+}
+pre, kbd, code, .highlight, .rst-content code.literal, .rst-content tt.literal {
+  direction: ltr; unicode-bidi: isolate; text-align: left;
+}

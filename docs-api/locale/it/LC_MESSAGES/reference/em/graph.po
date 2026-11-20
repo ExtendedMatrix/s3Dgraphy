@@ -1,0 +1,243 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "``em.graph`` — reading the graph"
+msgstr ""
+
+msgid "Generated for em API |api| from the docstrings of :mod:`s3dgraphy.em.graph`."
+msgstr ""
+
+msgid "Reading the graph — views, not nodes (SPEC-plugin §2.2)."
+msgstr ""
+
+msgid "``em.graph`` is the graph of the host (in an application: the one of the open document). What it returns are READ-ONLY VIEWS over s3Dgraphy's nodes: a script reads names, types, data, properties with their chain, relations, the chronology the core computes. ``node.raw`` gives the real node to whoever knows what they are doing — but changing it writes nothing (no step, no Log, no author), which its docstring says and a warning says the first time. Writing is :func:`em.write <s3dgraphy.em.write.write>`."
+msgstr ""
+
+msgid "Bases: :py:class:`object`"
+msgstr ""
+
+msgid "The graph, read-only. Built over the live graph each time it is asked for (``em.graph``), so it always shows the host's current graph."
+msgstr ""
+
+msgid "``len(view)`` is the number of nodes (a new graph already holds its ``geo_position`` node); ``ref in view`` tells whether a node exists; iterating gives every node."
+msgstr ""
+
+msgid "Example"
+msgstr ""
+
+msgid "Parameters"
+msgstr ""
+
+msgid "The graph's id, or None."
+msgstr ""
+
+msgid "The real :class:`~s3dgraphy.graph.Graph` (see :attr:`NodeView.raw`)."
+msgstr ""
+
+msgid "By id, else by name (the only one with that name); None if none."
+msgstr ""
+
+msgid "Return type"
+msgstr ""
+
+msgid "By id or by name. Two nodes with that name: :class:`AmbiguousNode` (use the id) — never the first one found."
+msgstr ""
+
+msgid "an id, a name, a :class:`NodeView` or an s3Dgraphy node."
+msgstr ""
+
+msgid "Returns"
+msgstr ""
+
+msgid "the node."
+msgstr ""
+
+msgid "Raises"
+msgstr ""
+
+msgid "no node has that id or name."
+msgstr ""
+
+msgid "several nodes have that name."
+msgstr ""
+
+msgid "Nodes of a ``type`` (``US``, ``property``, ``representation_model``… the node_type), with a ``name``, whose properties match ``where`` (``{quale: value}``; the value matches the property's value or its term's concept)."
+msgstr ""
+
+msgid "the node type (``US``, ``property``, ``representation_model``…)."
+msgstr ""
+
+msgid "the exact name."
+msgstr ""
+
+msgid "``{property name: wanted value}``; all must match."
+msgstr ""
+
+msgid "the matching nodes, in the graph's order."
+msgstr ""
+
+msgid "The relations of the graph, filtered."
+msgstr ""
+
+msgid "only relations from this node (id, name or view)."
+msgstr ""
+
+msgid "only relations to this node (id, name or view)."
+msgstr ""
+
+msgid "only relations of this edge type."
+msgstr ""
+
+msgid "the matching relations."
+msgstr ""
+
+msgid "``source`` or ``target`` names no node."
+msgstr ""
+
+msgid "The core's computation (``Graph.chronology``), nothing written: the whole graph's ``{id: entry}``, or one node's entry."
+msgstr ""
+
+msgid "One node, read-only."
+msgstr ""
+
+msgid "The node's id (unique in the graph)."
+msgstr ""
+
+msgid "The node's name (``US12``), or None."
+msgstr ""
+
+msgid "The node type of the datamodel (``US``, ``property``, ``representation_model``…)."
+msgstr ""
+
+msgid "The node's description, or None."
+msgstr ""
+
+msgid "The node's data — a read-only mapping over a copy."
+msgstr ""
+
+msgid "no step, no undo, no Log, no author, and in EMStudio the bridge throws the copy away. Use ``em.write``."
+msgstr ""
+
+msgid "type"
+msgstr ""
+
+msgid "The REAL s3Dgraphy node. Changing it writes nothing"
+msgstr ""
+
+msgid "All the properties of the node (``has_property``), as views."
+msgstr ""
+
+msgid "The value of the property ``name`` (a quale: ``material``, ``stat:fase_di_superficie``) — ``default`` when there is none."
+msgstr ""
+
+msgid "the property's name or property type."
+msgstr ""
+
+msgid "what to return when the node has no such property."
+msgstr ""
+
+msgid "The value (a copy, safe to keep)."
+msgstr ""
+
+msgid "The property ``name`` as a :class:`PropertyView` (value, term, unit, provenance), or None."
+msgstr ""
+
+msgid "The relations of the node."
+msgstr ""
+
+msgid "only relations of this edge type (``is_after``…)."
+msgstr ""
+
+msgid "``\"out\"`` (the node is the source, the default), ``\"in\"`` (the node is the target) or ``\"both\"``."
+msgstr ""
+
+msgid "the relations."
+msgstr ""
+
+msgid "The nodes at the other end of the node's relations."
+msgstr ""
+
+msgid "only through relations of this edge type."
+msgstr ""
+
+msgid "``\"out\"``, ``\"in\"`` or ``\"both\"``, as in :meth:`edges`."
+msgstr ""
+
+msgid "one entry per relation."
+msgstr ""
+
+msgid "One relation, read-only: its type and the two nodes it joins."
+msgstr ""
+
+msgid "The relation's id."
+msgstr ""
+
+msgid "The edge type (``is_after``, ``has_property``…)."
+msgstr ""
+
+msgid "The node the relation starts from."
+msgstr ""
+
+msgid "The node the relation points to."
+msgstr ""
+
+msgid "A property of a unit: its value, its term (when controlled), and the chain it comes from (combiner / extractors / document), as ids."
+msgstr ""
+
+msgid "The id of the property node."
+msgstr ""
+
+msgid "The property's name — its quale (``material``, ``stat:fase_di_superficie``)."
+msgstr ""
+
+msgid "the node's ``value``, else its description."
+msgstr ""
+
+msgid "The value (a copy)"
+msgstr ""
+
+msgid "The controlled term of the value (``{\"concept\": uri, \"label\": …}``), or None for free text."
+msgstr ""
+
+msgid "The unit of measure (``data.unit``), or None."
+msgstr ""
+
+msgid "The ids the value comes from (``has_data_provenance``), then what those combine or extract from — the chain, one level at a time."
+msgstr ""
+
+msgid "The property itself as a :class:`NodeView` (its relations, data, raw node)."
+msgstr ""
+
+msgid "Bases: :py:class:`~s3dgraphy.em.errors.EmError`, :py:class:`KeyError`"
+msgstr ""
+
+msgid "No node has that id or name. A ``KeyError`` too."
+msgstr ""
+
+msgid "Bases: :py:class:`~s3dgraphy.em.errors.EmError`, :py:class:`LookupError`"
+msgstr ""
+
+msgid "A name given for a node is shared by several nodes: use the id."
+msgstr ""
+
+msgid "``.data[\"ids\"]`` lists the candidates. A ``LookupError`` too."
+msgstr ""
+
+msgid "The id a reference stands for: a :class:`NodeView`'s id, a node's ``node_id``, else the reference itself as a string (an id or a name)."
+msgstr ""

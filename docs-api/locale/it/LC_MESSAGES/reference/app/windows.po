@@ -1,0 +1,60 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-20 18:23+0100\n"
+"PO-Revision-Date: 2026-11-20 18:23+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "``em.app.windows`` — the windows"
+msgstr "``em.app.windows`` — le finestre"
+
+msgid "*The windows of the workspace in front, the detached ones, and the types an area can show.* EMStudio only."
+msgstr "*Le finestre dello spazio di lavoro davanti, quelle staccate, e i tipi che un'area può mostrare.* Solo EMStudio."
+
+msgid "Name"
+msgstr "Nome"
+
+msgid "What it is"
+msgstr "Che cos'è"
+
+msgid "``list()``"
+msgstr ""
+
+msgid "every window: ``{id, type, label, active, detached}``"
+msgstr "ogni finestra: ``{id, type, label, active, detached}``"
+
+msgid "``active``"
+msgstr ""
+
+msgid "the id of the active window; **set** it to make another one active"
+msgstr "l'id della finestra attiva; **impostalo** per rendere attiva un'altra"
+
+msgid "``types``"
+msgstr ""
+
+msgid "the window types: ``graph``, ``scene``, ``table``, ``inspector``, ``outliner``, ``viewer``, ``console``, ``script``, …"
+msgstr "i tipi di finestra: ``graph``, ``scene``, ``table``, ``inspector``, ``outliner``, ``viewer``, ``console``, ``script``, …"
+
+msgid "``open(type, area=None, split=\"row\")``"
+msgstr ""
+
+msgid "a window of ``type``: in the area ``area`` (a window id, which changes type), else beside the active window (``split``: ``row`` or ``col``); its id"
+msgstr "una finestra di ``type``: nell'area ``area`` (l'id di una finestra, che cambia tipo), altrimenti accanto alla finestra attiva (``split``: ``row`` o ``col``); il suo id"
+
+msgid "``em.app.view(name)`` brings the first window of a type to the front (the console and the Script Editor included); the action :doc:`../commands/magnify` magnifies one."
+msgstr "``em.app.view(name)`` porta davanti la prima finestra di un tipo (console ed Editor di script compresi); l'azione :doc:`../commands/magnify` ne ingrandisce una."
+
+msgid "Every window can be detached into a window of the system (another screen) and put back. The Python console and the Script Editor keep, detached, the same Python session, the same history, the same script open: «Run Script» (Alt+P) writes in the console wherever it is."
+msgstr "Ogni finestra si stacca in una finestra di sistema (un altro schermo) e si riaggancia. La console Python e l'Editor di script, staccati, tengono la stessa sessione Python, la stessa storia, lo stesso script aperto: «Esegui script» (Alt+P) scrive nella console ovunque sia."

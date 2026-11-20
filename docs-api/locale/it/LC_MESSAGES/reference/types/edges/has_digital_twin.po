@@ -1,0 +1,72 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "has_digital_twin"
+msgstr ""
+
+msgid "Generated from the datamodels (nodes 1.6.51, connections 1.6.55) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``."
+msgstr ""
+
+msgid "*Links a heritage entity to its Heritage Digital Twin (HDTNode), at ANY scale: a site, a building, a single unit (an inscription, US 100).*"
+msgstr ""
+
+msgid "Label (en)"
+msgstr ""
+
+msgid "Has digital twin"
+msgstr ""
+
+msgid "Label (it)"
+msgstr ""
+
+msgid "Ha gemello digitale"
+msgstr ""
+
+msgid "Reverse"
+msgstr ""
+
+msgid "``is_digital_twin_of``"
+msgstr ""
+
+msgid "Source"
+msgstr ""
+
+msgid ":ref:`HeritageEntityNode <type-HeritageEntityNode>`, :ref:`StratigraphicNode <type-StratigraphicNode>`"
+msgstr ""
+
+msgid "Target"
+msgstr ""
+
+msgid ":ref:`HDTNode <type-HDTNode>`"
+msgstr ""
+
+msgid "CIDOC"
+msgstr ""
+
+msgid "``hdto:HP1_has_digital_twin``"
+msgstr ""
+
+msgid "Description"
+msgstr ""
+
+msgid "Links a heritage entity to its Heritage Digital Twin (HDTNode), at ANY scale: a site, a building, a single unit (an inscription, US 100). HDT-O HP1 per ECHOES D7.1 §4.2. Two uses, told apart by the twin and not by the edge. (1) The STUDY's twin: from the HC1 the study is about (study\\_about\\_heritage) to the HDTNode marked data.hdto\\_role = 'twin' — one per graph, the chain EMStudio's applyHdto and s3dgraphy.hdto.declare\\_hdto write (HC1 -HP1-> HC2 -HP33-> HC16). (2) The twin of a PART (1.6.42): from a stratigraphic unit or an HC1 inside the graph to an HDTNode WITHOUT hdto\\_role — read as a list by s3dgraphy.hdto.read\\_part\\_twins (read\\_hdto()['parts']), each with the unit or entity it belongs to. No hierarchy is presumed: which part belongs to which whole is said by heritage\\_part\\_of (HC1 to HC1) and is\\_part\\_of (unit to unit), never inferred from the twins; HDT to HDT nesting is has\\_digital\\_twin\\_component. In RDF the edge is hdto:HP1\\_has\\_digital\\_twin whatever the source; its rdfs:domain (HC1) makes a unit with a twin a heritage entity as well, which is what having a twin means."
+msgstr ""
+
+msgid "From em"
+msgstr ""

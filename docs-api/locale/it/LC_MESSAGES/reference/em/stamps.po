@@ -1,0 +1,78 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "``em.stamps`` — the stamp of a derived artifact"
+msgstr ""
+
+msgid "Generated for em API |api| from the docstrings of :mod:`s3dgraphy.em.stamps`."
+msgstr ""
+
+msgid "The stamp on a derived artifact — G-5 of the geophysics decisions (MICRO-GEO02, part 0, E.D. 19 Nov 2026)."
+msgstr ""
+
+msgid "When a plugin MAKES a file — a PNG from a slice, a cache, a baked drape, a resampled raster, a glb, an export — the encouraged practice (never an obligation: SPEC.md of em-profiles, «Good practice — the stamp on derived artifacts») is to write its **stamp** beside it: the immutable record of one step in the format of ``dtcstamp`` (``stamp-format.md``) — an agent, a process and its parameters, the inputs consumed by identity, ONE artifact produced."
+msgstr ""
+
+msgid "One line from a plugin::"
+msgstr ""
+
+msgid "writes ``<png>.stamp.json`` and returns the stamp. The agent is the plugin (id and version, in ``how.software`` before s3dgraphy's own line): by the format's rule an absent ``by.operator`` means «the agent is the software named in ``how``», which is exactly a plugin baking a cache. ``em.stamp(...)`` is the same for a script, and inside a plugin's command it names the calling plugin by itself."
+msgstr ""
+
+msgid "Nothing here touches the graph: a stamp is a file next to a file. How it joins the graph's DTC is the reader's (``s3dgraphy.stamp.absorb``): the inputs are named by ``resource_id`` and ``digest``, so an input that is a graph's resource — the file of an acquisition, ``dtc_had_output`` — is cited with ITS id, and the chain acquisition → resource → derivative reads backwards."
+msgstr ""
+
+msgid "Bases: :py:class:`ValueError`"
+msgstr ""
+
+msgid "What cannot be stamped (no file, an input that names nothing)."
+msgstr ""
+
+msgid "The stamp of ``artifact`` as a dict (nothing written). See :func:`stamp_artifact`."
+msgstr ""
+
+msgid "Parameters"
+msgstr ""
+
+msgid "Return type"
+msgstr ""
+
+msgid "Stamp a file a plugin (or a script) made, in one line."
+msgstr ""
+
+msgid "``agent`` — the plugin (a :class:`~s3dgraphy.em.plugins.Plugin`, its ``ctx`` or ``{\"id\", \"name\", \"version\"}``); inside a plugin's command, the calling plugin when not given. ``inputs`` — paths (hashed) or identities (``{\"resource_id\": …}`` of a graph's resource, ``{\"resource_id\": …, \"kind\": \"acquisition\"}``). ``parameters``, ``dtc_kind`` (the vocabulary of ``dtc_kinds``: ``format_conversion``, ``transformation``, ``export``…), ``technique``, ``label``, ``description``, ``resource_id`` (default: derived from the digest), ``operator``, ``at``, ``tier``, ``software`` (more lines)."
+msgstr ""
+
+msgid "Writes ``<artifact>.stamp.json`` (``write=False``: only returns it) and returns the stamp. Re-stamping the same bytes writes the same record but the instant (the format: the same fact registered twice, deduplicated)."
+msgstr ""
+
+msgid "Raises"
+msgstr ""
+
+msgid "the artifact or an input path is not a file, or an input     names nothing."
+msgstr ""
+
+msgid "Example"
+msgstr ""
+
+msgid "``<artifact>.stamp.json``, beside it (stamp-format, «Nomi dei file»)."
+msgstr ""
+
+msgid "``res:<uuid5 of the digest>`` — the identity a derived file gets when nobody gave it one: deterministic, so two bakes of the same bytes agree."
+msgstr ""

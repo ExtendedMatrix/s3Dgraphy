@@ -1,0 +1,120 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-20 18:23+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "updatesHelp"
+msgstr ""
+
+msgid "*Generated from EMStudio 17797d8 for em API 1.2.0.*"
+msgstr ""
+
+msgid "Id"
+msgstr ""
+
+msgid "``updatesHelp``"
+msgstr ""
+
+msgid "Label (en)"
+msgstr ""
+
+msgid "Check for updates…"
+msgstr ""
+
+msgid "Label (it)"
+msgstr ""
+
+msgid "Cerca aggiornamenti…"
+msgstr ""
+
+msgid "Kind"
+msgstr ""
+
+msgid "Menu command — presses the page button ``btn-help-updates``"
+msgstr ""
+
+msgid "Reachable from Python"
+msgstr ""
+
+msgid "yes — ``em.app.commands.run(\"updatesHelp\")``"
+msgstr ""
+
+msgid "Script form"
+msgstr ""
+
+msgid "runs without a window"
+msgstr ""
+
+msgid "Writes to the graph"
+msgstr ""
+
+msgid "not declared"
+msgstr ""
+
+msgid "Menu path (en)"
+msgstr ""
+
+msgid "Help ▸ Check for updates…"
+msgstr ""
+
+msgid "Menu path (it)"
+msgstr ""
+
+msgid "Aiuto ▸ Cerca aggiornamenti…"
+msgstr ""
+
+msgid "Drawn in"
+msgstr ""
+
+msgid "the page's menu bar: Windows desktop, Linux desktop"
+msgstr ""
+
+msgid "Shortcut"
+msgstr ""
+
+msgid "none"
+msgstr ""
+
+msgid "Same button as"
+msgstr ""
+
+msgid ":doc:`updates <updates>`"
+msgstr ""
+
+msgid "Defined in"
+msgstr ""
+
+msgid "``frontend/src/menu-table.ts:283``"
+msgstr ""
+
+msgid "What it does"
+msgstr ""
+
+msgid "**script** — Ask whether a newer EMStudio exists (Help menu, Windows and Linux)."
+msgstr ""
+
+msgid "Parameters"
+msgstr ""
+
+msgid "None: ``em.app.commands.run`` refuses a parameter given to it."
+msgstr ""
+
+msgid "From Python"
+msgstr ""
+
+msgid "Runs without a window. If the command is not possible at that moment (its button disabled) the call raises ``em.NotAvailable`` (``py.noCommand``). Outside EMStudio (no host) the call raises ``em.NotAvailable``."
+msgstr ""

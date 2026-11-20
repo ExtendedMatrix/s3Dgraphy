@@ -1,0 +1,72 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "DTCNode"
+msgstr ""
+
+msgid "Generated from the datamodels (nodes 1.6.51, connections 1.6.55) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``."
+msgstr ""
+
+msgid "*Abstract base for one STEP of a DTC chain.*"
+msgstr ""
+
+msgid "Class"
+msgstr ""
+
+msgid "``DTCNode``"
+msgstr ""
+
+msgid "node_type"
+msgstr ""
+
+msgid "— (abstract: no node has it)"
+msgstr ""
+
+msgid "Parent"
+msgstr ""
+
+msgid ":ref:`Node <type-Node>`"
+msgstr ""
+
+msgid "Label (en)"
+msgstr ""
+
+msgid "Label (it)"
+msgstr ""
+
+msgid "—"
+msgstr ""
+
+msgid "CIDOC"
+msgstr ""
+
+msgid "Description"
+msgstr ""
+
+msgid "Abstract base for one STEP of a DTC chain. Concrete subclasses set \\`\\`node\\_type\\`\\`"
+msgstr ""
+
+msgid "Edges"
+msgstr ""
+
+msgid "**Outgoing** (this node is the source): :ref:`dtc_had_input <edge-dtc_had_input>`, :ref:`dtc_had_output <edge-dtc_had_output>`, :ref:`dtc_happened_on_device <edge-dtc_happened_on_device>`, :ref:`generic_connection <edge-generic_connection>`, :ref:`has_author <edge-has_author>`, :ref:`has_embargo <edge-has_embargo>`, :ref:`has_license <edge-has_license>`, :ref:`has_semantic_shape <edge-has_semantic_shape>`, :ref:`has_translation <edge-has_translation>`"
+msgstr ""
+
+msgid "**Incoming** (this node is the target): :ref:`dtc_had_input <edge-dtc_had_input>`, :ref:`generic_connection <edge-generic_connection>`"
+msgstr ""

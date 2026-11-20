@@ -50,6 +50,7 @@ class Subscription:
         self.event, self.fn, self.active = event, fn, True
 
     def off(self) -> None:
+        """Unsubscribe (again: nothing happens)."""
         if self.active:
             try:
                 _listeners[self.event].remove(self.fn)
@@ -75,7 +76,32 @@ def _check(event: str) -> None:
 def on(event: str, fn: Optional[Listener] = None):
     """Subscribe ``fn(payload)`` to ``event``; usable as a decorator
     (``@em.on("graph-changed")``). Returns a :class:`Subscription`, or ``fn``
-    when used as a decorator."""
+    when used as a decorator.
+
+    The payload is a dict with the event's name under ``"event"``; for
+    ``graph-changed`` also the step's ``label`` and the ``ids`` it touched.
+
+    Args:
+        event: one of :data:`EVENTS`.
+        fn: the listener; omit it to use ``on`` as a decorator.
+
+    Raises:
+        ValueError: an unknown event.
+
+    Example:
+        >>> seen = []
+        >>> sub = em.on("graph-changed", seen.append)
+        >>> with em.write("Describe US1") as tx:
+        ...     tx.update("US1", "description", "a fill")
+        >>> seen[0]["label"], seen[0]["ids"]
+        ('Describe US1', ['US1'])
+        >>> sub.off()
+        >>> @em.on("document-saved")
+        ... def saved(payload):
+        ...     print("saved", payload["graph_id"])
+        >>> em.off("document-saved", saved)
+        True
+    """
     _check(event)
     if fn is None:
         def deco(f: Listener) -> Listener:
@@ -87,6 +113,26 @@ def on(event: str, fn: Optional[Listener] = None):
 
 
 def off(event: str, fn: Listener) -> bool:
+    """Unsubscribe ``fn`` from ``event`` (the other way is ``Subscription.off()``).
+
+    Args:
+        event: one of :data:`EVENTS`.
+        fn: the listener given to :func:`on`.
+
+    Returns:
+        bool: False when ``fn`` was not subscribed.
+
+    Raises:
+        ValueError: an unknown event.
+
+    Example:
+        >>> em.on("selection-changed", print)
+        <em subscription selection-changed on>
+        >>> em.off("selection-changed", print)
+        True
+        >>> em.off("selection-changed", print)
+        False
+    """
     _check(event)
     try:
         _listeners[event].remove(fn)
@@ -165,6 +211,7 @@ def clear() -> None:
 
 
 def dispatching() -> bool:
+    """True while an event is being delivered (a write opened now is queued)."""
     return _depth > 0
 
 
@@ -206,3 +253,7 @@ def emit(event: str, payload: Optional[Dict[str, Any]] = None) -> List[Dict[str,
             except Exception:                        # noqa: BLE001 — no app: the list says it
                 pass
     return failures
+
+
+__all__ = ["EVENTS", "Listener", "Subscription", "on", "off", "listeners", "owned_counts", "on_owned",
+           "off_owner", "scope", "new_table", "clear", "dispatching", "defer", "emit"]

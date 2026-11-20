@@ -1,0 +1,10 @@
+{#- The Read the Docs theme writes <html lang="…"> without a direction. For a
+    language written from right to left (conf.py: html_context['rtl']) the page
+    takes dir="rtl" before it is drawn, and _assets/rtl.css mirrors the frame. -#}
+{% extends "!layout.html" %}
+{%- block extrahead %}
+  {%- if rtl %}
+  <script>document.documentElement.dir = "rtl";</script>
+  {%- endif %}
+  {{ super() }}
+{%- endblock %}

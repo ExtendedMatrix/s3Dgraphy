@@ -1,0 +1,84 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "GCPSetNode"
+msgstr ""
+
+msgid "Generated from the datamodels (nodes 1.6.51, connections 1.6.55) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``."
+msgstr ""
+
+msgid "*The set of ground control points a registration was (or will be) solved from.*"
+msgstr ""
+
+msgid "Class"
+msgstr ""
+
+msgid "``GCPSetNode``"
+msgstr ""
+
+msgid "node_type"
+msgstr ""
+
+msgid "``gcp_set``"
+msgstr ""
+
+msgid "Parent"
+msgstr ""
+
+msgid ":ref:`Node <type-Node>`"
+msgstr ""
+
+msgid "Label (en)"
+msgstr ""
+
+msgid "Ground control points"
+msgstr ""
+
+msgid "Label (it)"
+msgstr ""
+
+msgid "Punti di controllo a terra"
+msgstr ""
+
+msgid "CIDOC"
+msgstr ""
+
+msgid "``crm:E73_Information_Object``"
+msgstr ""
+
+msgid "Description"
+msgstr ""
+
+msgid "The set of ground control points a registration was (or will be) solved from. data.points is a list of {id, world:[x,y,z], observations:[{image, pixel:[x,y]}], uncertainty?}; data.crs names the frame the world coordinates are in (null = a site-local grid, which is a different statement from absent). Minimum 3 observed non-collinear points for a similarity to be determined — reported by \\`solvable\\`, enforced by the runner, never at construction (a set being assembled in the field is legitimately incomplete). 1.6.24 (dev30, decided by E.D. 2 Oct 2026, D7): data.control says WHAT the points are — ground\\_control\\_points (default, not written) or camera\\_positions: the GPS positions of the cameras themselves, each point {id, world, image, uncertainty?} with no pixel observation (the camera is where the photograph was taken from, not something seen in it), solvable with three; data.accuracy\\_m is the accuracy the project records for the cameras. A chunk referenced only by its cameras' GPS is placed absolute with such a set, and validate warns «georeferenced only by camera GPS»: absolute without the control said would claim more than the data."
+msgstr ""
+
+msgid "*Italiano*: L'insieme dei punti di controllo a terra (GCP) da cui una registrazione è stata (o sarà) calcolata. data.points è una lista di {id, world:[x,y,z], observations:[{image, pixel:[x,y]}], uncertainty?}; data.crs indica il sistema di riferimento delle coordinate world (null = una griglia locale di sito, che è un'affermazione diversa dall'assenza). Servono almeno 3 punti osservati non allineati perché una similitudine sia determinata — lo segnala \\`solvable\\`, lo impone il runner, mai in fase di costruzione (un insieme che si sta raccogliendo sul campo è legittimamente incompleto)."
+msgstr ""
+
+msgid "Edges"
+msgstr ""
+
+msgid "**Outgoing** (this node is the source): :ref:`generic_connection <edge-generic_connection>`, :ref:`has_embargo <edge-has_embargo>`, :ref:`has_license <edge-has_license>`, :ref:`has_semantic_shape <edge-has_semantic_shape>`, :ref:`has_translation <edge-has_translation>`"
+msgstr ""
+
+msgid "**Incoming** (this node is the target): :ref:`generic_connection <edge-generic_connection>`, :ref:`has_gcp_set <edge-has_gcp_set>`"
+msgstr ""
+
+msgid "From em"
+msgstr ""

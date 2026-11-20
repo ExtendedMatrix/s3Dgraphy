@@ -1,0 +1,114 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "LicenseNode"
+msgstr ""
+
+msgid "Generated from the datamodels (nodes 1.6.51, connections 1.6.55) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``."
+msgstr ""
+
+msgid "*Represents the license under which a node (or the whole graph via GraphNode) is published.*"
+msgstr ""
+
+msgid "Class"
+msgstr ""
+
+msgid "``LicenseNode``"
+msgstr ""
+
+msgid "node_type"
+msgstr ""
+
+msgid "``license``"
+msgstr ""
+
+msgid "Parent"
+msgstr ""
+
+msgid ":ref:`Node <type-Node>`"
+msgstr ""
+
+msgid "Label (en)"
+msgstr ""
+
+msgid "License"
+msgstr ""
+
+msgid "Label (it)"
+msgstr ""
+
+msgid "Licenza"
+msgstr ""
+
+msgid "CIDOC"
+msgstr ""
+
+msgid "``E30 Right``"
+msgstr ""
+
+msgid "Description"
+msgstr ""
+
+msgid "Represents the license under which a node (or the whole graph via GraphNode) is published. Identified by license\\_type (e.g. 'CC-BY-4.0') and url to the license text. Connected via has\\_license edge to Nodes or GraphNode."
+msgstr ""
+
+msgid "*Italiano*: Rappresenta la licenza con cui è pubblicato un nodo (o l'intero grafo tramite GraphNode). Identificata da license\\_type (ad es. 'CC-BY-4.0') e dall'url del testo della licenza. Collegata tramite l'arco has\\_license a nodi o al GraphNode."
+msgstr ""
+
+msgid "Fields"
+msgstr ""
+
+msgid "Field"
+msgstr ""
+
+msgid "Mapping / note"
+msgstr ""
+
+msgid "``name``"
+msgstr ""
+
+msgid "P1\\_is\\_identified\\_by"
+msgstr ""
+
+msgid "``description``"
+msgstr ""
+
+msgid "P3\\_has\\_note"
+msgstr ""
+
+msgid "``license_type``"
+msgstr ""
+
+msgid "P2\\_has\\_type"
+msgstr ""
+
+msgid "``url``"
+msgstr ""
+
+msgid "Edges"
+msgstr ""
+
+msgid "**Outgoing** (this node is the source): :ref:`generic_connection <edge-generic_connection>`, :ref:`has_embargo <edge-has_embargo>`, :ref:`has_license <edge-has_license>`, :ref:`has_semantic_shape <edge-has_semantic_shape>`, :ref:`has_translation <edge-has_translation>`, :ref:`is_in_paradata_nodegroup <edge-is_in_paradata_nodegroup>`"
+msgstr ""
+
+msgid "**Incoming** (this node is the target): :ref:`generic_connection <edge-generic_connection>`, :ref:`has_license <edge-has_license>`"
+msgstr ""
+
+msgid "From em"
+msgstr ""

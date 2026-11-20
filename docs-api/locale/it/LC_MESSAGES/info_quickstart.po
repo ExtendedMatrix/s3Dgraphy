@@ -1,0 +1,105 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-20 09:09+0100\n"
+"PO-Revision-Date: 2026-11-20 09:15+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Quickstart"
+msgstr "Primi passi"
+
+msgid "*Three lines of Python on Templu Mare, in EMStudio and outside it.*"
+msgstr "*Tre righe di Python su Templu Mare, in EMStudio e fuori.*"
+
+msgid "``import em``"
+msgstr ""
+
+msgid "Everything starts with one line, as ``import bpy`` in Blender:"
+msgstr "Tutto comincia con una riga, come ``import bpy`` in Blender:"
+
+msgid "``em`` is the same in the three places it lives:"
+msgstr "``em`` è lo stesso nei tre posti in cui vive:"
+
+msgid "**in EMStudio** — the Python console, the Script Editor and the plugins: ``em`` is already imported and its graph is the open study;"
+msgstr "**in EMStudio** — la console Python, l'Editor di script e i plugin: ``em`` è già importato e il suo grafo è lo studio aperto;"
+
+msgid "**in EM Tools** — Blender's console and scripts, beside ``bpy``: its graph is the active graph of EM Setup;"
+msgstr "**in EM Tools** — la console e gli script di Blender, accanto a ``bpy``: il suo grafo è il grafo attivo di EM Setup;"
+
+msgid "**in a script or a notebook** — with s3dgraphy installed (``pip install s3dgraphy``), on a file: ``em.open(path)``, then ``em.save()``. No application is needed, as Blender «as a module»."
+msgstr "**in uno script o in un notebook** — con s3dgraphy installato (``pip install s3dgraphy``), su un file: ``em.open(path)``, poi ``em.save()``. Non serve nessuna applicazione, come Blender «come modulo»."
+
+msgid "``import em`` and ``from s3dgraphy import em`` are the same module."
+msgstr "``import em`` e ``from s3dgraphy import em`` sono lo stesso modulo."
+
+msgid "Open the console in EMStudio"
+msgstr "Aprire la console in EMStudio"
+
+msgid "Open a study — here, Templu Mare."
+msgstr "Apri uno studio — qui, Templu Mare."
+
+msgid "``Tools ▸ Python console…``. A **Python Console** window opens under the window you are in (a second time, the same one comes forward). It is a window like the others, as in Blender: any area of any workspace becomes a console from the type selector at the head of the window. Its head says **Python · em on «…»** and **beta**. ``em`` is imported, ``g`` is ``em.graph`` and ``sel`` is the selection."
+msgstr "``Strumenti ▸ Console Python…``. Si apre una finestra **Console Python** sotto quella in cui sei (la seconda volta, viene avanti la stessa). È una finestra come le altre, come in Blender: qualunque area di qualunque spazio di lavoro diventa una console dal selettore del tipo in testa alla finestra. L'intestazione dice **Python · em su «…»** e **beta**. ``em`` è importato, ``g`` è ``em.graph`` e ``sel`` è la selezione."
+
+msgid "Three first commands"
+msgstr "Tre primi comandi"
+
+msgid "**Read a unit.** A node is found by its name or its id; its edges say what it is connected to."
+msgstr "**Leggere un'unità.** Un nodo si trova per nome o per id; i suoi archi dicono a che cosa è collegato."
+
+msgid "**Look at the whole study.** ``nodes()`` filters by type, name or property."
+msgstr "**Guardare tutto lo studio.** ``nodes()`` filtra per tipo, nome o proprietà."
+
+msgid "**Write.** Every change is a block opened by ``em.write`` with a label: the block is one step of ``Edit ▸ Undo``, one line of the Log, and an act whose chain keeps the code that ran."
+msgstr "**Scrivere.** Ogni modifica è un blocco aperto da ``em.write`` con un'etichetta: il blocco è un passo di ``Modifica ▸ Annulla``, una riga nel Log, e un atto la cui catena conserva il codice che è stato eseguito."
+
+msgid "In the console, press **Try** first: the same code runs as a proof and shows what it would change, applying nothing."
+msgstr "Nella console, premi prima **Prova**: lo stesso codice viene eseguito come prova e mostra che cosa cambierebbe, senza applicare nulla."
+
+msgid "Scripts: the Script Editor"
+msgstr "Gli script: l'Editor di script"
+
+msgid "A few lines are typed in the console; a script that lasts is written in the **Script Editor**, the other Python window of EMStudio (Blender's Text Editor beside its Python Console):"
+msgstr "Poche righe si scrivono nella console; uno script che resta si scrive nell'**Editor di script**, l'altra finestra Python di EMStudio (il Text Editor di Blender accanto alla sua Python Console):"
+
+msgid "Choose **Script Editor** from the type selector at the head of a window — or open the **Scripting** workspace: the **+** at the end of the workspace tabs ▸ *From a model* ▸ **Scripting** (the Script Editor on the left, the console under it, the Matrix on the right)."
+msgstr "Scegli **Editor di script** dal selettore del tipo in testa a una finestra — oppure apri lo spazio di lavoro **Scripting**: il **+** in fondo alle schede degli spazi ▸ *Da un modello* ▸ **Scripting** (l'Editor di script a sinistra, la console sotto, la Matrix a destra)."
+
+msgid "**Templates ▾** starts from an example of this reference: the units of an epoch, a rename in series, a table exported as CSV, a property added to the selection."
+msgstr "**Modelli ▾** parte da un esempio di questo riferimento: le unità di un'epoca, una rinomina in serie, una tabella esportata in CSV, una proprietà aggiunta alla selezione."
+
+msgid "**▶ Run Script** (:kbd:`Alt+P`, as in Blender) runs the script in the console's session — the same interpreter: what the script defines, the console sees — and its output goes to the console. **Try** (:kbd:`Alt+Shift+P`) runs it as a proof."
+msgstr "**▶ Esegui script** (:kbd:`Alt+P`, come in Blender) esegue lo script nella sessione della console — lo stesso interprete: quello che lo script definisce, la console lo vede — e quello che stampa va nella console. **Prova** (:kbd:`Alt+Maiusc+P`) lo esegue come prova."
+
+msgid "**Save** (:kbd:`⌘S` / :kbd:`Ctrl+S`) writes ``<name>.py`` in the ``scripts/`` folder beside the study's ``.em.json``; **Open ▾** lists the scripts there. A study with no folder (a room, a document never saved) keeps its scripts in the browser, for that project. A script changed and not saved shows **●** in the window's title."
+msgstr "**Salva** (:kbd:`⌘S` / :kbd:`Ctrl+S`) scrive ``<nome>.py`` nella cartella ``scripts/`` accanto al ``.em.json`` dello studio; **Apri ▾** elenca gli script che ci sono. Uno studio senza cartella (una stanza, un documento mai salvato) tiene i suoi script nel browser, per quel progetto. Uno script modificato e non salvato mostra **●** nel titolo della finestra."
+
+msgid "A script saved there runs outside EMStudio as it is (next section)."
+msgstr "Uno script salvato lì gira fuori da EMStudio così com'è (sezione seguente)."
+
+msgid "The same, outside EMStudio"
+msgstr "Lo stesso, fuori da EMStudio"
+
+msgid "Save the three blocks as files and run them on a copy of the study:"
+msgstr "Salva i tre blocchi come file ed eseguili su una copia dello studio:"
+
+msgid "``--author`` is who writes (in EMStudio it is the person signed in); ``--save`` writes the file back; ``--dry-run`` turns every write into a proof. Or in a notebook, with the author set once for the session:"
+msgstr "``--author`` è chi scrive (in EMStudio è la persona che ha fatto l'accesso); ``--save`` riscrive il file; ``--dry-run`` fa di ogni scrittura una prova. Oppure in un notebook, con l'autore impostato una volta per la sessione:"
+
+msgid "``em.help()`` prints what ``em`` offers where you are."
+msgstr "``em.help()`` stampa ciò che ``em`` offre dove sei."
+
+msgid "Next: :doc:`info_overview`."
+msgstr "Poi: :doc:`info_overview`."

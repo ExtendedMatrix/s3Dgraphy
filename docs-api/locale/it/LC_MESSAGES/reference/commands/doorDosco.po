@@ -1,0 +1,138 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-20 18:23+0100\n"
+"PO-Revision-Date: 2026-11-20 18:23+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "doorDosco"
+msgstr ""
+
+msgid "*Generated from EMStudio 17797d8 for em API 1.2.0.*"
+msgstr ""
+
+msgid "Id"
+msgstr ""
+
+msgid "``doorDosco``"
+msgstr ""
+
+msgid "Label (en)"
+msgstr ""
+
+msgid "Read as DosCo…"
+msgstr ""
+
+msgid "Label (it)"
+msgstr ""
+
+msgid "Leggi come DosCo…"
+msgstr ""
+
+msgid "Kind"
+msgstr ""
+
+msgid "Menu command — presses the page button ``btn-door-dosco``"
+msgstr ""
+
+msgid "Reachable from Python"
+msgstr ""
+
+msgid "yes — ``em.app.commands.run(\"doorDosco\")``"
+msgstr ""
+
+msgid "Script form"
+msgstr ""
+
+msgid "opens its window, filled with the parameters given; runs WITHOUT it when ``path`` is given (Blender's EXEC / INVOKE)"
+msgstr ""
+
+msgid "Returns"
+msgstr ""
+
+msgid "true when given"
+msgstr ""
+
+msgid "Writes to the graph"
+msgstr ""
+
+msgid "not declared"
+msgstr ""
+
+msgid "Drawn in"
+msgstr ""
+
+msgid "no menu — the command is kept for Python and the keys; its item was replaced by another entry"
+msgstr ""
+
+msgid "Shortcut"
+msgstr ""
+
+msgid "none"
+msgstr ""
+
+msgid "Defined in"
+msgstr ""
+
+msgid "``frontend/src/menu-table.ts:188``"
+msgstr ""
+
+msgid "What it does"
+msgstr ""
+
+msgid "**en** — Bring in a DosCo folder: each file with an EM id (D.12…) becomes the document of that id — its date, its licence, its role asked in one block"
+msgstr ""
+
+msgid "**it** — Porta dentro una cartella DosCo: ogni file con un id EM (D.12…) diventa il documento di quell'id — data, licenza e ruolo chiesti in blocco"
+msgstr ""
+
+msgid "**script** — Read a folder as DosCo: each file with an EM id becomes the document of that id. With ``path`` the folder picker does not open; the door shows what it found."
+msgstr ""
+
+msgid "Parameters"
+msgstr ""
+
+msgid "Name"
+msgstr ""
+
+msgid "Type"
+msgstr ""
+
+msgid "Default"
+msgstr ""
+
+msgid "What it is"
+msgstr ""
+
+msgid "``path``"
+msgstr ""
+
+msgid "``str``"
+msgstr ""
+
+msgid "``None``"
+msgstr ""
+
+msgid "the DosCo folder (absolute path)"
+msgstr ""
+
+msgid "Declared in ``frontend/src/script-commands.json:47`` — the one place the console's completion and this page read. A name the command does not take, a wrong type, a value not among the choices are refused with ``em.NotAvailable`` in the page's language, never dropped."
+msgstr ""
+
+msgid "From Python"
+msgstr ""
+
+msgid "With the values above it runs without a window; without them its window opens, filled with what was given (the question about unsaved work, when there is one, is still asked). If the command is not possible at that moment (its button disabled) the call raises ``em.NotAvailable`` (``py.noCommand``). Outside EMStudio (no host) the call raises ``em.NotAvailable``."
+msgstr ""

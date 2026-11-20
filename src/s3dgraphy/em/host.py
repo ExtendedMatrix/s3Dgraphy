@@ -40,15 +40,41 @@ class App(Protocol):
     :class:`NotAvailable` for it — the same shape where the idea exists in both
     applications, absent where it does not (SPEC §2.4)."""
 
-    def selection(self) -> List[str]: ...
-    def select(self, ids: Sequence[str]) -> None: ...
-    def view(self, name: str) -> None: ...
-    def notify(self, msg: str, level: str = "info") -> None: ...
-    def run_command(self, command_id: str, **slots: Any) -> Any: ...
-    def camera(self) -> Dict[str, Any]: ...
-    def set_camera(self, camera: Dict[str, Any]) -> None: ...
-    def frame(self, ids: Sequence[str]) -> None: ...
-    def pick(self, prompt: str, primitive: str = "point") -> Any: ...
+    def selection(self) -> List[str]:
+        """The ids of the selected nodes."""
+        ...
+
+    def select(self, ids: Sequence[str]) -> None:
+        """Replace the selection with these node ids."""
+        ...
+
+    def view(self, name: str) -> None:
+        """Bring the view ``name`` to the front."""
+        ...
+
+    def notify(self, msg: str, level: str = "info") -> None:
+        """Show a message (``level``: ``info``, ``warning``, ``error``)."""
+        ...
+
+    def run_command(self, command_id: str, **slots: Any) -> Any:
+        """Run an application command; returns what it returns."""
+        ...
+
+    def camera(self) -> Dict[str, Any]:
+        """The camera of the 3D Space."""
+        ...
+
+    def set_camera(self, camera: Dict[str, Any]) -> None:
+        """Move the camera of the 3D Space."""
+        ...
+
+    def frame(self, ids: Sequence[str]) -> None:
+        """Frame these nodes in the 3D Space."""
+        ...
+
+    def pick(self, prompt: str, primitive: str = "point") -> Any:
+        """Ask the person to place a ``primitive`` in the Space; return its geometry."""
+        ...
 
 
 @runtime_checkable
@@ -59,11 +85,25 @@ class Host(Protocol):
     name: str
     app: App
 
-    def graph(self) -> Any: ...
-    def overlay(self) -> Any: ...
-    def author(self) -> Optional[str]: ...
-    def caller(self) -> ConnectorDescriptor: ...
-    def language(self) -> Optional[str]: ...
+    def graph(self) -> Any:
+        """The open :class:`~s3dgraphy.graph.Graph`, or None."""
+        ...
+
+    def overlay(self) -> Any:
+        """The packages of the open document (a profile overlay)."""
+        ...
+
+    def author(self) -> Optional[str]:
+        """Who is working in this session (an ORCID…), or None."""
+        ...
+
+    def caller(self) -> ConnectorDescriptor:
+        """The descriptor of whoever is calling ``em`` (the console, a script)."""
+        ...
+
+    def language(self) -> Optional[str]:
+        """The interface language (``"en"``, ``"it"``), or None."""
+        ...
 
     def apply(self, delta: Delta, *, descriptor: ConnectorDescriptor, capability: str,
               label: str) -> Result:
@@ -89,30 +129,39 @@ class NoApp:
         raise NotAvailable(feature, self._host)
 
     def selection(self):
+        """Raises :class:`NotAvailable` (``selection``): there is no application."""
         self._no("selection")
 
     def select(self, ids):
+        """Raises :class:`NotAvailable` (``select``): there is no application."""
         self._no("select")
 
     def view(self, name):
+        """Raises :class:`NotAvailable` (``view``): there is no application."""
         self._no("view")
 
     def notify(self, msg, level="info"):
+        """Raises :class:`NotAvailable` (``notify``): there is no application."""
         self._no("notify")
 
     def run_command(self, command_id, **slots):
+        """Raises :class:`NotAvailable` (``commands.run``): there is no application."""
         self._no("commands.run")
 
     def camera(self):
+        """Raises :class:`NotAvailable` (``space.camera``): there is no application."""
         self._no("space.camera")
 
     def set_camera(self, camera):
+        """Raises :class:`NotAvailable` (``space.set_camera``): there is no application."""
         self._no("space.set_camera")
 
     def frame(self, ids):
+        """Raises :class:`NotAvailable` (``space.frame``): there is no application."""
         self._no("space.frame")
 
     def pick(self, prompt, primitive="point"):
+        """Raises :class:`NotAvailable` (``space.pick``): there is no application."""
         self._no("space.pick")
 
     def __bool__(self) -> bool:
@@ -163,9 +212,12 @@ class ScriptHost:
 
     # what em reads
     def graph(self) -> Any:
+        """The graph of the session, or None before :meth:`use` / :meth:`open`."""
         return self._graph
 
     def overlay(self) -> Any:
+        """The packages in use: the overlay given, else the container's
+        (``header.profiles``), else an empty one."""
         if self._overlay is not None:
             return self._overlay
         from ..profiles import EMPTY
@@ -173,18 +225,26 @@ class ScriptHost:
         return prof if prof is not None else EMPTY
 
     def author(self) -> Optional[str]:
+        """The session's author (``author=``), else ``S3DGRAPHY_AUTHOR``, else None."""
         return self._author or os.environ.get(AUTHOR_ENV) or None
 
     def caller(self) -> ConnectorDescriptor:
+        """The caller given, else a script's descriptor (:func:`script_caller`)."""
         if self._caller is None:
             self._caller = script_caller()
         return self._caller
 
     def language(self) -> Optional[str]:
+        """The language given, else ``S3DGRAPHY_LANG``, else None (English)."""
         return self._language or os.environ.get("S3DGRAPHY_LANG") or None
 
     # what a session does
     def use(self, graph: Any, *, container: Any = None, path: Optional[str] = None) -> Any:
+        """Make ``graph`` the session's graph (closing the previous one).
+
+        Emits ``document-closed`` for the previous graph, then
+        ``document-opened``. Returns ``graph``.
+        """
         if self._graph is not None:
             events.emit("document-closed", {"graph_id": getattr(self._graph, "graph_id", None),
                                             "path": self.path})
@@ -203,6 +263,12 @@ class ScriptHost:
         return self.use(graph, container=container, path=str(path))
 
     def save(self, path: Optional[str] = None) -> str:
+        """Write the graph's container to ``path`` (default: where it came
+        from), emit ``document-saved`` and return the path written.
+
+        Raises:
+            ValueError: no path, and the graph did not come from a file.
+        """
         from ..container import container_of, save_container_file
         target = path or self.path
         if not target:
@@ -214,6 +280,7 @@ class ScriptHost:
         return out
 
     def close(self) -> None:
+        """Forget the graph (emits ``document-closed``)."""
         if self._graph is not None:
             events.emit("document-closed", {"graph_id": getattr(self._graph, "graph_id", None),
                                             "path": self.path})
@@ -221,6 +288,13 @@ class ScriptHost:
 
     def apply(self, delta: Delta, *, descriptor: ConnectorDescriptor, capability: str,
               label: str) -> Result:
+        """Apply a delta to the live graph through the contract, as one step.
+
+        Records the step in :attr:`steps` and emits ``graph-changed``.
+
+        Returns:
+            Result: the contract's result (``ok=False`` with no graph).
+        """
         if self._graph is None:
             from .messages import message
             return Result(ok=False, message=message("no_graph"), data={"reason": "no-graph"})
@@ -250,6 +324,8 @@ def process_of(descriptor: ConnectorDescriptor, label: str, *, host: str) -> Dic
 
 
 def touched_ids(delta: Delta) -> List[str]:
+    """The ids of the nodes a delta touches (new, joined, changed, removed),
+    in order, each once — the ``ids`` of a ``graph-changed`` payload."""
     out: List[str] = []
     for n in delta.nodes:
         out.append(str(n.get("id")))
@@ -297,6 +373,13 @@ def uninstall() -> None:
 
 
 def current() -> Any:
+    """The host ``em`` talks to now; a fresh :class:`ScriptHost` when none
+    was installed.
+
+    Example:
+        >>> em.host.current().name
+        'none'
+    """
     global _current
     if _current is None:
         _current = ScriptHost()

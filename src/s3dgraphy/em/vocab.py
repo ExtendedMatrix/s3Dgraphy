@@ -20,6 +20,8 @@ from .messages import both
 
 
 class ConceptNotFound(EmError, KeyError):
+    """No installed vocabulary knows the URI. A ``KeyError`` too."""
+
     def __init__(self, uri: str):
         super().__init__(both("no_concept", uri=uri), uri=uri)
 
@@ -28,7 +30,15 @@ class ConceptNotFound(EmError, KeyError):
 
 
 class Concept:
-    """A concept of an installed vocabulary, read."""
+    """A concept of an installed vocabulary, read.
+
+    Attributes:
+        uri: the concept's URI.
+        vocabulary: the id of the vocabulary package it comes from.
+        version: the vocabulary's version.
+        attribution: the attribution the vocabulary asks for.
+        license: the vocabulary's licence.
+    """
 
     def __init__(self, uri: str, concept: Dict[str, Any], vocabulary: Dict[str, Any]):
         self.uri = uri
@@ -40,14 +50,17 @@ class Concept:
 
     @property
     def labels(self) -> Dict[str, str]:
+        """The preferred labels, ``{language: label}``."""
         return dict(self._c.get("pref") or {})
 
     @property
     def broader(self) -> List[str]:
+        """The URIs of the broader concepts."""
         return list(self._c.get("broader") or [])
 
     @property
     def narrower(self) -> List[str]:
+        """The URIs of the narrower concepts."""
         return list(self._c.get("narrower") or [])
 
     def label(self, lang: str = "en", *, aligned: bool = True) -> Optional[str]:
@@ -75,10 +88,34 @@ class Concept:
 
 
 class Vocab:
-    """``em.vocab``."""
+    """``em.vocab`` — the vocabularies installed on this machine.
+
+    A concept is read by its URI, with its labels; a search proposes
+    candidates. A label is never invented: when no installed vocabulary has
+    it, the answer is None.
+    """
 
     def concept(self, uri: str, *, vocabulary: Optional[str] = None,
                 version: Optional[str] = None) -> Concept:
+        """The concept with this URI, from the installed vocabularies.
+
+        Args:
+            uri: the concept's URI.
+            vocabulary: look in this vocabulary package first.
+            version: with ``vocabulary``, that exact version first.
+
+        Returns:
+            Concept: the concept, with its labels.
+
+        Raises:
+            ConceptNotFound: no installed vocabulary knows the URI.
+
+        Example:
+            >>> em.vocab.concept("https://example.org/nothing")
+            Traceback (most recent call last):
+            ...
+            s3dgraphy.em.vocab.ConceptNotFound: no installed vocabulary knows «https://example.org/nothing»
+        """
         from ..authorities.packages import concept_of
         found = concept_of(str(uri), vocabulary, version)
         if found is None:
@@ -87,6 +124,16 @@ class Vocab:
         return Concept(str(uri), concept, summary)
 
     def find(self, uri: str, **kw: Any) -> Optional[Concept]:
+        """Like :meth:`concept`, but None instead of raising.
+
+        Args:
+            uri: the concept's URI.
+            **kw: ``vocabulary`` and ``version``, as in :meth:`concept`.
+
+        Example:
+            >>> em.vocab.find("https://example.org/nothing") is None
+            True
+        """
         try:
             return self.concept(uri, **kw)
         except ConceptNotFound:
@@ -99,6 +146,12 @@ class Vocab:
         return search(text, lang=lang, serves=serves, limit=limit)
 
     def installed(self) -> List[Dict[str, Any]]:
+        """The vocabulary packages installed on this machine (one summary each).
+
+        Example:
+            >>> isinstance(em.vocab.installed(), list)
+            True
+        """
         from ..authorities.packages import vocab_installed
         return vocab_installed()
 
@@ -117,7 +170,12 @@ class ExtractorType(dict):
 
 
 class Profiles:
-    """``em.profiles``."""
+    """``em.profiles`` — the community packages (qualia, extractor types,
+    landmark sets, combiners).
+
+    Reads the packages the open document declares and this machine has (the
+    host's overlay), and those installed on the machine.
+    """
 
     def _overlay(self) -> Any:
         from . import host as _host
@@ -135,25 +193,39 @@ class Profiles:
         return list(getattr(getattr(_host.current(), "container", None), "profiles_missing", None) or [])
 
     def overlay(self) -> Any:
+        """The merged view of the active packages (a :class:`~s3dgraphy.profiles.ProfileOverlay`)."""
         return self._overlay()
 
     def installed(self) -> List[Dict[str, Any]]:
+        """The packages installed on this machine, active or not."""
         from .. import profiles as P
         return P.installed()
 
     def qualia_types(self) -> Dict[str, Dict[str, Any]]:
+        """The qualia (property types) of the active packages, by id."""
         return self._overlay().qualia_types()
 
     def extractor_types(self) -> Dict[str, Dict[str, Any]]:
+        """The extractor types of the active packages, by id."""
         return self._overlay().extractor_types()
 
     def combiner_types(self) -> Dict[str, Dict[str, Any]]:
+        """The combiner types of the active packages, by id."""
         return self._overlay().combiner_types()
 
     def landmark_sets(self) -> Dict[str, Dict[str, Any]]:
+        """The landmark sets (sets of canonical points) of the active packages, by id."""
         return self._overlay().landmark_sets()
 
     def extractor_type(self, type_id: str) -> ExtractorType:
+        """One extractor type, with its geometry (``.geometry``).
+
+        Args:
+            type_id: the prefixed id (``stat:punto_canonico``).
+
+        Raises:
+            KeyError: no active package declares it.
+        """
         ov = self._overlay()
         entry = ov.extractor_types().get(type_id)
         if entry is None:
@@ -161,13 +233,30 @@ class Profiles:
         return ExtractorType(type_id, entry, ov.extractor_geometry(type_id))
 
     def landmark_set(self, set_id: str) -> Dict[str, Any]:
+        """One landmark set (its canonical points).
+
+        Args:
+            set_id: the prefixed id (``stat:volto``).
+
+        Raises:
+            KeyError: no active package declares it.
+        """
         ls = self._overlay().landmark_set(set_id)
         if ls is None:
             raise KeyError(both("no_profile", ref=set_id)["en"])
         return ls
 
     def label(self, type_id: str, lang: str = "en") -> Optional[str]:
+        """The label of a package type in ``lang``, or None.
+
+        Args:
+            type_id: any prefixed id of the active packages.
+            lang: the language wanted.
+        """
         return self._overlay().label(type_id, lang)
 
     def __repr__(self) -> str:
         return f"<em.profiles: {len(self.active())} active>"
+
+
+__all__ = ["Vocab", "Concept", "ConceptNotFound", "Profiles", "ExtractorType"]

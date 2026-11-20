@@ -1,0 +1,72 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "has_author"
+msgstr ""
+
+msgid "Generated from the datamodels (nodes 1.6.51, connections 1.6.55) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``."
+msgstr ""
+
+msgid "*Represents the connection of a node with its author.*"
+msgstr ""
+
+msgid "Label (en)"
+msgstr ""
+
+msgid "Has author"
+msgstr ""
+
+msgid "Label (it)"
+msgstr ""
+
+msgid "Ha autore"
+msgstr ""
+
+msgid "Reverse"
+msgstr ""
+
+msgid "``is_author_of``"
+msgstr ""
+
+msgid "Source"
+msgstr ""
+
+msgid ":ref:`GraphNode <type-GraphNode>`, :ref:`StratigraphicNode <type-StratigraphicNode>`, :ref:`ParadataNode <type-ParadataNode>`, :ref:`GroupNode <type-GroupNode>`, :ref:`DocumentNode <type-DocumentNode>`, :ref:`ExtractorNode <type-ExtractorNode>`, :ref:`CombinerNode <type-CombinerNode>`, :ref:`PropertyNode <type-PropertyNode>`, :ref:`EpochNode <type-EpochNode>`, :ref:`DTCNode <type-DTCNode>`, :ref:`NarrativeNode <type-NarrativeNode>`, :ref:`ResourceNode <type-ResourceNode>`, :ref:`TranslationNode <type-TranslationNode>`"
+msgstr ""
+
+msgid "Target"
+msgstr ""
+
+msgid ":ref:`AuthorNode <type-AuthorNode>`, :ref:`AuthorAINode <type-AuthorAINode>`"
+msgstr ""
+
+msgid "CIDOC"
+msgstr ""
+
+msgid "``prov:wasAttributedTo · em:hasAuthor``"
+msgstr ""
+
+msgid "Description"
+msgstr ""
+
+msgid "Represents the connection of a node with its author. Target can be an AuthorNode (human) or AuthorAINode (AI-assisted authoring). Source covers the full range of EM node types so that the resolver can walk from any scope level down to the author. SOURCE WIDENED 2026-08-16 (asset DTC protocol): ResourceNode joins the list. 'Who took this photograph' is exactly prov:wasAttributedTo on an information object, and the mapping is already domain-neutral — the omission was an oversight of scope, not a semantic boundary: the list exists so the resolver can walk from ANY scope down to the author, and a resource is a scope somebody attributes. It is also the shape the asset enrichment protocol needs, where the AUTHOR of the bytes (possibly absent, possibly dead) is declared by an ATTRIBUTOR who is somebody else (s3dgraphy.rights.enrich\\_asset\\_dtc, docs/asset-dtc-protocol.md)."
+msgstr ""
+
+msgid "From em"
+msgstr ""

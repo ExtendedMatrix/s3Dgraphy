@@ -1,0 +1,294 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "``em.plugins`` — plugins loaded from disk"
+msgstr ""
+
+msgid "Generated for em API |api| from the docstrings of :mod:`s3dgraphy.em.plugins`."
+msgstr ""
+
+msgid "The plugins loaded from disk — W14 of the extensions plan (MICRO-PL17, E.D. 18 Nov 2026)."
+msgstr ""
+
+msgid "A plugin is the ``[code]`` section of an ``em-extension.toml`` (a pure plugin, or the code of a mixed package), installed by :mod:`s3dgraphy.extensions` (W21) under ``~/.s3dgraphy/plugins/<source>/<id>/<code version>/`` with its ``.install.json``, and made active per host in ``enabled.json``. This module LOADS what is active, in the host's Python (SPEC-plugin §3.2):"
+msgstr ""
+
+msgid "**discovery** — :func:`sync` reads ``active_code(host)``;"
+msgstr ""
+
+msgid "**checks without running** — the folder is there; ``em_api_min``/``max`` against :data:`s3dgraphy.em.API_VERSION` (§14.7); the wheels' Python against this interpreter; the descriptor holds; the module does not hide one of the program's (a plugin called ``json``);"
+msgstr ""
+
+msgid "**activation** — the folder (and its wheels) on ``sys.path``, the module imported, ``setup(ctx)`` called: it wires the declared commands (``ctx.command``), listens (``ctx.on``), exposes functions to the console (``ctx.expose``);"
+msgstr ""
+
+msgid "**use** — every command passes the contract's ``invoke`` (the four refusals: unknown, declared and not wired, a slot missing, a write with no author); inside it, ``em.write`` writes AS THE PLUGIN — its declared capabilities are the seam's (``guard_write``), a command declared ``writes = false`` cannot write at all; a handler that raises is caught and said, the host stays up;"
+msgstr ""
+
+msgid "**deactivation** — ``teardown(ctx)``, its listeners and handlers off. The module stays in ``sys.modules`` (§3.2: not promised in 1.6): another VERSION of the same plugin needs the host to restart, and says so."
+msgstr ""
+
+msgid "A command IS a :class:`~s3dgraphy.contract.Descriptor` (``name`` = ``<plugin>/<command>``, ``input_schema`` = its slots, ``writes``), registered in a :class:`~s3dgraphy.contract.Registry`. Where it is drawn is the host's: the manifest's ``in`` names the slots (:mod:`s3dgraphy.extensions.slots`)."
+msgstr ""
+
+msgid "``ctx.package`` is the data of the same envelope (a mixed package: the package's version the code came with), ``None`` for a pure plugin (§17.4)."
+msgstr ""
+
+msgid "MICRO-PL25 (row X5 of the plan) · the slots of phase 2. A command may also be drawn in ``inspector.section@1``, ``tabular.column@1``, ``statusbar@1`` (it only reads: :func:`compute` runs many at once and gives back their values in the shape the host draws, :func:`shape`) and ``space.tool@1`` (its ``primitive`` and ``icon``; the host fills its ``geometry`` slot with what the person placed). ``[[code.panels]]`` are the declarative panels (``panel@1``): :class:`PanelDecl`, fields the host draws, values computed by read-only commands, buttons that invoke commands."
+msgstr ""
+
+msgid "MICRO-GEO11 (row G10 of the geophysics plan) · ``space.layer@1``: a read-only command (``layer = \"raster_stack\"``) describes a layer of the Space — planes with a picture in a frame of their own — and the host draws it; :func:`shape` gives the one description a host reads (:func:`_shape_layer`), the pictures named by a path INSIDE the plugin's own data folder (``plugins-data/<id>/``), the only place a host serves them from."
+msgstr ""
+
+msgid "Bases: :py:class:`object`"
+msgstr ""
+
+msgid "``[[code.commands]]``, read."
+msgstr ""
+
+msgid "Parameters"
+msgstr ""
+
+msgid "what it lays, its glyph"
+msgstr ""
+
+msgid "type"
+msgstr ""
+
+msgid "MICRO-PL25 (X5) · a tool of the Space"
+msgstr ""
+
+msgid "an Inspector section's buttons (command ids of the same plugin)"
+msgstr ""
+
+msgid "a column's sheet of the Tabular"
+msgstr ""
+
+msgid "extensions offered as «Read as» (never taken), whether it reads a folder, the panel the door opens instead"
+msgstr ""
+
+msgid "MICRO-GEO09 · door.reader@2"
+msgstr ""
+
+msgid "the kind of layer the command describes"
+msgstr ""
+
+msgid "MICRO-GEO11 · space.layer@1"
+msgstr ""
+
+msgid "The command's full name, ``<plugin>/<command>``."
+msgstr ""
+
+msgid "The name of the slot a reader's file or folder fills (the first of kind path)."
+msgstr ""
+
+msgid "The command's label in ``lang``, else English, else any, else its id."
+msgstr ""
+
+msgid "Return type"
+msgstr ""
+
+msgid "The declaration as plain data (what a host draws from)."
+msgstr ""
+
+msgid "One plugin found on disk, and what became of it."
+msgstr ""
+
+msgid "``state`` is one of ``loaded``, ``failed``, ``refused``, ``restart``; ``problems`` says why (each problem in English and Italian). Once loaded, ``handlers`` are its wired commands and ``exposed`` what it gives the console (``em.ext``)."
+msgstr ""
+
+msgid "a development copy hiding an installed one)"
+msgstr ""
+
+msgid "what does not refuse it but is said (W15a"
+msgstr ""
+
+msgid "MICRO-PL25 (X5) · the declarative panels (panel@1)"
+msgstr ""
+
+msgid "The plugin's display name (its id when the manifest gives none)."
+msgstr ""
+
+msgid "The data package of the same envelope (a mixed package), or None."
+msgstr ""
+
+msgid "W15a · loaded from the development folder, where it is (never installed)."
+msgstr ""
+
+msgid "Record a problem by its message key (in English and Italian)."
+msgstr ""
+
+msgid "The plugin's state as plain data (for a host's list of plugins)."
+msgstr ""
+
+msgid "``ctx.package`` — the data of the same envelope: the overlay of that one package (``landmark_set``, ``extractor_type``…) at the data version the code came with (or the newest compatible one installed)."
+msgstr ""
+
+msgid "A landmark set of this package, or None."
+msgstr ""
+
+msgid "The extractor types of this package, by id."
+msgstr ""
+
+msgid "The combiner types of this package, by id."
+msgstr ""
+
+msgid "The qualia (property types) of this package, by id."
+msgstr ""
+
+msgid "The label of a type of this package in ``lang``, or None."
+msgstr ""
+
+msgid "What an exporter's command returns (``ctx.file``): the host saves it."
+msgstr ""
+
+msgid "``{name, mime, text}``, or ``{name, mime, b64}`` for bytes."
+msgstr ""
+
+msgid "``ctx`` — what ``setup(ctx)`` receives."
+msgstr ""
+
+msgid "``~/.s3dgraphy/plugins-data/<id>/`` — the plugin's own state, out of the document, kept across updates (§14.3). Made when asked."
+msgstr ""
+
+msgid "Wire a DECLARED command: ``fn(slots) -> value``. A command not declared in the manifest is refused (a menu entry is a promise of the manifest, not of the code). Usable as a decorator."
+msgstr ""
+
+msgid "Listen to an event of every document (slot ``event@1``). The listener writes AS the plugin: a write it opens runs after the delivery."
+msgstr ""
+
+msgid "A function (or value) for the console: ``em.ext.<id>.<name>`` (slot ``console@1``)."
+msgstr ""
+
+msgid "What an exporter returns (``menu.file.export@1``, ``export.narrative@1``)."
+msgstr ""
+
+msgid "G-5 (MICRO-GEO02) · stamp a file this plugin made, in one line: ``<artifact>.stamp.json`` beside it, the plugin as the agent (id and version). ``inputs``, ``parameters``, ``dtc_kind``, ``technique``…: :func:`s3dgraphy.em.stamps.stamp_artifact`. Encouraged, never required."
+msgstr ""
+
+msgid "The plugin (and command) on whose behalf ``em`` is acting now (see :func:`calling_now`)."
+msgstr ""
+
+msgid "its declared capabilities are what the seam checks."
+msgstr ""
+
+msgid "The plugin's descriptor"
+msgstr ""
+
+msgid "no)."
+msgstr ""
+
+msgid "Whether the command may write (``writes = false`` in the manifest"
+msgstr ""
+
+msgid "``<plugin>/<command>``, or the plugin's id outside a command."
+msgstr ""
+
+msgid "``em.ext`` — what the loaded plugins expose to the console (``em.ext.facemesh_fit.propose``; ``em.ext[\"esempio-statuaria\"]`` for an id that is not a Python name: ``-`` reads as ``_`` too)."
+msgstr ""
+
+msgid "The plugin (and command) on whose behalf ``em.write`` is writing, or None."
+msgstr ""
+
+msgid "Load what is active for ``host`` and not loaded; unload what is no longer active; a version changed needs a restart (said). Cheap: one read of ``enabled.json``. Returns the plugins, in id order."
+msgstr ""
+
+msgid "``dev`` (W15a): the plugins of the development folder (:func:`s3dgraphy.extensions.dev_dir`) count too, loaded where they are, with no installation and no trust question — the HOST says when (EMStudio: «Funzioni sperimentali» on). A development copy hides an installed plugin with the same id, and says so. ``dev=False`` unloads them."
+msgstr ""
+
+msgid "Every plugin known to this process (whatever its state), by id."
+msgstr ""
+
+msgid "The plugin ``pid`` known to this process, or None."
+msgstr ""
+
+msgid "``teardown(ctx)``; the listeners, handlers and exposed functions off. The module stays imported (§3.2)."
+msgstr ""
+
+msgid "Every plugin off (tests; a host closing)."
+msgstr ""
+
+msgid "The declared commands of the plugins of this process (``slot``: only those drawn there, ``\"context.node\"`` or ``\"context.node@1\"``)."
+msgstr ""
+
+msgid "Everything a host draws: the plugins (state, problems in EN and IT, commands with their slots), and how many listeners per event."
+msgstr ""
+
+msgid "Every declared command as a Descriptor (wired or not)."
+msgstr ""
+
+msgid "The command as the contract sees it."
+msgstr ""
+
+msgid "Run a plugin's command through the contract. ``result.data``: ``reason`` (a refusal's name), ``messages`` (EN, IT), ``value`` (what the handler returned, when JSON can say it), ``file`` (an exporter's)."
+msgstr ""
+
+msgid "Every ``check@1`` command of the loaded plugins, read-only: the warnings they return (``{rule, sev, node, txt}``), each with its plugin; a check that fails or returns something else is ONE warning that says so."
+msgstr ""
+
+msgid "The readers of «Porta dentro…» (``door.reader``) for this file or folder."
+msgstr ""
+
+msgid "A file: those that ACCEPT it by its extension (taken from the host); with ``claimed=True`` those that only CLAIM it (``door.reader@2``: offered as «Read as: …» beside the host's own reading, never taken). A folder (``is_dir``; None = ask the disk): the ``@2`` readers with ``folders = true``."
+msgstr ""
+
+msgid "The commands of a ``[code]`` section; a command with an entry the host cannot draw keeps the others (§14.7: the entry, not the plugin)."
+msgstr ""
+
+msgid "The folder of the plugins' own state, kept across updates: ``S3DGRAPHY_PLUGINS_DATA_DIR``, else ``~/.s3dgraphy/plugins-data``."
+msgstr ""
+
+msgid "the folder of a plugin's own state, kept across updates (SPEC-plugin §14.3)"
+msgstr ""
+
+msgid "``[[code.panels]]``, read (``panel@1``, MICRO-PL25): a declarative panel — the host draws its fields; nothing of the plugin runs in the page."
+msgstr ""
+
+msgid "The panel's full name, ``<plugin>/<panel>``."
+msgstr ""
+
+msgid "The panels of a ``[code]`` section; a field that does not read is left out (the validator said it), a field that names a command the plugin does not declare too."
+msgstr ""
+
+msgid "What a host draws of a read-only command's ``value`` in ``slot``:"
+msgstr ""
+
+msgid "``statusbar`` — one line of text (≤ :data:`STATUS_MAX`);"
+msgstr ""
+
+msgid "``tabular.column`` — ``{id: text}`` (each ≤ :data:`CELL_MAX`);"
+msgstr ""
+
+msgid "``inspector.section`` and a panel's ``value`` — rows ``[{label, value}]`` (≤ :data:`ROWS_MAX`) from a dict (label → value), a list of ``{label, value}`` or of pairs, or a text (one row without a label);"
+msgstr ""
+
+msgid "``space.layer`` (MICRO-GEO11) — a list of layers (≤ :data:`LAYERS_MAX`) from a layer or a list of layers, each as :func:`_shape_layer` gives it."
+msgstr ""
+
+msgid "``(False, None)`` when the value has another shape (said by the caller)."
+msgstr ""
+
+msgid "The values of phase 2 at once: each item ``{key, plugin, command, slot, slots}`` is a READ-ONLY command (``writes = false``; one that is not is refused before it runs, one that tries to write is refused by the seam) run through the contract; the answer per item ``{key, ok, value}`` (in the shape of :func:`shape`) or ``{key, ok: false, messages: {en, it}}``. At most :data:`COMPUTE_MAX` items; one that fails never stops the others."
+msgstr ""
+
+msgid "MICRO-PL25 · the declarative panels of the loaded plugins (``panel@1``)."
+msgstr ""
+
+msgid "MICRO-PL25 · the tools of the Space of the loaded plugins (``space.tool@1``)."
+msgstr ""

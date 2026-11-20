@@ -1,0 +1,72 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "has_embargo"
+msgstr ""
+
+msgid "Generated from the datamodels (nodes 1.6.51, connections 1.6.55) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``."
+msgstr ""
+
+msgid "*Indicates that an element is subject to a temporal embargo.*"
+msgstr ""
+
+msgid "Label (en)"
+msgstr ""
+
+msgid "Has embargo"
+msgstr ""
+
+msgid "Label (it)"
+msgstr ""
+
+msgid "Ha embargo"
+msgstr ""
+
+msgid "Reverse"
+msgstr ""
+
+msgid "``is_embargo_of``"
+msgstr ""
+
+msgid "Source"
+msgstr ""
+
+msgid ":ref:`Node <type-Node>`, :ref:`GraphNode <type-GraphNode>`, :ref:`LicenseNode <type-LicenseNode>`"
+msgstr ""
+
+msgid "Target"
+msgstr ""
+
+msgid ":ref:`EmbargoNode <type-EmbargoNode>`"
+msgstr ""
+
+msgid "CIDOC"
+msgstr ""
+
+msgid "``P104_is_subject_to``"
+msgstr ""
+
+msgid "Description"
+msgstr ""
+
+msgid "Indicates that an element is subject to a temporal embargo. Source can be any node (GraphNode for canvas-wide embargo, LicenseNode for license-scoped embargo, or any node for node-scoped embargo), mirroring has\\_license."
+msgstr ""
+
+msgid "From em"
+msgstr ""

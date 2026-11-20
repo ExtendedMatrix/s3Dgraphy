@@ -1,0 +1,147 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "TranslationNode"
+msgstr ""
+
+msgid "Generated from the datamodels (nodes 1.6.51, connections 1.6.55) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``."
+msgstr ""
+
+msgid "*ONE TRANSLATION of one text field of one node (E.D.*"
+msgstr ""
+
+msgid "Class"
+msgstr ""
+
+msgid "``TranslationNode``"
+msgstr ""
+
+msgid "node_type"
+msgstr ""
+
+msgid "``translation``"
+msgstr ""
+
+msgid "Parent"
+msgstr ""
+
+msgid ":ref:`Node <type-Node>`"
+msgstr ""
+
+msgid "Label (en)"
+msgstr ""
+
+msgid "Translation"
+msgstr ""
+
+msgid "Label (it)"
+msgstr ""
+
+msgid "Traduzione"
+msgstr ""
+
+msgid "CIDOC"
+msgstr ""
+
+msgid "``E33 Linguistic Object``"
+msgstr ""
+
+msgid "Description"
+msgstr ""
+
+msgid "ONE TRANSLATION of one text field of one node (E.D. 2026-10-01, «Le traduzioni»). The ORIGINAL stays a string in its own field, in the language it was written in — data.lang on the node says which, else the study's working language — and a translation never overwrites it: the original is testimony. Each translation is a node of its own, reached from the translated node by has\\_translation (reverse is\\_translation\\_of). Fields in data: lang (the language of ARRIVAL, BCP 47 — the same key as every node's data.lang, so its own text takes its tag by the ordinary cascade); from\\_lang (the language of DEPARTURE, the original's WHEN it was translated: written, because the original can change); field (the translated field in the CRDT's vocabulary: description, or data.<key> — a PropertyNode's value is data.value; name is never translated, names are invariant identities); text; method (manual \\| ai \\| edition); source\\_digest ('sha256:<hex>' of the original text translated, NFC + UTF-8: when the original changes the digests differ and the translation is «da riallineare», which no signature clears); review\\_requested (true when the translator asks for a review, «da rivedere»). WHO translated is has\\_author (an AuthorNode); WHEN is the editorial stamp created\\_at. An AI translation carries data.ai\\_assisted and stays among the warnings until a person verifies it (data.validated\\_by / validated\\_at, the same two fields that close a requested review: ai\\_validation.verify). A translation from a published EDITION reaches the DocumentNode of that edition with extracted\\_from: a published translation is a source, Vitruvius read through a translator is an interpretation."
+msgstr ""
+
+msgid "*Italiano*: UNA TRADUZIONE di un campo di testo di un nodo (E.D. 1 ott 2026, «Le traduzioni»). L'ORIGINALE resta una stringa nel suo campo, nella lingua in cui è nato (data.lang del nodo, altrimenti la lingua dello studio), e una traduzione non lo sovrascrive mai: l'originale è testimonianza. Ogni traduzione è un nodo, raggiunto da has\\_translation, con lang (arrivo), from\\_lang (partenza, scritta perché l'originale può cambiare), field (description o data.<chiave>; il nome non si traduce), text, method (manual \\| ai \\| edition), source\\_digest (sha256 dell'originale tradotto: se cambia, la traduzione è «da riallineare») e review\\_requested («da rivedere»). Chi ha tradotto: has\\_author; una traduzione AI resta tra gli avvisi finché una persona non la verifica (validated\\_by); da un'edizione: extracted\\_from verso il DocumentNode."
+msgstr ""
+
+msgid "Fields"
+msgstr ""
+
+msgid "Field"
+msgstr ""
+
+msgid "Mapping / note"
+msgstr ""
+
+msgid "``name``"
+msgstr ""
+
+msgid "P1\\_is\\_identified\\_by"
+msgstr ""
+
+msgid "``description``"
+msgstr ""
+
+msgid "P3\\_has\\_note"
+msgstr ""
+
+msgid "``text``"
+msgstr ""
+
+msgid "P190\\_has\\_symbolic\\_content"
+msgstr ""
+
+msgid "``lang``"
+msgstr ""
+
+msgid "P72\\_has\\_language"
+msgstr ""
+
+msgid "``from_lang``"
+msgstr ""
+
+msgid "em:sourceLanguage"
+msgstr ""
+
+msgid "``field``"
+msgstr ""
+
+msgid "em:translatedField"
+msgstr ""
+
+msgid "``method``"
+msgstr ""
+
+msgid "em:translationMethod"
+msgstr ""
+
+msgid "``source_digest``"
+msgstr ""
+
+msgid "em:sourceDigest"
+msgstr ""
+
+msgid "``review_requested``"
+msgstr ""
+
+msgid "em:reviewRequested"
+msgstr ""
+
+msgid "Edges"
+msgstr ""
+
+msgid "**Outgoing** (this node is the source): :ref:`extracted_from <edge-extracted_from>`, :ref:`generic_connection <edge-generic_connection>`, :ref:`has_author <edge-has_author>`, :ref:`has_embargo <edge-has_embargo>`, :ref:`has_license <edge-has_license>`, :ref:`has_semantic_shape <edge-has_semantic_shape>`, :ref:`has_translation <edge-has_translation>`, :ref:`was_revision_of <edge-was_revision_of>`"
+msgstr ""
+
+msgid "**Incoming** (this node is the target): :ref:`generic_connection <edge-generic_connection>`, :ref:`has_translation <edge-has_translation>`, :ref:`was_revision_of <edge-was_revision_of>`"
+msgstr ""
+
+msgid "From em"
+msgstr ""

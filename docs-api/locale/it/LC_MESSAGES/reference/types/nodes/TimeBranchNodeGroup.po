@@ -1,0 +1,102 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "TimeBranchNodeGroup"
+msgstr ""
+
+msgid "Generated from the datamodels (nodes 1.6.51, connections 1.6.55) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``."
+msgstr ""
+
+msgid "*An alternative timeline aggregating a set of mutually exclusive beliefs about a temporal interval.*"
+msgstr ""
+
+msgid "Class"
+msgstr ""
+
+msgid "``TimeBranchNodeGroup``"
+msgstr ""
+
+msgid "node_type"
+msgstr ""
+
+msgid "Parent"
+msgstr ""
+
+msgid ":ref:`GroupNode <type-GroupNode>`"
+msgstr ""
+
+msgid "Label (en)"
+msgstr ""
+
+msgid "Time Branch Node Group"
+msgstr ""
+
+msgid "Label (it)"
+msgstr ""
+
+msgid "Gruppo di ramo temporale"
+msgstr ""
+
+msgid "CIDOC"
+msgstr ""
+
+msgid "``E4 Period``"
+msgstr ""
+
+msgid "Description"
+msgstr ""
+
+msgid "An alternative timeline aggregating a set of mutually exclusive beliefs about a temporal interval. Two TimeBranch instances can be connected via em:contrastsWith (symmetric) to express alternative reconstructions of the same period. The Period nature (E4) anchors temporal identity; the alternative-set semantic is captured by contrastsWith."
+msgstr ""
+
+msgid "*Italiano*: Una linea temporale alternativa che aggrega un insieme di convinzioni mutuamente esclusive su un intervallo temporale. Due istanze di TimeBranch possono essere collegate tramite em:contrastsWith (simmetrica) per esprimere ricostruzioni alternative dello stesso periodo. La natura di Period (E4) ancora l'identità temporale; la semantica di insieme alternativo è espressa da contrastsWith."
+msgstr ""
+
+msgid "Fields"
+msgstr ""
+
+msgid "Field"
+msgstr ""
+
+msgid "Mapping / note"
+msgstr ""
+
+msgid "``name``"
+msgstr ""
+
+msgid "P1\\_is\\_identified\\_by"
+msgstr ""
+
+msgid "``description``"
+msgstr ""
+
+msgid "P3\\_has\\_note"
+msgstr ""
+
+msgid "Edges"
+msgstr ""
+
+msgid "**Outgoing** (this node is the source): :ref:`contrasts_with <edge-contrasts_with>`, :ref:`generic_connection <edge-generic_connection>`, :ref:`has_author <edge-has_author>`, :ref:`has_embargo <edge-has_embargo>`, :ref:`has_license <edge-has_license>`, :ref:`has_semantic_shape <edge-has_semantic_shape>`, :ref:`has_translation <edge-has_translation>`"
+msgstr ""
+
+msgid "**Incoming** (this node is the target): :ref:`contrasts_with <edge-contrasts_with>`, :ref:`generic_connection <edge-generic_connection>`, :ref:`has_timebranch <edge-has_timebranch>`, :ref:`is_in_timebranch <edge-is_in_timebranch>`"
+msgstr ""
+
+msgid "From em"
+msgstr ""

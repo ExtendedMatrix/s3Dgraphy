@@ -1,0 +1,120 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "EpochNode"
+msgstr ""
+
+msgid "Generated from the datamodels (nodes 1.6.51, connections 1.6.55) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``."
+msgstr ""
+
+msgid "*Node representing a temporal epoch.*"
+msgstr ""
+
+msgid "Class"
+msgstr ""
+
+msgid "``EpochNode``"
+msgstr ""
+
+msgid "node_type"
+msgstr ""
+
+msgid "Parent"
+msgstr ""
+
+msgid ":ref:`Node <type-Node>`"
+msgstr ""
+
+msgid "Label (en)"
+msgstr ""
+
+msgid "Epoch"
+msgstr ""
+
+msgid "Label (it)"
+msgstr ""
+
+msgid "Epoca"
+msgstr ""
+
+msgid "CIDOC"
+msgstr ""
+
+msgid "``E4 Period``"
+msgstr ""
+
+msgid "Description"
+msgstr ""
+
+msgid "Node representing a temporal epoch. It is a convenient grouping that allows attributing a series of actions to a temporal delta. Once the specific chronology data, expressed as start\\_time and end\\_time properties of individual SUs, is defined through dating elements, these epoch nodes are ignored where such specific data are available."
+msgstr ""
+
+msgid "*Italiano*: Nodo che rappresenta un'epoca temporale. È un raggruppamento di comodo che permette di attribuire una serie di azioni a un intervallo temporale. Una volta definiti, tramite elementi di datazione, i dati cronologici specifici espressi come proprietà start\\_time ed end\\_time delle singole US, questi nodi epoca vengono ignorati laddove tali dati specifici siano disponibili."
+msgstr ""
+
+msgid "Fields"
+msgstr ""
+
+msgid "Field"
+msgstr ""
+
+msgid "Mapping / note"
+msgstr ""
+
+msgid "``name``"
+msgstr ""
+
+msgid "P1\\_is\\_identified\\_by"
+msgstr ""
+
+msgid "``description``"
+msgstr ""
+
+msgid "P3\\_has\\_note"
+msgstr ""
+
+msgid "``start_time``"
+msgstr ""
+
+msgid "P82a\\_begin\\_of\\_the\\_begin"
+msgstr ""
+
+msgid "``end_time``"
+msgstr ""
+
+msgid "P82b\\_end\\_of\\_the\\_end"
+msgstr ""
+
+msgid "``color``"
+msgstr ""
+
+msgid "P90\\_has\\_value"
+msgstr ""
+
+msgid "Edges"
+msgstr ""
+
+msgid "**Outgoing** (this node is the source): :ref:`generic_connection <edge-generic_connection>`, :ref:`has_author <edge-has_author>`, :ref:`has_embargo <edge-has_embargo>`, :ref:`has_license <edge-has_license>`, :ref:`has_paradata_nodegroup <edge-has_paradata_nodegroup>`, :ref:`has_property <edge-has_property>`, :ref:`has_representation_model <edge-has_representation_model>`, :ref:`has_semantic_shape <edge-has_semantic_shape>`, :ref:`has_sub_epoch <edge-has_sub_epoch>`, :ref:`has_translation <edge-has_translation>`"
+msgstr ""
+
+msgid "**Incoming** (this node is the target): :ref:`generic_connection <edge-generic_connection>`, :ref:`has_first_epoch <edge-has_first_epoch>`, :ref:`has_sub_epoch <edge-has_sub_epoch>`, :ref:`survive_in_epoch <edge-survive_in_epoch>`"
+msgstr ""
+
+msgid "From em"
+msgstr ""

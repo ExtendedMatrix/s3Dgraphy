@@ -1,0 +1,105 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "ProjectNode"
+msgstr ""
+
+msgid "Generated from the datamodels (nodes 1.6.51, connections 1.6.55) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``."
+msgstr ""
+
+msgid "*HC13 Project (HDT-O, ECHOES D7.1): the coordinated activities of institutions/research groups producing heritage-related outcomes; the organizational context under which studies are carried out and under which HDTs are created and curated (HC11 maintenance is carried out under a project, HP20).*"
+msgstr ""
+
+msgid "Class"
+msgstr ""
+
+msgid "``ProjectNode``"
+msgstr ""
+
+msgid "node_type"
+msgstr ""
+
+msgid "``project``"
+msgstr ""
+
+msgid "Parent"
+msgstr ""
+
+msgid ":ref:`Node <type-Node>`"
+msgstr ""
+
+msgid "Label (en)"
+msgstr ""
+
+msgid "Project"
+msgstr ""
+
+msgid "Label (it)"
+msgstr ""
+
+msgid "Progetto"
+msgstr ""
+
+msgid "CIDOC"
+msgstr ""
+
+msgid "``hdto:HC13_Project``"
+msgstr ""
+
+msgid "Description"
+msgstr ""
+
+msgid "HC13 Project (HDT-O, ECHOES D7.1): the coordinated activities of institutions/research groups producing heritage-related outcomes; the organizational context under which studies are carried out and under which HDTs are created and curated (HC11 maintenance is carried out under a project, HP20). Includes studies via crm:P9\\_consists\\_of (D7.1 defines no direct HC13->HC9 property). HDT-O-view node: not shown in the stratigrapher palette."
+msgstr ""
+
+msgid "*Italiano*: HC13 Project (HDT-O, ECHOES D7.1): le attività coordinate di istituzioni/gruppi di ricerca che producono risultati relativi al patrimonio; il contesto organizzativo nel quale si svolgono gli studi e si creano e curano gli HDT (la manutenzione HC11 è svolta nell'ambito di un progetto, HP20). Include gli studi tramite crm:P9\\_consists\\_of (D7.1 non definisce alcuna proprietà diretta HC13->HC9). Nodo della vista HDT-O: non mostrato nella palette dello stratigrafo."
+msgstr ""
+
+msgid "Fields"
+msgstr ""
+
+msgid "Field"
+msgstr ""
+
+msgid "Mapping / note"
+msgstr ""
+
+msgid "``name``"
+msgstr ""
+
+msgid "P1\\_is\\_identified\\_by"
+msgstr ""
+
+msgid "``description``"
+msgstr ""
+
+msgid "P3\\_has\\_note"
+msgstr ""
+
+msgid "Edges"
+msgstr ""
+
+msgid "**Outgoing** (this node is the source): :ref:`generic_connection <edge-generic_connection>`, :ref:`has_embargo <edge-has_embargo>`, :ref:`has_license <edge-has_license>`, :ref:`has_semantic_shape <edge-has_semantic_shape>`, :ref:`has_translation <edge-has_translation>`, :ref:`includes_study <edge-includes_study>`"
+msgstr ""
+
+msgid "**Incoming** (this node is the target): :ref:`generic_connection <edge-generic_connection>`"
+msgstr ""
+
+msgid "From em"
+msgstr ""

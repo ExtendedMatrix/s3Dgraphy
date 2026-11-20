@@ -1,0 +1,120 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "DocumentNode"
+msgstr ""
+
+msgid "Generated from the datamodels (nodes 1.6.51, connections 1.6.55) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``."
+msgstr ""
+
+msgid "*Node that represents a document or source.*"
+msgstr ""
+
+msgid "Class"
+msgstr ""
+
+msgid "``DocumentNode``"
+msgstr ""
+
+msgid "node_type"
+msgstr ""
+
+msgid "``document``"
+msgstr ""
+
+msgid "Parent"
+msgstr ""
+
+msgid ":ref:`ParadataNode <type-ParadataNode>`"
+msgstr ""
+
+msgid "Label (en)"
+msgstr ""
+
+msgid "Document"
+msgstr ""
+
+msgid "Label (it)"
+msgstr ""
+
+msgid "Documento"
+msgstr ""
+
+msgid "CIDOC"
+msgstr ""
+
+msgid "``E31 Document``"
+msgstr ""
+
+msgid "Description"
+msgstr ""
+
+msgid "Node that represents a document or source. Attributes: data (dict): Additional metadata, such as 'url\\_type'."
+msgstr ""
+
+msgid "*Italiano*: Nodo che rappresenta un documento o una fonte. Attributi: data (dict): metadati aggiuntivi, come 'url\\_type'."
+msgstr ""
+
+msgid "Fields"
+msgstr ""
+
+msgid "Field"
+msgstr ""
+
+msgid "Mapping / note"
+msgstr ""
+
+msgid "``acquired``"
+msgstr ""
+
+msgid "date"
+msgstr ""
+
+msgid "``valid_until``"
+msgstr ""
+
+msgid "``catalog_stamp``"
+msgstr ""
+
+msgid "—"
+msgstr ""
+
+msgid "``name``"
+msgstr ""
+
+msgid "P102\\_has\\_title"
+msgstr ""
+
+msgid "``description``"
+msgstr ""
+
+msgid "P3\\_has\\_note"
+msgstr ""
+
+msgid "Edges"
+msgstr ""
+
+msgid "**Outgoing** (this node is the source): :ref:`generic_connection <edge-generic_connection>`, :ref:`has_author <edge-has_author>`, :ref:`has_embargo <edge-has_embargo>`, :ref:`has_first_epoch <edge-has_first_epoch>`, :ref:`has_geoposition <edge-has_geoposition>`, :ref:`has_license <edge-has_license>`, :ref:`has_linked_resource <edge-has_linked_resource>`, :ref:`has_property <edge-has_property>`, :ref:`has_representation_model <edge-has_representation_model>`, :ref:`has_representation_model_doc <edge-has_representation_model_doc>`, :ref:`has_same_time <edge-has_same_time>`, :ref:`has_semantic_shape <edge-has_semantic_shape>`, :ref:`has_translation <edge-has_translation>`, :ref:`is_after <edge-is_after>`, :ref:`is_in_activity <edge-is_in_activity>`, :ref:`is_in_location <edge-is_in_location>`, :ref:`is_in_paradata_nodegroup <edge-is_in_paradata_nodegroup>`, :ref:`survive_in_epoch <edge-survive_in_epoch>`"
+msgstr ""
+
+msgid "**Incoming** (this node is the target): :ref:`extracted_from <edge-extracted_from>`, :ref:`generic_connection <edge-generic_connection>`, :ref:`has_documentation <edge-has_documentation>`, :ref:`has_same_time <edge-has_same_time>`, :ref:`is_after <edge-is_after>`, :ref:`is_on_resource <edge-is_on_resource>`"
+msgstr ""
+
+msgid "From em"
+msgstr ""

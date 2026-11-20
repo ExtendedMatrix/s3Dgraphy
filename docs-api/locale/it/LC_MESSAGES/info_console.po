@@ -1,0 +1,72 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-20 18:23+0100\n"
+"PO-Revision-Date: 2026-11-20 18:23+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "The console and its completion"
+msgstr "La console e il suo completamento"
+
+msgid "*Python in EMStudio as in Blender: a console, a script editor, Tab.*"
+msgstr "*Python in EMStudio come in Blender: una console, un editor di script, il Tab.*"
+
+msgid "The **Python console** (*Tools ▸ Python console*, or any area turned into a console from its type selector) and the **Script Editor** are windows of EMStudio; the workspace **Scripting** holds both, beside the Matrix. They share ONE Python session on the open document: ``em`` imported, ``g`` the graph, ``sel`` the selection."
+msgstr "La **console Python** (*Strumenti ▸ Console Python*, o qualunque area resa console dal suo selettore del tipo) e l'**Editor di script** sono finestre di EMStudio; lo spazio di lavoro **Scripting** le tiene entrambe, accanto alla Matrix. Condividono UNA sessione Python sul documento aperto: ``em`` importato, ``g`` il grafo, ``sel`` la selezione."
+
+msgid "Tab, as in Blender"
+msgstr "Il Tab, come in Blender"
+
+msgid "In the console, **Tab** (or **Ctrl+Space**, for whom Tab is taken) completes what is before the cursor:"
+msgstr "Nella console **Tab** (o **Ctrl+Spazio**, per chi ha il Tab occupato) completa ciò che sta prima del cursore:"
+
+msgid "one possibility: it is completed;"
+msgstr "una sola possibilità: la completa;"
+
+msgid "more: their common start is completed and **the list is printed in the output**, each name with the mark of its kind — ``▣`` module, ``◆`` class, ``ƒ`` function or method, ``•`` property, ``=`` value, ``k`` a Python keyword — and the first line of what it is;"
+msgstr "più d'una: completa il prefisso comune e **stampa l'elenco nell'output**, ogni nome con il segno del suo tipo — ``▣`` modulo, ``◆`` classe, ``ƒ`` funzione o metodo, ``•`` proprietà, ``=`` valore, ``k`` parola chiave di Python — e la prima riga di che cos'è;"
+
+msgid "after a callable and its ``(`` — ``g.node(``, ``em.app.commands.run(`` — its **signature** and the first lines of its docstring;"
+msgstr "dopo un nome chiamabile e la sua ``(`` — ``g.node(``, ``em.app.commands.run(`` — la sua **firma** e le prime righe della docstring;"
+
+msgid "inside ``em.app.commands.run(\"open\", `` the command's own parameters (``path=``, ``replace=``) and its signature;"
+msgstr "dentro ``em.app.commands.run(\"open\", `` i parametri del comando (``path=``, ``replace=``) e la sua firma;"
+
+msgid "inside a string, the values of the domain: the command ids in ``commands.run(\"…``, the ids and names of the nodes in ``g.node(\"…``, the node types in ``g.nodes(\"…`` or ``type=\"…``, the epochs' names in ``epoch=\"…``, the choices of a parameter that has them (``spaceView``'s ``side=\"…``)."
+msgstr "dentro una stringa, i valori del dominio: gli id dei comandi in ``commands.run(\"…``, gli id e i nomi dei nodi in ``g.node(\"…``, i tipi di nodo in ``g.nodes(\"…`` o ``type=\"…``, i nomi delle epoche in ``epoch=\"…``, le scelte di un parametro che le ha (``side=\"…`` di ``spaceView``)."
+
+msgid "A Tab never runs anything that asks the page: the names of ``em.app.space`` are listed without reading the layers."
+msgstr "Un Tab non esegue mai nulla che chieda alla pagina: i nomi di ``em.app.space`` sono elencati senza leggere i livelli."
+
+msgid "In the **Script Editor** the same answer comes as a list under the cursor while typing after a name or a dot, and on **Ctrl+Space**: the kind as an icon, the first line of the docstring beside it, the signature as the first row when a call is open. Enter accepts."
+msgstr "Nell'**Editor di script** la stessa risposta arriva come tendina sotto il cursore mentre si scrive dopo un nome o un punto, e con **Ctrl+Spazio**: il tipo come icona, la prima riga della docstring accanto, la firma come prima riga quando una chiamata è aperta. Invio accetta."
+
+msgid "One source"
+msgstr "Una sola fonte"
+
+msgid "Both read the live session (``dir``, ``inspect.signature``, the docstrings) and the parameters EMStudio declares for its commands — the table ``frontend/src/script-commands.json`` that the :doc:`reference/commands/index` pages are generated from, and that ``em.app.commands.list()`` returns."
+msgstr "Entrambi leggono la sessione viva (``dir``, ``inspect.signature``, le docstring) e i parametri che EMStudio dichiara per i suoi comandi — la tabella ``frontend/src/script-commands.json`` da cui sono generate le pagine di :doc:`reference/commands/index` e che ``em.app.commands.list()`` restituisce."
+
+msgid "Commands with parameters"
+msgstr "Comandi con parametri"
+
+msgid "``em.app.commands.run(id, **params)`` reaches a command of the menus or a named action (``addUnitAbove``, ``connect``, ``moveToEpoch``, ``fold``, ``frameNode``…). As Blender's operators: with its values given a command runs **without its window**; without them its window opens, filled with what was given:"
+msgstr "``em.app.commands.run(id, **params)`` raggiunge un comando dei menù o un'azione con nome (``addUnitAbove``, ``connect``, ``moveToEpoch``, ``fold``, ``frameNode``…). Come gli operatori di Blender: con i suoi valori un comando si esegue **senza la sua finestra**; senza, la sua finestra si apre, precompilata con ciò che è stato dato:"
+
+msgid "A name a command does not take, a wrong type, a value not among the choices are refused with ``em.NotAvailable`` in the page's language — never dropped."
+msgstr "Un nome che il comando non prende, un tipo sbagliato, un valore fuori dalle scelte sono rifiutati con ``em.NotAvailable`` nella lingua della pagina — mai lasciati cadere."
+
+msgid "The Space, the workspaces and the windows are objects: :doc:`reference/app/space`, :doc:`reference/app/workspaces`, :doc:`reference/app/windows`."
+msgstr "Lo Spazio, gli spazi di lavoro e le finestre sono oggetti: :doc:`reference/app/space`, :doc:`reference/app/workspaces`, :doc:`reference/app/windows`."

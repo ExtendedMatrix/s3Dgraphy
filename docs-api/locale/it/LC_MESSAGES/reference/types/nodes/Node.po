@@ -1,0 +1,204 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Node"
+msgstr ""
+
+msgid "Generated from the datamodels (nodes 1.6.51, connections 1.6.55) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``."
+msgstr ""
+
+msgid "*Base class for all nodes in the graph with CIDOC mapping*"
+msgstr ""
+
+msgid "Class"
+msgstr ""
+
+msgid "``Node``"
+msgstr ""
+
+msgid "node_type"
+msgstr ""
+
+msgid "Parent"
+msgstr ""
+
+msgid "—"
+msgstr ""
+
+msgid "Label (en)"
+msgstr ""
+
+msgid "Label (it)"
+msgstr ""
+
+msgid "CIDOC"
+msgstr ""
+
+msgid "``E1 CRM Entity``"
+msgstr ""
+
+msgid "Description"
+msgstr ""
+
+msgid "Base class for all nodes in the graph with CIDOC mapping"
+msgstr ""
+
+msgid "*Italiano*: Classe base per tutti i nodi del grafo, con mappatura CIDOC"
+msgstr ""
+
+msgid "Fields"
+msgstr ""
+
+msgid "Field"
+msgstr ""
+
+msgid "Mapping / note"
+msgstr ""
+
+msgid "``name``"
+msgstr ""
+
+msgid "P1\\_is\\_identified\\_by"
+msgstr ""
+
+msgid "``description``"
+msgstr ""
+
+msgid "``created_by``"
+msgstr ""
+
+msgid "em:createdBy"
+msgstr ""
+
+msgid "``created_at``"
+msgstr ""
+
+msgid "prov:generatedAtTime"
+msgstr ""
+
+msgid "``modified_by``"
+msgstr ""
+
+msgid "em:lastEditedBy"
+msgstr ""
+
+msgid "``modified_at``"
+msgstr ""
+
+msgid "em:modifiedAt"
+msgstr ""
+
+msgid "``removed.ts``"
+msgstr ""
+
+msgid "em:removedAt"
+msgstr ""
+
+msgid "``removed.by``"
+msgstr ""
+
+msgid "em:removedBy"
+msgstr ""
+
+msgid "``ai_assisted.by``"
+msgstr ""
+
+msgid "em:aiAssistedBy"
+msgstr ""
+
+msgid "``ai_assisted.model``"
+msgstr ""
+
+msgid "em:aiModel"
+msgstr ""
+
+msgid "``ai_assisted.prompt_ref``"
+msgstr ""
+
+msgid "em:aiPromptRef"
+msgstr ""
+
+msgid "``ai_assisted.fields``"
+msgstr ""
+
+msgid "em:aiAssistedField"
+msgstr ""
+
+msgid "``validated_by``"
+msgstr ""
+
+msgid "em:validatedBy"
+msgstr ""
+
+msgid "``validated_at``"
+msgstr ""
+
+msgid "em:validatedAt"
+msgstr ""
+
+msgid "``lang``"
+msgstr ""
+
+msgid "em:originalLanguage"
+msgstr ""
+
+msgid "``created_auth``"
+msgstr ""
+
+msgid "em:createdVia"
+msgstr ""
+
+msgid "``modified_auth``"
+msgstr ""
+
+msgid "em:modifiedVia"
+msgstr ""
+
+msgid "``validated_auth``"
+msgstr ""
+
+msgid "em:validatedVia"
+msgstr ""
+
+msgid "``created_auth.mode``"
+msgstr ""
+
+msgid "em:authMode"
+msgstr ""
+
+msgid "``created_auth.attested_by``"
+msgstr ""
+
+msgid "em:attestedBy"
+msgstr ""
+
+msgid "``scheda``"
+msgstr ""
+
+msgid "Edges"
+msgstr ""
+
+msgid "**Outgoing** (this node is the source): :ref:`generic_connection <edge-generic_connection>`, :ref:`has_embargo <edge-has_embargo>`, :ref:`has_license <edge-has_license>`, :ref:`has_semantic_shape <edge-has_semantic_shape>`, :ref:`has_translation <edge-has_translation>`"
+msgstr ""
+
+msgid "**Incoming** (this node is the target): :ref:`generic_connection <edge-generic_connection>`"
+msgstr ""
+
+msgid "From em"
+msgstr ""

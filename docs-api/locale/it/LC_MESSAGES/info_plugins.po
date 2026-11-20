@@ -1,0 +1,42 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-19 21:15+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Plugins and slots"
+msgstr "Plugin e slot"
+
+msgid "*A plugin is Python that EMStudio and EM Tools load from disk, with the same* ``em``."
+msgstr "*Un plugin è Python che EMStudio ed EM Tools caricano dal disco, con lo stesso* ``em``."
+
+msgid "A plugin is the ``[code]`` section of an ``em-extension.toml``: it names its module, the ``em`` versions it works with (``em_api_min``, ``em_api_max``) and its **commands**, each with the **slots** where the host draws it (``in = [\"context.node@1\"]``) and whether it writes (``writes``). Its module has a ``setup(ctx)``:"
+msgstr "Un plugin è la sezione ``[code]`` di un ``em-extension.toml``: nomina il suo modulo, le versioni di ``em`` con cui funziona (``em_api_min``, ``em_api_max``) e i suoi **comandi**, ciascuno con gli **slot** dove l'host lo disegna (``in = [\"context.node@1\"]``) e se scrive (``writes``). Il suo modulo ha un ``setup(ctx)``:"
+
+msgid "``ctx`` (:class:`~s3dgraphy.em.plugins.Context`) is the plugin's handle: ``command``, ``on``, ``expose``, ``file`` (a file returned to the host), ``stamp`` (the stamp of a derived artifact), ``data_dir``. Inside a command, ``em.write`` writes **as the plugin**: a command declared ``writes = false`` cannot write at all."
+msgstr "``ctx`` (:class:`~s3dgraphy.em.plugins.Context`) è il punto d'accesso del plugin: ``command``, ``on``, ``expose``, ``file`` (un file restituito all'host), ``stamp`` (il timbro di un artefatto derivato), ``data_dir``. Dentro un comando, ``em.write`` scrive **come il plugin**: un comando dichiarato ``writes = false`` non può scrivere affatto."
+
+msgid "The slots, with their versions and what each draws: :doc:`reference/slots`."
+msgstr "Gli slot, con le loro versioni e ciò che ciascuno disegna: :doc:`reference/slots`."
+
+msgid "The loader and its checks: :mod:`s3dgraphy.em.plugins`."
+msgstr "Il caricatore e i suoi controlli: :mod:`s3dgraphy.em.plugins`."
+
+msgid "Installing, enabling and removing from Python: :mod:`s3dgraphy.em.extensions`."
+msgstr "Installare, abilitare e rimuovere da Python: :mod:`s3dgraphy.em.extensions`."
+
+msgid "How to install packages and plugins, repositories and signatures, is in the EMStudio manual, *How-to ▸ Extensions* (`docs.extendedmatrix.org/projects/emstudio-doc <https://docs.extendedmatrix.org/projects/emstudio-doc/en/1.6/how-to/extensions/index.html>`_); the guide «Extending EMStudio» there tells how to write one."
+msgstr "Come installare pacchetti e plugin, repository e firme, lo trovi nel manuale di EMStudio, *Guide pratiche ▸ Blender ed estensioni* (`docs.extendedmatrix.org/projects/emstudio-doc <https://docs.extendedmatrix.org/projects/emstudio-doc/en/1.6/how-to/extensions/index.html>`_); lì la guida «Estendere EMStudio» spiega come scriverne uno."

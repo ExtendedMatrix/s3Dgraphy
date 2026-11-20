@@ -1,0 +1,162 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Emanuel Demetrescu
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-20 18:23+0100\n"
+"PO-Revision-Date: 2026-11-19 21:17+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "importGraphml"
+msgstr ""
+
+msgid "*Generated from EMStudio 17797d8 for em API 1.2.0.*"
+msgstr ""
+
+msgid "Id"
+msgstr ""
+
+msgid "``importGraphml``"
+msgstr ""
+
+msgid "Label (en)"
+msgstr ""
+
+msgid "GraphML…"
+msgstr ""
+
+msgid "Label (it)"
+msgstr ""
+
+msgid "Kind"
+msgstr ""
+
+msgid "Menu command — presses the page button ``btn-import-graphml``"
+msgstr ""
+
+msgid "Reachable from Python"
+msgstr ""
+
+msgid "yes — ``em.app.commands.run(\"importGraphml\")``"
+msgstr ""
+
+msgid "Script form"
+msgstr ""
+
+msgid "opens its window, filled with the parameters given; runs WITHOUT it when ``path`` is given (Blender's EXEC / INVOKE)"
+msgstr ""
+
+msgid "Returns"
+msgstr ""
+
+msgid "the path imported"
+msgstr ""
+
+msgid "Writes to the graph"
+msgstr ""
+
+msgid "not declared"
+msgstr ""
+
+msgid "Menu path (en)"
+msgstr ""
+
+msgid "File ▸ Import ▸ GraphML…"
+msgstr ""
+
+msgid "Menu path (it)"
+msgstr ""
+
+msgid "File ▸ Importa ▸ GraphML…"
+msgstr ""
+
+msgid "Drawn in"
+msgstr ""
+
+msgid "the page's menu bar: web, macOS desktop, Windows desktop, Linux desktop; the system menu bar: macOS desktop"
+msgstr ""
+
+msgid "Shortcut"
+msgstr ""
+
+msgid "none"
+msgstr ""
+
+msgid "Defined in"
+msgstr ""
+
+msgid "``frontend/src/menu-table.ts:192``"
+msgstr ""
+
+msgid "What it does"
+msgstr ""
+
+msgid "**en** — Import a yEd GraphML file (needs the local bridge)"
+msgstr ""
+
+msgid "**it** — Importa un file GraphML di yEd (serve il bridge locale)"
+msgstr ""
+
+msgid "**script** — Import a yEd GraphML (through s3Dgraphy's importer). With ``path`` neither the picker nor the question of the em.json's name opens: the graph stays without a file until ``saveAs(path=…)``."
+msgstr ""
+
+msgid "Label in the other languages"
+msgstr ""
+
+msgid "AI drafts, not yet validated by a person (see ``isValidated`` in ``i18n.ts``)."
+msgstr ""
+
+msgid "Locale"
+msgstr ""
+
+msgid "Label"
+msgstr ""
+
+msgid "``de``"
+msgstr ""
+
+msgid "Parameters"
+msgstr ""
+
+msgid "Name"
+msgstr ""
+
+msgid "Type"
+msgstr ""
+
+msgid "Default"
+msgstr ""
+
+msgid "What it is"
+msgstr ""
+
+msgid "``path``"
+msgstr ""
+
+msgid "``str``"
+msgstr ""
+
+msgid "``None``"
+msgstr ""
+
+msgid "the .graphml file (absolute path)"
+msgstr ""
+
+msgid "Declared in ``frontend/src/script-commands.json:50`` — the one place the console's completion and this page read. A name the command does not take, a wrong type, a value not among the choices are refused with ``em.NotAvailable`` in the page's language, never dropped."
+msgstr ""
+
+msgid "From Python"
+msgstr ""
+
+msgid "With the values above it runs without a window; without them its window opens, filled with what was given (the question about unsaved work, when there is one, is still asked). If the command is not possible at that moment (its button disabled) the call raises ``em.NotAvailable`` (``py.noCommand``). Outside EMStudio (no host) the call raises ``em.NotAvailable``."
+msgstr ""
