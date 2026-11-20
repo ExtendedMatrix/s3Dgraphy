@@ -1,0 +1,17 @@
+{% extends "!footer.html" %}
+{#
+   Rights, and nothing else: the Extended Matrix manuals predate StratiGraph and
+   make no claim on its funding. Vendored from stratigraph-brand by
+   sync-brand-docs.sh — change it there, never here.
+#}
+{% block extrafooter %}
+{{ super() }}
+<div class="sg-provenance sg-provenance--rights-only" role="complementary" aria-label="Rights">
+  <div class="sg-provenance-text">
+    <p class="sg-provenance-rights">Text and images:
+    <a href="https://creativecommons.org/licenses/by/4.0/">CC BY 4.0</a>. The software
+    described here carries its own licence. Extended Matrix is used by, and older than,
+    the <a href="https://stratigraph-eccch.eu">StratiGraph</a> project.</p>
+  </div>
+</div>
+{% endblock %}
