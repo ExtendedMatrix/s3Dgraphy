@@ -276,6 +276,16 @@ def ahead_subjects(r: Path) -> list:
     return git(r, "log", "--format=%s", f"{line.split()[0]}..HEAD").splitlines()
 
 
+def studio_release_branch(r: Path) -> str:
+    """MICRO-SEG07 · the branch EMStudio releases from, as EMStudio says it
+    (`./em.sh release-branch`, today 1.6 — never main). '' from an EMStudio
+    too old to have the command."""
+    if not (r / "em.sh").exists():
+        return ""
+    lines = out(["bash", str(r / "em.sh"), "release-branch"], r).splitlines()
+    return lines[-1].strip() if lines else ""
+
+
 def gh_ok() -> bool:
     return subprocess.run([*GH, "auth", "status"], env=ENV, stdout=subprocess.DEVNULL,
                           stderr=subprocess.DEVNULL, stdin=subprocess.DEVNULL).returncode == 0
@@ -929,6 +939,18 @@ class Preconditions(Step):
             if stray:
                 probs.append(f"{name}: uncommitted changes the release did not make — "
                              + ", ".join(stray[:4]) + (f" (+{len(stray) - 4})" if len(stray) > 4 else ""))
+            if name == "EMStudio":
+                # MICRO-SEG07: EMStudio releases from its version branch, never
+                # main — the pins of step 9 and devrel's tag land on the branch
+                # checked out, so a checkout on main would release from main
+                want = studio_release_branch(r)
+                have = git(r, "branch", "--show-current")
+                if not want:
+                    probs.append("EMStudio: em.sh has no `release-branch` (older than MICRO-SEG07) — "
+                                 "cannot tell which branch releases come from")
+                elif have != want:
+                    probs.append(f"EMStudio: on '{have or 'detached HEAD'}', releases come from "
+                                 f"'{want}' only (never main): git switch {want}")
             ahead, problem = remote_distance(r)
             if problem:
                 probs.append(f"{name}: {problem}")
@@ -1719,7 +1741,7 @@ class Push(Step):
         return TODO, " · ".join(f"{n} {k} ahead" for n, k in a)
 
     def plan(self, c):
-        return [("<each repository ahead of origin>", "git push")]
+        return [("<each repository ahead of origin>", "git push origin <its branch>")]
 
     def run(self, c):
         a = self.ahead(c)
@@ -1731,7 +1753,9 @@ class Push(Step):
         if not c.ask(f"Push these {len(a)} repositories?"):
             raise Stop(f"not pushed. When ready: {c.resume()}")
         for name, _ in a:
-            sh(["git", "push"], repo(name))
+            # the branch by name, not a bare `git push`: a branch made locally
+            # (EMStudio's 1.6, MICRO-SEG07) may have no upstream set yet
+            sh(["git", "push", "origin", git(repo(name), "branch", "--show-current")], repo(name))
         ok("pushed: " + ", ".join(n for n, _ in a))
 
 

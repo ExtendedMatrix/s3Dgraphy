@@ -202,6 +202,7 @@ STUDIO_EM = r'''#!/usr/bin/env bash
 set -e
 case "$1 $2" in
   "s3d status") exit 0 ;;
+  "release-branch ") echo "${FAKE_STUDIO_RELEASE_BRANCH:-$(git branch --show-current)}" ;;
   "apertura ")
     [[ -z "$FAKE_APERTURA_DEAD" ]] && exit 0
     echo "✗ EMStudio does not open: the empty app — ReferenceError: Cannot access 'hubToken' before initialization" >&2
@@ -580,6 +581,15 @@ def test_a_commit_not_pushed_stops_it(world):
     r = world.release(*FULL, "--yes")
     assert r.returncode == 1
     assert "stratigraph-server: 1 commit(s) not pushed that are not the release's" in r.stderr
+
+
+def test_an_emstudio_on_another_branch_than_its_release_branch_stops_it(world):
+    # MICRO-SEG07 · EMStudio releases from its version branch (1.6), never main:
+    # a checkout on another branch would get the pins and devrel's tag there
+    r = world.release(*FULL, "--yes", FAKE_STUDIO_RELEASE_BRANCH="1.6")
+    assert r.returncode == 1, _all(r)
+    assert "releases come from '1.6' only (never main): git switch 1.6" in r.stderr
+    assert "refs/tags" not in world.origin_tags("dtcstamp") + world.origin_tags("s3Dgraphy")
 
 
 def test_an_emstudio_that_does_not_open_is_not_tagged(world):
