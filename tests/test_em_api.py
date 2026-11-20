@@ -407,3 +407,54 @@ def test_extensions_from_disk():
     assert em.extensions.disable("facemesh_fit")
     em.extensions.remove("facemesh_fit")
     assert "facemesh_fit" not in [r["id"] for r in em.extensions.list()]
+
+
+# ── MICRO-SEG02 · what a host's application has beyond the protocol ──────────
+
+def test_app_reaches_what_the_host_adds():
+    """``em.app.space`` is the host's own when it has one (EMStudio: layers,
+    epoch, profile), the protocol's otherwise; ``em.app.<name>`` reaches what
+    the host's application adds (workspaces, windows) and ``dir`` lists it;
+    ``commands.list`` / ``describe`` answer from the host's catalogue, and a
+    host without one says so; the params of ``commands.run`` arrive whole."""
+    seen = {}
+
+    class Space:
+        layers = [{"name": "RM head", "visible": True}]
+
+        def camera(self):
+            return {"pos": [0, 0, 1]}
+
+    class App(NoApp):
+        space = Space()
+        workspaces = ["canvas", "scripting"]
+
+        def __init__(self):
+            super().__init__("emstudio")
+
+        def run_command(self, command_id, **slots):
+            seen[command_id] = slots
+            return "ran"
+
+        def command_catalog(self):
+            return [{"id": "open", "kind": "command", "params": [{"name": "path"}]}]
+
+    h = _host()
+    h.app = App()
+    assert em.app.space.layers[0]["name"] == "RM head"
+    assert em.app.space.camera() == {"pos": [0, 0, 1]}
+    assert em.app.workspaces == ["canvas", "scripting"]
+    assert {"workspaces", "space", "commands", "selection"} <= set(dir(em.app))
+    assert "run_command" not in dir(em.app)
+    with pytest.raises(AttributeError, match="has no 'nothing'"):
+        em.app.nothing
+    assert em.app.commands.run("open", path="/x.em.json", replace=True) == "ran"
+    assert seen["open"] == {"path": "/x.em.json", "replace": True}
+    assert em.app.commands.describe("open")["params"][0]["name"] == "path"
+    assert em.app.commands.describe("nope") is None
+    em.host.uninstall()
+    # no application: the protocol's Space, and no catalogue
+    with pytest.raises(em.NotAvailable):
+        em.app.space.camera()
+    with pytest.raises(em.NotAvailable):
+        em.app.commands.list()

@@ -32,7 +32,7 @@ checks it).
 """
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any, Dict, List, Optional
 
 from . import events, host, plugins
 from .errors import EmError, NotAvailable, Refused
@@ -93,19 +93,64 @@ class _App:
             return self._app._a().pick(prompt, primitive)
 
     class _Commands:
+        """``em.app.commands`` — the application's commands (our ``bpy.ops``)."""
+
         def __init__(self, app: "_App"):
             self._app = app
 
-        def run(self, command_id: str, **slots: Any):
-            return self._app._a().run_command(command_id, **slots)
+        def run(self, command_id: str, **params: Any):
+            """Run a command of the application, with its parameters (EMStudio:
+            a command whose values are all given runs without its window; with
+            values missing its window opens, filled — Blender's EXEC / INVOKE)."""
+            return self._app._a().run_command(command_id, **params)
+
+        def list(self) -> List[Dict[str, Any]]:
+            """The commands and actions a script reaches here, with their
+            parameters (``id``, ``kind``, ``form``, ``params``, ``doc``)."""
+            a = self._app._a()
+            fn = getattr(a, "command_catalog", None)
+            if fn is None:
+                from .errors import NotAvailable
+                raise NotAvailable("commands.list", host.current().name)
+            return fn()
+
+        def describe(self, command_id: str) -> Optional[Dict[str, Any]]:
+            """One command's entry of :meth:`list` (None: no such command)."""
+            return next((c for c in self.list() if c.get("id") == command_id), None)
+
+        def __repr__(self) -> str:
+            return "<em.app.commands>"
 
     @property
-    def space(self) -> "_App._Space":
-        return _App._Space(self)
+    def space(self) -> Any:
+        """The Space: ``camera``, ``set_camera``, ``frame``, ``pick`` in every
+        host; a host may give more (EMStudio: ``layers``, ``epoch``, ``profile``)."""
+        own = getattr(self._a(), "space", None)
+        return own if own is not None and not callable(own) else _App._Space(self)
 
     @property
     def commands(self) -> "_App._Commands":
         return _App._Commands(self)
+
+    def __getattr__(self, name: str) -> Any:
+        # MICRO-SEG02 · what a host's application has beyond the protocol
+        # (EMStudio: ``workspaces``, ``windows``): reached as ``em.app.<name>``
+        if name.startswith("_"):
+            raise AttributeError(name)
+        a = host.current().app
+        if hasattr(a, name):
+            return getattr(a, name)
+        raise AttributeError(f"em.app of {host.current().name} has no {name!r}")
+
+    def __dir__(self) -> List[str]:
+        own = {n for n in type(self).__dict__ if not n.startswith("_")}
+        own |= {"selection", "select", "view", "notify", "space", "commands", "available", "on"}
+        try:
+            own |= {n for n in dir(host.current().app) if not n.startswith("_")
+                    and n not in ("run_command", "camera", "set_camera", "frame", "pick", "command_catalog")}
+        except Exception:                            # noqa: BLE001 — a host that cannot say
+            pass
+        return sorted(own)
 
     @property
     def available(self) -> bool:
