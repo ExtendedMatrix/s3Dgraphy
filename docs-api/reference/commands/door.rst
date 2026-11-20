@@ -5,7 +5,7 @@
 door
 ====
 
-*Generated from EMStudio 85f69cd for em API 1.2.0.*
+*Generated from EMStudio 141c8f9 for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -37,7 +37,7 @@ door
 What it does
 ------------
 
-**en** — Bring files into the graph as part of a document: what each is, the document, its date, the epoch it represents
+**en** — Porta dentro — bring files in as documents: what each is, the document, its date, the epoch it represents
 
 **it** — Porta i file nel grafo come parte di un documento: che cos'è ciascuno, il documento, la sua data, l'epoca che rappresenta
 
@@ -45,7 +45,7 @@ Slots
 -----
 
 None declared: the command table (``CommandRow`` in ``menu-table.ts``) declares no slots, types or defaults.
-Keyword slots passed to ``em.app.commands.run`` reach the page but are dropped by the host hook (``frontend/src/main.ts:65807``), which calls ``runCommand(id)`` only.
+Keyword slots passed to ``em.app.commands.run`` reach the page but are dropped by the host hook (``frontend/src/main.ts:66015``), which calls ``runCommand(id)`` only.
 
 From Python
 -----------

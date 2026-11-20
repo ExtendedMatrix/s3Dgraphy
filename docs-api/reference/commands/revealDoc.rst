@@ -5,7 +5,7 @@
 revealDoc
 =========
 
-*Generated from EMStudio 85f69cd for em API 1.2.0.*
+*Generated from EMStudio 141c8f9 for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -37,15 +37,15 @@ revealDoc
 What it does
 ------------
 
-**en** — Shows the folder of the active .em.json in the Finder / Explorer / file manager, the file selected where the system allows it (in a browser alone: the path, copied)
+**en** — Opens the root of the active .em.json's project (the folder that holds EM/) in the Finder / Explorer / file manager (in a browser alone: the path, copied)
 
-**it** — Mostra la cartella dell'.em.json attivo nel Finder / Esplora file / gestore dei file, con il file selezionato dove il sistema lo permette (nel solo browser: il percorso, copiato)
+**it** — Apre la radice del progetto dell'.em.json attivo (la cartella che contiene EM/) nel Finder / Esplora file / gestore dei file (nel solo browser: il percorso, copiato)
 
 Slots
 -----
 
 None declared: the command table (``CommandRow`` in ``menu-table.ts``) declares no slots, types or defaults.
-Keyword slots passed to ``em.app.commands.run`` reach the page but are dropped by the host hook (``frontend/src/main.ts:65807``), which calls ``runCommand(id)`` only.
+Keyword slots passed to ``em.app.commands.run`` reach the page but are dropped by the host hook (``frontend/src/main.ts:66015``), which calls ``runCommand(id)`` only.
 
 From Python
 -----------

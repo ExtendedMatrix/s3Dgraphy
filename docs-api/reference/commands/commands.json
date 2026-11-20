@@ -1,6 +1,6 @@
 {
   "generated_from": {
-    "emstudio_sha": "85f69cd",
+    "emstudio_sha": "141c8f9",
     "emstudio_read": "HEAD",
     "em_api_version": "1.2.0"
   },
@@ -49,7 +49,7 @@
       {
         "key": "main.host_command",
         "file": "frontend/src/main.ts",
-        "line": 65807,
+        "line": 66015,
         "what": "the page's host hook: command -> runCommand(id)"
       },
       {
@@ -103,7 +103,7 @@
       },
       "dynamic": null,
       "slot": "menu.file.import@1",
-      "line": 164
+      "line": 166
     },
     {
       "id": "export",
@@ -121,7 +121,7 @@
       },
       "dynamic": null,
       "slot": "menu.file.export@1",
-      "line": 168
+      "line": 170
     }
   ],
   "commands": [
@@ -821,8 +821,8 @@
       },
       "title_key": "fs.revealDocTitle",
       "title": {
-        "en": "Shows the folder of the active .em.json in the Finder / Explorer / file manager, the file selected where the system allows it (in a browser alone: the path, copied)",
-        "it": "Mostra la cartella dell'.em.json attivo nel Finder / Esplora file / gestore dei file, con il file selezionato dove il sistema lo permette (nel solo browser: il percorso, copiato)"
+        "en": "Opens the root of the active .em.json's project (the folder that holds EM/) in the Finder / Explorer / file manager (in a browser alone: the path, copied)",
+        "it": "Apre la radice del progetto dell'.em.json attivo (la cartella che contiene EM/) nel Finder / Esplora file / gestore dei file (nel solo browser: il percorso, copiato)"
       },
       "button": "btn-reveal-doc",
       "os_item": null,
@@ -1143,7 +1143,7 @@
       "label_key": "toolbar.saveAs",
       "label": {
         "en": "Save As…",
-        "it": "Salva come…",
+        "it": "Salva con nome…",
         "de": "Speichern unter…",
         "el": "Αποθήκευση ως…",
         "he": "שמירה בשם…",
@@ -1163,7 +1163,7 @@
       "menu": "file",
       "menu_path": {
         "en": "File ▸ Save As…",
-        "it": "File ▸ Salva come…",
+        "it": "File ▸ Salva con nome…",
         "de": "Datei ▸ Speichern unter…",
         "el": "Αρχείο ▸ Αποθήκευση ως…",
         "he": "קובץ ▸ שמירה בשם…",
@@ -1201,7 +1201,7 @@
         "scope": "app",
         "label_key": "keys.saveAs",
         "label": {
-          "en": "Save as…",
+          "en": "Save As…",
           "it": "Salva con nome…",
           "de": "Speichern unter…"
         },
@@ -1348,7 +1348,7 @@
       },
       "title_key": "door.menuHint",
       "title": {
-        "en": "Bring files into the graph as part of a document: what each is, the document, its date, the epoch it represents",
+        "en": "Porta dentro — bring files in as documents: what each is, the document, its date, the epoch it represents",
         "it": "Porta i file nel grafo come parte di un documento: che cos'è ciascuno, il documento, la sua data, l'epoca che rappresenta"
       },
       "button": "btn-porta-dentro",
@@ -1405,8 +1405,8 @@
       },
       "title_key": "door.folderMenuHint",
       "title": {
-        "en": "Bring a folder in — a stack of geophysical slices, say — through the add-on that reads folders",
-        "it": "Porta dentro una cartella — una pila di fette geofisiche, per esempio — con il componente aggiuntivo che legge le cartelle"
+        "en": "Bring a folder in: read as DosCo, or by an add-on that reads folders (a stack of geophysical slices, say)",
+        "it": "Porta dentro una cartella: letta come DosCo, o da un componente aggiuntivo che legge le cartelle (una pila di fette geofisiche, per esempio)"
       },
       "button": "btn-porta-dentro-cartella",
       "os_item": null,
@@ -1447,6 +1447,63 @@
       "source": {
         "file": "frontend/src/menu-table.ts",
         "line": 161
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "doorDosco",
+      "page": "doorDosco",
+      "kind": "menu",
+      "command_id": "doorDosco",
+      "label_key": "door.doscoMenu",
+      "label": {
+        "en": "Read as DosCo…",
+        "it": "Leggi come DosCo…"
+      },
+      "title_key": "door.doscoMenuHint",
+      "title": {
+        "en": "Porta dentro a DosCo folder: each file with an EM id (D.12…) becomes the document of that id — its date, its licence, its role asked in one block",
+        "it": "Porta dentro una cartella DosCo: ogni file con un id EM (D.12…) diventa il documento di quell'id — data, licenza e ruolo chiesti in blocco"
+      },
+      "button": "btn-door-dosco",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ Read as DosCo…",
+        "it": "File ▸ Leggi come DosCo…",
+        "de": "Datei ▸ Read as DosCo…",
+        "el": "Αρχείο ▸ Read as DosCo…",
+        "he": "קובץ ▸ Read as DosCo…",
+        "es": "Archivo ▸ Read as DosCo…",
+        "pl": "Plik ▸ Read as DosCo…",
+        "ro": "Fișier ▸ Read as DosCo…",
+        "fr": "Fichier ▸ Read as DosCo…"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 163
       },
       "same_button_as": []
     },
@@ -1503,7 +1560,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 163
+        "line": 165
       },
       "same_button_as": []
     },
@@ -1562,7 +1619,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 165
+        "line": 167
       },
       "same_button_as": []
     },
@@ -1621,7 +1678,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 166
+        "line": 168
       },
       "same_button_as": []
     },
@@ -1679,7 +1736,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 169
+        "line": 171
       },
       "same_button_as": []
     },
@@ -1737,7 +1794,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 170
+        "line": 172
       },
       "same_button_as": []
     },
@@ -1794,7 +1851,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 173
+        "line": 175
       },
       "same_button_as": []
     },
@@ -1851,7 +1908,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 174
+        "line": 176
       },
       "same_button_as": []
     },
@@ -1908,7 +1965,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 176
+        "line": 178
       },
       "same_button_as": []
     },
@@ -1965,7 +2022,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 178
+        "line": 180
       },
       "same_button_as": []
     },
@@ -2022,7 +2079,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 180
+        "line": 182
       },
       "same_button_as": []
     },
@@ -2079,7 +2136,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 182
+        "line": 184
       },
       "same_button_as": []
     },
@@ -2136,7 +2193,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 183
+        "line": 185
       },
       "same_button_as": []
     },
@@ -2193,7 +2250,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 186
+        "line": 188
       },
       "same_button_as": []
     },
@@ -2250,7 +2307,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 187
+        "line": 189
       },
       "same_button_as": []
     },
@@ -2300,7 +2357,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 191
+        "line": 193
       },
       "same_button_as": []
     },
@@ -2378,7 +2435,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 201
+        "line": 203
       },
       "same_button_as": []
     },
@@ -2456,7 +2513,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 202
+        "line": 204
       },
       "same_button_as": []
     },
@@ -2497,7 +2554,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 203
+        "line": 205
       }
     },
     {
@@ -2537,7 +2594,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 203
+        "line": 205
       }
     },
     {
@@ -2577,7 +2634,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 205
+        "line": 207
       }
     },
     {
@@ -2617,7 +2674,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 205
+        "line": 207
       }
     },
     {
@@ -2657,7 +2714,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 205
+        "line": 207
       }
     },
     {
@@ -2697,7 +2754,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 205
+        "line": 207
       }
     },
     {
@@ -2737,7 +2794,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 212
+        "line": 214
       }
     },
     {
@@ -2777,7 +2834,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 212
+        "line": 214
       }
     },
     {
@@ -2817,7 +2874,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 212
+        "line": 214
       }
     },
     {
@@ -2871,7 +2928,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 219
+        "line": 221
       },
       "same_button_as": []
     },
@@ -2926,7 +2983,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 220
+        "line": 222
       },
       "same_button_as": []
     },
@@ -2981,7 +3038,62 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 221
+        "line": 223
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "pythonApi",
+      "page": "pythonApi",
+      "kind": "menu",
+      "command_id": "pythonApi",
+      "label_key": "help.pythonApi",
+      "label": {
+        "en": "Python API reference",
+        "it": "Riferimento API Python",
+        "de": "Python-API-Referenz"
+      },
+      "title_key": null,
+      "title": {},
+      "button": "btn-help-python-api",
+      "os_item": null,
+      "menu": "help",
+      "menu_path": {
+        "en": "Help ▸ Python API reference",
+        "it": "Aiuto ▸ Riferimento API Python",
+        "de": "Help ▸ Python-API-Referenz",
+        "el": "Help ▸ Python API reference",
+        "he": "Help ▸ Python API reference",
+        "es": "Help ▸ Python API reference",
+        "pl": "Help ▸ Python API reference",
+        "ro": "Help ▸ Python API reference",
+        "fr": "Help ▸ Python API reference"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 225
       },
       "same_button_as": []
     },
@@ -3031,7 +3143,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 223
+        "line": 227
       },
       "same_button_as": [
         "about"
@@ -3086,7 +3198,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 224
+        "line": 228
       },
       "same_button_as": [
         "settings"
@@ -3135,7 +3247,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 225
+        "line": 229
       },
       "same_button_as": [
         "updates"
@@ -3148,8 +3260,8 @@
       "command_id": null,
       "label_key": "keys.where",
       "label": {
-        "en": "Where you are",
-        "it": "Dove sei"
+        "en": "The chip's menu: author, node, where you work",
+        "it": "Il menu del chip: autore, nodo, dove lavori"
       },
       "title_key": null,
       "title": {},
@@ -3167,8 +3279,8 @@
         "scope": "app",
         "label_key": "keys.where",
         "label": {
-          "en": "Where you are",
-          "it": "Dove sei"
+          "en": "The chip's menu: author, node, where you work",
+          "it": "Il menu del chip: autore, nodo, dove lavori"
         },
         "source": {
           "file": "frontend/src/keymap.ts",
@@ -3635,7 +3747,7 @@
       "label_key": "keys.zoomIn",
       "label": {
         "en": "Zoom in",
-        "it": "Ingrandisci",
+        "it": "Zoom avanti",
         "de": "Vergrößern"
       },
       "title_key": null,
@@ -3655,7 +3767,7 @@
         "label_key": "keys.zoomIn",
         "label": {
           "en": "Zoom in",
-          "it": "Ingrandisci",
+          "it": "Zoom avanti",
           "de": "Vergrößern"
         },
         "source": {
@@ -3679,7 +3791,7 @@
       "label_key": "keys.zoomOut",
       "label": {
         "en": "Zoom out",
-        "it": "Riduci",
+        "it": "Zoom indietro",
         "de": "Verkleinern"
       },
       "title_key": null,
@@ -3699,7 +3811,7 @@
         "label_key": "keys.zoomOut",
         "label": {
           "en": "Zoom out",
-          "it": "Riduci",
+          "it": "Zoom indietro",
           "de": "Verkleinern"
         },
         "source": {
@@ -4490,8 +4602,8 @@
       "command_id": null,
       "label_key": "keys.s3pick",
       "label": {
-        "en": "Select the proxy under the cursor (a sketch too)",
-        "it": "Seleziona il proxy sotto il cursore (anche uno schizzo)"
+        "en": "Select the object under the cursor: a proxy, a model, a sketched shape",
+        "it": "Seleziona l'oggetto sotto il cursore: un proxy, un modello, una forma abbozzata"
       },
       "title_key": null,
       "title": {},
@@ -4512,8 +4624,8 @@
         "scope": "space",
         "label_key": "keys.s3pick",
         "label": {
-          "en": "Select the proxy under the cursor (a sketch too)",
-          "it": "Seleziona il proxy sotto il cursore (anche uno schizzo)"
+          "en": "Select the object under the cursor: a proxy, a model, a sketched shape",
+          "it": "Seleziona l'oggetto sotto il cursore: un proxy, un modello, una forma abbozzata"
         },
         "source": {
           "file": "frontend/src/keymap.ts",
@@ -5640,8 +5752,8 @@
       "command_id": null,
       "label_key": "keys.s3grs",
       "label": {
-        "en": "Move, rotate, scale a sketch: then X Y Z, a number, Enter or Esc",
-        "it": "Sposta, ruota, scala un abbozzo: poi X Y Z, un numero, Invio o Esc"
+        "en": "Move, rotate, scale the selection (proxies, models, sketched shapes; not a tileset, nor what is locked): then X Y Z, a number, Enter or Esc",
+        "it": "Sposta, ruota, scala la selezione (proxy, modelli, forme abbozzate; non un tileset, né ciò che è bloccato): poi X Y Z, un numero, Invio o Esc"
       },
       "title_key": null,
       "title": {},
@@ -5659,8 +5771,8 @@
         "scope": "space",
         "label_key": "keys.s3grs",
         "label": {
-          "en": "Move, rotate, scale a sketch: then X Y Z, a number, Enter or Esc",
-          "it": "Sposta, ruota, scala un abbozzo: poi X Y Z, un numero, Invio o Esc"
+          "en": "Move, rotate, scale the selection (proxies, models, sketched shapes; not a tileset, nor what is locked): then X Y Z, a number, Enter or Esc",
+          "it": "Sposta, ruota, scala la selezione (proxy, modelli, forme abbozzate; non un tileset, né ciò che è bloccato): poi X Y Z, un numero, Invio o Esc"
         },
         "source": {
           "file": "frontend/src/keymap.ts",

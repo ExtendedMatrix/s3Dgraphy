@@ -5,7 +5,7 @@
 osRedo
 ======
 
-*Generated from EMStudio 85f69cd for em API 1.2.0.*
+*Generated from EMStudio 141c8f9 for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -32,7 +32,7 @@ osRedo
    * - Shortcut
      - none
    * - Defined in
-     - ``frontend/src/menu-table.ts:203``
+     - ``frontend/src/menu-table.ts:205``
 
 .. admonition:: Not yet available from Python
    :class: warning

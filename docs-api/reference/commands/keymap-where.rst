@@ -5,7 +5,7 @@
 keymap:where
 ============
 
-*Generated from EMStudio 85f69cd for em API 1.2.0.*
+*Generated from EMStudio 141c8f9 for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -14,9 +14,9 @@ keymap:where
    * - Id
      - ``keymap:where``
    * - Label (en)
-     - Where you are
+     - The chip's menu: author, node, where you work
    * - Label (it)
-     - Dove sei
+     - Il menu del chip: autore, nodo, dove lavori
    * - Kind
      - Key of the key map (no command id)
    * - Reachable from Python

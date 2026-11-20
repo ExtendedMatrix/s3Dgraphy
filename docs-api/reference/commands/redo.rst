@@ -5,7 +5,7 @@
 redo
 ====
 
-*Generated from EMStudio 85f69cd for em API 1.2.0.*
+*Generated from EMStudio 141c8f9 for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -32,7 +32,7 @@ redo
    * - Shortcut
      - ``⇧⌘Z`` (key map, scope ``app``)
    * - Defined in
-     - ``frontend/src/menu-table.ts:202``
+     - ``frontend/src/menu-table.ts:204``
 
 What it does
 ------------
@@ -49,7 +49,7 @@ Slots
 -----
 
 None declared: the command table (``CommandRow`` in ``menu-table.ts``) declares no slots, types or defaults.
-Keyword slots passed to ``em.app.commands.run`` reach the page but are dropped by the host hook (``frontend/src/main.ts:65807``), which calls ``runCommand(id)`` only.
+Keyword slots passed to ``em.app.commands.run`` reach the page but are dropped by the host hook (``frontend/src/main.ts:66015``), which calls ``runCommand(id)`` only.
 
 From Python
 -----------

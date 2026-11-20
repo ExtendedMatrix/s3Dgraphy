@@ -5,7 +5,7 @@
 keymap:s3grs
 ============
 
-*Generated from EMStudio 85f69cd for em API 1.2.0.*
+*Generated from EMStudio 141c8f9 for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -14,9 +14,9 @@ keymap:s3grs
    * - Id
      - ``keymap:s3grs``
    * - Label (en)
-     - Move, rotate, scale a sketch: then X Y Z, a number, Enter or Esc
+     - Move, rotate, scale the selection (proxies, models, sketched shapes; not a tileset, nor what is locked): then X Y Z, a number, Enter or Esc
    * - Label (it)
-     - Sposta, ruota, scala un abbozzo: poi X Y Z, un numero, Invio o Esc
+     - Sposta, ruota, scala la selezione (proxy, modelli, forme abbozzate; non un tileset, né ciò che è bloccato): poi X Y Z, un numero, Invio o Esc
    * - Kind
      - Key of the key map (no command id)
    * - Reachable from Python

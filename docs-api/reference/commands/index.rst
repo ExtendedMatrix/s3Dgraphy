@@ -5,9 +5,9 @@
 EMStudio commands
 =================
 
-*Generated from EMStudio 85f69cd for em API 1.2.0.*
+*Generated from EMStudio 141c8f9 for em API 1.2.0.*
 
-Every command of EMStudio's menus (41 rows of the command table, 41 reachable from Python), the items the operating system draws in the macOS menu bar, and the keys and gestures of the key map. ``em.app.commands.run(command_id, **slots)`` reaches a command by the id in the first column.
+Every command of EMStudio's menus (43 rows of the command table, 43 reachable from Python), the items the operating system draws in the macOS menu bar, and the keys and gestures of the key map. ``em.app.commands.run(command_id, **slots)`` reaches a command by the id in the first column.
 
 How ``run_command`` reaches the page
 ------------------------------------
@@ -16,13 +16,13 @@ How ``run_command`` reaches the page
 #. ``src/s3dgraphy/em/host.py:147`` — NullHost: NotAvailable outside a host
 #. ``tools/em_py.py:576`` — EMStudioApp.run\_command asks the page: request kind "command" with id and slots
 #. ``frontend/src/py-session.ts:364`` — PySession answers the request through the page's host.command(id, slots); false -\> error py.noCommand
-#. ``frontend/src/main.ts:65807`` — the page's host hook: command -\> runCommand(id)
+#. ``frontend/src/main.ts:66015`` — the page's host hook: command -\> runCommand(id)
 #. ``frontend/src/menu-ui.ts:182`` — runCommand: plugin:\<id\>/\<cmd\> -\> plugin invocation; otherwise findRow(id) and click the row's button
 #. ``frontend/src/menu-ui.ts:201`` — findRow: only rows of kind "cmd" in MENUS (sub-menus walked)
 
 Plugin commands are reachable too, as ``plugin:<plugin>/<command>`` (registered at run time, not listed here; see ``em.plugins``). Slots are accepted by the API but not forwarded to the command by the page. No command declares whether it writes to the graph: the column says ``unknown``.
 
-Menu commands (41)
+Menu commands (43)
 ------------------
 
 .. list-table::
@@ -129,7 +129,7 @@ Menu commands (41)
      - unknown
    * - :doc:`saveAs <saveAs>`
      - Save As…
-     - Salva come…
+     - Salva con nome…
      - File ▸ Save As…
      - ``⇧⌘S``
      - yes
@@ -159,6 +159,13 @@ Menu commands (41)
      - Porta dentro una cartella…
      - Porta dentro una cartella…
      - File ▸ Porta dentro una cartella…
+     - —
+     - yes
+     - unknown
+   * - :doc:`doorDosco <doorDosco>`
+     - Read as DosCo…
+     - Leggi come DosCo…
+     - File ▸ Read as DosCo…
      - —
      - yes
      - unknown
@@ -299,6 +306,13 @@ Menu commands (41)
      - EM legend
      - Legenda EM
      - Help ▸ EM legend
+     - —
+     - yes
+     - unknown
+   * - :doc:`pythonApi <pythonApi>`
+     - Python API reference
+     - Riferimento API Python
+     - Help ▸ Python API reference
      - —
      - yes
      - unknown
@@ -452,8 +466,8 @@ Keys of the key map without a command (40)
      - Python
      - Writes graph
    * - :doc:`keymap:where <keymap-where>`
-     - Where you are
-     - Dove sei
+     - The chip's menu: author, node, where you work
+     - Il menu del chip: autore, nodo, dove lavori
      - —
      - ``⇧⌘L``
      - no
@@ -523,14 +537,14 @@ Keys of the key map without a command (40)
      - unknown
    * - :doc:`keymap:zoomIn <keymap-zoomIn>`
      - Zoom in
-     - Ingrandisci
+     - Zoom avanti
      - —
      - ``+ · =``
      - no
      - unknown
    * - :doc:`keymap:zoomOut <keymap-zoomOut>`
      - Zoom out
-     - Riduci
+     - Zoom indietro
      - —
      - ``−``
      - no
@@ -585,8 +599,8 @@ Keys of the key map without a command (40)
      - no
      - unknown
    * - :doc:`keymap:s3grs <keymap-s3grs>`
-     - Move, rotate, scale a sketch: then X Y Z, a number, Enter or Esc
-     - Sposta, ruota, scala un abbozzo: poi X Y Z, un numero, Invio o Esc
+     - Move, rotate, scale the selection (proxies, models, sketched shapes; not a tileset, nor what is locked): then X Y Z, a number, Enter or Esc
+     - Sposta, ruota, scala la selezione (proxy, modelli, forme abbozzate; non un tileset, né ciò che è bloccato): poi X Y Z, un numero, Invio o Esc
      - —
      - ``G · R · S``
      - no
@@ -866,8 +880,8 @@ Gestures of the key map (45)
      - no
      - unknown
    * - :doc:`keymap:s3pick <keymap-s3pick>`
-     - Select the proxy under the cursor (a sketch too)
-     - Seleziona il proxy sotto il cursore (anche uno schizzo)
+     - Select the object under the cursor: a proxy, a model, a sketched shape
+     - Seleziona l'oggetto sotto il cursore: un proxy, un modello, una forma abbozzata
      - —
      - Click
      - no
@@ -1086,6 +1100,7 @@ Sub-menus filled at run time
    createRoom
    cut
    door
+   doorDosco
    doorFolder
    exportSvg
    exportTtl
@@ -1194,6 +1209,7 @@ Sub-menus filled at run time
    paste
    pin
    printSheets
+   pythonApi
    quit
    quitFile
    redo

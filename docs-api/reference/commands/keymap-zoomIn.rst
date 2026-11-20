@@ -5,7 +5,7 @@
 keymap:zoomIn
 =============
 
-*Generated from EMStudio 85f69cd for em API 1.2.0.*
+*Generated from EMStudio 141c8f9 for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -16,7 +16,7 @@ keymap:zoomIn
    * - Label (en)
      - Zoom in
    * - Label (it)
-     - Ingrandisci
+     - Zoom avanti
    * - Kind
      - Key of the key map (no command id)
    * - Reachable from Python

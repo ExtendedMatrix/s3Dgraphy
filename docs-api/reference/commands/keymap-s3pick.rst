@@ -5,7 +5,7 @@
 keymap:s3pick
 =============
 
-*Generated from EMStudio 85f69cd for em API 1.2.0.*
+*Generated from EMStudio 141c8f9 for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -14,9 +14,9 @@ keymap:s3pick
    * - Id
      - ``keymap:s3pick``
    * - Label (en)
-     - Select the proxy under the cursor (a sketch too)
+     - Select the object under the cursor: a proxy, a model, a sketched shape
    * - Label (it)
-     - Seleziona il proxy sotto il cursore (anche uno schizzo)
+     - Seleziona l'oggetto sotto il cursore: un proxy, un modello, una forma abbozzata
    * - Kind
      - Gesture of the key map (no command id)
    * - Reachable from Python

@@ -5,7 +5,7 @@
 doorFolder
 ==========
 
-*Generated from EMStudio 85f69cd for em API 1.2.0.*
+*Generated from EMStudio 141c8f9 for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -37,15 +37,15 @@ doorFolder
 What it does
 ------------
 
-**en** — Bring a folder in — a stack of geophysical slices, say — through the add-on that reads folders
+**en** — Bring a folder in: read as DosCo, or by an add-on that reads folders (a stack of geophysical slices, say)
 
-**it** — Porta dentro una cartella — una pila di fette geofisiche, per esempio — con il componente aggiuntivo che legge le cartelle
+**it** — Porta dentro una cartella: letta come DosCo, o da un componente aggiuntivo che legge le cartelle (una pila di fette geofisiche, per esempio)
 
 Slots
 -----
 
 None declared: the command table (``CommandRow`` in ``menu-table.ts``) declares no slots, types or defaults.
-Keyword slots passed to ``em.app.commands.run`` reach the page but are dropped by the host hook (``frontend/src/main.ts:65807``), which calls ``runCommand(id)`` only.
+Keyword slots passed to ``em.app.commands.run`` reach the page but are dropped by the host hook (``frontend/src/main.ts:66015``), which calls ``runCommand(id)`` only.
 
 From Python
 -----------
