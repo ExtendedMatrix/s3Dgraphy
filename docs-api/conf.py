@@ -87,33 +87,34 @@ html_theme = "sphinx_rtd_theme"
 html_title = f"EMStudio Python API {API_VERSION}"
 html_static_path = ["_assets"]
 # MICRO-TIL004 · the foot of every page (_templates/footer.html, vendored from
-# stratigraph-brand): the EMStudio manual, and the small block of the funding,
-# whose full page (logos, the other funders) is in the manual. No line of the
-# rights: this reference has not declared a licence for its text.
+# stratigraph-brand): the EMStudio manual, and the small block of the funding.
+# MICRO-SEG04: the block names the projects of the manual's page «Funding»
+# (today only StratiGraph), and links to it. No line of the rights: this
+# reference has not declared a licence for its text.
 _MANUAL = f"https://docs.extendedmatrix.org/projects/emstudio-doc/{'it' if language == 'it' else 'en'}/1.6/"
 _FOOT = {
     "en": {
         "manual": "EMStudio manual",
-        "text": "EMStudio, whose scripting API this reference describes, is developed within "
-                "StratiGraph, a Horizon Europe Innovation Action (grant agreement 101232855).",
+        "text": "EMStudio, whose scripting API this reference describes, has been developed with "
+                "the support of StratiGraph (Horizon Europe, grant agreement 101232855).",
         "disclaimer": "Funded by the European Union. Views and opinions expressed are however "
                       "those of the author(s) only and do not necessarily reflect those of the "
                       "European Union or the European Research Executive Agency (REA). Neither "
                       "the European Union nor the granting authority can be held responsible "
                       "for them.",
-        "more": "Acknowledgements and funding",
+        "more": "Funding",
     },
     "it": {
         "manual": "Manuale di EMStudio",
-        "text": "EMStudio, di cui questo riferimento descrive l'API di scripting, è sviluppato "
-                "nell'ambito di StratiGraph, un'Innovation Action di Horizon Europe "
-                "(grant agreement 101232855).",
+        "text": "EMStudio, di cui questo riferimento descrive l'API di scripting, è stato "
+                "sviluppato con il sostegno di StratiGraph (Horizon Europe, grant agreement "
+                "n. 101232855).",
         "disclaimer": "Finanziato dall'Unione europea. I punti di vista e le opinioni espressi "
                       "sono tuttavia esclusivamente quelli degli autori e non riflettono "
                       "necessariamente quelli dell'Unione europea o dell'Agenzia esecutiva "
                       "europea per la ricerca (REA). Né l'Unione europea né l'autorità che "
                       "concede il finanziamento possono esserne ritenute responsabili.",
-        "more": "Ringraziamenti e finanziamenti",
+        "more": "Finanziamenti",
     },
 }
 _foot = _FOOT.get(language, _FOOT["en"])
