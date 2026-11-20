@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: EMStudio Python API 1.2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-20 18:23+0100\n"
+"POT-Creation-Date: 2026-11-20 20:31+0100\n"
 "PO-Revision-Date: 2026-11-19 21:17+0100\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: it <LL@li.org>\n"
@@ -89,7 +89,10 @@ msgstr ""
 msgid "``\"info\"``, ``\"warning\"`` or ``\"error\"``."
 msgstr ""
 
-msgid "The 3D Space of the application (camera, framing, picking)."
+msgid "The 3D Space of the application."
+msgstr ""
+
+msgid "``camera``, ``set_camera``, ``frame``, ``pick`` in every host; a host may give its own Space with more (EMStudio: ``layers``, ``epoch``, ``epochs``, ``profile``)."
 msgstr ""
 
 msgid "The application's commands (:meth:`run <_App._Commands.run>`)."
@@ -131,16 +134,40 @@ msgstr ""
 msgid "a dict in the shape :meth:`camera` returns."
 msgstr ""
 
-msgid "``em.app.commands`` — the application's own commands."
+msgid "``em.app.commands`` — the application's commands (our ``bpy.ops``)."
 msgstr ""
 
-msgid "Run a command of the application by its id."
+msgid "One command's entry of :meth:`list`."
+msgstr ""
+
+msgid "the command's id."
+msgstr ""
+
+msgid "the entry, or None when there is no such command."
+msgstr ""
+
+msgid "as :meth:`list`."
+msgstr ""
+
+msgid "The commands and actions a script reaches here, with their parameters."
+msgstr ""
+
+msgid "one entry per command (``id``, ``kind``, ``form``, ``params``, ``doc``), from the host's command catalog."
+msgstr ""
+
+msgid "with no application, or a host without a catalog."
+msgstr ""
+
+msgid "Run a command of the application by its id, with its parameters."
+msgstr ""
+
+msgid "In EMStudio a command whose values are all given runs without its window; with values missing its window opens, filled (Blender's EXEC / INVOKE)."
 msgstr ""
 
 msgid "the command's id (``\"graph.fit\"``, a plugin's ``\"<plugin>/<command>\"``…)."
 msgstr ""
 
-msgid "the command's arguments."
+msgid "the command's parameters; they reach the command."
 msgstr ""
 
 msgid "Whatever the command returns."

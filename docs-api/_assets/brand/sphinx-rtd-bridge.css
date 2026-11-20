@@ -133,7 +133,9 @@ a:hover, a:focus { color: var(--sgb-link-hover); }
   font-family: var(--sg-font-display);
   color: #fff;
 }
-.wy-side-nav-search > div.version { color: rgba(255, 255, 255, .8); }
+/* the version under the name: white, as the name (at 80 % it fell under AA
+   on the accent of the StratiGraph face) */
+.wy-side-nav-search > div.version { color: #fff; }
 .wy-side-nav-search input[type="text"] {
   background: var(--sg-surface);
   color: var(--sg-text);
@@ -383,7 +385,8 @@ hr, .rst-content hr { border-color: var(--sg-line); }
   gap: var(--sg-space-2);
   margin-top: var(--sg-space-3);
   padding: 4px var(--sg-space-3);
-  background: rgba(255, 255, 255, .14);
+  background: rgba(0, 0, 0, .12);   /* a shade, not a light: white over a
+                                        lightened accent fell under AA */
   color: #fff;
   border: 1px solid rgba(255, 255, 255, .35);
   border-radius: var(--sg-radius-pill);
@@ -392,7 +395,7 @@ hr, .rst-content hr { border-color: var(--sg-line); }
   line-height: 1.6;
   cursor: pointer;
 }
-.sg-theme-toggle:hover { background: rgba(255, 255, 255, .26); }
+.sg-theme-toggle:hover { background: rgba(0, 0, 0, .24); }
 .sg-theme-toggle:focus-visible { outline: 2px solid #fff; outline-offset: 2px; }
 .sg-theme-toggle svg { flex: none; }
 

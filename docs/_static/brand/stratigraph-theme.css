@@ -67,6 +67,13 @@
   --sg-olive-earth:    #8A8021;
   --sg-terracotta:     #A64724;
   --sg-burnt-orange:   #E85B1A;
+  /* The same two hues, only darker: the least lightness (HLS, hue and
+     saturation kept) at which they carry text at AA in the light face
+     (MICRO-SEG06, E.D. 20 Nov 2026: «arancio: scurisci poco»). The guidebook
+     colours above stay what they are, for fills, the gradient and the logo. */
+  --sg-burnt-orange-ink: #9D3C10;  /* 4.53 on Soft Dust (a linked `code`) ·
+                                      5.74 on Off-White · white on it 6.80 */
+  --sg-terracotta-ink:   #974121;  /* 4.52 on Soft Dust (inline code)      */
 
   /* Digital accents — "coded logic, modules, tool categories and system
      navigation. They should feel digital, glowing and intentional." Which is
@@ -89,8 +96,8 @@
   --sg-text:          var(--sg-deep-charcoal);
   --sg-muted:         var(--sg-deep-gray);
 
-  --sg-accent:        var(--sg-burnt-orange);   /* the primary action */
-  --sg-accent-quiet:  var(--sg-terracotta);     /* a secondary action */
+  --sg-accent:        var(--sg-burnt-orange-ink);  /* the primary action */
+  --sg-accent-quiet:  var(--sg-terracotta-ink);    /* a secondary action */
   --sg-info:          var(--sg-thermal-blue);   /* a stated fact, an id       */
   --sg-ok:            var(--sg-soft-neon-green);/* something landed           */
   --sg-warn:          var(--sg-terracotta);     /* something needs a person   */
@@ -105,13 +112,20 @@
          Terracotta     5.00  AA      Soft Neon Green  1.36  fails
                                       Olive Earth      3.42  AA-large only
 
+     Burnt Orange and Terracotta reach the roles through their -ink twins
+     (#9D3C10: 4.53 on Soft Dust, where a linked `code` sits, 5.74 on
+     Off-White, white on it 6.80; #974121: 4.52 on Soft Dust, 5.73 on
+     Off-White), so a link, the head of the side column and inline code read
+     at AA in the light face.
+
      So the three "digital accents" are FILLS and WASHES, never text ink. A tag
      uses the accent at 16-22% as its background and one of these as its ink;
      measured on the real wash, that is 6.28 (info) and 5.76 (ok) — both AA.
 
      On a filled control the ink is white, and there the rule is different: an
      ICON is a graphical object and needs 3:1, not 4.5:1. White on Burnt Orange
-     is 3.53 — enough for the glyph, NOT enough if it were a word. Hence icon
+     is 3.53 — enough for the glyph, NOT enough if it were a word (white on the
+     accent role, Burnt Orange ink, is 6.80). Hence icon
      buttons carry an `aria-label` rather than a caption. */
   --sg-info-ink:      #1F5D78;
   --sg-ok-ink:        #5C6410;
@@ -162,6 +176,7 @@
     --sg-muted:        var(--sg-soft-dust);
     --sg-info-ink:     var(--sg-thermal-blue);
     --sg-ok-ink:       var(--sg-soft-neon-green);
+    --sg-accent-quiet: var(--sg-terracotta);  /* the dark face as before */
     --sg-shadow:       0 2px 10px rgba(0, 0, 0, .35);
   }
 }
@@ -174,6 +189,7 @@
   --sg-muted:        var(--sg-soft-dust);
   --sg-info-ink:     var(--sg-thermal-blue);
   --sg-ok-ink:       var(--sg-soft-neon-green);
+  --sg-accent-quiet: var(--sg-terracotta);  /* the dark face as before */
   --sg-shadow:       0 2px 10px rgba(0, 0, 0, .35);
 }
 

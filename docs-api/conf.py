@@ -27,7 +27,7 @@ _pyproject = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
 S3D_VERSION = re.search(r'^version\s*=\s*"([^"]+)"', _pyproject, re.M).group(1)
 
 project = "EMStudio Python API"
-copyright = "2026, Emanuel Demetrescu"
+copyright = "2026, Consiglio Nazionale delle Ricerche (CNR) — Istituto di Scienze del Patrimonio Culturale"
 author = "Emanuel Demetrescu"
 version = API_VERSION
 release = f"{API_VERSION} (s3dgraphy {S3D_VERSION})"
@@ -89,8 +89,9 @@ html_static_path = ["_assets"]
 # MICRO-TIL004 · the foot of every page (_templates/footer.html, vendored from
 # stratigraph-brand): the EMStudio manual, and the small block of the funding.
 # MICRO-SEG04: the block names the projects of the manual's page «Funding»
-# (today only StratiGraph), and links to it. No line of the rights: this
-# reference has not declared a licence for its text.
+# (today only StratiGraph), and links to it.
+# MICRO-SEG06: the text of the reference is CC BY 4.0, as the other EM manuals
+# (docs-api/LICENSE, holder the institute): the line of the rights is shown.
 _MANUAL = f"https://docs.extendedmatrix.org/projects/emstudio-doc/{'it' if language == 'it' else 'en'}/1.6/"
 _FOOT = {
     "en": {
@@ -126,7 +127,7 @@ html_context = {
         "disclaimer": _foot["disclaimer"],
         "more": (_foot["more"], _MANUAL + "acknowledgements.html"),
     },
-    "sg_rights": False,
+    "sg_rights": True,
 }
 html_css_files = ["brand/stratigraph-theme.css", "brand/skins.css", "brand/sphinx-rtd-bridge.css"] + (
     ["rtl.css"] if rtl else [])
