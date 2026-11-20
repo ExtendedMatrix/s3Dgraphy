@@ -123,14 +123,17 @@ def _edge(graph, s: str, t: str, et: str) -> None:
 def bring_in(graph, files: Iterable[Mapping[str, Any]], *, document_id: Optional[str] = None,
              title: str = "", name: Optional[str] = None, date: Any = None, epoch_id: Optional[str] = None,
              license: Optional[str] = None, author_id: Optional[str] = None,
-             gis: Optional[Mapping[str, Any]] = None) -> Dict[str, Any]:
+             gis: Optional[Mapping[str, Any]] = None,
+             document_node_id: Optional[str] = None) -> Dict[str, Any]:
     """Files into a document (see the module). ``files``: ``{path, url?, name?,
     kind?, role?, packaging?, checksum?, size_bytes?, media_type?, name_only?}``
     — ``url`` the locator written (default ``path``), ``role`` one of
     :data:`ROLES` for a model or a tileset (default ``rm``); the rest is what a
     tileset's preview read (MICRO-F p.2: a tileset dropped passes by the door). ``gis``:
     the extra arguments of :func:`..gis.document.add_gis_document` (crs, shift,
-    urls) for the GIS files among them."""
+    urls) for the GIS files among them. ``document_node_id``: the id a NEW
+    document takes (a DosCo file's stable id, :func:`bring_in_dosco`); ignored
+    when ``document_id`` names one already there."""
     from .document_names import next_document_name
     from .gis.document import add_gis_document, set_license
     from .nodes.representation_node import RepresentationModelDocNode, RepresentationModelNode
@@ -157,7 +160,10 @@ def bring_in(graph, files: Iterable[Mapping[str, Any]], *, document_id: Optional
             d["absolute_time_start"] = date
     else:
         dname = str(name or "").strip() or next_document_name(graph)
-        document_id = new_document(graph, dname, description=str(title or ""), date=date, author_id=author_id)
+        if document_node_id and _node(graph, document_node_id) is not None:
+            raise ValueError(f"{document_node_id!r} is already a node of this graph")
+        document_id = new_document(graph, dname, description=str(title or ""), date=date, author_id=author_id,
+                                   node_id=document_node_id or None)
         doc = _node(graph, document_id)
         born = True
     if license:
@@ -283,4 +289,77 @@ def tropy_plan(items: Iterable[Mapping[str, Any]], graph=None) -> List[Dict[str,
     return out
 
 
-__all__ = ["kind_of", "bring_in", "model_of_locator", "resource_of_locator", "tropy_plan", "ROLES"]
+def dosco_plan(shelf: Iterable[Mapping[str, Any]], graph=None) -> List[Dict[str, Any]]:
+    """A DosCo folder through the same door, another form (MICRO-COR06, E.D.
+    19 Nov 2026: the old «Resources» window absorbed into «Porta dentro…»).
+    ``shelf``: the folder's files with an EM id that are not documents yet
+    (:func:`..api.shelf_resources`: ``{resource_id, key_id, filename,
+    rel_path}``). One row per FILE: ``key_id`` the document it becomes (its
+    name, ``D.nn``), ``resource_id`` the stable id the document ADOPTS, ``kind``
+    and the ``roles`` a model may take. The files of one id are the files of
+    ONE document (``first``: the row that makes it). Nothing is written: the
+    page shows the table — date always, licence, role — and confirms it in one
+    block (:func:`bring_in_dosco`)."""
+    taken = set()
+    if graph is not None:
+        taken = {str(n.node_id) for n in graph.nodes}
+    seen: Dict[str, int] = {}
+    out: List[Dict[str, Any]] = []
+    for e in shelf:
+        key = str(e.get("key_id") or "").strip()
+        rid = str(e.get("resource_id") or "").strip()
+        rel = str(e.get("rel_path") or e.get("filename") or "")
+        if not key or not rid or not rel:
+            continue
+        kind = kind_of(rel)
+        out.append({"key_id": key, "resource_id": rid, "filename": str(e.get("filename") or os.path.basename(rel)),
+                    "rel_path": rel, "kind": kind,
+                    "roles": list(ROLES[:2]) if kind in ("model", "tileset") else [],
+                    "first": key not in seen, "id_taken": rid in taken})
+        seen[key] = seen.get(key, 0) + 1
+    return sorted(out, key=lambda r: (r["key_id"], not r["first"], r["filename"]))
+
+
+def bring_in_dosco(graph, rows: Iterable[Mapping[str, Any]], *, epoch_id: Optional[str] = None,
+                   author_id: Optional[str] = None) -> Dict[str, Any]:
+    """The rows of :func:`dosco_plan`, confirmed: each file through
+    :func:`bring_in` — its document ``key_id`` (born with the stable id
+    ``resource_id`` of its first file, or the one already named so), its date
+    (ALWAYS: a row without one refuses the whole block, nothing written), its
+    licence, its role. ``rows``: ``{path, url?, key_id, resource_id, date,
+    license?, role?, kind?}`` with ``path`` the file on this machine.
+    → ``{documents: [{key_id, document_id, document_name, born, items}],
+    warnings}``."""
+    rows = [dict(r) for r in rows]
+    if not rows:
+        raise ValueError("no file to bring in")
+    nodate = [str(r.get("key_id") or r.get("path")) for r in rows if str(r.get("date") or "").strip() == ""]
+    if nodate:
+        raise ValueError("the document's date is wanted: «Quando è stato fatto questo documento?» — "
+                         + ", ".join(sorted(set(nodate))))
+    by_name = {}
+    for n in graph.nodes:
+        if getattr(n, "node_type", "") == "document":
+            by_name.setdefault(str(getattr(n, "name", "") or "").strip(), n.node_id)
+    docs: Dict[str, Dict[str, Any]] = {}
+    warnings: List[str] = []
+    for r in rows:
+        key = str(r.get("key_id") or "").strip()
+        if not key:
+            raise ValueError(f"{r.get('path')!r}: a DosCo file without its EM id")
+        f = {k: r[k] for k in ("path", "url", "kind", "role", "name") if r.get(k)}
+        there = docs.get(key, {}).get("document_id") or by_name.get(key)
+        rid = str(r.get("resource_id") or "").strip()
+        got = bring_in(graph, [f], document_id=there, name=key, date=str(r["date"]).strip(),
+                       epoch_id=epoch_id, license=r.get("license") or None, author_id=author_id,
+                       document_node_id=None if there or not rid or _node(graph, rid) is not None else rid)
+        d = docs.setdefault(key, {"key_id": key, "document_id": got["document_id"],
+                                  "document_name": got["document_name"], "born": got["document_born"], "items": []})
+        d["items"] += got["items"]
+        warnings += got["warnings"]
+        by_name.setdefault(key, got["document_id"])
+    return {"documents": list(docs.values()), "warnings": warnings}
+
+
+__all__ = ["kind_of", "bring_in", "bring_in_dosco", "dosco_plan", "model_of_locator", "resource_of_locator",
+           "tropy_plan", "ROLES"]

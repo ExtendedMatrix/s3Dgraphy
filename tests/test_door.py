@@ -102,3 +102,56 @@ def test_a_dropped_tileset_passes_by_the_door_with_what_its_preview_read(tmp_pat
                        title="T", date="2016")
     res2 = g.find_node_by_id(r2["items"][0]["resource_id"])
     assert res2.data.get("packaging") == "directory" and "name only" in res2.data.get("locator_note", "")
+
+
+# MICRO-COR06 · a DosCo folder through the same door (the «Resources» window absorbed)
+
+def test_dosco_plan_one_row_per_file_the_files_of_one_id_one_document():
+    from s3dgraphy.door import dosco_plan
+    shelf = [
+        {"resource_id": "r-b", "key_id": "D.12", "filename": "D.12_b.jpg", "rel_path": "D.12_b.jpg"},
+        {"resource_id": "r-a", "key_id": "D.12", "filename": "D.12_a.jpg", "rel_path": "D.12_a.jpg"},
+        {"resource_id": "r-m", "key_id": "D.20", "filename": "D.20.obj", "rel_path": "sub/D.20.obj"},
+        {"resource_id": "", "key_id": "D.30", "filename": "D.30.pdf", "rel_path": "D.30.pdf"},
+    ]
+    rows = dosco_plan(shelf, _g())
+    assert [(r["key_id"], r["filename"], r["first"]) for r in rows] == [
+        ("D.12", "D.12_b.jpg", True), ("D.12", "D.12_a.jpg", False), ("D.20", "D.20.obj", True)]
+    assert rows[2]["kind"] == "model" and rows[2]["roles"] == ["rm", "rmdoc"] and rows[0]["roles"] == []
+
+
+def test_bring_in_dosco_adopts_the_id_writes_date_and_licence(tmp_path):
+    from s3dgraphy.door import bring_in_dosco
+    g = _g()
+    got = bring_in_dosco(g, [
+        {"path": str(tmp_path / "D.12_a.jpg"), "url": "DosCo/D.12_a.jpg", "key_id": "D.12", "resource_id": "fs-uuid-12",
+         "date": "2019-05-03", "license": "CC-BY-4.0"},
+        {"path": str(tmp_path / "D.12_b.jpg"), "url": "DosCo/D.12_b.jpg", "key_id": "D.12", "resource_id": "fs-uuid-12b",
+         "date": "2019-05-03", "license": "CC-BY-4.0"},
+    ])
+    [d] = got["documents"]
+    assert d["document_id"] == "fs-uuid-12" and d["born"] and d["document_name"] == "D.12" and len(d["items"]) == 2
+    doc = g.find_node_by_id("fs-uuid-12")
+    assert doc.node_type == "document" and doc.data["absolute_time_start"] == "2019-05-03"
+    lic = [e.edge_target for e in g.edges if e.edge_source == "fs-uuid-12" and e.edge_type == "has_license"]
+    assert lic and g.find_node_by_id(lic[0]).data.get("license_type") == "CC-BY-4.0"
+    files = [e.edge_target for e in g.edges if e.edge_source == "fs-uuid-12" and e.edge_type == "has_linked_resource"]
+    assert len(files) == 2
+
+
+def test_bring_in_dosco_refuses_a_row_without_date_and_writes_nothing():
+    from s3dgraphy.door import bring_in_dosco
+    g = _g()
+    n0, e0 = len(g.nodes), len(g.edges)
+    with pytest.raises(ValueError, match="D.40"):
+        bring_in_dosco(g, [{"path": "a.jpg", "key_id": "D.41", "resource_id": "x1", "date": "2020"},
+                           {"path": "b.jpg", "key_id": "D.40", "resource_id": "x2", "date": " "}])
+    assert (len(g.nodes), len(g.edges)) == (n0, e0)
+
+
+def test_bring_in_dosco_into_the_document_of_the_same_name():
+    from s3dgraphy.door import bring_in_dosco
+    g = _g()
+    got = bring_in_dosco(g, [{"path": "D.01_x.jpg", "key_id": "D.01", "resource_id": "fs-1", "date": "2001"}])
+    assert got["documents"][0]["document_id"] == "D1" and not got["documents"][0]["born"]
+    assert g.find_node_by_id("fs-1") is None
