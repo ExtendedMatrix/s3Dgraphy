@@ -1362,3 +1362,9 @@ __all__ = ["CommandDecl", "Plugin", "PackageView", "ExportFile", "Context", "Cal
            "registry", "descriptor_of", "invoke", "run_checks", "readers_for", "read_commands",
            "plugins_data_dir", "DATA_ENV", "PanelDecl", "read_panels", "shape", "compute",
            "panels", "tools"]
+
+
+def __dir__() -> List[str]:
+    # MICRO-SEG12 (21 Nov 2026) · what a console's Tab lists (Blender's, EMStudio's):
+    # the public names only, not the typing helpers and modules imported here
+    return sorted(__all__)

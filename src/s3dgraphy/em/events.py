@@ -257,3 +257,9 @@ def emit(event: str, payload: Optional[Dict[str, Any]] = None) -> List[Dict[str,
 
 __all__ = ["EVENTS", "Listener", "Subscription", "on", "off", "listeners", "owned_counts", "on_owned",
            "off_owner", "scope", "new_table", "clear", "dispatching", "defer", "emit"]
+
+
+def __dir__() -> List[str]:
+    # MICRO-SEG12 (21 Nov 2026) · what a console's Tab lists (Blender's, EMStudio's):
+    # the public names only, not the typing helpers and modules imported here
+    return sorted(__all__)

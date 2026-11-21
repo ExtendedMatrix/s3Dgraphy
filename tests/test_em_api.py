@@ -458,3 +458,15 @@ def test_app_reaches_what_the_host_adds():
         em.app.space.camera()
     with pytest.raises(em.NotAvailable):
         em.app.commands.list()
+
+
+def test_dir_of_em_is_its_public_names():
+    """MICRO-SEG12 · a console's Tab lists ``dir(em)``: the names of ``__all__``,
+    not the typing helpers nor the modules imported inside (still importable)."""
+    import s3dgraphy.em as em_mod
+    for mod in (em_mod, em_mod.events, em_mod.host, em_mod.plugins):
+        names = dir(mod)
+        assert names == sorted(mod.__all__)
+        assert not {"Any", "Dict", "List", "Optional", "annotations"} & set(names)
+    assert "graph" in dir(em_mod)
+    from s3dgraphy.em import Catalogs, language, message  # noqa: F401 — the API is unchanged

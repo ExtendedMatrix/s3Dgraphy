@@ -388,3 +388,9 @@ def current() -> Any:
 
 __all__ = ["App", "Host", "NoApp", "ScriptHost", "AUTHOR_ENV", "SCRIPT_CALLER", "install",
            "uninstall", "current", "script_caller", "process_of", "touched_ids", "Versions"]
+
+
+def __dir__() -> List[str]:
+    # MICRO-SEG12 (21 Nov 2026) · what a console's Tab lists (Blender's, EMStudio's):
+    # the public names only, not the typing helpers and modules imported here
+    return sorted(__all__)

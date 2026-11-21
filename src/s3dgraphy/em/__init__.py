@@ -542,3 +542,9 @@ __all__ = ["API_VERSION", "EVENTS", "graph", "vocab", "profiles", "catalogs", "e
            "on", "off", "open", "use", "save", "help", "host", "events", "EmError", "NotAvailable",
            "Refused", "NodeNotFound", "AmbiguousNode", "ConceptNotFound", "GraphView", "NodeView",
            "EdgeView", "PropertyView", "Concept", "Transaction", "WriteResult"]
+
+
+def __dir__() -> List[str]:
+    # MICRO-SEG12 (21 Nov 2026) · what a console's Tab lists (Blender's, EMStudio's):
+    # the public names only, not the typing helpers and modules imported here
+    return sorted(__all__)
