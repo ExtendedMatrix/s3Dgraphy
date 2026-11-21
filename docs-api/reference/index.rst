@@ -31,6 +31,7 @@ The modules:
    em/graph
    em/write
    em/vocab
+   em/catalogs
    em/stamps
    em/extensions
    em/plugins

@@ -42,7 +42,7 @@ from s3dgraphy.nodes.representation_node import RepresentationModelNode
 from s3dgraphy.nodes.stratigraphic_node import StratigraphicUnit
 
 ORCID = "0000-0002-1825-0097"
-SUBMODULES = ("graph", "write", "vocab", "stamps", "extensions", "plugins", "events", "errors",
+SUBMODULES = ("graph", "write", "vocab", "catalogs", "stamps", "extensions", "plugins", "events", "errors",
               "messages", "host")
 MODULES = ["s3dgraphy.em"] + [f"s3dgraphy.em.{m}" for m in SUBMODULES]
 #: computed on access, documented in the module docstring

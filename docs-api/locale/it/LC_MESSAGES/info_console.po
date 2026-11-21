@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: EMStudio Python API 1.2.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-20 18:23+0100\n"
+"POT-Creation-Date: 2026-11-21 01:28+0100\n"
 "PO-Revision-Date: 2026-11-20 18:23+0100\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: it <LL@li.org>\n"
@@ -29,17 +29,17 @@ msgstr "La **console Python** (*Strumenti ▸ Console Python*, o qualunque area 
 msgid "Tab, as in Blender"
 msgstr "Il Tab, come in Blender"
 
-msgid "In the console, **Tab** (or **Ctrl+Space**, for whom Tab is taken) completes what is before the cursor:"
-msgstr "Nella console **Tab** (o **Ctrl+Spazio**, per chi ha il Tab occupato) completa ciò che sta prima del cursore:"
+msgid "In the console, **Tab** completes what is before the cursor, and **Tab twice** shows what may follow, as in Blender:"
+msgstr "Nella console **Tab** completa ciò che sta prima del cursore, e **due volte Tab** mostra i possibili proseguimenti, come in Blender:"
 
 msgid "one possibility: it is completed;"
 msgstr "una sola possibilità: la completa;"
 
-msgid "more: their common start is completed and **the list is printed in the output**, each name with the mark of its kind — ``▣`` module, ``◆`` class, ``ƒ`` function or method, ``•`` property, ``=`` value, ``k`` a Python keyword — and the first line of what it is;"
-msgstr "più d'una: completa il prefisso comune e **stampa l'elenco nell'output**, ogni nome con il segno del suo tipo — ``▣`` modulo, ``◆`` classe, ``ƒ`` funzione o metodo, ``•`` proprietà, ``=`` valore, ``k`` parola chiave di Python — e la prima riga di che cos'è;"
+msgid "more: the first Tab completes their common start; **the second Tab in a row prints the list under the line, in green**, in columns, each name with the mark of its kind — ``▣`` module, ``◆`` class, ``ƒ`` function or method, ``•`` property, ``=`` value, ``k`` a Python keyword — and the first line of what it is; the line stays as it was, the cursor where it was. **Ctrl+Space** is the double Tab at once;"
+msgstr "più d'una: il primo Tab completa il prefisso comune; **il secondo Tab di fila stampa l'elenco sotto la riga, in verde**, in colonne, ogni nome con il segno del suo tipo — ``▣`` modulo, ``◆`` classe, ``ƒ`` funzione o metodo, ``•`` proprietà, ``=`` valore, ``k`` parola chiave di Python — e la prima riga di che cos'è; la riga resta com'era, il cursore dov'era. **Ctrl+Spazio** è il doppio Tab in un colpo;"
 
-msgid "after a callable and its ``(`` — ``g.node(``, ``em.app.commands.run(`` — its **signature** and the first lines of its docstring;"
-msgstr "dopo un nome chiamabile e la sua ``(`` — ``g.node(``, ``em.app.commands.run(`` — la sua **firma** e le prime righe della docstring;"
+msgid "after a function's name or its ``(`` — ``g.chrono`` → ``g.chronology(``, ``g.node(``, ``em.app.commands.run(`` — its **signature** and the first lines of its docstring, in green too;"
+msgstr "dopo il nome di una funzione o la sua ``(`` — ``g.chrono`` → ``g.chronology(``, ``g.node(``, ``em.app.commands.run(`` — la sua **firma** e le prime righe della docstring, anch'esse in verde;"
 
 msgid "inside ``em.app.commands.run(\"open\", `` the command's own parameters (``path=``, ``replace=``) and its signature;"
 msgstr "dentro ``em.app.commands.run(\"open\", `` i parametri del comando (``path=``, ``replace=``) e la sua firma;"
@@ -52,6 +52,15 @@ msgstr "Un Tab non esegue mai nulla che chieda alla pagina: i nomi di ``em.app.s
 
 msgid "In the **Script Editor** the same answer comes as a list under the cursor while typing after a name or a dot, and on **Ctrl+Space**: the kind as an icon, the first line of the docstring beside it, the signature as the first row when a call is open. Enter accepts."
 msgstr "Nell'**Editor di script** la stessa risposta arriva come tendina sotto il cursore mentre si scrive dopo un nome o un punto, e con **Ctrl+Spazio**: il tipo come icona, la prima riga della docstring accanto, la firma come prima riga quando una chiamata è aperta. Invio accetta."
+
+msgid "Colours"
+msgstr "Colori"
+
+msgid "The console colours what it shows, in the light and the dark theme alike: the line you wrote with Python's colours (as in the Script Editor), the prompt ``>>>`` / ``...`` in ochre, results in blue, **errors and tracebacks in red**, Python's warnings in amber, the system's words (the welcome, ``em.help()``) faint, Tab's possibilities and signatures in green."
+msgstr "La console colora ciò che mostra, nel tema chiaro come in quello scuro: la riga scritta con i colori di Python (come nell'Editor di script), il prompt ``>>>`` / ``...`` in ocra, i risultati in blu, **errori e traceback in rosso**, gli avvisi di Python in ambra, le parole del sistema (il benvenuto, ``em.help()``) attenuate, i proseguimenti del Tab e le firme in verde."
+
+msgid "The Python console: a line in Python's colours, a warning in amber, a traceback in red, a signature and the list of em.app's names printed in green by a double Tab."
+msgstr "La console Python: una riga con i colori di Python, un avviso in ambra, un traceback in rosso, una firma e l'elenco dei nomi di em.app stampati in verde da un doppio Tab."
 
 msgid "One source"
 msgstr "Una sola fonte"

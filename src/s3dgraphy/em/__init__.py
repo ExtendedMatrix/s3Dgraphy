@@ -13,7 +13,7 @@
 
 Two halves (SPEC-plugin §1, §2):
 
-* **the graph** — :data:`graph`, :data:`vocab`, :data:`profiles`,
+* **the graph** — :data:`graph`, :data:`vocab`, :data:`profiles`, :data:`catalogs`,
   :func:`write`, :data:`extensions`, :func:`on`: IDENTICAL in EMStudio, in
   EM Tools and in a script with no application. A script that only touches the
   graph runs everywhere;
@@ -41,6 +41,7 @@ from .extensions import Extensions
 from .graph import AmbiguousNode, EdgeView, GraphView, NodeNotFound, NodeView, PropertyView
 from .messages import language, message
 from .vocab import Concept, ConceptNotFound, Profiles, Vocab
+from .catalogs import Catalogs
 from .write import Transaction, WriteResult, write
 from .stamps import StampError, stamp_artifact as stamp
 
@@ -53,6 +54,9 @@ API_VERSION = "1.2.0"   # 1.1 (W14, MICRO-PL17): em.ext, em.plugins, document-sa
 
 vocab = Vocab()
 profiles = Profiles()
+#: the datamodel's catalogues, read only (MICRO-SEG09): qualia, document and
+#: extractor types, visual rules, colour ramps, state symbols…
+catalogs = Catalogs()
 extensions = Extensions()
 #: what the loaded plugins expose to the console (slot ``console@1``, W14)
 ext = plugins.Ext()
@@ -502,6 +506,8 @@ def help(lang: Optional[str] = None) -> str:                # noqa: A001
          "em.vocab — the vocabularies (concept, search)"),
         ("em.profiles — i pacchetti (active, extractor_type, landmark_set)" if it else
          "em.profiles — the packages (active, extractor_type, landmark_set)"),
+        ("em.catalogs — i cataloghi del datamodel, in sola lettura (node_types, qualia_types, visual_rules…)" if it else
+         "em.catalogs — the datamodel's catalogues, read only (node_types, qualia_types, visual_rules…)"),
         ("with em.write(\"etichetta\") as tx: … — scrivere (un atto, un passo)" if it else
          "with em.write(\"label\") as tx: … — writing (one act, one step)"),
         ("em.extensions — installa, elenca, attiva da disco" if it else
@@ -531,7 +537,7 @@ def help(lang: Optional[str] = None) -> str:                # noqa: A001
     return text
 
 
-__all__ = ["API_VERSION", "EVENTS", "graph", "vocab", "profiles", "extensions", "ext", "plugins", "app", "write",
+__all__ = ["API_VERSION", "EVENTS", "graph", "vocab", "profiles", "catalogs", "extensions", "ext", "plugins", "app", "write",
            "stamp", "StampError",
            "on", "off", "open", "use", "save", "help", "host", "events", "EmError", "NotAvailable",
            "Refused", "NodeNotFound", "AmbiguousNode", "ConceptNotFound", "GraphView", "NodeView",

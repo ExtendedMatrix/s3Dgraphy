@@ -12,16 +12,19 @@ ONE Python session on the open document: ``em`` imported, ``g`` the graph,
 Tab, as in Blender
 ------------------
 
-In the console, **Tab** (or **Ctrl+Space**, for whom Tab is taken) completes
-what is before the cursor:
+In the console, **Tab** completes what is before the cursor, and **Tab
+twice** shows what may follow, as in Blender:
 
 * one possibility: it is completed;
-* more: their common start is completed and **the list is printed in the
-  output**, each name with the mark of its kind — ``▣`` module, ``◆`` class,
-  ``ƒ`` function or method, ``•`` property, ``=`` value, ``k`` a Python
-  keyword — and the first line of what it is;
-* after a callable and its ``(`` — ``g.node(``, ``em.app.commands.run(`` —
-  its **signature** and the first lines of its docstring;
+* more: the first Tab completes their common start; **the second Tab in a
+  row prints the list under the line, in green**, in columns, each name with
+  the mark of its kind — ``▣`` module, ``◆`` class, ``ƒ`` function or
+  method, ``•`` property, ``=`` value, ``k`` a Python keyword — and the first
+  line of what it is; the line stays as it was, the cursor where it was.
+  **Ctrl+Space** is the double Tab at once;
+* after a function's name or its ``(`` — ``g.chrono`` → ``g.chronology(``,
+  ``g.node(``, ``em.app.commands.run(`` — its **signature** and the first
+  lines of its docstring, in green too;
 * inside ``em.app.commands.run("open", `` the command's own parameters
   (``path=``, ``replace=``) and its signature;
 * inside a string, the values of the domain: the command ids in
@@ -47,6 +50,19 @@ In the **Script Editor** the same answer comes as a list under the cursor
 while typing after a name or a dot, and on **Ctrl+Space**: the kind as an
 icon, the first line of the docstring beside it, the signature as the first
 row when a call is open. Enter accepts.
+
+Colours
+-------
+
+The console colours what it shows, in the light and the dark theme alike: the
+line you wrote with Python's colours (as in the Script Editor), the prompt
+``>>>`` / ``...`` in ochre, results in blue, **errors and tracebacks in red**,
+Python's warnings in amber, the system's words (the welcome, ``em.help()``)
+faint, Tab's possibilities and signatures in green.
+
+.. image:: _assets/console-colours-tab.png
+   :alt: The Python console: a line in Python's colours, a warning in amber, a traceback in red, a signature and the list of em.app's names printed in green by a double Tab.
+   :width: 100%
 
 One source
 ----------

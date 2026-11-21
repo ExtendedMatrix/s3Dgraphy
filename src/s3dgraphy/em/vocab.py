@@ -209,6 +209,10 @@ class Profiles:
         """The extractor types of the active packages, by id."""
         return self._overlay().extractor_types()
 
+    def document_types(self) -> Dict[str, Dict[str, Any]]:
+        """The document types (core + the active packages'), by id (MICRO-SEG09)."""
+        return self._overlay().document_types()
+
     def combiner_types(self) -> Dict[str, Dict[str, Any]]:
         """The combiner types of the active packages, by id."""
         return self._overlay().combiner_types()

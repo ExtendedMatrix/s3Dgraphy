@@ -1,0 +1,177 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) 2026, Consiglio Nazionale delle Ricerche (CNR) — Istituto di Scienze del Patrimonio Culturale
+# This file is distributed under the same license as the EMStudio Python API package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: EMStudio Python API 1.2.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-21 01:28+0100\n"
+"PO-Revision-Date: 2026-11-21 01:28+0100\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: it <LL@li.org>\n"
+"Language: it\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "``em.catalogs`` — the datamodel's catalogues"
+msgstr "``em.catalogs`` — i cataloghi del datamodel"
+
+msgid "Generated for em API |api| from the docstrings of :mod:`s3dgraphy.em.catalogs`."
+msgstr "Generata per em API |api| dalle docstring di :mod:`s3dgraphy.em.catalogs`."
+
+msgid "What of s3Dgraphy is where in ``em``:"
+msgstr "Che cosa di s3Dgraphy sta dove in ``em``:"
+
+msgid "s3Dgraphy"
+msgstr ""
+
+msgid "in ``em``"
+msgstr "in ``em``"
+
+msgid "reference"
+msgstr "riferimento"
+
+msgid "node types (68) and edge types (63)"
+msgstr "tipi di nodo (68) e tipi di arco (63)"
+
+msgid "``em.graph`` (views), ``em.catalogs.node_types()`` / ``edge_types()``"
+msgstr "``em.graph`` (viste), ``em.catalogs.node_types()`` / ``edge_types()``"
+
+msgid ":doc:`../types/index`"
+msgstr ""
+
+msgid "qualia (property types), property names"
+msgstr "qualia (tipi di proprietà), nomi di proprietà"
+
+msgid "``em.catalogs.qualia_types()`` (core), ``em.profiles.qualia_types()`` (+ packages), ``em.catalogs.property_names()``"
+msgstr "``em.catalogs.qualia_types()`` (nucleo), ``em.profiles.qualia_types()`` (+ pacchetti), ``em.catalogs.property_names()``"
+
+msgid "this page, :doc:`vocab`"
+msgstr "questa pagina, :doc:`vocab`"
+
+msgid "document types, extractor types, accuracy levels"
+msgstr "tipi di documento, tipi di estrattore, livelli di accuratezza"
+
+msgid "``em.catalogs.document_types()`` / ``extractor_types()`` / ``accuracy_levels()``; with the packages ``em.profiles.document_types()`` / ``extractor_types()``"
+msgstr "``em.catalogs.document_types()`` / ``extractor_types()`` / ``accuracy_levels()``; con i pacchetti ``em.profiles.document_types()`` / ``extractor_types()``"
+
+msgid "visual rules, colour ramps, palette icons, state symbols"
+msgstr "regole visive, rampe di colore, icone della palette, simboli di stato"
+
+msgid "``em.catalogs.visual_rules()`` / ``color_ramps()`` / ``palette_icons()`` / ``state_symbols()``"
+msgstr ""
+
+msgid "this page"
+msgstr "questa pagina"
+
+msgid "alternative cases, basemap sources, translations of the datamodel"
+msgstr "casi alternativi, fonti delle mappe di base, traduzioni del datamodel"
+
+msgid "``em.catalogs.alternative_cases()`` / ``basemap_sources()`` / ``translations()``"
+msgstr ""
+
+msgid "epochs and groups of a document"
+msgstr "epoche e gruppi di un documento"
+
+msgid "nodes of the graph: ``em.graph.nodes(type=\"EpochNode\")``, the groups' types; ``em.graph.chronology()``"
+msgstr "nodi del grafo: ``em.graph.nodes(type=\"EpochNode\")``, i tipi dei gruppi; ``em.graph.chronology()``"
+
+msgid ":doc:`graph`, :doc:`../types/index`"
+msgstr ""
+
+msgid "authorities and vocabularies"
+msgstr "autorità e vocabolari"
+
+msgid "``em.vocab`` (concept, search, installed)"
+msgstr "``em.vocab`` (concept, search, installed)"
+
+msgid ":doc:`vocab`"
+msgstr ""
+
+msgid "the DTC (data transformation chain)"
+msgstr "la DTC (catena di trasformazione dei dati)"
+
+msgid "its node types (``DTC*``) through ``em.graph``; ``em.stamp`` for a derived artifact"
+msgstr "i suoi tipi di nodo (``DTC*``) attraverso ``em.graph``; ``em.stamp`` per un elaborato derivato"
+
+msgid ":doc:`../types/index`, :doc:`stamps`"
+msgstr ""
+
+msgid "``em.catalogs`` — the datamodel's catalogues, read only (MICRO-SEG09, 21 Nov 2026)."
+msgstr ""
+
+msgid "E.D.: «ci sono tutti i data object di s3dgraphy?». The node and edge TYPES were already there (``em.graph`` returns them, ``reference/types`` has a page for each); the catalogues of ``JSON_config`` were read only inside the library. Here they are, as the library reads them — the EM language's own tables, not the logic of any one tool::"
+msgstr ""
+
+msgid "Every function answers a COPY (as :class:`~s3dgraphy.em.GraphView` does): what a script changes in it changes nothing in the datamodel. The qualia, extractor and document types here are the CORE ones; with the active packages added they are :data:`em.profiles <s3dgraphy.em.profiles>` (``qualia_types()``, ``extractor_types()``, ``document_types()``). The epochs and groups of a document are nodes of its graph (``em.graph.nodes(type=\"EpochNode\")``, ``em.graph.chronology()``); the vocabularies are :data:`em.vocab <s3dgraphy.em.vocab>`; the DTC is its node types and :func:`em.stamp <s3dgraphy.em.stamp>`."
+msgstr ""
+
+msgid "Bases: :py:class:`object`"
+msgstr ""
+
+msgid "The datamodel's catalogues (``em.catalogs``): each a function that answers a copy, so the shared tables cannot be changed by a script."
+msgstr ""
+
+msgid "Example"
+msgstr ""
+
+msgid "The catalogues there are, in order."
+msgstr ""
+
+msgid "Return type"
+msgstr ""
+
+msgid "Each catalogue's file in ``JSON_config`` and what it holds."
+msgstr ""
+
+msgid "The datamodel's versions and digest (``s3dgraphy.datamodel.datamodel_fingerprint``)."
+msgstr ""
+
+msgid "The node types by CLASS (``StratigraphicUnit``, ``EpochNode``… — the 68 pages of ``reference/types``): its ``node_type`` (``US``; None for an abstract class), its parent, its description (``node_registry.generated.json``)."
+msgstr ""
+
+msgid "The edge types by name (``is_after``…): label, reverse, mapping, allowed connections (``s3Dgraphy_connections_datamodel.json``)."
+msgstr ""
+
+msgid "The CORE qualia by id, each with ``category`` and ``subcategory`` (``em_qualia_types.json``); with the packages': ``em.profiles.qualia_types()``."
+msgstr ""
+
+msgid "Property names in use that are not a quale (``em_qualia_types.json`` → ``property_names``)."
+msgstr ""
+
+msgid "The CORE document types by id, each with its ``category`` (``em_document_types.json``)."
+msgstr ""
+
+msgid "The CORE extractor types by id, each with its ``category`` (``em_extractor_types.json``)."
+msgstr ""
+
+msgid "The accuracy levels an extractor declares (``em_extractor_types.json``)."
+msgstr ""
+
+msgid "The visual rules of the EM language (``em_visual_rules.json``): node styles, 2D glyphs, document roles and variants, instances, alternatives."
+msgstr ""
+
+msgid "``{type: {name: {name, description, colors}}}`` (``em_color_ramps.json``)."
+msgstr ""
+
+msgid "The label prefixes of the paradata image nodes and their detection order (``em_palette_icons.json``)."
+msgstr ""
+
+msgid "``{families, states: {\"<family>.<state>\": {family, glyph, label, meaning}}}`` (``em_state_symbols.json``)."
+msgstr ""
+
+msgid "The cases of the alternatives of a 3D object (``alternative_cases.json``): what ``s3dgraphy.resources.alternatives`` answers, which every client's copy passes."
+msgstr ""
+
+msgid "The basemaps a geographic view may show (``em_basemap_sources.json``)."
+msgstr ""
+
+msgid "The datamodel's labels in the project's languages (``datamodel_translations.json``)."
+msgstr ""
+
+msgid "name → (file in ``JSON_config``, what it is). The order is the order of :meth:`Catalogs.names` and of the reference's table."
+msgstr ""
