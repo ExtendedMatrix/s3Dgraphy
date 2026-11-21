@@ -146,11 +146,41 @@ MENTION_CLOSE = "\ue001"
 MENTION_TOKEN = re.compile("\ue000(\\d+)\ue001")
 
 
-def mentions_in(text: Optional[str]) -> List[str]:
-    """The ids mentioned in ``text``, in order of appearance, without repeats."""
+#: MICRO-SEG24 · a mention of a FIGURE of the same story, not of a node:
+#: ``[[fig:<label>]]``, the label being the figure block's ``options.figure.label``.
+#: It prints as the figure's number («Fig. 8.1»), and it is not a citation: it
+#: never enters ``mentions_in`` / ``referenced_ids`` (a node whose id begins
+#: with ``fig:`` cannot be mentioned — no generator in the language makes one).
+FIGURE_REF_PREFIX = "fig:"
+
+
+def is_figure_ref(ref: Any) -> bool:
+    """Is this mentioned id a figure of the story (``fig:<label>``)?"""
+    return isinstance(ref, str) and ref.startswith(FIGURE_REF_PREFIX)
+
+
+def figure_refs_in(text: Optional[str]) -> List[str]:
+    """The figure labels referred to in ``text`` (``[[fig:<label>]]``), in
+    order, without repeats — the label only, without the prefix."""
     seen, out = set(), []
     for match in MENTION_PATTERN.finditer(str(text or "")):
         ref = match.group(1)
+        if is_figure_ref(ref):
+            label = ref[len(FIGURE_REF_PREFIX):].strip()
+            if label and label not in seen:
+                seen.add(label)
+                out.append(label)
+    return out
+
+
+def mentions_in(text: Optional[str]) -> List[str]:
+    """The ids mentioned in ``text``, in order of appearance, without repeats.
+    A figure's reference (``[[fig:…]]``, MICRO-SEG24) is not a node's: left out."""
+    seen, out = set(), []
+    for match in MENTION_PATTERN.finditer(str(text or "")):
+        ref = match.group(1)
+        if is_figure_ref(ref):
+            continue
         if ref not in seen:
             seen.add(ref)
             out.append(ref)
@@ -308,6 +338,93 @@ def numbered_title(number: str, title: str, numbered: bool = True) -> str:
     """«1.2 Title» when the story is numbered, «Title» when it is not — the one
     way every exporter writes a chapter's or a heading's title."""
     return f"{number} {title}" if numbered and number else title
+
+
+# ── the figures of the story (MICRO-SEG24, 21 Nov 2026) ─────────────────────
+#
+# A figure is an embed the reader LOOKS at (every view type but the cited ones,
+# ``source`` and ``document``, which are references). Its number is the
+# chapter's and its place in the chapter — «8.1», «8.2» — when the story is
+# numbered (the levels of MICRO-SEG22), a running «1», «2», … when it is not.
+# An embed may also be a figure OF AN EPOCH OR AN ACTIVITY (``options.figure``:
+# ``{kind, label, …}``, kind one of FIGURE_KINDS): what it shows is computed
+# from the graph when it is drawn; its label is what ``[[fig:<label>]]`` refers
+# to. Nothing here is a new block type: no SCHEMA_VERSION or datamodel bump.
+
+#: The figures an epoch or an activity carries with it: its Matrix, its 3D model,
+#: its plan (orthographic, from above), its three-quarter view, its sub-epochs.
+FIGURE_KINDS = ("matrix", "model", "plan", "three_quarter", "sub_epochs")
+
+#: View types a reader cites rather than looks at — the same pair as the LaTeX
+#: exporter's ``CITED_VIEW_TYPES`` (not imported: the exporter imports this).
+_CITED = ("source", "document")
+
+
+def figure_of(block: Any) -> Optional[Dict[str, Any]]:
+    """The ``options.figure`` of an embed that is a figure of an epoch or an
+    activity (a dict with a known ``kind``), else None."""
+    if (_get(block, "block_type", "") or "") != BLOCK_EMBED:
+        return None
+    options = _get(block, "options", None) or {}
+    fig = options.get("figure") if isinstance(options, dict) else None
+    if isinstance(fig, dict) and fig.get("kind") in FIGURE_KINDS:
+        return fig
+    return None
+
+
+def is_figure_block(block: Any, resolves: Optional[Callable[[str], bool]] = None) -> bool:
+    """Is this block numbered as a figure? An embed with a ref, not cited, and
+    (``resolves`` given) pointing at something that exists."""
+    if (_get(block, "block_type", "") or "") != BLOCK_EMBED:
+        return False
+    ref = _get(block, "ref", None)
+    if not ref:
+        return False
+    if (_get(block, "view_type", "") or "") in _CITED:
+        return False
+    return resolves(str(ref)) if resolves is not None else True
+
+
+def figure_numbers(chapters: Any, numbered: bool = True,
+                   resolves: Optional[Callable[[str], bool]] = None
+                   ) -> Dict[Tuple[int, int], str]:
+    """``{(chapter, block): number}`` for every figure of the story: «8.1»,
+    «8.2» (the chapter's number, then the figure's place in it) when
+    ``numbered``; «1», «2», … through the story when not."""
+    out: Dict[Tuple[int, int], str] = {}
+    running = 0
+    for c_index, chapter in enumerate(chapters or []):
+        k = 0
+        for b_index, block in enumerate(_get(chapter, "blocks", None) or []):
+            if not is_figure_block(block, resolves):
+                continue
+            k += 1
+            running += 1
+            out[(c_index, b_index)] = (f"{c_index + 1}.{k}" if numbered
+                                       else str(running))
+    return out
+
+
+def figure_labels(chapters: Any, numbered: bool = True,
+                  resolves: Optional[Callable[[str], bool]] = None) -> Dict[str, str]:
+    """``{label: number}`` — what ``[[fig:<label>]]`` prints («8.1»)."""
+    numbers = figure_numbers(chapters, numbered, resolves)
+    out: Dict[str, str] = {}
+    for c_index, chapter in enumerate(chapters or []):
+        for b_index, block in enumerate(_get(chapter, "blocks", None) or []):
+            fig = figure_of(block)
+            label = str((fig or {}).get("label") or "").strip()
+            if label and (c_index, b_index) in numbers and label not in out:
+                out[label] = numbers[(c_index, b_index)]
+    return out
+
+
+def figure_variant(block: Any) -> str:
+    """The figure kind that tells two figures of the same (view, subject)
+    apart — a plan and a three-quarter view of one epoch are both ``scene3d``
+    — or "" for an ordinary embed."""
+    fig = figure_of(block)
+    return str(fig.get("kind")) if fig else ""
 
 
 def heading_span(blocks: Any, index: int) -> Tuple[int, int]:

@@ -165,9 +165,12 @@ def _embed_cells(block: Dict[str, Any], index_hint: str,
     ref = str(block.get("ref") or "")
     view = str(block.get("view_type") or "")
     label = f"embed · {view or 'reference'} → {ref}"
-    from ..narrative.bake import figure_key
+    from ..narrative.bake import supplied_figure
 
-    rendered = (figures or {}).get(figure_key(view, ref))
+    # MICRO-SEG24 · a figure of an epoch or an activity is filed with its kind
+    fig = (block.get("options") or {}).get("figure") or {}
+    rendered = supplied_figure(figures, view, ref,
+                               fig.get("kind", "") if isinstance(fig, dict) else "")
     before: List[Dict[str, Any]] = (
         [_figure_markdown(view, ref, label, rendered, figure_suffix)]
         if rendered and view not in _SCENE_VIEW_TYPES else [])

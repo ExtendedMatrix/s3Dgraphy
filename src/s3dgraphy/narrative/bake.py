@@ -429,15 +429,34 @@ def _name_resolver(lookup: Dict[Any, Any]):
 
 # ── the bake ──────────────────────────────────────────────────────────────────
 
-def figure_key(view_type: Any, ref: Any) -> str:
+def figure_key(view_type: Any, ref: Any, variant: Any = "") -> str:
     """The name a SUPPLIED figure is filed under: ``"<view_type>:<ref>"``.
 
     Computed the same way on both sides of the wire (the client renders and
     names, the bake looks up), and stable per (what is shown, what it shows): the
     same epoch embedded in two chapters is ONE figure, which is also what a
     reader expects of a printed plate.
+
+    MICRO-SEG24 · a figure of an epoch or an activity carries its kind as a
+    ``variant`` — ``"scene3d:EP1#plan"``, ``"scene3d:EP1#three_quarter"`` — so
+    the plan and the three-quarter view of one epoch are two plates, not one.
     """
-    return f"{str(view_type or '').strip()}:{str(ref or '').strip()}"
+    key = f"{str(view_type or '').strip()}:{str(ref or '').strip()}"
+    variant = str(variant or "").strip()
+    return f"{key}#{variant}" if variant else key
+
+
+def supplied_figure(figures: Optional[Dict[str, Any]], view_type: Any, ref: Any,
+                    variant: Any = "") -> Any:
+    """The figure handed in for an embed: under its variant's key, else — only
+    when the variant IS the view (a Matrix figure is the epoch's matrix) —
+    under the plain key. A plan never borrows a free view's still."""
+    figures = figures or {}
+    if variant:
+        got = figures.get(figure_key(view_type, ref, variant))
+        if got or str(variant) != str(view_type or ""):
+            return got
+    return figures.get(figure_key(view_type, ref))
 
 
 def bake_narrative(graph: Any, narrative_id: str, *,
@@ -551,13 +570,42 @@ def bake_narrative(graph: Any, narrative_id: str, *,
     numbers = {(row["chapter"], row["block"]): row["number"]
                for row in _outline(node.chapters)}
 
+    # MICRO-SEG24 · the figures' numbers («8.1» by chapter, a running «1» when
+    # the story is not numbered) and ``[[fig:<label>]]`` printed as «Fig. 8.1»
+    from ..nodes.narrative_node import (FIGURE_REF_PREFIX, figure_labels,
+                                        figure_numbers, figure_of,
+                                        figure_variant, is_figure_ref)
+    known = lambda r: r in lookup and r not in ai_gone  # noqa: E731
+    fig_numbers = figure_numbers(node.chapters, baked.numbered, known)
+    fig_labels = figure_labels(node.chapters, baked.numbered, known)
+    node_name_of = name_of
+
+    def name_of(ref: str) -> Optional[str]:  # noqa: F811
+        if is_figure_ref(ref):
+            number = fig_labels.get(ref[len(FIGURE_REF_PREFIX):].strip())
+            return f"Fig. {number}" if number else None
+        return node_name_of(ref)
+
     for c_index, chapter in enumerate(node.chapters):
         baked_chapter = BakedChapter(
             title=getattr(chapter, "title", "") or "",
             anchor=getattr(chapter, "anchor", None) or "",
             number=numbers.get((c_index, None), ""),
         )
+        stamp: List[Any] = []
+
+        def stamp_figure() -> None:
+            # the blocks an embed baked into get its figure number (MICRO-SEG24)
+            if stamp:
+                since, number = stamp.pop()
+                for out in baked_chapter.blocks[since:]:
+                    out.meta["figure_number"] = number
+
         for b_index, block in enumerate(getattr(chapter, "blocks", []) or []):
+            stamp_figure()
+            if (c_index, b_index) in fig_numbers:
+                stamp.append((len(baked_chapter.blocks),
+                              fig_numbers[(c_index, b_index)]))
             if getattr(block, "block_type", "") == "heading":
                 # MICRO-SEG22 · the title of a section or a subsection: its
                 # mentions resolved as a paragraph's, its level and number in
@@ -622,9 +670,11 @@ def bake_narrative(graph: Any, narrative_id: str, *,
             # which views are allowed to have one. (It held that opinion until
             # the map and the timeline got renderers, and the figures were
             # dropped in silence — nothing said no, the lookup simply never ran.)
-            rendered = supplied.get(figure_key(view_type, ref)) if ref else None
+            variant = figure_variant(block)
+            rendered = (supplied_figure(supplied, view_type, ref, variant)
+                        if ref else None)
 
-            figure = BakedImage(locator=figure_key(view_type, ref),
+            figure = BakedImage(locator=figure_key(view_type, ref, variant),
                                 data=rendered, suffix=figure_suffix,
                                 note="reso dal client all'export") \
                 if rendered else None
@@ -658,6 +708,10 @@ def bake_narrative(graph: Any, narrative_id: str, *,
                 # Somebody rendered it: it is a figure like any other, and every
                 # renderer already knows how to place a `kind="image"`.
                 label = getattr(target, "name", "") or str(ref)
+                if figure_of(block) and options.get("caption"):
+                    # MICRO-SEG24 · a figure of an epoch or an activity writes
+                    # its whole caption (title, dates, source), the name in it
+                    label = str(options["caption"])
                 baked_chapter.blocks.append(BakedBlock(
                     kind="image", text=str(label), ref=str(ref),
                     view_type=view_type, image=figure,
@@ -726,6 +780,7 @@ def bake_narrative(graph: Any, narrative_id: str, *,
                 meta={} if view_type in ("us", "paradata")
                 else {"note": f"view_type {view_type!r} baked as text"}))
 
+        stamp_figure()
         baked.chapters.append(baked_chapter)
 
     return baked

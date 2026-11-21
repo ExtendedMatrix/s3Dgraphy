@@ -175,7 +175,10 @@ def _block(block: BakedBlock, numbered: bool = True) -> str:
                  else '<div class="em-note">'
                       'l\'immagine non era leggibile al momento dello snapshot'
                       '</div>')
-        caption = f'<div class="em-note">{_esc(block.text)}</div>' if block.text else ""
+        # MICRO-SEG24 · the figure's number before its caption
+        number = (block.meta or {}).get("figure_number")
+        words = f"Fig. {number} — {block.text}" if number and block.text else block.text
+        caption = f'<div class="em-note">{_esc(words)}</div>' if words else ""
         return (f'<figure class="em-embed"><div class="em-kind">immagine</div>'
                 f'{inner}{caption}</figure>')
 

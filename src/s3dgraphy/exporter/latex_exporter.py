@@ -26,7 +26,9 @@ from __future__ import annotations
 import re
 from typing import Any, Dict, List, Optional, Tuple
 
-from ..nodes.narrative_node import (UNVALIDATED_MARK, UNVALIDATED_NOTICE,
+from ..nodes.narrative_node import (FIGURE_REF_PREFIX, UNVALIDATED_MARK,
+                                     UNVALIDATED_NOTICE, figure_labels,
+                                     figure_of, figure_variant, is_figure_ref,
                                      is_unvalidated, numbering_on,
                                      render_mention_tokens,
                                      substitute_mentions)
@@ -225,8 +227,15 @@ def figure_file(view_type: Any, node_id: Any, suffix: str = ".pdf") -> str:
     return f"{FIGURE_DIR}/{safe or 'figura'}{suffix}"
 
 
+def _figure_label(label: str) -> str:
+    """The `\\label` of a figure of an epoch or an activity (MICRO-SEG24), from
+    its ``options.figure.label`` — what `[[fig:<label>]]` refers to."""
+    return _label("fig", f"n-{label}")
+
+
 def _figure(node: Any, view_type: str, caption_extra: str = "",
-            figure_path: Optional[str] = None) -> str:
+            figure_path: Optional[str] = None, *, caption_full: str = "",
+            label: str = "") -> str:
     """An embed the reader LOOKS at → a figure, with its caption.
 
     With `figure_path` (a file the caller is writing beside the document) this is
@@ -245,6 +254,10 @@ def _figure(node: Any, view_type: str, caption_extra: str = "",
     caption = latex_escape(name)
     if caption_extra:
         caption = f"{caption} — {latex_escape(caption_extra)}"
+    if caption_full:
+        # MICRO-SEG24 · a figure of an epoch or an activity: its caption is
+        # whole (title, dates, source), written by the author or by the app
+        caption = latex_escape(caption_full)
     if figure_path:
         picture = f"  \\includegraphics[width=\\linewidth]{{{figure_path}}}\n"
     else:
@@ -256,14 +269,18 @@ def _figure(node: Any, view_type: str, caption_extra: str = "",
         "  \\centering\n"
         + picture
         + f"  \\caption{{{caption}}}\n"
-        f"  \\label{{{_label('fig', node_id)}}}\n"
+        f"  \\label{{{label or _label('fig', node_id)}}}\n"
         "\\end{figure}"
     )
 
 
 def _latex_mention(mention: Any) -> str:
     """A `[[id]]` mention on the printed page: the node's name in `\\emph{}`, or
-    the unresolved wording in bold, as an unresolved embed prints it."""
+    the unresolved wording in bold, as an unresolved embed prints it. A figure's
+    reference (`[[fig:<label>]]`, MICRO-SEG24) is `Fig.~\\ref{…}`: LaTeX numbers
+    its own figures, and the reference follows them."""
+    if mention.resolved and is_figure_ref(mention.ref):
+        return "Fig.~\\ref{" + _figure_label(mention.ref[len(FIGURE_REF_PREFIX):]) + "}"
     if mention.resolved:
         return "\\emph{" + latex_escape(mention.label) + "}"
     return "\\textbf{" + latex_escape(mention.label) + "}"
@@ -379,7 +396,15 @@ def export_narrative_latex(graph: Any, narrative_id: str, *,
 
     lookup = {getattr(n, "node_id", None): n for n in getattr(graph, "nodes", [])}
     from ..narrative.bake import _name_resolver
-    name_of = _name_resolver(lookup)
+    node_name_of = _name_resolver(lookup)
+    # MICRO-SEG24 · `[[fig:<label>]]` resolves when the story has that figure
+    fig_labels = figure_labels(node.chapters, True, lambda r: r in lookup)
+
+    def name_of(ref: str) -> Optional[str]:
+        if is_figure_ref(ref):
+            number = fig_labels.get(ref[len(FIGURE_REF_PREFIX):].strip())
+            return f"Fig. {number}" if number else None
+        return node_name_of(ref)
     lines: List[str] = []
     bib_entries: Dict[str, str] = {}     # key → entry, so a source cited twice
                                          # yields one entry (dict, not a list)
@@ -411,6 +436,10 @@ def export_narrative_latex(graph: Any, narrative_id: str, *,
                          "\\DeclareUnicodeCharacter{26A0} and {FE0E}")
     else:
         lines.extend(_PREAMBLE)
+        if numbering_on(getattr(node, "data", None)):
+            # MICRO-SEG24 · figures numbered by chapter (8.1, 8.2…), as the
+            # editor numbers them: a chapter is a \\section here
+            lines.append("\\counterwithin{figure}{section}")
         if include_unvalidated and node.unvalidated_for_export():
             lines.extend(_UNVALIDATED_PREAMBLE)
         lines.append(f"\\title{{{latex_escape(title)}}}")
@@ -570,20 +599,33 @@ def export_narrative_latex(graph: Any, narrative_id: str, *,
                         view_type, getattr(target, "node_id", ""), figure_suffix)))
             else:
                 options = getattr(block, "options", None) or {}
+                fig = figure_of(block)
+                variant = figure_variant(block)
                 extra = ""
                 if view_type == "map":
                     data = _node_data(target)
                     epsg = data.get("epsg")
                     if epsg:
                         extra = f"EPSG:{epsg}"
-                elif options.get("caption"):
+                elif options.get("caption") and not fig:
                     extra = str(options["caption"])
-                key = f"{view_type or 'embed'}:{getattr(target, 'node_id', '')}"
-                path = (figure_file(view_type or "embed",
-                                    getattr(target, "node_id", ""),
-                                    figure_suffix)
-                        if (figures or {}).get(key) else None)
-                lines.append(_figure(target, view_type or "embed", extra, path))
+                node_id = getattr(target, "node_id", "")
+                # MICRO-SEG24 · a figure of an epoch or an activity is filed
+                # under its kind too (`scene3d:EP1#plan`), as the bake files it
+                from ..narrative.bake import figure_key, supplied_figure
+                file_ref = node_id
+                if variant and (figures or {}).get(
+                        figure_key(view_type or "embed", node_id, variant)):
+                    file_ref = f"{node_id}#{variant}"
+                found = supplied_figure(figures, view_type or "embed", node_id,
+                                        variant)
+                path = (figure_file(view_type or "embed", file_ref,
+                                    figure_suffix) if found else None)
+                lines.append(_figure(
+                    target, view_type or "embed", extra, path,
+                    caption_full=str(options.get("caption") or "") if fig else "",
+                    label=_figure_label(str(fig.get("label")))
+                    if fig and fig.get("label") else ""))
 
     if not fragment and cited_order:
         # THE BIBLIOGRAPHY TRAVELS WITH THE FILE. `\\cite` without one prints

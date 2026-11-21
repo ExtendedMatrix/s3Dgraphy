@@ -164,7 +164,10 @@ def render_docx(baked: BakedNarrative) -> bytes:
                 if block.image is not None and block.image.resolved:
                     document.add_picture(io.BytesIO(block.image.data),
                                          width=Inches(5.5))
-                    caption = document.add_paragraph(block.text)
+                    # MICRO-SEG24 · the figure's number before its caption
+                    number = (block.meta or {}).get("figure_number")
+                    caption = document.add_paragraph(
+                        f"Fig. {number} — {block.text}" if number else block.text)
                     caption.runs[0].italic = True if caption.runs else None
                 else:
                     note = (block.image.note if block.image is not None
