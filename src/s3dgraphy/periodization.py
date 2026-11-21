@@ -112,7 +112,8 @@ def add_horizon(pg: Graph, periodization_id: str, name: str,
                 enabled: bool = True, node_id: Optional[str] = None,
                 description: str = "") -> HorizonNode:
     """Add an horizon (SP10) to a periodization. ``order`` defaults to after
-    the last horizon of that periodization."""
+    the last horizon of that periodization (kept for compatibility: the
+    horizons are READ in the order of their dates, see :func:`_time_key`)."""
     if pg.find_node_by_id(periodization_id) is None:
         raise ValueError(f"no periodization {periodization_id!r}")
     if order is None:
@@ -131,7 +132,18 @@ def _horizon_nodes(pg: Graph, periodization_id: str) -> List[HorizonNode]:
            if e.edge_type == MEMBERSHIP_EDGE and e.edge_target == periodization_id]
     nodes = [pg.find_node_by_id(i) for i in ids]
     nodes = [n for n in nodes if n is not None]
-    return sorted(nodes, key=lambda n: (_order(n), _num(n.start_time), n.name or ""))
+    return sorted(nodes, key=_time_key)
+
+
+def _time_key(node):
+    """MICRO-SEG16 (E.D., 21 Nov 2026): horizons are intervals of time and
+    their order is their DATES' — by start, then by end, oldest first (an open
+    start is the oldest, an open end the latest). ``data.order`` stays in the
+    file for compatibility and only breaks a tie of identical dates; it is
+    never rewritten here."""
+    end = _float_or_none(getattr(node, "end_time", None))
+    return (_num(node.start_time), float("inf") if end is None else end,
+            _order(node), node.name or "")
 
 
 def _order(node) -> int:
@@ -170,7 +182,7 @@ def horizon_dict(node) -> Dict[str, Any]:
 
 
 def list_periodizations(container: Any) -> List[Dict[str, Any]]:
-    """Every periodization with its horizons in order.
+    """Every periodization with its horizons in time order (by their dates).
 
     ``[{"id", "name", "description", "source", "active", "horizons": [{"id",
     "name", "start", "end", "color", "order", "enabled"}]}]`` — empty when the

@@ -155,6 +155,22 @@ def test_cronofilter_shapes_enter_as_one_periodization():
     assert listed[1]["horizons"][0]["color"] == "#ff0080"
 
 
+def test_horizons_are_read_in_the_order_of_their_dates():
+    """MICRO-SEG16: the order is the dates'; ``order`` only breaks a tie and
+    is never rewritten."""
+    c = container_of(_graph())
+    pg = P.periodizations_of(c, create=True)
+    P.add_periodization(pg, "P", node_id="P")
+    P.add_horizon(pg, "P", "C", 300, 700, node_id="C", order=0)
+    P.add_horizon(pg, "P", "A", 0, 100, node_id="A", order=2)
+    P.add_horizon(pg, "P", "B", 100, 300, node_id="B", order=1)
+    P.add_horizon(pg, "P", "E", 150, 250, node_id="E")     # between B and C
+    P.add_horizon(pg, "P", "F", 0, 50, node_id="F", order=9)  # same start as A, earlier end
+    listed = P.list_periodizations(c)[0]["horizons"]
+    assert [h["id"] for h in listed] == ["F", "A", "B", "E", "C"]
+    assert {h["id"]: h["order"] for h in listed} == {"C": 0, "A": 2, "B": 1, "E": 3, "F": 9}
+
+
 # ── sub-epochs ──────────────────────────────────────────────────────────────
 
 def test_has_sub_epoch_runs_parent_to_sub_epoch():
