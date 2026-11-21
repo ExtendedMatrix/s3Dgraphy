@@ -246,6 +246,8 @@ def test_the_loader_reads_the_new_keys_and_the_panels(tmp_path):
     assert [t.id for t in PL.tools()] == ["axis"]
     (panel,) = PL.panels()
     assert panel.name == f"{pid}/fit" and panel.place == "right" and panel.when == "document"
+    # MICRO-SEG19 · «right» of before is the Space's sidebar, its tab the extension's name (None)
+    assert (panel.space, panel.region, panel.tab) == ("space", "sidebar", None)
     kinds = [f["kind"] for f in panel.fields]
     assert kinds == ["number", "choice", "node", "value", "button"]
     assert panel.fields[3]["label"] == {"it": "Volto", "en": "Face"} and panel.fields[4]["label"] == {"it": "Segna", "en": "Mark"}
@@ -574,3 +576,36 @@ def test_the_shape_of_a_layer():
     ok, out = PL.shape("space.layer", many)
     assert len(out) == PL.LAYERS_MAX and len(out[0]["items"]) == PL.LAYER_ITEMS_MAX
     assert out[0]["display"]["mode"] == "one"
+
+
+# ── MICRO-SEG19 · where a panel goes: the Space's sidebar, its tab ──────────
+
+def test_a_panel_says_its_region_and_its_tab():
+    ok = S.check_panels([{"id": "a", "label": "A", "space": "space", "region": "sidebar", "tab": "Geo"},
+                         {"id": "b", "label": "B", "region": "window", "tab": {"en": "Geo", "it": "Geo"}}], [])
+    assert ok == []
+    bad = S.check_panels([{"id": "a", "label": "A", "space": "matrix", "region": "column", "tab": ""},
+                          {"id": "b", "label": "B", "tab": "x" * (S.PANEL_TAB_MAX + 1)},
+                          {"id": "c", "label": "C", "tab": 3}], [])
+    assert [c for _, c, _ in bad] == ["code_panel_space", "code_panel_region", "code_panel_tab",
+                                      "code_panel_tab", "code_panel_tab"]
+    from s3dgraphy.profiles.problems import Problem
+    it = {c: Problem(c, "error", params=p).text("it") for _, c, p in bad}
+    assert "barra laterale" in it["code_panel_region"] and "nome dell'estensione" in it["code_panel_tab"]
+    assert S.panel_tab(" Geofisica ") == {"en": "Geofisica", "it": "Geofisica"}
+    assert S.panel_tab({"en": "Geophysics", "it": "Geofisica"}) == {"en": "Geophysics", "it": "Geofisica"}
+    assert S.panel_tab("<b>") is None and S.panel_tab({}) is None
+
+
+def test_the_loader_reads_region_and_tab_and_the_old_place():
+    panels = PL.read_panels("geo", {"commands": [], "panels": [
+        {"id": "a", "label": "A", "tab": {"en": "Geophysics", "it": "Geofisica"}},
+        {"id": "b", "label": "B", "place": "window"},
+        {"id": "c", "label": "C", "place": "below"},
+        {"id": "d", "label": "D", "place": "window", "region": "sidebar", "space": "elsewhere"}]})
+    got = [(p.id, p.space, p.region, p.tab) for p in panels]
+    assert got == [("a", "space", "sidebar", {"en": "Geophysics", "it": "Geofisica"}),
+                   ("b", "space", "window", None), ("c", "space", "sidebar", None),
+                   ("d", "space", "sidebar", None)]
+    d = panels[0].as_dict()
+    assert d["region"] == "sidebar" and d["tab"] == {"en": "Geophysics", "it": "Geofisica"} and d["space"] == "space"

@@ -97,8 +97,17 @@ TOOL_PRIMITIVES: Dict[str, Tuple[int, Optional[int]]] = {
     "point": (1, 1), "line": (2, 2), "polyline": (2, None), "surface": (3, None)}
 #: the kinds of a panel's field: what the person fills, what a command shows, a button
 PANEL_FIELD_KINDS: Tuple[str, ...] = ("number", "text", "choice", "node", "check", "value", "button")
-#: where a panel opens the first time (the person moves it after: SPEC-plugin §14)
+#: where a panel opens the first time (the person moves it after: SPEC-plugin §14).
+#: MICRO-SEG19 · kept for the packages written before ``region``: «window» is
+#: the region ``window``, the three others the sidebar (no panel is a column
+#: between the areas any more)
 PANEL_PLACES: Tuple[str, ...] = ("right", "left", "below", "window")
+#: MICRO-SEG19 · the editor a panel lives in: the Space (the 3D view)
+PANEL_SPACES: Tuple[str, ...] = ("space",)
+#: …and its region there: the sidebar of vertical tabs (Blender's N), or a window of its own
+PANEL_REGIONS: Tuple[str, ...] = ("sidebar", "window")
+#: the tab of the sidebar a panel goes in: a short word (absent: the extension's name)
+PANEL_TAB_MAX = 24
 #: a panel is a few fields, not an application
 PANEL_FIELDS_MAX = 40
 
@@ -348,6 +357,17 @@ def default_writes(command: Dict[str, Any]) -> bool:
     return not any(n in READ_ONLY_SLOTS for n in names)
 
 
+def panel_tab(raw: Any) -> Optional[Dict[str, str]]:
+    """MICRO-SEG19 · a panel's ``tab`` as words by language (a text is every
+    language's), None when it is not one: empty, too long, of another kind."""
+    ok = lambda v: isinstance(v, str) and 0 < len(v.strip()) <= PANEL_TAB_MAX and "<" not in v
+    if ok(raw):
+        return {"en": raw.strip(), "it": raw.strip()}
+    if isinstance(raw, dict) and raw and all(isinstance(k, str) and ok(v) for k, v in raw.items()):
+        return {k: v.strip() for k, v in raw.items()}
+    return None
+
+
 def check_panels(panels: Any, commands: Any) -> List[Tuple[str, str, Dict[str, Any]]]:
     """What is wrong with ``[[code.panels]]`` (``panel@1``, MICRO-PL25): an id,
     a label, a place among :data:`PANEL_PLACES`, at most
@@ -385,6 +405,13 @@ def check_panels(panels: Any, commands: Any) -> List[Tuple[str, str, Dict[str, A
             out.append(("error", "code_panel_label", at))
         if p.get("place") is not None and p.get("place") not in PANEL_PLACES:
             out.append(("error", "code_panel_place", dict(at, value=p.get("place"), places=", ".join(PANEL_PLACES))))
+        # MICRO-SEG19 · where it goes: the editor, its region, the sidebar's tab
+        if p.get("space") is not None and p.get("space") not in PANEL_SPACES:
+            out.append(("error", "code_panel_space", dict(at, value=p.get("space"), spaces=", ".join(PANEL_SPACES))))
+        if p.get("region") is not None and p.get("region") not in PANEL_REGIONS:
+            out.append(("error", "code_panel_region", dict(at, value=p.get("region"), regions=", ".join(PANEL_REGIONS))))
+        if p.get("tab") is not None and panel_tab(p.get("tab")) is None:
+            out.append(("error", "code_panel_tab", dict(at, max=PANEL_TAB_MAX)))
         if p.get("when") is not None and parse_when(p.get("when")) is None:
             out.append(("error", "code_command_when", dict(at, value=p.get("when"))))
         fields = p.get("fields")
@@ -424,5 +451,5 @@ def check_panels(panels: Any, commands: Any) -> List[Tuple[str, str, Dict[str, A
 
 __all__ = ["PHASE1", "PHASE2", "DRAWN2", "LAYER_KINDS", "COMMAND_SLOTS", "FILE_SLOTS", "SLOT_KINDS", "SELECTION_WORDS",
            "READ_ONLY_SLOTS", "TABULAR_VIEWS", "TOOL_PRIMITIVES", "PANEL_FIELD_KINDS", "PANEL_PLACES",
-           "PANEL_FIELDS_MAX", "parse_slot", "slot_status", "parse_when", "when_holds", "check_commands",
+           "PANEL_SPACES", "PANEL_REGIONS", "PANEL_TAB_MAX", "panel_tab", "PANEL_FIELDS_MAX", "parse_slot", "slot_status", "parse_when", "when_holds", "check_commands",
            "check_panels", "default_writes", "reader_version"]

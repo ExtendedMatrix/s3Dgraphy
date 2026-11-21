@@ -152,6 +152,11 @@ class PanelDecl:
     place: str
     when: str
     fields: List[Dict[str, Any]]
+    #: MICRO-SEG19 · the editor it lives in, its region there, the sidebar's tab
+    #: (None: the tab takes the extension's name)
+    space: str = "space"
+    region: str = "sidebar"
+    tab: Optional[Dict[str, str]] = None
 
     @property
     def name(self) -> str:
@@ -161,14 +166,15 @@ class PanelDecl:
     def as_dict(self) -> Dict[str, Any]:
         """The declaration as plain data (what a host draws from)."""
         return {"plugin": self.plugin, "id": self.id, "name": self.name, "label": dict(self.label),
-                "place": self.place, "when": self.when, "fields": [dict(f) for f in self.fields]}
+                "place": self.place, "when": self.when, "fields": [dict(f) for f in self.fields],
+                "space": self.space, "region": self.region, "tab": dict(self.tab) if self.tab else None}
 
 
 def read_panels(pid: str, code: Dict[str, Any]) -> List[PanelDecl]:
     """The panels of a ``[code]`` section; a field that does not read is left
     out (the validator said it), a field that names a command the plugin does
     not declare too."""
-    from ..extensions.slots import PANEL_FIELD_KINDS, PANEL_FIELDS_MAX, PANEL_PLACES
+    from ..extensions.slots import PANEL_FIELD_KINDS, PANEL_FIELDS_MAX, PANEL_PLACES, PANEL_REGIONS, PANEL_SPACES, panel_tab
     declared = {str(c.get("id")): c for c in code.get("commands") or [] if isinstance(c, dict)}
     out: List[PanelDecl] = []
     for p in code.get("panels") or []:
@@ -208,9 +214,15 @@ def read_panels(pid: str, code: Dict[str, Any]) -> List[PanelDecl]:
                 row["help"] = _label(f.get("help"), "")
             fields.append(row)
         place = str(p.get("place") or "right")
+        place = place if place in PANEL_PLACES else "right"
+        # MICRO-SEG19 · the region said, else the old place: «window» a window, the rest the sidebar
+        region = str(p.get("region") or "")
+        region = region if region in PANEL_REGIONS else ("window" if place == "window" else "sidebar")
+        space = str(p.get("space") or "space")
         out.append(PanelDecl(plugin=pid, id=str(p["id"]), label=_label(p.get("label"), str(p["id"])),
-                             place=place if place in PANEL_PLACES else "right",
-                             when=str(p.get("when") or ""), fields=fields))
+                             place=place, when=str(p.get("when") or ""), fields=fields,
+                             space=space if space in PANEL_SPACES else "space", region=region,
+                             tab=panel_tab(p.get("tab"))))
     return out
 
 

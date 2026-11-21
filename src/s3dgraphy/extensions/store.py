@@ -323,7 +323,9 @@ def _code_summary(pkg: Package, source: str) -> Dict[str, Any]:
              **({"folders": True} if x.get("folders") else {}),
              **({"when": x.get("when")} if isinstance(x.get("when"), str) else {})}
             for x in (c.get("commands") or []) if isinstance(x, Mapping)]
-    panels = [{"id": x.get("id"), "label": x.get("label"), "place": x.get("place") or "right"}
+    # MICRO-SEG19 · …and the tab of the Space's sidebar it goes in (absent: the extension's name)
+    panels = [{"id": x.get("id"), "label": x.get("label"), "place": x.get("place") or "right",
+               **{k: x.get(k) for k in ("space", "region", "tab") if x.get(k) is not None}}
               for x in (c.get("panels") or []) if isinstance(x, Mapping)]
     return {"entry": c.get("entry"), "module": _module(c.get("entry")), "hosts": list(c.get("hosts") or []),
             "platforms": list(c.get("platforms") or []), "wheels": list(c.get("wheels") or []),

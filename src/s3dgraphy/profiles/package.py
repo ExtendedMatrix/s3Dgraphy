@@ -955,7 +955,7 @@ CODE_PROBLEMS = ("code_entry", "code_hosts", "permission_reason", "permission_un
                  "code_shows_writes", "code_column_view", "code_tool_primitive", "code_tool_geometry",
                  "code_icon", "code_section_buttons", "code_button_unknown", "code_buttons_unused",
                  "code_panels_shape", "code_panel_id", "code_panel_twice", "code_panel_label",
-                 "code_panel_place", "code_panel_fields", "code_panel_field_kind", "code_panel_field_name",
+                 "code_panel_place", "code_panel_space", "code_panel_region", "code_panel_tab", "code_panel_fields", "code_panel_field_kind", "code_panel_field_name",
                  "code_panel_field_twice", "code_panel_choice", "code_panel_command", "code_panel_value_writes",
                  # MICRO-GEO11 (G10) · a layer of the Space
                  "code_layer_kind")

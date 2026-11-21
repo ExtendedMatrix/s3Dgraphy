@@ -312,7 +312,8 @@ class _App:
 
         ``camera``, ``set_camera``, ``frame``, ``pick`` in every host; a host
         may give its own Space with more (EMStudio: ``layers``, ``epoch``,
-        ``epochs``, ``profile``).
+        ``epochs``, ``profile``, and — MICRO-SEG19 — ``sidebar``, the tabs of
+        its sidebar, and ``tools``, the tools of its toolbar).
         """
         own = getattr(self._a(), "space", None)
         return own if own is not None and not callable(own) else _App._Space(self)
