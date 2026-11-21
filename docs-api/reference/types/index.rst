@@ -5,7 +5,7 @@ Types — nodes and edges
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.51, connections 1.6.55) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.52, connections 1.6.56) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 The types of the EM language: what ``em.graph`` returns as :class:`~s3dgraphy.em.NodeView` and :class:`~s3dgraphy.em.EdgeView`, and what ``tx.add_node`` / ``tx.add_edge`` accept. The edges a node may have are checked by the contract at every write.
 
@@ -516,6 +516,10 @@ Edge types
      - Is in timebranch
      - È nel ramo temporale
      - ``contains_in_timebranch``
+   * - :ref:`is_observed_in <edge-is_observed_in>`
+     - Is observed in
+     - È osservata in
+     - ``observes``
    * - :ref:`is_on_resource <edge-is_on_resource>`
      - Is on resource
      - Sta sulla risorsa

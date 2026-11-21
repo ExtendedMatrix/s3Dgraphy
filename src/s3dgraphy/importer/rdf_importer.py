@@ -881,6 +881,7 @@ class RDFImporter:
         self._rebuild_edges(store, node_prefix, id_of, class_of, g)
         self._rebuild_has_property_from_i17(store, node_prefix, id_of, g)
         self._mark_inherited_properties(store, id_of, g)
+        self._mark_transformations(store, id_of, g)
 
     @staticmethod
     def _mark_inherited_properties(store: ConjunctiveGraph,
@@ -900,6 +901,39 @@ class RDFImporter:
             if (e.edge_type == "has_property"
                     and (e.edge_source, e.edge_target) in declared):
                 e.attributes["inherited"] = True
+
+    def _mark_transformations(self, store: ConjunctiveGraph,
+                              id_of: Dict[str, str], g: S3DGraph) -> None:
+        """Put ``attributes[change_type]`` back on the changed_from edges the
+        exporter restated as an event (connections 1.6.56,
+        ``mapping.projection_when_attribute``: <T> a crm:E81_Transformation;
+        P124 <former>; P123 <latter>). The edge itself came back from its core
+        predicate; T is no node (no dcterms:identifier)."""
+        for edge_type, entry in (self.inverse.dm.connections_datamodel.get("edge_types") or {}).items():
+            rule = (entry.get("mapping") or {}).get("projection_when_attribute")
+            if not isinstance(rule, dict):
+                continue
+            for value, spec in (rule.get("values") or {}).items():
+                klass = _resolve_prefixed_name(spec.get("event_class"))
+                p_former = _resolve_prefixed_name(spec.get("former"))
+                p_latter = _resolve_prefixed_name(spec.get("latter"))
+                if klass is None or p_former is None or p_latter is None:
+                    continue
+                pairs = set()
+                for event in store.subjects(RDF.type, klass):
+                    if str(event) in id_of:
+                        continue  # a node of the graph typed so, not a restatement
+                    formers = [id_of.get(str(o)) for o in store.objects(event, p_former)]
+                    latters = [id_of.get(str(o)) for o in store.objects(event, p_latter)]
+                    for a in latters:
+                        for b in formers:
+                            if a and b:
+                                pairs.add((a, b))
+                if not pairs:
+                    continue
+                for e in g.edges:
+                    if e.edge_type == edge_type and (e.edge_source, e.edge_target) in pairs:
+                        e.attributes[rule.get("attribute")] = value
 
     @staticmethod
     def _collect_node_iris(store: ConjunctiveGraph, node_prefix: str) -> List[str]:

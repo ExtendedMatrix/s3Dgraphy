@@ -5,7 +5,7 @@ is_in_representation_model_group
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.51, connections 1.6.55) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.52, connections 1.6.56) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *Membership of a representation model in a RepresentationModelNodeGroup (EM16-RMNG): the models that together form one named set published under a single Document — «Survey 2015» under D.01, «Reconstruction» under D.09.*
 

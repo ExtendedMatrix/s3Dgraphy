@@ -91,7 +91,8 @@ def test_direction_resolution_is_reported_and_bounded():
     # 54 since connections 1.6.47: is_in_periodization declares lists_horizon
     # 55 since connections 1.6.53: is_in_district declares includes_in_district
     # 56 since connections 1.6.55: has_sub_resource declares is_sub_resource_of
-    assert len(dm._reverse_of) == 56
+    # 57 since connections 1.6.56: is_observed_in declares observes
+    assert len(dm._reverse_of) == 57
     assert not (set(dm._reverse_of) & canonicals)
 
 

@@ -5,6 +5,40 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Changed
+- **The functional unit in time, and the Landscape Matrix of Sarmizegetusa**
+  (MICRO-LG2, 21 November 2026; §14–15 of the brain note
+  landscape-graph-semantica, E.D. 20–21 Nov). Node datamodel 1.6.52: a
+  `FunctionalUnitNodeGroup` is an IDENTITY whose life is DECLARED
+  (`has_first_epoch` / `survive_in_epoch`, absolute dates with their
+  paradata), never derived from its members — «has NO epoch of its own» is
+  withdrawn; new node element `scale` (territory, complex, building, room,
+  component — `crm:P2_has_type` → `em:FunctionalScale*`, em.ttl 1.6.27);
+  `PropertyNode.data.valid_from` / `valid_to`, a DATED property (the `use` of
+  a unit, its `phase`: em_qualia_types 1.6.14 property names). Connections
+  1.6.56: `has_property`, `is_in_location` (source), `changed_from`,
+  `is_after`, `has_same_time` widened to the FU; `changed_from` carries
+  `attributes.change_type = transformation` (with `transformation_kind`,
+  `note`) and, between two FUs, leaves for RDF also as a
+  `crm:E81_Transformation` minted from the edge (`P124_transformed` the
+  former, `P123_resulted_in` the latter; `mapping.projection_when_attribute`),
+  read back onto the edge by the importer; new edge `is_observed_in` (US, SF,
+  USD → UT; reverse `observes`; `crm:P46i_forms_part_of`, to be checked with
+  Felicetti), EN + IT, the other languages as drafts (translations 1.18). New
+  `s3dgraphy.functional_units`: `declared_life`, `members` / `children` /
+  `handles`, `transformations`, `uses`, `coherence` (member alive in its
+  unit, child inside its parent, coverage per epoch: the units alive and read
+  by nobody — a measure), `presence` (the E93 slice on an horizon: interval,
+  members alive, LOD0 footprint as the union of their footprints, evidence
+  stratigraphic / documentary / reconstructive / symbol). `landscape_matrix`
+  adds a row per HANDLE (the highest FU) of the landscape graph and of every
+  graph read with it. New `importer.landscape_matrix_csv` and
+  `scripts/import_landscape_matrix.py`: the Landscape Matrix table → a
+  landscape em.json (one site per `sito_id`, one FU per identity, phases
+  folded into one FU as dated `phase` properties, chains from `ingresso_da`
+  + `tipo_cambio`, UT rows as topographic units, alternative readings marked;
+  no invented date: what is missing is kept as text and listed). Mappings
+  re-stamped, node registry, translations, generated report and
+  docs-api types regenerated, version pins moved; `tests/test_functional_units_lg2.py`.
 - **`import em`, and the EMStudio Python API site** (MICRO-API01, 19 November
   2026). A top-level package `em` (`src/em/__init__.py`) puts
   `s3dgraphy.em` under its short name — the same module object, so one host,

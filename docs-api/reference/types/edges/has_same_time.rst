@@ -5,7 +5,7 @@ has_same_time
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.51, connections 1.6.55) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.52, connections 1.6.56) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *Indicates that two elements are contemporaneous.*
 
@@ -19,9 +19,9 @@ has_same_time
    * - Reverse
      - —
    * - Source
-     - :ref:`StratigraphicNode <type-StratigraphicNode>`, :ref:`DocumentNode <type-DocumentNode>`, :ref:`AuthorNode <type-AuthorNode>`, :ref:`LandscapeUnitNode <type-LandscapeUnitNode>`, :ref:`LocationNodeGroup <type-LocationNodeGroup>`
+     - :ref:`StratigraphicNode <type-StratigraphicNode>`, :ref:`DocumentNode <type-DocumentNode>`, :ref:`AuthorNode <type-AuthorNode>`, :ref:`LandscapeUnitNode <type-LandscapeUnitNode>`, :ref:`LocationNodeGroup <type-LocationNodeGroup>`, :ref:`FunctionalUnitNodeGroup <type-FunctionalUnitNodeGroup>`
    * - Target
-     - :ref:`StratigraphicNode <type-StratigraphicNode>`, :ref:`DocumentNode <type-DocumentNode>`, :ref:`AuthorNode <type-AuthorNode>`, :ref:`LandscapeUnitNode <type-LandscapeUnitNode>`, :ref:`LocationNodeGroup <type-LocationNodeGroup>`
+     - :ref:`StratigraphicNode <type-StratigraphicNode>`, :ref:`DocumentNode <type-DocumentNode>`, :ref:`AuthorNode <type-AuthorNode>`, :ref:`LandscapeUnitNode <type-LandscapeUnitNode>`, :ref:`LocationNodeGroup <type-LocationNodeGroup>`, :ref:`FunctionalUnitNodeGroup <type-FunctionalUnitNodeGroup>`
    * - CIDOC
      - ``crmarchaeo:AP22_is_equal_in_time_to``
 

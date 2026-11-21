@@ -5,7 +5,7 @@ dtc_had_output
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.51, connections 1.6.55) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.52, connections 1.6.56) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *DTC chain: a processing step (DTCProcess) produced a RESOURCE (a file: mesh/orthophoto/table…) — the ResourceNode (E73/D1), which is the SHARED HINGE that a RepresentationModel and/or a Document may reference.*
 

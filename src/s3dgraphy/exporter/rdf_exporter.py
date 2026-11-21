@@ -1149,6 +1149,20 @@ class RDFExporter:
                          EM.inheritsQualia,
                          self._node_iri(g.graph_id, edge.edge_target)))
 
+        # The change of IDENTITY between two functional units (connections
+        # 1.6.56, MICRO-LG2): beside the core <latter> P123i <former> written
+        # above, the event the shortcut stands for — an E81 Transformation
+        # minted from the edge, P124 the former, P123 the latter. No node of
+        # the graph (no dcterms:identifier), so the importer reads it back as
+        # the change_type of the changed_from it restates.
+        for edge in g.edges:
+            projected = self._transformation_triples(g, edge)
+            for triple in projected:
+                ctx.add(triple)
+            if projected:
+                self.stats["edges_transformation_events"] = (
+                    self.stats.get("edges_transformation_events", 0) + 1)
+
         # A1 · the qualia with a predicate of their own on the unit: an
         # alternative_label leaves as <unit> crm:P1_is_identified_by <label>
         # and <unit> skos:altLabel "the label" — beside em:hasQualia, so a
@@ -2520,6 +2534,41 @@ class RDFExporter:
         self.stats["edges_emitted"] += 1
         self.stats["edges_projected"] = self.stats.get("edges_projected", 0) + 1
         return True
+
+    def _transformation_triples(self, g: S3DGraph, edge: Any) -> List[Tuple[Any, Any, Any]]:
+        """``mapping.projection_when_attribute`` of ``changed_from`` (connections
+        1.6.56): for an edge whose ``attributes.change_type`` names a value the
+        datamodel projects, and whose LOGICAL ends are of the classes it
+        requires, the triples of the event — ``<T> a <event_class>; <former>
+        <old>; <latter> <new>``, T minted as ``<new>/transformation/<old id>``.
+        ``changed_to`` is read the other way round. Empty otherwise."""
+        canonical, inverted = self.datamodel.resolve_edge_direction(edge.edge_type)
+        entry = (self.datamodel.connections_datamodel.get("edge_types") or {}).get(canonical) or {}
+        rule = (entry.get("mapping") or {}).get("projection_when_attribute")
+        if not isinstance(rule, dict):
+            return []
+        value = (getattr(edge, "attributes", None) or {}).get(rule.get("attribute"))
+        spec = (rule.get("values") or {}).get(value) if isinstance(value, str) else None
+        if not isinstance(spec, dict):
+            return []
+        latter_id = edge.edge_target if inverted else edge.edge_source
+        former_id = edge.edge_source if inverted else edge.edge_target
+        latter, former = g.find_node_by_id(latter_id), g.find_node_by_id(former_id)
+        req = spec.get("requires") or {}
+        if (latter is None or former is None
+                or type(latter).__name__ not in (req.get("source_node_class") or [type(latter).__name__])
+                or type(former).__name__ not in (req.get("target_node_class") or [type(former).__name__])):
+            return []
+        klass = _resolve_prefixed(spec.get("event_class"))
+        p_former = _resolve_prefixed(spec.get("former"))
+        p_latter = _resolve_prefixed(spec.get("latter"))
+        if klass is None or p_former is None or p_latter is None:
+            return []
+        latter_iri = self._node_iri(g.graph_id, latter_id)
+        former_iri = self._node_iri(g.graph_id, former_id)
+        event = URIRef(f"{latter_iri}/transformation/{str(former_id).replace(' ', '_')}")
+        return [(event, RDF.type, klass), (event, p_former, former_iri),
+                (event, p_latter, latter_iri)]
 
     def _serialize_edge(self, g: S3DGraph, edge: Any, ctx) -> None:
         edge_type = edge.edge_type

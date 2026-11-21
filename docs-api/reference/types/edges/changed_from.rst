@@ -5,7 +5,7 @@ changed_from
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.51, connections 1.6.55) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.52, connections 1.6.56) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *Represents an object that changes over time, indicating temporal transformation.*
 
@@ -19,9 +19,9 @@ changed_from
    * - Reverse
      - ``changed_to``
    * - Source
-     - :ref:`StratigraphicNode <type-StratigraphicNode>`, :ref:`LandscapeUnitNode <type-LandscapeUnitNode>`, :ref:`LocationNodeGroup <type-LocationNodeGroup>`
+     - :ref:`StratigraphicNode <type-StratigraphicNode>`, :ref:`LandscapeUnitNode <type-LandscapeUnitNode>`, :ref:`LocationNodeGroup <type-LocationNodeGroup>`, :ref:`FunctionalUnitNodeGroup <type-FunctionalUnitNodeGroup>`
    * - Target
-     - :ref:`StratigraphicNode <type-StratigraphicNode>`, :ref:`LandscapeUnitNode <type-LandscapeUnitNode>`, :ref:`LocationNodeGroup <type-LocationNodeGroup>`
+     - :ref:`StratigraphicNode <type-StratigraphicNode>`, :ref:`LandscapeUnitNode <type-LandscapeUnitNode>`, :ref:`LocationNodeGroup <type-LocationNodeGroup>`, :ref:`FunctionalUnitNodeGroup <type-FunctionalUnitNodeGroup>`
    * - CIDOC
      - ``P123i_resulted_from · AP4_produced_surface (was_surface_produced_by)``
 

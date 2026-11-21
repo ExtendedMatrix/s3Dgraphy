@@ -38,7 +38,7 @@ def test_node_and_edge_types_match_the_reference():
     edges = em.catalogs.edge_types()
     pages_n = {p.stem for p in (ROOT / "docs-api/reference/types/nodes").glob("*.rst")}
     pages_e = {p.stem for p in (ROOT / "docs-api/reference/types/edges").glob("*.rst")}
-    assert len(nodes) == 68 and len(edges) == 63
+    assert len(nodes) == 68 and len(edges) == 64  # 64 since connections 1.6.56 (is_observed_in, MICRO-LG2)
     assert len(pages_n) == len(nodes) and len(pages_e) == len(edges)
     assert nodes["StratigraphicUnit"]["node_type"] == "US"
     assert nodes["DTCNode"]["node_type"] is None          # abstract: no node_type

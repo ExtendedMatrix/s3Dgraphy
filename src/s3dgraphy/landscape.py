@@ -335,6 +335,41 @@ def landscape_warnings(graph: Graph) -> List[str]:
 
 # ── D-LG3 · the Landscape Matrix ─────────────────────────────────────────────
 
+def _handle_rows(g: Graph, origin: str, keep: Optional[set], place,
+                 chron: Optional[Dict[str, Any]], landscape: Graph) -> List[Dict[str, Any]]:
+    """The rows of the highest functional units of ``g`` (MICRO-LG2): kind
+    ``functional_unit``, layer painting, ``site_id`` the site it is in (the
+    first, when several), ``scale``, ``evidence`` (the degree read from its
+    members over its whole life), ``changed_from`` the identities it replaced
+    (change_type transformation)."""
+    from . import functional_units as FU
+    ids = FU.handles(g)
+    if not ids:
+        return []
+    chron = g.chronology() if chron is None else chron
+    rows = []
+    for fid in ids:
+        node = g.find_node_by_id(fid)
+        sites = [s for s in FU.sites_of_unit(g, fid) if is_site(g.find_node_by_id(s))
+                 or g.find_node_by_id(s) is None]
+        if keep is not None and not any(s in keep for s in sites):
+            continue
+        interval = FU.declared_life(g, fid)
+        pres = FU.presence(g, fid, chronology=chron)
+        rows.append({"key": f"{origin}#{g.graph_id}:{fid}" if origin else f"{g.graph_id}:{fid}",
+                     "kind": "functional_unit", "layer": PAINTING,
+                     "graph_id": g.graph_id, "origin": origin, "node_id": fid,
+                     "name": node.name, "site_id": sites[0] if sites else None,
+                     "scale": FU.scale_of(node), "evidence": pres["evidence"],
+                     "changed_from": [t["former"] for t in FU.transformations(g, fid)
+                                      if t["latter"] == fid],
+                     "start": interval[0], "end": interval[1],
+                     "rule": "declared",
+                     "districts": districts_of(landscape, sites[0]) if sites else [],
+                     "horizons": place(interval)})
+    return rows
+
+
 def landscape_matrix(landscape: Graph, container: Any = None,
                      sources: Iterable[Any] = (), *,
                      periodization_id: Optional[str] = None,
@@ -352,6 +387,10 @@ def landscape_matrix(landscape: Graph, container: Any = None,
     * the units of the landscape (UT, UT0, district) and its sites, with the
       chronology of the landscape graph (sites by the rule ``cited``), ``key``
       ``<landscape graph>:<node>``;
+    * the HANDLES (MICRO-LG2, D-LG14): the highest functional units — the
+      identities no functional unit contains — of the landscape graph and of
+      every graph read with it (``kind`` ``functional_unit``, ``site_id``,
+      ``scale``, ``evidence``, ``changed_from``), each on its DECLARED life;
     * each cited STUDY as a whole (``kind`` ``study``, ``node_id`` None), from
       the same container or another file: its interval is its graph's, with its
       own epochs — several graphs, several periodizations of their own, one
@@ -392,6 +431,13 @@ def landscape_matrix(landscape: Graph, container: Any = None,
                      "rule": entry.get("rule"),
                      "districts": districts_of(landscape, node.node_id),
                      "horizons": place(interval)})
+    # MICRO-LG2 (21 Nov 2026, D-LG14 / P6): the HANDLES — the highest
+    # identities (functional units no functional unit contains) of the
+    # landscape graph and of every graph read with it, the container's and the
+    # cited ones. Each with its own graph's chronology: its DECLARED life.
+    for origin, g in [("", landscape)] + _source_graphs(landscape, container, sources):
+        rows.extend(_handle_rows(g, origin, keep, place,
+                                 chron if g is landscape else None, landscape))
     for site_id, life in lives.items():
         if keep is not None and site_id not in keep:
             continue

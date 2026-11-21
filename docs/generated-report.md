@@ -10,10 +10,10 @@ Every figure on this page is read off the datamodels and the installed package a
 
 | Component | Version |
 | --- | --- |
-| s3dgraphy (library) | 1.6.0.dev130 |
-| nodes datamodel | 1.6.51 |
-| connections datamodel | 1.6.55 |
-| qualia datamodel | 1.6.13 |
+| s3dgraphy (library) | 1.6.0.dev135 |
+| nodes datamodel | 1.6.52 |
+| connections datamodel | 1.6.56 |
+| qualia datamodel | 1.6.14 |
 | CIDOC-CRM | 7.1.3 |
 | CRMarchaeo | 2.1.1 |
 | CRMsci | 3.2 |
@@ -23,8 +23,6 @@ Every figure on this page is read off the datamodels and the installed package a
 | HDT-O | 1.0 |
 | PROV-O | W3C Recommendation 2013-04-30 |
 | CRMem | 1.6.26 |
-
-> ⚠ The generated node registry declares node datamodel version `1.6.41` while the node datamodel itself is at `1.6.51`. The registry's `--check` mode compares class entries only, so a version drift like this one passes unnoticed. Regenerate with `python -m s3dgraphy.tools.sync_node_datamodel`.
 
 ## Node types
 
@@ -44,9 +42,9 @@ Abstract family bases: `GroupNode`, `Node`, `ParadataNode`, `StratigraphicNode`.
 
 | What | Count |
 | --- | --- |
-| declared in the connections datamodel | 63 |
-| — of which live (not deprecated) | 62 |
-| — declaring a named reverse direction | 56 |
+| declared in the connections datamodel | 64 |
+| — of which live (not deprecated) | 63 |
+| — declaring a named reverse direction | 57 |
 
 ## Python classes
 
@@ -65,7 +63,7 @@ Classes present in the registry with no entry in the node datamodel, and therefo
 | What | Count |
 | --- | --- |
 | public API callables | 290 |
-| test modules in tests/ | 254 |
+| test modules in tests/ | 260 |
 | test modules in tests/*/ | 77 |
 
 ## Alignment by ontology
@@ -88,7 +86,7 @@ Edge types, by the ontology of the CIDOC predicate they emit. An edge with no CI
 
 | Ontology | Edge types |
 | --- | --- |
-| crm | 37 |
+| crm | 38 |
 | (none declared) | 10 |
 | crmdig | 6 |
 | hdto | 6 |

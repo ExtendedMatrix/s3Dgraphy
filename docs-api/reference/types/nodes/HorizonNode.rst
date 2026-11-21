@@ -5,7 +5,7 @@ HorizonNode
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.51, connections 1.6.55) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.52, connections 1.6.56) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *One span of a periodization: a label, a start and an end in years (negative = BC), a colour and its order in the periodization.*
 

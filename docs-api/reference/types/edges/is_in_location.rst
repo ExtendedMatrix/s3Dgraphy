@@ -5,7 +5,7 @@ is_in_location
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.51, connections 1.6.55) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.52, connections 1.6.56) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *Indicates that a node belongs to a spatial / locational group (LocationNodeGroup).*
 
@@ -19,7 +19,7 @@ is_in_location
    * - Reverse
      - ``includes_location``
    * - Source
-     - :ref:`StratigraphicNode <type-StratigraphicNode>`, :ref:`ParadataNode <type-ParadataNode>`, :ref:`ParadataNodeGroup <type-ParadataNodeGroup>`, :ref:`DocumentNode <type-DocumentNode>`, :ref:`ExtractorNode <type-ExtractorNode>`, :ref:`CombinerNode <type-CombinerNode>`, :ref:`PropertyNode <type-PropertyNode>`, :ref:`LocationNodeGroup <type-LocationNodeGroup>`, :ref:`LandscapeSurfaceNode <type-LandscapeSurfaceNode>`, :ref:`LandscapeUnitNode <type-LandscapeUnitNode>`
+     - :ref:`StratigraphicNode <type-StratigraphicNode>`, :ref:`ParadataNode <type-ParadataNode>`, :ref:`ParadataNodeGroup <type-ParadataNodeGroup>`, :ref:`DocumentNode <type-DocumentNode>`, :ref:`ExtractorNode <type-ExtractorNode>`, :ref:`CombinerNode <type-CombinerNode>`, :ref:`PropertyNode <type-PropertyNode>`, :ref:`LocationNodeGroup <type-LocationNodeGroup>`, :ref:`LandscapeSurfaceNode <type-LandscapeSurfaceNode>`, :ref:`LandscapeUnitNode <type-LandscapeUnitNode>`, :ref:`FunctionalUnitNodeGroup <type-FunctionalUnitNodeGroup>`
    * - Target
      - :ref:`LocationNodeGroup <type-LocationNodeGroup>`
    * - CIDOC

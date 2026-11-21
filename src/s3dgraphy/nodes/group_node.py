@@ -168,6 +168,11 @@ class LocationNodeGroup(GroupNode):
         self.attributes['propagation'] = propagation
 
 
+#: The scales of a functional unit (node datamodel 1.6.52, data.scale), from
+#: the widest: a TYPE (crm:P2_has_type → em:FunctionalScale*), not a class.
+FUNCTIONAL_SCALES = ("territory", "complex", "building", "room", "component")
+
+
 class FunctionalUnitNodeGroup(GroupNode):
     """Typed aggregation of the stratigraphic units that make up one
     recognisable functional / architectural component — the *column* made
@@ -224,8 +229,21 @@ class FunctionalUnitNodeGroup(GroupNode):
     - the orthogonal axes stay orthogonal: a member keeps its own
       ``has_first_epoch`` (time), ``is_in_activity`` (intention) and
       ``is_in_location`` (place); the Functional Unit does not override
-      them and has no epoch of its own — its temporal extent is DERIVED
-      from its members, and may cover several epochs.
+      them.
+
+    An identity in time (node datamodel 1.6.52, MICRO-LG2, E.D. 20–21 Nov 2026)
+    ----------------------------------------------------------------------------
+    At every ``scale`` (:data:`FUNCTIONAL_SCALES`: territory, complex,
+    building, room, component) a Functional Unit is an IDENTITY — the villa,
+    the castle, the temple, the ruin, the restored temple — whose life is
+    DECLARED (``has_first_epoch`` / ``survive_in_epoch``, absolute dates with
+    their paradata), never derived from the members, which may be older (the
+    Roman wall reused in the castle). Its function is the quale
+    ``primary_function``; its use a dated property (``use``, ``data.valid_from``
+    / ``valid_to``). Another identity taking its place in the same volume is a
+    new unit ``changed_from`` it with ``change_type`` ``transformation``;
+    phases with different US under one function stay one unit. Coherence
+    and presence: :mod:`s3dgraphy.functional_units`.
 
     EM manual: *Stratigraphic Nodes* → "SU / USD / VSF as Container" and
     *Connectors* → ``is_part_of`` ("Containment is a relationship (edge),
@@ -235,7 +253,7 @@ class FunctionalUnitNodeGroup(GroupNode):
     node_type = "FunctionalUnitNodeGroup"
 
     def __init__(self, node_id, name, description="",
-                 geometry_type_ref=None):
+                 geometry_type_ref=None, scale=None):
         super().__init__(node_id, name, description=description)
         # Geometry type BY REFERENCE only (DP-72): an opaque pointer into an
         # external taxonomy (bSDD / Getty AAT / HBIM shape grammar). Free-form
@@ -243,6 +261,19 @@ class FunctionalUnitNodeGroup(GroupNode):
         # binding to a target ontology (CRMvr V5) is separate work.
         if geometry_type_ref is not None:
             self.attributes['geometry_type_ref'] = geometry_type_ref
+        # The scale (node datamodel 1.6.52): a TYPE of the EM vocabulary,
+        # data.scale, like the kind of a district. Absent = not said.
+        if scale is not None:
+            if scale not in FUNCTIONAL_SCALES:
+                raise ValueError(f"scale must be one of {FUNCTIONAL_SCALES}, got {scale!r}")
+            if not isinstance(getattr(self, "data", None), dict):
+                self.data = {}
+            self.data["scale"] = scale
+
+    @property
+    def scale(self):
+        data = getattr(self, "data", None)
+        return data.get("scale") if isinstance(data, dict) else None
 
 class RepresentationModelNodeGroup(GroupNode):
     """Typed aggregation of the representation models that form ONE named set

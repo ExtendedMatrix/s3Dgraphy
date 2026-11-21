@@ -5,7 +5,7 @@ has_property
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.51, connections 1.6.55) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.52, connections 1.6.56) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *Connects a node to one of its properties.*
 
@@ -19,7 +19,7 @@ has_property
    * - Reverse
      - ``is_property_of``
    * - Source
-     - :ref:`StratigraphicNode <type-StratigraphicNode>`, :ref:`DocumentNode <type-DocumentNode>`, :ref:`RepresentationModelDocNode <type-RepresentationModelDocNode>`, :ref:`EpochNode <type-EpochNode>`, :ref:`GraphNode <type-GraphNode>`, :ref:`AuthorNode <type-AuthorNode>`, :ref:`LocationNodeGroup <type-LocationNodeGroup>`, :ref:`LandscapeUnitNode <type-LandscapeUnitNode>`
+     - :ref:`StratigraphicNode <type-StratigraphicNode>`, :ref:`DocumentNode <type-DocumentNode>`, :ref:`RepresentationModelDocNode <type-RepresentationModelDocNode>`, :ref:`EpochNode <type-EpochNode>`, :ref:`GraphNode <type-GraphNode>`, :ref:`AuthorNode <type-AuthorNode>`, :ref:`LocationNodeGroup <type-LocationNodeGroup>`, :ref:`LandscapeUnitNode <type-LandscapeUnitNode>`, :ref:`FunctionalUnitNodeGroup <type-FunctionalUnitNodeGroup>`
    * - Target
      - :ref:`PropertyNode <type-PropertyNode>`
    * - CIDOC

@@ -187,7 +187,7 @@ def test_property_names_are_labelled_and_are_not_qualia():
     t._doc.cache_clear()
     qualia = json.loads(t.QUALIA.read_text(encoding="utf-8"))
     en = t._collect_property_names_en(qualia)
-    assert set(en) == {"definition", "material", "interpretation"}  # interpretation: 1.6.12
+    assert set(en) == {"definition", "material", "interpretation", "use", "phase"}  # interpretation: 1.6.12; use, phase: 1.6.14 (MICRO-LG2, 21 Nov 2026)
     assert not any(k.startswith("_") for k in en)
     ids = set(t._collect_qualia_en(qualia)["qualia"])
     assert not (set(en) & ids)
