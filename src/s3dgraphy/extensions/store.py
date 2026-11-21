@@ -313,12 +313,22 @@ def _data_summary(pkg: Package) -> Dict[str, Any]:
 def _code_summary(pkg: Package, source: str) -> Dict[str, Any]:
     c = _code(pkg)
     desc = c.get("descriptor") if isinstance(c.get("descriptor"), Mapping) else {}
+    # MICRO-SEG08 · what a command needs (its slots) and whether it reads folders, and the
+    # declarative panels with where they open: EMStudio says «where you will find it»
+    # from these BEFORE the code is installed (the preview is all it has then)
     cmds = [{"id": x.get("id"), "label": x.get("label"), "in": list(x.get("in") or []),
-             "writes": bool(x.get("writes"))} for x in (c.get("commands") or []) if isinstance(x, Mapping)]
+             "writes": bool(x.get("writes")),
+             "slots": [{"name": s.get("name"), "kind": s.get("kind"), "required": s.get("required", True) is not False}
+                       for s in (x.get("slots") or []) if isinstance(s, Mapping)],
+             **({"folders": True} if x.get("folders") else {}),
+             **({"when": x.get("when")} if isinstance(x.get("when"), str) else {})}
+            for x in (c.get("commands") or []) if isinstance(x, Mapping)]
+    panels = [{"id": x.get("id"), "label": x.get("label"), "place": x.get("place") or "right"}
+              for x in (c.get("panels") or []) if isinstance(x, Mapping)]
     return {"entry": c.get("entry"), "module": _module(c.get("entry")), "hosts": list(c.get("hosts") or []),
             "platforms": list(c.get("platforms") or []), "wheels": list(c.get("wheels") or []),
             "permissions": dict(c.get("permissions") or {}), "capabilities": list(desc.get("capabilities") or []),
-            "commands": cmds, "license": c.get("license"), "source": source, "verified": False}
+            "commands": cmds, "panels": panels, "license": c.get("license"), "source": source, "verified": False}
 
 
 def _open(source: Any) -> Package:

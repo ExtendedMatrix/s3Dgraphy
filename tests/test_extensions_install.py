@@ -113,6 +113,20 @@ def test_the_panel_says_the_tier_written_as_tier(tmp_path):
     assert [v["fascia"] for v in pv["data"]["summary"]["vocabularies"]] == ["A", "A", "A"]
 
 
+def test_the_code_panel_says_slots_and_panels(tmp_path):
+    """MICRO-SEG08 · EMStudio's «Where you will find it» is computed from the
+    preview before the code is installed: each command carries its slots (and
+    whether it reads folders), the declarative panels their place."""
+    pkg = copy(MIXED, tmp_path)
+    with open(pkg / "em-extension.toml", "a", encoding="utf-8") as f:
+        f.write('\n  [[code.panels]]\n  id = "pannello"\n  label = { en = "A panel", it = "Un pannello" }\n  place = "left"\n')
+    c = X.preview(pkg)["code"]
+    assert c["commands"][0]["slots"] == [{"name": "model", "kind": "id", "required": True}]
+    assert "folders" not in c["commands"][0]
+    assert c["panels"] == [{"id": "pannello", "label": {"en": "A panel", "it": "Un pannello"}, "place": "left"}]
+    assert X.preview(MIXED)["code"]["panels"] == []
+
+
 def test_archive_hash_is_the_same_for_a_folder_and_its_zip(tmp_path):
     assert X.preview(MIXED)["archive_hash"] == X.preview(zip_of(MIXED, tmp_path))["archive_hash"]
 
