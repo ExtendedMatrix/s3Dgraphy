@@ -333,6 +333,72 @@ def heading_span(blocks: Any, index: int) -> Tuple[int, int]:
     return index, end
 
 
+# ── what a part of the story NARRATES (MICRO-SEG23, 21 Nov 2026) ─────────────
+#
+# A chapter narrates lanes of the graph: ``anchor`` held ONE id (an epoch, an
+# activity). It now holds the first of several: ``anchors`` lists them all, in
+# the order the author ticked them — epochs, horizons, activities, and later
+# the functional units (LG2). Compatible both ways: a file with only
+# ``anchor`` reads as ``anchors == [anchor]``; ``anchors`` is written only when
+# there is more than one, so a chapter with one lane is byte for byte what it
+# was, and a reader that knows only ``anchor`` still finds the first.
+#
+# A section or a subsection (a heading block) narrates in the same two keys,
+# inside its ``options`` (``options.anchor`` was already carried by
+# «Transform into…», MICRO-SEG22). Narrating is NOT citing: it does not enter
+# ``referenced_ids`` nor ``query.citations``; it enters the coverage
+# (``query.interpretive_coverage``, column ``narrated``).
+
+def anchors_of(part: Any) -> List[str]:
+    """The ids a chapter or a heading narrates, in order, without repeats.
+
+    ``part`` is a :class:`Chapter`, a heading :class:`Block`, or their dicts.
+    A chapter reads ``anchors`` / ``anchor``; a heading reads them in its
+    ``options``. Any other block narrates nothing."""
+    if (_get(part, "block_type", None) or None) is not None:
+        if _get(part, "block_type") != BLOCK_HEADING:
+            return []
+        source = _get(part, "options", None) or {}
+    else:
+        source = part
+    out: List[str] = []
+    first = _get(source, "anchor", None)
+    for value in [first, *(_get(source, "anchors", None) or [])]:
+        if isinstance(value, str) and value and value not in out:
+            out.append(value)
+    return out
+
+
+def set_anchors(target: Dict[str, Any], ids: List[str]) -> None:
+    """Write ``ids`` into a chapter's dict or a heading's ``options`` dict the
+    compatible way: ``anchor`` the first, ``anchors`` only when more than one,
+    both gone when none."""
+    clean: List[str] = []
+    for value in ids or []:
+        if isinstance(value, str) and value and value not in clean:
+            clean.append(value)
+    target.pop("anchors", None)
+    if not clean:
+        target.pop("anchor", None)
+        return
+    target["anchor"] = clean[0]
+    if len(clean) > 1:
+        target["anchors"] = clean
+
+
+def narrated_parts(chapters: Any) -> List[Dict[str, Any]]:
+    """Every act of narrating, in reading order: ``{chapter, block, ref}`` —
+    ``block`` None for the chapter itself, the heading's index otherwise."""
+    rows: List[Dict[str, Any]] = []
+    for c_index, chapter in enumerate(chapters or []):
+        for ref in anchors_of(chapter):
+            rows.append({"chapter": c_index, "block": None, "ref": ref})
+        for b_index, block in enumerate(_get(chapter, "blocks", None) or []):
+            for ref in anchors_of(block):
+                rows.append({"chapter": c_index, "block": b_index, "ref": ref})
+    return rows
+
+
 class NarrativeError(ValueError):
     """A narrative structure was given something the model does not admit."""
 
@@ -516,6 +582,14 @@ class Chapter:
     #: node, so it cannot carry a `has_author` edge of its own — the attribution
     #: rides here, and the NarrativeNode carries the edge for the whole work.
     authored_by: Optional[str] = None
+    #: MICRO-SEG23 · every lane this chapter narrates, ``anchor`` the first
+    #: (see :func:`anchors_of`). Kept in step with ``anchor`` on construction.
+    anchors: List[str] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        ids = anchors_of({"anchor": self.anchor, "anchors": self.anchors})
+        self.anchors = ids
+        self.anchor = ids[0] if ids else None
 
     def add_prose(self, text: str) -> Block:
         block = Block.prose(text)
@@ -543,6 +617,9 @@ class Chapter:
                                "blocks": [b.to_dict() for b in self.blocks]}
         if self.anchor:
             out["anchor"] = self.anchor
+        ids = anchors_of(self)
+        if len(ids) > 1:
+            out["anchors"] = ids
         if self.authored_by:
             out["authored_by"] = self.authored_by
         return out
@@ -555,6 +632,7 @@ class Chapter:
             canonical=bool(payload.get("canonical", False)),
             blocks=[Block.from_dict(b) for b in (payload.get("blocks") or [])],
             authored_by=payload.get("authored_by"),
+            anchors=list(payload.get("anchors") or []),
         )
 
 
@@ -611,6 +689,15 @@ class NarrativeNode(Node):
         if not anchor:
             return None
         return next((c for c in self.chapters if c.anchor == anchor), None)
+
+    def narrated_ids(self) -> List[str]:
+        """Every lane the story narrates — the chapters' anchors and their
+        sections' — in reading order, without repeats (MICRO-SEG23)."""
+        seen: List[str] = []
+        for row in narrated_parts(self.chapters):
+            if row["ref"] not in seen:
+                seen.append(row["ref"])
+        return seen
 
     # — references ————————————————————————————————————————————————————————
 

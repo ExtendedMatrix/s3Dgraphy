@@ -1310,9 +1310,17 @@ def interpretive_coverage(graph: Graph, *, kind: str = "epoch"
                           ) -> List[Dict[str, Any]]:
     """How much has been WRITTEN about each epoch (or activity), counting a
     citation of a member as covering the whole. `narratives: 0` is the row
-    people are actually looking for."""
+    people are actually looking for. A chapter or a section that NARRATES it
+    (MICRO-SEG23, column `narrated`) covers it too."""
     from .narrative.query import interpretive_coverage as _q
     return _q(graph, kind=kind)
+
+
+def narrated(graph: Graph) -> List[Dict[str, Any]]:
+    """Every «Narrates» binding of every narrative — a chapter's or a section's
+    epoch, horizon, activity — with its position (MICRO-SEG23)."""
+    from .narrative.query import narrated as _q
+    return _q(graph)
 
 
 def unexplained_reconstructions(graph: Graph) -> List[Dict[str, Any]]:

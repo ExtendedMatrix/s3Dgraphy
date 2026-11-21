@@ -224,6 +224,40 @@ def _cited_ids(graph: Any) -> Dict[str, Set[str]]:
     return out
 
 
+def narrated(graph: Any) -> List[Dict[str, Any]]:
+    """Every lane every narrative NARRATES (MICRO-SEG23): one row per chapter
+    or heading and per id it is bound to — ``{narrative_id, narrative_name,
+    chapter, chapter_title, block, ref}``, ``block`` None for a chapter.
+
+    Narrating is the «Narrates» binding of a chapter or a section to an epoch,
+    a horizon, an activity (``anchor`` / ``anchors``, see
+    :func:`s3dgraphy.nodes.narrative_node.anchors_of`); it is not a citation
+    and is not in :func:`citations`."""
+    from ..nodes.narrative_node import narrated_parts
+
+    rows: List[Dict[str, Any]] = []
+    for narrative in narratives(graph):
+        chapters = _chapters(narrative)
+        for row in narrated_parts(chapters):
+            rows.append({
+                "narrative_id": narrative.node_id,
+                "narrative_name": _name(narrative),
+                "chapter": row["chapter"],
+                "chapter_title": str(chapters[row["chapter"]].get("title") or ""),
+                "block": row["block"],
+                "ref": row["ref"],
+            })
+    return rows
+
+
+def _narrated_ids(graph: Any) -> Dict[str, Set[str]]:
+    """ref → the narratives that narrate it, once each."""
+    out: Dict[str, Set[str]] = {}
+    for row in narrated(graph):
+        out.setdefault(row["ref"], set()).add(row["narrative_id"])
+    return out
+
+
 def interpretive_coverage(graph: Any, *, kind: str = "epoch"
                           ) -> List[Dict[str, Any]]:
     """How much has been *written about* each epoch (or activity).
@@ -237,6 +271,11 @@ def interpretive_coverage(graph: Any, *, kind: str = "epoch"
     `narratives: 0` is the interesting row, and it is why this returns every
     epoch rather than only the covered ones: the question people actually have
     is *what has nobody explained yet*.
+
+    MICRO-SEG23 · a narrative that NARRATES the epoch or the activity — a
+    chapter or a section bound to it by «Narrates» — touches it too, and so
+    does one that narrates one of its members (an activity of the epoch):
+    ``narrated`` counts the narratives bound to it directly.
     """
     if kind not in ("epoch", "activity"):
         raise ValueError("kind must be 'epoch' or 'activity'")
@@ -244,6 +283,10 @@ def interpretive_coverage(graph: Any, *, kind: str = "epoch"
     links = _EPOCH_LINKS if kind == "epoch" else _GROUP_LINKS
 
     cited = _cited_ids(graph)
+    bound = _narrated_ids(graph)
+    touched: Dict[str, Set[str]] = {k: set(v) for k, v in cited.items()}
+    for ref, ids in bound.items():
+        touched.setdefault(ref, set()).update(ids)
     members: Dict[str, Set[str]] = {}
     for edge in _edges(graph):
         if str(getattr(edge, "edge_type", "")) in links:
@@ -253,16 +296,17 @@ def interpretive_coverage(graph: Any, *, kind: str = "epoch"
     for node in (getattr(graph, "nodes", None) or []):
         if getattr(node, "node_type", "") not in types:
             continue
-        touching: Set[str] = set(cited.get(node.node_id, set()))
-        direct = len(touching)
+        touching: Set[str] = set(touched.get(node.node_id, set()))
+        direct = len(cited.get(node.node_id, set()))
         for member in members.get(node.node_id, set()):
-            touching |= cited.get(member, set())
+            touching |= touched.get(member, set())
         rows.append({
             "id": node.node_id,
             "name": _name(node),
             "kind": kind,
             "narratives": len(touching),
             "direct_citations": direct,
+            "narrated": len(bound.get(node.node_id, set())),
             "members": len(members.get(node.node_id, set())),
             "narrative_ids": sorted(touching),
         })
