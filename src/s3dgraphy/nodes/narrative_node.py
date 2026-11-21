@@ -95,11 +95,27 @@ def canonical_view_type(view_type: Optional[str]) -> Optional[str]:
         return None
     return NARRATIVE_VIEW_TYPE_ALIASES.get(view_type, view_type)
 
-#: The two kinds of block. `prose` carries text the author wrote; `embed`
-#: carries a reference to something the graph already knows.
+#: The kinds of block. `prose` carries text the author wrote; `embed` carries a
+#: reference to something the graph already knows; `heading` (MICRO-SEG22, 21
+#: Nov 2026) is the title of a SECTION or a SUBSECTION inside a chapter.
+#:
+#: A heading is a block, not a container: the paragraphs that follow it belong
+#: to it because they come after it, up to the next heading of the same level or
+#: higher — the hierarchy is born from the ORDER, as the headings of a document
+#: are, and nothing has to be nested by hand. So a file with no heading is what
+#: it always was (chapters and paragraphs), and moving a section is moving the
+#: run of blocks it heads (:func:`heading_span`).
 BLOCK_PROSE = "prose"
 BLOCK_EMBED = "embed"
-NARRATIVE_BLOCK_TYPES = (BLOCK_PROSE, BLOCK_EMBED)
+BLOCK_HEADING = "heading"
+NARRATIVE_BLOCK_TYPES = (BLOCK_PROSE, BLOCK_EMBED, BLOCK_HEADING)
+
+#: The levels of a heading, under the chapter (which is level 0, and is not a
+#: block): 1 a section, 2 a subsection. Numbered 1.1 and 1.1.1 when the story is
+#: numbered (:func:`outline`).
+HEADING_SECTION = 1
+HEADING_SUBSECTION = 2
+HEADING_LEVELS = (HEADING_SECTION, HEADING_SUBSECTION)
 
 #: Who stands behind a piece of content, and whether a person has said so (N4).
 #:
@@ -240,6 +256,83 @@ def unvalidated_for_export(chapters: Any) -> List[Dict[str, Any]]:
     return out
 
 
+#: ``data.numbering`` on a NarrativeNode: absent or true → the chapters, the
+#: sections and the subsections are numbered (1, 1.1, 1.1.1) wherever the story
+#: is shown or exported; false → no numbers anywhere.
+def numbering_on(data: Optional[Dict[str, Any]]) -> bool:
+    """Is the story numbered? Yes unless ``data.numbering`` is false."""
+    return (data or {}).get("numbering", True) is not False
+
+
+def _get(obj: Any, key: str, default: Any = None) -> Any:
+    return (obj.get(key, default) if isinstance(obj, dict)
+            else getattr(obj, key, default))
+
+
+def outline(chapters: Any) -> List[Dict[str, Any]]:
+    """The tree of the story, in reading order: one row per chapter and per
+    heading, ``{chapter, block, level, title, number}``.
+
+    ``block`` is None for a chapter (level 0); a heading's level is 1 (a
+    section) or 2 (a subsection). ``number`` is «1», «1.2», «1.2.1»: the
+    sections restart in every chapter, the subsections in every section. A
+    subsection with no section above it in its chapter is «1.0.1» — what LaTeX
+    prints for the same page, so the numbers of the preview and of the PDF
+    agree. ``chapters`` are :class:`Chapter` objects or their dicts.
+    """
+    rows: List[Dict[str, Any]] = []
+    for c_index, chapter in enumerate(chapters or []):
+        c_number = str(c_index + 1)
+        rows.append({"chapter": c_index, "block": None, "level": 0,
+                     "title": str(_get(chapter, "title", "") or ""),
+                     "number": c_number})
+        section = subsection = 0
+        for b_index, block in enumerate(_get(chapter, "blocks", None) or []):
+            if (_get(block, "block_type", "") or "") != BLOCK_HEADING:
+                continue
+            level = int(_get(block, "level", 0) or HEADING_SECTION)
+            if level == HEADING_SECTION:
+                section += 1
+                subsection = 0
+                number = f"{c_number}.{section}"
+            else:
+                subsection += 1
+                number = f"{c_number}.{section}.{subsection}"
+            rows.append({"chapter": c_index, "block": b_index, "level": level,
+                         "title": str(_get(block, "text", "") or ""),
+                         "number": number})
+    return rows
+
+
+def numbered_title(number: str, title: str, numbered: bool = True) -> str:
+    """«1.2 Title» when the story is numbered, «Title» when it is not — the one
+    way every exporter writes a chapter's or a heading's title."""
+    return f"{number} {title}" if numbered and number else title
+
+
+def heading_span(blocks: Any, index: int) -> Tuple[int, int]:
+    """The blocks a heading heads: ``(index, end)``, ``end`` excluded — the
+    heading itself and everything after it up to the next heading of the same
+    level or higher (a subsection's run stops at the next subsection or
+    section; a section's at the next section). For any other block, just
+    itself. This is what moves with a heading when it is moved."""
+    blocks = list(blocks or [])
+    if not 0 <= index < len(blocks):
+        return index, index
+    head = blocks[index]
+    if (_get(head, "block_type", "") or "") != BLOCK_HEADING:
+        return index, index + 1
+    level = int(_get(head, "level", 0) or HEADING_SECTION)
+    end = index + 1
+    while end < len(blocks):
+        other = blocks[end]
+        if ((_get(other, "block_type", "") or "") == BLOCK_HEADING
+                and int(_get(other, "level", 0) or HEADING_SECTION) <= level):
+            break
+        end += 1
+    return index, end
+
+
 class NarrativeError(ValueError):
     """A narrative structure was given something the model does not admit."""
 
@@ -275,12 +368,22 @@ class Block:
     #: block is what travels: a reader must be able to tell, from the text
     #: alone, without resolving the author node first.
     ai_generated: bool = False
+    #: For a ``heading``: 1 a section, 2 a subsection (:data:`HEADING_LEVELS`).
+    #: 0 on every other block, and never written for them.
+    level: int = 0
 
     def __post_init__(self) -> None:
         if self.block_type not in NARRATIVE_BLOCK_TYPES:
             raise NarrativeError(
                 f"block_type must be one of {NARRATIVE_BLOCK_TYPES}, "
                 f"got {self.block_type!r}")
+        if self.block_type == BLOCK_HEADING:
+            if self.level not in HEADING_LEVELS:
+                raise NarrativeError(
+                    f"a heading's level must be one of {HEADING_LEVELS}, "
+                    f"got {self.level!r}")
+        else:
+            self.level = 0
         if self.block_type == BLOCK_EMBED:
             if not self.ref:
                 raise NarrativeError("an embed block needs a ref")
@@ -332,10 +435,16 @@ class Block:
         return cls(block_type=BLOCK_EMBED, ref=ref, view_type=view_type,
                    options=dict(options))
 
+    @classmethod
+    def heading(cls, text: str, level: int = HEADING_SECTION) -> "Block":
+        """The title of a section (level 1) or a subsection (level 2)."""
+        return cls(block_type=BLOCK_HEADING, text=text, level=level)
+
     def mentions(self) -> List[str]:
-        """The ids this block mentions in its prose (``[[id]]``), in order,
-        without repeats. An embed mentions nothing: it IS a reference."""
-        if self.block_type != BLOCK_PROSE:
+        """The ids this block mentions in its text (``[[id]]``), in order,
+        without repeats — a paragraph's or a heading's. An embed mentions
+        nothing: it IS a reference."""
+        if self.block_type not in (BLOCK_PROSE, BLOCK_HEADING):
             return []
         return mentions_in(self.text)
 
@@ -345,6 +454,9 @@ class Block:
         out: Dict[str, Any] = {"block_type": self.block_type}
         if self.block_type == BLOCK_PROSE:
             out["text"] = self.text
+        elif self.block_type == BLOCK_HEADING:
+            out["text"] = self.text
+            out["level"] = self.level
         else:
             out["ref"] = self.ref
             out["view_type"] = self.view_type
@@ -377,6 +489,8 @@ class Block:
             validated_by=payload.get("validated_by"),
             validated_at=payload.get("validated_at"),
             ai_generated=bool(payload.get("ai_generated", False)),
+            level=(int(payload.get("level") or HEADING_SECTION)
+                   if payload.get("block_type") == BLOCK_HEADING else 0),
         )
 
 
@@ -410,6 +524,11 @@ class Chapter:
 
     def add_embed(self, ref: str, view_type: str, **options: Any) -> Block:
         block = Block.embed(ref, view_type, **options)
+        self.blocks.append(block)
+        return block
+
+    def add_heading(self, text: str, level: int = HEADING_SECTION) -> Block:
+        block = Block.heading(text, level)
         self.blocks.append(block)
         return block
 
@@ -513,6 +632,17 @@ class NarrativeNode(Node):
                         seen.add(ref)
                         out.append(ref)
         return out
+
+    def outline(self) -> List[Dict[str, Any]]:
+        """The tree of chapters, sections and subsections — see the module
+        function :func:`outline`; numbers are given even when the story is not
+        numbered (:attr:`numbered` says whether to show them)."""
+        return outline(self.chapters)
+
+    @property
+    def numbered(self) -> bool:
+        """Are the numbers shown? ``data.numbering`` false turns them off."""
+        return numbering_on(self.data)
 
     def mentioned_ids(self) -> List[str]:
         """Only the ``[[id]]`` mentions, in order of appearance, without

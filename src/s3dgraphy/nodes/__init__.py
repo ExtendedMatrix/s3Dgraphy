@@ -96,7 +96,7 @@ from .periodization_node import PeriodizationNode, HorizonNode
 from .narrative_node import (
     NarrativeNode, Chapter, Block, NarrativeError,
     NARRATIVE_VIEW_TYPES, NARRATIVE_BLOCK_TYPES,
-    BLOCK_PROSE, BLOCK_EMBED,
+    BLOCK_PROSE, BLOCK_EMBED, BLOCK_HEADING, HEADING_LEVELS,
 )
 
 # Define what is available for import when using 'from nodes import *'
@@ -110,6 +110,8 @@ __all__ = [
     "NARRATIVE_BLOCK_TYPES",
     "BLOCK_PROSE",
     "BLOCK_EMBED",
+    "BLOCK_HEADING",
+    "HEADING_LEVELS",
     "StratigraphicNode",
     "WorkingUnit",
     "StratigraphicUnit",

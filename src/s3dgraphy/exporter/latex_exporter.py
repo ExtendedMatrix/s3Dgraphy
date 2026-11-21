@@ -27,7 +27,8 @@ import re
 from typing import Any, Dict, List, Optional, Tuple
 
 from ..nodes.narrative_node import (UNVALIDATED_MARK, UNVALIDATED_NOTICE,
-                                     is_unvalidated, render_mention_tokens,
+                                     is_unvalidated, numbering_on,
+                                     render_mention_tokens,
                                      substitute_mentions)
 
 #: View types that a printed page CITES rather than shows. A source and a document
@@ -485,6 +486,14 @@ def export_narrative_latex(graph: Any, narrative_id: str, *,
             cite(prompt)
 
     # ── chapters ─────────────────────────────────────────────────────────────
+    # MICRO-SEG22 · LaTeX numbers its own sectioning (1, 1.1, 1.1.1 — the
+    # numbers of the editor's outline, a subsection with no section above it
+    # included: «1.0.1» there and here); `numbering: false` uses the starred
+    # commands, which print no number.
+    star = "" if numbering_on(getattr(node, "data", None)) else "*"
+    # chapter, section, subsection — one level deeper in a fragment
+    sectioning = (("subsection", "subsubsection", "paragraph") if fragment
+                  else ("section", "subsection", "subsubsection"))
     for chapter in node.chapters:
         lines.append("")
         chapter_title = getattr(chapter, "title", "") or ""
@@ -494,8 +503,8 @@ def export_narrative_latex(graph: Any, narrative_id: str, *,
         # the chapters came out numbered "0.1 … 0.4" — a numbering that says the
         # document is a piece of another one, which for the default file is no
         # longer true.
-        level = "subsection" if fragment else "section"
-        lines.append(f"\\{level}{{{latex_escape(chapter_title)}}}")
+        level = sectioning[0]
+        lines.append(f"\\{level}{star}{{{latex_escape(chapter_title)}}}")
         anchor = getattr(chapter, "anchor", None)
         if anchor:
             # The lane a chapter narrates is structural information a reader of
@@ -504,6 +513,20 @@ def export_narrative_latex(graph: Any, narrative_id: str, *,
             lines.append(f"\\label{{{_label('sec', anchor)}}}")
         for block in getattr(chapter, "blocks", []):
             block_type = getattr(block, "block_type", "")
+            if block_type == "heading":
+                # MICRO-SEG22 · a section's or a subsection's title; its
+                # mentions are names, as in a paragraph
+                text = getattr(block, "text", "") or ""
+                if not text.strip():
+                    continue
+                text, mentions = substitute_mentions(text, name_of)
+                body = render_mention_tokens(latex_escape(text), mentions,
+                                             _latex_mention)
+                command = sectioning[2 if int(getattr(block, "level", 1)
+                                              or 1) >= 2 else 1]
+                lines.append("")
+                lines.append(f"\\{command}{star}{{{body}}}")
+                continue
             if block_type == "prose":
                 text = getattr(block, "text", "") or ""
                 unvalidated = is_unvalidated(block)

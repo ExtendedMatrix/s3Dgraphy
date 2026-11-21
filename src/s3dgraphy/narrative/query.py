@@ -116,7 +116,8 @@ def citations(graph: Any) -> List[Dict[str, Any]]:
                     ref = str(block.get("ref") or "")
                     cited = [(ref, str(block.get("view_type") or ""), "embed")] \
                         if ref else []
-                elif block.get("block_type", "prose") == "prose":
+                elif block.get("block_type", "prose") in ("prose", "heading"):
+                    # a heading's title may mention a node too (MICRO-SEG22)
                     cited = [(ref, "", "mention")
                              for ref in mentions_in(block.get("text"))]
                 else:

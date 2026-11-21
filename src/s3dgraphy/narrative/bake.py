@@ -41,7 +41,7 @@ truth (ADR-001), so the bake reads it and maps what is really there.
 
 Note the deliberate two-level naming: ``view_type`` belongs to the EM language and
 is never invented here; ``BakedBlock.kind`` is the bake's own small set of things a
-page can hold (``prose``, ``citation``, ``image``, ``unit``, ``map``,
+page can hold (``heading``, ``prose``, ``citation``, ``image``, ``unit``, ``map``,
 ``placeholder``, ``unresolved``). A renderer switches on ``kind`` — so a new
 ``view_type`` lands without touching any renderer.
 
@@ -106,8 +106,9 @@ class BakedImage:
 class BakedBlock:
     """One resolved block.
 
-    ``kind`` is what a renderer switches on: ``prose``, ``citation``, ``image``,
-    ``unit``, ``map``, ``placeholder``, ``unresolved``. It is NOT the block's
+    ``kind`` is what a renderer switches on: ``heading`` (MICRO-SEG22: a
+    section's or subsection's title, ``meta`` level and number), ``prose``,
+    ``citation``, ``image``, ``unit``, ``map``, ``placeholder``, ``unresolved``. It is NOT the block's
     ``view_type`` — that is kept in ``view_type`` for provenance, but a renderer
     that switched on it would have to re-derive the source/figure distinction the
     bake has already made.
@@ -152,6 +153,9 @@ class BakedChapter:
     title: str
     anchor: str = ""
     blocks: List[BakedBlock] = field(default_factory=list)
+    #: «1», «2» … (MICRO-SEG22): the chapter's number in the story's outline,
+    #: given always; ``BakedNarrative.numbered`` says whether to print it.
+    number: str = ""
 
 
 @dataclass
@@ -165,6 +169,12 @@ class BakedNarrative:
     #: Models that assisted. Stated as assistance, never as authorship (N8).
     assisting: List[str] = field(default_factory=list)
     chapters: List[BakedChapter] = field(default_factory=list)
+    #: MICRO-SEG22 · are chapters, sections and subsections printed with their
+    #: numbers (1, 1.1, 1.1.1)? False when the NarrativeNode says
+    #: ``data.numbering: false``. A ``heading`` block carries its own number in
+    #: ``meta["number"]`` and its level (1 section, 2 subsection) in
+    #: ``meta["level"]``.
+    numbered: bool = True
     #: Citations in first-cited order, keyed by the same stable key L1 uses, so a
     #: DocX bibliography and a .bib cannot disagree.
     citations: List[Dict[str, Any]] = field(default_factory=list)
@@ -534,12 +544,38 @@ def bake_narrative(graph: Any, narrative_id: str, *,
     if not include_unvalidated:
         baked.excluded = node.unvalidated_for_export()
 
-    for chapter in node.chapters:
+    # MICRO-SEG22 · the outline: the number of every chapter and heading, and
+    # whether to print them
+    from ..nodes.narrative_node import numbering_on, outline as _outline
+    baked.numbered = numbering_on(getattr(node, "data", None))
+    numbers = {(row["chapter"], row["block"]): row["number"]
+               for row in _outline(node.chapters)}
+
+    for c_index, chapter in enumerate(node.chapters):
         baked_chapter = BakedChapter(
             title=getattr(chapter, "title", "") or "",
             anchor=getattr(chapter, "anchor", None) or "",
+            number=numbers.get((c_index, None), ""),
         )
-        for block in getattr(chapter, "blocks", []) or []:
+        for b_index, block in enumerate(getattr(chapter, "blocks", []) or []):
+            if getattr(block, "block_type", "") == "heading":
+                # MICRO-SEG22 · the title of a section or a subsection: its
+                # mentions resolved as a paragraph's, its level and number in
+                # `meta`. A heading with no words is not printed (an empty
+                # paragraph is not either).
+                text = getattr(block, "text", "") or ""
+                if not text.strip():
+                    continue
+                text, mentions = substitute_mentions(text, name_of)
+                for mention in mentions:
+                    if not mention.resolved and mention.ref not in ai_gone \
+                            and mention.ref not in baked.unresolved:
+                        baked.unresolved.append(mention.ref)
+                baked_chapter.blocks.append(BakedBlock(
+                    kind="heading", text=text, mentions=mentions,
+                    meta={"level": int(getattr(block, "level", 1) or 1),
+                          "number": numbers.get((c_index, b_index), "")}))
+                continue
             if getattr(block, "block_type", "") == "prose":
                 text = getattr(block, "text", "") or ""
                 unvalidated = is_unvalidated(block)

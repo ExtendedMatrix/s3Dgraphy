@@ -354,8 +354,10 @@ def test_the_docx_is_a_document_word_can_open():
     # what gives the reader a navigable document.
     headings = [p.text for p in document.paragraphs
                 if p.style.name.startswith("Heading")]
-    assert "Presentazione" in headings
-    assert "Età imperiale" in headings
+    # MICRO-SEG22 · numbered (1, 1.1, 1.1.1) unless the story says
+    # `numbering: false` — the fixture does not
+    assert "1 Presentazione" in headings
+    assert "3 Età imperiale" in headings
 
 
 @docx_missing

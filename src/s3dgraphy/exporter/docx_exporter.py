@@ -23,7 +23,7 @@ import io
 from typing import Any, List
 
 from ..narrative.bake import BakedNarrative
-from ..nodes.narrative_node import UNVALIDATED_NOTICE
+from ..nodes.narrative_node import UNVALIDATED_NOTICE, numbered_title
 
 
 def _require_docx():
@@ -134,9 +134,20 @@ def render_docx(baked: BakedNarrative) -> bytes:
             + f" nel testo con {UNVALIDATED_NOTICE.split()[0]}.")
         run.bold = True
 
+    numbered = getattr(baked, "numbered", True)
     for chapter in baked.chapters:
-        document.add_heading(chapter.title, level=1)
+        # MICRO-SEG22 · chapter Heading 1, section Heading 2, subsection
+        # Heading 3 — Word's own outline levels, numbered in the text (1, 1.1,
+        # 1.1.1) unless the story says `numbering: false`
+        document.add_heading(numbered_title(getattr(chapter, "number", ""),
+                                            chapter.title, numbered), level=1)
         for block in chapter.blocks:
+            if block.kind == "heading":
+                level = 3 if int(block.meta.get("level") or 1) >= 2 else 2
+                document.add_heading(numbered_title(
+                    str(block.meta.get("number") or ""), block.plain_text,
+                    numbered), level=level)
+                continue
             if block.kind == "prose":
                 paragraph = document.add_paragraph()
                 if block.unendorsed:

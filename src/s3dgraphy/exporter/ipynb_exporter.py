@@ -204,6 +204,7 @@ def build_notebook(graph: Any, narrative_id: str, *,
 
     from ..narrative.bake import _name_resolver
     from ..nodes.narrative_node import (UNVALIDATED_NOTICE, is_unvalidated,
+                                        numbered_title, numbering_on, outline,
                                         plain_mentions)
     name_of = _name_resolver({getattr(n, "node_id", None): n
                               for n in (getattr(graph, "nodes", []) or [])})
@@ -263,10 +264,28 @@ def build_notebook(graph: Any, narrative_id: str, *,
         "report['unexplained_reconstructions']])\n"
         "report['broken_citations']"))
 
-    for chapter in _chapters(target):
-        cells.append(_markdown(f"## {chapter.get('title') or ''}\n"))
-        for block in (chapter.get("blocks") or []):
+    # MICRO-SEG22 · chapter «##», section «###», subsection «####», numbered
+    # 1, 1.1, 1.1.1 unless the story says `numbering: false`
+    chapters = _chapters(target)
+    numbered = numbering_on(getattr(target, "data", None))
+    numbers = {(row["chapter"], row["block"]): row["number"]
+               for row in outline(chapters)}
+    for c_index, chapter in enumerate(chapters):
+        cells.append(_markdown("## " + numbered_title(
+            numbers.get((c_index, None), ""), str(chapter.get("title") or ""),
+            numbered) + "\n"))
+        for b_index, block in enumerate(chapter.get("blocks") or []):
             if not isinstance(block, dict):
+                continue
+            if block.get("block_type") == "heading":
+                text = plain_mentions(str(block.get("text") or ""),
+                                      name_of).strip()
+                if not text:
+                    continue
+                marks = "####" if int(block.get("level") or 1) >= 2 else "###"
+                cells.append(_markdown(f"{marks} " + numbered_title(
+                    numbers.get((c_index, b_index), ""), text, numbered)
+                    + "\n"))
                 continue
             if block.get("block_type") == "prose":
                 text = str(block.get("text") or "").strip()

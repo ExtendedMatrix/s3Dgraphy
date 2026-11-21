@@ -54,6 +54,9 @@ body {
 h1 { font-size: 1.9rem; line-height: 1.25; margin: 0 0 .35rem; }
 h2 { font-size: 1.3rem; margin: 2.2rem 0 .6rem;
      border-bottom: 1px solid rgba(128,128,128,.3); padding-bottom: .25rem; }
+h3 { font-size: 1.12rem; margin: 1.8rem 0 .5rem; }
+h4 { font-size: 1rem; font-style: italic; margin: 1.4rem 0 .4rem; }
+.em-num { font-variant-numeric: tabular-nums; margin-right: .35em; }
 .em-byline { font-size: .85rem; color: #666; margin: 0 0 2rem; }
 .em-byline b { font-weight: 600; }
 .em-embed {
@@ -138,10 +141,23 @@ def _image_src(block: BakedBlock) -> Optional[str]:
     return f"data:image/{mime};base64,{encoded}"
 
 
-def _block(block: BakedBlock) -> str:
+def _block(block: BakedBlock, numbered: bool = True) -> str:
     kind = getattr(block, "kind", "")
     ref = _esc(getattr(block, "ref", ""))
     link = getattr(block, "link", "")
+
+    if kind == "heading":
+        # MICRO-SEG22 · a section (h3) or a subsection (h4) under the chapter's
+        # h2, with its number when the story is numbered; its mentions are
+        # names, as in a paragraph
+        meta = getattr(block, "meta", {}) or {}
+        level = 4 if int(meta.get("level") or 1) >= 2 else 3
+        title = render_mention_tokens(_esc(block.text),
+                                      list(getattr(block, "mentions", None) or []),
+                                      _mention)
+        number = str(meta.get("number") or "") if numbered else ""
+        lead = f'<span class="em-num">{_esc(number)}</span> ' if number else ""
+        return f"<h{level}>{lead}{title}</h{level}>"
 
     if kind == "prose":
         body = _prose(block.text, getattr(block, "mentions", None))
@@ -210,10 +226,13 @@ def render_html(baked: BakedNarrative, *, generated_at: str = "") -> str:
     bytes, or a diff of two exports is unreadable.
     """
     parts: List[str] = []
+    numbered = getattr(baked, "numbered", True)
     for chapter in baked.chapters:
-        parts.append(f"<h2>{_esc(chapter.title)}</h2>")
+        number = getattr(chapter, "number", "") if numbered else ""
+        lead = f'<span class="em-num">{_esc(number)}</span> ' if number else ""
+        parts.append(f"<h2>{lead}{_esc(chapter.title)}</h2>")
         for block in chapter.blocks:
-            parts.append(_block(block))
+            parts.append(_block(block, numbered))
 
     responsible = ", ".join(_esc(a) for a in (baked.responsible or []))
     assisting = ", ".join(_esc(a) for a in (baked.assisting or []))
