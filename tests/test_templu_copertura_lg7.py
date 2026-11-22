@@ -39,7 +39,10 @@ def test_su019_covers_the_foundations_and_the_hints_follow():
     hints = OB.obliteration_hints(g, chronology=ch)
     uncovered = {names[h["unit"]] for h in hints if h["kind"] == "declared_uncovered"}
     assert not uncovered & {"SU001", "SU003", "SU004"}          # the «nothing covers it» is gone
-    assert uncovered == {"RSF002", "RSF003", "RSF005"}
+    # MICRO-LG8: SU019 is out of the rudere in this file and no member is left
+    # out by its date — USD003 / USD004 (born with the window) are obliterated
+    # now, and nothing covers them physically
+    assert uncovered == {"RSF002", "RSF003", "RSF005", "USD003", "USD004"}
 
 
 def test_the_ruin_lives_to_the_end_of_its_obliteration():
@@ -48,7 +51,9 @@ def test_the_ruin_lives_to_the_end_of_its_obliteration():
     assert FU.declared_life(g, ruin) == (200.0, 1979.0)
     d = OB.obliteration_windows(g, ruin)
     assert d["conflicts"] == []                                 # no outside_life any more
-    assert FU.presence(g, ruin, (1978, 1979))["obliteration_counts"]["obliterated"] == 7
+    # 9 since MICRO-LG8 (7 in LG7): SU019 out of the rudere, USD003 / USD004
+    # reached (no exclusion by date)
+    assert FU.presence(g, ruin, (1978, 1979))["obliteration_counts"]["obliterated"] == 9
 
 
 def test_the_round_trip_towards_pyarchinit_invents_no_cover():

@@ -79,7 +79,7 @@ def _rows(d):
 
 def test_the_datamodel_says_the_obliteration_its_values_and_its_projection():
     q = json.loads((CONFIG / "em_qualia_types.json").read_text(encoding="utf-8"))
-    assert q["metadata"]["version"] == "1.6.18"  # 1.6.18 MICRO-LG7 (observation)
+    assert q["metadata"]["version"] == "1.6.19"  # 1.6.19 MICRO-LG8 (the layer that obliterates); 1.6.18 MICRO-LG7 (observation)
     pn = q["property_names"]
     assert "visibility" not in pn                      # replaced, read only by the migration
     ob = pn["obliteration"]
@@ -209,17 +209,19 @@ def test_declared_on_the_functional_unit_inherited_by_its_members():
         assert w["doubtful_start"] is True and w["start_scissor"] == [200.0, 1800.0]
         assert w["paradata"][0]["name"] == "E.D. 22 nov 2026"
         assert w["paradata"][0]["description"] == "inizio non noto"
-    # SU019 is born at the start of the window: the obliteration is of what
-    # was there — not reached, listed
+    # SU019 is born at the start of the window. MICRO-LG8 (rule of E.D.):
+    # no exclusion by date any more — every member alive in the window is
+    # reached; that the destruction layer should not be a member of the ruin
+    # is said by a hint when it covers (tests/test_obliteration_lg8.py)
     d19 = OB.obliteration_windows(g, "D19")
-    assert d19["windows"] == []
-    assert d19["not_reached"][0]["container"]["node"] == "RUIN"
+    assert _rows(d19) == [("obliterated", 200.0, 1979.0, "inherited")]
+    assert d19["not_reached"] == []
     p = FU.presence(g, "RUIN", (200, 1800))
-    assert sorted(p["members_obliterated"]) == ["F1", "F3", "F4"]
-    assert p["members_not_obliterated"] == ["D19"]
-    assert sorted(p["members_obliteration_uncertain"]) == ["F1", "F3", "F4"]
+    assert sorted(p["members_obliterated"]) == ["D19", "F1", "F3", "F4"]
+    assert p["members_not_obliterated"] == []
+    assert sorted(p["members_obliteration_uncertain"]) == ["D19", "F1", "F3", "F4"]
     perceivable = [r["name"] for r in OB.perceivable_units(g, (200, 1800))]
-    assert perceivable == ["SU019"]
+    assert perceivable == []
     # after 1979 nothing is said: perceivable again, as everything is
     assert sorted(r["name"] for r in OB.perceivable_units(g, (2000, 2000))) == [
         "SU001", "SU003", "SU004", "SU019"]
@@ -429,7 +431,10 @@ def test_templumare_the_ruin_obliterated_in_the_post_antique_period():
     (w1,) = OB.obliteration_windows(g, by["SU001"], chronology=ch)["windows"]
     assert w1["level"] == "inherited" and w1["inherited_from"]["node"] == ruin
     assert (w1["start"], w1["end"], w1["end_scissor"]) == (200.0, 1979.0, [1978.0, 1979.0])
-    assert OB.obliteration_windows(g, by["SU019"], chronology=ch)["not_reached"][0]["container"]["node"] == ruin
+    # MICRO-LG8: no member is left out by its date (SU019 was «not reached»
+    # in LG6; on this LG6 file it is still a member, so it is obliterated)
+    d19 = OB.obliteration_windows(g, by["SU019"], chronology=ch)
+    assert d19["not_reached"] == [] and d19["windows"][0]["inherited_from"]["node"] == ruin
     assert "inizio non noto" in (w1["paradata"][0]["description"] or "")
 
 

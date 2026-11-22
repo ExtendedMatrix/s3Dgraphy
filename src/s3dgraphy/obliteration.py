@@ -32,11 +32,15 @@ and its paradata say the much there is to say.
   declared on a container (a functional unit and the ones containing it, an
   activity, a time branch, an epoch the unit lives in) reaches its members as
   an INHERITED window with its origin and paradata; a window declared on the
-  member overrides it locally. *Choice of MICRO-LG6*: an inherited window
-  does not reach a member that comes into being at or after the window's
-  (earliest) start — an obliteration is of what WAS THERE; what comes after
-  (the earth that covers, a later addition) is not obliterated by it. The
-  member is listed in ``not_reached``.
+  member overrides it locally. An inherited window
+  reaches EVERY member alive in the window — MICRO-LG8, rule of E.D. (22 Nov
+  2026): THE LAYER THAT OBLITERATES IS NOT INSIDE THE FUNCTIONAL UNIT IT
+  OBLITERATES. The exclusion by date of MICRO-LG6 (a member coming into being
+  at the window's start not reached) is gone; in its place a HINT: a member
+  that covers (overlies / fills) other members of the same functional unit
+  while that unit is declared obliterated — «the layer that obliterates is
+  inside the unit it obliterates: remove it?» (``obliterating_member``),
+  never corrected.
 * NO STATE IS DERIVED FROM THE STRATIGRAPHY. The physical cover
   (:data:`COVERING_EDGES`: overlies, fills and their reverse) is only a HINT
   OF COHERENCE (:func:`obliteration_hints`, information, never a loud
@@ -506,10 +510,10 @@ def inherited_windows(graph: Any, unit_id: str, *, chronology: Optional[Dict[str
     span; a written one holds as written, also beyond it — MICRO-LG6, unlike
     LG5), paradata (who declared it there stays its author) — clipped to the
     unit's existence, ``level`` ``inherited`` and ``inherited_from`` ``{node,
-    name, kind, distance, via}``. A window whose (earliest) start is not
-    after the member's coming into being does not reach it (MICRO-LG6: the
-    obliteration is of what was there): ``not_reached`` ``[{container,
-    property_ids, start, member_start}]``."""
+    name, kind, distance, via}``. EVERY member alive in the window is reached
+    (MICRO-LG8: the rule of MICRO-LG6 «a member that comes into being at the
+    window's start is not reached» is gone); ``not_reached`` stays in the
+    answer, always empty, for a reader of LG6."""
     chron = graph.chronology() if chronology is None else chronology
     intervals = graph.epoch_intervals() if epoch_intervals is None else epoch_intervals
     owners = _owners(graph) if owners is None else owners
@@ -539,11 +543,16 @@ def inherited_windows(graph: Any, unit_id: str, *, chronology: Optional[Dict[str
                 w["start_scissor"] = (slo, max(slo, sc[1])) if w.get("doubtful_start") else (slo, slo)
             if w["end"] == _INF and shi != _INF:
                 w["end"], w["end_scissor"] = shi, (shi, shi)
-            if w["start"] != -_INF and lo != -_INF and lo >= w["start"]:
-                not_reached.append({"container": {k: c[k] for k in ("node", "name", "kind", "distance", "via")},
-                                    "property_ids": [w["property_id"]], "state": w["state"],
-                                    "start": _out(w["start"]), "member_start": _out(lo)})
-                continue
+            # every member alive in the window is reached (MICRO-LG8, rule of
+            # E.D.: the layer that obliterates is not inside the functional
+            # unit it obliterates — no exclusion by date; a member that covers
+            # the others of its unit while it is obliterated is a HINT, see
+            # obliteration_hints, kind ``obliterating_member``): the window
+            # starts, for the member, where its life does
+            if w["start"] < lo:
+                w["start"] = lo
+                sc = w["start_scissor"]
+                w["start_scissor"] = (lo, max(lo, min(sc[1], hi))) if w.get("doubtful_start") else (lo, lo)
             if w["end"] > hi:
                 w["end"], w["end_scissor"] = hi, (hi, hi)
             if w["start"] > w["end"] or (w["start"] == w["end"] and slo != shi):
@@ -866,9 +875,20 @@ def obliteration_hints(graph: Any, *, chronology: Optional[Dict[str, Any]] = Non
       the same functional unit that came into being in the same epoch (the
       wall on its foundation; not the destruction layer of a ruin over the
       foundations of the temple, though both are members of the ruin);
-    * ``not_reached`` — a member a container's window does not reach,
-      because it comes into being at or after the window's start (what
-      obliterates, or comes later).
+    * ``obliterating_member`` (MICRO-LG8, rule of E.D.: the layer that
+      obliterates is not inside the functional unit it obliterates) — a
+      member of a functional unit that physically covers (overlies / fills)
+      other members of the same functional unit and comes into being while
+      that unit is declared obliterated (a window declared on it or on a
+      functional unit containing it, the member's start at or after the
+      window's earliest start and before its end): «the layer that
+      obliterates is inside the unit it obliterates: remove it?» — a
+      question, NEVER a correction. ``unit`` the member, ``container`` the
+      functional unit ``{node, name, kind, distance, via}``, ``covers`` the
+      members it covers, ``edges`` their edge types, ``state``,
+      ``property_ids``, ``start`` / ``end`` the span of the member inside the
+      window. The wall built on its foundation before the obliteration is
+      not one.
 
     ``units`` restricts the reading to those units (the Inspector asks for
     one)."""
@@ -914,9 +934,6 @@ def obliteration_hints(graph: Any, *, chronology: Optional[Dict[str, Any]] = Non
                               "end": w["end"], "by": [], "level": w["level"],
                               "inherited_from": w.get("inherited_from"),
                               "property_ids": list(w.get("property_ids") or [])})
-        if diary:
-            for nr in diary.get("not_reached") or []:
-                hints.append(dict(nr, kind="not_reached", unit=uid, end=None, by=[]))
         if _is_fill(graph, uid):
             continue
         for a, b, cid, et in cover_spans:
@@ -929,7 +946,72 @@ def obliteration_hints(graph: Any, *, chronology: Optional[Dict[str, Any]] = Non
             if not said:
                 hints.append({"kind": "covered_undeclared", "unit": uid, "start": _out(a),
                               "end": _out(b), "by": [cid], "edge": et})
+    hints.extend(_obliterating_members(graph, chron, intervals, owners, only))
     return hints
+
+
+def _obliterating_members(graph: Any, chron: Dict[str, Any], intervals: Dict[str, Any],
+                          owners: Dict[str, List[str]], only: Optional[set]) -> List[Dict[str, Any]]:
+    """The hints ``obliterating_member`` (MICRO-LG8): see
+    :func:`obliteration_hints`."""
+    out: List[Dict[str, Any]] = []
+    if not owners:
+        return out
+    members: Dict[str, List[str]] = {}
+    for e in graph.edges:
+        if e.edge_type == "is_in_functional_unit":
+            members.setdefault(e.edge_target, []).append(e.edge_source)
+    for fu_id, mems in members.items():
+        fu = graph.find_node_by_id(fu_id)
+        if not _fu.is_functional_unit(fu):
+            continue
+        # the windows declared on the functional unit and on the functional
+        # units containing it (an epoch, an activity: not «the unit»)
+        origins = [{"node": fu_id, "name": getattr(fu, "name", None), "kind": "functional_unit",
+                    "distance": 0, "via": [fu_id]}]
+        origins += [{k: c[k] for k in ("node", "name", "kind", "distance", "via")}
+                    for c in containers_of(graph, fu_id, chronology=chron, epoch_intervals=intervals)
+                    if c["kind"] == "functional_unit"]
+        wins = []
+        for o in origins:
+            if o["node"] not in owners:
+                continue
+            slo, shi = _container_span(graph, dict(o), intervals)
+            for w in declared_windows(graph, o["node"], epoch_intervals=intervals)["windows"]:
+                wlo = w["start_scissor"][0] if w["start"] != -_INF else slo
+                whi = w["end"] if w["end"] != _INF else shi
+                wins.append((wlo, whi, w, o))
+        if not wins:
+            continue
+        unit_members = [m for m in mems if _fu._is_unit(graph.find_node_by_id(m))]
+        mset = set(unit_members)
+        for m in unit_members:
+            if only is not None and m not in only:
+                continue
+            covered: List[Tuple[str, str]] = []
+            for e in graph.edges:
+                flag = COVERING_EDGES.get(e.edge_type)
+                if flag is None:
+                    continue
+                actor, patient = (e.edge_source, e.edge_target) if flag else (e.edge_target, e.edge_source)
+                if actor == m and patient in mset and patient != m \
+                        and patient not in [c for c, _ in covered]:
+                    covered.append((patient, e.edge_type))
+            if not covered or not _fu._dated(graph, m, chron):
+                continue
+            m_life = _fu.life(graph, m, chronology=chron)
+            mlo, mhi = _lo(m_life[0]), _hi(m_life[1])
+            if mlo == -_INF:
+                continue
+            for wlo, whi, w, o in wins:
+                if not (wlo <= mlo < whi):
+                    continue
+                out.append({"kind": "obliterating_member", "unit": m, "container": o,
+                            "covers": [c for c, _ in covered], "edges": [et for _, et in covered],
+                            "state": w["state"], "property_ids": [w["property_id"]],
+                            "start": _out(mlo), "end": _out(min(whi, mhi)), "by": []})
+                break
+    return out
 
 
 __all__ = [

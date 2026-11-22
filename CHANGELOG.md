@@ -5,6 +5,22 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Changed
+- **The layer that obliterates is not inside the functional unit it
+  obliterates** (MICRO-LG8, 22 November 2026, rule of E.D.). `s3dgraphy.obliteration`:
+  the rule of MICRO-LG6 «an inherited window does not reach a member that comes
+  into being at or after its start» is gone — the obliteration of a container
+  reaches every member alive in the window, from the member's own start;
+  `not_reached` stays in the diary, always empty. In its place a hint of
+  coherence, `obliteration_hints` kind `obliterating_member`: a member of a
+  functional unit that covers (`overlies` / `fills`, and the reverse) other
+  members of the same unit and comes into being while that unit (or a functional
+  unit containing it) is declared obliterated — «the layer that obliterates is
+  inside the unit it obliterates: remove it?», never corrected (`unit`,
+  `container`, `covers`, `edges`, `state`, `property_ids`, `start`, `end`); the
+  wall built on its foundation before the obliteration is not one. em_qualia_types
+  1.6.19 (`property_names.obliteration`: description, scope_note, _hints_note),
+  translations 1.24 (EN + IT). Tests: `test_obliteration_lg8` (7); LG6 / LG7 tests
+  follow, each with the reason.
 - **Time stays time towards pyArchInit; the phrase of is_after; the observation
   in a campaign** (MICRO-LG7, 22 November 2026, decisions of E.D.).
   `s3dgraphy.rapporti`: `is_after` / `is_before` go out as `>` / `<` for every

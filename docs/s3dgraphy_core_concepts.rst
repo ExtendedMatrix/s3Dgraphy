@@ -530,9 +530,11 @@ functional unit (the villa, the temple, the ruin), also on a unit when needed. T
 propagation of LG5 stays: a window declared on a container — a functional unit (and the
 ones containing it), an activity, a time branch, every epoch the unit's life reaches —
 is **inherited** by its members with its origin and its paradata; a window declared on
-the member overrides it locally. A member that comes into being at or after the start of
-the container's window is *not reached*: the obliteration is of what was there (the earth
-that covers the ruin is a member of the ruin, and is not obliterated by it).
+the member overrides it locally. The window reaches **every member alive in it**, whenever
+the member comes into being (MICRO-LG8, rule of E.D.): **the layer that obliterates is not
+inside the functional unit it obliterates** — the destruction layer, the earth that covers
+the ruin, are not members of the ruin. The exclusion by date of MICRO-LG6 (*not reached*)
+is gone; ``not_reached`` stays in the diary, always empty.
 
 **No state derived from the stratigraphy.** The physical cover (``overlies``,
 ``fills`` and their reverse) is only a **hint of coherence**, information and never a
@@ -540,7 +542,10 @@ loud warning (``obliteration.obliteration_hints``): an obliteration declared whe
 nothing more recent covers (``declared_uncovered``); a unit covered for which nobody
 declared anything (``covered_undeclared``) — neutral the units under the earth by
 function: a fill, a unit covered by its own fill or by a unit of the same functional
-unit; a member a container's window does not reach (``not_reached``). Time and
+unit; a member of a functional unit that covers (``overlies`` / ``fills``) other members
+of the same unit and comes into being while the unit is declared obliterated
+(``obliterating_member``: «the layer that obliterates is inside the unit it obliterates:
+remove it?» — a question, never a correction). Time and
 stratigraphy still do not mix (MICRO-LG5): ``is_after``, ``is_before`` and
 ``has_same_time`` are never a cover.
 
