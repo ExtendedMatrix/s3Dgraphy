@@ -564,7 +564,8 @@ def evidence(graph: Any, member_ids: Iterable[str]) -> str:
 
 
 def presence(graph: Any, fu_id: str, horizon: Any = None, *,
-             chronology: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+             chronology: Optional[Dict[str, Any]] = None,
+             proxy_footprints: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
     """The PRESENCE of an identity on an horizon (``crm:E93 Presence``, ``P195
     was a presence of`` the identity), COMPUTED, NEVER SAVED (D-LG14).
 
@@ -584,7 +585,13 @@ def presence(graph: Any, fu_id: str, horizon: Any = None, *,
     geometric engine in the core) — None when no member alive has one or the
     parts are in different frames; ``footprint_parts`` the members it comes
     from; ``proxies`` the ``geometry`` properties of the members alive (their
-    proxies)."""
+    proxies).
+
+    ``proxy_footprints`` (MICRO-MF04): ``{unit_id: {wkt, …}}`` — the LOD0
+    outlines COMPUTED from the members' proxies
+    (:func:`s3dgraphy.gis.proxy_footprint.proxy_footprints`); a member alive
+    with no ``footprint`` property of its own (a positive unit may not carry
+    one: its geometry is the proxy) gives the outline of its proxy."""
     from .geometry.wkt import WktError, polygon_to_wkt, wkt_to_polygons
     node = graph.find_node_by_id(fu_id)
     if not is_functional_unit(node):
@@ -627,7 +634,11 @@ def presence(graph: Any, fu_id: str, horizon: Any = None, *,
     polygons: List[Any] = []
     mixed = False
     for m in alive:
-        for literal in _footprints(graph, m):
+        literals = _footprints(graph, m)
+        if not literals and proxy_footprints and m in proxy_footprints:
+            computed = (proxy_footprints[m] or {}).get("wkt")
+            literals = [computed] if isinstance(computed, str) and computed else []
+        for literal in literals:
             try:
                 c, _shape, polys = wkt_to_polygons(literal)
             except WktError:
