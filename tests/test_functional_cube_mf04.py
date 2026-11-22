@@ -166,7 +166,7 @@ def test_the_cube_of_a_building(tmp_path):
     # the vertical: F1, read in three planes
     assert v["verticals"] == [{"id": "F1", "lanes": ["E4", "E3", "E2"]}]
     assert v["units"]["F1"]["source"] == "proxy" and v["units"]["F1"]["lanes"] == ["E4", "E3", "E2"]
-    assert v["functional_units"]["A"] == {"name": "aedes", "scale": "room"}
+    assert v["functional_units"]["A"] == {"name": "aedes", "scale": "room", "parent": "T"}   # MF07: its parent
 
 
 def test_the_cube_without_functional_units_crosses_by_life(tmp_path):

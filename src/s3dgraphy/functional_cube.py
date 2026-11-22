@@ -115,10 +115,17 @@ def _bbox(rings: Iterable[List[List[float]]]) -> Optional[List[float]]:
     return [min(xs), min(ys), max(xs), max(ys)] if xs else None
 
 
+def _hull(points: List[List[float]]) -> List[List[float]]:
+    from .gis.site import plan_hull
+    return [[round(p[0], 3), round(p[1], 3)] for p in plan_hull(points)] if len(points) >= 3 else []
+
+
 def cube_view(graph: Any, *, footprints: Optional[Dict[str, Dict[str, Any]]] = None,
               proxy_footprints: Optional[Dict[str, Any]] = None,
               lanes: Optional[Iterable[Any]] = None,
-              chronology: Optional[Dict[str, Any]] = None, lang: str = "en") -> Dict[str, Any]:
+              chronology: Optional[Dict[str, Any]] = None, lang: str = "en",
+              rm_footprints: Optional[Dict[str, Dict[str, Any]]] = None,
+              rm_unread: Optional[List[Dict[str, Any]]] = None) -> Dict[str, Any]:
     """What the Cube draws at the scale of the BUILDING, computed in one pass.
 
     ``{scale: "building", lanes, planes, units, verticals, bbox, crs, readers,
@@ -134,7 +141,22 @@ def cube_view(graph: Any, *, footprints: Optional[Dict[str, Dict[str, Any]]] = N
     * ``units`` — ``{id: {name, type, rings, centroid, lane, lanes, source,
       z_range}}``, each outline once (graph frame, Z = 0);
     * ``verticals`` — ``[{id, lanes}]`` the units crossing the planes;
-    * ``functional_units`` — ``{id: {name, scale}}`` for the legend.
+    * ``functional_units`` — ``{id: {name, scale, parent}}`` for the legend.
+
+    MICRO-MF07 (the four layers of the Cube, the plan by horizon):
+
+    * every item carries its ``visibility`` in the plane (MICRO-LG4,
+      :func:`s3dgraphy.visibility.visibility` on the plane's interval):
+      ``exposed`` · ``buried`` · ``partially_exposed`` · ``undetermined``;
+    * every plane carries ``symbols`` — the SYMBOLIC layer: per functional
+      unit alive in the plane, the hull of the outlines of its members
+      (recursively) living there ``{fu, name, ring, evidence, container,
+      parent, members}`` (``container``: it has functional units inside) —
+      and ``rm`` / ``rm_unread``: the representation models of the epochs
+      meeting the plane, in plan (``rm_footprints``, from
+      :func:`s3dgraphy.gis.proxy_footprint.rm_footprints`), and those not read;
+    * ``chains`` — the chain of identities between the planes
+      (:func:`s3dgraphy.functional_units.transformations`).
 
     ``footprints`` the outlines (:func:`unit_footprints`); or
     ``proxy_footprints`` and they are read from it and the properties."""
@@ -188,6 +210,44 @@ def cube_view(graph: Any, *, footprints: Optional[Dict[str, Dict[str, Any]]] = N
         life = fu_life[fid]
         return life == (None, None) or _meets(life, ln)
 
+    from . import visibility as V
+    from .periodization import overlaps
+    intervals = graph.epoch_intervals()
+    diaries: Dict[str, Dict[str, Any]] = {}
+
+    def seen(uid: str, ln: Dict[str, Any]) -> str:
+        if uid not in diaries:
+            try:
+                diaries[uid] = V.visibility_windows(graph, uid, chronology=chron, epoch_intervals=intervals)
+            except Exception:  # noqa: BLE001 — a diary that cannot be read is undetermined
+                diaries[uid] = {"windows": [], "conflicts": []}
+        try:
+            v = V.visibility(graph, uid, (ln["start"], ln["end"]), chronology=chron,
+                             epoch_intervals=intervals, diary=diaries[uid])
+        except Exception:  # noqa: BLE001
+            return V.UNDETERMINED
+        return v["state"] or V.UNDETERMINED
+
+    # the models of the epochs that meet a plane (MF07, the layer «RM»)
+    models_of_epoch: Dict[str, List[str]] = {}
+    if rm_footprints is not None or rm_unread:
+        from .gis.proxy_footprint import epoch_models
+        models_of_epoch = epoch_models(graph)
+    unread_by_id = {u["id"]: u for u in (rm_unread or [])}
+
+    def epochs_meeting(ln: Dict[str, Any]) -> List[str]:
+        out = []
+        for ep, iv in intervals.items():
+            if ln["id"] == ep:
+                out.append(ep)
+                continue
+            try:
+                if iv and overlaps((iv.get("start"), iv.get("end")), (ln["start"], ln["end"])):
+                    out.append(ep)
+            except Exception:  # noqa: BLE001
+                continue
+        return out
+
     units: Dict[str, Dict[str, Any]] = {}
     planes: List[Dict[str, Any]] = []
     read_in: Dict[str, List[str]] = {}
@@ -217,7 +277,8 @@ def cube_view(graph: Any, *, footprints: Optional[Dict[str, Dict[str, Any]]] = N
             inst = older(home[uid], ln["id"])
             items.append({"id": uid, "reader": reader, "readers": leaves,
                           "evidence": evidence_in(reader, ln) if reader else None,
-                          "instance": inst, "from_lane": home[uid] if inst else None})
+                          "instance": inst, "from_lane": home[uid] if inst else None,
+                          "visibility": seen(uid, ln)})
             if uid not in units:
                 fp = fps[uid]
                 units[uid] = {"name": node.name, "type": getattr(node, "node_type", None),
@@ -226,8 +287,42 @@ def cube_view(graph: Any, *, footprints: Optional[Dict[str, Dict[str, Any]]] = N
                               "stale": bool(fp.get("stale")), "crs": fp.get("crs")}
         # the largest outlines first: drawn below the small ones
         items.sort(key=lambda it: -_area(units[it["id"]]["rings"]))
+        # the SYMBOLIC layer: the hull of the members living here, per unit
+        here_ids = {it["id"] for it in items}
+        symbols = []
+        for f in fus:
+            if not fu_in(f.node_id, ln):
+                continue
+            ms = [m for m in FU.members(graph, f.node_id, recursive=True) if m in here_ids]
+            pts_ = [p for m in ms for r in fps[m]["rings"] for p in r]
+            ring = _hull(pts_)
+            if not ring:
+                continue
+            ps = FU.parents(graph, f.node_id)
+            symbols.append({"fu": f.node_id, "name": f.name, "ring": ring,
+                            "evidence": evidence_in(f.node_id, ln),
+                            "container": bool(FU.children(graph, f.node_id)),
+                            "parent": ps[0] if ps else None, "members": ms})
+        # containers first: drawn below their rooms
+        symbols.sort(key=lambda x: (not x["container"], -len(x["members"])))
+        rm, unread = [], []
+        if models_of_epoch:
+            took: List[str] = []
+            for ep in epochs_meeting(ln):
+                for mid in models_of_epoch.get(ep, []):
+                    if mid in took:
+                        continue
+                    took.append(mid)
+                    m = (rm_footprints or {}).get(mid)
+                    if m:
+                        rm.append({"id": mid, "name": m.get("name") or mid, "epoch": ep,
+                                   "rings": [[[p[0], p[1]] for p in m["ring"]]],
+                                   "z_range": m.get("z_range"), "url": m.get("url")})
+                    elif mid in unread_by_id:
+                        unread.append(dict(unread_by_id[mid], epoch=ep))
         planes.append({"lane": ln["id"], "name": ln["name"], "start": ln["start"], "end": ln["end"],
-                       "items": items, "without": without})
+                       "items": items, "without": without, "symbols": symbols,
+                       "rm": rm, "rm_unread": unread})
     for uid, u in units.items():
         u["lane"] = home.get(uid)
         u["lanes"] = alive_in.get(uid, [])
@@ -239,7 +334,10 @@ def cube_view(graph: Any, *, footprints: Optional[Dict[str, Dict[str, Any]]] = N
     return {"scale": "building", "lanes": L, "planes": planes, "units": units,
             "verticals": verticals, "bbox": _bbox(r for u in units.values() for r in u["rings"]),
             "crs": crs,
-            "functional_units": {f.node_id: {"name": f.name, "scale": FU.scale_of(f)} for f in fus}}
+            "functional_units": {f.node_id: {"name": f.name, "scale": FU.scale_of(f),
+                                             "parent": (FU.parents(graph, f.node_id) or [None])[0]} for f in fus},
+            "chains": [{"latter": c["latter"], "former": c["former"], "change_type": c["change_type"]}
+                       for c in FU.transformations(graph)]}
 
 
 def _area(rings: List[List[List[float]]]) -> float:

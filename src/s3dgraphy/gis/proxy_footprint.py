@@ -46,6 +46,7 @@ def clear_cache() -> None:
     """Forget every signature and hull kept in memory."""
     _SIG_MEMO.clear()
     _HULLS.clear()
+    _BOUNDS.clear()
 
 
 def file_signature(path: str) -> str:
@@ -293,5 +294,190 @@ def proxy_footprints(graph: Any, doc_dir: Optional[str], *, units: Optional[Iter
     return out
 
 
+# ── MICRO-MF07 · the representation models of an epoch, in plan ───────────────
+#
+# The Cube's fourth layer («Modelli (RM)», E.D. 22 Nov 2026) draws the
+# representation model of each epoch in plan, cut to what was VISIBLE then
+# (MICRO-LG4: the page masks it with the buried units). A model is read from
+# its ``.glb`` or ``.gltf`` — the BOUNDS of every primitive (the ``min``/``max``
+# the glTF specification makes compulsory on a POSITION accessor), each of
+# their eight corners carried through the node tree: the hull of those corners
+# in plan. No vertex buffer is read (a ``.gltf`` is read without its ``.bin``):
+# a reconstruction of 88 models answers in a blink, and its outline is the
+# envelope of its pieces, which is what a plan of the model is for. Tilesets
+# (``.3tz``, ``.zip``), ``blend://`` and missing files are NOT read: they are
+# listed, with why.
+
+#: signature → {ring_local, z_range, vertices} of the bounds of a model
+_BOUNDS: Dict[str, Dict[str, Any]] = {}
+#: the url endings read as a model; the rest is listed as not read
+MODEL_SUFFIXES = (".glb", ".gltf")
+
+
+def _gltf_doc(path: str) -> Dict[str, Any]:
+    if path.lower().endswith(".gltf"):
+        with open(path, encoding="utf-8") as fh:
+            return json.load(fh)
+    from ..geometry.gltf import _parse
+    with open(path, "rb") as fh:
+        doc, _binary = _parse(fh.read())
+    return doc
+
+
+def model_bounds_points(path: str) -> List[List[float]]:
+    """The eight corners of the bounds of every primitive of a ``.glb`` /
+    ``.gltf``, in the SCENE frame (glTF, Y up), every node's transform applied
+    down the scene tree. A primitive whose POSITION has no ``min``/``max`` is
+    skipped."""
+    from .site import _mat_apply, _quat_rotate
+    doc = _gltf_doc(path)
+    nodes = doc.get("nodes") or []
+    accessors = doc.get("accessors") or []
+    out: List[List[float]] = []
+
+    def local(node, p):
+        if node.get("matrix"):
+            return _mat_apply(node["matrix"], p)
+        s = node.get("scale") or [1, 1, 1]
+        p = [p[0] * s[0], p[1] * s[1], p[2] * s[2]]
+        if node.get("rotation"):
+            p = _quat_rotate(node["rotation"], p)
+        t = node.get("translation") or [0, 0, 0]
+        return [p[0] + t[0], p[1] + t[1], p[2] + t[2]]
+
+    def walk(idx, chain, depth=0):
+        if depth > 64 or not (0 <= idx < len(nodes)):
+            return
+        node = nodes[idx]
+        chain = chain + [node]
+        if "mesh" in node:
+            for prim in (doc.get("meshes") or [])[node["mesh"]].get("primitives", []):
+                try:
+                    acc = accessors[prim["attributes"]["POSITION"]]
+                    lo, hi = acc["min"], acc["max"]
+                except (KeyError, IndexError, TypeError):
+                    continue
+                for cx in (lo[0], hi[0]):
+                    for cy in (lo[1], hi[1]):
+                        for cz in (lo[2], hi[2]):
+                            q = [float(cx), float(cy), float(cz)]
+                            for n in reversed(chain):
+                                q = local(n, q)
+                            out.append(q)
+        for c in node.get("children") or []:
+            walk(c, chain, depth + 1)
+    scenes = doc.get("scenes") or [{"nodes": list(range(len(nodes)))}]
+    for root in scenes[doc.get("scene", 0) or 0].get("nodes", []):
+        walk(root, [])
+    return out
+
+
+def model_hull(path: str) -> Dict[str, Any]:
+    """``{signature, ring_local, z_range, vertices, cached}`` of a model: the
+    hull in plan of the bounds of its primitives (see :func:`model_bounds_points`),
+    cached by the signature of the file."""
+    sig = file_signature(path)
+    hit = _BOUNDS.get(sig)
+    if hit is not None:
+        return {"signature": sig, **hit, "cached": True}
+    out = _hull_of_points(model_bounds_points(path))
+    _BOUNDS[sig] = out
+    return {"signature": sig, **out, "cached": False}
+
+
+def _rm_kind(url: str) -> str:
+    u = url.lower()
+    if u.startswith("blend://"):
+        return "blend"
+    if u.endswith(MODEL_SUFFIXES):
+        return "model"
+    if u.endswith((".3tz", ".zip", "tileset.json", ".json")):
+        return "tileset"
+    return "other"
+
+
+def epoch_models(graph: Any) -> Dict[str, List[str]]:
+    """``{epoch_id: [model_id…]}`` — the representation models of each epoch
+    (``EpochNode`` → ``has_representation_model``); a GROUP of models stands
+    for its members (``is_in_representation_model_group``), and for itself
+    when it has a file of its own."""
+    members: Dict[str, List[str]] = {}
+    for e in graph.edges:
+        if e.edge_type == "is_in_representation_model_group":
+            members.setdefault(e.edge_target, []).append(e.edge_source)
+    out: Dict[str, List[str]] = {}
+    for e in graph.edges:
+        if e.edge_type != "has_representation_model":
+            continue
+        ep = graph.find_node_by_id(e.edge_source)
+        if getattr(ep, "node_type", None) != "EpochNode":
+            continue
+        lst = out.setdefault(ep.node_id, [])
+        for mid in [e.edge_target, *members.get(e.edge_target, [])]:
+            if mid not in lst:
+                lst.append(mid)
+    return out
+
+
+def rm_footprints(graph: Any, doc_dir: Optional[str], *, models: Optional[Iterable[str]] = None,
+                  inside: Optional[Callable[[str], Optional[str]]] = None) -> Tuple[Dict[str, Dict[str, Any]], List[Dict[str, Any]]]:
+    """``({model_id: {name, ring, ring_local, z_range, url, crs}}, unread)`` —
+    the plan of every representation model whose ``.glb`` / ``.gltf`` is on
+    this disk (``models`` restricts it; default: every model of an epoch),
+    ``ring`` in the graph's frame (Z = 0) like the proxies'. ``unread``:
+    ``[{id, name, url, why}]`` — ``why`` ``tileset`` · ``blend`` · ``other`` ·
+    ``missing`` · ``unreadable`` · ``no_file``. ``inside`` may refuse a path
+    (the bridge's sandbox)."""
+    oe = _out_edges(graph)
+    frame = graph_frame(graph)
+    wanted = list(models) if models is not None else \
+        list(dict.fromkeys(m for ms in epoch_models(graph).values() for m in ms))
+    out: Dict[str, Dict[str, Any]] = {}
+    unread: List[Dict[str, Any]] = []
+    for mid in wanted:
+        node = graph.find_node_by_id(mid)
+        if node is None:
+            continue
+        name = getattr(node, "name", None) or mid
+        urls: List[str] = []
+        for e in oe.get(mid, []):
+            if e.edge_type != "has_linked_resource":
+                continue
+            r = graph.find_node_by_id(e.edge_target)
+            if r is not None:
+                urls.extend(u for u, _c in _urls_of_resource(r, oe, graph))
+        if not urls:
+            if getattr(node, "node_type", "") != "RepresentationModelNodeGroup":
+                unread.append({"id": mid, "name": name, "url": None, "why": "no_file"})
+            continue
+        hulls, used, why = [], [], None
+        for url in urls:
+            kind = _rm_kind(url)
+            if kind != "model":
+                why = why or kind
+                continue
+            full = url if os.path.isabs(url) or not doc_dir else os.path.normpath(os.path.join(doc_dir, url))
+            if inside is not None:
+                full = inside(full)
+            if not full or not os.path.isfile(full):
+                why = why or "missing"
+                continue
+            try:
+                hulls.append(model_hull(full))
+                used.append(url)
+            except Exception:  # noqa: BLE001 — an unreadable model is said, not raised
+                why = why or "unreadable"
+        if not hulls:
+            unread.append({"id": mid, "name": name, "url": urls[0], "why": why or "other"})
+            continue
+        ring_local = hulls[0]["ring_local"] if len(hulls) == 1 else \
+            [[round(p[0], 3), round(p[1], 3)] for p in plan_hull([q for h in hulls for q in h["ring_local"]])]
+        out[mid] = {"name": name, "ring": to_graph_frame(ring_local, frame), "ring_local": ring_local,
+                    "z_range": [min(h["z_range"][0] for h in hulls), max(h["z_range"][1] for h in hulls)],
+                    "url": used[0], "crs": frame["crs"]}
+    return out, unread
+
+
 __all__ = ["clear_cache", "file_signature", "proxy_hull", "proxy_files", "graph_frame",
-           "to_graph_frame", "proxy_footprints"]
+           "to_graph_frame", "proxy_footprints", "MODEL_SUFFIXES", "model_bounds_points",
+           "model_hull", "epoch_models", "rm_footprints"]
