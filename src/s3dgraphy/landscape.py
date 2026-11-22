@@ -215,7 +215,8 @@ def _site_matches(site: Any, place: Optional[Dict[str, Any]]) -> bool:
 
 
 def cited_lives(landscape: Graph, container: Any = None,
-                sources: Iterable[Any] = ()) -> Dict[str, Dict[str, Any]]:
+                sources: Iterable[Any] = (), *,
+                bindings: Optional[Dict[str, str]] = None) -> Dict[str, Dict[str, Any]]:
     """The life of every site of ``landscape`` from the studies cited that
     took place there (D-LG7): ``{site_id: {start, end, start_source,
     end_source, studies: [{graph_id, origin, study_id, study, start, end}]}}``.
@@ -225,8 +226,17 @@ def cited_lives(landscape: Graph, container: Any = None,
     computed (:func:`s3dgraphy.periodization.graph_interval`). The site lives
     from the earliest start to the latest end; each bound names the study that
     gives it. A site no study cites is not in the answer (its life, if any, is
-    written: a virtual site's ``absolute_time_*`` with its paradata)."""
+    written: a virtual site's ``absolute_time_*`` with its paradata).
+
+    MICRO-MF03: a cited graph that does not declare where it took place may be
+    bound to a site by the LANDSCAPE, in its own file — the ``site`` of its
+    entry in the header's ``composition``
+    (:func:`s3dgraphy.functional_zoom.site_bindings`); ``bindings``
+    ``{graph id: site id}`` overrides what the container's header says."""
     from .hdto import read_hdto
+    if bindings is None:
+        from .functional_zoom import site_bindings
+        bindings = site_bindings(getattr(container, "header", None))
     sites = sites_of(landscape)
     if not sites:
         return {}
@@ -236,7 +246,8 @@ def cited_lives(landscape: Graph, container: Any = None,
     for site in sites:
         studies = []
         for origin, g, chain in hdto:
-            if not _site_matches(site, chain.get("place")):
+            if not (_site_matches(site, chain.get("place"))
+                    or bindings.get(g.graph_id) == site.node_id):
                 continue
             start, end = P.graph_interval(g)
             study = chain.get("study") or {}
