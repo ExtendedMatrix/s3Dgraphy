@@ -19,7 +19,7 @@ lanes and gathers the card «how we know it» (:func:`how_we_know`).
 
 from __future__ import annotations
 
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from .functional_units import (Interval, _intersect, _targets_of, children,
                                coherence, evidence, evidence_of_unit, functional_units_of,
@@ -332,10 +332,232 @@ def functional_matrix(graph: Any, *, lanes: Optional[Iterable[Any]] = None,
         chain.append({**t, "label": transformation_label(kind, lang)})
     how = {u["id"]: how_we_know(graph, u["id"], chronology=chron, epoch_intervals=intervals)
            for u in units}
-    return {"lanes": L, "units": units, "roots": roots, "readers": readers,
-            "chain": chain, "coherence": coherence(graph, chronology=chron, lang=lang),
-            "how": how}
+    out = {"lanes": L, "units": units, "roots": roots, "readers": readers,
+           "chain": chain, "coherence": coherence(graph, chronology=chron, lang=lang),
+           "how": how}
+    out["overlay"] = overlay_plan(out)
+    return out
 
 
-__all__ = ["TRANSFORMATION_KINDS", "COLLAPSE_AT", "transformation_label", "matrix_lanes",
-           "lanes_of_life", "home_lane", "how_we_know", "functional_matrix"]
+# ── MICRO-MF02 · the functional overlay on the Matrix ────────────────────────
+#
+# The braces drawn ON the stratigraphic Matrix (E.D.'s «scrivania», «Sovrimpressione»):
+# the members of one functional unit kept close together in their lane, a unit
+# shared by two functional units put ON THE BORDER between the two braces (the
+# enclosure SU003/USV102 between portico and courtyard), the braces overlapping
+# only there. Where the geometry does not hold the view falls back to the
+# INSTANCE (the master in one brace, a dashed copy in the other):
+#
+#   · ``three_or_more``  — the unit is in three or more functional units of its lane;
+#   · ``not_contiguous`` — its two units cannot stand side by side in the row;
+#   · ``other_scale``    — its two units are of different scales and neither
+#                          contains the other (the drained fields of S01 over
+#                          the rooms of a building);
+#   · ``other_lane``     — a member whose own lane is not the unit's: the
+#                          instances BETWEEN epochs, drawn only inside the braces
+#                          (the lanes of the Matrix are never touched);
+#   · ``no_lane``        — a member with no lane of its own (undated).
+#
+# Only the TOPOLOGY is decided here (which slot each unit goes to, which
+# memberships are instances and why, and the counts); the page lays the slots
+# out in the lane, from left to right, in the order given.
+
+OVERLAY_REASONS = ("three_or_more", "not_contiguous", "other_scale", "other_lane", "no_lane")
+
+
+def overlay_plan(answer: Dict[str, Any]) -> Dict[str, Any]:
+    """The plan of the functional overlay (MICRO-MF02) from a
+    :func:`functional_matrix` answer.
+
+    Returns ``{lanes, place, instances, stats}``:
+
+    ``lanes`` — ``[{lane, slots, braces}]`` in the Matrix's order; ``slots``
+    the row of the lane from left to right, each ``{kind: "own", unit}`` (the
+    members of ``unit`` that are in no other unit of the lane) or
+    ``{kind: "border", units: [a, b]}`` (the members shared by the two
+    neighbours ``a`` and ``b``); ``braces`` ``[{unit, slots, depth}]`` — the
+    slots each functional unit of the lane encloses (its own, its borders, its
+    children's), ``depth`` its nesting level counted from the leaves (0 = no
+    child in the lane: the outer braces get the larger margin);
+    ``place`` — ``{unit_id: {lane, slot}}``: where the MASTER of each member
+    stands (its own lane only);
+    ``instances`` — ``[{unit, fu, lane, slot, reason, from_lane}]``: a
+    membership drawn as an instance in the slot of ``fu``, with why;
+    ``stats`` — the measure of MF02 §C: ``units`` members placed in their own
+    lane, ``spatial`` the ones the geometry holds alone (one unit, or two on a
+    border), ``border`` of them on a border, ``instanced`` the ones needing an
+    instance, ``by_reason`` the instances per reason, ``memberships`` (unit,
+    functional unit) pairs, ``memberships_spatial``."""
+    units = {u["id"]: u for u in answer.get("units", [])}
+    lane_ids = [ln["id"] for ln in answer.get("lanes", [])]
+    order_of = {fid: i for i, fid in enumerate(units)}
+
+    def ancestors(fid: str) -> set:
+        out, todo = set(), list(units.get(fid, {}).get("parents", []))
+        while todo:
+            p = todo.pop()
+            if p in out or p not in units:
+                continue
+            out.add(p)
+            todo.extend(units[p].get("parents", []))
+        return out
+
+    anc = {fid: ancestors(fid) for fid in units}
+    place: Dict[str, Dict[str, Any]] = {}
+    instances: List[Dict[str, Any]] = []
+    lanes_out: List[Dict[str, Any]] = []
+    stats = {"units": 0, "spatial": 0, "border": 0, "instanced": 0,
+             "by_reason": {r: 0 for r in OVERLAY_REASONS},
+             "memberships": 0, "memberships_spatial": 0}
+
+    for lane in lane_ids:
+        here = [fid for fid in units if units[fid].get("lane") == lane]
+        if not here:
+            continue
+        here_set = set(here)
+        parent_in = {fid: next((p for p in units[fid].get("parents", []) if p in here_set), None)
+                     for fid in here}
+        kids = {fid: [k for k in here if parent_in[k] == fid] for fid in here}
+        # the members of the lane: in which units (direct) is each one?
+        homes: Dict[str, List[str]] = {}
+        for fid in here:
+            for m in units[fid].get("members", []):
+                stats["memberships"] += 1
+                if m.get("lane") is None:
+                    instances.append({"unit": m["id"], "fu": fid, "lane": lane, "reason": "no_lane",
+                                      "from_lane": None})
+                    stats["by_reason"]["no_lane"] += 1
+                elif m["lane"] != lane:
+                    instances.append({"unit": m["id"], "fu": fid, "lane": lane, "reason": "other_lane",
+                                      "from_lane": m["lane"]})
+                    stats["by_reason"]["other_lane"] += 1
+                else:
+                    homes.setdefault(m["id"], [])
+                    if fid not in homes[m["id"]]:
+                        homes[m["id"]].append(fid)
+        # a unit in a child and in its parent stands in the child: the parent's
+        # braces enclose the child's
+        for uid, hs in homes.items():
+            homes[uid] = [h for h in hs if not any(h in anc[o] for o in hs if o != h)]
+        # who shares with whom (two homes): the weight of keeping them side by side
+        share: Dict[Tuple[str, str], int] = {}
+        for hs in homes.values():
+            if len(hs) == 2:
+                a, b = sorted(hs, key=lambda f: order_of[f])
+                share[(a, b)] = share.get((a, b), 0) + 1
+
+        def weight(a: str, b: str) -> int:
+            return share.get((a, b), 0) + share.get((b, a), 0)
+
+        def arrange(siblings: List[str]) -> List[str]:
+            """a row of siblings where the ones that share stand side by side
+            (a greedy path: from the one with fewest partners, the heaviest
+            neighbour next)"""
+            rest = sorted(siblings, key=lambda f: order_of[f])
+            row: List[str] = []
+            while rest:
+                deg = {f: sum(1 for o in rest if o != f and weight(f, o)) for f in rest}
+                start = min(rest, key=lambda f: (deg[f] == 0, deg[f], order_of[f])) if any(deg.values()) else rest[0]
+                cur = start
+                while cur is not None:
+                    row.append(cur)
+                    rest.remove(cur)
+                    nxt = [o for o in rest if weight(cur, o)]
+                    cur = max(nxt, key=lambda o: (weight(cur, o), -order_of[o])) if nxt else None
+            return row
+
+        # the leaves of the row: each unit's own slot, its children after it
+        seq: List[str] = []
+
+        def walk(fid: str, path: set) -> None:
+            seq.append(fid)
+            for k in arrange([k for k in kids[fid] if k not in path]):
+                walk(k, path | {fid})
+
+        for r in arrange([f for f in here if parent_in[f] is None]):
+            walk(r, set())
+        # a unit has a slot of its own unless it has children in the lane and
+        # no direct member: then its braces only enclose its children's
+        has_slot = {fid: bool(units[fid].get("members")) or not kids[fid] for fid in seq}
+        row = [fid for fid in seq if has_slot[fid]]
+        pos = {fid: i for i, fid in enumerate(row)}
+
+        borders: Dict[Tuple[str, str], List[str]] = {}
+        own: Dict[str, List[str]] = {fid: [] for fid in row}
+        for uid, hs in homes.items():
+            stats["units"] += 1
+            hs = sorted(hs, key=lambda f: pos.get(f, len(row)))
+            reason = None
+            if len(hs) >= 3:
+                reason = "three_or_more"
+            elif len(hs) == 2:
+                a, b = hs
+                sa, sb = units[a].get("scale"), units[b].get("scale")
+                if sa and sb and sa != sb:
+                    reason = "other_scale"
+                elif pos[b] - pos[a] != 1:
+                    reason = "not_contiguous"
+            if len(hs) == 2 and reason is None:
+                borders.setdefault((hs[0], hs[1]), []).append(uid)
+                place[uid] = {"lane": lane, "border": [hs[0], hs[1]]}
+                stats["spatial"] += 1
+                stats["border"] += 1
+                stats["memberships_spatial"] += 2
+                continue
+            own[hs[0]].append(uid)
+            place[uid] = {"lane": lane, "fu": hs[0]}
+            stats["memberships_spatial"] += 1
+            if reason is None:
+                stats["spatial"] += 1
+                continue
+            stats["instanced"] += 1
+            for other in hs[1:]:
+                instances.append({"unit": uid, "fu": other, "lane": lane, "reason": reason,
+                                  "from_lane": None})
+                stats["by_reason"][reason] += 1
+
+        # the slots, left to right: a unit's own slot, then the border it
+        # shares with its right neighbour
+        slots: List[Dict[str, Any]] = []
+        slot_of_own: Dict[str, int] = {}
+        slot_of_border: Dict[Tuple[str, str], int] = {}
+        for i, fid in enumerate(row):
+            slot_of_own[fid] = len(slots)
+            slots.append({"kind": "own", "unit": fid})
+            if i + 1 < len(row) and (fid, row[i + 1]) in borders:
+                slot_of_border[(fid, row[i + 1])] = len(slots)
+                slots.append({"kind": "border", "units": [fid, row[i + 1]]})
+        for uid, p in place.items():
+            if p["lane"] != lane:
+                continue
+            p["slot"] = slot_of_own[p["fu"]] if "fu" in p else slot_of_border[tuple(p["border"])]
+        for inst in instances:
+            if inst["lane"] == lane:
+                inst["slot"] = slot_of_own.get(inst["fu"])
+
+        def encloses(fid: str, path: set) -> List[int]:
+            out = []
+            if fid in slot_of_own:
+                out.append(slot_of_own[fid])
+            for (a, b), si in slot_of_border.items():
+                if fid in (a, b):
+                    out.append(si)
+            for k in kids[fid]:
+                if k not in path:
+                    out.extend(encloses(k, path | {fid}))
+            return sorted(set(out))
+
+        def depth(fid: str, path: set) -> int:
+            ks = [k for k in kids[fid] if k not in path]
+            return 1 + max(depth(k, path | {fid}) for k in ks) if ks else 0
+
+        braces = [{"unit": fid, "slots": encloses(fid, set()), "depth": depth(fid, set())} for fid in seq]
+        lanes_out.append({"lane": lane, "slots": slots, "braces": braces})
+
+    return {"lanes": lanes_out, "place": place, "instances": instances, "stats": stats}
+
+
+
+__all__ = ["TRANSFORMATION_KINDS", "COLLAPSE_AT", "OVERLAY_REASONS", "transformation_label",
+           "matrix_lanes", "lanes_of_life", "home_lane", "how_we_know", "functional_matrix",
+           "overlay_plan"]
