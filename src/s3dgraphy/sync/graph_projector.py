@@ -1291,8 +1291,17 @@ class GraphProjector:
                 src_attrs = getattr(us_node, "attributes", None) or {}
                 src_family = _ut_family(src_attrs.get("unita_tipo") or "US")
                 src_folder = src_attrs.get("attivita")
+                unread: list = []
+                parsed_rapporti = parse_rapporti(rapporti_raw, skipped=unread)
+                if unread:
+                    # MICRO-LG7: a voice no table knows (``<->``, «Connesso
+                    # a», a raw edge name…) is said, not lost in silence.
+                    logging.getLogger(__name__).warning(
+                        "rapporti of %s: %d voice(s) not read: %s",
+                        getattr(us_node, "name", "?"), len(unread),
+                        sorted(set(map(str, unread))))
                 for (edge_type, target_us, _area, _sito, swap) in \
-                        parse_rapporti(rapporti_raw):
+                        parsed_rapporti:
                     # Bug P (2026-05-15 v2): all row records are
                     # StratigraphicNode-class now; family is
                     # discriminated by ``attributes['unita_tipo']``:

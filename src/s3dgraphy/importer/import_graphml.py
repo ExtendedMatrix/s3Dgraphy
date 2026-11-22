@@ -1233,16 +1233,36 @@ class GraphMLImporter:
             key = strip_us_prefix(getattr(n, "name", "") or "")
             nodes_by_name.setdefault(key, []).append(n)
 
-        # 4) Drop the reduced physical edges (parse_edges produced
-        # them); the per-node packed strings carry the canonical set.
+        # 4) Drop the PHYSICAL edges only (MICRO-LG7): the packed strings
+        # carry the physical set. The temporal edges of the body
+        # (is_after, has_same_time, changed_from — what the yEd line styles
+        # say) stay: until then they were all dropped too, so a
+        # has_same_time was lost and an is_after came back only as the
+        # «Copre» the old writer made of it. A body is_after that merely
+        # reduces a restored physical relation is dropped after step 5.
+        from ..edges.connections_loader import get_connections_datamodel
+        physical = get_connections_datamodel().physical_relations()
         before = len(self.graph.edges)
         self.graph.edges = [
             e for e in self.graph.edges
-            if e.edge_type not in PHYSICAL_STRATIGRAPHIC_TYPES
+            if e.edge_type not in physical
         ]
         dropped = before - len(self.graph.edges)
         if hasattr(self.graph, "_indices_dirty"):
             self.graph._indices_dirty = True
+
+        def _later_first(edge_type, a, b):
+            if edge_type == "is_before":
+                return (b, a)
+            return (a, b)
+
+        body_temporal = {}
+        for e in self.graph.edges:
+            if e.edge_type in ("is_after", "is_before"):
+                body_temporal.setdefault(
+                    _later_first(e.edge_type, e.edge_source, e.edge_target),
+                    []).append(e)
+        physical_pairs = set()
 
         restored = 0
         skipped_missing = 0
@@ -1269,6 +1289,14 @@ class GraphMLImporter:
                            f"{edge_type}")
                 if edge_id in seen_edge_ids:
                     continue
+                if edge_type in ("is_after", "is_before"):
+                    # A «>» the body already draws as a line: one fact.
+                    if _later_first(edge_type, src.node_id,
+                                    dst.node_id) in body_temporal:
+                        continue
+                elif edge_type in physical:
+                    physical_pairs.add(frozenset((src.node_id,
+                                                  dst.node_id)))
                 try:
                     self.graph.add_edge(edge_id, src.node_id,
                                         dst.node_id, edge_type)
@@ -1280,6 +1308,18 @@ class GraphMLImporter:
                     continue
                 seen_edge_ids.add(edge_id)
                 restored += 1
+
+        # 5) The body's is_after between two units the strings relate
+        # physically is the reduction of that relation (the exporter
+        # draws the physical set as lines): drop it, keep the relation.
+        reduced = {id(e) for pair, es in body_temporal.items()
+                   if frozenset(pair) in physical_pairs for e in es}
+        if reduced:
+            self.graph.edges = [e for e in self.graph.edges
+                                if id(e) not in reduced]
+            dropped += len(reduced)
+            if hasattr(self.graph, "_indices_dirty"):
+                self.graph._indices_dirty = True
 
         print(f"[GraphML Parser] physical_relationships (d13): "
               f"dropped {dropped} reduced edges, restored {restored} "

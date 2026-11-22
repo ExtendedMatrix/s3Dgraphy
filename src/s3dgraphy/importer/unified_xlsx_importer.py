@@ -764,28 +764,22 @@ class UnifiedXLSXImporter:
 
         Every other real unit (US, SF, RSF… with no BR) gets nothing.
 
-        Such a unit, cited by a claim (SOURCE_1 / SOURCE_2), gets
-        ``survive_in_epoch`` to the NARROWEST epoch of the sheet whose
-        START–END contains the year — the campaign epoch, when the extractor
-        wrote one — with the attributes ``{"origin": "derived", "rule":
-        "observed_in_campaign", "document": <Documents.ID>, "year": <YEAR>}``:
-        the rule, its source and its year travel on the edge. Nothing is
-        added when the epoch is already the unit's (first or survival), and
-        a report whose year no epoch contains is one warning.
-        :meth:`Graph.chronology` reads such a survival as a WINDOW of life
-        (rule ``observed``, the year itself when the edge carries it), never
-        as a birth."""
+        MICRO-LG7 (E.D., 22 Nov 2026): such a unit, cited by a claim
+        (SOURCE_1 / SOURCE_2) of an analytical document with a YEAR, gets an
+        OBSERVATION — a record of its own, INDEPENDENT OF THE EPOCHS
+        (:mod:`s3dgraphy.observation`): a PropertyNode ``observation`` with
+        the year (``data.valid_from = valid_to = YEAR``), ``origin:
+        derived``, and its paradata (an ExtractorNode that says the rule,
+        ``extracted_from`` the document). Until then a ``survive_in_epoch``
+        towards the narrowest epoch containing the year, not written when that
+        epoch was already the unit's (the limit of LG3b: the lower bound of
+        that year was lost) and impossible when no epoch contained the year.
+        Now the record is written ALWAYS, epoch or not.
+        :meth:`Graph.chronology` reads it as a WINDOW of life (rule
+        ``observed``, the year), never as a birth: «it existed at least until
+        YEAR» — a BR before it gives ``[chronology window]``."""
+        from ..observation import add_observation
         from ..unit_life import continuities_of, is_real
-        dated = []
-        for ref, ep in self._epoch_by_id.items():
-            s, e = getattr(ep, "start_time", None), getattr(ep, "end_time", None)
-            try:
-                s, e = float(s), float(e)
-            except (TypeError, ValueError):
-                continue
-            dated.append((e - s, ref, s, e, ep))
-        dated.sort(key=lambda x: x[0])
-        no_epoch = set()
         added = 0
         for uid, docs in self._unit_docs.items():
             unit = self._unit_by_id[uid]
@@ -794,33 +788,18 @@ class UnifiedXLSXImporter:
             if (getattr(unit, "node_type", "") not in _DOCUMENTARY_TYPES
                     and not continuities_of(self.graph, unit.node_id)):
                 continue                      # still there: redundant (LG3b)
-            own = {e.edge_target for e in self.graph.edges
-                   if e.edge_source == unit.node_id
-                   and e.edge_type in ("has_first_epoch", "survive_in_epoch")}
             for did in docs:
                 year, role = self._doc_meta.get(did, (None, None))
                 if year is None or role != "analytical":
                     continue
-                ep = next((x[4] for x in dated if x[2] <= year <= x[3]), None)
-                if ep is None:
-                    no_epoch.add((did, year))
-                    continue
-                if ep.node_id in own:
-                    continue
-                own.add(ep.node_id)
-                edge = self.graph.add_edge(
-                    edge_id=self._mint("observed", f"{uid}|{ep.node_id}"),
-                    edge_source=unit.node_id, edge_target=ep.node_id,
-                    edge_type="survive_in_epoch")
-                edge.attributes.update({"origin": "derived", "rule": "observed_in_campaign",
-                                        "document": did, "year": float(year)})
-                added += 1
+                doc = self._document_by_id.get(did)
+                res = add_observation(
+                    self.graph, unit.node_id, float(year),
+                    document_id=getattr(doc, "node_id", None),
+                    value=f"{did} ({float(year):g})", origin="derived")
+                if res["created"]:
+                    added += 1
         self.stats["observed_in_campaign"] = added
-        for did, year in sorted(no_epoch, key=lambda x: (x[1], x[0])):
-            self.warnings.append(
-                f"Document '{did}' ({year:g}) is an analytical report, but no epoch of the "
-                f"sheet contains its year: the units it describes are not marked as observed "
-                f"in that campaign.")
 
     def _resolve_inherited_rows(self) -> None:
         """Link each inheriting row to the property its original owner has.

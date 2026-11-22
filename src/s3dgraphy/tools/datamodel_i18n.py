@@ -103,7 +103,7 @@ partially_obliterated «parzialmente obliterata»; it replaces ``visibility`` of
 ``property_name_text(name, field, lang)``.
 
 `edge_types` (connections 1.6.22: `edge_types.<edge>.ui_phrase`) are the phrases of a menu entry that
-creates a node linked to an existing one («US sopra X», «Proprietà di X»):
+creates a node linked to an existing one («US posteriore a X», «Proprietà di X»):
 `{node}` is the new node's type label, `{x}` the existing node's name, and every
 translation keeps both.
 
@@ -184,7 +184,7 @@ EDGE_TEXT_FIELDS = ("description", "scope_note")
 #: VALUES (``values.<key>.name``) have a label each, ``value_<key>`` — the
 #: visibility of a unit: exposed, buried, partially_exposed. 1.22 (MICRO-LG6):
 #: the obliteration replaces it — obliterated, partially_obliterated
-PROPERTY_TEXT_NAMES = ("obliteration",)
+PROPERTY_TEXT_NAMES = ("obliteration", "observation")
 PROPERTY_TEXT_FIELDS = ("description", "scope_note")
 _PREFIX_TO_SECTION = {v: k for k, v in SECTIONS.items()}
 
@@ -693,7 +693,7 @@ _README = [
     ("StratiGraph · datamodel strings", "title"),
     ("The names and definitions the StratiGraph apps take from the Extended Matrix datamodel: "
      "node types (US, USV, Document…), qualia (length, thickness, colour…) and their categories, "
-     "and the phrases of the linking menu ('{node} above {x}'). "
+     "and the phrases of the linking menu ('{node} later than {x}'). "
      "Partners correct it; we regenerate s3Dgraphy's datamodel_translations.json from it.", None),
     (None, None),
     ("How to work in this file", "h"),

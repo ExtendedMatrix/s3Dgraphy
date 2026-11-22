@@ -1,6 +1,6 @@
 """`ui_phrase` — the phrase a menu uses to create a node linked by an edge.
 
-«US above X», «Property of X», «Document for X» are EM language (E.D., 1 Oct
+«US later than X» (until MICRO-LG7 «US above X»), «Property of X», «Document for X» are EM language (E.D., 1 Oct
 2026), so they live in the connections datamodel, not in a consumer's i18n:
 `edge_types.<edge>.ui_phrase` = {as_source, as_target} in canonical English, and
 the other languages in `datamodel_translations.json → edge_types.<edge>.
@@ -102,7 +102,11 @@ def test_a_symmetric_edge_reads_the_same_both_ways():
 
 def test_the_examples_E_D_gave():
     p = _phrased()
-    assert p["is_after"] == {"as_source": "{node} above {x}", "as_target": "{node} below {x}"}
+    # MICRO-LG7 (E.D., 22 Nov 2026): is_after is TIME, not a position — until
+    # then «above / below» (the example of 1 Oct, Harris's drawing read as a
+    # relation)
+    assert p["is_after"] == {"as_source": "{node} later than {x}",
+                             "as_target": "{node} earlier than {x}"}
     assert p["has_property"]["as_target"] == "{node} of {x}"
     assert p["extracted_from"]["as_target"] == "{node} for {x}"
     assert p["has_data_provenance"]["as_target"] == "{node} for {x}"
@@ -160,8 +164,8 @@ def test_every_language_translates_or_falls_back_to_english_on_purpose():
 
 def test_the_reader():
     assert i18n.edge_ui_phrase("has_property", "as_target") == "{node} of {x}"
-    assert i18n.edge_ui_phrase("is_after", "as_source", "it") == "{node} sopra {x}"
-    assert i18n.edge_ui_phrase("is_after", "as_target", "it-IT") == "{node} sotto {x}"
+    assert i18n.edge_ui_phrase("is_after", "as_source", "it") == "{node} posteriore a {x}"
+    assert i18n.edge_ui_phrase("is_after", "as_target", "it-IT") == "{node} anteriore a {x}"
     assert i18n.edge_ui_phrase("cuts", "as_target", "xx") == "{node} cut by {x}"
     assert i18n.edge_ui_phrase("generic_connection", "as_source", "it") is None
     with pytest.raises(ValueError):
@@ -231,7 +235,7 @@ def test_the_version_went_up():
     # badge's {owner}, no refresh_instance — the instance is a view
     # 1.9 (2026-10-09, night): the `property_names` section — see
     # test_datamodel_i18n.test_property_names_are_labelled_and_are_not_qualia
-    assert _translations()["version"] == "1.22"  # 1.22 dal 22 nov 2026 (MICRO-LG6: obliteration sostituisce visibility, EN + IT); 1.21 dal 22 nov 2026 (MICRO-LG5: visibility, la propagazione e tempo/stratigrafia nei testi EN + IT); 1.20 dal 22 nov 2026 (MICRO-LG4: la proprietà visibility, testi e valori); 1.19 dal 22 nov 2026 (MICRO-LG3: description e scope_note di changed_from); 1.18 dal 21 nov 2026 (MICRO-LG2: is_observed_in, property_names use e phase, la descrizione dell'unità funzionale); 1.17 dal 17 nov 2026 (property_names.interpretation); 1.16 dal 6 nov 2026 (master_kinds); 1.15 dal 24 ott 2026 (orizzonti e periodizzazioni); 1.14 dal 23 ott 2026 (end_reasons; 1.12-1.13 SF/RSF/VSF, serVSF; 1.11 study_took_place_at; 1.10 label_author / label_author_ai)
+    assert _translations()["version"] == "1.23"  # 1.23 dal 22 nov 2026 (MICRO-LG7: is_after «posteriore a / anteriore a», observation EN + IT); 1.22 dal 22 nov 2026 (MICRO-LG6: obliteration sostituisce visibility, EN + IT); 1.21 dal 22 nov 2026 (MICRO-LG5: visibility, la propagazione e tempo/stratigrafia nei testi EN + IT); 1.20 dal 22 nov 2026 (MICRO-LG4: la proprietà visibility, testi e valori); 1.19 dal 22 nov 2026 (MICRO-LG3: description e scope_note di changed_from); 1.18 dal 21 nov 2026 (MICRO-LG2: is_observed_in, property_names use e phase, la descrizione dell'unità funzionale); 1.17 dal 17 nov 2026 (property_names.interpretation); 1.16 dal 6 nov 2026 (master_kinds); 1.15 dal 24 ott 2026 (orizzonti e periodizzazioni); 1.14 dal 23 ott 2026 (end_reasons; 1.12-1.13 SF/RSF/VSF, serVSF; 1.11 study_took_place_at; 1.10 label_author / label_author_ai)
 
 
 def test_combines_reads_of_in_english():

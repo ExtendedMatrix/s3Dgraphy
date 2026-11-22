@@ -92,18 +92,31 @@ def test_inverse_vocabulary_round_trips_canonical_pairs():
             f"{italian_out!r}, expected {expected_out!r}")
 
 
-def test_inverse_vocabulary_has_temporal_fallback():
-    """`is_after` must fall back to a verbose Italian term so the
-    pyArchInit storage convention accepts it (the user's UI expects
-    'Copre' for an unqualified temporal-precedence edge)."""
-    assert rapporti.EDGE_TYPE_TO_RAPPORTI_IT.get("is_after") == "Copre"
+def test_inverse_vocabulary_has_no_temporal_fallback():
+    """MICRO-LG7 (E.D., 22 Nov 2026): `is_after` has NO verbose voice. Until
+    then it fell back to 'Copre', and pyArchInit's export read it back as
+    `overlies` — time turned into a cover. It goes out as `>` (the token
+    pyArchInit's combobox has), `is_before` as `<`."""
+    assert "is_after" not in rapporti.EDGE_TYPE_TO_RAPPORTI_IT
+    assert "is_before" not in rapporti.EDGE_TYPE_TO_RAPPORTI_IT
+    assert rapporti.select_rapporti_label("is_after", "US", "US") == ">"
+    assert rapporti.select_rapporti_label("is_before", "US", "US") == "<"
 
 
-def test_inverse_vocabulary_has_paradata_fallback():
-    """`generic_connection` is the canonical edge for paradata
-    data-flow chains, surfaced in pyArchInit as 'Connesso a'."""
-    assert rapporti.EDGE_TYPE_TO_RAPPORTI_IT.get("generic_connection") == \
-        "Connesso a"
+def test_inverse_vocabulary_has_no_paradata_voice():
+    """MICRO-LG7: `generic_connection` is always the paradata arrow `>>`.
+    'Connesso a' was a voice pyArchInit does not have (dropped on the way
+    back; pyarchinit-mini read it as a bond)."""
+    assert "generic_connection" not in rapporti.EDGE_TYPE_TO_RAPPORTI_IT
+    assert rapporti.select_rapporti_label("generic_connection", "US", "US") == ">>"
+
+
+def test_the_verbose_table_is_only_physical():
+    """Every key of the verbose table is a physical relation of the
+    datamodel: no voice of a cover can come from anything else."""
+    from s3dgraphy.edges.connections_loader import get_connections_datamodel
+    physical = get_connections_datamodel().physical_relations()
+    assert set(rapporti.EDGE_TYPE_TO_RAPPORTI_IT) <= physical
 
 
 # ---------------------------------------------------------------------------
@@ -201,6 +214,10 @@ def test_module_dunder_all_exposed():
         "CANONICAL_UNIT_TYPES",
         "CONTINUITY_UNIT_TYPES",
         "NON_RAPPORTI_EDGE_TYPES",
+        # Time / paradata / white list (MICRO-LG7)
+        "TEMPORAL_RAPPORTI_EDGE_TYPES",
+        "PARADATA_RAPPORTI_EDGE_TYPES",
+        "rapporti_edge_types",
         # Type / prefix helpers (commit 2)
         "S3DGRAPHY_TYPE_TO_UNITA_TIPO",
         "strip_us_prefix",

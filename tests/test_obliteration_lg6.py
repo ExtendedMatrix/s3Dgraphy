@@ -79,7 +79,7 @@ def _rows(d):
 
 def test_the_datamodel_says_the_obliteration_its_values_and_its_projection():
     q = json.loads((CONFIG / "em_qualia_types.json").read_text(encoding="utf-8"))
-    assert q["metadata"]["version"] == "1.6.17"
+    assert q["metadata"]["version"] == "1.6.18"  # 1.6.18 MICRO-LG7 (observation)
     pn = q["property_names"]
     assert "visibility" not in pn                      # replaced, read only by the migration
     ob = pn["obliteration"]

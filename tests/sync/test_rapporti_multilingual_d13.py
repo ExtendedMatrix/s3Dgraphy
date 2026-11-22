@@ -53,11 +53,14 @@ def test_canonical_unita_tipo_alias_map():
     assert R.canonical_unita_tipo("WHATEVER") == "WHATEVER"
 
 
-def test_virtual_and_continuity_keep_shorthand():
-    assert R.select_rapporti_label("overlies", "USVs", "US") == ">>"
-    assert R.select_rapporti_label("is_overlain_by", "US", "USVs") == "<<"
-    assert R.select_rapporti_label("overlies", "CON", "US") == ">"
-    assert R.select_rapporti_label("is_overlain_by", "US", "CON") == "<"
+def test_virtual_and_continuity_keep_the_physical_voice():
+    """MICRO-LG7 (F1, E.D.): an explicit physical relation goes out with its
+    voice whatever the units. Until then `>>` / `<<` (USV: read back as a
+    paradata link) and `>` / `<` (CON: read back as is_after)."""
+    assert R.select_rapporti_label("overlies", "USVs", "US") == "Copre"
+    assert R.select_rapporti_label("is_overlain_by", "US", "USVs") == "Coperto da"
+    assert R.select_rapporti_label("overlies", "CON", "US") == "Copre"
+    assert R.select_rapporti_label("is_overlain_by", "US", "CON") == "Coperto da"
 
 
 # --- 2-4. serialize_rapporti_from_edges (d13) -----------------------------
@@ -111,7 +114,9 @@ def test_d13_falls_back_to_canonical_without_column():
     assert out["a"] == [["Copre", "2", "1", "Site"]]
 
 
-def test_d13_virtual_unit_keeps_shorthand_even_with_verbose_column():
+def test_d13_virtual_unit_takes_the_voice_of_its_column():
+    """MICRO-LG7: a USV's physical relation is verbose now, so it is
+    anchored on its own column like a US's (until then `>>`)."""
     out = R.serialize_rapporti_from_edges(
-        _two_us("USVs", "[['copre', '2', '1', 'x']]"), "Site")
-    assert out["a"] == [[">>", "2", "1", "Site"]]
+        _two_us("USVs", "[['covers', '2', '1', 'x']]"), "Site")
+    assert out["a"] == [["Covers", "2", "1", "Site"]]

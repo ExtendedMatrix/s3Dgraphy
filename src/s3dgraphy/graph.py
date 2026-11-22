@@ -1163,6 +1163,11 @@ class Graph:
         year, not the whole epoch: «nel 2006 c'era ancora» — a BR before 2006
         contradicts it (``[chronology window]``).
 
+        MICRO-LG7: the observation is now a PropertyNode ``observation`` of
+        the unit (s3dgraphy.observation) — a window with the year, ALWAYS,
+        source the property, relation ``has_property``; the edges
+        ``observed_in_campaign`` are read only in a graph not migrated.
+
         ``is_in_functional_unit``: a member of a functional unit with a
         declared life was alive in some moment of it (rule
         ``functional_unit``, source the unit, relation the edge) — the
@@ -1201,6 +1206,16 @@ class Graph:
                             "source": e.edge_target, "relation": "survive_in_epoch",
                             **({"document": attrs["document"]} if attrs.get("document") else {}),
                             **({"year": year} if year is not None else {})})
+            # MICRO-LG7 (E.D., 22 Nov 2026): the observation in a campaign is a
+            # record of its own (PropertyNode ``observation``, the year and the
+            # source), independent of the epochs — ALWAYS a window (a lower
+            # bound of the end), also when the year falls in an epoch that is
+            # already the unit's. The edges above are only read for a graph
+            # that was not migrated (s3dgraphy.observation).
+            from .observation import is_observation, observation_windows
+            if any(e.edge_type == "has_property" and is_observation(ix.node(e.edge_target))
+                   for e in ix.out.get(nid, ())):
+                out.extend(observation_windows(self, nid, epoch_intervals=intervals))
         for e in ix.out.get(nid, ()):
             if e.edge_type != "is_in_functional_unit":
                 continue

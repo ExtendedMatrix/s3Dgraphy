@@ -195,20 +195,20 @@ del _terms, _i, _term
 # ---------------------------------------------------------------------------
 # Inverse: canonical edge type → verbose Italian rapporti label
 # ---------------------------------------------------------------------------
-#: Inverse of ``RAPPORTI_TO_EDGE_TYPE`` for the verbose-Italian dispatch
-#: (the form pyArchInit's Scheda US shows). Used when serialising
-#: canonical edges back into the ``us_table.rapporti`` column for the
-#: subset of edges whose endpoints are both canonical Harris units
-#: (US / USM ↔ US / USM). For other unit-type combinations the
-#: serialiser falls back to ``RAPPORTI_SHORTHAND`` instead (see
-#: convention notes below).
+#: Inverse of ``RAPPORTI_TO_EDGE_TYPE``: the verbose Italian voice (the
+#: form pyArchInit's Scheda US shows) of every PHYSICAL relation.
 #:
-#: ``is_after`` falls back to ``Copre`` because that's the
-#: stratigraphic-precedence default pyArchInit's UI assumes when no
-#: more-specific physical relation is declared.
-#: ``generic_connection`` falls back to ``Connesso a`` (used for
-#: paradata data-flow shorthand ``>>`` / ``<<`` that travels through
-#: pyArchInit as a free-text term).
+#: 1.6 · MICRO-LG7 (E.D., 22 Nov 2026) — a relation of TIME goes out as
+#: time, a PHYSICAL one as physical, never the first as the second. Until
+#: then this table had ``"is_after": "Copre"`` («default fallback for
+#: temporal precedence»): «after» became «covers», and pyArchInit's
+#: export read it back as ``overlies`` — a fact of time turned into a
+#: fact of the ground. ``is_after`` / ``is_before`` now go out as ``>`` /
+#: ``<`` for every pair of units (:func:`select_rapporti_label`), the
+#: token pyArchInit's combobox already has and its own em.json import
+#: writes since 17 Oct 2026. ``generic_connection`` («Connesso a», a voice
+#: pyArchInit does not know and pyarchinit-mini read as a bond) is always
+#: the paradata arrow ``>>`` / ``<<``.
 EDGE_TYPE_TO_RAPPORTI_IT: dict[str, str] = {
     "overlies": "Copre",
     "is_overlain_by": "Coperto da",
@@ -220,9 +220,29 @@ EDGE_TYPE_TO_RAPPORTI_IT: dict[str, str] = {
     "bonded_to": "Si lega a",
     "abuts": "Si appoggia a",
     "is_abutted_by": "Gli si appoggia",
-    "is_after": "Copre",       # default fallback for temporal precedence
-    "generic_connection": "Connesso a",
 }
+
+
+#: Relations of TIME and their token (MICRO-LG7): ``>`` «later than», ``<``
+#: «earlier than», whatever the two units are. The reverse reading
+#: ``is_before`` is the same fact seen from the other end.
+TEMPORAL_RAPPORTI_EDGE_TYPES: frozenset[str] = frozenset({"is_after", "is_before"})
+
+
+#: The paradata chain: the double arrow ``>>`` / ``<<``, as pyArchInit
+#: means it (its ``em_native_import.PARADATA_EDGES``), with the reverse
+#: readings the datamodel declares. The serialiser still leaves out the
+#: three this module has always left to their own columns
+#: (``has_property``, ``extracted_from``, ``combines``, see
+#: :data:`NON_RAPPORTI_EDGE_TYPES`); :func:`select_rapporti_label` gives
+#: their token to whoever asks.
+PARADATA_RAPPORTI_EDGE_TYPES: frozenset[str] = frozenset({
+    "generic_connection",
+    "has_property", "extracted_from", "combines",
+    "has_data_provenance", "is_data_provenance_of",
+    "has_documentation", "is_documentation_of",
+    "is_part_of", "has_part",
+})
 
 
 # ---------------------------------------------------------------------------
@@ -233,7 +253,8 @@ EDGE_TYPE_TO_RAPPORTI_IT: dict[str, str] = {
 #: Per pyArchInit author convention (May 2026):
 #:
 #: * single arrow ``>`` / ``<`` carries simple temporal precedence
-#:   (used for Continuity units, ``CON``);
+#:   (first used for Continuity units, ``CON``; since MICRO-LG7 for every
+#:   ``is_after`` / ``is_before``, whatever the units);
 #: * double arrow ``>>`` / ``<<`` carries paradata-style data flow
 #:   (Extractor / Combiner / property / DOC chains, expressed as
 #:   ``generic_connection`` edges so the GraphML writer's paradata
@@ -279,6 +300,12 @@ EDGE_TYPE_DIRECTION_FORWARD: dict[str, bool] = {
     "is_after": True,
     "is_before": False,
     "generic_connection": True,
+    "has_data_provenance": True,
+    "is_data_provenance_of": False,
+    "has_documentation": True,
+    "is_documentation_of": False,
+    "is_part_of": True,
+    "has_part": False,
     "extracted_from": True,
     "combines": True,
     "has_property": True,
@@ -523,38 +550,52 @@ def resolve_unita_tipo_for_dispatch(node) -> str | None:
 
 def select_rapporti_label(edge_type: str,
                           src_unita_tipo: str | None,
-                          tgt_unita_tipo: str | None) -> str:
-    """Pick the pyarchinit ``rapporti`` token for an edge.
+                          tgt_unita_tipo: str | None) -> str | None:
+    """Pick the pyarchinit ``rapporti`` token for an edge, or ``None``.
 
-    Dispatch table:
+    The rule (E.D., MICRO-LG7, 22 Nov 2026): a relation of time goes out as
+    time, a physical one as physical; never the first as the second.
 
-    * both endpoints ∈ :data:`CANONICAL_UNIT_TYPES` (US / USM) →
-      verbose Italian (``Copre`` / ``Coperto da`` / …) from
-      :data:`EDGE_TYPE_TO_RAPPORTI_IT`;
-    * either endpoint ∈ :data:`CONTINUITY_UNIT_TYPES` (CON) →
-      single arrow ``>`` / ``<`` per the temporal-precedence
-      shorthand;
-    * otherwise → double arrow ``>>`` / ``<<`` (paradata-style data
-      flow shorthand).
+    * ``is_after`` / ``is_before`` → ``>`` / ``<``, **for every pair of
+      units** (US, USM, USV, SF, USD, CON…). Until 1.6.0.dev138 an
+      ``is_after`` between two US went out as «Copre» and came back as
+      ``overlies``;
+    * a PHYSICAL relation (overlies, cuts, fills, abuts, bonded_to,
+      equals and their reverses) → its verbose voice
+      (:data:`EDGE_TYPE_TO_RAPPORTI_IT`), **whatever the units** — between
+      a USV and a US too (until then ``>>``, read back as a paradata link);
+    * the paradata chain (:data:`PARADATA_RAPPORTI_EDGE_TYPES`) →
+      ``>>`` / ``<<``;
+    * anything else → ``None``: it is not a rapporto (``has_same_time``,
+      which pyArchInit has no voice for; ``changed_from``;
+      ``contrasts_with``; activities, authors…). Never the raw edge name,
+      which pyArchInit discarded on the way back.
 
-    Direction (``>`` vs ``<``, ``>>`` vs ``<<``) is read from
-    :data:`EDGE_TYPE_DIRECTION_FORWARD`: ``overlies`` / ``cuts`` /
-    ``is_after`` / etc. emit ``>`` (source covers target); their
-    inverses emit ``<``.
+    The unit types are kept in the signature: they no longer change the
+    token, but the callers (and pyArchInit's own copy) pass them.
+    Direction (``>`` vs ``<``) is read from
+    :data:`EDGE_TYPE_DIRECTION_FORWARD`.
     """
     edge_type = _as_written(edge_type)
-    src = src_unita_tipo or ""
-    tgt = tgt_unita_tipo or ""
-    both_canonical = (src in CANONICAL_UNIT_TYPES
-                      and tgt in CANONICAL_UNIT_TYPES)
-    if both_canonical:
-        return EDGE_TYPE_TO_RAPPORTI_IT.get(edge_type, str(edge_type))
-    forward = EDGE_TYPE_DIRECTION_FORWARD.get(edge_type, True)
-    is_continuity = (src in CONTINUITY_UNIT_TYPES
-                     or tgt in CONTINUITY_UNIT_TYPES)
-    if is_continuity:
-        return ">" if forward else "<"
-    return ">>" if forward else "<<"
+    if edge_type in TEMPORAL_RAPPORTI_EDGE_TYPES:
+        return ">" if EDGE_TYPE_DIRECTION_FORWARD.get(edge_type, True) else "<"
+    if edge_type in EDGE_TYPE_TO_RAPPORTI_IT:
+        return EDGE_TYPE_TO_RAPPORTI_IT[edge_type]
+    if edge_type in PARADATA_RAPPORTI_EDGE_TYPES:
+        return ">>" if EDGE_TYPE_DIRECTION_FORWARD.get(edge_type, True) else "<<"
+    return None
+
+
+def rapporti_edge_types() -> frozenset:
+    """Every edge name that goes into the ``rapporti`` column — a WHITE
+    list (MICRO-LG7): the physical relations that have a voice (every one
+    the datamodel's :meth:`physical_relations` names, older spellings
+    included), ``is_after`` / ``is_before``, the paradata chain. Everything
+    else is left out and counted (:func:`serialize_rapporti_from_edges`,
+    ``report=``)."""
+    return ((frozenset(EDGE_TYPE_TO_RAPPORTI_IT)
+             | TEMPORAL_RAPPORTI_EDGE_TYPES | PARADATA_RAPPORTI_EDGE_TYPES)
+            - NON_RAPPORTI_EDGE_TYPES)
 
 
 # ---------------------------------------------------------------------------
@@ -569,6 +610,13 @@ def select_rapporti_label(edge_type: str,
 #: Kept here (rather than as a magic constant inside ``serialize``)
 #: so callers can introspect the exclusion list when debugging
 #: missing rapporti.
+#:
+#: Since MICRO-LG7 the serialiser reads a WHITE list
+#: (:func:`rapporti_edge_types`); this set stays as the names left out ON
+#: PURPOSE (they have their own columns), for callers that import it —
+#: pyArchInit's ``em_native_import`` among them. ``has_same_time`` is
+#: here because pyArchInit has no voice for it yet: it is counted, never
+#: dropped in silence.
 NON_RAPPORTI_EDGE_TYPES: frozenset[str] = frozenset({
     "has_first_epoch",
     "has_paradata_nodegroup",
@@ -584,7 +632,7 @@ NON_RAPPORTI_EDGE_TYPES: frozenset[str] = frozenset({
 # Public parse / serialize API
 # ---------------------------------------------------------------------------
 
-def parse_rapporti(value):
+def parse_rapporti(value, skipped=None):
     """Parse a pyarchinit ``us_table.rapporti`` value into canonical
     relations ready to materialise as graph edges.
 
@@ -609,8 +657,11 @@ def parse_rapporti(value):
       the edge as ``source_us is_after target_us`` after the swap.
 
     Labels not in :data:`RAPPORTI_TO_EDGE_TYPE` nor
-    :data:`RAPPORTI_SHORTHAND` are silently skipped — the caller
-    decides whether to log a warning. Malformed list entries (not a
+    :data:`RAPPORTI_SHORTHAND` are skipped; pass a list as *skipped* and
+    each one is appended to it (the raw label, MICRO-LG7) so the caller
+    can say how many voices it could not read — ``<->``, «Connesso a»,
+    pyarchinit-mini's «Posteriore a», raw edge names written by an older
+    s3Dgraphy — instead of losing them in silence. Malformed list entries (not a
     list, or empty) are skipped likewise.
 
     The function is pure and side-effect-free; it does not mutate the
@@ -628,6 +679,8 @@ def parse_rapporti(value):
         if edge_type is None:
             shorthand = RAPPORTI_SHORTHAND.get(raw_label.strip())
             if shorthand is None:
+                if skipped is not None:
+                    skipped.append(raw_label)
                 continue
             edge_type, swap = shorthand
         target_us = str(entry[1]).strip() if len(entry) > 1 and entry[1] is not None else ""
@@ -690,15 +743,18 @@ def _source_rapporti_label(src_node, target_us: str, edge_type: str):
     the only reliable source.
 
     Returned in the canonical display casing (first letter upper, rest
-    lower — the form pyArchInit shows). Matching prefers the entry whose
-    label maps to the SAME canonical ``edge_type`` (disambiguates multiple
-    relations to one target), falling back to any verbose entry pointing at
-    ``target_us``. Returns ``None`` when the node carries no usable
-    ``rapporti`` attribute (e.g. a yEd-imported graph) — the caller then
-    keeps the canonical dispatch label.
+    lower — the form pyArchInit shows). Only an entry whose label maps to
+    the SAME canonical ``edge_type`` is taken. Returns ``None`` when there
+    is none (no ``rapporti`` attribute, e.g. a yEd-imported graph, or no
+    entry of that relation) — the caller then keeps the canonical label.
+
+    MICRO-LG7: until then ANY verbose entry towards the same target was
+    taken when none matched. A row that already carried a spurious
+    «Copre» (an old export of an ``is_after``) would have given it back to
+    the very ``is_after`` the fix sends out as ``>`` — and a row with
+    «Coperto da» towards that target would have reversed it.
     """
     attrs = getattr(src_node, "attributes", None) or {}
-    fallback = None
     for entry in _coerce_to_list(attrs.get("rapporti")):
         if not isinstance(entry, (list, tuple)) or len(entry) < 2:
             continue
@@ -709,12 +765,10 @@ def _source_rapporti_label(src_node, target_us: str, edge_type: str):
         lbl = lbl.capitalize()
         if RAPPORTI_TO_EDGE_TYPE.get(lbl.lower()) == _as_written(edge_type):
             return lbl
-        if fallback is None:
-            fallback = lbl
-    return fallback
+    return None
 
 
-def serialize_rapporti_from_edges(graph, default_sito: str):
+def serialize_rapporti_from_edges(graph, default_sito: str, report=None):
     """Walk *graph*'s edges and produce per-US rapporti lists ready
     for the pyarchinit ``us_table.rapporti`` column.
 
@@ -730,9 +784,14 @@ def serialize_rapporti_from_edges(graph, default_sito: str):
 
     Behaviour notes:
 
-    * Edges with types in :data:`NON_RAPPORTI_EDGE_TYPES` are
-      excluded (paradata / property / epoch edges that don't belong
-      in the pyarchinit ``rapporti`` column).
+    * Only the edges of :func:`rapporti_edge_types` go out (a white
+      list, MICRO-LG7): physical relations with their voice, ``is_after``
+      / ``is_before`` as ``>`` / ``<``, the paradata chain as ``>>`` /
+      ``<<``. Every other edge is left out — and COUNTED: pass a dict as
+      *report* and it receives ``excluded`` (``{edge_type: n}``) and
+      ``exported`` (n). Until then a black list let ``is_in_activity``,
+      ``has_author``… out as ``>>`` towards the target's name, and
+      ``is_before`` / ``changed_from`` as their raw names.
     * Target US is read from ``tgt_node.attributes['us']`` when
       present, otherwise derived from ``tgt_node.name`` via
       :func:`strip_us_prefix`.
@@ -747,6 +806,9 @@ def serialize_rapporti_from_edges(graph, default_sito: str):
         nid = getattr(n, "node_id", None)
         if nid:
             by_id[nid] = n
+    allowed = rapporti_edge_types()
+    excluded: dict[str, int] = {}
+    exported = 0
     out: dict[str, list[list]] = {}
     for e in getattr(graph, "edges", None) or []:
         src = getattr(e, "edge_source", None)
@@ -754,7 +816,8 @@ def serialize_rapporti_from_edges(graph, default_sito: str):
         et = getattr(e, "edge_type", None)
         if not src or not tgt or not et:
             continue
-        if et in NON_RAPPORTI_EDGE_TYPES:
+        if _as_written(et) not in allowed and et not in allowed:
+            excluded[et] = excluded.get(et, 0) + 1
             continue
         src_node = by_id.get(src)
         tgt_node = by_id.get(tgt)
@@ -771,12 +834,14 @@ def serialize_rapporti_from_edges(graph, default_sito: str):
             tgt_us = strip_us_prefix(str(tgt_name))
         rapporti_label = select_rapporti_label(
             et, src_unita_tipo, tgt_unita_tipo)
-        # For a verbose relation (both endpoints real US/USM, any language)
-        # anchor the term on the source row's own rapporti column so the
-        # packed string byte-matches the DB in the site's UI language;
-        # fall back to the canonical label when the source carries no
-        # rapporti attribute (e.g. yEd-imported graphs). Virtual units
-        # (``>>`` / ``<<``) and continuity (``>`` / ``<``) keep shorthand.
+        if rapporti_label is None:
+            excluded[et] = excluded.get(et, 0) + 1
+            continue
+        # For a verbose (physical) relation anchor the term on the source
+        # row's own rapporti column, only an entry of the SAME relation, so
+        # the packed string byte-matches the DB in the site's UI language;
+        # the canonical label otherwise. The arrows (time ``>`` / ``<``,
+        # paradata ``>>`` / ``<<``) are never re-anchored.
         if rapporti_label not in _SHORTHAND_TOKENS:
             original = _source_rapporti_label(src_node, str(tgt_us), et)
             if original:
@@ -787,6 +852,10 @@ def serialize_rapporti_from_edges(graph, default_sito: str):
         bucket = out.setdefault(src, [])
         if rapporto not in bucket:
             bucket.append(rapporto)
+            exported += 1
+    if report is not None:
+        report["excluded"] = excluded
+        report["exported"] = exported
     return out
 
 
@@ -801,6 +870,9 @@ __all__ = [
     "CANONICAL_UNIT_TYPES",
     "CONTINUITY_UNIT_TYPES",
     "NON_RAPPORTI_EDGE_TYPES",
+    "TEMPORAL_RAPPORTI_EDGE_TYPES",
+    "PARADATA_RAPPORTI_EDGE_TYPES",
+    "rapporti_edge_types",
     # Type / prefix helpers (commit 2)
     "S3DGRAPHY_TYPE_TO_UNITA_TIPO",
     "strip_us_prefix",

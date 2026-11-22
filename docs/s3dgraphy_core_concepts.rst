@@ -564,6 +564,56 @@ loader reads it as an obliteration (``buried`` → ``obliterated``,
 property is dropped) with one migration warning; only ``obliteration`` is written. The
 module ``s3dgraphy.visibility`` keeps deprecated aliases of its functions, to be removed.
 
+Observation in a campaign
+-------------------------
+
+**What it is** (MICRO-LG7, E.D., 22 Nov 2026). «Observed in the campaign X, year Y» — a
+documentary unit (USD) shown by the report of a campaign, or a unit closed by a BR that the
+report still describes — is a **record of its own, independent of the epochs**: a dated
+``PropertyNode`` named ``observation`` (``em_qualia_types`` 1.6.18), ``data.valid_from =
+data.valid_to = Y``, its value the campaign, with its paradata — ``has_data_provenance`` →
+an extractor (a person, or the rule of the importer, ``data.origin`` «derived») →
+``extracted_from`` → the report. Until then it was a ``survive_in_epoch`` towards the
+epoch containing the year (MICRO-LG3 / LG3b), not written when that epoch was already the
+unit's: the bound of that year was lost.
+
+**What it says.** Always a **lower bound of the end** of the unit's life: «it existed at
+least until Y», whatever the epochs. ``Graph.chronology`` reads it as a *window* (rule
+``observed``, the year itself, relation ``has_property``), never as a birth; a BR that
+closes the unit before Y gives ``[chronology window]``
+(``observation.observation_conflicts`` lists the same as data). The xlsx importer writes
+it for the USD / serUSD and the real units closed by a BR cited by an *analytical*
+document with a YEAR. In RDF the property is a ``crmsci:S4_Observation`` the unit reaches
+by ``crmsci:O8i_was_observed_by``, with its ``crm:P4_has_time-span``.
+
+**Migration.** The em.json loader turns the old edges (``survive_in_epoch`` with
+``attributes.rule`` «observed_in_campaign») into records — the year of the edge, else the
+document's, else the record anchored to the epoch — with one warning
+(``observation.migrate_observed_in_campaign``).
+
+Relations towards pyArchInit
+----------------------------
+
+**Time stays time** (MICRO-LG7, E.D., 22 Nov 2026). In the ``rapporti`` column of
+pyArchInit a relation of time goes out as time, a physical one as physical; never the
+first as the second (``s3dgraphy.rapporti``):
+
+* ``is_after`` / ``is_before`` → ``>`` / ``<`` for every pair of units — the token of
+  pyArchInit's own combobox. Until 1.6.0.dev138 an ``is_after`` between two US went out
+  as «Copre» and came back as ``overlies``;
+* an explicit physical relation (covers, cuts, fills, abuts, bonded to, same as) → its
+  voice, for every pair of units, USV, SF and USD included;
+* the paradata chain → ``>>`` / ``<<``; nothing else. What has no voice
+  (``has_same_time``, ``changed_from``, ``contrasts_with``, activities, authors) is left out
+  and counted (``serialize_rapporti_from_edges(..., report=)``), never written as a raw
+  edge name.
+
+The yEd pipeline reads the line style (a plain line is ``is_after``); the GraphML d13
+fallback replaces only the physical relations; a voice ``parse_rapporti`` cannot read is
+reported (``skipped=``). For data already exported, ``python -m s3dgraphy.rapporti_check
+--db <pyArchInit.sqlite> --graph <origin em.json>`` reads both, read-only, and lists the
+«Copre» that were an ``is_after`` (matched by ``node_uuid``); it corrects nothing.
+
 Comment Node Skipping
 ---------------------
 

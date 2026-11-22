@@ -161,18 +161,19 @@ def test_select_label_continuity_emits_single_arrow():
     assert rapporti.select_rapporti_label("is_before", "CON", "US") == "<"
 
 
-def test_select_label_other_emits_double_arrow():
-    """Non-canonical, non-continuity endpoints → double-arrow `>>` /
-    `<<` (paradata data-flow shorthand)."""
-    assert rapporti.select_rapporti_label("is_after", "USVs", "USVs") == ">>"
-    assert rapporti.select_rapporti_label("is_before", "USD", "SF") == "<<"
+def test_select_label_time_is_a_single_arrow_for_every_unit():
+    """MICRO-LG7: `is_after` / `is_before` → `>` / `<` whatever the units
+    (until then `>>` / `<<` between non-US units, read back as a paradata
+    `generic_connection`)."""
+    assert rapporti.select_rapporti_label("is_after", "USVs", "USVs") == ">"
+    assert rapporti.select_rapporti_label("is_before", "USD", "SF") == "<"
 
 
-def test_select_label_unknown_edge_type_defaults_to_forward():
-    """An unknown edge type falls back to forward direction (`>>` for
-    non-canonical, no exception) — the function never raises."""
-    out = rapporti.select_rapporti_label("not_a_real_edge_type", "USVs", "USVn")
-    assert out in (">>", "<<")
+def test_select_label_unknown_edge_type_has_no_token():
+    """MICRO-LG7: an edge that is no rapporto has no token (`None`) — no
+    raw name, no arrow; the function never raises."""
+    assert rapporti.select_rapporti_label("not_a_real_edge_type", "USVs", "USVn") is None
+    assert rapporti.select_rapporti_label("not_a_real_edge_type", "US", "US") is None
 
 
 # ---------------------------------------------------------------------------
@@ -336,13 +337,12 @@ def test_serialize_dedups_within_source():
 
 
 def test_serialize_emits_shorthand_for_non_canonical():
-    """When the target unit-type is not US/USM (e.g. USVs), the
-    dispatcher falls back to shorthand tokens (`>>` here for
-    `is_after`)."""
+    """US → USVs: `is_after` is `>` (MICRO-LG7: until then `>>`, a
+    paradata link on the way back)."""
     src = _us("src", "12")
     tgt = _N(node_id="tgt", name="100", attrs={"unita_tipo": "USVs", "us": "100"})
     g = _FakeGraph([src, tgt], [_E("src", "tgt", "is_after")])
     out = rapporti.serialize_rapporti_from_edges(g, default_sito="X")
-    label = out["src"][0][0]
-    assert label in (">>", "<<")
-    assert label == ">>"
+    assert out["src"][0][0] == ">"
+
+

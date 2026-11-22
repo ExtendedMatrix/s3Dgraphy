@@ -473,7 +473,16 @@ class GraphIngestor:
 
         # Pre-compute per-source rapporti from graph edges so the write
         # path can populate us_table.rapporti as JSON-list-of-lists.
-        rapporti_by_source = _build_rapporti_from_edges(graph, sito)
+        rapporti_report: dict = {}
+        rapporti_by_source = _build_rapporti_from_edges(
+            graph, sito, report=rapporti_report)
+        # MICRO-LG7: what is not a rapporto is left out and SAID, never
+        # dropped in silence (has_same_time above all: pyArchInit has no
+        # voice for it yet).
+        if rapporti_report.get("excluded"):
+            log.info("rapporti: %d written, left out %s",
+                     rapporti_report.get("exported", 0),
+                     dict(sorted(rapporti_report["excluded"].items())))
 
         # PG-C (5.7.2-alpha): engine.begin() opens an atomic transaction
         # that commits on clean exit / rolls back on exception. Identical

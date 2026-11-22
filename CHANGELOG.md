@@ -5,6 +5,31 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Changed
+- **Time stays time towards pyArchInit; the phrase of is_after; the observation
+  in a campaign** (MICRO-LG7, 22 November 2026, decisions of E.D.).
+  `s3dgraphy.rapporti`: `is_after` / `is_before` go out as `>` / `<` for every
+  pair of units (no more «Copre» between two US, read back as `overlies`); an
+  explicit physical relation keeps its voice for every pair (USV, SF, USD:
+  until then `>>`); `>>` / `<<` only for the paradata chain
+  (`PARADATA_RAPPORTI_EDGE_TYPES`); a WHITE list (`rapporti_edge_types`), what
+  is left out counted (`serialize_rapporti_from_edges(report=)`), never a raw
+  edge name; `select_rapporti_label` returns `None` for what is no rapporto;
+  `_source_rapporti_label` anchors only on a voice of the SAME relation;
+  `parse_rapporti(skipped=)` reports the voices it cannot read. The yEd
+  pipeline reads the line style (a plain line is `is_after`, never `overlies`);
+  the GraphML d13 fallback drops only the physical relations (the body's
+  `has_same_time` and `is_after` stay) and the GraphML exporter draws
+  `has_same_time` as a double line. New `s3dgraphy.rapporti_check`
+  (`python -m s3dgraphy.rapporti_check --db … --graph …`): read-only, lists the
+  «Copre» of an export that were an `is_after`. Connections datamodel 1.6.60:
+  `is_after.ui_phrase` «later than» / «earlier than» (IT «posteriore a» /
+  «anteriore a»; translations 1.23). New `property_names.observation`
+  (em_qualia_types 1.6.18) and `s3dgraphy.observation`: «observed in the
+  campaign X, year Y» is a dated PropertyNode with its paradata, independent of
+  the epochs, ALWAYS a lower bound of the end (a BR before it:
+  `[chronology window]`); the xlsx importer writes it instead of the
+  `survive_in_epoch` of MICRO-LG3, the em.json loader migrates the old edges.
+  RDF: `crmsci:S4_Observation`.
 - **From the visibility to the obliteration** (MICRO-LG6, 22 November 2026,
   decisions of E.D.). The property name `visibility` becomes `obliteration`
   (em_qualia_types 1.6.17): what was part of the perceivable configuration of

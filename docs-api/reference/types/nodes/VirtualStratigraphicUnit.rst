@@ -5,7 +5,7 @@ VirtualStratigraphicUnit
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.54, connections 1.6.59) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.54, connections 1.6.60) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *Abstract parent of the virtual stratigraphic units (USV/s, USV/n).*
 

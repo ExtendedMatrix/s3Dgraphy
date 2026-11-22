@@ -51,6 +51,29 @@ from .yed_group_walker import FolderCandidate
 
 logger = logging.getLogger(__name__)
 
+#: yEd line style → EM edge, the EM palette as
+#: ``importer.import_graphml.GraphMLImporter._get_edge_type`` reads it
+#: (keep the two alike). A plain line is «later than», never «covers».
+YED_LINE_STYLE_EDGE_TYPE: dict[str, str] = {
+    "line": "is_after",
+    "double_line": "has_same_time",
+    "dotted": "changed_from",
+    "dashed": "has_data_provenance",
+    "dashed_dotted": "contrasts_with",
+}
+
+_Y_NS = "{http://www.yworks.com/xml/graphml}"
+
+
+def yed_line_edge_type(edge) -> "str | None":
+    """The EM edge an yEd ``<edge>`` draws, from its ``y:LineStyle``;
+    ``generic_connection`` for a style the palette does not know, ``None``
+    when the edge has no LineStyle at all."""
+    style = edge.find(f".//{_Y_NS}LineStyle")
+    if style is None:
+        return None
+    return YED_LINE_STYLE_EDGE_TYPE.get(style.get("type") or "", "generic_connection")
+
 
 class FolderEdgePolicy(str, Enum):
     """Strategy for folder-touching edges during yEd-raw import."""
@@ -169,10 +192,12 @@ def analyze_edges(
         src_is_leaf = src in leaf_ids
         tgt_is_leaf = tgt in leaf_ids
 
-        # edge_type: read <y:LineStyle type="..."/> or <y:EdgeLabel> if any.
-        # For MVP we use None (graphml fixtures don't set explicit types
-        # at the schema level). Future yE-E can read these.
-        edge_type: str | None = None
+        # edge_type: read from <y:LineStyle type="..."/> (MICRO-LG7). Until
+        # then None for every edge, and the pipeline made each line between
+        # two US a «Copre»: the double line (contemporaneity), the dotted
+        # (changed_from), the dashed (paradata) all became a cover. None
+        # stays only for an edge without a LineStyle.
+        edge_type: str | None = yed_line_edge_type(edge)
 
         if src_is_leaf and tgt_is_leaf:
             leaf_to_leaf.append((src, tgt, edge_type))

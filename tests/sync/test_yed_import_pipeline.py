@@ -819,9 +819,9 @@ def test_write_rapporti_format_is_type_us_area_sito(
     graph_ingestor.py:1259). Before the fix pos 1 held sito and pos 3
     held us_target, breaking every rapporti join.
 
-    Bug F regression: US ↔ US edge gets the verbose Italian token
-    'Copre' (default edge_type='overlies' resolves via the canonical
-    {US, USM}² map), NOT the placeholder 'covers'."""
+    Bug F regression: NOT the placeholder 'covers'. MICRO-LG7 (E.D.,
+    22 Nov 2026): an edge without a line style is the plain line, «later
+    than» — `>`, not the 'Copre' every line became until then."""
     import json
     from s3dgraphy.sync.yed_import_pipeline import (
         _write_rapporti, _write_us_rows,
@@ -859,8 +859,9 @@ def test_write_rapporti_format_is_type_us_area_sito(
     assert len(rapporti) == 1
     rapporto = rapporti[0]
     # Canonical pyarchinit order: [type, us_target, area, sito].
-    # US → US default → verbose IT 'Copre' (Bug F: was hardcoded 'covers').
-    assert rapporto[0] == "Copre"        # type
+    # US → US, no line style → plain line → is_after → '>' (MICRO-LG7;
+    # was 'Copre', and before Bug F 'covers').
+    assert rapporto[0] == ">"            # type
     assert rapporto[1] == "02"           # us_target — NOT sito
     assert rapporto[2] == "1"            # area
     assert rapporto[3] == "X"            # sito — NOT us_target
@@ -869,10 +870,11 @@ def test_write_rapporti_format_is_type_us_area_sito(
 def test_write_rapporti_token_dispatch_by_unita_tipo(
     tmp_path: Path,
 ) -> None:
-    """Bug F regression: the rapporti token depends on the unita_tipo
-    of both endpoints — verbose Italian for US/USM, '>>' for any
-    other non-canonical (USV / SF / VSF / RSF / VA), '>' if either
-    is CON (continuity).
+    """MICRO-LG7 (E.D., 22 Nov 2026): the token depends on the RELATION,
+    not on the unit types — time `>` / `<` for every pair, a physical
+    relation its voice for every pair, what pyArchInit has no voice for
+    left out. Until then (Bug F) every line was 'Copre' between US/USM and
+    '>>' between the others.
     """
     import json
     from s3dgraphy.sync.yed_import_pipeline import (
@@ -891,13 +893,13 @@ def test_write_rapporti_token_dispatch_by_unita_tipo(
     with handle.engine.begin() as conn:
         _, uuid_map = _write_us_rows(conn, leaves, sito="X")
 
-        # Several edges with different endpoint type combinations.
         expanded = ExpandedRapporti(
             policy=FolderEdgePolicy.SKIP,
             rapporti=[
-                ("y_us",  "y_usm", None),  # US  → USM  → verbose 'Copre'
-                ("y_usv", "y_us",  None),  # USV → US   → '>>'
-                ("y_sf",  "y_usv", None),  # SF  → USV  → '>>'
+                ("y_us",  "y_usm", None),            # US  → USM : '>'
+                ("y_usv", "y_us",  "overlies"),      # USV → US  : 'Copre'
+                ("y_sf",  "y_usv", "is_after"),      # SF  → USV : '>'
+                ("y_sf",  "y_us",  "has_same_time"), # no voice  : left out
             ],
         )
         _write_rapporti(
@@ -918,17 +920,14 @@ def test_write_rapporti_token_dispatch_by_unita_tipo(
                  "WHERE sito = :s ORDER BY us"),
             {"s": "X"},
         ))
-    by_us = {r[0]: r[1] for r in rows}
+    by_us = {r[0]: json.loads(r[1]) if r[1] else [] for r in rows}
 
-    # US (10) → USM (20): both canonical → verbose IT.
-    us_rapp = json.loads(by_us["10"])
-    assert us_rapp[0][0] == "Copre"
-    # USV (30) → US (10): one non-canonical → '>>' shorthand.
-    usv_rapp = json.loads(by_us["30"])
-    assert usv_rapp[0][0] == ">>"
-    # SF (40) → USV (30): both non-canonical → '>>' shorthand.
-    sf_rapp = json.loads(by_us["40"])
-    assert sf_rapp[0][0] == ">>"
+    assert ["<", "10", "1", "X"] in by_us["20"]         # the inverse
+    assert by_us["10"][0][0] == ">"
+    assert ["Copre", "10", "1", "X"] in by_us["30"]
+    assert ["Coperto da", "30", "1", "X"] in by_us["10"]
+    assert by_us["40"] == [[">", "30", "1", "X"]]      # has_same_time out
+    assert not any(v[0] in ("Copre", "Coperto da") for v in by_us["40"])
 
 
 def test_paradata_store_add_document_dedups_same_identity(

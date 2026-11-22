@@ -484,6 +484,12 @@ def parse_emjson(doc: Dict[str, Any], *,
     # exposed → none), ONE warning; the next save writes obliteration only.
     from ..obliteration import migrate_visibility
     warnings.extend(migrate_visibility(graph)["warnings"])
+    # MICRO-LG7 (E.D., 22 Nov 2026): «observed in the campaign» is a record of
+    # its own (PropertyNode observation, year and source), no more a
+    # survive_in_epoch with rule observed_in_campaign: the old edges become
+    # records in memory, ONE warning; the next save writes the records only.
+    from ..observation import migrate_observed_in_campaign
+    warnings.extend(migrate_observed_in_campaign(graph)["warnings"])
 
     return graph, warnings
 

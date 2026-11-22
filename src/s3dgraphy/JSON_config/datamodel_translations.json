@@ -1,6 +1,6 @@
 {
  "schema": "s3Dgraphy_datamodel_translations",
- "version": "1.22",
+ "version": "1.23",
  "languages": [
   "en",
   "it",
@@ -7100,8 +7100,8 @@
   },
   "is_after": {
    "ui_phrase_as_source": {
-    "en": "{node} above {x}",
-    "validated_it": false,
+    "en": "{node} later than {x}",
+    "validated_it": true,
     "validated_el": false,
     "validated_he": false,
     "validated_es": false,
@@ -7109,18 +7109,18 @@
     "validated_ro": false,
     "validated_fr": false,
     "validated_de": false,
-    "it": "{node} sopra {x}",
-    "el": "{node} πάνω από {x}",
-    "he": "{node} מעל {x}",
-    "es": "{node} sobre {x}",
-    "pl": "{node} nad {x}",
-    "ro": "{node} deasupra lui {x}",
-    "fr": "{node} au-dessus de {x}",
-    "de": "{node} über {x}"
+    "it": "{node} posteriore a {x}",
+    "el": "{node} μεταγενέστερο από {x}",
+    "he": "{node} מאוחר מ-{x}",
+    "es": "{node} posterior a {x}",
+    "pl": "{node} późniejsze niż {x}",
+    "ro": "{node} ulterior lui {x}",
+    "fr": "{node} postérieur à {x}",
+    "de": "{node} jünger als {x}"
    },
    "ui_phrase_as_target": {
-    "en": "{node} below {x}",
-    "validated_it": false,
+    "en": "{node} earlier than {x}",
+    "validated_it": true,
     "validated_el": false,
     "validated_he": false,
     "validated_es": false,
@@ -7128,14 +7128,14 @@
     "validated_ro": false,
     "validated_fr": false,
     "validated_de": false,
-    "it": "{node} sotto {x}",
-    "el": "{node} κάτω από {x}",
-    "he": "{node} מתחת ל-{x}",
-    "es": "{node} bajo {x}",
-    "pl": "{node} pod {x}",
-    "ro": "{node} sub {x}",
-    "fr": "{node} au-dessous de {x}",
-    "de": "{node} unter {x}"
+    "it": "{node} anteriore a {x}",
+    "el": "{node} προγενέστερο από {x}",
+    "he": "{node} מוקדם מ-{x}",
+    "es": "{node} anterior a {x}",
+    "pl": "{node} wcześniejsze niż {x}",
+    "ro": "{node} anterior lui {x}",
+    "fr": "{node} antérieur à {x}",
+    "de": "{node} älter als {x}"
    },
    "label": {
     "en": "Is after",
@@ -9641,6 +9641,51 @@
     "ro": "parțial obliterată",
     "fr": "partiellement oblitérée",
     "de": "teilweise obliteriert"
+   }
+  },
+  "observation": {
+   "label": {
+    "en": "Observation",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Osservazione",
+    "el": "Παρατήρηση",
+    "he": "תצפית",
+    "es": "Observación",
+    "pl": "Obserwacja",
+    "ro": "Observație",
+    "fr": "Observation",
+    "de": "Beobachtung"
+   },
+   "description": {
+    "en": "The OBSERVATION of a unit in a campaign (MICRO-LG7, E.D. 22 Nov 2026): «observed in the campaign X, year Y» — the unit is described, drawn or photographed by the report of that campaign — as a RECORD OF ITS OWN, INDEPENDENT OF THE EPOCHS: a dated PropertyNode of the unit, data.valid_from = data.valid_to = Y (the year of the observation), its value the campaign (the report's words), with its paradata: has_data_provenance → the extractor (who or what states it: a person, or the rule of the importer, data.origin «derived») → extracted_from → the document (the report). It ALWAYS says a LOWER BOUND OF THE END of the unit's life: «it existed at least until Y» — also when Y falls in an epoch that is already the unit's (until then a survive_in_epoch towards the epoch containing Y, not written in that case, and the bound was lost). Graph.chronology reads it as a WINDOW of life (rule observed, the year itself), never as a birth; a continuity (BR) that closes the unit before Y gives the warning [chronology window]. For a documentary unit (USD) without a birth it is its window of dating. The importer writes it for the USD (and serUSD) and the real units closed by a BR cited by an analytical document with a YEAR (MICRO-LG3b rule).",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "L'OSSERVAZIONE di un'unità in una campagna (MICRO-LG7, E.D. 22 nov 2026): «osservata nella campagna X, anno Y» — l'unità è descritta, disegnata o fotografata dal rapporto di quella campagna — come DATO A SÉ, INDIPENDENTE DALLE EPOCHE: una PropertyNode datata dell'unità, data.valid_from = data.valid_to = Y (l'anno dell'osservazione), il valore la campagna (le parole del rapporto), con i suoi paradati: has_data_provenance → l'estrattore (chi o che cosa lo afferma: una persona, o la regola dell'importatore, data.origin «derived») → extracted_from → il documento (il rapporto). Dice SEMPRE un LIMITE INFERIORE DELLA FINE della vita dell'unità: «esisteva almeno fino a Y» — anche quando Y cade in un'epoca che è già dell'unità (fino ad allora un survive_in_epoch verso l'epoca che contiene Y, non scritto in quel caso, e il limite si perdeva). Graph.chronology la legge come FINESTRA di vita (regola observed, l'anno stesso), mai come nascita; una continuità (BR) che chiude l'unità prima di Y dà l'avviso [chronology window]. Per un'unità documentaria (USD) senza nascita è la sua finestra di datazione. L'importatore la scrive per le USD (e serUSD) e le unità reali chiuse da un BR citate da un documento analitico con un ANNO (regola di MICRO-LG3b)."
+   },
+   "scope_note": {
+    "en": "USE: when a document of a given year shows the unit — the report of the 2006 campaign describes a wall that a later BR says was dismantled; a USD drawn in the 1914 survey. The year is the year of the OBSERVATION (of the report, of the campaign), not of the unit. DO NOT USE: to date the unit's BIRTH or its phase (has_first_epoch, absolute_time_start); for its SURVIVAL through an epoch said by the stratigraphy (survive_in_epoch); for the obliteration (obliteration). NARRATIVE: «The report of 2006 still describes the wall: it was dismantled after 2006, whatever the BR that closes it says.»",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "USARE: quando un documento di un certo anno mostra l'unità — il rapporto della campagna 2006 descrive un muro che un BR successivo dice smontato; una USD disegnata nel rilievo del 1914. L'anno è quello dell'OSSERVAZIONE (del rapporto, della campagna), non dell'unità. NON USARE: per datare la NASCITA dell'unità o la sua fase (has_first_epoch, absolute_time_start); per la sua SOPRAVVIVENZA attraverso un'epoca detta dalla stratigrafia (survive_in_epoch); per l'obliterazione (obliteration). NARRATIVA: «Il rapporto del 2006 descrive ancora il muro: fu smontato dopo il 2006, qualunque cosa dica il BR che lo chiude.»"
    }
   }
  },

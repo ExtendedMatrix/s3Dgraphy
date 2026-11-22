@@ -13,7 +13,10 @@ from .utils import IDManager, generate_uuid
 EDGE_TYPE_TO_LINE_STYLE = {
     'is_after': ('line', 1.0),                    # Temporal: solid line (1.0 as in reference)
     'is_before': ('line', 1.0),                   # Temporal: solid line
-    'has_same_time': ('line', 1.0),               # Temporal: solid line
+    # MICRO-LG7: the EM palette's double line (import_graphml reads it as
+    # has_same_time). Until then a plain line, which every reader of the
+    # body — the d13 fallback, yEd — read as is_after.
+    'has_same_time': ('double_line', 1.0),        # Temporal: double line
     'changed_from': ('dotted', 2.0),              # Transformation: dotted
     'has_data_provenance': ('dashed', 2.0),       # Provenance: dashed
     'extracted_from': ('dashed', 2.0),            # Provenance: dashed

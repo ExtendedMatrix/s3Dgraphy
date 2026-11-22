@@ -1050,7 +1050,8 @@ def _write_rapporti(
     against the canonical reader contract (graph_projector.py:721
     reads ``rapporto[1]`` as the target us; graph_ingestor's
     ``_rewrite_rapporti_sito`` updates ``item[3]`` as sito).
-    yE-D MVP: ``type='covers'`` when ``edge_type`` is None,
+    The type is the yEd line style (``is_after`` for a plain line or none:
+    ``>`` / ``<``; MICRO-LG7 — until then ``'covers'`` for every edge),
     ``area='1'`` (matches the yE-D default in ``_write_us_rows``),
     ``us_target`` = the target's us value (already stripped of its
     unita_tipo prefix by the caller — ``id_to_label`` is built with
@@ -1071,9 +1072,13 @@ def _write_rapporti(
     # CON (continuity) on either side → single arrow ``>`` / ``<``
     # All other unita_tipo (USV*, SF,
     #   VSF, RSF, USD, VA, …)         → double arrow ``>>`` / ``<<``
-    # Default edge_type when yEd doesn't encode one is ``overlies``
-    # (stratigraphic precedence default), which _select_rapporti_label
-    # maps to ``Copre`` / ``>>`` / ``>`` respectively.
+    # The edge type is the yEd line style (``yed_rapporti_policy``,
+    # MICRO-LG7): a plain line is ``is_after`` → ``>`` / ``<``, never
+    # «Copre»; a physical relation keeps its voice for every unit type; the
+    # paradata chain ``>>`` / ``<<``. An edge with no line style is read as
+    # the plain line. What has no voice in pyArchInit (the double line
+    # ``has_same_time``, ``changed_from``, ``contrasts_with``) is left out
+    # and counted in the log. Until then every line was ``overlies``.
     from .graph_ingestor import _select_rapporti_label
 
     # SYNTHETIC: insert virtual-activity rows first.
@@ -1145,6 +1150,7 @@ def _write_rapporti(
     # each us_table row once. Each rapporto tuple is canonical:
     # ``[rel_type, us_target, area, sito]``.
     rapporti_by_node: dict[str, list[list]] = {}
+    left_out: dict[str, int] = {}
     for src, tgt, edge_type in expanded.rapporti:
         src_label = id_to_label.get(src)
         tgt_label = id_to_label.get(tgt)
@@ -1157,11 +1163,14 @@ def _write_rapporti(
             or tgt_ut in _PARADATA_UNITA_TIPO
         )
         effective_edge_type = edge_type or (
-            "generic_connection" if crosses_paradata else "overlies"
+            "generic_connection" if crosses_paradata else "is_after"
         )
         fwd_token = _select_rapporti_label(
             effective_edge_type, src_ut, tgt_ut,
         )
+        if fwd_token is None:
+            left_out[effective_edge_type] = left_out.get(effective_edge_type, 0) + 1
+            continue
         # Forward: on source's row (target_label needed).
         if src in uuid_map and tgt_label is not None:
             rapporti_by_node.setdefault(src, []).append(
@@ -1176,6 +1185,9 @@ def _write_rapporti(
                 [inv_token, src_label, "1", sito]
             )
 
+    if left_out:
+        log.info("_write_rapporti: left out (no pyArchInit voice) %s",
+                 dict(sorted(left_out.items())))
     update_count = 0
     for node_yed_id, rapporti_list in rapporti_by_node.items():
         if node_yed_id not in uuid_map:

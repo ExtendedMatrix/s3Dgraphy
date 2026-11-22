@@ -200,18 +200,18 @@ def test_observed_in_the_report_of_a_campaign_alive_then(tmp_path):
     imp = UnifiedXLSXImporter(path, graph_id="lg3")
     g = imp.parse()
     by = {n.name: n for n in g.nodes}
-    obs = [e for e in g.edges if e.edge_type == "survive_in_epoch"]
-    # D: the narrowest epoch containing 2013 (the campaign, not «Modern»); the
-    # comparative document says nothing; the 1999 report finds «Modern»
-    got = sorted((by_id.name, g.find_node_by_id(e.edge_target).name, e.attributes["document"])
-                 for e in obs for by_id in [g.find_node_by_id(e.edge_source)])
-    assert got == [("D", "Campaign 2013", "R13"), ("D", "Modern", "R99")]
-    assert all(e.attributes["rule"] == "observed_in_campaign"
-               and e.attributes["origin"] == "derived" for e in obs)
-    assert sorted(e.attributes["year"] for e in obs) == [1999.0, 2013.0]
-    # W is a US still there (redundant), V is virtual (not observed); S is
-    # born in the campaign already
-    assert imp.stats["observed_in_campaign"] == 2
+    # MICRO-LG7: the observation is a record of its own (PropertyNode
+    # observation, the year and the document), no more a survive_in_epoch to
+    # the narrowest epoch containing the year.
+    from s3dgraphy.observation import observations
+    assert not [e for e in g.edges if e.edge_type == "survive_in_epoch"]
+    got = sorted((u, o["year"], g.find_node_by_id(o["documents"][0]).name)
+                 for u in ("D", "S", "W", "V") for o in observations(g, by[u].node_id))
+    # the comparative document says nothing; S, born in the campaign epoch,
+    # is observed too now (independent of the epochs: LG3b's limit gone)
+    assert got == [("D", 1999.0, "R99"), ("D", 2013.0, "R13"), ("S", 2013.0, "R13")]
+    # W is a US still there (redundant), V is virtual (not observed)
+    assert imp.stats["observed_in_campaign"] == 3
     e = g.chronology()[by["D"].node_id]
     assert e["start"] is None and e["end"] is None
     assert {w["rule"] for w in e["windows"]} == {"observed"}
@@ -251,9 +251,10 @@ def _br_case(tmp_path, br_end):
 def test_a_us_with_a_br_cited_in_2006_did_not_disappear_before_2006(tmp_path):
     imp, g = _br_case(tmp_path, None)
     w = next(n for n in g.nodes if n.name == "W")
-    obs = [e for e in g.edges if e.edge_type == "survive_in_epoch" and e.edge_source == w.node_id]
-    assert [(e.attributes["rule"], e.attributes["year"]) for e in obs] == [
-        ("observed_in_campaign", 2006.0)]
+    from s3dgraphy.observation import observations
+    obs = observations(g, w.node_id)                    # MICRO-LG7: a record
+    assert [(o["year"], g.find_node_by_id(o["documents"][0]).name) for o in obs] == [
+        (2006.0, "R06")]
     assert g.chronology()[w.node_id]["end_earliest"] == 2006.0
     # a BR dated before the document contradicts it: a warning
     imp, g = _br_case(tmp_path, 1990)
@@ -282,16 +283,22 @@ def test_a_us_without_a_br_cited_gets_no_edge(tmp_path):
     assert not [e for e in g.edges if e.edge_type == "survive_in_epoch"]
 
 
-def test_a_report_whose_year_no_epoch_contains_is_a_warning(tmp_path):
+def test_a_report_whose_year_no_epoch_contains_is_observed_all_the_same(tmp_path):
+    """MICRO-LG7: the observation is independent of the epochs — a report
+    whose year no epoch contains still gives the record, and no warning
+    (until then: one warning and nothing written)."""
     path = _xlsx(tmp_path / "em_data.xlsx",
                  docs=[["R13", "r13.pdf", "Report 2013", "2013", "A.01", "analytical"]],
                  units=[["W", "USD", "wall"]],
                  claims=[["W", "", "description", "the wall", "", "", "q", "R13", "A.01", "author"]],
                  epochs=[["E1", "Trajanic", 98, 117, ""]])
     imp = UnifiedXLSXImporter(path, graph_id="lg3b")
-    imp.parse()
-    assert imp.stats["observed_in_campaign"] == 0
-    assert any("R13" in w and "no epoch" in w for w in imp.warnings)
+    g = imp.parse()
+    assert imp.stats["observed_in_campaign"] == 1
+    assert not any("R13" in w and "no epoch" in w for w in imp.warnings)
+    w = next(n for n in g.nodes if n.name == "W")
+    assert [(x["start"], x["end"], x["rule"]) for x in g.chronology()[w.node_id]["windows"]] == [
+        (2013.0, 2013.0, "observed")]
 
 
 # ── B · the declared life of the functional units ────────────────────────────
@@ -349,7 +356,7 @@ def test_a_bound_against_a_window_is_a_warning():
 def test_the_datamodel_says_the_dotted_line_is_a_displacement():
     from s3dgraphy.tools.datamodel_i18n import CONNECTIONS, edge_text
     raw = json.loads(Path(CONNECTIONS).read_text(encoding="utf-8"))
-    assert raw["s3Dgraphy_connections_model_version"] == "1.6.59"  # LG3b: abuts; LG5: has_property da attività e time branch
+    assert raw["s3Dgraphy_connections_model_version"] == "1.6.60"  # LG3b: abuts; LG5: has_property da attività e time branch; LG7: la frase di is_after
     e = raw["edge_types"]["changed_from"]
     assert "POSITION IN SPACE" in e["description"]
     assert "CHANGE OF FUNCTION WITHOUT DISPLACEMENT" in e["description"]
