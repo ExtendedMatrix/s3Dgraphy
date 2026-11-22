@@ -311,7 +311,8 @@ Physical Relations
 ^^^^^^^^^^^^^^^^^^
 
 **abuts**
-   Physical contact relationship
+   Physical contact relationship; the unit that abuts is MORE RECENT than the
+   one it leans against (``implies is_after``, 1.6.58 — not contemporaneity)
    
    - CIDOC-CRM: *none holds — declared absent, see* :doc:`crmem`
    - Extension: ``AP11_has_physical_relation_to``

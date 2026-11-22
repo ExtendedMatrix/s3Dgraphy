@@ -179,16 +179,20 @@ def _xlsx(path, docs, units, claims, epochs):
 
 
 def test_observed_in_the_report_of_a_campaign_alive_then(tmp_path):
+    """MICRO-LG3b: the rule is for the USD (a window of dating) and the units
+    closed by a BR (a lower bound of the disappearance), not for a US still
+    there (redundant: its life already runs to today)."""
     path = _xlsx(
         tmp_path / "em_data.xlsx",
         docs=[["R13", "r13.pdf", "Report 2013", "2013", "A.01", "analytical"],
               ["R99", "r99.pdf", "Report 1999", "1999", "A.01", "analytical"],
               ["B07", "b07.pdf", "Comparison", "2013", "A.01", "comparative"]],
-        units=[["W", "US", "city wall"], ["V", "USVs", "missing part"],
-               ["S", "US", "trench"]],
-        claims=[["W", "", "description", "the wall", "", "", "q", "R13", "A.01", "author"],
-                ["W", "", "material", "stone", "", "", "q", "B07", "A.01", "author"],
-                ["W", "", "material", "stone", "", "", "q", "R99", "A.01", "author"],
+        units=[["D", "USD", "lost wall"], ["V", "USVs", "missing part"],
+               ["W", "US", "city wall"], ["S", "USD", "trench"]],
+        claims=[["D", "", "description", "the wall", "", "", "q", "R13", "A.01", "author"],
+                ["D", "", "material", "stone", "", "", "q", "B07", "A.01", "author"],
+                ["D", "", "material", "stone", "", "", "q", "R99", "A.01", "author"],
+                ["W", "", "description", "the wall", "", "", "q", "R13", "A.01", "author"],
                 ["V", "", "description", "lost", "", "", "q", "R13", "A.01", "author"],
                 ["S", "", "has_first_epoch", "E13", "", "", "q", "R13", "A.01", "author"]],
         epochs=[["E1", "Trajanic", 98, 117, ""], ["E13", "Campaign 2013", 2013, 2013, ""],
@@ -197,25 +201,91 @@ def test_observed_in_the_report_of_a_campaign_alive_then(tmp_path):
     g = imp.parse()
     by = {n.name: n for n in g.nodes}
     obs = [e for e in g.edges if e.edge_type == "survive_in_epoch"]
-    # W: the narrowest epoch containing 2013 (the campaign, not «Modern»); the
+    # D: the narrowest epoch containing 2013 (the campaign, not «Modern»); the
     # comparative document says nothing; the 1999 report finds «Modern»
     got = sorted((by_id.name, g.find_node_by_id(e.edge_target).name, e.attributes["document"])
                  for e in obs for by_id in [g.find_node_by_id(e.edge_source)])
-    assert got == [("W", "Campaign 2013", "R13"), ("W", "Modern", "R99")]
+    assert got == [("D", "Campaign 2013", "R13"), ("D", "Modern", "R99")]
     assert all(e.attributes["rule"] == "observed_in_campaign"
                and e.attributes["origin"] == "derived" for e in obs)
-    # V is virtual (not observed); S is born in the campaign already
+    assert sorted(e.attributes["year"] for e in obs) == [1999.0, 2013.0]
+    # W is a US still there (redundant), V is virtual (not observed); S is
+    # born in the campaign already
     assert imp.stats["observed_in_campaign"] == 2
-    e = g.chronology()[by["W"].node_id]
+    e = g.chronology()[by["D"].node_id]
     assert e["start"] is None and e["end"] is None
     assert {w["rule"] for w in e["windows"]} == {"observed"}
     assert e["end_earliest"] == 2013.0
 
 
+def test_a_usd_cited_by_the_report_of_2014_has_the_window_2014(tmp_path):
+    path = _xlsx(tmp_path / "em_data.xlsx",
+                 docs=[["R14", "r14.pdf", "Report 2014", "2014", "A.01", "analytical"]],
+                 units=[["D", "USD", "wall seen in 2014"]],
+                 claims=[["D", "", "description", "a wall", "", "", "q", "R14", "A.01", "author"]],
+                 epochs=[["E1", "Trajanic", 98, 117, ""], ["E2", "Modern", 1900, 2026, ""]])
+    imp = UnifiedXLSXImporter(path, graph_id="lg3b-usd")
+    g = imp.parse()
+    d = next(n for n in g.nodes if n.name == "D")
+    ws = g.chronology()[d.node_id]["windows"]
+    assert [(w["start"], w["end"], w["rule"], w["document"]) for w in ws] == [
+        (2014.0, 2014.0, "observed", "R14")]          # the year, not «Modern»
+
+
+def _br_case(tmp_path, br_end):
+    claims = [["W", "", "description", "the wall", "", "", "q", "R06", "A.01", "author"],
+              ["W", "", "has_first_epoch", "E1", "", "", "q", "R06", "A.01", "author"],
+              ["BR1", "W", "is_after", "", "", "", "q", "R06", "A.01", "author"]]
+    if br_end is not None:
+        claims.append(["BR1", "", "absolute_time_end", str(br_end), "", "", "q", "R06",
+                       "A.01", "author"])
+    path = _xlsx(tmp_path / "em_data.xlsx",
+                 docs=[["R06", "r06.pdf", "Report 2006", "2006", "A.01", "analytical"]],
+                 units=[["W", "US", "wall"], ["BR1", "BR", "wall gone"]],
+                 claims=claims,
+                 epochs=[["E1", "Trajanic", 98, 117, ""], ["E2", "Modern", 1900, 2026, ""]])
+    imp = UnifiedXLSXImporter(path, graph_id="lg3b-br")
+    return imp, imp.parse()
+
+
+def test_a_us_with_a_br_cited_in_2006_did_not_disappear_before_2006(tmp_path):
+    imp, g = _br_case(tmp_path, None)
+    w = next(n for n in g.nodes if n.name == "W")
+    obs = [e for e in g.edges if e.edge_type == "survive_in_epoch" and e.edge_source == w.node_id]
+    assert [(e.attributes["rule"], e.attributes["year"]) for e in obs] == [
+        ("observed_in_campaign", 2006.0)]
+    assert g.chronology()[w.node_id]["end_earliest"] == 2006.0
+    # a BR dated before the document contradicts it: a warning
+    imp, g = _br_case(tmp_path, 1990)
+    w = next(n for n in g.nodes if n.name == "W")
+    warnings = []
+    iv = g.chronology(warnings=warnings)[w.node_id]
+    assert iv["end"] == 1990.0 and iv["end_earliest"] == 2006.0
+    assert any("[chronology window]" in x and "'W'" in x and "2006" in x for x in warnings)
+    # a BR after the document: no warning
+    imp, g = _br_case(tmp_path, 2010)
+    warnings = []
+    g.chronology(warnings=warnings)
+    assert not any("[chronology window]" in x for x in warnings)
+
+
+def test_a_us_without_a_br_cited_gets_no_edge(tmp_path):
+    path = _xlsx(tmp_path / "em_data.xlsx",
+                 docs=[["R06", "r06.pdf", "Report 2006", "2006", "A.01", "analytical"]],
+                 units=[["W", "US", "wall"], ["F", "SF", "find"], ["R", "RSF", "moved find"]],
+                 claims=[[u, "", "description", "x", "", "", "q", "R06", "A.01", "author"]
+                         for u in ("W", "F", "R")],
+                 epochs=[["E2", "Modern", 1900, 2026, ""]])
+    imp = UnifiedXLSXImporter(path, graph_id="lg3b-none")
+    g = imp.parse()
+    assert imp.stats["observed_in_campaign"] == 0
+    assert not [e for e in g.edges if e.edge_type == "survive_in_epoch"]
+
+
 def test_a_report_whose_year_no_epoch_contains_is_a_warning(tmp_path):
     path = _xlsx(tmp_path / "em_data.xlsx",
                  docs=[["R13", "r13.pdf", "Report 2013", "2013", "A.01", "analytical"]],
-                 units=[["W", "US", "wall"]],
+                 units=[["W", "USD", "wall"]],
                  claims=[["W", "", "description", "the wall", "", "", "q", "R13", "A.01", "author"]],
                  epochs=[["E1", "Trajanic", 98, 117, ""]])
     imp = UnifiedXLSXImporter(path, graph_id="lg3b")
@@ -279,7 +349,7 @@ def test_a_bound_against_a_window_is_a_warning():
 def test_the_datamodel_says_the_dotted_line_is_a_displacement():
     from s3dgraphy.tools.datamodel_i18n import CONNECTIONS, edge_text
     raw = json.loads(Path(CONNECTIONS).read_text(encoding="utf-8"))
-    assert raw["s3Dgraphy_connections_model_version"] == "1.6.57"
+    assert raw["s3Dgraphy_connections_model_version"] == "1.6.58"  # LG3b: abuts
     e = raw["edge_types"]["changed_from"]
     assert "POSITION IN SPACE" in e["description"]
     assert "CHANGE OF FUNCTION WITHOUT DISPLACEMENT" in e["description"]

@@ -1135,6 +1135,11 @@ class Graph:
         in that epoch (rule ``survival``, or ``observed`` when the edge says
         ``attributes.rule == "observed_in_campaign"`` — the importer's rule:
         a unit described in the report of a campaign was alive then).
+        MICRO-LG3b: an ``observed`` survival is a window also for a unit WITH
+        a birth (the importer writes it only for a USD or a unit closed by a
+        BR), and when the edge carries ``attributes.year`` the window is that
+        year, not the whole epoch: «nel 2006 c'era ancora» — a BR before 2006
+        contradicts it (``[chronology window]``).
 
         ``is_in_functional_unit``: a member of a functional unit with a
         declared life was alive in some moment of it (rule
@@ -1144,20 +1149,36 @@ class Graph:
         from .nodes.group_node import FunctionalUnitNodeGroup
         out = []
         nid = node.node_id
-        if self._is_real_unit(node) and not [
-                t for t in ix.targets(nid, "has_first_epoch") if ix.is_epoch(t)]:
+        if self._is_real_unit(node):
+            born = bool([t for t in ix.targets(nid, "has_first_epoch") if ix.is_epoch(t)])
             for e in ix.out.get(nid, ()):
                 if e.edge_type != "survive_in_epoch" or not ix.is_epoch(e.edge_target):
                     continue
-                iv = intervals.get(e.edge_target) or {}
-                if iv.get("start") is None and iv.get("end") is None:
-                    continue
                 attrs = getattr(e, "attributes", None) or {}
-                out.append({"start": iv.get("start"), "end": iv.get("end"),
-                            "rule": "observed" if attrs.get("rule") == "observed_in_campaign"
-                            else "survival",
+                observed = attrs.get("rule") == "observed_in_campaign"
+                # MICRO-LG3b: an observation is a window even for a unit with
+                # a birth — the importer writes it only for a USD (a window of
+                # dating) or a unit closed by a BR (alive at least until the
+                # year: the BR cannot be earlier). A plain survival of a unit
+                # with a birth is part of its life, not a window.
+                if born and not observed:
+                    continue
+                iv = intervals.get(e.edge_target) or {}
+                lo, hi = iv.get("start"), iv.get("end")
+                year = attrs.get("year") if observed else None
+                try:
+                    year = float(year) if year is not None else None
+                except (TypeError, ValueError):
+                    year = None
+                if year is not None:          # the year of the document itself
+                    lo = hi = year
+                if lo is None and hi is None:
+                    continue
+                out.append({"start": lo, "end": hi,
+                            "rule": "observed" if observed else "survival",
                             "source": e.edge_target, "relation": "survive_in_epoch",
-                            **({"document": attrs["document"]} if attrs.get("document") else {})})
+                            **({"document": attrs["document"]} if attrs.get("document") else {}),
+                            **({"year": year} if year is not None else {})})
         for e in ix.out.get(nid, ()):
             if e.edge_type != "is_in_functional_unit":
                 continue
@@ -1430,7 +1451,7 @@ class Graph:
         # CONTEMPORARIES (MICRO-LG3): a unit contemporary with another —
         # has_same_time, and every physical relation that implies it in the
         # connections datamodel (bonded_to: one construction, so one first
-        # epoch; abuts, equals) — starts no earlier than the other's TPQ: the
+        # epoch; equals) — starts no earlier than the other's TPQ: the
         # start pass walks them both ways. Never the end: two contemporary
         # units may be taken away at different times.
         same_time = set(get_connections_datamodel().same_time_edges()) | {"has_same_time"}

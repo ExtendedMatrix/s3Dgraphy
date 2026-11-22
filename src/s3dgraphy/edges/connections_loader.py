@@ -167,8 +167,8 @@ class ConnectionsDatamodel:
         ``True``: the source is more recent (cuts, overlies, fills, is_after);
         ``False``: the target is (is_cut_by, is_overlain_by, is_filled_by,
         is_before); ``None``: the edge implies no order — a physical relation
-        that implies contemporaneity (abuts, bonded_to, equals and their
-        older spellings, 1.6.48: see :meth:`same_time_edges`) or none, or not a
+        that implies contemporaneity (bonded_to, equals and their older
+        spellings, 1.6.48: see :meth:`same_time_edges`) or none, or not a
         physical/temporal relation at all.
 
         1.6.47 · one source for the rule «this physical relation implies that
@@ -196,7 +196,11 @@ class ConnectionsDatamodel:
     def same_time_edges(self) -> frozenset:
         """Every edge name (canonical, reverse, older spelling) whose two
         units are CONTEMPORARY, as the datamodel says (``implies: {edge:
-        "has_same_time"}``): abuts, bonded_to, equals and their other names.
+        "has_same_time"}``): bonded_to, equals and their other names.
+
+        1.6.58 · abuts left (E.D., 22 Nov 2026, MICRO-LG3b): the unit that
+        abuts leans against one already there, so it is MORE RECENT — an
+        ordering edge (:meth:`temporal_direction` True), not a contemporary.
 
         1.6.48 · decided by E.D. (24 Oct 2026): read by
         :func:`s3dgraphy.temporal.derive_relative_chronology` and, through

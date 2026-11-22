@@ -475,6 +475,13 @@ is, even when its function changes, is one node: it lives from its first epoch u
 action takes it away (a continuity, BR), and its functions are memberships in
 functional units (connections 1.6.57).
 
+**No instance node, as a rule** (decision of E.D., 22 Nov 2026): the membership of a
+unit in a functional unit, at any scale and also through the nested functional units,
+already creates its presence in that epoch. An instance node is needed only when the
+instance carries an assertion of its own. The instance of a unit in a functional unit
+is that membership, with its interval computed (the life of the unit within the
+declared life of the functional unit: ``functional_units.instances``) and never saved.
+
 The chain is traversed transitively: if A ``changed_from`` B and B ``changed_from`` C,
 then A, B, and C form a single instance chain representing the complete biography of
 a physical object through time.

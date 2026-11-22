@@ -39,7 +39,8 @@ class TemporalInferenceEngine:
 
         # The PHYSICAL relations and the temporal direction each implies,
         # True = source is more recent, False = target is more recent, None =
-        # no order (abuts, bonded_to, equals: contemporary, 1.6.48). READ FROM
+        # no order (bonded_to, equals: contemporary, 1.6.48; abuts orders since
+        # 1.6.58, MICRO-LG3b: the unit that abuts is more recent). READ FROM
         # THE CONNECTIONS DATAMODEL (`implies`, 1.6.47), every name included —
         # reverses (is_cut_by) and older spellings (is_bonded_to) alike. Until
         # 1.6.46 this table was written here by hand, a third copy of the rule.

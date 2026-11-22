@@ -171,6 +171,10 @@ def _canonical_spelling(prop_type: str) -> str:
 # Property types that mean "temporal seed for chronology resolver"
 _TEMPORAL_PROPERTIES = frozenset({"absolute_time_start", "absolute_time_end"})
 
+#: MICRO-LG3b · the documentary units, for which «observed in a campaign» is a
+#: window of dating (:meth:`UnifiedXLSXImporter._mark_observed_in_campaigns`).
+_DOCUMENTARY_TYPES = frozenset({"USD", "serUSD"})
+
 # Namespace for the derived node/edge ids (see UnifiedXLSXImporter._mint).
 # A fixed, arbitrary UUID: its only job is to keep these uuid5 values from
 # colliding with uuid5 values some other producer derives from the same
@@ -744,18 +748,34 @@ class UnifiedXLSXImporter:
 
         The campaign comes from the Documents sheet: a document of ROLE
         ``analytical`` (the excavation report, the primary source) with a
-        YEAR is the report of the campaign of that year. Every REAL unit
-        (US, USD, SF, RSF, series…: the virtual ones are not observed) whose
-        claims cite it (SOURCE_1 / SOURCE_2) gets ``survive_in_epoch`` to the
-        NARROWEST epoch of the sheet whose START–END contains the year — the
-        campaign epoch, when the extractor wrote one — with the attributes
-        ``{"origin": "derived", "rule": "observed_in_campaign", "document":
-        <Documents.ID>}``: the rule and its source travel on the edge.
-        Nothing is added when the epoch is already the unit's (first or
-        survival), and a report whose year no epoch contains is one warning.
+        YEAR is the report of the campaign of that year.
+
+        MICRO-LG3b (E.D., 22 Nov 2026, «l'appartenenza basta; il documento
+        serve alle USD»): the rule is for the units whose life the document
+        TELLS something about, not for a unit that is still there (its life
+        already runs from its birth to today — the edge would be redundant):
+
+        - a DOCUMENTARY unit (USD, serUSD): the document shows it in that
+          campaign, so it was alive then — a window of dating;
+        - a REAL unit closed by a continuity (BR): the document that still
+          shows it in that year («nel 2006 c'era ancora») is a LOWER BOUND
+          of its disappearance: the BR cannot be earlier — if it is,
+          :meth:`Graph.chronology` warns ``[chronology window]``.
+
+        Every other real unit (US, SF, RSF… with no BR) gets nothing.
+
+        Such a unit, cited by a claim (SOURCE_1 / SOURCE_2), gets
+        ``survive_in_epoch`` to the NARROWEST epoch of the sheet whose
+        START–END contains the year — the campaign epoch, when the extractor
+        wrote one — with the attributes ``{"origin": "derived", "rule":
+        "observed_in_campaign", "document": <Documents.ID>, "year": <YEAR>}``:
+        the rule, its source and its year travel on the edge. Nothing is
+        added when the epoch is already the unit's (first or survival), and
+        a report whose year no epoch contains is one warning.
         :meth:`Graph.chronology` reads such a survival as a WINDOW of life
-        (rule ``observed``), never as a birth."""
-        from ..unit_life import is_real
+        (rule ``observed``, the year itself when the edge carries it), never
+        as a birth."""
+        from ..unit_life import continuities_of, is_real
         dated = []
         for ref, ep in self._epoch_by_id.items():
             s, e = getattr(ep, "start_time", None), getattr(ep, "end_time", None)
@@ -771,6 +791,9 @@ class UnifiedXLSXImporter:
             unit = self._unit_by_id[uid]
             if not is_real(unit):
                 continue
+            if (getattr(unit, "node_type", "") not in _DOCUMENTARY_TYPES
+                    and not continuities_of(self.graph, unit.node_id)):
+                continue                      # still there: redundant (LG3b)
             own = {e.edge_target for e in self.graph.edges
                    if e.edge_source == unit.node_id
                    and e.edge_type in ("has_first_epoch", "survive_in_epoch")}
@@ -790,7 +813,7 @@ class UnifiedXLSXImporter:
                     edge_source=unit.node_id, edge_target=ep.node_id,
                     edge_type="survive_in_epoch")
                 edge.attributes.update({"origin": "derived", "rule": "observed_in_campaign",
-                                        "document": did})
+                                        "document": did, "year": float(year)})
                 added += 1
         self.stats["observed_in_campaign"] = added
         for did, year in sorted(no_epoch, key=lambda x: (x[1], x[0])):

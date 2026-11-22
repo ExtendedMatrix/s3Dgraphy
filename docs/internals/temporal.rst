@@ -53,16 +53,19 @@ Edge type                          Temporal direction
 ``is_overlain_by``                 target is more recent
 ``fills``                          source is more recent
 ``is_filled_by``                   target is more recent
-``abuts`` / ``is_abutted_by``      ambiguous (no temporal direction)
-``is_bonded_to`` / ``bonded_to``   symmetric (no temporal direction)
-``is_physically_equal_to`` /       symmetric (no temporal direction)
+``abuts``                          source is more recent (1.6.58)
+``is_abutted_by``                  target is more recent (1.6.58)
+``is_bonded_to`` / ``bonded_to``   contemporary (no temporal direction)
+``is_physically_equal_to`` /       contemporary (no temporal direction)
 ``equals``
 ================================  =========================================
 
 Edges that are already ``is_after`` (or ``is_before``) are absorbed
-into the DAG without re-derivation. Symmetric and ambiguous relations
-are *intentionally* dropped — they encode physical contact, not
-sequence.
+into the DAG without re-derivation. The contemporary relations
+(``bonded_to``, ``equals``: ``implies has_same_time``, 1.6.48) give a
+``has_same_time``, never an order. ``abuts`` was among them from 1.6.48 to
+1.6.57; since 1.6.58 (E.D., 22 Nov 2026, MICRO-LG3b) it is POSTERIORITY: the
+unit that abuts leans against one already there, so it is more recent.
 
 attribute_temporal_claim
 ------------------------

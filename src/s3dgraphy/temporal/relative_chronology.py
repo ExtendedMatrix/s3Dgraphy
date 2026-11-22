@@ -20,8 +20,10 @@ The ORIGIN of a relative-chronology edge (connections 1.6.47) travels in
 
 An edge without it is valid: every file before 1.6.47 simply does not say.
 
-``abuts``, ``bonded_to``, ``equals`` (and their other names) imply
-CONTEMPORANEITY — decided by E.D. on 24 Oct 2026, connections 1.6.48,
+``bonded_to``, ``equals`` (and their other names) imply
+CONTEMPORANEITY — decided by E.D. on 24 Oct 2026, connections 1.6.48 (``abuts``
+was among them until 1.6.57; since 1.6.58, MICRO-LG3b, it is POSTERIORITY —
+the unit that abuts is more recent — and gives an ``is_after``),
 ``implies: {edge: "has_same_time"}``: the derivation adds a ``has_same_time``
 for each pair no ``has_same_time`` already joins, in either direction.
 :func:`same_time_pairs` is the rule, read by the GraphML exporter too.
@@ -81,7 +83,7 @@ def same_time_pairs(graph) -> dict:
     ``{(a, b): [edges]}`` with ``a < b`` (the pair has no direction, so it is
     written sorted, as the GraphML exporter has always written it), the edges
     being those of a type the datamodel declares ``implies: {edge:
-    "has_same_time"}`` — abuts, bonded_to, equals and their other names. A
+    "has_same_time"}`` — bonded_to, equals and their other names. A
     loop (a unit with itself) is skipped.
     """
     names = get_connections_datamodel().same_time_edges()
@@ -119,13 +121,13 @@ def derive_relative_chronology(graph, *, reduce: bool = True, write: bool = Fals
     edges, not redundant, then the ``has_same_time`` edges (1.6.48).
 
     Every edge whose type the connections datamodel declares with a temporal
-    direction (cuts, fills, overlies and their reverses; is_after / is_before
+    direction (cuts, fills, overlies, abuts — 1.6.58 — and their reverses; is_after / is_before
     themselves) becomes an ordered pair *more recent → more ancient*; with
     ``reduce`` the transitive reduction keeps only the pairs no chain already
     implies (the Harris principle, as the GraphML exporter does). A cycle is
     reported in ``warnings`` and the unreduced set is used, as the exporter does.
 
-    The physical relations that imply contemporaneity (abuts, bonded_to,
+    The physical relations that imply contemporaneity (bonded_to,
     equals: ``implies: {edge: "has_same_time"}``) give one ``has_same_time``
     per pair, sorted (:func:`same_time_pairs`); no reduction, the relation is
     symmetric. A pair both ordered and contemporary is a contradiction of the

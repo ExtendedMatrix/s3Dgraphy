@@ -5,6 +5,24 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Changed
+- **Two corrections to MICRO-LG3** (MICRO-LG3b, 22 November 2026, decisions of
+  E.D.). Connections 1.6.58: `abuts` is POSTERIORITY, not contemporaneity —
+  `implies: {edge: "is_after", source_is_more_recent: true}` (the unit that
+  abuts is more recent; `is_abutted_by` the opposite), new `scope_note`;
+  `same_time_edges()` is now `bonded_to`, `equals` and their older spellings.
+  The readers take it from the datamodel: `derive_relative_chronology` (and the
+  table importers, the GraphML exporter) derive an `is_after` from an `abuts`
+  instead of a `has_same_time`; `Graph.chronology` gives the abutting unit the
+  TPQ of the one it leans against and never the other way. The
+  `UnifiedXLSXImporter` rule `observed_in_campaign` is restricted to the
+  documentary units (USD, serUSD: a window of dating) and to the real units
+  closed by a BR (a lower bound of the disappearance); a US, SF, RSF with no BR
+  gets nothing (its life already runs to today). The edge now carries
+  `attributes.year`; `Graph.chronology` reads an observation as a window of
+  that year, also for a unit with a birth, and a BR earlier than it is a
+  `[chronology window]` warning. No instance node, as a rule: the membership
+  already creates the presence (docstring of `functional_units.instances`,
+  manual «Instance Chains»).
 - **The life of the units** (MICRO-LG3, 22 November 2026; E.D.: «il
   frammento in situ è la stessa US dall'antichità a oggi»). A REAL unit with
   no continuity is still existing and REACHES TODAY: its end is OPEN (None,

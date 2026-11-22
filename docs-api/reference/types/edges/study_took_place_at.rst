@@ -5,7 +5,7 @@ study_took_place_at
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.52, connections 1.6.57) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.52, connections 1.6.58) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *Links an HC9 Study to the topographic place where it was carried out — the LocationNodeGroup of the site, the last link of the toponym chain (nation → region → province → comune → site), or of a saggio in the site (kind study, is\_in\_location the site: E.D., 11 Oct 2026), so the site finds the study going up.*
 

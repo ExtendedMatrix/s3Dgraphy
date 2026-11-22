@@ -314,6 +314,13 @@ def instances(graph: Any, unit_id: str, *, chronology: Optional[Dict[str, Any]] 
     as an instance of the castle, lives 1100–1400; as matter it is born in
     the 1st century and reaches today.
 
+    NO INSTANCE NODE, as a rule (decision of E.D., 22 Nov 2026, MICRO-LG3b):
+    the membership of a unit in a functional unit, at any scale and also
+    through the nested functional units, already creates its presence in
+    that epoch. An instance node is needed only when the instance carries an
+    assertion of its own. The instance is the membership with its computed
+    interval; nothing is added to the graph.
+
     ``[{unit, functional_unit, name, edge_id, unit_life, functional_life,
     interval, judged}]``, in edge order: ``interval`` None when the two lives
     do not meet (the member is not alive in its unit: :func:`coherence`);

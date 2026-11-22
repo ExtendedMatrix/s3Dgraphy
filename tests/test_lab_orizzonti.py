@@ -231,15 +231,18 @@ def test_the_rule_is_read_from_the_datamodel_and_says_what_the_copies_said():
     dm = get_connections_datamodel()
     assert dm.ordering_edges() == {
         "cuts": True, "overlies": True, "fills": True, "is_after": True,
-        "is_cut_by": False, "is_overlain_by": False, "is_filled_by": False, "is_before": False}
-    assert Graph._SOURCE_IS_MORE_RECENT == {"cuts", "overlies", "fills", "is_after"}
+        "is_cut_by": False, "is_overlain_by": False, "is_filled_by": False, "is_before": False,
+        # 1.6.58 (E.D., 22 Nov 2026, MICRO-LG3b): abuts is posteriority
+        "abuts": True, "is_abutted_by": False}
+    assert Graph._SOURCE_IS_MORE_RECENT == {"cuts", "overlies", "fills", "is_after", "abuts"}
     from s3dgraphy import diagnostics
     assert diagnostics._TARGET_IS_MORE_RECENT == Graph._TARGET_IS_MORE_RECENT
     engine = TemporalInferenceEngine()
     assert engine.TOPOLOGICAL_TO_TEMPORAL["is_cut_by"] is False
     # 1.6.48 (E.D., 24 Oct 2026): no order, but contemporaneity —
     # tests/test_contemporaneity.py
-    for same in ("abuts", "is_abutted_by", "bonded_to", "is_bonded_to",
+    # (abuts left them in 1.6.58, MICRO-LG3b)
+    for same in ("bonded_to", "is_bonded_to",
                  "equals", "is_physically_equal_to"):
         assert same in engine.TOPOLOGICAL_TO_TEMPORAL
         assert engine.TOPOLOGICAL_TO_TEMPORAL[same] is None

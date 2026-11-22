@@ -240,7 +240,8 @@ class GraphMLExporter:
 
             engine.print_inference_report(temporal_edges, minimal_edges)
 
-        # 3c. The contemporary pairs (abuts, bonded_to, equals → has_same_time):
+        # 3c. The contemporary pairs (bonded_to, equals → has_same_time; abuts
+        # orders since 1.6.58 and is re-expressed as is_after above):
         # the connections datamodel's rule (`implies`, 1.6.48), read through
         # the same function the importers derive with — no list of our own.
         from ...temporal import same_time_pairs
