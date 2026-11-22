@@ -202,7 +202,9 @@ def test_the_cube_of_a_landscape_presences_and_symbols(tmp_path):
     assert t["parts"] == [{"graph_id": "TEMPLE-GRAPH", "members": ["SU1", "SU2"]}]
     assert len(v["shapes"]["TEMPLE"]["rings_by_lane"]["H2"]) == 2
     # the earlier phase reads two USD with no proxy: a symbol, «no outline»
-    assert items["H2"]["OLDER"] == {"kind": "symbol", "id": "OLDER", "evidence": "documentary", "why": "no_outline"}
+    # (MICRO-MF09: every item says whether it is an instance — after its home lane — and its share)
+    assert {k: v for k, v in items["H2"]["OLDER"].items() if k not in ("instance", "share")} == \
+        {"kind": "symbol", "id": "OLDER", "evidence": "documentary", "why": "no_outline"}
     # the colony of S01 (no graph bound): a symbol with no members
     assert items["H1"]["COLONY"]["kind"] == "symbol" and items["H1"]["COLONY"]["why"] == "no_members"
     # the UT: a symbol on H7

@@ -108,6 +108,29 @@ def proposal_epoch(graph: Any, members: Iterable[str]) -> Optional[str]:
     return max(set(eps), key=lambda e: ((intervals.get(e) or {}).get("start") or float("-inf"), e))
 
 
+def proposal_lanes(graph: Any, epoch: Optional[str], members: Iterable[str],
+                   L: List[Dict[str, Any]]) -> Tuple[Optional[str], List[str]]:
+    """MICRO-MF09 · where a proposal stands: ``(lane, lanes)`` — ``lanes``
+    EVERY lane its epoch's interval touches (a proposal has no life yet: the
+    epoch it would take is its interval, :func:`s3dgraphy.functional_units.span_horizons`),
+    ``lane`` the home one (the epoch itself when it is a lane, else the
+    earliest of ``lanes``). With no dated epoch, the home lanes of its members,
+    the earliest first-drawn. Never the lane the members fill most."""
+    ids = [ln["id"] for ln in L]
+    lanes: List[str] = []
+    if epoch is not None:
+        iv = graph.epoch_intervals().get(epoch) or {}
+        lanes = [h["id"] for h in FU.span_horizons((iv.get("start"), iv.get("end")), L)]
+        if epoch in ids and epoch not in lanes:
+            lanes.append(epoch)
+    if not lanes:
+        homes = {h for h in (home_lane(graph, m, L) for m in members) if h}
+        lanes = [x for x in ids if x in homes]
+    lanes.sort(key=ids.index)
+    lane = epoch if epoch in ids else (lanes[-1] if lanes else None)
+    return lane, lanes
+
+
 def _member_ok(graph: Any, node_id: str) -> bool:
     """A unit that can be read and that the connections datamodel lets be a
     member (``is_in_functional_unit`` toward a functional unit: a SERIES of
@@ -137,17 +160,13 @@ def from_activities(graph: Any, *, lanes: Optional[Iterable[Any]] = None,
         if not ms:
             continue
         epoch = proposal_epoch(graph, ms)
-        lane = None
-        if epoch is not None:
-            ids = [ln["id"] for ln in L]
-            lane = epoch if epoch in ids else None
-        if lane is None:
-            homes = [home_lane(graph, m, L) for m in ms]
-            homes = [h for h in homes if h]
-            lane = max(set(homes), key=homes.count) if homes else (L[0]["id"] if L else None)
+        lane, lanes = proposal_lanes(graph, epoch, ms, L)
+        if lane is None and L:
+            lane = L[0]["id"]
         label = re.sub(r"^\S*Act\.\d+\s+", "", a.name or "") or (a.name or a.node_id)
         out.append({"key": f"act:{a.node_id}", "source": ACTIVITY, "activity": a.node_id,
                     "name": label, "scale": DEFAULT_SCALE, "function": None, "epoch": epoch, "lane": lane,
+                    "lanes": lanes,
                     "parent": None, "members": ms,
                     "why": _t(lang, "why_activity", act=(a.name or a.node_id).split(" ")[0], n=len(ms))})
     return out
@@ -363,17 +382,13 @@ def parse_ai_reply(graph: Any, text: str, *, lanes: Optional[Iterable[Any]] = No
             dropped.append({"key": key, "name": name, "why": _t(lang, "drop_members")})
             continue
         epoch = epoch or proposal_epoch(graph, members)
-        ids = [ln["id"] for ln in L]
-        lane = epoch if epoch in ids else None
-        if lane is None and members:
-            homes = [h for h in (home_lane(graph, m, L) for m in members) if h]
-            lane = max(set(homes), key=homes.count) if homes else None
+        lane, lanes = proposal_lanes(graph, epoch, members, L)
         fn = str(it.get("function") or "").strip()[:MAX_NAME] or None
         if not fn:
             dropped.append({"key": key, "name": name, "why": _t(lang, "drop_function")})
             continue
         proposals.append({"key": key, "source": AI, "name": name, "scale": scale, "function": fn,
-                          "epoch": epoch, "lane": lane, "parent": parent, "members": members,
+                          "epoch": epoch, "lane": lane, "lanes": lanes, "parent": parent, "members": members,
                           "why": str(it.get("why") or "").strip()[:MAX_WHY], "unknown": unknown,
                           "model": model, "date": date})
     # a container dropped drops the link, not the room

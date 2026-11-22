@@ -57,7 +57,8 @@ def test_the_place_of_a_row():
     L = Z.landscape_lanes(None, LANES)
     # dated: the lanes its life meets, the home lane the earliest
     p = Z.place((150, 250), None, L)
-    assert p == {"lanes": ["H3", "H2"], "lane": "H2", "rule": "dated", "uncertain": False}
+    # (MICRO-MF09 adds ``present``: every lane with its share)
+    assert {k: v for k, v in p.items() if k != "present"} == {"lanes": ["H3", "H2"], "lane": "H2", "rule": "dated", "uncertain": False}
     # an open start would reach H0: the declared horizon keeps it (the ruin)
     p = Z.place((None, 2026), "H4–H7", L)
     assert p["lanes"] == ["H7", "H56", "H4"] and p["lane"] == "H4" and p["rule"] == "dated_declared"

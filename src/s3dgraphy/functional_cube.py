@@ -45,24 +45,27 @@ Interval = Tuple[Optional[float], Optional[float]]
 
 
 def _meets(span: Interval, lane: Dict[str, Any]) -> bool:
-    from .periodization import overlaps
-    if (lane["start"], lane["end"]) == (None, None):
-        return False
-    return overlaps(span, (lane["start"], lane["end"]))
+    # MICRO-MF09 · the one rule (functional_units.span_horizons)
+    return bool(FU.span_horizons(span, [lane]))
+
+
+def presence_in(entry: Dict[str, Any], lane: Dict[str, Any]) -> Optional[Dict[str, Any]]:
+    """MICRO-MF09 · the presence of a unit (its chronology entry) in the plane
+    ``lane`` by THE rule (:func:`s3dgraphy.functional_units.span_horizons`):
+    ``{interval, share, by}`` or None."""
+    life: Interval = (entry.get("start"), entry.get("end"))
+    wins = [(w.get("start"), w.get("end")) for w in entry.get("windows") or []]
+    got = FU.span_horizons(life, [lane], windows=wins)
+    return got[0] if got else None
 
 
 def lives_in(entry: Dict[str, Any], lane: Dict[str, Any]) -> bool:
     """Does a unit (its chronology entry) live in the plane ``lane``: its life
     meets the plane, or one of its windows does. A unit known only by its
     windows lives in the planes they meet (no more: an open life is not
-    «everywhere» on a plane — it is drawn where we know it was)."""
-    life: Interval = (entry.get("start"), entry.get("end"))
-    if life != (None, None) and _meets(life, lane):
-        return True
-    for w in entry.get("windows") or []:
-        if _meets((w.get("start"), w.get("end")), lane):
-            return True
-    return False
+    «everywhere» on a plane — it is drawn where we know it was).
+    MICRO-MF09: in EVERY plane it touches (:func:`presence_in`)."""
+    return presence_in(entry, lane) is not None
 
 
 def _rings_of(literal: Optional[str]) -> Tuple[Optional[str], List[List[List[float]]]]:
@@ -310,7 +313,8 @@ def cube_view(graph: Any, *, footprints: Optional[Dict[str, Dict[str, Any]]] = N
                 continue
             uid = node.node_id
             entry = chron.get(uid) or {}
-            if not lives_in(entry, ln):
+            got = presence_in(entry, ln)
+            if got is None:
                 continue
             if uid not in fps:
                 without.append(uid)
@@ -336,6 +340,7 @@ def cube_view(graph: Any, *, footprints: Optional[Dict[str, Dict[str, Any]]] = N
             items.append({"id": uid, "reader": reader, "readers": leaves, "by_scale": by_scale,
                           "evidence": evidence_in(reader, ln) if reader else None,
                           "instance": inst, "from_lane": home[uid] if inst else None,
+                          "share": got["share"],
                           **_seen_item(seen(uid, ln))})
             if uid not in units:
                 fp = fps[uid]
@@ -497,6 +502,7 @@ def landscape_cube(landscape: Any, *, header: Optional[Dict[str, Any]] = None,
     plane_of = {p["lane"]: p for p in planes}
     rows = {r["id"]: r for r in view["rows"]}
     shapes: Dict[str, Dict[str, Any]] = {}
+    share_of = {r["id"]: {h["id"]: h.get("share") for h in r.get("present") or []} for r in view["rows"]}
     for r in view["rows"]:
         for lid in r["lanes"]:
             ln = by_lane[lid]
@@ -559,6 +565,9 @@ def landscape_cube(landscape: Any, *, header: Optional[Dict[str, Any]] = None,
             else:
                 why = "no_members" if (r["kind"] == "ut" or not (members or r["members"])) else "no_outline"
                 item = {"kind": "symbol", "id": r["id"], "evidence": r["evidence"], "why": why}
+            # MICRO-MF09 · after its home lane an appearance is an INSTANCE
+            item["instance"] = lid != r.get("lane")
+            item["share"] = (share_of.get(r["id"]) or {}).get(lid)
             plane_of[lid]["items"].append(item)
     # MF08 · the SYMBOLIC layer of the landscape: the hull of a presence per plane
     for s_ in shapes.values():

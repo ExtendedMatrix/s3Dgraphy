@@ -186,7 +186,9 @@ def place(interval: Interval, declared: Any, lanes: List[Dict[str, Any]]) -> Dic
     life meets (``dated``); a life with an open bound kept to the lanes the
     declared horizon names when they meet (``dated_declared``); an undated
     row in the lanes the declared horizon names (``declared_horizon``); else
-    none. ``lane`` the HOME lane, the earliest."""
+    none. ``lane`` the HOME lane, the earliest — where the master is drawn;
+    MICRO-MF09: the row is present in EVERY lane of ``lanes`` (``present``:
+    ``{id, share, interval}``), never only in the one it overlaps most."""
     from .functional_matrix import lanes_of_life
     met = lanes_of_life(interval, lanes) if interval != (None, None) else []
     rule: Optional[str] = "dated" if met else None
@@ -204,8 +206,14 @@ def place(interval: Interval, declared: Any, lanes: List[Dict[str, Any]]) -> Dic
         uncertain = uncertain or bool(declared)
     order = {ln["id"]: i for i, ln in enumerate(lanes)}
     met.sort(key=lambda x: order[x])
+    # MICRO-MF09 · the row is present in ALL these lanes (the home lane, the
+    # earliest, holds the master; the others its instances), each with the
+    # share of the overlap (None for a lane named only by the declared horizon)
+    shares = {h["id"]: h for h in FU.span_horizons(interval, lanes)} if interval != (None, None) else {}
+    present = [{"id": x, "share": (shares.get(x) or {}).get("share"),
+                "interval": (shares.get(x) or {}).get("interval")} for x in met]
     return {"lanes": met, "lane": met[-1] if met else None, "rule": rule,
-            "uncertain": bool(uncertain)}
+            "uncertain": bool(uncertain), "present": present}
 
 
 # ── the members from a bound graph ───────────────────────────────────────────
@@ -527,7 +535,7 @@ def landscape_view(landscape: Any, *, header: Optional[Dict[str, Any]] = None,
             members_from.append({"graph_id": gid, "rule": got["rule"], "handle": got["handle"],
                                  "handle_name": got["handle_name"], "members": len(got["members"])})
         rows.append({"id": fid, "kind": "identity", "name": node.name, "site": site,
-                     "lanes": where["lanes"], "lane": where["lane"], "lane_rule": where["rule"],
+                     "lanes": where["lanes"], "lane": where["lane"], "lane_rule": where["rule"], "present": where["present"],
                      "uncertain": where["uncertain"], "scale": FU.scale_of(node),
                      "evidence": evidence, "members": count, "members_rule": rule,
                      "members_from": members_from, "rooms": rooms,
@@ -543,7 +551,7 @@ def landscape_view(landscape: Any, *, header: Optional[Dict[str, Any]] = None,
         life = (entry.get("start"), entry.get("end"))
         where = place(life, (getattr(node, "data", None) or {}).get("declared_horizon"), L)
         rows.append({"id": node.node_id, "kind": "ut", "name": node.name, "site": site,
-                     "lanes": where["lanes"], "lane": where["lane"], "lane_rule": where["rule"],
+                     "lanes": where["lanes"], "lane": where["lane"], "lane_rule": where["rule"], "present": where["present"],
                      "uncertain": where["uncertain"], "scale": None, "evidence": None,
                      "members": 0, "members_rule": None, "members_from": [], "rooms": [],
                      "alternative": None, "life": list(life), "declared_horizon": None})
@@ -592,7 +600,7 @@ def identities_view(graph: Any, *, lanes: Optional[Iterable[Dict[str, Any]]] = N
         where = place(life, (getattr(node, "data", None) or {}).get("declared_horizon"), L)
         ms = FU.members(graph, h, recursive=True)
         rows.append({"id": h, "kind": "identity", "name": node.name, "site": None,
-                     "lanes": where["lanes"], "lane": where["lane"], "lane_rule": where["rule"],
+                     "lanes": where["lanes"], "lane": where["lane"], "lane_rule": where["rule"], "present": where["present"],
                      "uncertain": where["uncertain"], "scale": FU.scale_of(node),
                      "evidence": FU.evidence(graph, ms), "members": len(ms),
                      "members_rule": "own" if ms else None, "members_from": [],

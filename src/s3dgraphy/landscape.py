@@ -426,7 +426,9 @@ def landscape_matrix(landscape: Graph, container: Any = None,
     def place(interval: Interval) -> List[str]:
         if interval == (None, None):
             return []
-        return [h["id"] for h in horizons if P.overlaps(interval, (h["start"], h["end"]))]
+        # MICRO-MF09 · the one rule: every horizon the life touches
+        from .functional_units import span_horizons
+        return [h["id"] for h in span_horizons(interval, horizons)]
 
     rows: List[Dict[str, Any]] = []
     for node in landscape.nodes:

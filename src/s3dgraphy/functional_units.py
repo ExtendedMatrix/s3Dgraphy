@@ -311,6 +311,123 @@ def _inside(child: Interval, parent: Interval) -> bool:
     return True
 
 
+# ── MICRO-MF09 · a unit in EVERY horizon its life touches ──────────────────
+#
+# Decision of E.D. (22 Nov 2026, 21:00): a wide epoch that touches several
+# horizons (the 2nd century, 100–199, against H2 117–179; «Post antiquity»
+# 200–1800) does NOT go to the one horizon it overlaps most: it is in ALL the
+# horizons it touches. ONE rule, used by every view that puts a unit in an
+# horizon (the Functional Matrix and its overlay, the Landscape Matrix, the
+# Cube and its plan, the cube at a scale, the presence, the counts): a unit
+# is present in an horizon when its LIFE (:func:`life`, LG3/LG5) has an
+# intersection of positive duration with it — touching at a bound is not
+# enough (:func:`s3dgraphy.periodization.overlaps`). The SHARE of the overlap
+# is given for whoever wants to shade it, never to choose one horizon.
+
+
+def _lane_bounds(lane: Any) -> Interval:
+    if isinstance(lane, dict):
+        return (lane.get("start"), lane.get("end"))
+    return (lane[0], lane[1])
+
+
+def _share(iv: Interval, of: Interval) -> Optional[float]:
+    """|iv| / |of| when both are closed and ``of`` has a length; else None."""
+    if None in iv or None in of:
+        return None
+    n = float(of[1]) - float(of[0])
+    if n <= 0:
+        return None
+    return round(max(0.0, float(iv[1]) - float(iv[0])) / n, 4)
+
+
+def span_horizons(span: Interval, lanes: Iterable[Any], *,
+                  windows: Iterable[Any] = ()) -> List[Dict[str, Any]]:
+    """THE RULE (MICRO-MF09), pure: the horizons a life ``span`` is present
+    in, in the order of ``lanes`` (dicts ``{id, start, end}``).
+
+    Each ``{id, interval, share, share_of_life, by}``: ``interval`` the life ∩
+    the horizon; ``share`` the part of the HORIZON the life covers (0–1; None
+    when the horizon is open); ``share_of_life`` the part of the LIFE that
+    falls in it (None when the life is open); ``by`` ``life`` — or ``window``
+    when only a WINDOW of the unit meets it (LG3: a survival, an observation,
+    a membership in a dated functional unit: it was alive there at least
+    once). An undated life and an undated horizon meet nothing; touching at
+    a bound is not meeting (a point on a border is in: ``overlaps``)."""
+    from .periodization import overlaps
+    wins: List[Interval] = []
+    for w in windows or ():
+        wi = _lane_bounds(w)
+        if wi != (None, None):
+            wins.append(wi)
+    out: List[Dict[str, Any]] = []
+    for ln in lanes:
+        hz = _lane_bounds(ln)
+        if hz == (None, None):
+            continue
+        lid = ln.get("id") if isinstance(ln, dict) else None
+        if span != (None, None) and overlaps(span, hz):
+            iv = _intersect(span, hz)
+            out.append({"id": lid, "interval": list(iv), "share": _share(iv, hz),
+                        "share_of_life": _share(iv, span), "by": "life"})
+            continue
+        met = [_intersect(w, hz) for w in wins if overlaps(w, hz)]
+        if met:
+            shares = [_share(iv, hz) for iv in met]
+            known = [x for x in shares if x is not None]
+            best = met[shares.index(max(known))] if known else met[0]
+            out.append({"id": lid, "interval": list(best), "share": max(known) if known else None,
+                        "share_of_life": None, "by": "window"})
+    return out
+
+
+def life_for_horizons(graph: Any, node_id: str, *, chronology: Optional[Dict[str, Any]] = None,
+                      epoch_intervals: Optional[Dict[str, Any]] = None) -> Tuple[Interval, List[Interval], str]:
+    """What :func:`horizons_of_life` measures: ``(span, windows, rule)``.
+    An EPOCH is its interval (``epoch``); a functional unit its declared life
+    (``declared``); any other node the computed life of :func:`life` with its
+    windows (``life``) — and, when the chronology gives it nothing, the
+    interval of its epochs (``has_first_epoch`` / ``survive_in_epoch``:
+    ``epochs``); ``none`` when nothing dates it."""
+    from .nodes.epoch_node import EpochNode
+    node = graph.find_node_by_id(node_id)
+    intervals = graph.epoch_intervals() if epoch_intervals is None else epoch_intervals
+    if isinstance(node, EpochNode):
+        iv = intervals.get(node_id) or {}
+        span = (iv.get("start", getattr(node, "start_time", None)), iv.get("end", getattr(node, "end_time", None)))
+        return span, [], "epoch" if span != (None, None) else "none"
+    if is_functional_unit(node):
+        span = declared_life(graph, node_id, epoch_intervals=intervals)
+        return span, [], "declared" if span != (None, None) else "none"
+    chron = graph.chronology() if chronology is None else chronology
+    span = life(graph, node_id, chronology=chron)
+    windows = [(w.get("start"), w.get("end")) for w in ((chron.get(node_id) or {}).get("windows") or [])]
+    if span != (None, None) or windows:
+        return span, windows, "life"
+    eps = [e.edge_target for e in graph.edges
+           if e.edge_source == node_id and e.edge_type in ("has_first_epoch", "survive_in_epoch")]
+    starts = [(intervals.get(e) or {}).get("start") for e in eps]
+    ends = [(intervals.get(e) or {}).get("end") for e in eps]
+    starts = [x for x in starts if x is not None]
+    ends = [x for x in ends if x is not None]
+    if starts or ends:
+        return (min(starts) if starts else None, max(ends) if ends else None), [], "epochs"
+    return (None, None), [], "none"
+
+
+def horizons_of_life(graph: Any, node_id: str, lanes: Iterable[Any], *,
+                     chronology: Optional[Dict[str, Any]] = None,
+                     epoch_intervals: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    """The horizons (``lanes``: ``{id, start, end}``) a node is present in —
+    a US, a functional unit, an identity of the landscape, an epoch —
+    by :func:`span_horizons` on :func:`life_for_horizons` (MICRO-MF09).
+    ALL of them, in the order of ``lanes``: the first in time is where the
+    view draws the master, the others its INSTANCES."""
+    span, windows, _rule = life_for_horizons(graph, node_id, chronology=chronology,
+                                             epoch_intervals=epoch_intervals)
+    return span_horizons(span, lanes, windows=windows)
+
+
 # ── MICRO-LG3 · the instance of a unit in a functional unit ─────────────────
 
 def instances(graph: Any, unit_id: str, *, chronology: Optional[Dict[str, Any]] = None,
@@ -482,7 +599,6 @@ def coherence(graph: Any, *, chronology: Optional[Dict[str, Any]] = None,
     window does not reach (:func:`s3dgraphy.obliteration.obliteration_hints`).
 
     ``warnings`` — one sentence per incoherence, in ``lang`` (en | it)."""
-    from .periodization import overlaps
     chron = graph.chronology() if chronology is None else chronology
     it = lang == "it"
     out: Dict[str, Any] = {"members_not_alive": [], "children_outside": [],
@@ -540,7 +656,8 @@ def coherence(graph: Any, *, chronology: Optional[Dict[str, Any]] = None,
         if ep_iv == (None, None):
             continue
         alive = [u for u, lf in unit_lives.items() if _alive_in(lf, unit_dated[u], ep_iv)]
-        live_fus = [f for f, lf in fu_lives.items() if overlaps(lf, ep_iv)]
+        # MICRO-MF09 · the one rule (an epoch is its interval)
+        live_fus = [f for f, lf in fu_lives.items() if span_horizons(lf, [ep_iv])]
         read_by = set()
         for f in live_fus:
             read_by |= fu_members[f]
@@ -667,12 +784,16 @@ def presence(graph: Any, fu_id: str, horizon: Any = None, *,
     else:
         h = (horizon[0], horizon[1])
     fu_life = life(graph, fu_id, chronology=chron)
+    share: Optional[float] = None
     if h == (None, None):
         interval: Optional[Interval] = fu_life
     elif fu_life == (None, None):
         interval = h
     else:
-        interval = _intersect(fu_life, h)
+        # MICRO-MF09 · the one rule: present when the life touches the horizon
+        got = span_horizons(fu_life, [h])
+        interval = tuple(got[0]["interval"]) if got else None
+        share = got[0]["share"] if got else None
 
     alive: List[str] = []
     if interval is not None:
@@ -741,7 +862,7 @@ def presence(graph: Any, fu_id: str, horizon: Any = None, *,
                            "partially_obliterated": len(partial),
                            "not_said": len(alive) - len(obliterated) - len(partial)}
     return {"identity": fu_id, "name": node.name, "scale": scale_of(node),
-            "life": fu_life, "interval": interval, "members_alive": alive,
+            "life": fu_life, "interval": interval, "share": share, "members_alive": alive,
             "members_by_degree": by_degree,
             "members_obliterated": obliterated,
             "members_not_obliterated": [m for m in alive if m not in obliterated],
@@ -763,4 +884,5 @@ __all__ = [
     "children", "parents", "members", "handles", "sites_of_unit",
     "transformations", "uses", "declared_life", "life", "instances", "coherence", "evidence",
     "presence", "changed_from_to_review",
+    "span_horizons", "life_for_horizons", "horizons_of_life",
 ]

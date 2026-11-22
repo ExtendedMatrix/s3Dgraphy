@@ -25,6 +25,8 @@ from .functional_units import (Interval, _intersect, _targets_of, children,
                                coherence, evidence, evidence_of_unit, functional_units_of,
                                handles, is_functional_unit, life, members, parents,
                                scale_of, sites_of_unit, transformations, uses)
+from .functional_units import horizons_of_life as FU_horizons_of_life
+from .functional_units import span_horizons as FU_span_horizons
 
 
 # The view (E.D., 22 Nov 2026, «la scrivania»): the lanes shared with the
@@ -121,20 +123,22 @@ def matrix_lanes(graph: Any, lanes: Optional[Iterable[Any]] = None) -> List[Dict
 
 def lanes_of_life(span: Optional[Interval], lanes: List[Dict[str, Any]]) -> List[str]:
     """The ids of the lanes a life meets (touching is not meeting, as in
-    :func:`s3dgraphy.periodization.overlaps`). An undated life meets none."""
-    from .periodization import overlaps
+    :func:`s3dgraphy.periodization.overlaps`). An undated life meets none.
+    MICRO-MF09: ALL of them — :func:`s3dgraphy.functional_units.span_horizons`."""
     if span is None or span == (None, None):
         return []
-    return [ln["id"] for ln in lanes
-            if (ln["start"], ln["end"]) != (None, None) and overlaps(span, (ln["start"], ln["end"]))]
+    # MICRO-MF09 · the one rule (functional_units.span_horizons)
+    return [h["id"] for h in FU_span_horizons(span, lanes)]
 
 
 def home_lane(graph: Any, node_id: str, lanes: List[Dict[str, Any]], *,
               chronology: Optional[Dict[str, Any]] = None) -> Optional[str]:
-    """The lane a node is DRAWN in: its first epoch when that is a lane (a
+    """The HOME lane of a node — where its MASTER is drawn (MICRO-MF09: the
+    node is present in EVERY lane its life meets, :func:`s3dgraphy.functional_units.horizons_of_life`;
+    in the others it is an instance): its first epoch when that is a lane (a
     sub-epoch → its top epoch); else the lane holding the start of its life
     (for a functional unit its DECLARED life); else the first lane its life
-    meets; None when it has no place."""
+    meets; None when it has no place. It never chooses by the widest overlap."""
     ids = [ln["id"] for ln in lanes]
     parents = _sub_epoch_parents(graph)
     for e in graph.edges:
@@ -280,6 +284,18 @@ def functional_matrix(graph: Any, *, lanes: Optional[Iterable[Any]] = None,
             lane_cache[nid] = home_lane(graph, nid, L, chronology=chron)
         return lane_cache[nid]
 
+    present_cache: Dict[str, List[Dict[str, Any]]] = {}
+
+    def present_of(nid: str) -> List[Dict[str, Any]]:
+        """MICRO-MF09 · every lane the node's life touches, with the share"""
+        if nid not in present_cache:
+            present_cache[nid] = FU_horizons_of_life(graph, nid, L, chronology=chron,
+                                                     epoch_intervals=intervals)
+        return present_cache[nid]
+
+    def present_ids(nid: str) -> List[str]:
+        return [h["id"] for h in present_of(nid)]
+
     def older(a: Optional[str], b: Optional[str]) -> bool:
         """is lane a EARLIER than lane b (by its start; by the order else)?"""
         if a is None or b is None or a == b:
@@ -306,14 +322,15 @@ def functional_matrix(graph: Any, *, lanes: Optional[Iterable[Any]] = None,
             mnode = graph.find_node_by_id(m)
             rows.append({"id": m, "name": getattr(mnode, "name", None) or m,
                          "type": getattr(mnode, "node_type", None),
-                         "lane": mlane,
+                         "lane": mlane, "lanes": present_ids(m),
                          "from_lane": mlane if older(mlane, flane) else None,
                          "from_name": lane_name.get(mlane) if older(mlane, flane) else None,
                          "life": m_life, "alive": alive,
                          "evidence": evidence_of_unit(mnode)})
         every = members(graph, fid, recursive=True)
+        here = present_of(fid)
         units.append({"id": fid, "name": fu.name, "scale": scale_of(fu), "life": fu_life,
-                      "lane": flane, "lanes": lanes_of_life(fu_life, L),
+                      "lane": flane, "lanes": [h["id"] for h in here], "present": here,
                       "parents": parents(graph, fid), "children": children(graph, fid),
                       "members": rows, "count": len(rows), "count_all": len(every),
                       "evidence": evidence(graph, every),
@@ -378,7 +395,10 @@ def overlay_plan(answer: Dict[str, Any]) -> Dict[str, Any]:
     neighbours ``a`` and ``b``); ``braces`` ``[{unit, slots, depth}]`` — the
     slots each functional unit of the lane encloses (its own, its borders, its
     children's), ``depth`` its nesting level counted from the leaves (0 = no
-    child in the lane: the outer braces get the larger margin);
+    child in the lane: the outer braces get the larger margin), ``instance``
+    true when the lane is not the unit's home lane (MICRO-MF09: a unit stands
+    in every lane its declared life touches; after the first, its braces are
+    an INSTANCE and enclose only the members alive in that lane);
     ``place`` — ``{unit_id: {lane, slot}}``: where the MASTER of each member
     stands (its own lane only);
     ``instances`` — ``[{unit, fu, lane, slot, reason, from_lane}]``: a
@@ -410,8 +430,14 @@ def overlay_plan(answer: Dict[str, Any]) -> Dict[str, Any]:
              "by_reason": {r: 0 for r in OVERLAY_REASONS},
              "memberships": 0, "memberships_spatial": 0}
 
+    def present_in(fid: str, lane: str) -> bool:
+        """MICRO-MF09 · a functional unit stands in EVERY lane its declared
+        life touches (``lanes``), its home lane included"""
+        u = units[fid]
+        return u.get("lane") == lane or lane in (u.get("lanes") or [])
+
     for lane in lane_ids:
-        here = [fid for fid in units if units[fid].get("lane") == lane]
+        here = [fid for fid in units if present_in(fid, lane)]
         if not here:
             continue
         here_set = set(here)
@@ -421,7 +447,12 @@ def overlay_plan(answer: Dict[str, Any]) -> Dict[str, Any]:
         # the members of the lane: in which units (direct) is each one?
         homes: Dict[str, List[str]] = {}
         for fid in here:
+            appearance = units[fid].get("lane") != lane
             for m in units[fid].get("members", []):
+                # MF09 · in a LATER appearance of the unit (an instance of its
+                # braces) only the members alive in that lane
+                if appearance and m.get("lane") != lane and lane not in (m.get("lanes") or []):
+                    continue
                 stats["memberships"] += 1
                 if m.get("lane") is None:
                     instances.append({"unit": m["id"], "fu": fid, "lane": lane, "reason": "no_lane",
@@ -551,7 +582,8 @@ def overlay_plan(answer: Dict[str, Any]) -> Dict[str, Any]:
             ks = [k for k in kids[fid] if k not in path]
             return 1 + max(depth(k, path | {fid}) for k in ks) if ks else 0
 
-        braces = [{"unit": fid, "slots": encloses(fid, set()), "depth": depth(fid, set())} for fid in seq]
+        braces = [{"unit": fid, "slots": encloses(fid, set()), "depth": depth(fid, set()),
+                   "instance": units[fid].get("lane") != lane} for fid in seq]
         lanes_out.append({"lane": lane, "slots": slots, "braces": braces})
 
     return {"lanes": lanes_out, "place": place, "instances": instances, "stats": stats}
