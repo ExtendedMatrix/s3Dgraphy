@@ -352,8 +352,16 @@ def numbered_title(number: str, title: str, numbered: bool = True) -> str:
 # to. Nothing here is a new block type: no SCHEMA_VERSION or datamodel bump.
 
 #: The figures an epoch or an activity carries with it: its Matrix, its 3D model,
-#: its plan (orthographic, from above), its three-quarter view, its sub-epochs.
-FIGURE_KINDS = ("matrix", "model", "plan", "three_quarter", "sub_epochs")
+#: its plan (orthographic, from above), its three-quarter view, its sub-epochs —
+#: and (MICRO-SEG26, 22 Nov 2026) a VIEW brought from the Space: ``view`` is a
+#: live one (the camera, the epoch, the layers, the selection kept in
+#: ``options``; drawn again from the graph), ``still`` a frozen picture (its
+#: image in ``options.still``, the date and the view's parameters in the caption).
+FIGURE_KINDS = ("matrix", "model", "plan", "three_quarter", "sub_epochs", "view", "still")
+
+#: The kinds that are ONE view each, not "the" plan of an epoch: two views of the
+#: same epoch are two plates, told apart by their label (``figure_variant``).
+VIEW_FIGURE_KINDS = ("view", "still")
 
 #: View types a reader cites rather than looks at — the same pair as the LaTeX
 #: exporter's ``CITED_VIEW_TYPES`` (not imported: the exporter imports this).
@@ -422,9 +430,15 @@ def figure_labels(chapters: Any, numbered: bool = True,
 def figure_variant(block: Any) -> str:
     """The figure kind that tells two figures of the same (view, subject)
     apart — a plan and a three-quarter view of one epoch are both ``scene3d``
-    — or "" for an ordinary embed."""
+    — or "" for an ordinary embed. A view brought from the Space (``view``,
+    ``still``, MICRO-SEG26) is one camera among many of the same epoch: its
+    variant carries its label too (``view-f3``), so each is its own plate."""
     fig = figure_of(block)
-    return str(fig.get("kind")) if fig else ""
+    if not fig:
+        return ""
+    kind = str(fig.get("kind"))
+    label = str(fig.get("label") or "").strip()
+    return f"{kind}-{label}" if kind in VIEW_FIGURE_KINDS and label else kind
 
 
 def heading_span(blocks: Any, index: int) -> Tuple[int, int]:

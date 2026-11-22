@@ -61,7 +61,8 @@ def _graph(numbered=True):
 
 
 def test_the_kinds_and_the_figure_of_a_block():
-    assert FIGURE_KINDS == ("matrix", "model", "plan", "three_quarter", "sub_epochs")
+    # the five of SEG24 first (MICRO-SEG26 added the views brought from the Space after them)
+    assert FIGURE_KINDS[:5] == ("matrix", "model", "plan", "three_quarter", "sub_epochs")
     assert figure_of(_fig("E2", "scene3d", "plan", "x")) == {"kind": "plan", "label": "x"}
     assert figure_of({"block_type": "embed", "ref": "E2", "view_type": "matrix"}) is None
     assert figure_of(_fig("E2", "scene3d", "nonsense", "x")) is None

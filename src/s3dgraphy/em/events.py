@@ -1,12 +1,16 @@
 """The events of ``em`` — a closed, small set (SPEC-plugin §2.5).
 
-Six for 1.6: ``selection-changed``, ``graph-changed`` (after a step was
+Six for 1.6 (seven since MICRO-SEG26, below): ``selection-changed``, ``graph-changed`` (after a step was
 applied, with the ids it touched), ``document-opened``, ``document-saved``
 (after the host saved: a listener never changes what is saved, SPEC-plugin
 §14.5), ``document-closed``, ``locale-changed``. Closed for the same reason
 the capabilities are: an event nobody emits is a subscription that silently
 never fires. (``document-saved`` came with W14, MICRO-PL17: the slot
-``event@1`` of SPEC-plugin §13.)
+``event@1`` of SPEC-plugin §13.) MICRO-SEG26 (22 Nov 2026) adds a seventh,
+``narrative-block-changed``: the block of a story the person is writing or
+reading changed (payload ``{narrative, chapter, block, narrates, cites,
+reading}``). Emitted by EMStudio's Narrative; a host without one never emits
+it, and says so in its docs.
 
 Two tables of listeners. The SCRIPT's (:func:`on`) — which a host may scope
 to one document's session (:func:`scope`: EMStudio keeps one per page
@@ -32,7 +36,7 @@ from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple
 from .messages import message
 
 EVENTS = ("selection-changed", "graph-changed", "document-opened", "document-saved",
-          "document-closed", "locale-changed")
+          "document-closed", "locale-changed", "narrative-block-changed")
 
 Listener = Callable[[Dict[str, Any]], Any]
 
