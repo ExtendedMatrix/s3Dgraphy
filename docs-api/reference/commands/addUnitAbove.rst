@@ -5,7 +5,7 @@
 addUnitAbove
 ============
 
-*Generated from EMStudio 1217b52 for em API 1.2.0.*
+*Generated from EMStudio 7b3688d for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -32,7 +32,7 @@ addUnitAbove
    * - Shortcut
      - none
    * - Defined in
-     - ``frontend/src/script-commands.json:87``
+     - ``frontend/src/script-commands.json:102``
 
 What it does
 ------------
@@ -63,7 +63,7 @@ Parameters
      - ``None``
      - its name (default: the next free one)
 
-Declared in ``frontend/src/script-commands.json:87`` — the one place the console's completion and this page read. A name the command does not take, a wrong type, a value not among the choices are refused with ``em.NotAvailable`` in the page's language, never dropped.
+Declared in ``frontend/src/script-commands.json:102`` — the one place the console's completion and this page read. A name the command does not take, a wrong type, a value not among the choices are refused with ``em.NotAvailable`` in the page's language, never dropped.
 
 From Python
 -----------

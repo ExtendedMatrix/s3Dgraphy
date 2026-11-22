@@ -5,7 +5,7 @@
 keymap:s3dbl
 ============
 
-*Generated from EMStudio 1217b52 for em API 1.2.0.*
+*Generated from EMStudio 7b3688d for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -14,9 +14,9 @@ keymap:s3dbl
    * - Id
      - ``keymap:s3dbl``
    * - Label (en)
-     - Move: the centre of rotation and the zoom go to the point under the cursor; nothing is selected
+     - Fly towards the point under the cursor, which becomes the centre of rotation; nothing is selected. A click, the wheel or a key stops the flight
    * - Label (it)
-     - Muoversi: il centro di rotazione e lo zoom vanno sul punto sotto il cursore; non seleziona niente
+     - Volare verso il punto sotto il cursore, che diventa il centro di rotazione; non seleziona niente. Un clic, la rotella o un tasto fermano il volo
    * - Kind
      - Gesture of the key map (no command id)
    * - Reachable from Python
@@ -26,12 +26,12 @@ keymap:s3dbl
    * - Shortcut
      - double-click (gesture, scope ``space``)
    * - Defined in
-     - ``frontend/src/keymap.ts:63``
+     - ``frontend/src/keymap.ts:65``
 
 .. admonition:: Not available from Python
    :class: warning
 
-   No id on purpose: a pure gesture (the centre of rotation under the cursor): a script sets the camera with em.app.space.set\_camera.
+   No id on purpose: a pure gesture (a flight towards the point under the cursor): a script sets the camera with em.app.space.set\_camera.
 
 What it does
 ------------

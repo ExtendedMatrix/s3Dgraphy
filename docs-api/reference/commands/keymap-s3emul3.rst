@@ -5,7 +5,7 @@
 keymap:s3emul3
 ==============
 
-*Generated from EMStudio 1217b52 for em API 1.2.0.*
+*Generated from EMStudio 7b3688d for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -26,7 +26,7 @@ keymap:s3emul3
    * - Shortcut
      - Alt + left drag («Emulate 3 button mouse») (gesture, scope ``space``)
    * - Defined in
-     - ``frontend/src/keymap.ts:74``
+     - ``frontend/src/keymap.ts:76``
 
 .. admonition:: Not available from Python
    :class: warning

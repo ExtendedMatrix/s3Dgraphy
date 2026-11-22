@@ -5,7 +5,7 @@
 keymap:s3sidebar
 ================
 
-*Generated from EMStudio 1217b52 for em API 1.2.0.*
+*Generated from EMStudio 7b3688d for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -14,9 +14,9 @@ keymap:s3sidebar
    * - Id
      - ``keymap:s3sidebar``
    * - Label (en)
-     - The «View» panel on the right: 3D cursor, selected object, view
+     - The sidebar on the right, its tabs: Item, Tool, View and the extensions'
    * - Label (it)
-     - Il pannello «Vista» a destra: cursore 3D, oggetto selezionato, vista
+     - La barra laterale a destra, i suoi tab: Elemento, Strumento, Vista e quelli delle estensioni
    * - Kind
      - Key of the key map (no command id)
    * - Reachable from Python
@@ -26,12 +26,12 @@ keymap:s3sidebar
    * - Shortcut
      - ``N`` (key map, scope ``space``)
    * - Defined in
-     - ``frontend/src/keymap.ts:83``
+     - ``frontend/src/keymap.ts:85``
 
 .. admonition:: Not available from Python
    :class: warning
 
-   No id on purpose: opens a panel a person reads: a script reads the cursor and the camera through em.app.space.
+   No id on purpose: opens a panel a person reads: a script opens its tabs through em.app.space.sidebar (open, tabs, close).
 
 What it does
 ------------

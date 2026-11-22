@@ -5,7 +5,7 @@
 keymap:bubbleArrows
 ===================
 
-*Generated from EMStudio 1217b52 for em API 1.2.0.*
+*Generated from EMStudio 7b3688d for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -26,7 +26,7 @@ keymap:bubbleArrows
    * - Shortcut
      - ``↑ ↓ · Enter`` (key map, scope ``trace``)
    * - Defined in
-     - ``frontend/src/keymap.ts:106``
+     - ``frontend/src/keymap.ts:110``
 
 .. admonition:: Not available from Python
    :class: warning

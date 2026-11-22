@@ -5,7 +5,7 @@
 quitFile
 ========
 
-*Generated from EMStudio 1217b52 for em API 1.2.0.*
+*Generated from EMStudio 7b3688d for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -34,7 +34,7 @@ quitFile
    * - Shortcut
      - ``⌘Q`` (macOS) / ``Ctrl+Q`` (Windows, Linux)
    * - Defined in
-     - ``frontend/src/menu-table.ts:234``
+     - ``frontend/src/menu-table.ts:244``
 
 .. admonition:: Not available from Python
    :class: warning

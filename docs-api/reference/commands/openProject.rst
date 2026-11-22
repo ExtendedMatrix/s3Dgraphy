@@ -5,7 +5,7 @@
 openProject
 ===========
 
-*Generated from EMStudio 1217b52 for em API 1.2.0.*
+*Generated from EMStudio 7b3688d for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -34,7 +34,7 @@ openProject
    * - Shortcut
      - none
    * - Defined in
-     - ``frontend/src/menu-table.ts:172``
+     - ``frontend/src/menu-table.ts:176``
 
 What it does
 ------------

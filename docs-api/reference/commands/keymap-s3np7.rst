@@ -5,7 +5,7 @@
 keymap:s3np7
 ============
 
-*Generated from EMStudio 1217b52 for em API 1.2.0.*
+*Generated from EMStudio 7b3688d for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -26,7 +26,7 @@ keymap:s3np7
    * - Shortcut
      - Numpad 7 (gesture, scope ``space``)
    * - Defined in
-     - ``frontend/src/keymap.ts:78``
+     - ``frontend/src/keymap.ts:80``
 
 What it does
 ------------

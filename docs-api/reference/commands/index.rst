@@ -5,27 +5,27 @@
 EMStudio commands
 =================
 
-*Generated from EMStudio 1217b52 for em API 1.2.0.*
+*Generated from EMStudio 7b3688d for em API 1.2.0.*
 
-Every command of EMStudio's menus (44 rows of the command table, 30 with a script form), the 26 named actions (keys and gestures given an id for scripts), the items the operating system draws in the macOS menu bar, and the keys and gestures of the key map. ``em.app.commands.run(command_id, **params)`` reaches a command or an action by the id in the first column (69 in all); 58 keys and gestures have no id, each page says why.
+Every command of EMStudio's menus (59 rows of the command table, 39 with a script form), the 26 named actions (keys and gestures given an id for scripts), the items the operating system draws in the macOS menu bar, and the keys and gestures of the key map. ``em.app.commands.run(command_id, **params)`` reaches a command or an action by the id in the first column (83 in all); 63 keys and gestures have no id, each page says why.
 
 As Blender's operators: a command whose values are all given runs WITHOUT its window (``EXEC_DEFAULT``); with values missing its window opens, filled with what was given (``INVOKE_DEFAULT``). The parameters of each command are declared once, in ``frontend/src/script-commands.json``: these pages, ``em.app.commands.list()`` and the console's Tab read them.
 
 How ``run_command`` reaches the page
 ------------------------------------
 
-#. ``src/s3dgraphy/em/__init__.py:233`` — em.app.commands.run -\> host app run\_command
+#. ``src/s3dgraphy/em/__init__.py:237`` — em.app.commands.run -\> host app run\_command
 #. ``src/s3dgraphy/em/host.py:147`` — NullHost: NotAvailable outside a host
-#. ``tools/em_py.py:764`` — EMStudioApp.run\_command asks the page: request kind "command" with id and slots
-#. ``frontend/src/py-session.ts:386`` — PySession answers the request through the page's host.command(id, slots); false -\> error py.noCommand
-#. ``frontend/src/main.ts:66702`` — the page's host hook: command -\> runScriptCommand(id, params)
-#. ``frontend/src/main.ts:66769`` — runScriptCommand: the params checked against script-commands.json (refused in the page's words); an action runs its handler; a command with a script form runs it (no window when its values are given); otherwise runCommand(id)
-#. ``frontend/src/menu-ui.ts:216`` — runCommand: plugin:\<id\>/\<cmd\> -\> plugin invocation; otherwise findRow(id) and click the row's button
-#. ``frontend/src/menu-ui.ts:237`` — findRow: only rows of kind "cmd" in MENUS (sub-menus walked)
+#. ``tools/em_py.py:932`` — EMStudioApp.run\_command asks the page: request kind "command" with id and slots
+#. ``frontend/src/py-session.ts:392`` — PySession answers the request through the page's host.command(id, slots); false -\> error py.noCommand
+#. ``frontend/src/main.ts:69459`` — the page's host hook: command -\> runScriptCommand(id, params)
+#. ``frontend/src/main.ts:69526`` — runScriptCommand: the params checked against script-commands.json (refused in the page's words); an action runs its handler; a command with a script form runs it (no window when its values are given); otherwise runCommand(id)
+#. ``frontend/src/menu-ui.ts:221`` — runCommand: plugin:\<id\>/\<cmd\> -\> plugin invocation; otherwise findRow(id) and click the row's button
+#. ``frontend/src/menu-ui.ts:242`` — findRow: only rows of kind "cmd" in MENUS (sub-menus walked)
 
 Plugin commands are reachable too, as ``plugin:<plugin>/<command>`` (registered at run time, not listed here; see ``em.plugins``). No command declares whether it writes to the graph: the column says ``unknown``.
 
-Menu commands (44)
+Menu commands (59)
 ------------------
 
 .. list-table::
@@ -151,6 +151,13 @@ Menu commands (44)
      - —
      - yes
      - invoke
+   * - :doc:`stratiminer <stratiminer>`
+     - StratiMiner
+     - StratiMiner
+     - File ▸ StratiMiner
+     - —
+     - yes
+     - window
    * - :doc:`integrate <integrate>`
      - Integrate into this file…
      - Integra in questo file…
@@ -242,6 +249,13 @@ Menu commands (44)
      - —
      - yes
      - window
+   * - :doc:`georef <georef>`
+     - Georeferencing…
+     - Georeferenziazione…
+     - File ▸ Georeferencing…
+     - —
+     - yes
+     - window
    * - :doc:`createRoom <createRoom>`
      - Create a room…
      - Crea una stanza…
@@ -277,13 +291,6 @@ Menu commands (44)
      - ``⌘Q``
      - no
      - none
-   * - :doc:`georef <georef>`
-     - Georeferencing…
-     - Georeferenziazione…
-     - Tools ▸ Georeferencing…
-     - —
-     - yes
-     - window
    * - :doc:`undo <undo>`
      - Undo
      - Annulla
@@ -296,6 +303,83 @@ Menu commands (44)
      - Ripristina
      - Edit ▸ Redo
      - ``⇧⌘Z``
+     - yes
+     - exec
+   * - :doc:`commandSearch <commandSearch>`
+     - Search commands…
+     - Cerca comandi…
+     - Edit ▸ Search commands…
+     - ``⌘K``
+     - no
+     - none
+   * - :doc:`uniformSpellings <uniformSpellings>`
+     - Normalise spellings…
+     - Uniforma le grafie…
+     - Edit ▸ Clean up ▸ Normalise spellings…
+     - —
+     - yes
+     - window
+   * - :doc:`sortLanes <sortLanes>`
+     - Sort lanes by date
+     - Ordina lane per data
+     - Edit ▸ Clean up ▸ Sort lanes by date
+     - —
+     - yes
+     - exec
+   * - :doc:`addMenu <addMenu>`
+     - Add node…
+     - Aggiungi nodo…
+     - Edit ▸ Add node…
+     - —
+     - yes
+     - window
+   * - :doc:`chronology <chronology>`
+     - Check the chronology…
+     - Verifica la cronologia…
+     - Edit ▸ Check the chronology…
+     - —
+     - yes
+     - window
+   * - :doc:`scripting <scripting>`
+     - Scripting workspace
+     - Spazio di lavoro Scripting
+     - Window ▸ Scripting workspace
+     - —
+     - yes
+     - exec
+   * - :doc:`console <console>`
+     - Python console… · beta
+     - Console Python… · beta
+     - Window ▸ Python console… · beta
+     - —
+     - yes
+     - exec
+   * - :doc:`detachWindow <detachWindow>`
+     - Detach the active window
+     - Stacca la finestra attiva
+     - Window ▸ Detach the active window
+     - —
+     - yes
+     - exec
+   * - :doc:`returnWindows <returnWindows>`
+     - Bring back the detached windows
+     - Riporta le finestre staccate
+     - Window ▸ Bring back the detached windows
+     - —
+     - yes
+     - exec
+   * - :doc:`maximizeArea <maximizeArea>`
+     - Maximise the area
+     - Ingrandisci l'area
+     - Window ▸ Maximise the area
+     - —
+     - yes
+     - exec
+   * - :doc:`areaHeaders <areaHeaders>`
+     - Area headers
+     - Intestazioni delle aree
+     - Window ▸ Area headers
+     - —
      - yes
      - exec
    * - :doc:`workspaces <workspaces>`
@@ -338,6 +422,27 @@ Menu commands (44)
      - Impostazioni…
      - Help ▸ Settings…
      - ``⌘,``
+     - yes
+     - exec
+   * - :doc:`colours <colours>`
+     - Colours…
+     - Colori…
+     - Help ▸ Colours…
+     - —
+     - yes
+     - window
+   * - :doc:`vocabularies <vocabularies>`
+     - Vocabularies…
+     - Vocabolari…
+     - Help ▸ Vocabularies…
+     - —
+     - yes
+     - exec
+   * - :doc:`extensions <extensions>`
+     - Extensions…
+     - Estensioni…
+     - Help ▸ Extensions…
+     - —
      - yes
      - exec
    * - :doc:`updatesHelp <updatesHelp>`
@@ -658,7 +763,7 @@ Operating-system menu items (macOS menu bar) (14)
      - no
      - —
 
-Keys of the key map without a command (40)
+Keys of the key map without a command (45)
 ------------------------------------------
 
 .. list-table::
@@ -771,10 +876,24 @@ Keys of the key map without a command (40)
      - via
      - → spaceCursorReset
    * - :doc:`keymap:s3sidebar <keymap-s3sidebar>`
-     - The «View» panel on the right: 3D cursor, selected object, view
-     - Il pannello «Vista» a destra: cursore 3D, oggetto selezionato, vista
+     - The sidebar on the right, its tabs: Item, Tool, View and the extensions'
+     - La barra laterale a destra, i suoi tab: Elemento, Strumento, Vista e quelli delle estensioni
      - —
      - ``N``
+     - no
+     - —
+   * - :doc:`keymap:s3toNarrative <keymap-s3toNarrative>`
+     - Bring the view as it is now into the Narrative's active block (dynamic or static)
+     - Porta la vista com'è ora nel blocco attivo della Narrative (dinamica o statica)
+     - —
+     - ``⇧N``
+     - no
+     - —
+   * - :doc:`keymap:s3toolbar <keymap-s3toolbar>`
+     - The toolbar on the left: select, 3D cursor and the extensions' tools
+     - La barra degli strumenti a sinistra: seleziona, cursore 3D e gli strumenti delle estensioni
+     - —
+     - ``T``
      - no
      - —
    * - :doc:`keymap:s3frameSel <keymap-s3frameSel>`
@@ -791,13 +910,6 @@ Keys of the key map without a command (40)
      - ``Home``
      - via
      - → spaceFrameAll
-   * - :doc:`keymap:s3outliner <keymap-s3outliner>`
-     - Open and close the Space's Outliner
-     - Apre e chiude l'Outliner dello Spazio
-     - —
-     - ``T``
-     - no
-     - —
    * - :doc:`keymap:s3add <keymap-s3add>`
      - Add a base shape at the 3D cursor
      - Aggiungi una forma base al cursore 3D
@@ -936,6 +1048,34 @@ Keys of the key map without a command (40)
      - Cita un nodo
      - —
      - ``[[``
+     - no
+     - —
+   * - :doc:`keymap:nvTfChapter <keymap-nvTfChapter>`
+     - Narrative, Write: the part into a chapter
+     - Narrativa, Scrivi: la parte in capitolo
+     - —
+     - ``⌘⌥1``
+     - no
+     - —
+   * - :doc:`keymap:nvTfSection <keymap-nvTfSection>`
+     - Narrative, Write: the part into a section
+     - Narrativa, Scrivi: la parte in sezione
+     - —
+     - ``⌘⌥2``
+     - no
+     - —
+   * - :doc:`keymap:nvTfSubsection <keymap-nvTfSubsection>`
+     - Narrative, Write: the part into a subsection
+     - Narrativa, Scrivi: la parte in sottosezione
+     - —
+     - ``⌘⌥3``
+     - no
+     - —
+   * - :doc:`keymap:nvTfParagraph <keymap-nvTfParagraph>`
+     - Narrative, Write: the part into a paragraph
+     - Narrativa, Scrivi: la parte in paragrafo
+     - —
+     - ``⌘⌥0``
      - no
      - —
    * - :doc:`keymap:menuArrows <keymap-menuArrows>`
@@ -1108,8 +1248,8 @@ Gestures of the key map (45)
      - no
      - —
    * - :doc:`keymap:s3dbl <keymap-s3dbl>`
-     - Move: the centre of rotation and the zoom go to the point under the cursor; nothing is selected
-     - Muoversi: il centro di rotazione e lo zoom vanno sul punto sotto il cursore; non seleziona niente
+     - Fly towards the point under the cursor, which becomes the centre of rotation; nothing is selected. A click, the wheel or a key stops the flight
+     - Volare verso il punto sotto il cursore, che diventa il centro di rotazione; non seleziona niente. Un clic, la rotella o un tasto fermano il volo
      - —
      - double-click
      - no
@@ -1289,6 +1429,7 @@ Sub-menus filled at run time
 * ``openRecent`` — Open Recent: dynamic (recent)
 * ``import`` — Import: plugin slot ``menu.file.import@1``
 * ``export`` — Export: plugin slot ``menu.file.export@1``
+* ``workspaces`` — Workspaces: dynamic (workspaces)
 
 .. toctree::
    :hidden:
@@ -1296,24 +1437,31 @@ Sub-menus filled at run time
 
    about
    aboutHelp
+   addMenu
    addNode
    addUnitAbove
    addUnitBelow
+   areaHeaders
    back
    bringIn
    bringIntoRoom
+   chronology
    cleanFile
    close
    closeProject
    collect
+   colours
+   commandSearch
    compact
    composeFromGraph
    connect
+   console
    consolidate
    copy
    createRoom
    cut
    deleteNodes
+   detachWindow
    door
    doorDosco
    doorFolder
@@ -1321,6 +1469,7 @@ Sub-menus filled at run time
    exportSvg
    exportTtl
    extendToEpoch
+   extensions
    fit
    fold
    frameNode
@@ -1360,6 +1509,10 @@ Sub-menus filled at run time
    keymap-multi
    keymap-nudge
    keymap-nudge10
+   keymap-nvTfChapter
+   keymap-nvTfParagraph
+   keymap-nvTfSection
+   keymap-nvTfSubsection
    keymap-pan
    keymap-panMiddle
    keymap-polyClose
@@ -1392,7 +1545,6 @@ Sub-menus filled at run time
    keymap-s3npCtrl
    keymap-s3npDot
    keymap-s3orbit
-   keymap-s3outliner
    keymap-s3pan
    keymap-s3parent
    keymap-s3pick
@@ -1404,6 +1556,8 @@ Sub-menus filled at run time
    keymap-s3shiftClick
    keymap-s3sidebar
    keymap-s3snap
+   keymap-s3toNarrative
+   keymap-s3toolbar
    keymap-s3wheel
    keymap-s3zoomDrag
    keymap-search
@@ -1421,6 +1575,7 @@ Sub-menus filled at run time
    legend
    magnify
    maximize
+   maximizeArea
    minimize
    moveToEpoch
    new
@@ -1441,25 +1596,31 @@ Sub-menus filled at run time
    reflow
    relocate
    reorderProject
+   returnWindows
    revealDoc
    save
    saveAll
    saveAs
+   scripting
    selectAll
    services
    settings
    settingsHelp
    shortcuts
    showAll
+   sortLanes
    spaceCursorReset
    spaceFrameAll
    spaceFrameSelected
    spaceToggleOrtho
    spaceView
+   stratiminer
    undo
    unfold
+   uniformSpellings
    updates
    updatesHelp
+   vocabularies
    workspaces
    zoomIn
    zoomOut

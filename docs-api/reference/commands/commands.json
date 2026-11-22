@@ -1,6 +1,6 @@
 {
   "generated_from": {
-    "emstudio_sha": "1217b52",
+    "emstudio_sha": "7b3688d",
     "emstudio_read": "HEAD",
     "em_api_version": "1.2.0"
   },
@@ -17,7 +17,7 @@
   "library_chain": [
     {
       "file": "src/s3dgraphy/em/__init__.py",
-      "line": 233,
+      "line": 237,
       "what": "em.app.commands.run -> host app run_command"
     },
     {
@@ -38,37 +38,37 @@
       {
         "key": "em_py.run_command",
         "file": "tools/em_py.py",
-        "line": 764,
+        "line": 932,
         "what": "EMStudioApp.run_command asks the page: request kind \"command\" with id and slots"
       },
       {
         "key": "py_session.case_command",
         "file": "frontend/src/py-session.ts",
-        "line": 386,
+        "line": 392,
         "what": "PySession answers the request through the page's host.command(id, slots); false -> error py.noCommand"
       },
       {
         "key": "main.host_command",
         "file": "frontend/src/main.ts",
-        "line": 66702,
+        "line": 69459,
         "what": "the page's host hook: command -> runScriptCommand(id, params)"
       },
       {
         "key": "main.runScriptCommand",
         "file": "frontend/src/main.ts",
-        "line": 66769,
+        "line": 69526,
         "what": "runScriptCommand: the params checked against script-commands.json (refused in the page's words); an action runs its handler; a command with a script form runs it (no window when its values are given); otherwise runCommand(id)"
       },
       {
         "key": "menu_ui.runCommand",
         "file": "frontend/src/menu-ui.ts",
-        "line": 216,
+        "line": 221,
         "what": "runCommand: plugin:<id>/<cmd> -> plugin invocation; otherwise findRow(id) and click the row's button"
       },
       {
         "key": "menu_ui.findRow",
         "file": "frontend/src/menu-ui.ts",
-        "line": 237,
+        "line": 242,
         "what": "findRow: only rows of kind \"cmd\" in MENUS (sub-menus walked)"
       }
     ]
@@ -98,7 +98,7 @@
       },
       "dynamic": "recent",
       "slot": null,
-      "line": 173
+      "line": 177
     },
     {
       "id": "import",
@@ -110,7 +110,7 @@
       },
       "dynamic": null,
       "slot": "menu.file.import@1",
-      "line": 191
+      "line": 200
     },
     {
       "id": "export",
@@ -128,7 +128,7 @@
       },
       "dynamic": null,
       "slot": "menu.file.export@1",
-      "line": 195
+      "line": 204
     },
     {
       "id": "externalData",
@@ -139,7 +139,7 @@
       },
       "dynamic": null,
       "slot": null,
-      "line": 207
+      "line": 216
     },
     {
       "id": "cleanUp",
@@ -150,7 +150,7 @@
       },
       "dynamic": null,
       "slot": null,
-      "line": 216
+      "line": 225
     },
     {
       "id": "room",
@@ -161,7 +161,29 @@
       },
       "dynamic": null,
       "slot": null,
-      "line": 222
+      "line": 234
+    },
+    {
+      "id": "graphCleanUp",
+      "menu": "edit",
+      "label": {
+        "en": "Clean up",
+        "it": "Pulizia"
+      },
+      "dynamic": null,
+      "slot": null,
+      "line": 264
+    },
+    {
+      "id": "workspaces",
+      "menu": "window",
+      "label": {
+        "en": "Workspaces",
+        "it": "Spazi di lavoro"
+      },
+      "dynamic": "workspaces",
+      "slot": null,
+      "line": 304
     }
   ],
   "commands": [
@@ -205,7 +227,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 138
+        "line": 142
       },
       "script": {
         "form": "exec",
@@ -262,7 +284,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 139
+        "line": 143
       },
       "script": {
         "form": "exec",
@@ -341,7 +363,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 141
+        "line": 145
       },
       "script": {
         "form": "exec",
@@ -398,7 +420,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 143
+        "line": 147
       }
     },
     {
@@ -441,7 +463,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 145
+        "line": 149
       }
     },
     {
@@ -484,7 +506,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 146
+        "line": 150
       }
     },
     {
@@ -527,7 +549,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 147
+        "line": 151
       }
     },
     {
@@ -570,7 +592,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 149
+        "line": 153
       }
     },
     {
@@ -656,7 +678,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 163
+        "line": 167
       },
       "script": {
         "form": "exec",
@@ -724,7 +746,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 165
+        "line": 169
       },
       "script": {
         "form": "window",
@@ -816,7 +838,7 @@
       ],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 166
+        "line": 170
       },
       "script": {
         "form": "invoke",
@@ -879,7 +901,7 @@
       ],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 170
+        "line": 174
       },
       "script": {
         "form": "invoke",
@@ -949,7 +971,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 172
+        "line": 176
       },
       "script": {
         "form": "window",
@@ -1047,7 +1069,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 175
+        "line": 179
       },
       "script": {
         "form": "exec",
@@ -1152,7 +1174,7 @@
       ],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 176
+        "line": 180
       },
       "script": {
         "form": "invoke",
@@ -1225,7 +1247,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 177
+        "line": 181
       },
       "script": {
         "form": "exec",
@@ -1293,7 +1315,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 178
+        "line": 182
       },
       "script": {
         "form": "exec",
@@ -1397,7 +1419,7 @@
       ],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 182
+        "line": 186
       },
       "script": {
         "form": "invoke",
@@ -1489,7 +1511,7 @@
       ],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 184
+        "line": 188
       },
       "script": {
         "form": "invoke",
@@ -1519,8 +1541,8 @@
       },
       "title_key": "door.folderMenuHint",
       "title": {
-        "en": "Bring a folder in: read as DosCo, or by an add-on that reads folders (a stack of geophysical slices, say)",
-        "it": "Porta dentro una cartella: letta come DosCo, o da un componente aggiuntivo che legge le cartelle (una pila di fette geofisiche, per esempio)"
+        "en": "Bring a folder in: read as DosCo, or by an extension that reads folders (a stack of geophysical slices, say)",
+        "it": "Porta dentro una cartella: letta come DosCo, o da un'estensione che legge le cartelle (una pila di fette geofisiche, per esempio)"
       },
       "button": "btn-porta-dentro-cartella",
       "os_item": null,
@@ -1553,7 +1575,7 @@
       ],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 186
+        "line": 190
       },
       "script": {
         "form": "invoke",
@@ -1616,7 +1638,7 @@
       ],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 188
+        "line": 194
       },
       "script": {
         "form": "invoke",
@@ -1629,6 +1651,67 @@
         "source": {
           "file": "frontend/src/script-commands.json",
           "line": 47
+        }
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "stratiminer",
+      "page": "stratiminer",
+      "kind": "menu",
+      "command_id": "stratiminer",
+      "label_key": "tab.stratiminer",
+      "label": {
+        "en": "StratiMiner",
+        "it": "StratiMiner",
+        "el": "StratiMiner",
+        "he": "StratiMiner",
+        "es": "StratiMiner",
+        "pl": "StratiMiner",
+        "ro": "StratiMiner",
+        "fr": "StratiMiner"
+      },
+      "title_key": "menu.stratiminerTitle",
+      "title": {
+        "en": "StratiMiner: build a graph from a folder of unstructured sources, via the reviewable em_data.xlsx table",
+        "it": "StratiMiner: costruisci un grafo da una cartella di fonti non strutturate, passando per la tabella em_data.xlsx da rivedere",
+        "de": "StratiMiner: einen Graphen aus einem Ordner unstrukturierter Quellen bauen, über die prüfbare Tabelle em_data.xlsx"
+      },
+      "button": "btn-tool-stratiminer",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ StratiMiner",
+        "it": "File ▸ StratiMiner",
+        "de": "Datei ▸ StratiMiner",
+        "el": "Αρχείο ▸ StratiMiner",
+        "he": "קובץ ▸ StratiMiner",
+        "es": "Archivo ▸ StratiMiner",
+        "pl": "Plik ▸ StratiMiner",
+        "ro": "Fișier ▸ StratiMiner",
+        "fr": "Fichier ▸ StratiMiner"
+      },
+      "surfaces": {},
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 197
+      },
+      "script": {
+        "form": "window",
+        "exec_when": [],
+        "why": "the folder, the table and its review are a person's, in StratiMiner's window: no script form yet",
+        "doc": "Open StratiMiner: a folder of unstructured sources becomes a graph through the reviewable em_data.xlsx table (a choice of File ▸ Bring in…).",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 75
         }
       },
       "same_button_as": []
@@ -1686,7 +1769,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 190
+        "line": 199
       },
       "script": {
         "form": "window",
@@ -1763,7 +1846,7 @@
       ],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 192
+        "line": 201
       },
       "script": {
         "form": "invoke",
@@ -1835,7 +1918,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 193
+        "line": 202
       },
       "script": {
         "form": "window",
@@ -1911,7 +1994,7 @@
       ],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 196
+        "line": 205
       },
       "script": {
         "form": "exec",
@@ -1987,7 +2070,7 @@
       ],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 197
+        "line": 206
       },
       "script": {
         "form": "exec",
@@ -2055,7 +2138,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 201
+        "line": 210
       },
       "script": {
         "form": "window",
@@ -2123,7 +2206,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 202
+        "line": 211
       },
       "script": {
         "form": "window",
@@ -2191,7 +2274,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 203
+        "line": 212
       },
       "script": {
         "form": "window",
@@ -2272,7 +2355,7 @@
       ],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 209
+        "line": 218
       },
       "script": {
         "form": "invoke",
@@ -2342,7 +2425,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 211
+        "line": 220
       },
       "script": {
         "form": "window",
@@ -2410,7 +2493,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 213
+        "line": 222
       },
       "script": {
         "form": "exec",
@@ -2478,7 +2561,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 218
+        "line": 227
       },
       "script": {
         "form": "window",
@@ -2546,7 +2629,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 219
+        "line": 228
       },
       "script": {
         "form": "window",
@@ -2557,6 +2640,74 @@
         "source": {
           "file": "frontend/src/script-commands.json",
           "line": 68
+        }
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "georef",
+      "page": "georef",
+      "kind": "menu",
+      "command_id": "georef",
+      "label_key": "gr.menu",
+      "label": {
+        "en": "Georeferencing…",
+        "it": "Georeferenziazione…"
+      },
+      "title_key": "gr.menuTitle",
+      "title": {
+        "en": "The coordinate system of each graph of the file, and of its models",
+        "it": "Il sistema di coordinate di ciascun grafo del file, e dei suoi modelli"
+      },
+      "button": "btn-georef",
+      "os_item": null,
+      "menu": "file",
+      "menu_path": {
+        "en": "File ▸ Georeferencing…",
+        "it": "File ▸ Georeferenziazione…",
+        "de": "Datei ▸ Georeferencing…",
+        "el": "Αρχείο ▸ Georeferencing…",
+        "he": "קובץ ▸ Georeferencing…",
+        "es": "Archivo ▸ Georeferencing…",
+        "pl": "Plik ▸ Georeferencing…",
+        "ro": "Fișier ▸ Georeferencing…",
+        "fr": "Fichier ▸ Georeferencing…"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 233
+      },
+      "script": {
+        "form": "window",
+        "exec_when": [],
+        "why": "the card of each graph's system is answered in its window: no script form yet",
+        "doc": "Georeferencing.",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 74
         }
       },
       "same_button_as": []
@@ -2614,7 +2765,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 223
+        "line": 235
       },
       "script": {
         "form": "window",
@@ -2682,7 +2833,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 224
+        "line": 236
       },
       "script": {
         "form": "window",
@@ -2753,7 +2904,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 227
+        "line": 239
       },
       "script": {
         "form": "exec",
@@ -2821,7 +2972,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 228
+        "line": 240
       },
       "script": {
         "form": "exec",
@@ -2882,7 +3033,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 234
+        "line": 244
       },
       "script": {
         "form": "none",
@@ -2893,73 +3044,6 @@
         "source": {
           "file": "frontend/src/script-commands.json",
           "line": 73
-        }
-      },
-      "same_button_as": []
-    },
-    {
-      "id": "georef",
-      "page": "georef",
-      "kind": "menu",
-      "command_id": "georef",
-      "label_key": "gr.menu",
-      "label": {
-        "en": "Georeferencing…",
-        "it": "Georeferenziazione…"
-      },
-      "title_key": "gr.menuTitle",
-      "title": {
-        "en": "The coordinate system of each graph of the file, and of its models",
-        "it": "Il sistema di coordinate di ciascun grafo del file, e dei suoi modelli"
-      },
-      "button": "btn-georef",
-      "os_item": null,
-      "menu": "tools",
-      "menu_path": {
-        "en": "Tools ▸ Georeferencing…",
-        "it": "Strumenti ▸ Georeferenziazione…",
-        "de": "Tools ▸ Georeferencing…",
-        "el": "Tools ▸ Georeferencing…",
-        "he": "Tools ▸ Georeferencing…",
-        "es": "Tools ▸ Georeferencing…",
-        "pl": "Tools ▸ Georeferencing…",
-        "ro": "Tools ▸ Georeferencing…",
-        "fr": "Tools ▸ Georeferencing…"
-      },
-      "surfaces": {
-        "web": [
-          "internal"
-        ],
-        "mac": [
-          "internal"
-        ],
-        "win": [
-          "internal"
-        ],
-        "linux": [
-          "internal"
-        ]
-      },
-      "accel": null,
-      "accel_not_on_web": false,
-      "shortcut": null,
-      "keymap": null,
-      "reachable_from_python": "yes",
-      "writes_graph": "unknown",
-      "slots": [],
-      "source": {
-        "file": "frontend/src/menu-table.ts",
-        "line": 247
-      },
-      "script": {
-        "form": "window",
-        "exec_when": [],
-        "why": "the card of each graph's system is answered in its window: no script form yet",
-        "doc": "Georeferencing.",
-        "returns": null,
-        "source": {
-          "file": "frontend/src/script-commands.json",
-          "line": 74
         }
       },
       "same_button_as": []
@@ -3048,7 +3132,7 @@
       ],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 257
+        "line": 254
       },
       "script": {
         "form": "exec",
@@ -3058,7 +3142,7 @@
         "returns": "how many steps were undone",
         "source": {
           "file": "frontend/src/script-commands.json",
-          "line": 75
+          "line": 90
         }
       },
       "same_button_as": []
@@ -3147,7 +3231,7 @@
       ],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 258
+        "line": 255
       },
       "script": {
         "form": "exec",
@@ -3157,7 +3241,7 @@
         "returns": "how many steps were redone",
         "source": {
           "file": "frontend/src/script-commands.json",
-          "line": 77
+          "line": 92
         }
       },
       "same_button_as": []
@@ -3199,7 +3283,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 259
+        "line": 256
       }
     },
     {
@@ -3239,8 +3323,349 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 259
+        "line": 256
       }
+    },
+    {
+      "id": "commandSearch",
+      "page": "commandSearch",
+      "kind": "menu",
+      "command_id": "commandSearch",
+      "label_key": "cmds.menu",
+      "label": {
+        "en": "Search commands…",
+        "it": "Cerca comandi…"
+      },
+      "title_key": "cmds.menuTitle",
+      "title": {
+        "en": "Find any command by its name, in English or in Italian, and see where it lives (F3)",
+        "it": "Trova un comando per nome, in italiano o in inglese, e vedi dove vive (F3)"
+      },
+      "button": "btn-command-search",
+      "os_item": null,
+      "menu": "edit",
+      "menu_path": {
+        "en": "Edit ▸ Search commands…",
+        "it": "Modifica ▸ Cerca comandi…",
+        "de": "Edit ▸ Search commands…",
+        "el": "Edit ▸ Search commands…",
+        "he": "Edit ▸ Search commands…",
+        "es": "Edit ▸ Search commands…",
+        "pl": "Edit ▸ Search commands…",
+        "ro": "Edit ▸ Search commands…",
+        "fr": "Edit ▸ Search commands…"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": "CmdOrCtrl+K",
+      "accel_not_on_web": false,
+      "shortcut": {
+        "mac": "⌘K",
+        "pc": "Ctrl+K"
+      },
+      "keymap": {
+        "id": "commandSearch",
+        "keys": "F3 · ⌘K",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "app",
+        "label_key": "keys.commandSearch",
+        "label": {
+          "en": "Search every command by its name (Edit ▸ Search commands…)",
+          "it": "Cerca ogni comando per nome (Modifica ▸ Cerca comandi…)"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 32
+        },
+        "script": {
+          "command": "commandSearch"
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 259
+      },
+      "script": {
+        "form": "none",
+        "exec_when": [],
+        "why": "a field a person types in: a script runs a command by its id with em.app.commands.run",
+        "doc": "Open the command search (F3, Cmd/Ctrl+K): every command by its name, where it lives, its keys.",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 76
+        }
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "uniformSpellings",
+      "page": "uniformSpellings",
+      "kind": "menu",
+      "command_id": "uniformSpellings",
+      "label_key": "menu.uniformSpellings",
+      "label": {
+        "en": "Normalise spellings…",
+        "it": "Uniforma le grafie…"
+      },
+      "title_key": "menu.uniformSpellingsTitle",
+      "title": {
+        "en": "Bring the edges written with an older spelling to the canonical one, in the whole graph — one undo step",
+        "it": "Porta alla grafia canonica gli archi scritti con una grafia vecchia, in tutto il grafo — un solo annulla",
+        "de": "Kanten mit älterer Schreibweise im ganzen Graphen auf die kanonische bringen — ein Rückgängig",
+        "el": "Φέρνει στην κανονική γραφή τις ακμές με παλαιότερη γραφή, σε όλο τον γράφο — μία αναίρεση",
+        "he": "מביא לכתיב הקנוני קשתות שנכתבו בכתיב ישן, בכל הגרף — ביטול אחד",
+        "es": "Llevar a la grafía canónica las aristas escritas con una grafía antigua, en todo el grafo — un solo deshacer",
+        "pl": "Sprowadza krawędzie zapisane starszą pisownią do kanonicznej, w całym grafie — jedno cofnięcie",
+        "ro": "Aduce la grafia canonică muchiile scrise cu o grafie veche, în tot graful — o singură anulare",
+        "fr": "Ramener à la graphie canonique les arêtes écrites avec une ancienne graphie, dans tout le graphe — une seule annulation"
+      },
+      "button": "btn-tool-uniform",
+      "os_item": null,
+      "menu": "edit",
+      "menu_path": {
+        "en": "Edit ▸ Clean up ▸ Normalise spellings…",
+        "it": "Modifica ▸ Pulizia ▸ Uniforma le grafie…",
+        "de": "Edit ▸ Clean up ▸ Normalise spellings…",
+        "el": "Edit ▸ Clean up ▸ Normalise spellings…",
+        "he": "Edit ▸ Clean up ▸ Normalise spellings…",
+        "es": "Edit ▸ Clean up ▸ Normalise spellings…",
+        "pl": "Edit ▸ Clean up ▸ Normalise spellings…",
+        "ro": "Edit ▸ Clean up ▸ Normalise spellings…",
+        "fr": "Edit ▸ Clean up ▸ Normalise spellings…"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 265
+      },
+      "script": {
+        "form": "window",
+        "exec_when": [],
+        "why": "the window shows the plan of the respellings and asks before writing: no script form yet",
+        "doc": "Normalise the spellings of the edges to the canonical ones (Edit ▸ Clean up; one undo step after the window).",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 77
+        }
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "sortLanes",
+      "page": "sortLanes",
+      "kind": "menu",
+      "command_id": "sortLanes",
+      "label_key": "issues.sortLanes",
+      "label": {
+        "en": "Sort lanes by date",
+        "it": "Ordina lane per data",
+        "de": "Bahnen nach Datum ordnen"
+      },
+      "title_key": "menu.sortLanesTitle",
+      "title": {
+        "en": "Put the epochs' lanes in the order of their dates (one undo step)",
+        "it": "Metti le lane delle epoche nell'ordine delle loro date (un passo di annulla)"
+      },
+      "button": "btn-sort-lanes",
+      "os_item": null,
+      "menu": "edit",
+      "menu_path": {
+        "en": "Edit ▸ Clean up ▸ Sort lanes by date",
+        "it": "Modifica ▸ Pulizia ▸ Ordina lane per data",
+        "de": "Edit ▸ Clean up ▸ Bahnen nach Datum ordnen",
+        "el": "Edit ▸ Clean up ▸ Sort lanes by date",
+        "he": "Edit ▸ Clean up ▸ Sort lanes by date",
+        "es": "Edit ▸ Clean up ▸ Sort lanes by date",
+        "pl": "Edit ▸ Clean up ▸ Sort lanes by date",
+        "ro": "Edit ▸ Clean up ▸ Sort lanes by date",
+        "fr": "Edit ▸ Clean up ▸ Sort lanes by date"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 266
+      },
+      "script": {
+        "form": "exec",
+        "exec_when": [],
+        "why": null,
+        "doc": "Put the epochs' lanes in the order of their dates (Edit ▸ Clean up; one undo step).",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 78
+        }
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "addMenu",
+      "page": "addMenu",
+      "kind": "menu",
+      "command_id": "addMenu",
+      "label_key": "tools.addNode",
+      "label": {
+        "en": "Add node…",
+        "it": "Aggiungi nodo…",
+        "de": "Knoten hinzufügen…"
+      },
+      "title_key": "add.headerBtn",
+      "title": {
+        "en": "Add a node (⇧A)",
+        "it": "Aggiungi un nodo (⇧A)"
+      },
+      "button": "btn-tool-add",
+      "os_item": null,
+      "menu": "edit",
+      "menu_path": {
+        "en": "Edit ▸ Add node…",
+        "it": "Modifica ▸ Aggiungi nodo…",
+        "de": "Edit ▸ Knoten hinzufügen…",
+        "el": "Edit ▸ Add node…",
+        "he": "Edit ▸ Add node…",
+        "es": "Edit ▸ Add node…",
+        "pl": "Edit ▸ Add node…",
+        "ro": "Edit ▸ Add node…",
+        "fr": "Edit ▸ Add node…"
+      },
+      "surfaces": {},
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 271
+      },
+      "script": {
+        "form": "window",
+        "exec_when": [],
+        "why": "a menu a person reads: a script adds a node with the action addNode",
+        "doc": "Open the Add menu over the Matrix (the Matrix's header «Add ▾», Shift+A).",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 79
+        }
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "chronology",
+      "page": "chronology",
+      "kind": "menu",
+      "command_id": "chronology",
+      "label_key": "chr.checkEllipsis",
+      "label": {
+        "en": "Check the chronology…",
+        "it": "Verifica la cronologia…",
+        "de": "Chronologie prüfen…"
+      },
+      "title_key": "chr.checkTitle",
+      "title": {
+        "en": "The epochs on a time axis, the overlaps with their delta and their remedies",
+        "it": "Le epoche su un asse del tempo, le sovrapposizioni con il loro delta e i rimedi",
+        "de": "Die Epochen auf einer Zeitachse, die Überschneidungen mit ihrem Delta und ihren Abhilfen"
+      },
+      "button": "btn-tool-chronology",
+      "os_item": null,
+      "menu": "edit",
+      "menu_path": {
+        "en": "Edit ▸ Check the chronology…",
+        "it": "Modifica ▸ Verifica la cronologia…",
+        "de": "Edit ▸ Chronologie prüfen…",
+        "el": "Edit ▸ Check the chronology…",
+        "he": "Edit ▸ Check the chronology…",
+        "es": "Edit ▸ Check the chronology…",
+        "pl": "Edit ▸ Check the chronology…",
+        "ro": "Edit ▸ Check the chronology…",
+        "fr": "Edit ▸ Check the chronology…"
+      },
+      "surfaces": {},
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 272
+      },
+      "script": {
+        "form": "window",
+        "exec_when": [],
+        "why": "the remedies are chosen in the window: a script reads the epochs with em.graph",
+        "doc": "Open «Check the chronology…»: the epochs on a time axis, the overlaps with their delta and their remedies.",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 80
+        }
+      },
+      "same_button_as": []
     },
     {
       "id": "cut",
@@ -3279,7 +3704,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 261
+        "line": 274
       }
     },
     {
@@ -3319,7 +3744,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 261
+        "line": 274
       }
     },
     {
@@ -3359,7 +3784,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 261
+        "line": 274
       }
     },
     {
@@ -3399,8 +3824,416 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 261
+        "line": 274
       }
+    },
+    {
+      "id": "scripting",
+      "page": "scripting",
+      "kind": "menu",
+      "command_id": "scripting",
+      "label_key": "menu.scripting",
+      "label": {
+        "en": "Scripting workspace",
+        "it": "Spazio di lavoro Scripting"
+      },
+      "title_key": "menu.scriptingTitle",
+      "title": {
+        "en": "The workspace of the Python console and of the Script Editor",
+        "it": "Lo spazio di lavoro della console Python e dell'Editor di script"
+      },
+      "button": "btn-ws-scripting",
+      "os_item": null,
+      "menu": "window",
+      "menu_path": {
+        "en": "Window ▸ Scripting workspace",
+        "it": "Finestra ▸ Spazio di lavoro Scripting",
+        "de": "Window ▸ Scripting workspace",
+        "el": "Window ▸ Scripting workspace",
+        "he": "Window ▸ Scripting workspace",
+        "es": "Window ▸ Scripting workspace",
+        "pl": "Window ▸ Scripting workspace",
+        "ro": "Window ▸ Scripting workspace",
+        "fr": "Window ▸ Scripting workspace"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 286
+      },
+      "script": {
+        "form": "exec",
+        "exec_when": [],
+        "why": null,
+        "doc": "Bring the Scripting workspace to the front (Window).",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 81
+        }
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "console",
+      "page": "console",
+      "kind": "menu",
+      "command_id": "console",
+      "label_key": "tools.console",
+      "label": {
+        "en": "Python console… · beta",
+        "it": "Console Python… · beta"
+      },
+      "title_key": "tools.consoleTitle",
+      "title": {
+        "en": "Python on the open document (em of s3Dgraphy): every write one undo step, its code in the DTC — beta: a young function",
+        "it": "Python sul documento aperto (em di s3Dgraphy): ogni scrittura un passo di annulla, il suo codice nel DTC — beta: una funzione giovane"
+      },
+      "button": "btn-tool-console",
+      "os_item": null,
+      "menu": "window",
+      "menu_path": {
+        "en": "Window ▸ Python console… · beta",
+        "it": "Finestra ▸ Console Python… · beta",
+        "de": "Window ▸ Python console… · beta",
+        "el": "Window ▸ Python console… · beta",
+        "he": "Window ▸ Python console… · beta",
+        "es": "Window ▸ Python console… · beta",
+        "pl": "Window ▸ Python console… · beta",
+        "ro": "Window ▸ Python console… · beta",
+        "fr": "Window ▸ Python console… · beta"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 288
+      },
+      "script": {
+        "form": "exec",
+        "exec_when": [],
+        "why": null,
+        "doc": "Open the Python console in the active workspace (Window).",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 82
+        }
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "detachWindow",
+      "page": "detachWindow",
+      "kind": "menu",
+      "command_id": "detachWindow",
+      "label_key": "menu.detachWindow",
+      "label": {
+        "en": "Detach the active window",
+        "it": "Stacca la finestra attiva"
+      },
+      "title_key": "menu.detachWindowTitle",
+      "title": {
+        "en": "The active window in a system window of its own (another screen, beside this one)",
+        "it": "La finestra attiva in una finestra di sistema tutta sua (un altro schermo, accanto a questo)"
+      },
+      "button": "btn-detach-window",
+      "os_item": null,
+      "menu": "window",
+      "menu_path": {
+        "en": "Window ▸ Detach the active window",
+        "it": "Finestra ▸ Stacca la finestra attiva",
+        "de": "Window ▸ Detach the active window",
+        "el": "Window ▸ Detach the active window",
+        "he": "Window ▸ Detach the active window",
+        "es": "Window ▸ Detach the active window",
+        "pl": "Window ▸ Detach the active window",
+        "ro": "Window ▸ Detach the active window",
+        "fr": "Window ▸ Detach the active window"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 290
+      },
+      "script": {
+        "form": "exec",
+        "exec_when": [],
+        "why": null,
+        "doc": "Detach the active window into a system window of its own (Window).",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 83
+        }
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "returnWindows",
+      "page": "returnWindows",
+      "kind": "menu",
+      "command_id": "returnWindows",
+      "label_key": "menu.returnWindows",
+      "label": {
+        "en": "Bring back the detached windows",
+        "it": "Riporta le finestre staccate"
+      },
+      "title_key": "menu.returnWindowsTitle",
+      "title": {
+        "en": "Every detached window back into the main window",
+        "it": "Ogni finestra staccata torna nella finestra principale"
+      },
+      "button": "btn-return-windows",
+      "os_item": null,
+      "menu": "window",
+      "menu_path": {
+        "en": "Window ▸ Bring back the detached windows",
+        "it": "Finestra ▸ Riporta le finestre staccate",
+        "de": "Window ▸ Bring back the detached windows",
+        "el": "Window ▸ Bring back the detached windows",
+        "he": "Window ▸ Bring back the detached windows",
+        "es": "Window ▸ Bring back the detached windows",
+        "pl": "Window ▸ Bring back the detached windows",
+        "ro": "Window ▸ Bring back the detached windows",
+        "fr": "Window ▸ Bring back the detached windows"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 291
+      },
+      "script": {
+        "form": "exec",
+        "exec_when": [],
+        "why": null,
+        "doc": "Bring every detached window back into the main window (Window).",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 84
+        }
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "maximizeArea",
+      "page": "maximizeArea",
+      "kind": "menu",
+      "command_id": "maximizeArea",
+      "label_key": "menu.maximizeArea",
+      "label": {
+        "en": "Maximise the area",
+        "it": "Ingrandisci l'area"
+      },
+      "title_key": "menu.maximizeAreaTitle",
+      "title": {
+        "en": "The active area over the whole workspace, and back (⌃Space)",
+        "it": "L'area attiva su tutto lo spazio di lavoro, e indietro (⌃Spazio)"
+      },
+      "button": "btn-maximize-area",
+      "os_item": null,
+      "menu": "window",
+      "menu_path": {
+        "en": "Window ▸ Maximise the area",
+        "it": "Finestra ▸ Ingrandisci l'area",
+        "de": "Window ▸ Maximise the area",
+        "el": "Window ▸ Maximise the area",
+        "he": "Window ▸ Maximise the area",
+        "es": "Window ▸ Maximise the area",
+        "pl": "Window ▸ Maximise the area",
+        "ro": "Window ▸ Maximise the area",
+        "fr": "Window ▸ Maximise the area"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 293
+      },
+      "script": {
+        "form": "exec",
+        "exec_when": [],
+        "why": null,
+        "doc": "Maximise the active area over the workspace, and back (Window, Ctrl+Space).",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 85
+        }
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "areaHeaders",
+      "page": "areaHeaders",
+      "kind": "menu",
+      "command_id": "areaHeaders",
+      "label_key": "menu.areaHeaders",
+      "label": {
+        "en": "Area headers",
+        "it": "Intestazioni delle aree"
+      },
+      "title_key": "menu.areaHeadersTitle",
+      "title": {
+        "en": "Show or hide the headers of the areas (for this session)",
+        "it": "Mostra o nascondi le intestazioni delle aree (per questa sessione)"
+      },
+      "button": "btn-area-headers",
+      "os_item": null,
+      "menu": "window",
+      "menu_path": {
+        "en": "Window ▸ Area headers",
+        "it": "Finestra ▸ Intestazioni delle aree",
+        "de": "Window ▸ Area headers",
+        "el": "Window ▸ Area headers",
+        "he": "Window ▸ Area headers",
+        "es": "Window ▸ Area headers",
+        "pl": "Window ▸ Area headers",
+        "ro": "Window ▸ Area headers",
+        "fr": "Window ▸ Area headers"
+      },
+      "surfaces": {
+        "web": [
+          "internal"
+        ],
+        "mac": [
+          "internal",
+          "native"
+        ],
+        "win": [
+          "internal"
+        ],
+        "linux": [
+          "internal"
+        ]
+      },
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 294
+      },
+      "script": {
+        "form": "exec",
+        "exec_when": [],
+        "why": null,
+        "doc": "Show or hide the headers of the areas, for this session (Window).",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 86
+        }
+      },
+      "same_button_as": []
     },
     {
       "id": "minimize",
@@ -3439,7 +4272,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 268
+        "line": 296
       }
     },
     {
@@ -3479,7 +4312,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 268
+        "line": 296
       }
     },
     {
@@ -3519,7 +4352,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 268
+        "line": 296
       }
     },
     {
@@ -3573,7 +4406,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 275
+        "line": 304
       },
       "script": {
         "form": "exec",
@@ -3639,7 +4472,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 276
+        "line": 305
       },
       "script": {
         "form": "exec",
@@ -3705,7 +4538,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 277
+        "line": 306
       },
       "script": {
         "form": "exec",
@@ -3771,7 +4604,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 279
+        "line": 308
       },
       "script": {
         "form": "exec",
@@ -3832,7 +4665,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 281
+        "line": 310
       },
       "script": {
         "form": "exec",
@@ -3898,7 +4731,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 282
+        "line": 311
       },
       "script": {
         "form": "exec",
@@ -3914,6 +4747,168 @@
       "same_button_as": [
         "settings"
       ]
+    },
+    {
+      "id": "colours",
+      "page": "colours",
+      "kind": "menu",
+      "command_id": "colours",
+      "label_key": "tools.colours",
+      "label": {
+        "en": "Colours…",
+        "it": "Colori…"
+      },
+      "title_key": "tools.coloursTitle",
+      "title": {
+        "en": "The Colours window of the active Space: colour the proxies by type, epoch or a property",
+        "it": "La finestra Colori dello Spazio attivo: colora i proxy per tipo, epoca o una proprietà"
+      },
+      "button": "btn-tool-colours",
+      "os_item": null,
+      "menu": "help",
+      "menu_path": {
+        "en": "Help ▸ Colours…",
+        "it": "Aiuto ▸ Colori…",
+        "de": "Help ▸ Colours…",
+        "el": "Help ▸ Colours…",
+        "he": "Help ▸ Colours…",
+        "es": "Help ▸ Colours…",
+        "pl": "Help ▸ Colours…",
+        "ro": "Help ▸ Colours…",
+        "fr": "Help ▸ Colours…"
+      },
+      "surfaces": {},
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 314
+      },
+      "script": {
+        "form": "window",
+        "exec_when": [],
+        "why": "the colours are chosen in the window; a script colours with em.app.space",
+        "doc": "Open the Colours window of the active Space (Preferences ▸ Colours).",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 87
+        }
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "vocabularies",
+      "page": "vocabularies",
+      "kind": "menu",
+      "command_id": "vocabularies",
+      "label_key": "tools.vocabularies",
+      "label": {
+        "en": "Vocabularies…",
+        "it": "Vocabolari…"
+      },
+      "title_key": "tools.vocabulariesTitle",
+      "title": {
+        "en": "The vocabularies installed on this computer, those this file uses, and the copy of their terms in the file",
+        "it": "I vocabolari installati su questo computer, quelli che il file usa, e la copia dei loro termini nel file"
+      },
+      "button": "btn-tool-vocabularies",
+      "os_item": null,
+      "menu": "help",
+      "menu_path": {
+        "en": "Help ▸ Vocabularies…",
+        "it": "Aiuto ▸ Vocabolari…",
+        "de": "Help ▸ Vocabularies…",
+        "el": "Help ▸ Vocabularies…",
+        "he": "Help ▸ Vocabularies…",
+        "es": "Help ▸ Vocabularies…",
+        "pl": "Help ▸ Vocabularies…",
+        "ro": "Help ▸ Vocabularies…",
+        "fr": "Help ▸ Vocabularies…"
+      },
+      "surfaces": {},
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 315
+      },
+      "script": {
+        "form": "exec",
+        "exec_when": [],
+        "why": null,
+        "doc": "Open Preferences ▸ Vocabularies: the vocabularies of this computer and of the file.",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 88
+        }
+      },
+      "same_button_as": []
+    },
+    {
+      "id": "extensions",
+      "page": "extensions",
+      "kind": "menu",
+      "command_id": "extensions",
+      "label_key": "tools.extensions",
+      "label": {
+        "en": "Extensions…",
+        "it": "Estensioni…"
+      },
+      "title_key": "tools.extensionsTitle",
+      "title": {
+        "en": "Settings ▸ Extensions: what EMStudio knows and does — vocabularies, forms, colours (data) and commands, readers, Space layers and tools (code), from the repositories you trust",
+        "it": "Impostazioni ▸ Estensioni: ciò che EMStudio sa e fa — vocabolari, schede, colori (dati) e comandi, lettori, layer e strumenti dello Spazio (codice), dai repository di cui ti fidi"
+      },
+      "button": "btn-tool-extensions",
+      "os_item": null,
+      "menu": "help",
+      "menu_path": {
+        "en": "Help ▸ Extensions…",
+        "it": "Aiuto ▸ Estensioni…",
+        "de": "Help ▸ Extensions…",
+        "el": "Help ▸ Extensions…",
+        "he": "Help ▸ Extensions…",
+        "es": "Help ▸ Extensions…",
+        "pl": "Help ▸ Extensions…",
+        "ro": "Help ▸ Extensions…",
+        "fr": "Help ▸ Extensions…"
+      },
+      "surfaces": {},
+      "accel": null,
+      "accel_not_on_web": false,
+      "shortcut": null,
+      "keymap": null,
+      "reachable_from_python": "yes",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/menu-table.ts",
+        "line": 316
+      },
+      "script": {
+        "form": "exec",
+        "exec_when": [],
+        "why": null,
+        "doc": "Open Preferences ▸ Extensions.",
+        "returns": null,
+        "source": {
+          "file": "frontend/src/script-commands.json",
+          "line": 89
+        }
+      },
+      "same_button_as": []
     },
     {
       "id": "updatesHelp",
@@ -3958,7 +4953,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/menu-table.ts",
-        "line": 283
+        "line": 317
       },
       "script": {
         "form": "exec",
@@ -4147,7 +5142,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 31
+          "line": 33
         },
         "script": {
           "action": "magnify"
@@ -4158,7 +5153,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 31
+        "line": 33
       }
     },
     {
@@ -4194,7 +5189,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 32
+          "line": 34
         },
         "script": {
           "action": "leaveGroup"
@@ -4205,7 +5200,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 32
+        "line": 34
       }
     },
     {
@@ -4241,7 +5236,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 34
+          "line": 36
         },
         "script": {
           "action": "deleteNodes"
@@ -4252,7 +5247,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 34
+        "line": 36
       }
     },
     {
@@ -4292,7 +5287,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 35
+          "line": 37
         },
         "script": {
           "command": "undo"
@@ -4303,7 +5298,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 35
+        "line": 37
       }
     },
     {
@@ -4339,7 +5334,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 36
+          "line": 38
         },
         "script": {
           "action": "nudge"
@@ -4350,7 +5345,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 36
+        "line": 38
       }
     },
     {
@@ -4386,7 +5381,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 37
+          "line": 39
         },
         "script": {
           "action": "nudge"
@@ -4397,7 +5392,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 37
+        "line": 39
       }
     },
     {
@@ -4433,7 +5428,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 38
+          "line": 40
         },
         "script": {
           "action": "fit"
@@ -4444,7 +5439,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 38
+        "line": 40
       }
     },
     {
@@ -4480,7 +5475,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 39
+          "line": 41
         },
         "script": {
           "action": "back"
@@ -4491,7 +5486,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 39
+        "line": 41
       }
     },
     {
@@ -4527,7 +5522,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 40
+          "line": 42
         },
         "script": {
           "action": "zoomIn"
@@ -4538,7 +5533,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 40
+        "line": 42
       }
     },
     {
@@ -4574,7 +5569,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 41
+          "line": 43
         },
         "script": {
           "action": "zoomOut"
@@ -4585,7 +5580,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 41
+        "line": 43
       }
     },
     {
@@ -4625,7 +5620,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 42
+          "line": 44
         },
         "script": {
           "why": "a pure gesture of the pointer: a script moves the view with frameNode or em.app.space.set_camera"
@@ -4636,7 +5631,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 42
+        "line": 44
       }
     },
     {
@@ -4676,7 +5671,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 43
+          "line": 45
         },
         "script": {
           "why": "a pure gesture of the pointer: a script moves the view with frameNode"
@@ -4687,7 +5682,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 43
+        "line": 45
       }
     },
     {
@@ -4727,7 +5722,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 44
+          "line": 46
         },
         "script": {
           "why": "a pure gesture (zoom at the pointer): a script zooms with zoomIn / zoomOut"
@@ -4738,7 +5733,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 44
+        "line": 46
       }
     },
     {
@@ -4778,7 +5773,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 45
+          "line": 47
         },
         "script": {
           "why": "a pure gesture: a script selects with em.app.select"
@@ -4789,7 +5784,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 45
+        "line": 47
       }
     },
     {
@@ -4829,7 +5824,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 46
+          "line": 48
         },
         "script": {
           "why": "a pure gesture: a script selects several with em.app.select"
@@ -4840,7 +5835,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 46
+        "line": 48
       }
     },
     {
@@ -4880,7 +5875,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 47
+          "line": 49
         },
         "script": {
           "why": "a pure gesture: a script selects with em.app.select"
@@ -4891,7 +5886,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 47
+        "line": 49
       }
     },
     {
@@ -4931,7 +5926,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 48
+          "line": 50
         },
         "script": {
           "action": "enterGroup"
@@ -4942,7 +5937,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 48
+        "line": 50
       }
     },
     {
@@ -4982,7 +5977,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 49
+          "line": 51
         },
         "script": {
           "action": "connect"
@@ -4993,7 +5988,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 49
+        "line": 51
       }
     },
     {
@@ -5033,7 +6028,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 50
+          "line": 52
         },
         "script": {
           "action": "addUnitBelow"
@@ -5044,7 +6039,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 50
+        "line": 52
       }
     },
     {
@@ -5084,7 +6079,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 51
+          "line": 53
         },
         "script": {
           "why": "a drag out of a container: a script removes the membership edge with em.write"
@@ -5095,7 +6090,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 51
+        "line": 53
       }
     },
     {
@@ -5135,7 +6130,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 52
+          "line": 54
         },
         "script": {
           "action": "moveToEpoch"
@@ -5146,7 +6141,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 52
+        "line": 54
       }
     },
     {
@@ -5186,7 +6181,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 53
+          "line": 55
         },
         "script": {
           "why": "puts back what is being dragged: there is no drag in a script"
@@ -5197,7 +6192,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 53
+        "line": 55
       }
     },
     {
@@ -5237,7 +6232,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 54
+          "line": 56
         },
         "script": {
           "why": "opens a menu a person reads: its items are commands and actions of this list"
@@ -5248,7 +6243,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 54
+        "line": 56
       }
     },
     {
@@ -5288,7 +6283,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 55
+          "line": 57
         },
         "script": {
           "why": "opens a menu a person reads: reflow, a new epoch (em.write), the chronology check"
@@ -5299,7 +6294,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 55
+        "line": 57
       }
     },
     {
@@ -5339,7 +6334,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 56
+          "line": 58
         },
         "script": {
           "why": "the add menu on touch: a script uses addNode"
@@ -5350,7 +6345,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 56
+        "line": 58
       }
     },
     {
@@ -5390,7 +6385,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 57
+          "line": 59
         },
         "script": {
           "action": "layoutFresh"
@@ -5401,7 +6396,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 57
+        "line": 59
       }
     },
     {
@@ -5438,7 +6433,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 60
+          "line": 62
         },
         "script": {
           "why": "a pure gesture in the Space: a script asks a point with em.app.space.pick"
@@ -5449,7 +6444,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 60
+        "line": 62
       }
     },
     {
@@ -5486,7 +6481,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 61
+          "line": 63
         },
         "script": {
           "why": "a pure gesture in the Space: a script reads the models with em.app.space.layers"
@@ -5497,7 +6492,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 61
+        "line": 63
       }
     },
     {
@@ -5534,7 +6529,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 62
+          "line": 64
         },
         "script": {
           "why": "opens a menu a person reads"
@@ -5545,7 +6540,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 62
+        "line": 64
       }
     },
     {
@@ -5555,8 +6550,8 @@
       "command_id": null,
       "label_key": "keys.s3dbl",
       "label": {
-        "en": "Move: the centre of rotation and the zoom go to the point under the cursor; nothing is selected",
-        "it": "Muoversi: il centro di rotazione e lo zoom vanno sul punto sotto il cursore; non seleziona niente"
+        "en": "Fly towards the point under the cursor, which becomes the centre of rotation; nothing is selected. A click, the wheel or a key stops the flight",
+        "it": "Volare verso il punto sotto il cursore, che diventa il centro di rotazione; non seleziona niente. Un clic, la rotella o un tasto fermano il volo"
       },
       "title_key": null,
       "title": {},
@@ -5578,15 +6573,15 @@
         "scope": "space",
         "label_key": "keys.s3dbl",
         "label": {
-          "en": "Move: the centre of rotation and the zoom go to the point under the cursor; nothing is selected",
-          "it": "Muoversi: il centro di rotazione e lo zoom vanno sul punto sotto il cursore; non seleziona niente"
+          "en": "Fly towards the point under the cursor, which becomes the centre of rotation; nothing is selected. A click, the wheel or a key stops the flight",
+          "it": "Volare verso il punto sotto il cursore, che diventa il centro di rotazione; non seleziona niente. Un clic, la rotella o un tasto fermano il volo"
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 63
+          "line": 65
         },
         "script": {
-          "why": "a pure gesture (the centre of rotation under the cursor): a script sets the camera with em.app.space.set_camera"
+          "why": "a pure gesture (a flight towards the point under the cursor): a script sets the camera with em.app.space.set_camera"
         }
       },
       "reachable_from_python": "no",
@@ -5594,7 +6589,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 63
+        "line": 65
       }
     },
     {
@@ -5628,7 +6623,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 64
+          "line": 66
         },
         "script": {
           "why": "waits for a rectangle drawn by a person"
@@ -5639,7 +6634,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 64
+        "line": 66
       }
     },
     {
@@ -5676,7 +6671,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 65
+          "line": 67
         },
         "script": {
           "why": "a pure gesture (the 3D cursor on the surface under the pointer)"
@@ -5687,7 +6682,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 65
+        "line": 67
       }
     },
     {
@@ -5721,7 +6716,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 66
+          "line": 68
         },
         "script": {
           "action": "spaceCursorReset"
@@ -5732,7 +6727,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 66
+        "line": 68
       }
     },
     {
@@ -5769,7 +6764,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 67
+          "line": 69
         },
         "script": {
           "why": "a pure gesture: a script sets the camera with em.app.space.set_camera"
@@ -5780,7 +6775,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 67
+        "line": 69
       }
     },
     {
@@ -5817,7 +6812,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 69
+          "line": 71
         },
         "script": {
           "why": "a pure gesture: a script sets the camera with em.app.space.set_camera"
@@ -5828,7 +6823,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 69
+        "line": 71
       }
     },
     {
@@ -5865,7 +6860,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 70
+          "line": 72
         },
         "script": {
           "why": "a pure gesture: a script sets the camera with em.app.space.set_camera"
@@ -5876,7 +6871,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 70
+        "line": 72
       }
     },
     {
@@ -5913,7 +6908,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 71
+          "line": 73
         },
         "script": {
           "why": "a pure gesture: a script sets the camera with em.app.space.set_camera"
@@ -5924,7 +6919,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 71
+        "line": 73
       }
     },
     {
@@ -5961,7 +6956,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 72
+          "line": 74
         },
         "script": {
           "why": "a pure gesture: a script sets the camera with em.app.space.set_camera"
@@ -5972,7 +6967,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 72
+        "line": 74
       }
     },
     {
@@ -6009,7 +7004,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 73
+          "line": 75
         },
         "script": {
           "why": "a pure gesture: a script selects with em.app.select"
@@ -6020,7 +7015,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 73
+        "line": 75
       }
     },
     {
@@ -6057,7 +7052,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 74
+          "line": 76
         },
         "script": {
           "why": "a setting of the mouse, not an act"
@@ -6068,7 +7063,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 74
+        "line": 76
       }
     },
     {
@@ -6105,7 +7100,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 76
+          "line": 78
         },
         "script": {
           "action": "spaceView"
@@ -6116,7 +7111,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 76
+        "line": 78
       }
     },
     {
@@ -6153,7 +7148,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 77
+          "line": 79
         },
         "script": {
           "action": "spaceView"
@@ -6164,7 +7159,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 77
+        "line": 79
       }
     },
     {
@@ -6201,7 +7196,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 78
+          "line": 80
         },
         "script": {
           "action": "spaceView"
@@ -6212,7 +7207,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 78
+        "line": 80
       }
     },
     {
@@ -6249,7 +7244,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 79
+          "line": 81
         },
         "script": {
           "action": "spaceView"
@@ -6260,7 +7255,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 79
+        "line": 81
       }
     },
     {
@@ -6297,7 +7292,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 80
+          "line": 82
         },
         "script": {
           "action": "spaceToggleOrtho"
@@ -6308,7 +7303,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 80
+        "line": 82
       }
     },
     {
@@ -6345,7 +7340,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 81
+          "line": 83
         },
         "script": {
           "why": "the camera view: the Space has no camera object yet"
@@ -6356,7 +7351,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 81
+        "line": 83
       }
     },
     {
@@ -6393,7 +7388,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 82
+          "line": 84
         },
         "script": {
           "action": "spaceFrameSelected"
@@ -6404,7 +7399,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 82
+        "line": 84
       }
     },
     {
@@ -6414,8 +7409,8 @@
       "command_id": null,
       "label_key": "keys.s3sidebar",
       "label": {
-        "en": "The «View» panel on the right: 3D cursor, selected object, view",
-        "it": "Il pannello «Vista» a destra: cursore 3D, oggetto selezionato, vista"
+        "en": "The sidebar on the right, its tabs: Item, Tool, View and the extensions'",
+        "it": "La barra laterale a destra, i suoi tab: Elemento, Strumento, Vista e quelli delle estensioni"
       },
       "title_key": null,
       "title": {},
@@ -6433,15 +7428,15 @@
         "scope": "space",
         "label_key": "keys.s3sidebar",
         "label": {
-          "en": "The «View» panel on the right: 3D cursor, selected object, view",
-          "it": "Il pannello «Vista» a destra: cursore 3D, oggetto selezionato, vista"
+          "en": "The sidebar on the right, its tabs: Item, Tool, View and the extensions'",
+          "it": "La barra laterale a destra, i suoi tab: Elemento, Strumento, Vista e quelli delle estensioni"
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 83
+          "line": 85
         },
         "script": {
-          "why": "opens a panel a person reads: a script reads the cursor and the camera through em.app.space"
+          "why": "opens a panel a person reads: a script opens its tabs through em.app.space.sidebar (open, tabs, close)"
         }
       },
       "reachable_from_python": "no",
@@ -6449,7 +7444,97 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 83
+        "line": 85
+      }
+    },
+    {
+      "id": "keymap:s3toNarrative",
+      "page": "keymap-s3toNarrative",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.s3toNarrative",
+      "label": {
+        "en": "Bring the view as it is now into the Narrative's active block (dynamic or static)",
+        "it": "Porta la vista com'è ora nel blocco attivo della Narrative (dinamica o statica)"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "s3toNarrative",
+        "keys": "⇧N",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "space",
+        "label_key": "keys.s3toNarrative",
+        "label": {
+          "en": "Bring the view as it is now into the Narrative's active block (dynamic or static)",
+          "it": "Porta la vista com'è ora nel blocco attivo della Narrative (dinamica o statica)"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 87
+        },
+        "script": {
+          "why": "opens a dialog a person answers (a live view or a still): a script reads the narrative with em.app.narrative"
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 87
+      }
+    },
+    {
+      "id": "keymap:s3toolbar",
+      "page": "keymap-s3toolbar",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.s3toolbar",
+      "label": {
+        "en": "The toolbar on the left: select, 3D cursor and the extensions' tools",
+        "it": "La barra degli strumenti a sinistra: seleziona, cursore 3D e gli strumenti delle estensioni"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "s3toolbar",
+        "keys": "T",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "space",
+        "label_key": "keys.s3toolbar",
+        "label": {
+          "en": "The toolbar on the left: select, 3D cursor and the extensions' tools",
+          "it": "La barra degli strumenti a sinistra: seleziona, cursore 3D e gli strumenti delle estensioni"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 88
+        },
+        "script": {
+          "why": "shows or hides the toolbar a person clicks: a script lists and activates its tools through em.app.space.tools"
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 88
       }
     },
     {
@@ -6483,7 +7568,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 84
+          "line": 89
         },
         "script": {
           "action": "spaceFrameSelected"
@@ -6494,7 +7579,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 84
+        "line": 89
       }
     },
     {
@@ -6528,7 +7613,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 85
+          "line": 90
         },
         "script": {
           "action": "spaceFrameAll"
@@ -6539,52 +7624,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 85
-      }
-    },
-    {
-      "id": "keymap:s3outliner",
-      "page": "keymap-s3outliner",
-      "kind": "shortcut",
-      "command_id": null,
-      "label_key": "keys.s3outliner",
-      "label": {
-        "en": "Open and close the Space's Outliner",
-        "it": "Apre e chiude l'Outliner dello Spazio"
-      },
-      "title_key": null,
-      "title": {},
-      "button": null,
-      "menu": null,
-      "menu_path": {},
-      "surfaces": {},
-      "accel": null,
-      "shortcut": null,
-      "keymap": {
-        "id": "s3outliner",
-        "keys": "T",
-        "gesture_key": null,
-        "gesture": {},
-        "scope": "space",
-        "label_key": "keys.s3outliner",
-        "label": {
-          "en": "Open and close the Space's Outliner",
-          "it": "Apre e chiude l'Outliner dello Spazio"
-        },
-        "source": {
-          "file": "frontend/src/keymap.ts",
-          "line": 86
-        },
-        "script": {
-          "why": "opens a panel: a script opens windows with em.app.windows.open"
-        }
-      },
-      "reachable_from_python": "no",
-      "writes_graph": "unknown",
-      "slots": [],
-      "source": {
-        "file": "frontend/src/keymap.ts",
-        "line": 86
+        "line": 90
       }
     },
     {
@@ -6618,7 +7658,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 87
+          "line": 91
         },
         "script": {
           "why": "a base shape is placed with the 3D cursor by a person; no script form yet"
@@ -6629,7 +7669,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 87
+        "line": 91
       }
     },
     {
@@ -6663,7 +7703,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 88
+          "line": 92
         },
         "script": {
           "why": "a modal transform driven by the pointer; a model's placement is written with em.write"
@@ -6674,7 +7714,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 88
+        "line": 92
       }
     },
     {
@@ -6708,7 +7748,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 89
+          "line": 93
         },
         "script": {
           "why": "a key inside the modal transform (G R S)"
@@ -6719,7 +7759,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 89
+        "line": 93
       }
     },
     {
@@ -6753,7 +7793,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 90
+          "line": 94
         },
         "script": {
           "why": "a key inside the modal transform (G R S)"
@@ -6764,7 +7804,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 90
+        "line": 94
       }
     },
     {
@@ -6798,7 +7838,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 91
+          "line": 95
         },
         "script": {
           "why": "no script form yet: the parent is an edge written with em.write"
@@ -6809,7 +7849,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 91
+        "line": 95
       }
     },
     {
@@ -6843,7 +7883,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 92
+          "line": 96
         },
         "script": {
           "why": "no script form yet: a proxy is removed with em.write"
@@ -6854,7 +7894,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 92
+        "line": 96
       }
     },
     {
@@ -6888,7 +7928,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 93
+          "line": 97
         },
         "script": {
           "action": "back"
@@ -6899,7 +7939,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 93
+        "line": 97
       }
     },
     {
@@ -6933,7 +7973,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 95
+          "line": 99
         },
         "script": {
           "why": "a pure gesture: a script selects with em.app.select"
@@ -6944,7 +7984,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 95
+        "line": 99
       }
     },
     {
@@ -6978,7 +8018,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 96
+          "line": 100
         },
         "script": {
           "why": "the Space's own selection of objects is not reachable from Python yet: em.app.select selects nodes"
@@ -6989,7 +8029,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 96
+        "line": 100
       }
     },
     {
@@ -7023,7 +8063,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 97
+          "line": 101
         },
         "script": {
           "why": "the Space's own selection of objects is not reachable from Python yet: em.app.select([]) clears the nodes'"
@@ -7034,7 +8074,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 97
+        "line": 101
       }
     },
     {
@@ -7068,7 +8108,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 98
+          "line": 102
         },
         "script": {
           "why": "waits for a rectangle drawn by a person"
@@ -7079,7 +8119,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 98
+        "line": 102
       }
     },
     {
@@ -7113,7 +8153,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 99
+          "line": 103
         },
         "script": {
           "why": "hides the selected objects: a script hides a layer with em.app.space.layers (visible)"
@@ -7124,7 +8164,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 99
+        "line": 103
       }
     },
     {
@@ -7158,7 +8198,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 100
+          "line": 104
         },
         "script": {
           "why": "reveals the hidden objects: a script shows a layer with em.app.space.layers (visible)"
@@ -7169,7 +8209,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 100
+        "line": 104
       }
     },
     {
@@ -7203,7 +8243,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 101
+          "line": 105
         },
         "script": {
           "why": "hides the others: a script hides layers with em.app.space.layers (visible)"
@@ -7214,7 +8254,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 101
+        "line": 105
       }
     },
     {
@@ -7250,7 +8290,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 103
+          "line": 107
         },
         "script": {
           "why": "a key of the tracing tool, driven by the pointer"
@@ -7261,7 +8301,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 103
+        "line": 107
       }
     },
     {
@@ -7301,7 +8341,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 104
+          "line": 108
         },
         "script": {
           "why": "a key of the tracing tool, driven by the pointer"
@@ -7312,7 +8352,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 104
+        "line": 108
       }
     },
     {
@@ -7352,7 +8392,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 105
+          "line": 109
         },
         "script": {
           "why": "a gesture of the tracing tool"
@@ -7363,7 +8403,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 105
+        "line": 109
       }
     },
     {
@@ -7399,7 +8439,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 106
+          "line": 110
         },
         "script": {
           "why": "keys of a suggestion bubble a person reads"
@@ -7410,7 +8450,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 106
+        "line": 110
       }
     },
     {
@@ -7450,7 +8490,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 108
+          "line": 112
         },
         "script": {
           "why": "a pure gesture of the windows: a script opens windows with em.app.windows.open"
@@ -7461,7 +8501,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 108
+        "line": 112
       }
     },
     {
@@ -7501,7 +8541,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 109
+          "line": 113
         },
         "script": {
           "why": "a pure gesture of the windows (the size of the areas)"
@@ -7512,7 +8552,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 109
+        "line": 113
       }
     },
     {
@@ -7552,7 +8592,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 110
+          "line": 114
         },
         "script": {
           "action": "magnify"
@@ -7563,7 +8603,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 110
+        "line": 114
       }
     },
     {
@@ -7603,7 +8643,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 111
+          "line": 115
         },
         "script": {
           "why": "renames a workspace: a person's word"
@@ -7614,7 +8654,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 111
+        "line": 115
       }
     },
     {
@@ -7654,7 +8694,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 112
+          "line": 116
         },
         "script": {
           "why": "opens a menu a person reads"
@@ -7665,7 +8705,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 112
+        "line": 116
       }
     },
     {
@@ -7705,7 +8745,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 113
+          "line": 117
         },
         "script": {
           "why": "a pure gesture in the File window"
@@ -7716,7 +8756,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 113
+        "line": 117
       }
     },
     {
@@ -7756,7 +8796,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 114
+          "line": 118
         },
         "script": {
           "why": "a pure gesture in the File window"
@@ -7767,7 +8807,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 114
+        "line": 118
       }
     },
     {
@@ -7803,7 +8843,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 116
+          "line": 120
         },
         "script": {
           "why": "a key of a text field"
@@ -7814,7 +8854,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 116
+        "line": 120
       }
     },
     {
@@ -7850,7 +8890,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 117
+          "line": 121
         },
         "script": {
           "why": "a key of a text field"
@@ -7861,7 +8901,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 117
+        "line": 121
       }
     },
     {
@@ -7897,7 +8937,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 118
+          "line": 122
         },
         "script": {
           "why": "a key of the narrative's text"
@@ -7908,7 +8948,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 118
+        "line": 122
       }
     },
     {
@@ -7944,7 +8984,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 119
+          "line": 123
         },
         "script": {
           "why": "a key of the narrative's text"
@@ -7955,7 +8995,195 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 119
+        "line": 123
+      }
+    },
+    {
+      "id": "keymap:nvTfChapter",
+      "page": "keymap-nvTfChapter",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.nvTfChapter",
+      "label": {
+        "en": "Narrative, Write: the part into a chapter",
+        "it": "Narrativa, Scrivi: la parte in capitolo",
+        "de": "Narrativ, Schreiben: den Teil zum Kapitel machen"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "nvTfChapter",
+        "keys": "⌘⌥1",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "field",
+        "label_key": "keys.nvTfChapter",
+        "label": {
+          "en": "Narrative, Write: the part into a chapter",
+          "it": "Narrativa, Scrivi: la parte in capitolo",
+          "de": "Narrativ, Schreiben: den Teil zum Kapitel machen"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 126
+        },
+        "script": {
+          "why": "a key of the narrative's text (Transform into a chapter): a script writes the blocks with em.app.narrative"
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 126
+      }
+    },
+    {
+      "id": "keymap:nvTfSection",
+      "page": "keymap-nvTfSection",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.nvTfSection",
+      "label": {
+        "en": "Narrative, Write: the part into a section",
+        "it": "Narrativa, Scrivi: la parte in sezione",
+        "de": "Narrativ, Schreiben: den Teil zum Abschnitt machen"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "nvTfSection",
+        "keys": "⌘⌥2",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "field",
+        "label_key": "keys.nvTfSection",
+        "label": {
+          "en": "Narrative, Write: the part into a section",
+          "it": "Narrativa, Scrivi: la parte in sezione",
+          "de": "Narrativ, Schreiben: den Teil zum Abschnitt machen"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 127
+        },
+        "script": {
+          "why": "a key of the narrative's text (Transform into a section): a script writes the blocks with em.app.narrative"
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 127
+      }
+    },
+    {
+      "id": "keymap:nvTfSubsection",
+      "page": "keymap-nvTfSubsection",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.nvTfSubsection",
+      "label": {
+        "en": "Narrative, Write: the part into a subsection",
+        "it": "Narrativa, Scrivi: la parte in sottosezione",
+        "de": "Narrativ, Schreiben: den Teil zum Unterabschnitt machen"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "nvTfSubsection",
+        "keys": "⌘⌥3",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "field",
+        "label_key": "keys.nvTfSubsection",
+        "label": {
+          "en": "Narrative, Write: the part into a subsection",
+          "it": "Narrativa, Scrivi: la parte in sottosezione",
+          "de": "Narrativ, Schreiben: den Teil zum Unterabschnitt machen"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 128
+        },
+        "script": {
+          "why": "a key of the narrative's text (Transform into a subsection): a script writes the blocks with em.app.narrative"
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 128
+      }
+    },
+    {
+      "id": "keymap:nvTfParagraph",
+      "page": "keymap-nvTfParagraph",
+      "kind": "shortcut",
+      "command_id": null,
+      "label_key": "keys.nvTfParagraph",
+      "label": {
+        "en": "Narrative, Write: the part into a paragraph",
+        "it": "Narrativa, Scrivi: la parte in paragrafo",
+        "de": "Narrativ, Schreiben: den Teil zum Absatz machen"
+      },
+      "title_key": null,
+      "title": {},
+      "button": null,
+      "menu": null,
+      "menu_path": {},
+      "surfaces": {},
+      "accel": null,
+      "shortcut": null,
+      "keymap": {
+        "id": "nvTfParagraph",
+        "keys": "⌘⌥0",
+        "gesture_key": null,
+        "gesture": {},
+        "scope": "field",
+        "label_key": "keys.nvTfParagraph",
+        "label": {
+          "en": "Narrative, Write: the part into a paragraph",
+          "it": "Narrativa, Scrivi: la parte in paragrafo",
+          "de": "Narrativ, Schreiben: den Teil zum Absatz machen"
+        },
+        "source": {
+          "file": "frontend/src/keymap.ts",
+          "line": 129
+        },
+        "script": {
+          "why": "a key of the narrative's text (Transform into a paragraph): a script writes the blocks with em.app.narrative"
+        }
+      },
+      "reachable_from_python": "no",
+      "writes_graph": "unknown",
+      "slots": [],
+      "source": {
+        "file": "frontend/src/keymap.ts",
+        "line": 129
       }
     },
     {
@@ -7991,7 +9219,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 120
+          "line": 130
         },
         "script": {
           "why": "keys of a menu a person reads"
@@ -8002,7 +9230,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 120
+        "line": 130
       }
     },
     {
@@ -8038,7 +9266,7 @@
         },
         "source": {
           "file": "frontend/src/keymap.ts",
-          "line": 121
+          "line": 131
         },
         "script": {
           "why": "keys of a button"
@@ -8049,7 +9277,7 @@
       "slots": [],
       "source": {
         "file": "frontend/src/keymap.ts",
-        "line": 121
+        "line": 131
       }
     },
     {
@@ -8100,12 +9328,12 @@
         "returns": "the new node's id",
         "source": {
           "file": "frontend/src/script-commands.json",
-          "line": 81
+          "line": 96
         }
       },
       "source": {
         "file": "frontend/src/script-commands.json",
-        "line": 81
+        "line": 96
       }
     },
     {
@@ -8155,12 +9383,12 @@
         "returns": "the new unit's id",
         "source": {
           "file": "frontend/src/script-commands.json",
-          "line": 87
+          "line": 102
         }
       },
       "source": {
         "file": "frontend/src/script-commands.json",
-        "line": 87
+        "line": 102
       }
     },
     {
@@ -8212,12 +9440,12 @@
         "returns": "the new unit's id",
         "source": {
           "file": "frontend/src/script-commands.json",
-          "line": 93
+          "line": 108
         }
       },
       "source": {
         "file": "frontend/src/script-commands.json",
-        "line": 93
+        "line": 108
       }
     },
     {
@@ -8270,12 +9498,12 @@
         "returns": "the edge type used",
         "source": {
           "file": "frontend/src/script-commands.json",
-          "line": 99
+          "line": 114
         }
       },
       "source": {
         "file": "frontend/src/script-commands.json",
-        "line": 99
+        "line": 114
       }
     },
     {
@@ -8322,12 +9550,12 @@
         "returns": "how many moved",
         "source": {
           "file": "frontend/src/script-commands.json",
-          "line": 105
+          "line": 120
         }
       },
       "source": {
         "file": "frontend/src/script-commands.json",
-        "line": 105
+        "line": 120
       }
     },
     {
@@ -8372,12 +9600,12 @@
         "returns": "how many changed",
         "source": {
           "file": "frontend/src/script-commands.json",
-          "line": 110
+          "line": 125
         }
       },
       "source": {
         "file": "frontend/src/script-commands.json",
-        "line": 110
+        "line": 125
       }
     },
     {
@@ -8415,12 +9643,12 @@
         "returns": null,
         "source": {
           "file": "frontend/src/script-commands.json",
-          "line": 115
+          "line": 130
         }
       },
       "source": {
         "file": "frontend/src/script-commands.json",
-        "line": 115
+        "line": 130
       }
     },
     {
@@ -8458,12 +9686,12 @@
         "returns": null,
         "source": {
           "file": "frontend/src/script-commands.json",
-          "line": 116
+          "line": 131
         }
       },
       "source": {
         "file": "frontend/src/script-commands.json",
-        "line": 116
+        "line": 131
       }
     },
     {
@@ -8503,12 +9731,12 @@
         "returns": null,
         "source": {
           "file": "frontend/src/script-commands.json",
-          "line": 117
+          "line": 132
         }
       },
       "source": {
         "file": "frontend/src/script-commands.json",
-        "line": 117
+        "line": 132
       }
     },
     {
@@ -8540,12 +9768,12 @@
         "returns": null,
         "source": {
           "file": "frontend/src/script-commands.json",
-          "line": 118
+          "line": 133
         }
       },
       "source": {
         "file": "frontend/src/script-commands.json",
-        "line": 118
+        "line": 133
       }
     },
     {
@@ -8583,12 +9811,12 @@
         "returns": null,
         "source": {
           "file": "frontend/src/script-commands.json",
-          "line": 119
+          "line": 134
         }
       },
       "source": {
         "file": "frontend/src/script-commands.json",
-        "line": 119
+        "line": 134
       }
     },
     {
@@ -8620,12 +9848,12 @@
         "returns": null,
         "source": {
           "file": "frontend/src/script-commands.json",
-          "line": 120
+          "line": 135
         }
       },
       "source": {
         "file": "frontend/src/script-commands.json",
-        "line": 120
+        "line": 135
       }
     },
     {
@@ -8664,12 +9892,12 @@
         "returns": null,
         "source": {
           "file": "frontend/src/script-commands.json",
-          "line": 121
+          "line": 136
         }
       },
       "source": {
         "file": "frontend/src/script-commands.json",
-        "line": 121
+        "line": 136
       }
     },
     {
@@ -8708,12 +9936,12 @@
         "returns": null,
         "source": {
           "file": "frontend/src/script-commands.json",
-          "line": 122
+          "line": 137
         }
       },
       "source": {
         "file": "frontend/src/script-commands.json",
-        "line": 122
+        "line": 137
       }
     },
     {
@@ -8746,12 +9974,12 @@
         "returns": null,
         "source": {
           "file": "frontend/src/script-commands.json",
-          "line": 123
+          "line": 138
         }
       },
       "source": {
         "file": "frontend/src/script-commands.json",
-        "line": 123
+        "line": 138
       }
     },
     {
@@ -8790,12 +10018,12 @@
         "returns": "how many were deleted",
         "source": {
           "file": "frontend/src/script-commands.json",
-          "line": 124
+          "line": 139
         }
       },
       "source": {
         "file": "frontend/src/script-commands.json",
-        "line": 124
+        "line": 139
       }
     },
     {
@@ -8841,12 +10069,12 @@
         "returns": null,
         "source": {
           "file": "frontend/src/script-commands.json",
-          "line": 126
+          "line": 141
         }
       },
       "source": {
         "file": "frontend/src/script-commands.json",
-        "line": 126
+        "line": 141
       }
     },
     {
@@ -8889,12 +10117,12 @@
         "returns": null,
         "source": {
           "file": "frontend/src/script-commands.json",
-          "line": 129
+          "line": 144
         }
       },
       "source": {
         "file": "frontend/src/script-commands.json",
-        "line": 129
+        "line": 144
       }
     },
     {
@@ -8926,12 +10154,12 @@
         "returns": null,
         "source": {
           "file": "frontend/src/script-commands.json",
-          "line": 132
+          "line": 147
         }
       },
       "source": {
         "file": "frontend/src/script-commands.json",
-        "line": 132
+        "line": 147
       }
     },
     {
@@ -8961,12 +10189,12 @@
         "returns": null,
         "source": {
           "file": "frontend/src/script-commands.json",
-          "line": 133
+          "line": 148
         }
       },
       "source": {
         "file": "frontend/src/script-commands.json",
-        "line": 133
+        "line": 148
       }
     },
     {
@@ -9006,12 +10234,12 @@
         "returns": null,
         "source": {
           "file": "frontend/src/script-commands.json",
-          "line": 134
+          "line": 149
         }
       },
       "source": {
         "file": "frontend/src/script-commands.json",
-        "line": 134
+        "line": 149
       }
     },
     {
@@ -9061,12 +10289,12 @@
         "returns": null,
         "source": {
           "file": "frontend/src/script-commands.json",
-          "line": 135
+          "line": 150
         }
       },
       "source": {
         "file": "frontend/src/script-commands.json",
-        "line": 135
+        "line": 150
       }
     },
     {
@@ -9098,12 +10326,12 @@
         "returns": null,
         "source": {
           "file": "frontend/src/script-commands.json",
-          "line": 136
+          "line": 151
         }
       },
       "source": {
         "file": "frontend/src/script-commands.json",
-        "line": 136
+        "line": 151
       }
     },
     {
@@ -9136,12 +10364,12 @@
         "returns": null,
         "source": {
           "file": "frontend/src/script-commands.json",
-          "line": 137
+          "line": 152
         }
       },
       "source": {
         "file": "frontend/src/script-commands.json",
-        "line": 137
+        "line": 152
       }
     },
     {
@@ -9173,12 +10401,12 @@
         "returns": null,
         "source": {
           "file": "frontend/src/script-commands.json",
-          "line": 138
+          "line": 153
         }
       },
       "source": {
         "file": "frontend/src/script-commands.json",
-        "line": 138
+        "line": 153
       }
     },
     {
@@ -9210,12 +10438,12 @@
         "returns": null,
         "source": {
           "file": "frontend/src/script-commands.json",
-          "line": 139
+          "line": 154
         }
       },
       "source": {
         "file": "frontend/src/script-commands.json",
-        "line": 139
+        "line": 154
       }
     }
   ]

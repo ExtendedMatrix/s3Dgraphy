@@ -5,7 +5,7 @@
 keymap:s3np3
 ============
 
-*Generated from EMStudio 1217b52 for em API 1.2.0.*
+*Generated from EMStudio 7b3688d for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -26,7 +26,7 @@ keymap:s3np3
    * - Shortcut
      - Numpad 3 (gesture, scope ``space``)
    * - Defined in
-     - ``frontend/src/keymap.ts:77``
+     - ``frontend/src/keymap.ts:79``
 
 What it does
 ------------

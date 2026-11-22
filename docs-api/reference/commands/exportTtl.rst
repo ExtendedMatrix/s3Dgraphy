@@ -5,7 +5,7 @@
 exportTtl
 =========
 
-*Generated from EMStudio 1217b52 for em API 1.2.0.*
+*Generated from EMStudio 7b3688d for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -36,7 +36,7 @@ exportTtl
    * - Shortcut
      - none
    * - Defined in
-     - ``frontend/src/menu-table.ts:197``
+     - ``frontend/src/menu-table.ts:206``
 
 What it does
 ------------

@@ -5,7 +5,7 @@
 keymap:s3orbit
 ==============
 
-*Generated from EMStudio 1217b52 for em API 1.2.0.*
+*Generated from EMStudio 7b3688d for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -26,7 +26,7 @@ keymap:s3orbit
    * - Shortcut
      - Middle drag · two fingers · left drag (while the left does not select) (gesture, scope ``space``)
    * - Defined in
-     - ``frontend/src/keymap.ts:69``
+     - ``frontend/src/keymap.ts:71``
 
 .. admonition:: Not available from Python
    :class: warning

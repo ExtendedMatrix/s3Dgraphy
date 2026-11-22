@@ -5,7 +5,7 @@
 keymap:s3cursor
 ===============
 
-*Generated from EMStudio 1217b52 for em API 1.2.0.*
+*Generated from EMStudio 7b3688d for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -26,7 +26,7 @@ keymap:s3cursor
    * - Shortcut
      - Shift + right click (gesture, scope ``space``)
    * - Defined in
-     - ``frontend/src/keymap.ts:65``
+     - ``frontend/src/keymap.ts:67``
 
 .. admonition:: Not available from Python
    :class: warning

@@ -5,7 +5,7 @@
 spaceFrameSelected
 ==================
 
-*Generated from EMStudio 1217b52 for em API 1.2.0.*
+*Generated from EMStudio 7b3688d for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -32,7 +32,7 @@ spaceFrameSelected
    * - Shortcut
      - none
    * - Defined in
-     - ``frontend/src/script-commands.json:137``
+     - ``frontend/src/script-commands.json:152``
 
 What it does
 ------------

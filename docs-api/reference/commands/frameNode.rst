@@ -5,7 +5,7 @@
 frameNode
 =========
 
-*Generated from EMStudio 1217b52 for em API 1.2.0.*
+*Generated from EMStudio 7b3688d for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -30,7 +30,7 @@ frameNode
    * - Shortcut
      - none
    * - Defined in
-     - ``frontend/src/script-commands.json:119``
+     - ``frontend/src/script-commands.json:134``
 
 What it does
 ------------
@@ -53,7 +53,7 @@ Parameters
      - required
      - the node (id or name)
 
-Declared in ``frontend/src/script-commands.json:119`` — the one place the console's completion and this page read. A name the command does not take, a wrong type, a value not among the choices are refused with ``em.NotAvailable`` in the page's language, never dropped.
+Declared in ``frontend/src/script-commands.json:134`` — the one place the console's completion and this page read. A name the command does not take, a wrong type, a value not among the choices are refused with ``em.NotAvailable`` in the page's language, never dropped.
 
 From Python
 -----------

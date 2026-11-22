@@ -5,7 +5,7 @@
 doorFolder
 ==========
 
-*Generated from EMStudio 1217b52 for em API 1.2.0.*
+*Generated from EMStudio 7b3688d for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -32,14 +32,14 @@ doorFolder
    * - Shortcut
      - none
    * - Defined in
-     - ``frontend/src/menu-table.ts:186``
+     - ``frontend/src/menu-table.ts:190``
 
 What it does
 ------------
 
-**en** — Bring a folder in: read as DosCo, or by an add-on that reads folders (a stack of geophysical slices, say)
+**en** — Bring a folder in: read as DosCo, or by an extension that reads folders (a stack of geophysical slices, say)
 
-**it** — Porta dentro una cartella: letta come DosCo, o da un componente aggiuntivo che legge le cartelle (una pila di fette geofisiche, per esempio)
+**it** — Porta dentro una cartella: letta come DosCo, o da un'estensione che legge le cartelle (una pila di fette geofisiche, per esempio)
 
 **script** — A folder (a stack of slices) to a reader of folders, or read as DosCo.
 

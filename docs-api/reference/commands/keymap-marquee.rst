@@ -5,7 +5,7 @@
 keymap:marquee
 ==============
 
-*Generated from EMStudio 1217b52 for em API 1.2.0.*
+*Generated from EMStudio 7b3688d for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -26,7 +26,7 @@ keymap:marquee
    * - Shortcut
      - drag on the empty canvas (gesture, scope ``graph``)
    * - Defined in
-     - ``frontend/src/keymap.ts:47``
+     - ``frontend/src/keymap.ts:49``
 
 .. admonition:: Not available from Python
    :class: warning

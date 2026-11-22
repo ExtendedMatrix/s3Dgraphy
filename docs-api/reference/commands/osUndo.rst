@@ -5,7 +5,7 @@
 osUndo
 ======
 
-*Generated from EMStudio 1217b52 for em API 1.2.0.*
+*Generated from EMStudio 7b3688d for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -32,12 +32,12 @@ osUndo
    * - Shortcut
      - none
    * - Defined in
-     - ``frontend/src/menu-table.ts:259``
+     - ``frontend/src/menu-table.ts:256``
 
 .. admonition:: Not available from Python
    :class: warning
 
-   An item the operating system draws in the macOS menu bar: it has no page button, and ``runCommand`` only finds rows of kind ``cmd`` (``frontend/src/menu-ui.ts:237``), so ``em.app.commands.run`` raises ``em.NotAvailable``.
+   An item the operating system draws in the macOS menu bar: it has no page button, and ``runCommand`` only finds rows of kind ``cmd`` (``frontend/src/menu-ui.ts:242``), so ``em.app.commands.run`` raises ``em.NotAvailable``.
 
 What it does
 ------------

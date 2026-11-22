@@ -5,7 +5,7 @@
 georef
 ======
 
-*Generated from EMStudio 1217b52 for em API 1.2.0.*
+*Generated from EMStudio 7b3688d for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -26,15 +26,15 @@ georef
    * - Writes to the graph
      - not declared
    * - Menu path (en)
-     - Tools ▸ Georeferencing…
+     - File ▸ Georeferencing…
    * - Menu path (it)
-     - Strumenti ▸ Georeferenziazione…
+     - File ▸ Georeferenziazione…
    * - Drawn in
-     - the page's menu bar: web, macOS desktop, Windows desktop, Linux desktop
+     - the page's menu bar: web, macOS desktop, Windows desktop, Linux desktop; the system menu bar: macOS desktop
    * - Shortcut
      - none
    * - Defined in
-     - ``frontend/src/menu-table.ts:247``
+     - ``frontend/src/menu-table.ts:233``
 
 What it does
 ------------

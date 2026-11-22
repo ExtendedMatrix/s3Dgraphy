@@ -5,7 +5,7 @@
 keymap:esc
 ==========
 
-*Generated from EMStudio 1217b52 for em API 1.2.0.*
+*Generated from EMStudio 7b3688d for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -26,7 +26,7 @@ keymap:esc
    * - Shortcut
      - ``Esc`` (key map, scope ``app``)
    * - Defined in
-     - ``frontend/src/keymap.ts:32``
+     - ``frontend/src/keymap.ts:34``
 
 What it does
 ------------

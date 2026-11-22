@@ -5,7 +5,7 @@
 keymap:wheel
 ============
 
-*Generated from EMStudio 1217b52 for em API 1.2.0.*
+*Generated from EMStudio 7b3688d for em API 1.2.0.*
 
 .. list-table::
    :widths: 25 75
@@ -26,7 +26,7 @@ keymap:wheel
    * - Shortcut
      - wheel (gesture, scope ``graph``)
    * - Defined in
-     - ``frontend/src/keymap.ts:44``
+     - ``frontend/src/keymap.ts:46``
 
 .. admonition:: Not available from Python
    :class: warning
