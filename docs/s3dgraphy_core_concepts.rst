@@ -496,6 +496,41 @@ The system relies solely on ``changed_from`` edges to identify chains, never on 
 In the EM-tools Blender interface, instance chain members are marked with a three-dots
 icon and can be filtered to show only the chain members.
 
+Visibility in Time
+------------------
+
+A unit can **exist and be buried** (MICRO-LG4, E.D., 22 Nov 2026). In the post-antique
+period the foundations of a temple are the same US as in the 2nd century and members of
+the functional identity «ruin», but nobody sees them: what is seen is the earth that
+covers them. The representation model of an epoch rests on what was *visible*, so
+visibility is kept apart from life (a buried unit is alive) and from conservation (a
+well-preserved wall can be buried).
+
+The **declared** visibility is a dated ``PropertyNode`` named ``visibility`` (like
+``use`` and ``phase``), its value ``exposed``, ``buried`` or ``partially_exposed``, with
+its paradata like any property. The properties of one unit make its **diary**: windows
+whose ends are either an absolute year with its scissor (``data.valid_from`` /
+``valid_from_latest``, ``data.valid_to_earliest`` / ``valid_to``) or anchored to an epoch
+(``data.valid_from_epoch``, ``data.valid_to_epoch``: the reference is saved, never the
+dates, so the window follows the epoch).
+
+The **derived** visibility is computed from the stratigraphy and never saved: a unit is
+buried while a more recent unit, alive then, covers it (``overlies``, ``fills`` and their
+reverse spellings), in view when nothing covers it or what covered it was taken away (a
+BR: the excavation), partly in view while a cut through the cover that reaches it is
+open. Precedence: declared absolute > declared by epoch > derived; contiguous windows of
+the same state merge; a declaration against the stratigraphy is reported, never
+corrected.
+
+``s3dgraphy.visibility.visibility_windows(graph, unit)`` gives the diary,
+``visibility(graph, unit, horizon)`` the state on an horizon, ``visible_units(graph,
+horizon)`` what the representation model of that horizon shows; ``functional_units.
+presence`` counts the members in view and buried. In RDF the property is a
+``crm:E3_Condition_State`` the unit reaches by ``crm:P44_has_condition``, typed
+``em:VisibilityExposed`` / ``em:VisibilityBuried`` / ``em:VisibilityPartiallyExposed``,
+with its ``crm:P4_has_time-span`` (the time-span of the period itself when the window is
+one whole epoch).
+
 Comment Node Skipping
 ---------------------
 

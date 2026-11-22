@@ -5,7 +5,7 @@ AnnotationRegionNode
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.52, connections 1.6.58) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.53, connections 1.6.58) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *The PLACE A READING LOOKED AT, in the source it read (geometry\_kind): a region of one image or page in NORMALISED image coordinates [0,1] (region2d, the default: shape\_kind rect\|polygon, rect [x,y,w,h] or points [[x,y], ...], page index), a passage of a text (passage: start, end, text — character offsets plus the quoted words), or a point, a line or an open polyline on a 3D model (point\|line\|poly…*
 

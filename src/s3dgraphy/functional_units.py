@@ -251,6 +251,13 @@ def life(graph: Any, node_id: str, *, chronology: Optional[Dict[str, Any]] = Non
         return declared_life(graph, node_id, epoch_intervals=epoch_intervals)
     chron = graph.chronology() if chronology is None else chronology
     entry = chron.get(node_id) or {}
+    # MICRO-LG4: a real unit STILL EXISTING (no BR closes it, MICRO-LG3) has
+    # an open end even when the sequence gives it a TAQ — the limit of the
+    # epoch of a more recent unit pushed down (the foundations under the
+    # elevation USV/s of the 2nd century) is a bound of the sequence, not a
+    # removal: the foundations of the temple exist in the post-antique period
+    if (entry.get("end_life") or {}).get("status") == "still_existing":
+        return (entry.get("start"), None)
     return (entry.get("start"), entry.get("end"))
 
 
@@ -460,6 +467,11 @@ def coherence(graph: Any, *, chronology: Optional[Dict[str, Any]] = None,
     they are members (recursively, through nested units), and the ids of the
     others. A MEASURE, not an error.
 
+    ``visibility_conflicts`` (MICRO-LG4) — ``[{unit, kind, property_id,
+    declared, derived, start, end, by}]``: a declared visibility against the
+    stratigraphy, outside the life of its unit, or against another
+    declaration as strong (:func:`s3dgraphy.visibility.visibility_conflicts`).
+
     ``warnings`` — one sentence per incoherence, in ``lang`` (en | it)."""
     from .periodization import overlaps
     chron = graph.chronology() if chronology is None else chronology
@@ -527,6 +539,33 @@ def coherence(graph: Any, *, chronology: Optional[Dict[str, Any]] = None,
         out["coverage"][ep.node_id] = {"name": ep.name, "interval": ep_iv,
                                        "alive": len(alive), "read": len(read),
                                        "unread": [u for u in alive if u not in read_by]}
+
+    # MICRO-LG4 · a declared visibility against the stratigraphy (or outside
+    # the life of its unit, or against another declaration as strong):
+    # reported, never corrected
+    from . import visibility as _vis
+    out["visibility_conflicts"] = _vis.visibility_conflicts(graph, chronology=chron)
+    for c in out["visibility_conflicts"]:
+        where = _fmt((c.get("start"), c.get("end")))
+        if c["kind"] == "stratigraphy":
+            covers = ", ".join(name(b) for b in c.get("by") or []) or "—"
+            out["warnings"].append(
+                (f"[visibilità] {name(c['unit'])}: dichiarata {c['declared']} in {where}, "
+                 f"la stratigrafia dice {c['derived']} (copertura: {covers})") if it else
+                (f"[visibility] {name(c['unit'])}: declared {c['declared']} in {where}, "
+                 f"the stratigraphy says {c['derived']} (cover: {covers})"))
+        elif c["kind"] == "outside_life":
+            out["warnings"].append(
+                (f"[visibilità] {name(c['unit'])}: una finestra {c['declared']} ({where}) "
+                 f"esce dalla vita dell'unità") if it else
+                (f"[visibility] {name(c['unit'])}: a window {c['declared']} ({where}) "
+                 f"lies outside the life of the unit"))
+        else:
+            out["warnings"].append(
+                (f"[visibilità] {name(c['unit'])}: due dichiarazioni dicono {c['declared']} e "
+                 f"{c.get('other')} in {where}") if it else
+                (f"[visibility] {name(c['unit'])}: two declarations say {c['declared']} and "
+                 f"{c.get('other')} in {where}"))
     return out
 
 
@@ -572,7 +611,8 @@ def evidence(graph: Any, member_ids: Iterable[str]) -> str:
 
 def presence(graph: Any, fu_id: str, horizon: Any = None, *,
              chronology: Optional[Dict[str, Any]] = None,
-             proxy_footprints: Optional[Dict[str, Any]] = None) -> Dict[str, Any]:
+             proxy_footprints: Optional[Dict[str, Any]] = None,
+             covering: Optional[Dict[str, bool]] = None) -> Dict[str, Any]:
     """The PRESENCE of an identity on an horizon (``crm:E93 Presence``, ``P195
     was a presence of`` the identity), COMPUTED, NEVER SAVED (D-LG14).
 
@@ -593,6 +633,17 @@ def presence(graph: Any, fu_id: str, horizon: Any = None, *,
     parts are in different frames; ``footprint_parts`` the members it comes
     from; ``proxies`` the ``geometry`` properties of the members alive (their
     proxies).
+
+    MICRO-LG4 · ``members_visible`` (in view and partly in view),
+    ``members_buried``, ``members_by_visibility`` ``{exposed, buried,
+    partially_exposed, undetermined: [ids]}``, ``member_visibility`` ``{id:
+    state}`` and ``visibility_counts`` ``{alive, exposed, buried,
+    partially_exposed, undetermined}``: what of the identity could be SEEN on
+    the interval (:func:`s3dgraphy.visibility.visibility` — declared, else
+    derived from the stratigraphy). The membership does not change: a buried
+    member is still a member (the buried ruin is still the ruin).
+    ``covering`` replaces the edges read as a cover
+    (:data:`s3dgraphy.visibility.COVERING_EDGES`).
 
     ``proxy_footprints`` (MICRO-MF04): ``{unit_id: {wkt, …}}`` — the LOD0
     outlines COMPUTED from the members' proxies
@@ -663,9 +714,27 @@ def presence(graph: Any, fu_id: str, horizon: Any = None, *,
         except WktError:
             footprint = None
     proxies = [p for m in alive for p in _geometry_proxies(graph, m)]
+    # MICRO-LG4 · the members alive split by what could be seen on the
+    # interval: the ruin exists in the post-antique period, its members are
+    # alive and buried («rudere in H4: 8 membri, 0 in vista»)
+    from . import visibility as _vis
+    by_visibility: Dict[str, List[str]] = {s: [] for s in _vis.STATES + (_vis.UNDETERMINED,)}
+    member_visibility: Dict[str, Optional[str]] = {}
+    if interval is not None:
+        v_interval = interval if interval != (None, None) else h
+        for m in alive:
+            v = _vis.visibility(graph, m, v_interval, chronology=chron, covering=covering)
+            state = v["state"] if v["state"] in _vis.STATES else _vis.UNDETERMINED
+            member_visibility[m] = state
+            by_visibility[state].append(m)
+    visibility_counts = {"alive": len(alive), **{s: len(ids) for s, ids in by_visibility.items()}}
     return {"identity": fu_id, "name": node.name, "scale": scale_of(node),
             "life": fu_life, "interval": interval, "members_alive": alive,
             "members_by_degree": by_degree,
+            "members_visible": by_visibility[_vis.EXPOSED] + by_visibility[_vis.PARTIALLY_EXPOSED],
+            "members_buried": by_visibility[_vis.BURIED],
+            "members_by_visibility": by_visibility, "member_visibility": member_visibility,
+            "visibility_counts": visibility_counts,
             "evidence": evidence(graph, alive) if interval is not None else None,
             "footprint": footprint, "footprint_parts": parts,
             "crs": crs if not mixed else None, "proxies": proxies,

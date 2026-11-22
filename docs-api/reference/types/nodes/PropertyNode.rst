@@ -5,7 +5,7 @@ PropertyNode
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.52, connections 1.6.58) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.53, connections 1.6.58) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *Node representing a property (qualia) of another node.*
 
@@ -63,6 +63,14 @@ Fields
      - number (year, negative before the common era)
    * - ``valid_to``
      - number (year)
+   * - ``valid_from_latest``
+     - number (year)
+   * - ``valid_to_earliest``
+     - number (year)
+   * - ``valid_from_epoch``
+     - string (the node id of an EpochNode of the same graph)
+   * - ``valid_to_epoch``
+     - string (the node id of an EpochNode of the same graph)
 
 Edges
 -----

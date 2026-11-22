@@ -283,6 +283,13 @@ class _Datamodel:
         self._qualia_natural_language_fields: Dict[str, Tuple[str, ...]] = {}
         self._qualia_unit_predicates: Dict[str, Tuple[str, str]] = {}
         self._build_qualia_index(self.qualia_types)
+        #: MICRO-LG4 · a PROPERTY NAME (not a quale) that declares its own
+        #: projection (em_qualia_types property_names.<name>.rdf): visibility
+        #: → crm:E3_Condition_State reached from the unit by P44
+        self.property_name_rdf: Dict[str, Dict[str, Any]] = {
+            name: spec["rdf"]
+            for name, spec in (self.qualia_types.get("property_names") or {}).items()
+            if not name.startswith("_") and isinstance(spec, dict) and isinstance(spec.get("rdf"), dict)}
 
         #: reverse edge name → canonical edge name. The connections datamodel
         #: declares `reverse` on every non-symmetric canonical but keys the
@@ -1183,9 +1190,109 @@ class RDFExporter:
             if pred[1] and value:
                 ctx.add((unit_iri, _resolve_prefixed(pred[1]), Literal(value)))
 
+        # MICRO-LG4 · a dated property that is a CONDITION STATE of its unit
+        # (visibility): declared in em_qualia_types, read here
+        self._emit_condition_states(g, ctx)
+
         # CRMinf belief propositions (J4 → I17) — needs the full edge
         # topology, so it runs as a post-pass after nodes and edges.
         self._emit_belief_propositions(g, ctx)
+
+    def _emit_condition_states(self, g: S3DGraph, ctx) -> None:
+        """MICRO-LG4 (E.D., 22 Nov 2026) · the PropertyNode of a property name
+        that declares a projection (``property_names.<name>.rdf``, today
+        ``visibility``) IS a ``crm:E3_Condition_State`` of its unit:
+
+            <unit> crm:P44_has_condition <property> .
+            <property> a crm:E3_Condition_State ;
+                crm:P2_has_type em:VisibilityBuried ;
+                crm:P4_has_time-span <time-span> .
+
+        The time-span: a window from the start to the end of ONE epoch
+        (``valid_from_epoch`` = ``valid_to_epoch``, no year) shares the
+        time-span OF the period (``<epoch> crm:P4_has_time-span
+        <epoch>/time-span``) — the reference, not the dates, so it follows
+        the epoch. Otherwise the window has its own ``<property>/time-span``:
+        its absolute ends as P82a / P81a / P81b / P82b (the scissor), and the
+        time-span of each epoch it is anchored to ``crm:P86_falls_within``
+        it. No node of the graph is minted (no dcterms:identifier): the
+        importer does not read them back as nodes."""
+        rules = self.datamodel.property_name_rdf
+        if not rules:
+            return
+        epoch_ts_done = set()
+
+        def epoch_span(epoch_id: str) -> Optional[URIRef]:
+            epoch = g.find_node_by_id(epoch_id)
+            if epoch is None:
+                return None
+            e_iri = self._node_iri(g.graph_id, epoch_id)
+            ts = URIRef(str(e_iri) + "/time-span")
+            if epoch_id not in epoch_ts_done:
+                epoch_ts_done.add(epoch_id)
+                ctx.add((e_iri, CRM["P4_has_time-span"], ts))
+                ctx.add((ts, RDF.type, CRM["E52_Time-Span"]))
+                for attr, pred in (("start_time", "P82a_begin_of_the_begin"),
+                                   ("end_time", "P82b_end_of_the_end")):
+                    v = getattr(epoch, attr, None)
+                    if v is not None:
+                        ctx.add((ts, CRM[pred], Literal(v)))
+            return ts
+
+        for edge in g.edges:
+            if edge.edge_type != "has_property":
+                continue
+            pn = g.find_node_by_id(edge.edge_target)
+            if pn is None:
+                continue
+            name = getattr(pn, "property_type", None)
+            if not name or name not in rules:
+                name = getattr(pn, "name", None)
+            rule = rules.get(name or "")
+            if not rule:
+                continue
+            p_iri = self._node_iri(g.graph_id, pn.node_id)
+            u_iri = self._node_iri(g.graph_id, edge.edge_source)
+            cls = _resolve_prefixed(rule.get("class"))
+            if cls is not None:
+                ctx.add((p_iri, RDF.type, cls))
+            self.stats["condition_states"] = self.stats.get("condition_states", 0) + 1
+            pred = _resolve_prefixed(rule.get("from_unit"))
+            if pred is not None:
+                ctx.add((u_iri, pred, p_iri))
+            value = str(getattr(pn, "value", "") or "").strip().lower().replace(" ", "_")
+            concept = (rule.get("concepts") or {}).get(value)
+            type_pred = _resolve_prefixed(rule.get("type"))
+            if concept and type_pred is not None:
+                ctx.add((p_iri, type_pred, _resolve_prefixed(concept)))
+            time_pred = _resolve_prefixed(rule.get("time"))
+            if time_pred is None:
+                continue
+            data = getattr(pn, "data", None) or {}
+            f_ep, t_ep = data.get("valid_from_epoch"), data.get("valid_to_epoch")
+            years = {k: data.get(k) for k in ("valid_from", "valid_from_latest",
+                                               "valid_to_earliest", "valid_to")}
+            if f_ep and f_ep == t_ep and data.get("valid_from") is None and data.get("valid_to") is None:
+                ts = epoch_span(f_ep)
+                if ts is not None:
+                    ctx.add((p_iri, time_pred, ts))
+                continue
+            if not f_ep and not t_ep and all(v is None for v in years.values()):
+                continue
+            ts = URIRef(str(p_iri) + "/time-span")
+            ctx.add((p_iri, time_pred, ts))
+            ctx.add((ts, RDF.type, CRM["E52_Time-Span"]))
+            for key, crm_pred in (("valid_from", "P82a_begin_of_the_begin"),
+                                  ("valid_from_latest", "P81a_end_of_the_begin"),
+                                  ("valid_to_earliest", "P81b_begin_of_the_end"),
+                                  ("valid_to", "P82b_end_of_the_end")):
+                if years[key] is not None:
+                    ctx.add((ts, CRM[crm_pred], Literal(years[key])))
+            for ep, year_key in ((f_ep, "valid_from"), (t_ep, "valid_to")):
+                if ep and data.get(year_key) is None:
+                    e_ts = epoch_span(ep)
+                    if e_ts is not None:
+                        ctx.add((e_ts, CRM.P86_falls_within, ts))
 
     def _emit_belief_propositions(self, g: S3DGraph, ctx) -> None:
         """J4 linking: connect each argumentation belief to its proposition.

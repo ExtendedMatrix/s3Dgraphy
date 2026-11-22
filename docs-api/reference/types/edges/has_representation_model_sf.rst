@@ -5,7 +5,7 @@ has_representation_model_sf
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.52, connections 1.6.58) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.53, connections 1.6.58) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *Connects special find units to their representation model in 3D space.*
 

@@ -5,7 +5,7 @@ HeritageEntityNode
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.52, connections 1.6.58) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.53, connections 1.6.58) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *HC1 Heritage Entity (HDT-O, ECHOES D7.1): the real-world entity socially recognized as having cultural/historical/scientific value that an HC2 Heritage Digital Twin (HDTNode) is a digital twin of.*
 

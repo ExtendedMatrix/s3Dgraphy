@@ -5,6 +5,27 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Changed
+- **The visibility in time — a unit can exist and be buried** (MICRO-LG4, 22
+  November 2026, decision of E.D.). New property name `visibility`
+  (em_qualia_types 1.6.15): a DATED property of a unit, `exposed` · `buried` ·
+  `partially_exposed`, with definition, scope note (not the life, not the
+  conservation) and narrative, EN + IT (translations 1.20). Node datamodel
+  1.6.53: PropertyNode `data.valid_from_latest` / `valid_to_earliest` (the
+  scissor of an absolute end) and `data.valid_from_epoch` / `valid_to_epoch`
+  (an end anchored to an epoch: the reference, never the dates). em.ttl 1.6.28:
+  `em:VisibilityExposed`, `em:VisibilityBuried`, `em:VisibilityPartiallyExposed`;
+  the RDF exporter writes the property as a `crm:E3_Condition_State` of its
+  unit (`crm:P44_has_condition`, `P2_has_type`, `P4_has_time-span` — the
+  period's own time-span for a window of one whole epoch, `P86_falls_within`
+  for the epochs of a window across epochs). New `s3dgraphy.visibility`:
+  `visibility_windows` (the diary: declared absolute > by epoch > derived from
+  `overlies` / `fills`, contiguous windows merged, conflicts reported),
+  `visibility(graph, unit, horizon)`, `horizon_visibility` / `visible_units`
+  (what the representation model of an horizon shows), `visibility_conflicts`.
+  `functional_units.presence` counts the members in view and buried;
+  `coherence` lists the visibility conflicts. `functional_units.life`: a real
+  unit still existing (no BR) has an open end even when the sequence gives it a
+  TAQ (the foundations below the USV/s of their elevation live on).
 - **Two corrections to MICRO-LG3** (MICRO-LG3b, 22 November 2026, decisions of
   E.D.). Connections 1.6.58: `abuts` is POSTERIORITY, not contemporaneity —
   `implies: {edge: "is_after", source_is_more_recent: true}` (the unit that

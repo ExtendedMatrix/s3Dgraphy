@@ -5,7 +5,7 @@ LicenseNode
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.52, connections 1.6.58) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.53, connections 1.6.58) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *Represents the license under which a node (or the whole graph via GraphNode) is published.*
 

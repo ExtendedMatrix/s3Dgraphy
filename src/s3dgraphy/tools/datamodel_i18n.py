@@ -94,6 +94,13 @@ the definition and the scope note of the few edge types listed in
 :data:`EDGE_TEXT_EDGES` — today ``changed_from``, whose dotted line between units
 says a displacement in space (MICRO-LG3): ``edge_text(edge, field, lang)``.
 
+`property_names.<name>.description` / `.scope_note` / `.value_<key>` (1.20,
+em_qualia_types 1.6.15) are the definition, the scope note and the label of
+each value of the property names listed in :data:`PROPERTY_TEXT_NAMES` — today
+``visibility`` (MICRO-LG4: exposed «in vista», buried «sepolta»,
+partially_exposed «parzialmente in vista»): ``property_value_label(name, value,
+lang)``, ``property_name_text(name, field, lang)``.
+
 `edge_types` (connections 1.6.22: `edge_types.<edge>.ui_phrase`) are the phrases of a menu entry that
 creates a node linked to an existing one («US sopra X», «Proprietà di X»):
 `{node}` is the new node's type label, `{x}` the existing node's name, and every
@@ -171,6 +178,12 @@ PHRASE_FIELDS = tuple(f"ui_phrase_{d}" for d in PHRASE_DIRS)
 #: reader must not misread: changed_from (the dotted line says a displacement)
 EDGE_TEXT_EDGES = ("changed_from",)
 EDGE_TEXT_FIELDS = ("description", "scope_note")
+#: 1.20 (em_qualia_types 1.6.15, MICRO-LG4): the property names whose
+#: DEFINITION (``description``) and ``scope_note`` are translated, and whose
+#: VALUES (``values.<key>.name``) have a label each, ``value_<key>`` — the
+#: visibility of a unit: exposed, buried, partially_exposed
+PROPERTY_TEXT_NAMES = ("visibility",)
+PROPERTY_TEXT_FIELDS = ("description", "scope_note")
 _PREFIX_TO_SECTION = {v: k for k, v in SECTIONS.items()}
 
 SHEET = "Datamodel strings"
@@ -256,6 +269,14 @@ def _collect_property_names_en(qualia: Dict[str, Any]) -> Dict[str, Dict[str, st
         assert name not in ids, f"property name {name} is a quale"
         if isinstance(spec.get("name"), str) and spec["name"].strip():
             out[name] = {"label": spec["name"]}
+        if name in PROPERTY_TEXT_NAMES:
+            entry = out.setdefault(name, {})
+            for field in PROPERTY_TEXT_FIELDS:
+                if isinstance(spec.get(field), str) and spec[field].strip():
+                    entry[field] = spec[field]
+            for key, value in (spec.get("values") or {}).items():
+                if isinstance(value, dict) and isinstance(value.get("name"), str):
+                    entry[f"value_{key}"] = value["name"]
     return out
 
 
@@ -523,6 +544,18 @@ def qualia_label(qualia_id: str, lang: str = "en",
         if text:
             return text
     return translate("qualia", qualia_id, "label", lang)
+
+
+def property_value_label(name: str, value: str, lang: str = "en") -> Optional[str]:
+    """Label of a VALUE of a property name that has a closed list (1.20,
+    MICRO-LG4: ``visibility`` exposed → «in vista»)."""
+    return translate("property_names", name, f"value_{value}", lang)
+
+
+def property_name_text(name: str, field: str = "description", lang: str = "en") -> Optional[str]:
+    """The definition (``description``) or the ``scope_note`` of a property
+    name of :data:`PROPERTY_TEXT_NAMES` (1.20)."""
+    return translate("property_names", name, field, lang)
 
 
 def property_name_label(name: str, lang: str = "en") -> Optional[str]:

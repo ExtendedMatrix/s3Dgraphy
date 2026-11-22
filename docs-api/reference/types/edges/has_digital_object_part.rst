@@ -5,7 +5,7 @@ has_digital_object_part
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.52, connections 1.6.58) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.53, connections 1.6.58) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *Links an HDT (or any HC14 Volatile Digital Object) to an auxiliary digital object that is NOT a proposition set — e.g., a 3D survey database, a point cloud, a generic linked resource.*
 
