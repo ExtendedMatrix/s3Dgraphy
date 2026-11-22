@@ -838,7 +838,12 @@ class Graph:
                        born: ``{"node", "rule", "source"}`` — the unit whose own
                        bound it is, and its rule (``epoch`` / ``sub_epoch``: the
                        LIMIT of the epoch ``source``, not an end; ``written``: a
-                       date). MICRO-C-CORREZIONI-ED.
+                       date). MICRO-C-CORREZIONI-ED. WHAT STILL EXISTS STAYS
+                       (MICRO-LG5, E.D. 22 Nov 2026): a real unit no BR
+                       closes and with no end written takes no TAQ — its end
+                       stays open, a ``[chronology still existing]`` warning
+                       says the TAQ it did not take; the TAQ still bounds
+                       the units that end (a BR, an end written).
         ``cited``      the life of a SITE in a landscape (D-LG7, MICRO-LANDSCAPE-
                        ONTOLOGIA, 6 Nov 2026): computed from the studies cited
                        that took place there, never written. The studies live
@@ -951,8 +956,25 @@ class Graph:
             elif st["start"] is None or value > st["start"]:
                 self._set_bound(st, "start", value, "contained", member.node_id, "is_part_of")
 
-        # Pass 3: TPQ/TAQ along the stratigraphic sequence.
-        self._propagate_bounds(strat_nodes, state, written_start, written_end, sink)
+        # Pass 3: TPQ/TAQ along the stratigraphic sequence. MICRO-LG5 (E.D.,
+        # 22 Nov 2026, 17:00): what still exists stays — a REAL unit no
+        # continuity (BR) closes and with no end written is still existing
+        # (MICRO-LG3), it reaches today: no TAQ shortens it (the elevation
+        # USV/s that collapses in its epoch leaves the foundation below it).
+        from .unit_life import continuities_of
+        still_existing = set()
+        for node in strat_nodes:
+            nid = node.node_id
+            if nid in written_end or not self._is_real_unit(node):
+                continue
+            le = life_end.get(nid)
+            if le is not None:
+                if le["status"] == "still_existing":
+                    still_existing.add(nid)
+            elif not continuities_of(self, nid, index=life_ix):
+                still_existing.add(nid)
+        self._propagate_bounds(strat_nodes, state, written_start, written_end, sink,
+                               still_existing=still_existing)
 
         # Pass 4 (MICRO-LG3): the windows of life — a survival of a unit with
         # no birth, a membership in a dated functional unit. They move no
@@ -1411,7 +1433,8 @@ class Graph:
         from .resolvers import resolve, get_rule
         return resolve(self, node, get_rule(rule_id), default=default)
 
-    def _propagate_bounds(self, strat_nodes, state, written_start, written_end, sink):
+    def _propagate_bounds(self, strat_nodes, state, written_start, written_end, sink,
+                          still_existing=frozenset()):
         """
         Propagate Terminus Post Quem (TPQ) and Terminus Ante Quem (TAQ) constraints
         with coherence checking (DP-32 Layer B, Hard paradox policy), on the
@@ -1433,8 +1456,15 @@ class Graph:
             modify it, propagation is *blocked* at that node: the written seed is
             kept, a warning goes to ``sink``, and BFS does not traverse further
             through the conflicting node.
+
+        What still exists stays (MICRO-LG5, E.D. 22 Nov 2026): a unit in
+        ``still_existing`` (a real unit no BR closes, no end written) takes
+        no TAQ — it reaches today. The TAQ goes on through it to the more
+        ancient units, and once per unit a ``[chronology still existing]``
+        warning says the TAQ it did not take (the tightest).
         """
         from .diagnostics import format_attribution
+        spared = {}
 
         # node_id -> [(neighbour_id, edge_type)]
         more_recent_of = {}
@@ -1507,13 +1537,28 @@ class Graph:
                         continue
 
                     nst = state.setdefault(neighbor_id, self._blank_bounds())
-                    if tighter(value, nst[side]):
+                    if side == "end" and neighbor_id in still_existing:
+                        # still existing: the TAQ is at most a warning
+                        old = spared.get(neighbor_id)
+                        if old is None or value < old[0]:
+                            spared[neighbor_id] = (value, node, via_id, edge_type)
+                    elif tighter(value, nst[side]):
                         self._set_bound(nst, side, value, rule, via_id, edge_type)
                         nst[side + "_root"] = self._bound_root(state, node.node_id, side)
 
                     for next_id, et in adjacency.get(neighbor_id, []):
                         if next_id not in visited:
                             queue.append((next_id, neighbor_id, et))
+        for nid, (value, origin, via_id, edge_type) in spared.items():
+            node = self.find_node_by_id(nid)
+            via = self.find_node_by_id(via_id)
+            label = getattr(node, "name", None) or nid
+            origin_label = getattr(origin, "name", None) or origin.node_id
+            via_label = getattr(via, "name", None) or via_id
+            sink.append(
+                f"[chronology still existing] node '{label}' is still existing (no "
+                f"continuity closes it): the TAQ {value} of '{origin_label}' (through "
+                f"'{via_label}', {edge_type}) does not end it — it reaches today.")
 
     def filter_nodes_by_time_range(self, *args):
         """

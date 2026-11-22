@@ -5,6 +5,24 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Changed
+- **The visibility in the Inspector with propagation; time and stratigraphy do
+  not mix; what still exists stays** (MICRO-LG5, 22 November 2026, decisions of
+  E.D.). `s3dgraphy.visibility`: `covering=` takes physical relations only
+  (`check_covering`: `is_after`, `is_before`, `has_same_time`, `changed_from`
+  raise `ValueError`), and a unit with only temporal relations has no
+  stratigraphic relation (derived visibility undetermined). PROPAGATION: a
+  window declared on a container — a functional unit (and its parents), an
+  activity, a time branch, an epoch the unit lives in — is INHERITED by its
+  members with its origin and paradata (`containers_of`, `inherited_windows`;
+  every window says `level` own · inherited · derived and `inherited_from`);
+  declared on the unit > nearest container > derived; `inherited_overlap`
+  conflict. `Graph.chronology`: a real unit still existing (no BR, no end
+  written) takes no TAQ — its end stays open, a `[chronology still existing]`
+  warning instead (the LG4 correction of `functional_units.life` now in the
+  chronology: exports, `CALCUL_END_T`, the Matrix lanes). Connections 1.6.59
+  (`has_property` from ActivityNodeGroup, TimeBranchNodeGroup), qualia 1.6.16
+  (visibility: propagation, `_covering_note`), translations 1.21. Mappings
+  re-stamped; tests/test_visibility_lg5.py.
 - **The visibility in time — a unit can exist and be buried** (MICRO-LG4, 22
   November 2026, decision of E.D.). New property name `visibility`
   (em_qualia_types 1.6.15): a DATED property of a unit, `exposed` · `buried` ·

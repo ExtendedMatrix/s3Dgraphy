@@ -78,7 +78,7 @@ def _states(diary):
 
 def test_the_datamodel_says_the_visibility_its_values_and_its_projection():
     q = json.loads((CONFIG / "em_qualia_types.json").read_text(encoding="utf-8"))
-    assert q["metadata"]["version"] == "1.6.15"
+    assert q["metadata"]["version"] == "1.6.16"  # LG5: propagation, _covering_note
     vis = q["property_names"]["visibility"]
     assert set(vis["values"]) == {"exposed", "buried", "partially_exposed"}
     assert "DO NOT USE" in vis["scope_note"] and "conservation" in vis["scope_note"].lower()
@@ -293,8 +293,13 @@ def test_a_still_existing_unit_lives_on_beyond_the_taq_of_its_elevation():
     g.add_node(StructuralVirtualStratigraphicUnit("USV100", "USV100"))
     g.add_edge("fe_usv", "USV100", "ROM", "has_first_epoch")
     g.add_edge("ia", "USV100", "F1", "is_after")
-    ch = g.chronology()
-    assert ch["F1"]["end"] == 199.0 and ch["F1"]["end_life"]["status"] == "still_existing"
+    warnings = []
+    ch = g.chronology(warnings=warnings)
+    # MICRO-LG5 (E.D., 22 Nov 2026): Graph.chronology itself no longer ends
+    # it at the TAQ 199 of the elevation (was: end 199.0, rule taq) — what
+    # still exists stays; the TAQ is a warning
+    assert ch["F1"]["end"] is None and ch["F1"]["end_life"]["status"] == "still_existing"
+    assert any("[chronology still existing]" in w and "SU001" in w for w in warnings)
     assert FU.life(g, "F1", chronology=ch) == (100.0, None)
     assert FU.presence(g, "RUIN", (200, 1800), chronology=ch)["visibility_counts"]["alive"] == 2
 
@@ -374,10 +379,9 @@ def test_templumare_the_foundations_exist_in_the_post_antique_period():
     for name in ("SU001", "SU003", "SU004"):
         v = V.visibility(g, by[name], post, chronology=ch)
         assert v["alive"] is True                                    # the same US, alive
-    # the data has no overlies / fills over the foundations: with the
-    # datamodel's covers they are in view; read as EM 1.5 (is_after) the
-    # destruction layer SU019 buries them until the excavation
+    # the data has no overlies / fills over the foundations. MICRO-LG5 (E.D.,
+    # 22 Nov 2026): the reading of is_after as a cover (EM 1.5) is refused —
+    # time never goes back into stratigraphy (was: SU019 buried them)
     em15 = dict(V.COVERING_EDGES, is_after=True, is_before=False)
-    v = V.visibility(g, by["SU001"], post, chronology=ch, covering=em15)
-    assert (v["state"], [g.find_node_by_id(b).name for b in v["by"]]) == ("buried", ["SU019"])
-    assert V.visibility(g, by["SU001"], (2026, 2026), chronology=ch, covering=em15)["state"] == "exposed"
+    with pytest.raises(ValueError, match="relation of TIME"):
+        V.visibility(g, by["SU001"], post, chronology=ch, covering=em15)

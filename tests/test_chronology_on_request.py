@@ -19,7 +19,7 @@ from pathlib import Path
 import pytest
 
 from s3dgraphy.graph import Graph
-from s3dgraphy.nodes import (EpochNode, PropertyNode, SpecialFindUnit,
+from s3dgraphy.nodes import (ContinuityNode, EpochNode, PropertyNode, SpecialFindUnit,
                              StratigraphicUnit)
 from s3dgraphy.exporter.emjson_exporter import CALCULATED_KEYS, build_emjson
 from s3dgraphy.importer.emjson_importer import import_emjson, parse_emjson
@@ -63,7 +63,16 @@ def test_chronology_writes_nothing():
 
 
 def test_each_bound_says_where_it_comes_from():
-    chron = _sequence().chronology()
+    # MICRO-LG5 (E.D., 22 Nov 2026): US1, a real unit no BR closes, is still
+    # existing — no TAQ shortens it (was: end 250, rule taq)
+    assert _sequence().chronology()["US1"]["end"] is None
+    # closed by a continuity (BR) in its epoch, it ends, and the TAQ of the
+    # more recent US2 bounds it as before
+    g = _sequence()
+    g.add_node(ContinuityNode(node_id="BR1", name="end of US1", description=""))
+    g.add_edge("b1", "BR1", "US1", "is_after")
+    g.add_edge("b2", "BR1", "EP", "has_first_epoch")
+    chron = g.chronology()
     assert chron["US1"]["start"] == 100 and chron["US1"]["start_rule"] == "epoch"
     assert chron["US1"]["start_source"] == "EP"
     # US1 ends no later than the written end of the more recent US2 (TAQ)

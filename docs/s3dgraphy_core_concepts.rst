@@ -531,6 +531,28 @@ presence`` counts the members in view and buried. In RDF the property is a
 with its ``crm:P4_has_time-span`` (the time-span of the period itself when the window is
 one whole epoch).
 
+**Time and stratigraphy do not mix** (MICRO-LG5, E.D., 22 Nov 2026). The stratigraphic
+relations (``overlies``, ``fills``, ``cuts``, ``abuts``…) are the ground of the temporal
+ones and both are recorded, but nothing goes back from time to stratigraphy:
+``is_after``, ``is_before`` and ``has_same_time`` are never a cover nor any other
+physical relation. The ``covering=`` parameter takes physical relations only — a
+temporal edge there raises ``ValueError`` (``visibility.check_covering``) — and a unit
+whose only relations are temporal has an *undetermined* derived visibility: declare it.
+
+**Propagation from a container**, as the author is inherited. A window declared on a
+container reaches its members as an **inherited** window, with its origin and its
+paradata (who declared it on the container stays its author): a functional unit (and the
+ones that contain it, one step farther each), an activity, a time branch (both may hold
+a property since connections 1.6.59), and — always the farthest — every epoch the
+unit's life reaches. An open end of a container's window is the container's span (the
+epoch's, the functional unit's declared life). Precedence: declared on the unit >
+inherited from the nearest container > derived from the stratigraphy; a window declared
+on the member overrides the inherited one locally. Each window of the diary says its
+``level`` (``own``, ``inherited``, ``derived``) and ``inherited_from``; two containers at
+the same distance saying different states are an ``inherited_overlap`` conflict.
+``visibility.containers_of`` lists the containers of a unit, ``inherited_windows`` what
+it inherits. EMStudio shows the diary in the Inspector, section «Visibility».
+
 Comment Node Skipping
 ---------------------
 
@@ -565,7 +587,12 @@ The result is a pair of computed attributes on each node:
 - ``CALCUL_START_T`` — the **Terminus Post Quem (TPQ)**: the earliest possible start
   date, constrained by predecessors
 - ``CALCUL_END_T`` — the **Terminus Ante Quem (TAQ)**: the latest possible end date,
-  constrained by successors
+  constrained by successors. **What still exists stays** (MICRO-LG5, E.D., 22 Nov
+  2026): a real unit no continuity (BR) closes and with no end written is still
+  existing and reaches today — no TAQ shortens it (the elevation USV/s that collapses
+  in its epoch leaves the foundation below it); its end stays open and a
+  ``[chronology still existing]`` warning says the TAQ it did not take. The TAQ still
+  bounds the units that end, and goes on through a still existing unit to them.
 
 **Example:** If ``USV132`` is stratigraphically *after* ``VSF141``, and ``VSF141``
 has ``absolute_time_start = 180``, then ``USV132``'s ``CALCUL_START_T`` will be at

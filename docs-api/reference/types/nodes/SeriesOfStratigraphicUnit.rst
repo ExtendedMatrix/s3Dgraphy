@@ -5,7 +5,7 @@ SeriesOfStratigraphicUnit
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.53, connections 1.6.58) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.53, connections 1.6.59) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *Series of Stratigraphic Units (SU).*
 

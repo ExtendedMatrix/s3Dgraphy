@@ -255,7 +255,9 @@ def life(graph: Any, node_id: str, *, chronology: Optional[Dict[str, Any]] = Non
     # an open end even when the sequence gives it a TAQ — the limit of the
     # epoch of a more recent unit pushed down (the foundations under the
     # elevation USV/s of the 2nd century) is a bound of the sequence, not a
-    # removal: the foundations of the temple exist in the post-antique period
+    # removal: the foundations of the temple exist in the post-antique period.
+    # MICRO-LG5: Graph.chronology says it itself now (no TAQ on a unit still
+    # existing); kept for a chronology computed by an older s3Dgraphy
     if (entry.get("end_life") or {}).get("status") == "still_existing":
         return (entry.get("start"), None)
     return (entry.get("start"), entry.get("end"))

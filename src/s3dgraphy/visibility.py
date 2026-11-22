@@ -28,6 +28,21 @@ unit is alive) and not conservation (a well-preserved wall can be buried).
   without date > derived. Contiguous windows of the same state merge. A
   declared window against the stratigraphy (exposed where a cover says
   buried, or the other way round) is reported, never corrected.
+* TIME AND STRATIGRAPHY DO NOT MIX (MICRO-LG5, E.D. 22 Nov 2026, 17:00): the
+  stratigraphic relations (overlies, fills, cuts, abuts…) are the ground of
+  the temporal ones and both are recorded, but nothing ever goes back from a
+  temporal relation to a stratigraphic one. ``is_after`` / ``is_before`` /
+  ``has_same_time`` are never a cover nor any other physical relation:
+  ``covering=`` takes physical relations only (a temporal edge is a
+  ``ValueError``), and a unit with only temporal relations has no
+  stratigraphic relation at all (its derived visibility is undetermined).
+* PROPAGATION (MICRO-LG5, like the author): a window declared on a CONTAINER
+  — a functional unit (and the ones that contain it), an activity, a time
+  branch, an epoch the unit lives in — reaches its members as an INHERITED
+  window with its origin (``inherited_from``) and its paradata (who declared
+  it on the container stays its author). Precedence: declared on the unit >
+  inherited from the nearest container > derived from the stratigraphy; a
+  window declared on the unit overrides an inherited one locally.
 
 :func:`visibility_windows` is the diary; :func:`visibility` the state on an
 horizon; :func:`horizon_visibility` / :func:`visible_units` the units visible
@@ -64,11 +79,43 @@ DERIVED = "derived"
 SOURCES = (ABSOLUTE, EPOCH, UNDATED, DERIVED)
 _RANK = {DERIVED: 0, UNDATED: 1, EPOCH: 2, ABSOLUTE: 3}
 
+#: whose a window is (MICRO-LG5): declared on the unit itself, inherited from
+#: a container, derived from the stratigraphy — strongest first
+OWN = "own"
+INHERITED = "inherited"
+LEVELS = (OWN, INHERITED, DERIVED)
+_LEVEL_RANK = {DERIVED: 0, INHERITED: 1, OWN: 2}
+
+#: the containers a window declared on them reaches the members of, by the
+#: edge member → container (MICRO-LG5); a functional unit inside another
+#: passes its parent's on, one step farther
+CONTAINER_EDGES: Dict[str, str] = {
+    "is_in_functional_unit": "functional_unit",
+    "is_in_activity": "activity",
+    "is_in_timebranch": "timebranch",
+}
+#: the epoch is the widest container: always farther than any group
+EPOCH_DISTANCE = 100
+#: at the same distance, the order the containers are read in (the last read
+#: is on top): an epoch, a time branch, an activity, a functional unit
+_KIND_ORDER = {"epoch": 0, "timebranch": 1, "activity": 2, "functional_unit": 3}
+
 #: the edges that COVER, ``edge_type → True when the SOURCE covers the
 #: TARGET``: a unit that lies on another (overlies) or fills it (fills — the
 #: fill covers the interface of the cut) and their reverse spellings. Not
-#: ``is_after`` (a time, not a contact), not ``abuts`` (beside, not above),
-#: not ``cuts`` (it takes away), not the contemporaries.
+#: ``abuts`` (beside, not above), not ``cuts`` (it takes away), not the
+#: contemporaries.
+#:
+#: _note (MICRO-LG5, E.D. 22 Nov 2026, 17:00) · TIME AND STRATIGRAPHY DO NOT
+#: MIX. The stratigraphic relations are the ground of the temporal ones; both
+#: are recorded, and nothing goes back from time to stratigraphy: ``is_after``,
+#: ``is_before``, ``has_same_time`` (and ``changed_from``) are never a cover
+#: nor any other physical relation — not by default, not on request. A table
+#: passed as ``covering=`` is checked against the physical relations of the
+#: connections datamodel (``ConnectionsDatamodel.physical_relations``): a
+#: temporal edge there is a ``ValueError`` (:func:`check_covering`). The same
+#: rule is written in the scope note of ``property_names.visibility``
+#: (em_qualia_types 1.6.16).
 COVERING_EDGES: Dict[str, bool] = {
     "overlies": True, "is_overlain_by": False,
     "fills": True, "is_filled_by": False,
@@ -226,11 +273,43 @@ def _related(graph: Any, unit_id: str, table: Dict[str, bool], *, as_source: boo
     return out
 
 
-def _has_relations(graph: Any, unit_id: str) -> bool:
+#: the relations of TIME, never read as a contact (MICRO-LG5)
+TEMPORAL_EDGES = frozenset({"is_after", "is_before", "has_same_time", "changed_from"})
+
+
+def check_covering(covering: Optional[Dict[str, bool]]) -> Dict[str, bool]:
+    """The table of covering edges to use: :data:`COVERING_EDGES` for None,
+    else ``covering`` once every name in it is a PHYSICAL relation of the
+    connections datamodel. A temporal relation (``is_after``…) is refused
+    with a ``ValueError``: time never goes back into stratigraphy (MICRO-LG5,
+    E.D. 22 Nov 2026)."""
+    if covering is None:
+        return COVERING_EDGES
     from .edges.connections_loader import get_connections_datamodel
-    ordering = set(get_connections_datamodel().ordering_edges()) | set(COVERING_EDGES) | set(CUT_EDGES)
-    ordering |= {"is_after", "is_before"}
-    return any(e.edge_type in ordering and unit_id in (e.edge_source, e.edge_target)
+    physical = get_connections_datamodel().physical_relations()
+    temporal = sorted(k for k in covering if k in TEMPORAL_EDGES)
+    if temporal:
+        raise ValueError(
+            f"covering= takes stratigraphic (physical) relations only — {', '.join(temporal)}: "
+            f"a relation of TIME, not of contact. The temporal relations are derived from "
+            f"the stratigraphic ones, never the other way round (MICRO-LG5, E.D. 22 Nov 2026). "
+            f"Physical relations: {', '.join(sorted(physical))}.")
+    other = sorted(k for k in covering if k not in physical)
+    if other:
+        raise ValueError(
+            f"covering= takes stratigraphic (physical) relations only — {', '.join(other)}: "
+            f"not one of them. Physical relations: {', '.join(sorted(physical))}.")
+    return dict(covering)
+
+
+def _has_relations(graph: Any, unit_id: str) -> bool:
+    """Does the unit have a STRATIGRAPHIC relation at all — a physical one of
+    the connections datamodel. ``is_after`` / ``is_before`` / ``has_same_time``
+    do not count (MICRO-LG5): with only them, «nothing covers it» would be
+    read from time."""
+    from .edges.connections_loader import get_connections_datamodel
+    physical = set(get_connections_datamodel().physical_relations()) | set(COVERING_EDGES) | set(CUT_EDGES)
+    return any(e.edge_type in physical and unit_id in (e.edge_source, e.edge_target)
                for e in graph.edges)
 
 
@@ -240,13 +319,13 @@ def derived_windows(graph: Any, unit_id: str, *, chronology: Optional[Dict[str, 
     """The visibility DERIVED from the stratigraphy, never saved: ``{status,
     windows, undated_covers}``. ``status`` is ``ok``, ``undated`` (the unit
     has no date: nothing to say) or ``no_relations`` (no stratigraphic
-    relation at all: «nothing covers it» would be a guess). ``covering``
-    replaces :data:`COVERING_EDGES` (a reading of ``is_after`` as a cover is
-    the caller's choice, never the default)."""
-    from .periodization import overlaps
+    relation at all: «nothing covers it» would be a guess; ``is_after`` and
+    the other temporal relations are not stratigraphic ones). ``covering``
+    replaces :data:`COVERING_EDGES` with other PHYSICAL relations only — a
+    temporal one is a ``ValueError`` (:func:`check_covering`, MICRO-LG5)."""
+    table = check_covering(covering)
     chron = graph.chronology() if chronology is None else chronology
     intervals = graph.epoch_intervals() if epoch_intervals is None else epoch_intervals
-    table = COVERING_EDGES if covering is None else covering
     if not _fu._dated(graph, unit_id, chron):
         return {"status": "undated", "windows": [], "undated_covers": []}
     if not _has_relations(graph, unit_id) and not any(
@@ -405,9 +484,20 @@ def _merge(windows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
             if w["source"] not in srcs:
                 srcs.append(w["source"])
             cur["source"] = max(srcs, key=lambda s: _RANK[s])
+            # whose the merged window is: the strongest piece's (own >
+            # inherited > derived); the origin of the first inherited piece
+            lvls = cur.setdefault("levels", [cur.get("level") or DERIVED])
+            wl = w.get("level") or DERIVED
+            if wl not in lvls:
+                lvls.append(wl)
+            if wl == INHERITED and cur.get("inherited_from") is None:
+                cur["inherited_from"] = w.get("inherited_from")
+            cur["level"] = max(lvls, key=lambda x: _LEVEL_RANK[x])
             continue
         w = dict(w)
         w.setdefault("sources", [w["source"]])
+        w.setdefault("level", DERIVED)
+        w.setdefault("levels", [w["level"]])
         if w.get("property_id") and not w.get("property_ids"):
             w["property_ids"] = [w["property_id"]]
         out.append(w)
@@ -416,7 +506,7 @@ def _merge(windows: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
 def _part(w: Dict[str, Any]) -> Dict[str, Any]:
     return {k: w.get(k) for k in ("state", "start", "end", "source", "property_id", "by",
-                                  "start_epoch", "end_epoch")}
+                                  "start_epoch", "end_epoch", "level", "inherited_from")}
 
 
 def _public(w: Dict[str, Any]) -> Dict[str, Any]:
@@ -429,44 +519,219 @@ def _public(w: Dict[str, Any]) -> Dict[str, Any]:
     out.setdefault("by", [])
     out.setdefault("property_ids", [])
     out.setdefault("paradata", [])
+    out.setdefault("level", DERIVED)
+    out.setdefault("levels", [out["level"]])
+    out.setdefault("inherited_from", None)
+    if out["level"] != INHERITED and INHERITED not in out["levels"]:
+        out["inherited_from"] = None
     if "parts" in out:
         out["parts"] = [dict(p, start=_out(p["start"]), end=_out(p["end"])) for p in out["parts"]]
     return out
 
 
+# ── the containers (MICRO-LG5) ───────────────────────────────────────────────
+
+def _visibility_owners(graph: Any) -> Dict[str, List[str]]:
+    """``{owner_id: [property_id]}``: every node that DECLARES a visibility."""
+    out: Dict[str, List[str]] = {}
+    for e in graph.edges:
+        if e.edge_type == "has_property" and is_visibility_property(graph.find_node_by_id(e.edge_target)):
+            out.setdefault(e.edge_source, []).append(e.edge_target)
+    return out
+
+
+def containers_of(graph: Any, unit_id: str, *, chronology: Optional[Dict[str, Any]] = None,
+                  epoch_intervals: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    """The CONTAINERS of a unit a visibility declared on them reaches it from
+    (MICRO-LG5), nearest first: ``[{node, name, kind, distance, via, edge}]``.
+
+    * the functional units it is a member of (``is_in_functional_unit``,
+      distance 1) and the ones that contain them (2, 3…);
+    * its activities (``is_in_activity``) and time branches
+      (``is_in_timebranch``), distance 1;
+    * the epochs its LIFE reaches (:func:`s3dgraphy.functional_units.life`;
+      an epoch is an horizon: every unit alive in it is in it), distance
+      :data:`EPOCH_DISTANCE` — always the farthest.
+
+    ``via`` the ids from the unit's first container to this one."""
+    out: List[Dict[str, Any]] = []
+    seen = {unit_id}
+    frontier: List[Tuple[str, List[str]]] = [(unit_id, [])]
+    dist = 0
+    while frontier:
+        dist += 1
+        nxt: List[Tuple[str, List[str]]] = []
+        for cur, via in frontier:
+            for e in graph.edges:
+                if e.edge_source != cur:
+                    continue
+                kind = CONTAINER_EDGES.get(e.edge_type)
+                if kind is None or e.edge_target in seen:
+                    continue
+                # a group contains others only as a functional unit does
+                if cur != unit_id and kind != "functional_unit":
+                    continue
+                node = graph.find_node_by_id(e.edge_target)
+                if node is None:
+                    continue
+                seen.add(e.edge_target)
+                path = via + [e.edge_target]
+                out.append({"node": e.edge_target, "name": getattr(node, "name", None), "kind": kind,
+                            "distance": dist, "via": path, "edge": e.edge_type})
+                if kind == "functional_unit":
+                    nxt.append((e.edge_target, path))
+        frontier = nxt
+    chron = graph.chronology() if chronology is None else chronology
+    intervals = graph.epoch_intervals() if epoch_intervals is None else epoch_intervals
+    dated = _fu._dated(graph, unit_id, chron)
+    if dated:
+        life = _fu.life(graph, unit_id, chronology=chron)
+        for ep_id, iv in intervals.items():
+            iv = iv or {}
+            span = (iv.get("start"), iv.get("end"))
+            if span == (None, None) or not _fu._alive_in(life, dated, span):
+                continue
+            node = graph.find_node_by_id(ep_id)
+            out.append({"node": ep_id, "name": getattr(node, "name", None), "kind": "epoch",
+                        "distance": EPOCH_DISTANCE, "via": [ep_id], "edge": None})
+    return out
+
+
+def _container_span(graph: Any, c: Dict[str, Any], intervals: Dict[str, Any]) -> Tuple[float, float]:
+    """What a window declared on a container speaks of: an epoch its own span,
+    a functional unit its declared life, an activity or a time branch all of
+    time (the member's life clips it)."""
+    if c["kind"] == "epoch":
+        iv = intervals.get(c["node"]) or {}
+        return _lo(iv.get("start")), _hi(iv.get("end"))
+    if c["kind"] == "functional_unit":
+        s, e = _fu.declared_life(graph, c["node"], epoch_intervals=intervals)
+        return _lo(s), _hi(e)
+    return -_INF, _INF
+
+
+def inherited_windows(graph: Any, unit_id: str, *, chronology: Optional[Dict[str, Any]] = None,
+                      epoch_intervals: Optional[Dict[str, Any]] = None,
+                      owners: Optional[Dict[str, List[str]]] = None) -> Dict[str, Any]:
+    """The windows a unit INHERITS from its containers (MICRO-LG5), as the
+    author is inherited: ``{windows, warnings}``. Each window is the one
+    declared on the container — its state, its ends (an open end is the
+    container's span: an epoch's, a functional unit's declared life), its
+    paradata (who declared it on the container stays its author) — clipped to
+    the unit's existence, with ``level`` ``inherited`` and ``inherited_from``
+    ``{node, name, kind, distance, via}``."""
+    chron = graph.chronology() if chronology is None else chronology
+    intervals = graph.epoch_intervals() if epoch_intervals is None else epoch_intervals
+    owners = _visibility_owners(graph) if owners is None else owners
+    out: List[Dict[str, Any]] = []
+    warnings: List[str] = []
+    if not any(o != unit_id for o in owners):
+        return {"windows": out, "warnings": warnings}
+    life = _fu.life(graph, unit_id, chronology=chron)
+    lo, hi = _lo(life[0]), _hi(life[1])
+    for c in containers_of(graph, unit_id, chronology=chron, epoch_intervals=intervals):
+        if c["node"] not in owners:
+            continue
+        dec = declared_windows(graph, c["node"], epoch_intervals=intervals)
+        warnings.extend(dec["warnings"])
+        slo, shi = _container_span(graph, c, intervals)
+        for w in dec["windows"]:
+            w = dict(w)
+            for side, edge, bound in (("start", max, (slo, lo)), ("end", min, (shi, hi))):
+                v = edge(w[side], *bound)
+                if v != w[side]:
+                    w[side] = v
+                    w[side + "_scissor"] = (v, v)
+            if w["start"] > w["end"] or (w["start"] == w["end"] and slo != shi):
+                continue
+            w["level"] = INHERITED
+            w["inherited_from"] = {k: c[k] for k in ("node", "name", "kind", "distance", "via")}
+            out.append(w)
+    return {"windows": out, "warnings": warnings}
+
+
 def visibility_windows(graph: Any, unit_id: str, *, chronology: Optional[Dict[str, Any]] = None,
                        epoch_intervals: Optional[Dict[str, Any]] = None,
-                       covering: Optional[Dict[str, bool]] = None) -> Dict[str, Any]:
+                       covering: Optional[Dict[str, bool]] = None,
+                       owners: Optional[Dict[str, List[str]]] = None) -> Dict[str, Any]:
     """The DIARY of visibility of a unit (E.D., 22 Nov 2026, 15:20): the
     sequence of windows in view · buried · partially in view across its
     existence, computed, never saved.
 
-    ``{unit, name, life, status, windows, conflicts, warnings}``. Each window
-    ``{state, start, end, start_scissor, end_scissor, source, sources, by,
-    property_ids, paradata, parts?, start_epoch?, end_epoch?}``: ``source``
-    the strongest of the pieces (``absolute`` > ``epoch`` > ``undated`` >
-    ``derived``), ``by`` the units whose cover (or cut) makes a derived
+    ``{unit, name, life, status, windows, conflicts, warnings, containers}``.
+    Each window ``{state, start, end, start_scissor, end_scissor, source,
+    sources, level, levels, inherited_from, by, property_ids, paradata,
+    parts?, start_epoch?, end_epoch?}``: ``source`` how the strongest piece
+    is dated (``absolute`` > ``epoch`` > ``undated`` > ``derived``);
+    ``level`` whose it is (MICRO-LG5) — ``own`` declared on the unit,
+    ``inherited`` from a container (``inherited_from`` ``{node, name, kind,
+    distance, via}``: :func:`containers_of`), ``derived`` from the
+    stratigraphy; ``by`` the units whose cover (or cut) makes a derived
     window, ``paradata`` the chain of each declared property (who states it,
-    on which source), ``parts`` the pieces of a merged window. Open ends are
-    None. ``status`` is the derived one (``ok`` | ``undated`` |
-    ``no_relations``).
+    on which source — for an inherited window, the container's), ``parts``
+    the pieces of a merged window. Open ends are None. ``status`` is the
+    derived one (``ok`` | ``undated`` | ``no_relations``).
 
-    ``conflicts``: ``[{kind, property_id, declared, derived, start, end, by}]``
-    — ``stratigraphy`` a declared window says exposed where a cover says
-    buried, or the other way round; ``outside_life`` it lies (partly) outside
-    the existence of the unit; ``declared_overlap`` two declared windows of
-    the same strength say different states. Reported, never corrected."""
+    PRECEDENCE: declared on the unit (absolute > epoch > undated) > inherited
+    from the nearest container > derived. A window declared on the unit
+    overrides an inherited one: that is how a member says otherwise.
+
+    ``conflicts``: ``[{kind, property_id, declared, derived, start, end, by,
+    inherited_from?}]`` — ``stratigraphy`` a declared or inherited window says
+    exposed where a cover says buried, or the other way round;
+    ``outside_life`` a window of the unit lies (partly) outside its
+    existence; ``declared_overlap`` two declared windows of the same strength
+    say different states; ``inherited_overlap`` two containers at the same
+    distance say different states. Reported, never corrected."""
     chron = graph.chronology() if chronology is None else chronology
     intervals = graph.epoch_intervals() if epoch_intervals is None else epoch_intervals
+    owners = _visibility_owners(graph) if owners is None else owners
     node = graph.find_node_by_id(unit_id)
     life = _fu.life(graph, unit_id, chronology=chron)
     der = derived_windows(graph, unit_id, chronology=chron, epoch_intervals=intervals,
                           covering=covering)
     dec = declared_windows(graph, unit_id, epoch_intervals=intervals)
+    inh = inherited_windows(graph, unit_id, chronology=chron, epoch_intervals=intervals,
+                            owners=owners)
     lo, hi = _lo(life[0]), _hi(life[1])
     conflicts: List[Dict[str, Any]] = []
 
-    layer = [dict(w) for w in der["windows"]]
+    def against_stratigraphy(w: Dict[str, Any], clipped: Dict[str, Any]) -> None:
+        for d in der["windows"]:
+            if d["end"] <= clipped["start"] or d["start"] >= clipped["end"]:
+                continue
+            if {d["state"], clipped["state"]} == {EXPOSED, BURIED}:
+                c = {"kind": "stratigraphy", "property_id": w["property_id"],
+                     "declared": clipped["state"], "derived": d["state"],
+                     "start": _out(max(d["start"], clipped["start"])),
+                     "end": _out(min(d["end"], clipped["end"])), "by": list(d.get("by") or [])}
+                if w.get("inherited_from"):
+                    c["inherited_from"] = w["inherited_from"]
+                conflicts.append(c)
+
+    layer = [dict(w, level=DERIVED) for w in der["windows"]]
+    # the inherited windows: the farthest container first, the nearest on top
+    placed_inh: List[Dict[str, Any]] = []
+    for w in sorted(inh["windows"], key=lambda w: (-w["inherited_from"]["distance"],
+                                                  _KIND_ORDER.get(w["inherited_from"]["kind"], 0),
+                                                  _RANK[w["source"]], w["start"])):
+        against_stratigraphy(w, w)
+        for q in placed_inh:
+            if q["inherited_from"]["distance"] == w["inherited_from"]["distance"] \
+                    and q["inherited_from"]["node"] != w["inherited_from"]["node"] \
+                    and q["state"] != w["state"] \
+                    and not (q["end"] <= w["start"] or q["start"] >= w["end"]):
+                conflicts.append({"kind": "inherited_overlap", "property_id": w["property_id"],
+                                  "declared": w["state"], "derived": None,
+                                  "other_property_id": q["property_id"], "other": q["state"],
+                                  "inherited_from": w["inherited_from"],
+                                  "other_inherited_from": q["inherited_from"],
+                                  "start": _out(max(q["start"], w["start"])),
+                                  "end": _out(min(q["end"], w["end"])), "by": []})
+        layer = _carve(layer, w)
+        layer.append(w)
+        placed_inh.append(w)
+
     placed: List[Dict[str, Any]] = []
     for w in sorted(dec["windows"], key=lambda w: (_RANK[w["source"]], w["start"])):
         if life != (None, None) and ((w["start"] != -_INF and w["start"] < lo)
@@ -476,21 +741,14 @@ def visibility_windows(graph: Any, unit_id: str, *, chronology: Optional[Dict[st
                               "start": _out(w["start"]), "end": _out(w["end"]), "by": []})
         # an open end of a declared window is the unit's existence; what lies
         # outside it is not shown (the unit is not there)
-        clipped = dict(w)
+        clipped = dict(w, level=OWN)
         if clipped["start"] < lo:
             clipped["start"], clipped["start_scissor"] = lo, (lo, lo)
         if clipped["end"] > hi:
             clipped["end"], clipped["end_scissor"] = hi, (hi, hi)
         if clipped["start"] > clipped["end"] or (clipped["start"] == clipped["end"] and w["start"] != w["end"]):
             continue
-        for d in der["windows"]:
-            if d["end"] <= clipped["start"] or d["start"] >= clipped["end"]:
-                continue
-            if {d["state"], clipped["state"]} == {EXPOSED, BURIED}:
-                conflicts.append({"kind": "stratigraphy", "property_id": w["property_id"],
-                                  "declared": clipped["state"], "derived": d["state"],
-                                  "start": _out(max(d["start"], clipped["start"])),
-                                  "end": _out(min(d["end"], clipped["end"])), "by": list(d.get("by") or [])})
+        against_stratigraphy(w, clipped)
         for q in placed:
             if q["source"] == clipped["source"] and q["state"] != clipped["state"] \
                     and not (q["end"] <= clipped["start"] or q["start"] >= clipped["end"]):
@@ -503,9 +761,13 @@ def visibility_windows(graph: Any, unit_id: str, *, chronology: Optional[Dict[st
         layer.append(clipped)
         placed.append(clipped)
     windows = [_public(w) for w in _merge(layer)]
+    containers = containers_of(graph, unit_id, chronology=chron, epoch_intervals=intervals)
+    for c in containers:
+        c["declares"] = c["node"] in owners
     return {"unit": unit_id, "name": getattr(node, "name", None), "life": life,
             "status": der["status"], "windows": windows, "conflicts": conflicts,
-            "undated_covers": der["undated_covers"], "warnings": dec["warnings"]}
+            "undated_covers": der["undated_covers"],
+            "warnings": dec["warnings"] + inh["warnings"], "containers": containers}
 
 
 # ── B · the state on an horizon ──────────────────────────────────────────────
@@ -539,16 +801,17 @@ def visibility(graph: Any, unit_id: str, horizon: Any, *,
     that moment; at a boundary, the state reached); ``states`` every state
     met, oldest first, when the visibility changes inside the horizon;
     ``uncertain`` True when a change of state falls in the horizon only
-    through its scissor."""
-    from .periodization import overlaps
+    through its scissor; ``level`` and ``inherited_from`` whose the window
+    is (MICRO-LG5: own, inherited from a container, derived)."""
+    check_covering(covering)
     chron = graph.chronology() if chronology is None else chronology
     intervals = graph.epoch_intervals() if epoch_intervals is None else epoch_intervals
     h = _horizon(horizon)
     life = _fu.life(graph, unit_id, chronology=chron)
     dated = _fu._dated(graph, unit_id, chron)
     base = {"unit": unit_id, "horizon": h, "alive": None, "state": UNDETERMINED,
-            "source": None, "by": [], "property_ids": [], "paradata": [], "states": [],
-            "uncertain": False, "window": None}
+            "source": None, "level": None, "inherited_from": None, "by": [], "property_ids": [],
+            "paradata": [], "states": [], "uncertain": False, "window": None}
     if not dated:
         return base
     alive = h == (None, None) or _fu._alive_in(life, dated, h)
@@ -595,6 +858,7 @@ def visibility(graph: Any, unit_id: str, horizon: Any, *,
         elif s_lo < hhi and s_hi > hlo and (s_lo < hlo or s_hi > hhi):
             uncertain = True
     return dict(base, alive=True, state=best["state"], source=best["source"],
+                level=best.get("level"), inherited_from=best.get("inherited_from"),
                 by=list(best.get("by") or []), property_ids=list(best.get("property_ids") or []),
                 paradata=list(best.get("paradata") or []),
                 states=states if len(states) > 1 else [best["state"]],
@@ -613,6 +877,7 @@ def horizon_visibility(graph: Any, horizon: Any, *, units: Optional[Iterable[str
     (``[{unit, name, state, source}]``), the rest buried or undetermined.
     ``units`` restricts the reading (the members of an identity); default:
     every unit of the graph (stratigraphic, not BR / SE / unknown)."""
+    check_covering(covering)
     chron = graph.chronology() if chronology is None else chronology
     intervals = graph.epoch_intervals() if epoch_intervals is None else epoch_intervals
     ids = [n.node_id for n in graph.nodes if _fu._is_unit(n)] if units is None else list(units)
@@ -624,7 +889,7 @@ def horizon_visibility(graph: Any, horizon: Any, *, units: Optional[Iterable[str
             continue
         node = graph.find_node_by_id(uid)
         row = {"unit": uid, "name": getattr(node, "name", None), "state": v["state"],
-               "source": v["source"], "by": v["by"]}
+               "source": v["source"], "level": v["level"], "by": v["by"]}
         if v["alive"] is None or v["state"] == UNDETERMINED:
             out["undetermined"].append(row)
         elif v["state"] in VISIBLE_STATES:
@@ -644,20 +909,24 @@ def visible_units(graph: Any, horizon: Any, **kwargs: Any) -> List[Dict[str, Any
 
 def visibility_conflicts(graph: Any, *, chronology: Optional[Dict[str, Any]] = None,
                          epoch_intervals: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
-    """The conflicts of every unit that DECLARES a visibility (see
-    :func:`visibility_windows`), each with its ``unit``."""
+    """The conflicts of every unit that DECLARES a visibility or INHERITS one
+    from a container (see :func:`visibility_windows`), each with its
+    ``unit``."""
     chron = graph.chronology() if chronology is None else chronology
     intervals = graph.epoch_intervals() if epoch_intervals is None else epoch_intervals
-    owners: List[str] = []
-    for e in graph.edges:
-        if e.edge_type == "has_property" and e.edge_source not in owners \
-                and is_visibility_property(graph.find_node_by_id(e.edge_target)) \
-                and _fu._is_unit(graph.find_node_by_id(e.edge_source)):
-            owners.append(e.edge_source)
+    owners_map = _visibility_owners(graph)
+    owners: List[str] = [o for o in owners_map if _fu._is_unit(graph.find_node_by_id(o))]
+    if any(not _fu._is_unit(graph.find_node_by_id(o)) for o in owners_map):
+        for n in graph.nodes:
+            if n.node_id in owners or not _fu._is_unit(n):
+                continue
+            if any(c["node"] in owners_map for c in containers_of(
+                    graph, n.node_id, chronology=chron, epoch_intervals=intervals)):
+                owners.append(n.node_id)
     out = []
     for uid in owners:
-        for c in visibility_windows(graph, uid, chronology=chron,
-                                    epoch_intervals=intervals)["conflicts"]:
+        for c in visibility_windows(graph, uid, chronology=chron, epoch_intervals=intervals,
+                                    owners=owners_map)["conflicts"]:
             out.append(dict(c, unit=uid))
     return out
 
@@ -665,7 +934,9 @@ def visibility_conflicts(graph: Any, *, chronology: Optional[Dict[str, Any]] = N
 __all__ = [
     "PROPERTY", "EXPOSED", "BURIED", "PARTIALLY_EXPOSED", "STATES", "VISIBLE_STATES",
     "UNDETERMINED", "ABSOLUTE", "EPOCH", "UNDATED", "DERIVED", "SOURCES",
-    "COVERING_EDGES", "CUT_EDGES", "state_of_value", "is_visibility_property",
+    "COVERING_EDGES", "CUT_EDGES", "TEMPORAL_EDGES", "OWN", "INHERITED", "LEVELS",
+    "CONTAINER_EDGES", "EPOCH_DISTANCE", "check_covering", "containers_of",
+    "inherited_windows", "state_of_value", "is_visibility_property",
     "paradata_of", "derived_windows", "declared_windows", "visibility_windows",
     "visibility", "horizon_visibility", "visible_units", "visibility_conflicts",
 ]

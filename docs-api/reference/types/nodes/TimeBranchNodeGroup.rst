@@ -5,7 +5,7 @@ TimeBranchNodeGroup
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.53, connections 1.6.58) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.53, connections 1.6.59) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *An alternative timeline aggregating a set of mutually exclusive beliefs about a temporal interval.*
 
@@ -49,7 +49,7 @@ Fields
 Edges
 -----
 
-**Outgoing** (this node is the source): :ref:`contrasts_with <edge-contrasts_with>`, :ref:`generic_connection <edge-generic_connection>`, :ref:`has_author <edge-has_author>`, :ref:`has_embargo <edge-has_embargo>`, :ref:`has_license <edge-has_license>`, :ref:`has_semantic_shape <edge-has_semantic_shape>`, :ref:`has_translation <edge-has_translation>`
+**Outgoing** (this node is the source): :ref:`contrasts_with <edge-contrasts_with>`, :ref:`generic_connection <edge-generic_connection>`, :ref:`has_author <edge-has_author>`, :ref:`has_embargo <edge-has_embargo>`, :ref:`has_license <edge-has_license>`, :ref:`has_property <edge-has_property>`, :ref:`has_semantic_shape <edge-has_semantic_shape>`, :ref:`has_translation <edge-has_translation>`
 
 **Incoming** (this node is the target): :ref:`contrasts_with <edge-contrasts_with>`, :ref:`generic_connection <edge-generic_connection>`, :ref:`has_timebranch <edge-has_timebranch>`, :ref:`is_in_timebranch <edge-is_in_timebranch>`
 

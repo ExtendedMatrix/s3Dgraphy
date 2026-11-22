@@ -69,7 +69,7 @@ def test_the_version_and_the_changelog_say_so(qualia_doc):
     # (property_names); la voce 1.6.2 resta nella storia
     # 1.6.9 dal 10 ott 2026 (owner_names di nascita e scomparsa)
     # 1.6.11 dal 12 nov 2026 (chi porta un'impronta); 1.6.10 dal 30 ott 2026 (footprint, il sito)
-    assert meta["version"] == "1.6.15"  # 1.6.15 dal 22 nov 2026 (MICRO-LG4: property_names visibility); 1.6.14 dal 21 nov 2026 (MICRO-LG2: property_names use e phase); 1.6.13 dal 17 nov 2026 (la definizione è la proprietà, alias tolto); 1.6.12 (interpretation, definition alias)
+    assert meta["version"] == "1.6.16"  # 1.6.16 dal 22 nov 2026 (MICRO-LG5: visibility, propagazione e _covering_note); 1.6.15 dal 22 nov 2026 (MICRO-LG4: property_names visibility); 1.6.14 dal 21 nov 2026 (MICRO-LG2: property_names use e phase); 1.6.13 dal 17 nov 2026 (la definizione è la proprietà, alias tolto); 1.6.12 (interpretation, definition alias)
     head = meta["changelog"].split(" v1.6.2:", 1)[1].split(" v1.6.1:")[0]
     assert "feature_shape" in head and "boundary_distinctness" in head
     assert "proposte da Cowork per E.D., 28 set 2026, dalla scheda DAI" in head

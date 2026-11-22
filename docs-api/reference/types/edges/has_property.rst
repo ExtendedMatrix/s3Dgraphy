@@ -5,7 +5,7 @@ has_property
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.53, connections 1.6.58) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.53, connections 1.6.59) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *Connects a node to one of its properties.*
 
@@ -19,7 +19,7 @@ has_property
    * - Reverse
      - ``is_property_of``
    * - Source
-     - :ref:`StratigraphicNode <type-StratigraphicNode>`, :ref:`DocumentNode <type-DocumentNode>`, :ref:`RepresentationModelDocNode <type-RepresentationModelDocNode>`, :ref:`EpochNode <type-EpochNode>`, :ref:`GraphNode <type-GraphNode>`, :ref:`AuthorNode <type-AuthorNode>`, :ref:`LocationNodeGroup <type-LocationNodeGroup>`, :ref:`LandscapeUnitNode <type-LandscapeUnitNode>`, :ref:`FunctionalUnitNodeGroup <type-FunctionalUnitNodeGroup>`
+     - :ref:`StratigraphicNode <type-StratigraphicNode>`, :ref:`DocumentNode <type-DocumentNode>`, :ref:`RepresentationModelDocNode <type-RepresentationModelDocNode>`, :ref:`EpochNode <type-EpochNode>`, :ref:`GraphNode <type-GraphNode>`, :ref:`AuthorNode <type-AuthorNode>`, :ref:`LocationNodeGroup <type-LocationNodeGroup>`, :ref:`LandscapeUnitNode <type-LandscapeUnitNode>`, :ref:`FunctionalUnitNodeGroup <type-FunctionalUnitNodeGroup>`, :ref:`ActivityNodeGroup <type-ActivityNodeGroup>`, :ref:`TimeBranchNodeGroup <type-TimeBranchNodeGroup>`
    * - Target
      - :ref:`PropertyNode <type-PropertyNode>`
    * - CIDOC

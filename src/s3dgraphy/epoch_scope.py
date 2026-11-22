@@ -299,7 +299,8 @@ def _apply(graph, add: Sequence[Dict[str, str]], remove: Sequence[Dict[str, str]
 
 def _chronology_warnings(graph, moved_units: Sequence[str], add, remove) -> List[Dict[str, Any]]:
     """What the move would break, said before it is done: a unit that is
-    AFTER another (``is_after``: it lies above, it is more recent) and would
+    AFTER another (``is_after``: it is more recent — a relation of time, not
+    of position: MICRO-LG5) and would
     begin in an older epoch than it, or the other way round; and the
     chronology paradoxes :meth:`Graph.chronology` raises that it did not raise
     before. Computed on a copy."""
