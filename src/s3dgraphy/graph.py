@@ -802,16 +802,22 @@ class Graph:
                        (:func:`s3dgraphy.unit_life.unit_life`, MICRO-K §B2, E.D.
                        17 Nov 2026): the start is the start of its birth epoch
                        (relation ``has_first_epoch``), the end the limit of the
-                       last epoch its life reaches — a real unit with no
-                       continuity is still existing and reaches the latest
-                       epoch, a virtual one lives in its birth epoch, a
-                       continuity closes either in its epoch (relation
-                       ``unit_life``; ``end_life`` says the status). The
+                       last epoch its life reaches — a virtual unit lives
+                       in its birth epoch, a continuity closes either in its
+                       epoch (relation ``unit_life``; ``end_life`` says the
+                       status). A REAL unit with no continuity is still
+                       existing: it reaches TODAY, its end is OPEN (None,
+                       ``end_life.status`` ``still_existing``, ``end_kind``
+                       ``open``) — never the limit of the latest epoch of the
+                       graph (MICRO-LG3, E.D. 22 Nov 2026: «il frammento in
+                       situ è la stessa US dall'antichità a oggi»). The
                        ``survive_in_epoch`` written by hand no longer move a
-                       bound: the life implies or contradicts them. A node
-                       that is not a unit, or a unit with no birth epoch,
-                       reads min start / max end over ``has_first_epoch`` +
-                       ``survive_in_epoch`` as before.
+                       bound: the life implies or contradicts them. A real
+                       unit is born only in a first epoch: with none, its
+                       survivals are WINDOWS (below), not a start. A node
+                       that is not a unit, or a virtual unit with no birth
+                       epoch, reads min start / max end over
+                       ``has_first_epoch`` + ``survive_in_epoch`` as before.
         ``continuity`` the end of a unit closed by a DATED continuity (BR):
                        its date, source the continuity, relation ``unit_life``.
         ``sub_epoch``  the same, when the node's epoch is a SUB-EPOCH whose bound
@@ -846,6 +852,23 @@ class Graph:
                        otherwise), so the sequence between sites (``is_after``)
                        propagates TPQ/TAQ like between units. Precedence:
                        written, then cited, then the epochs.
+
+        CONTEMPORARIES (MICRO-LG3): the TPQ walks ``has_same_time`` and every
+        relation the connections datamodel says implies it (``bonded_to`` —
+        one construction, one first epoch —, ``abuts``, ``equals`` and their
+        other spellings) both ways, as relation of the bound; the TAQ does
+        not (two contemporary units may be taken away at different times).
+
+        WINDOWS (MICRO-LG3): ``windows`` lists the intervals in which the node
+        was alive at least at one moment — a ``survive_in_epoch`` of a real
+        unit with no birth (rule ``survival``, or ``observed``: the importer's
+        rule «described in the report of a campaign, alive in that
+        campaign»), a membership ``is_in_functional_unit`` in a functional
+        unit with a declared life (rule ``functional_unit``). They move no
+        bound; ``start_latest`` (born no later than: the earliest window end)
+        and ``end_earliest`` (alive at least until: the latest window start)
+        sum them up, and a bound against them is a ``[chronology window]``
+        warning. A node with windows and no bound is in the answer.
 
         A WRITTEN bound is never moved. When what the node contains says it is
         younger than it declares, ``contained`` is still reported beside it and a
@@ -897,6 +920,8 @@ class Graph:
                 self._set_bound(st, side, *found)
                 if found[1] == "written":
                     written[node.node_id] = found[0]
+        life_ix = self._life_ix
+        epoch_iv = self._epoch_iv
         self._epoch_iv = None
         self._life_ix = None
         life_end, self._life_end = self._life_end, {}
@@ -929,9 +954,30 @@ class Graph:
         # Pass 3: TPQ/TAQ along the stratigraphic sequence.
         self._propagate_bounds(strat_nodes, state, written_start, written_end, sink)
 
+        # Pass 4 (MICRO-LG3): the windows of life — a survival of a unit with
+        # no birth, a membership in a dated functional unit. They move no
+        # bound: they say born no later than (start_latest) and alive at
+        # least until (end_earliest), and a bound that contradicts them is a
+        # warning.
+        windows = {}
+        for node in strat_nodes:
+            ws = self._life_windows(node, epoch_iv or {}, life_ix)
+            if ws:
+                windows[node.node_id] = ws
+                st = state[node.node_id]
+                label = getattr(node, "name", None) or node.node_id
+                latest = [w["end"] for w in ws if w["end"] is not None]
+                earliest = [w["start"] for w in ws if w["start"] is not None]
+                if latest and st["start"] is not None and st["start"] > min(latest):
+                    sink.append(f"[chronology window] node '{label}' starts at {st['start']} "
+                                f"but was alive by {min(latest)} (a window of its life).")
+                if earliest and st["end"] is not None and st["end"] < max(earliest):
+                    sink.append(f"[chronology window] node '{label}' ends at {st['end']} "
+                                f"but was alive in {max(earliest)} (a window of its life).")
+
         out = {}
         for nid, st in state.items():
-            if st["start"] is None and st["end"] is None:
+            if st["start"] is None and st["end"] is None and nid not in windows:
                 continue
             entry = {k: st[k] for k in self._BOUND_KEYS}
             entry["rule"] = st["start_rule"] or st["end_rule"]
@@ -940,8 +986,16 @@ class Graph:
                     entry[side + "_root"] = st[side + "_root"]
             if "contained" in st:
                 entry["contained"] = st["contained"]
-            if st.get("end_relation") == "unit_life" and nid in life_end:
+            if nid in life_end and (st.get("end_relation") == "unit_life"
+                                    or life_end[nid]["status"] == "still_existing"):
                 entry["end_life"] = life_end[nid]
+            if nid in windows:
+                ws = windows[nid]
+                entry["windows"] = ws
+                latest = [w["end"] for w in ws if w["end"] is not None]
+                earliest = [w["start"] for w in ws if w["start"] is not None]
+                entry["start_latest"] = min(latest) if latest else None
+                entry["end_earliest"] = max(earliest) if earliest else None
             out[nid] = entry
         return out
 
@@ -1027,6 +1081,21 @@ class Graph:
         life = self._life_bound(node, side, intervals)
         if life is not None:
             return life
+        if self._is_real_unit(node):
+            # MICRO-LG3: a REAL unit is born only in its first epoch (a
+            # survival is not a birth: it is a window, see _life_windows) and
+            # still existing it reaches today — its end is open, never the
+            # limit of an epoch. With no birth epoch, only a dated
+            # continuity gives it an end.
+            if side == "end":
+                from .unit_life import _continuity_date, continuities_of
+                ix = getattr(self, "_life_ix", None)
+                for br in continuities_of(self, node.node_id, index=ix):
+                    from .resolvers.provenance import _ix as _pix
+                    v = _continuity_date(self, br, _pix(self, ix))
+                    if v is not None:
+                        return float(v), "continuity", br, "unit_life"
+            return None
         values, seen = [], set()
         for edge_type in ("has_first_epoch", "survive_in_epoch"):
             for epoch in self.get_connected_epoch_nodes_list_by_edge_type(node, edge_type):
@@ -1045,6 +1114,62 @@ class Graph:
         if iv.get(side + "_rule") == "sub_epoch":
             return best, "sub_epoch", iv[side + "_source"], "has_sub_epoch"
         return best, "epoch", epoch.node_id, edge_type
+
+    @staticmethod
+    def _is_real_unit(node):
+        """A unit of the REAL family (US, USD, SF, RSF, their series… —
+        ``classification.is_real``), BR and SE excepted."""
+        from .nodes.stratigraphic_node import StratigraphicNode
+        if (not isinstance(node, StratigraphicNode)
+                or getattr(node, "node_type", "") in ("BR", "SE")):
+            return False
+        from .unit_life import is_real
+        return is_real(node)
+
+    def _life_windows(self, node, intervals, ix):
+        """The WINDOWS of life of a unit (MICRO-LG3, E.D. 22 Nov 2026): the
+        intervals in which it was alive at least at one moment —
+        ``[{"start", "end", "rule", "source", "relation"}]``.
+
+        ``survive_in_epoch`` of a REAL unit with no birth epoch: it was alive
+        in that epoch (rule ``survival``, or ``observed`` when the edge says
+        ``attributes.rule == "observed_in_campaign"`` — the importer's rule:
+        a unit described in the report of a campaign was alive then).
+
+        ``is_in_functional_unit``: a member of a functional unit with a
+        declared life was alive in some moment of it (rule
+        ``functional_unit``, source the unit, relation the edge) — the
+        membership is a chronological constraint (decision of E.D., 22 Nov
+        2026, «l'appartenenza dà informazione cronologica alla US»)."""
+        from .nodes.group_node import FunctionalUnitNodeGroup
+        out = []
+        nid = node.node_id
+        if self._is_real_unit(node) and not [
+                t for t in ix.targets(nid, "has_first_epoch") if ix.is_epoch(t)]:
+            for e in ix.out.get(nid, ()):
+                if e.edge_type != "survive_in_epoch" or not ix.is_epoch(e.edge_target):
+                    continue
+                iv = intervals.get(e.edge_target) or {}
+                if iv.get("start") is None and iv.get("end") is None:
+                    continue
+                attrs = getattr(e, "attributes", None) or {}
+                out.append({"start": iv.get("start"), "end": iv.get("end"),
+                            "rule": "observed" if attrs.get("rule") == "observed_in_campaign"
+                            else "survival",
+                            "source": e.edge_target, "relation": "survive_in_epoch",
+                            **({"document": attrs["document"]} if attrs.get("document") else {})})
+        for e in ix.out.get(nid, ()):
+            if e.edge_type != "is_in_functional_unit":
+                continue
+            if not isinstance(ix.node(e.edge_target), FunctionalUnitNodeGroup):
+                continue
+            from .functional_units import declared_life
+            lo, hi = declared_life(self, e.edge_target, epoch_intervals=intervals)
+            if lo is None and hi is None:
+                continue
+            out.append({"start": lo, "end": hi, "rule": "functional_unit",
+                        "source": e.edge_target, "relation": "is_in_functional_unit"})
+        return out
 
     def _life_bound(self, node, side, intervals):
         """A UNIT's bound from its LIFE (MICRO-K §B2), or None when the node
@@ -1302,9 +1427,24 @@ class Graph:
                 more_recent_of.setdefault(edge.edge_source, []).append((edge.edge_target, et))
                 more_ancient_of.setdefault(edge.edge_target, []).append((edge.edge_source, et))
 
+        # CONTEMPORARIES (MICRO-LG3): a unit contemporary with another —
+        # has_same_time, and every physical relation that implies it in the
+        # connections datamodel (bonded_to: one construction, so one first
+        # epoch; abuts, equals) — starts no earlier than the other's TPQ: the
+        # start pass walks them both ways. Never the end: two contemporary
+        # units may be taken away at different times.
+        same_time = set(get_connections_datamodel().same_time_edges()) | {"has_same_time"}
+        start_adjacency = {k: list(v) for k, v in more_recent_of.items()}
+        for edge in self.edges:
+            if edge.edge_type in same_time and edge.edge_source != edge.edge_target:
+                start_adjacency.setdefault(edge.edge_source, []).append(
+                    (edge.edge_target, edge.edge_type))
+                start_adjacency.setdefault(edge.edge_target, []).append(
+                    (edge.edge_source, edge.edge_type))
+
         passes = (
             # side, adjacency, written seeds, rule, "tighter?", wording
-            ("start", more_recent_of, written_start, "tpq",
+            ("start", start_adjacency, written_start, "tpq",
              lambda new, cur: cur is None or cur < new,
              "more recent", "TPQ"),
             ("end", more_ancient_of, written_end, "taq",

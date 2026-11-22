@@ -5,7 +5,7 @@ StudyNode
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.52, connections 1.6.56) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.52, connections 1.6.57) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *HC9 Study (HDT-O, ECHOES D7.1): a scholarly activity (research/analysis/documentation, any domain) about a Heritage Entity (HC1), with a disciplinary focus, that produces documentary outputs contributing to an HDT.*
 

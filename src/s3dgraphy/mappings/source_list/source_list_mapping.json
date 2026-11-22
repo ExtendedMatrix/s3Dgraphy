@@ -40,10 +40,10 @@
     "png"
   ],
   "_validated_against": {
-    "s3dgraphy": "1.6.0.dev135",
+    "s3dgraphy": "1.6.0.dev136",
     "schema_version": "1",
     "node_datamodel": "1.6.52",
-    "connections_datamodel": "1.6.56",
-    "on": "2026-11-21"
+    "connections_datamodel": "1.6.57",
+    "on": "2026-11-22"
   }
 }

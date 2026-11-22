@@ -5,7 +5,7 @@ AuthorAINode
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.52, connections 1.6.56) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.52, connections 1.6.57) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *AI agent (model + prompt\_reference) responsible for asserting or refining one or more nodes.*
 

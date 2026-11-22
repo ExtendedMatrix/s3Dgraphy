@@ -5,7 +5,7 @@ extracted_from
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.52, connections 1.6.56) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.52, connections 1.6.57) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *Indicates that information is derived from a particular source: a source DOCUMENT, (since v1.6.10) an ANNOTATION REGION — the traced part of an image that a reading is based on — or (since v1.6.24) a STRATIGRAPHIC UNIT that itself has the property the extractor feeds.*
 

@@ -89,6 +89,11 @@ a» — for EVERY edge type of the connections datamodel, seeded from its `label
 the name an inspector, a legend or the sub-row of a menu shows. Before 1.3 the
 sidecar had no edge names, so every interface showed the English one.
 
+`edge_types.<edge>.description` / `.scope_note` (1.19, connections 1.6.57) are
+the definition and the scope note of the few edge types listed in
+:data:`EDGE_TEXT_EDGES` — today ``changed_from``, whose dotted line between units
+says a displacement in space (MICRO-LG3): ``edge_text(edge, field, lang)``.
+
 `edge_types` (connections 1.6.22: `edge_types.<edge>.ui_phrase`) are the phrases of a menu entry that
 creates a node linked to an existing one («US sopra X», «Proprietà di X»):
 `{node}` is the new node's type label, `{x}` the existing node's name, and every
@@ -161,6 +166,11 @@ SECTIONS: Dict[str, str] = {
 #: section — `ui_phrase.as_source` in the datamodel is `ui_phrase_as_source` here
 PHRASE_DIRS = ("as_source", "as_target")
 PHRASE_FIELDS = tuple(f"ui_phrase_{d}" for d in PHRASE_DIRS)
+#: 1.19 (connections 1.6.57, MICRO-LG3): the edge types whose DEFINITION
+#: (``description``) and ``scope_note`` are translated too — the texts a
+#: reader must not misread: changed_from (the dotted line says a displacement)
+EDGE_TEXT_EDGES = ("changed_from",)
+EDGE_TEXT_FIELDS = ("description", "scope_note")
 _PREFIX_TO_SECTION = {v: k for k, v in SECTIONS.items()}
 
 SHEET = "Datamodel strings"
@@ -264,6 +274,9 @@ def _collect_edge_phrases_en(connections: Dict[str, Any]) -> Dict[str, Dict[str,
         if isinstance(phrase, dict):
             fields.update({f"ui_phrase_{d}": phrase[d] for d in PHRASE_DIRS
                            if isinstance(phrase.get(d), str)})
+        if name in EDGE_TEXT_EDGES:
+            fields.update({f: edge[f] for f in EDGE_TEXT_FIELDS
+                           if isinstance(edge.get(f), str) and edge[f].strip()})
         if fields:
             out[name] = fields
     return out
@@ -440,7 +453,7 @@ def _rows(doc: Dict[str, Any]) -> List[Tuple[str, str, str]]:
                     "packagings", "master_kinds", "reasoning"):
         entries = doc.get(section, {})
         for key in sorted(entries):
-            for field in ("label", "description") + PHRASE_FIELDS:
+            for field in ("label", "description", "scope_note") + PHRASE_FIELDS:
                 if field in entries[key]:
                     keys.append((section, key, field))
             # 1.10: the owner labels of a quale (label_author, label_author_ai)
@@ -538,6 +551,15 @@ def edge_label(edge_type: str, lang: str = "en") -> Optional[str]:
     """The name of an edge type in ``lang`` («Is after» → «È posteriore a»),
     English fallback; ``None`` for an edge type the datamodel does not know."""
     return translate("edge_types", edge_type, "label", lang)
+
+
+def edge_text(edge_type: str, field: str = "description", lang: str = "en") -> Optional[str]:
+    """The definition (``description``) or the ``scope_note`` of an edge type
+    in ``lang`` — only for :data:`EDGE_TEXT_EDGES` (1.19); English fallback,
+    ``None`` otherwise."""
+    if field not in EDGE_TEXT_FIELDS:
+        raise ValueError(f"field must be one of {EDGE_TEXT_FIELDS}, got {field!r}")
+    return translate("edge_types", edge_type, field, lang)
 
 
 def dtc_kind_label(kind: str, lang: str = "en") -> Optional[str]:

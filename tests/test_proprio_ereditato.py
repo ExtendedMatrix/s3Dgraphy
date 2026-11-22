@@ -98,7 +98,8 @@ def test_a_servile_feeding_two_units_takes_their_union():
     assert {m["id"] for m in masters_of(g, "X2")} == {"SU1", "SU2"}
     assert resolve_provenance(g, "X2", START)["value"] == 100.0       # min
     end = resolve_provenance(g, "X2", END)
-    assert end["level"] == "master" and end["value"] == 2026.0        # max: SU1 still existing
+    # MICRO-LG3: SU1 still existing has an OPEN end — the union is open
+    assert end["level"] == "master" and end["value"] is None and end["bound"] == "open"
 
 
 def test_the_paradata_group_follows_its_unit_and_its_own_epoch_is_redundant():
@@ -145,7 +146,8 @@ def test_an_activity_group_begins_with_its_earliest_member_and_ends_with_its_lat
     s = resolve_provenance(g, "ACT", START)
     e = resolve_provenance(g, "ACT", END)
     assert (s["value"], s["level"], s["via"], s["origin"]) == (100.0, "members", "SU1", "II")
-    assert (e["value"], e["level"], e["via"]) == (2026.0, "members", "SU1")
+    # MICRO-LG3: SU1 still existing — the activity's end is open
+    assert (e["value"], e["level"], e["via"], e["bound"]) == (None, "members", "SU1", "open")
     assert AT.epoch_attribution(g, "ACT")["level"] == "members"
 
 
@@ -194,8 +196,10 @@ def test_a_real_unit_without_continuity_is_still_existing_never_unknown():
     assert life["epochs"] == ["II", "PA", "XX", "E13", "E15"]
     assert life["redundant"] == ["PA"] and life["contradicting"] == []
     assert "still existing" in life["why"] and "II A.D." in life["why"]
+    # MICRO-LG3: the end is OPEN — it reaches today, not the limit of XX
+    assert (life["end_value"], life["end_kind"]) == (None, "open")
     e = resolve_provenance(g, "SU1", END)
-    assert (e["value"], e["level"], e["status"]) == (2026.0, "life", "still_existing")
+    assert (e["value"], e["level"], e["status"], e["bound"]) == (None, "life", "still_existing", "open")
 
 
 def test_a_continuity_closes_a_real_unit_dated_or_not():

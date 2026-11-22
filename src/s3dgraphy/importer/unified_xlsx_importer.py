@@ -254,6 +254,10 @@ class UnifiedXLSXImporter:
         self._unit_by_id: Dict[str, object] = {}
         # Scalar rows with a TARGET2_ID: inherited properties, linked last.
         self._inherited_rows: List[tuple] = []
+        # MICRO-LG3 · observed in a campaign: each document's (year, role),
+        # and the documents each unit's claims cite.
+        self._doc_meta: Dict[str, tuple] = {}
+        self._unit_docs: Dict[str, List[str]] = {}
 
         # Counters for generating paradata serials on the fly (for
         # extractor / combiner short codes).
@@ -312,6 +316,7 @@ class UnifiedXLSXImporter:
         self._parse_epochs(sheets["Epochs"])
         self._parse_units(sheets["Units"])
         self._parse_claims(sheets["Claims"])
+        self._mark_observed_in_campaigns()
 
         # connections 1.6.47 · the relations a person wrote in the EM template
         # are the user's; then the is_after the physical ones imply, derived
@@ -533,6 +538,7 @@ class UnifiedXLSXImporter:
             )
             self.graph.add_node(doc)
             self._document_by_id[did] = doc
+            self._doc_meta[did] = (_num(row.get("YEAR")), role)
 
             # Link document to its author(s) — one has_author edge each.
             if author_ids:
@@ -690,6 +696,12 @@ class UnifiedXLSXImporter:
             value = row.get("VALUE")
             value_str = _str(value)
             target2 = _str(row.get("TARGET2_ID"))
+            if target_id in self._unit_by_id:
+                docs = self._unit_docs.setdefault(target_id, [])
+                for col in ("SOURCE_1", "SOURCE_2"):
+                    did = _str(row.get(col))
+                    if did and did not in docs:
+                        docs.append(did)
 
             # Dispatch by semantic class of PROPERTY_TYPE.
             # ``has_first_epoch`` is the canonical name (matches the graph
@@ -724,6 +736,68 @@ class UnifiedXLSXImporter:
                 self._handle_qualia(
                     target_node, prop_type, value, row, idx + 2)
         self._resolve_inherited_rows()
+
+    def _mark_observed_in_campaigns(self) -> None:
+        """OBSERVED, THEREFORE ALIVE THEN (MICRO-LG3, E.D. 22 Nov 2026): a
+        unit described in the report of a campaign was alive at least in that
+        campaign. A rule of the IMPORTER, not a claim of the extractor.
+
+        The campaign comes from the Documents sheet: a document of ROLE
+        ``analytical`` (the excavation report, the primary source) with a
+        YEAR is the report of the campaign of that year. Every REAL unit
+        (US, USD, SF, RSF, series…: the virtual ones are not observed) whose
+        claims cite it (SOURCE_1 / SOURCE_2) gets ``survive_in_epoch`` to the
+        NARROWEST epoch of the sheet whose START–END contains the year — the
+        campaign epoch, when the extractor wrote one — with the attributes
+        ``{"origin": "derived", "rule": "observed_in_campaign", "document":
+        <Documents.ID>}``: the rule and its source travel on the edge.
+        Nothing is added when the epoch is already the unit's (first or
+        survival), and a report whose year no epoch contains is one warning.
+        :meth:`Graph.chronology` reads such a survival as a WINDOW of life
+        (rule ``observed``), never as a birth."""
+        from ..unit_life import is_real
+        dated = []
+        for ref, ep in self._epoch_by_id.items():
+            s, e = getattr(ep, "start_time", None), getattr(ep, "end_time", None)
+            try:
+                s, e = float(s), float(e)
+            except (TypeError, ValueError):
+                continue
+            dated.append((e - s, ref, s, e, ep))
+        dated.sort(key=lambda x: x[0])
+        no_epoch = set()
+        added = 0
+        for uid, docs in self._unit_docs.items():
+            unit = self._unit_by_id[uid]
+            if not is_real(unit):
+                continue
+            own = {e.edge_target for e in self.graph.edges
+                   if e.edge_source == unit.node_id
+                   and e.edge_type in ("has_first_epoch", "survive_in_epoch")}
+            for did in docs:
+                year, role = self._doc_meta.get(did, (None, None))
+                if year is None or role != "analytical":
+                    continue
+                ep = next((x[4] for x in dated if x[2] <= year <= x[3]), None)
+                if ep is None:
+                    no_epoch.add((did, year))
+                    continue
+                if ep.node_id in own:
+                    continue
+                own.add(ep.node_id)
+                edge = self.graph.add_edge(
+                    edge_id=self._mint("observed", f"{uid}|{ep.node_id}"),
+                    edge_source=unit.node_id, edge_target=ep.node_id,
+                    edge_type="survive_in_epoch")
+                edge.attributes.update({"origin": "derived", "rule": "observed_in_campaign",
+                                        "document": did})
+                added += 1
+        self.stats["observed_in_campaign"] = added
+        for did, year in sorted(no_epoch, key=lambda x: (x[1], x[0])):
+            self.warnings.append(
+                f"Document '{did}' ({year:g}) is an analytical report, but no epoch of the "
+                f"sheet contains its year: the units it describes are not marked as observed "
+                f"in that campaign.")
 
     def _resolve_inherited_rows(self) -> None:
         """Link each inheriting row to the property its original owner has.

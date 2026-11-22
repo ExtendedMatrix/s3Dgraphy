@@ -318,7 +318,8 @@ In the GraphML representation:
      - Contemporaneous elements
    * - dotted line
      - ``changed_from``
-     - Same object across epochs (instance chain)
+     - Same object moved to another position (instance chain); between
+       functional units, the chain of identities
    * - dashed line
      - ``has_data_provenance``
      - Provenance and documentation relationships
@@ -337,13 +338,30 @@ Temporal Relationships
    Two elements are contemporaneous -- they existed or were created at the same time.
 
 **changed_from**
-   Represents the same physical object through different epochs. When multiple nodes
-   are connected by ``changed_from`` edges, they form an **instance chain** -- a
-   navigable sequence documenting the complete biography of a single object through time.
+   Between two stratigraphic units, the dotted line says a **change of position in
+   space** (connections 1.6.57, decision of E.D., 22 Nov 2026): the matter moved. It
+   runs from the unit in the original position -- often a USV/s or a USD, because that
+   position is reconstructed -- to the unit in the new one (US → US-b, or an RSF).
+   When multiple nodes are connected by ``changed_from`` edges, they form an
+   **instance chain** -- a navigable sequence documenting the biography of a single
+   object through its positions.
 
    Example: a capital found on the ground today (SF), the same capital as a collapsed
    element in a previous epoch (USD), and the capital in its original Roman-era position
-   (US) form a three-node instance chain.
+   (US) form a three-node instance chain; the capital walled up in a channel in the
+   5th century is RSF 120b, ``changed_from`` its original position USV/s 120.
+
+   **A change of function without displacement is not a changed_from.** The wall of
+   the villa that becomes the curtain of the castle stays one unit, in the same place:
+   it is a member (``is_in_functional_unit``) of the villa and of the castle, and each
+   membership is an *instance* whose interval is computed -- the life of the unit ∩ the
+   declared life of the functional unit (``s3dgraphy.functional_units.instances``).
+   A change of *interpretation* between scholars («a wall for one, a terrace for the
+   other») is neither: it stays in the paradata and the alternative readings.
+   ``s3dgraphy.functional_units.changed_from_to_review`` lists, in graphs drawn before,
+   the ``changed_from`` between units with no sign of displacement (no «b», no
+   USV/USD/RSF original position) and proposes memberships instead -- a proposal, the
+   user decides.
 
 Containment Relationships
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -450,9 +468,12 @@ background colours, preserving the visual nesting in yEd.
 Instance Chains
 ---------------
 
-When the same physical object exists across multiple epochs -- each represented as a
-distinct stratigraphic unit -- the ``changed_from`` connector links these instances
-into a navigable **instance chain**.
+When the same physical object exists in different POSITIONS across the epochs -- each
+position represented as a distinct stratigraphic unit -- the ``changed_from`` connector
+links these instances into a navigable **instance chain**. A unit that stays where it
+is, even when its function changes, is one node: it lives from its first epoch until an
+action takes it away (a continuity, BR), and its functions are memberships in
+functional units (connections 1.6.57).
 
 The chain is traversed transitively: if A ``changed_from`` B and B ``changed_from`` C,
 then A, B, and C form a single instance chain representing the complete biography of

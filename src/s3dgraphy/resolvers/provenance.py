@@ -258,6 +258,15 @@ def _combine(rule, nid, level, found: Sequence[Dict[str, Any]], via: Sequence[Li
     rule's aggregate (min / max) when it has one, else the first."""
     # a master's answer that is the graph's is the graph's: said as such, not
     # «via» the master (the graph level answers last, for every node)
+    # MICRO-LG3: an OPEN end (a unit still existing) is the latest of all —
+    # the union of the lives reaches today
+    if rule.id == "absolute_time_end":
+        for f, v in zip(found, via):
+            if f and f.get("bound") == "open" and f.get("value") is None:
+                chain = [nid] + list(v[1:]) + [x for x in f["chain"][1:]]
+                return _rec(None, level, f["origin"], list(dict.fromkeys(chain)),
+                            via=v[-1] if len(v) > 1 else None, from_level=f["level"],
+                            bound="open", status=f.get("status"))
     pairs = [(f, v) for f, v in zip(found, via)
              if f and f.get("value") is not None and f.get("level") != "graph"]
     if not pairs:
@@ -282,7 +291,8 @@ def resolve_provenance(graph, node, rule, *, index: Optional[EdgeIndex] = None,
     ``ended_undated`` / ``birth_only``; for an inherited date ``bound``:
     ``epoch_limit`` — the value is the limit of the epoch ``limit_of``, not a
     date of the node: «limite dell'epoca II A.D.» — or ``date``, a date written
-    on another node, e.g. a dated continuity).
+    on another node, e.g. a dated continuity; ``open`` for the end of a unit
+    still existing, value None: it reaches today, MICRO-LG3).
 
     ``level`` one of :data:`LEVELS` or None; ``origin`` the id of the node the
     value is WRITTEN on (the node itself, an epoch, a continuity, the graph
@@ -417,8 +427,22 @@ def _walk(graph, ix, node, nid, rule, seen) -> Dict[str, Any]:
         if life.get("end_value") is not None:
             return _rec(life["end_value"], "life", life["end_origin"], life["end_chain"],
                         status=life["status"])
+        from ..unit_life import continuities_of, is_real
+        if life.get("status") == "still_existing" or (
+                life.get("status") == "undated" and is_real(node)
+                and not continuities_of(graph, nid, index=ix)):
+            # MICRO-LG3: a unit still existing reaches today — its end is OPEN,
+            # never the limit of the latest epoch of the graph
+            return _rec(None, "life", nid, [nid], status="still_existing", bound="open")
 
-    r = _swimlane(graph, ix, rule, nid, lane_epochs(ix, nid))
+    lanes = lane_epochs(ix, nid)
+    if rule.id == "absolute_time_start" and _is_life_bearing(node):
+        from ..unit_life import is_real
+        if is_real(node):
+            # MICRO-LG3: a real unit is born in its first epoch; an epoch it
+            # survives in (observed in a campaign) is not its beginning
+            lanes = [t for t in ix.targets(nid, "has_first_epoch") if ix.is_epoch(t)]
+    r = _swimlane(graph, ix, rule, nid, lanes)
     return r or graph_level()
 
 

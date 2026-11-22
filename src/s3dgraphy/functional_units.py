@@ -194,11 +194,21 @@ def uses(graph: Any, fu_id: str) -> List[Dict[str, Any]]:
 
 def declared_life(graph: Any, fu_id: str, *,
                   epoch_intervals: Optional[Dict[str, Any]] = None) -> Interval:
-    """The DECLARED life of a functional unit: for each bound, its own
-    ``absolute_time_start`` / ``_end`` (a PropertyNode, with its paradata),
-    else its epochs (``has_first_epoch`` + ``survive_in_epoch``: the earliest
-    start, the latest end, sub-epochs restricted by their parent). Never its
-    members': the castle is younger than its stones.
+    """The DECLARED life of a functional unit, never its members': the castle
+    is younger than its stones, and the stones outlive it (MICRO-LG3, E.D. 22
+    Nov 2026: «la vita dell'unità funzionale resta dichiarata»).
+
+    * START: its own ``absolute_time_start`` (a PropertyNode, with its
+      paradata), else the earliest start of its ``has_first_epoch`` epochs
+      ONLY (sub-epochs restricted by their parent). An epoch of survival is
+      not a beginning: the ruin begins when the gate stops working, not with
+      the first dated levelling it survives in — so a ruin with no first
+      epoch has an OPEN start.
+    * END: its own ``absolute_time_end``, else the latest end of ALL its
+      epochs (first and survival); if ONE of them has no end, the end is OPEN
+      (None) — an unknown bound stays open, never replaced by the nearest
+      known one (the gate does not «end» with Trajan because its later phases
+      are undated).
 
     :meth:`Graph.chronology` does not date a functional unit (it is not in
     ``CHRONOLOGY_TYPES``, so nothing propagates to or from it along the
@@ -208,21 +218,26 @@ def declared_life(graph: Any, fu_id: str, *,
     if node is None:
         return (None, None)
     intervals = graph.epoch_intervals() if epoch_intervals is None else epoch_intervals
+
+    def epochs(edge_types: Tuple[str, ...]) -> List[str]:
+        return [e.edge_target for e in graph.edges
+                if e.edge_type in edge_types and e.edge_source == fu_id]
+
     out: List[Optional[float]] = []
     for side in ("start", "end"):
         found = _node_temporal_property_found(graph, node, "absolute_time_" + side)
         if found is not None and found[0] is not None:
             out.append(float(found[0]))
             continue
-        values = []
-        for edge_type in ("has_first_epoch", "survive_in_epoch"):
-            for e in graph.edges:
-                if e.edge_type != edge_type or e.edge_source != fu_id:
-                    continue
-                v = (intervals.get(e.edge_target) or {}).get(side)
-                if v is not None:
-                    values.append(float(v))
-        out.append((min(values) if side == "start" else max(values)) if values else None)
+        if side == "start":
+            values = [(intervals.get(t) or {}).get("start") for t in epochs(("has_first_epoch",))]
+            values = [float(v) for v in values if v is not None]
+            out.append(min(values) if values else None)
+        else:
+            ends = [(intervals.get(t) or {}).get("end")
+                    for t in epochs(("has_first_epoch", "survive_in_epoch"))]
+            out.append(None if not ends or any(v is None for v in ends)
+                       else max(float(v) for v in ends))
     return (out[0], out[1])
 
 
@@ -230,12 +245,35 @@ def life(graph: Any, node_id: str, *, chronology: Optional[Dict[str, Any]] = Non
          epoch_intervals: Optional[Dict[str, Any]] = None) -> Interval:
     """The life of a node, ``(start, end)``: for a functional unit its
     DECLARED life (:func:`declared_life`), never its members'; for any other
-    node the computed one of :meth:`Graph.chronology`."""
+    node the computed one of :meth:`Graph.chronology` — a unit still existing
+    has an OPEN end (None): it reaches today (MICRO-LG3)."""
     if is_functional_unit(graph.find_node_by_id(node_id)):
         return declared_life(graph, node_id, epoch_intervals=epoch_intervals)
     chron = graph.chronology() if chronology is None else chronology
     entry = chron.get(node_id) or {}
     return (entry.get("start"), entry.get("end"))
+
+
+def _dated(graph: Any, node_id: str, chron: Dict[str, Any]) -> bool:
+    """Is the node dated at all: a bound, or (MICRO-LG3) a WINDOW of life —
+    a survival, an observation in a campaign, a membership in a dated
+    functional unit (:meth:`Graph.chronology`, ``windows``). A unit known
+    only through its windows has OPEN bounds: it may have been alive at any
+    moment, and was at least once in each window."""
+    if is_functional_unit(graph.find_node_by_id(node_id)):
+        return life(graph, node_id) != (None, None)
+    entry = chron.get(node_id) or {}
+    return (entry.get("start") is not None or entry.get("end") is not None
+            or bool(entry.get("windows")))
+
+
+def _alive_in(m_life: Interval, m_dated: bool, interval: Interval) -> bool:
+    """Does a unit of life ``m_life`` meet ``interval`` (both dated)? A unit
+    dated only by its windows has open bounds and meets any interval."""
+    from .periodization import overlaps
+    if m_life == (None, None):
+        return m_dated
+    return overlaps(m_life, interval)
 
 
 def _intersect(a: Interval, b: Interval) -> Optional[Interval]:
@@ -262,6 +300,137 @@ def _inside(child: Interval, parent: Interval) -> bool:
     if ce is not None and pe is not None and ce > pe:
         return False
     return True
+
+
+# ── MICRO-LG3 · the instance of a unit in a functional unit ─────────────────
+
+def instances(graph: Any, unit_id: str, *, chronology: Optional[Dict[str, Any]] = None,
+              epoch_intervals: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    """The INSTANCES of a unit in the functional units it is a member of
+    (decision of E.D., 22 Nov 2026, «il tratteggio dice lo spostamento; il
+    cambio di funzione sta nello strato funzionale»): one per
+    ``is_in_functional_unit``, its interval COMPUTED, never saved — the life
+    of the unit ∩ the declared life of the functional unit. The Roman wall,
+    as an instance of the castle, lives 1100–1400; as matter it is born in
+    the 1st century and reaches today.
+
+    ``[{unit, functional_unit, name, edge_id, unit_life, functional_life,
+    interval, judged}]``, in edge order: ``interval`` None when the two lives
+    do not meet (the member is not alive in its unit: :func:`coherence`);
+    ``judged`` False when either life is unknown (the unit has no bound and
+    no window, or the functional unit no declared life) — then ``interval``
+    is the other life, or ``(None, None)``. A unit dated only by its windows
+    has open bounds: its instance is the life of the functional unit."""
+    chron = graph.chronology() if chronology is None else chronology
+    intervals = graph.epoch_intervals() if epoch_intervals is None else epoch_intervals
+    u_life = life(graph, unit_id, chronology=chron)
+    u_dated = _dated(graph, unit_id, chron)
+    out: List[Dict[str, Any]] = []
+    for e in graph.edges:
+        if e.edge_type != MEMBER_EDGE or e.edge_source != unit_id:
+            continue
+        fu_node = graph.find_node_by_id(e.edge_target)
+        if not is_functional_unit(fu_node):
+            continue
+        f_life = declared_life(graph, e.edge_target, epoch_intervals=intervals)
+        judged = u_dated and f_life != (None, None)
+        if not judged:
+            interval: Optional[Interval] = f_life if f_life != (None, None) else u_life
+        elif u_life == (None, None):
+            interval = f_life
+        else:
+            interval = _intersect(u_life, f_life)
+        out.append({"unit": unit_id, "functional_unit": e.edge_target, "name": fu_node.name,
+                    "edge_id": e.edge_id, "unit_life": u_life, "functional_life": f_life,
+                    "interval": interval, "judged": judged})
+    return out
+
+
+# ── MICRO-LG3 · the dotted line says a displacement ──────────────────────────
+
+#: the units whose presence at one end of a ``changed_from`` is a sign of a
+#: DISPLACEMENT: the original position, reconstructed (USV/s, USV/n, VSF, a
+#: USD and their series), or the new one of a repositioned find (RSF)
+DISPLACEMENT_ORIGIN_TYPES = ("USVs", "USVn", "VSF", "USD", "serUSVs", "serUSVn", "serVSF",
+                             "serUSD", "RSF")
+
+import re as _re  # noqa: E402
+
+_SUFFIX = _re.compile(r"^(?P<base>.*?\d)\s*[-_.]?\s*(?P<letter>[a-z])$", _re.IGNORECASE)
+
+
+def _base_and_letter(name: str) -> Tuple[str, Optional[str]]:
+    clean = (name or "").strip()
+    m = _SUFFIX.match(clean)
+    if not m:
+        return _re.sub(r"[\s_.-]", "", clean).lower(), None
+    return _re.sub(r"[\s_.-]", "", m.group("base")).lower(), m.group("letter").lower()
+
+
+def _is_b_of(latter: str, former: str) -> bool:
+    """Are the two names two INSTANCES of one numbered unit — the «b» of the
+    other (US12 → US12b) or the letters of the instance chain of the manual
+    (USM5000-A ← USD5000-B, ``{TYPE}{ID}-{LETTER}``)? The numbers must match;
+    the type prefix may differ."""
+    lb, ll = _base_and_letter(latter)
+    fb, fl = _base_and_letter(former)
+    if ll is None and fl is None:
+        return False
+    ln, fn = _re.sub(r"^\D*", "", lb), _re.sub(r"^\D*", "", fb)
+    return bool(ln) and ln == fn and (ll, lb) != (fl, fb)
+
+
+def changed_from_to_review(graph: Any, *, lang: str = "en") -> List[Dict[str, Any]]:
+    """The ``changed_from`` between two STRATIGRAPHIC units that carry no sign
+    of a DISPLACEMENT — for the graphs drawn before the decision of E.D. (22
+    Nov 2026): the dotted line between units says a change of POSITION in
+    space (the capital walled up as an RSF, the block dismantled and
+    rebuilt, the anastylosis), the change of function without displacement
+    is said by memberships in several functional units.
+
+    Signs of a displacement: the latter is the «b» of the former (US12 →
+    US12b), or one end is a reconstructed original position or a
+    repositioned find (:data:`DISPLACEMENT_ORIGIN_TYPES`: USV/s, USV/n, VSF,
+    USD and their series, RSF).
+
+    ``[{edge_id, latter, former, latter_name, former_name,
+    latter_functional_units, former_functional_units, proposal}]``: only a
+    PROPOSAL — the two instances are one unit that did not move, its two
+    functions two memberships ``is_in_functional_unit`` — never a conversion:
+    the user decides."""
+    it = lang == "it"
+    out: List[Dict[str, Any]] = []
+    for e in graph.edges:
+        if e.edge_type not in (CHANGE_EDGE, "changed_to"):
+            continue
+        latter, former = ((e.edge_source, e.edge_target) if e.edge_type == CHANGE_EDGE
+                          else (e.edge_target, e.edge_source))
+        ln, fn = graph.find_node_by_id(latter), graph.find_node_by_id(former)
+        if not (_is_unit(ln) and _is_unit(fn)):
+            continue
+        types = {getattr(ln, "node_type", ""), getattr(fn, "node_type", "")}
+        if types & set(DISPLACEMENT_ORIGIN_TYPES):
+            continue
+        l_name, f_name = getattr(ln, "name", latter), getattr(fn, "name", former)
+        if _is_b_of(l_name, f_name):
+            continue
+        l_fus = [t for t in _targets_of(graph, latter, MEMBER_EDGE)
+                 if is_functional_unit(graph.find_node_by_id(t))]
+        f_fus = [t for t in _targets_of(graph, former, MEMBER_EDGE)
+                 if is_functional_unit(graph.find_node_by_id(t))]
+        proposal = (
+            f"{l_name} ← {f_name}: nessun segno di spostamento (né «b» né posizione d'origine "
+            f"USV/USD/RSF). Se l'unità non si è mossa, è una sola US: il cambio di funzione si dice "
+            f"con due appartenenze is_in_functional_unit, non con il tratteggio. Decide l'utente."
+            if it else
+            f"{l_name} ← {f_name}: no sign of displacement (no «b», no USV/USD/RSF original "
+            f"position). If the unit did not move it is one unit: the change of function is two "
+            f"memberships is_in_functional_unit, not the dotted line. The user decides.")
+        out.append({"edge_id": e.edge_id, "latter": latter, "former": former,
+                    "latter_name": l_name, "former_name": f_name,
+                    "latter_functional_units": l_fus, "former_functional_units": f_fus,
+                    "proposal": proposal})
+    return out
 
 
 # ── U3 · coherence ───────────────────────────────────────────────────────────
@@ -300,10 +469,14 @@ def coherence(graph: Any, *, chronology: Optional[Dict[str, Any]] = None,
         fu_life = life(graph, fu.node_id, chronology=chron)
         for m in members(graph, fu.node_id):
             m_life = life(graph, m, chronology=chron)
-            if fu_life == (None, None) or m_life == (None, None):
+            if is_functional_unit(graph.find_node_by_id(m)):
+                continue
+            inst = next((i for i in instances(graph, m, chronology=chron)
+                         if i["functional_unit"] == fu.node_id), None)
+            if inst is None or not inst["judged"]:
                 out["undated"].append({"unit": fu.node_id, "member": m})
                 continue
-            if _intersect(fu_life, m_life) is None:
+            if inst["interval"] is None:
                 out["members_not_alive"].append({"unit": fu.node_id, "member": m,
                                                  "unit_life": fu_life, "member_life": m_life})
                 out["warnings"].append(
@@ -330,6 +503,7 @@ def coherence(graph: Any, *, chronology: Optional[Dict[str, Any]] = None,
     intervals = graph.epoch_intervals() if epochs else {}
     units = [n for n in graph.nodes if _is_unit(n)]
     unit_lives = {u.node_id: life(graph, u.node_id, chronology=chron) for u in units}
+    unit_dated = {u.node_id: _dated(graph, u.node_id, chron) for u in units}
     fu_lives = {f.node_id: life(graph, f.node_id, chronology=chron) for f in fus}
     fu_members = {f.node_id: set(members(graph, f.node_id, recursive=True)) for f in fus}
     for ep in epochs:
@@ -337,7 +511,7 @@ def coherence(graph: Any, *, chronology: Optional[Dict[str, Any]] = None,
         ep_iv = (iv.get("start"), iv.get("end"))
         if ep_iv == (None, None):
             continue
-        alive = [u for u, lf in unit_lives.items() if overlaps(lf, ep_iv)]
+        alive = [u for u, lf in unit_lives.items() if _alive_in(lf, unit_dated[u], ep_iv)]
         live_fus = [f for f, lf in fu_lives.items() if overlaps(lf, ep_iv)]
         read_by = set()
         for f in live_fus:
@@ -432,14 +606,16 @@ def presence(graph: Any, fu_id: str, horizon: Any = None, *,
 
     alive: List[str] = []
     if interval is not None:
-        from .periodization import overlaps
         for m in members(graph, fu_id, recursive=True):
             m_life = life(graph, m, chronology=chron)
-            if interval == (None, None) or m_life == (None, None):
-                if interval == (None, None) and m_life == (None, None):
+            if interval == (None, None):
+                if m_life == (None, None):
                     alive.append(m)
                 continue
-            if overlaps(m_life, interval):
+            # the instance of the member in the identity (MICRO-LG3): its
+            # life ∩ the identity's, met by the horizon — a member dated only
+            # by its windows has open bounds
+            if _alive_in(m_life, _dated(graph, m, chron), interval):
                 alive.append(m)
     by_degree: Dict[str, List[str]] = {}
     for m in alive:
@@ -481,7 +657,9 @@ def presence(graph: Any, fu_id: str, horizon: Any = None, *,
 __all__ = [
     "MEMBER_EDGE", "CHANGE_EDGE", "TRANSFORMATION", "FUNCTIONAL_SCALES",
     "STRATIGRAPHIC", "DOCUMENTARY", "RECONSTRUCTIVE", "SYMBOL", "EVIDENCE_DEGREES",
+    "DISPLACEMENT_ORIGIN_TYPES",
     "is_functional_unit", "functional_units_of", "scale_of", "evidence_of_unit",
     "children", "parents", "members", "handles", "sites_of_unit",
-    "transformations", "uses", "declared_life", "life", "coherence", "evidence", "presence",
+    "transformations", "uses", "declared_life", "life", "instances", "coherence", "evidence",
+    "presence", "changed_from_to_review",
 ]

@@ -5,6 +5,28 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Changed
+- **The life of the units** (MICRO-LG3, 22 November 2026; E.D.: «il
+  frammento in situ è la stessa US dall'antichità a oggi»). A REAL unit with
+  no continuity is still existing and REACHES TODAY: its end is OPEN (None,
+  `end_kind` `open`, resolver `bound: "open"`) — never again the limit of the
+  latest epoch of the graph (the Porta Nord walls «ended» with the 2015
+  campaign). An undated continuity that is one act with the cut removing the
+  unit takes the cut's date (`unit_life.removal_cut_of`); a cut alone closes
+  nothing. A real unit is born only in its first epoch: a survival is a
+  WINDOW of life (`Graph.chronology` → `windows`, `start_latest`,
+  `end_earliest`, `[chronology window]` warnings), and so is a membership in a
+  dated functional unit. The TPQ walks contemporaries (`has_same_time` and
+  what implies it: `bonded_to`, `abuts`, `equals`) both ways. The
+  `UnifiedXLSXImporter` marks a real unit described in an analytical report of
+  year Y as `survive_in_epoch` the narrowest epoch containing Y
+  (`attributes.rule = observed_in_campaign`, `document`). `declared_life` of a
+  functional unit: start from its first epochs only, an epoch without end
+  makes the end open. New `functional_units.instances` (life of the unit ∩
+  declared life, used by `presence` and `coherence`) and
+  `changed_from_to_review` (a proposal for old graphs). Connections 1.6.57:
+  `changed_from` between stratigraphic units says a DISPLACEMENT in space —
+  description and new `scope_note`, translated (translations 1.19,
+  `edge_text`). tests/test_unit_life_lg3.py 15.
 - **The functional unit in time, and the Landscape Matrix of Sarmizegetusa**
   (MICRO-LG2, 21 November 2026; §14–15 of the brain note
   landscape-graph-semantica, E.D. 20–21 Nov). Node datamodel 1.6.52: a

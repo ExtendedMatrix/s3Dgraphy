@@ -216,11 +216,12 @@ def _lives():
     return g
 
 
-def test_a_real_unit_still_existing_ends_at_the_limit_of_the_latest_epoch():
+def test_a_real_unit_still_existing_reaches_today_with_an_open_end():
+    # MICRO-LG3 (was: «ends at the limit of the latest epoch»)
     ch = _lives().chronology()
     e = ch["SU1"]
-    assert (e["start"], e["end"]) == (100.0, 2026.0)
-    assert e["end_relation"] == "unit_life" and e["end_life"]["status"] == "still_existing"
+    assert (e["start"], e["end"]) == (100.0, None)
+    assert e["end_life"]["status"] == "still_existing" and e["end_life"]["end_kind"] == "open"
 
 
 def test_a_virtual_unit_lives_in_its_epoch_whatever_was_ticked():

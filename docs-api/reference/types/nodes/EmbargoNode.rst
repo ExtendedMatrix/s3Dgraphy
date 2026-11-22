@@ -5,7 +5,7 @@ EmbargoNode
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.52, connections 1.6.56) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.52, connections 1.6.57) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *Represents a temporal embargo on access or distribution of a node, license, or whole graph.*
 

@@ -134,7 +134,8 @@ def test_one_horizon_is_valid_for_every_graph_of_the_container():
     g2.add_edge("x", "US9", "EP_X", "has_first_epoch")
     c, _, _ = _with_periodizations(g1)
     c.graphs["G2"] = g2
-    assert [h["id"] for h in P.horizons_of(c, g2, "US9")] == ["H2"]
+    # MICRO-LG3: US9 is still existing — it reaches today, so the later horizon too
+    assert [h["id"] for h in P.horizons_of(c, g2, "US9")] == ["H2", "H3"]
 
 
 def test_cronofilter_shapes_enter_as_one_periodization():
@@ -199,12 +200,17 @@ def test_sub_epoch_restricts_the_parent():
     assert chron["U1"]["start"] == -100.0
     assert (chron["U1"]["start_rule"], chron["U1"]["start_source"], chron["U1"]["start_relation"]) == (
         "sub_epoch", "EP", "has_sub_epoch")
-    # MICRO-K §B2: U1 is a real unit with no continuity — still existing, its
-    # end the limit of the latest epoch its life reaches (EP), not of PH1
-    assert (chron["U1"]["end_rule"], chron["U1"]["end_source"], chron["U1"]["end_relation"]) == (
-        "epoch", "EP", "unit_life")
+    # MICRO-LG3: U1 is a real unit with no continuity — still existing, its
+    # end OPEN (it reaches today), never the limit of an epoch
+    assert chron["U1"]["end"] is None and chron["U1"]["end_rule"] is None
     assert chron["U1"]["end_life"]["status"] == "still_existing"
-    assert chron["U2"]["end"] == 300.0 and chron["U2"]["end_rule"] == "sub_epoch"
+    assert chron["U2"]["end"] is None                    # still existing too
+    # a VIRTUAL unit lives in its epoch: its end is the sub-epoch's, restricted
+    from s3dgraphy.nodes.stratigraphic_node import StructuralVirtualStratigraphicUnit
+    g.add_node(StructuralVirtualStratigraphicUnit("V2", "V2"))
+    g.add_edge("fV2", "V2", "PH2", "has_first_epoch")
+    chron = g.chronology()
+    assert chron["V2"]["end"] == 300.0 and chron["V2"]["end_rule"] == "sub_epoch"
     assert "sub_epoch" in Graph.CHRONOLOGY_RULES
 
 

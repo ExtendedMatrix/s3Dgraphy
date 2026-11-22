@@ -24,11 +24,28 @@ A continuity can be **dated** (its own ``absolute_time_end`` — or
 
 **The limit of an epoch is not an end** (E.D., MICRO-C-CORREZIONI-ED): when a
 unit «ends» because the epoch it lives in ends — a virtual unit, a unit closed
-by an undated continuity, a unit still existing — the year is the LIMIT OF
-THE EPOCH, not the end of the unit: ``end_kind == "epoch_limit"`` and
-``end_limit_of`` the epoch, said «vive nell'epoca II A.D. (limite dell'epoca:
-199)». ``end_kind == "dated"`` only when an end is really dated (a dated
-continuity).
+by an undated continuity — the year is the LIMIT OF THE EPOCH, not the end of
+the unit: ``end_kind == "epoch_limit"`` and ``end_limit_of`` the epoch, said
+«vive nell'epoca II A.D. (limite dell'epoca: 199)». ``end_kind == "dated"``
+only when an end is really dated (a dated continuity, or the date of the cut
+it is one act with).
+
+**A unit still existing reaches today** (E.D., MICRO-LG3, 22 Nov 2026: «il
+frammento in situ è la stessa US dall'antichità a oggi»): its end is OPEN —
+``end_value`` None, ``end_kind == "open"`` — never the limit of the latest
+epoch the graph happens to hold (until LG3 it was: the Porta Nord walls
+«ended» with the 2015 campaign). Only an action that takes the unit away
+closes it, and the EM language says that with a continuity (BR): a cut that
+takes away only a part leaves no BR (node datamodel, BR). An undated BR that
+is ONE ACT with the cut that removes the unit — the BR and the negative unit
+linked by any edge, and the negative unit ``cuts`` the unit — takes the
+date of the cut (its own ``absolute_time_start``, else the start of its first
+epoch): :func:`removal_cut_of`.
+
+**Survival is not birth** (MICRO-LG3): a REAL unit with no birth epoch is
+not born in the epochs it ``survive_in_epoch`` — it was alive then (observed
+in a campaign, say). Those epochs are its only word, neither redundant nor
+contradicting; :meth:`Graph.chronology` reads them as WINDOWS of life.
 
 The epochs are ordered by their start (the swimlane getters of the resolver); an epoch
 belongs to the life when it begins between the birth and the end epoch; a
@@ -85,6 +102,36 @@ def _continuity_date(graph, br_id: str, ix: EdgeIndex):
     return None
 
 
+def _unit_start(graph, nid: str, ix: EdgeIndex):
+    """A unit's own start: its ``absolute_time_start``, else the start of its
+    earliest dated first epoch (no propagation: the act's own date)."""
+    from .resolvers.builtin_rules import _node_temporal_property
+    v = _node_temporal_property(graph, ix.node(nid), "absolute_time_start")
+    if v is not None:
+        return float(v)
+    starts, _ends = _starts_ends(graph, ix)
+    vals = [starts[t] for t in ix.targets(nid, FIRST) if t in starts]
+    return min(vals) if vals else None
+
+
+def removal_cut_of(graph, unit_id: str, br_id: str, *, index: Optional[EdgeIndex] = None):
+    """The cut that is ONE ACT with the continuity ``br_id`` closing
+    ``unit_id`` (node datamodel, BR: «when a cut takes the whole unit away,
+    the BR and the USN are one act: the BR takes the date of the cut»): a
+    unit that ``cuts`` ``unit_id`` and is linked to the BR by any edge
+    (an excavation trench included). ``(cut_id, date)`` or None; the date may
+    be None when the cut is undated (MICRO-LG3)."""
+    ix = _ix(graph, index)
+    cutters = [e.edge_source for e in ix.inn.get(unit_id, ()) if e.edge_type == "cuts"]
+    cutters += [e.edge_target for e in ix.out.get(unit_id, ()) if e.edge_type == "is_cut_by"]
+    linked = ({e.edge_target for e in ix.out.get(br_id, ())}
+              | {e.edge_source for e in ix.inn.get(br_id, ())})
+    for c in dict.fromkeys(cutters):
+        if c in linked:
+            return c, _unit_start(graph, c, ix)
+    return None
+
+
 def is_real(node) -> bool:
     """The family of the datamodel, not a list written here (BR and SE have
     none: not real)."""
@@ -105,10 +152,11 @@ def unit_life(graph, unit_id: str, *, index: Optional[EdgeIndex] = None) -> Dict
     life, oldest first, mothers included. ``declared`` the ``survive_in_epoch``
     written on the unit; ``redundant`` those the rule implies; ``contradicting``
     those it does not reach. ``end_value`` the year the life ends, for the
-    resolver (the continuity's date, else the end of its epoch; for a unit
-    still existing the end of the latest epoch it reaches). ``end_kind``
-    ``dated`` (a dated continuity) or ``epoch_limit`` (the value is the limit
-    of the epoch ``end_limit_of``, not an end of the unit)."""
+    resolver (the continuity's date — or the date of the cut it is one act
+    with —, else the end of its epoch; None for a unit still existing: its
+    end is OPEN, it reaches today). ``end_kind`` ``dated`` (a dated
+    continuity or cut), ``epoch_limit`` (the value is the limit of the epoch
+    ``end_limit_of``, not an end of the unit) or ``open`` (still existing)."""
     ix = _ix(graph, index)
     node = ix.node(unit_id)
     out: Dict[str, Any] = {"unit": unit_id, "real": is_real(node), "birth": None, "end_epoch": None,
@@ -122,7 +170,9 @@ def unit_life(graph, unit_id: str, *, index: Optional[EdgeIndex] = None) -> Dict
     declared = [t for t in ix.targets(unit_id, SURVIVE) if ix.is_epoch(t)]
     out["declared"] = declared
     if not firsts:
-        out["contradicting"] = list(declared)
+        # a real unit with no birth: its survivals are its only word (alive
+        # then — observed in a campaign), not contradicting (MICRO-LG3)
+        out["contradicting"] = [] if out["real"] else list(declared)
         return out
     starts, ends = _starts_ends(graph, ix)
     birth = min(firsts, key=lambda e: starts.get(e, float("inf")))
@@ -183,10 +233,16 @@ def unit_life(graph, unit_id: str, *, index: Optional[EdgeIndex] = None) -> Dict
 
     if br is not None:
         date = _continuity_date(graph, br, ix)
+        cut = removal_cut_of(graph, unit_id, br, index=ix) if date is None else None
         if date is not None:
             out.update(status="ended", end_value=date, end_origin=br,
                        end_chain=[unit_id, br], end_dated=True, end_kind="dated",
                        why=f"viva da {name(birth)}, chiusa da un continuity datato {date:g}")
+        elif cut is not None and cut[1] is not None:
+            out.update(status="ended", end_value=cut[1], end_origin=cut[0],
+                       end_chain=[unit_id, br, cut[0]], end_dated=True, end_kind="dated",
+                       why=f"viva da {name(birth)}, tolta dal taglio {name(cut[0])} ({cut[1]:g}), "
+                           "un solo atto con il suo continuity")
         else:
             ev = ends.get(end_epoch) if end_epoch else None
             out.update(status="ended_undated", end_value=ev, end_origin=end_epoch or br,
@@ -197,11 +253,11 @@ def unit_life(graph, unit_id: str, *, index: Optional[EdgeIndex] = None) -> Dict
                             "data della fine non indicata"
                             if end_epoch else f"viva da {name(birth)}, chiusa da un continuity senza epoca"))
     elif out["real"]:
-        last = max((e for e in epochs if e in ends), key=lambda e: ends[e], default=None)
-        out.update(status="still_existing", end_value=ends.get(last) if last else None,
-                   end_origin=last, end_chain=[unit_id] + ([last] if last else []),
-                   end_kind="epoch_limit" if last else None, end_limit_of=last,
-                   why=f"viva da {name(birth)}, nessun continuity → still existing")
+        # MICRO-LG3: the end is OPEN, the unit reaches today — never the limit
+        # of the latest epoch the graph holds
+        out.update(status="still_existing", end_value=None, end_origin=None,
+                   end_chain=[unit_id], end_kind="open", end_limit_of=None,
+                   why=f"viva da {name(birth)}, nessun continuity → still existing, fino a oggi")
     else:
         ev = ends.get(birth)
         out.update(status="birth_only", end_value=ev, end_origin=birth,

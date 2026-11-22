@@ -118,10 +118,14 @@ def test_translation_keys_point_to_existing_edges_with_a_phrase():
     # Since 1.3 EVERY edge type has an entry, for its `label`; the phrase fields
     # are there exactly for the edges that have a phrase.
     assert set(tr) == set(edges), "every edge type has its translation entry"
+    # 1.19 (MICRO-LG3): the edges of EDGE_TEXT_EDGES carry their definition
+    # and scope note too
+    from s3dgraphy.tools.datamodel_i18n import EDGE_TEXT_EDGES, EDGE_TEXT_FIELDS
     for edge, entry in tr.items():
         phrases = {f"ui_phrase_{d}" for d in DIRS} if "ui_phrase" in edges[edge] \
             else set()
-        assert set(entry) == {"label"} | phrases, (edge, sorted(entry))
+        texts = set(EDGE_TEXT_FIELDS) if edge in EDGE_TEXT_EDGES else set()
+        assert set(entry) == {"label"} | phrases | texts, (edge, sorted(entry))
 
 
 def test_the_english_of_the_sidecar_is_the_datamodel_s():
@@ -227,7 +231,7 @@ def test_the_version_went_up():
     # badge's {owner}, no refresh_instance — the instance is a view
     # 1.9 (2026-10-09, night): the `property_names` section — see
     # test_datamodel_i18n.test_property_names_are_labelled_and_are_not_qualia
-    assert _translations()["version"] == "1.18"  # 1.18 dal 21 nov 2026 (MICRO-LG2: is_observed_in, property_names use e phase, la descrizione dell'unità funzionale); 1.17 dal 17 nov 2026 (property_names.interpretation); 1.16 dal 6 nov 2026 (master_kinds); 1.15 dal 24 ott 2026 (orizzonti e periodizzazioni); 1.14 dal 23 ott 2026 (end_reasons; 1.12-1.13 SF/RSF/VSF, serVSF; 1.11 study_took_place_at; 1.10 label_author / label_author_ai)
+    assert _translations()["version"] == "1.19"  # 1.19 dal 22 nov 2026 (MICRO-LG3: description e scope_note di changed_from); 1.18 dal 21 nov 2026 (MICRO-LG2: is_observed_in, property_names use e phase, la descrizione dell'unità funzionale); 1.17 dal 17 nov 2026 (property_names.interpretation); 1.16 dal 6 nov 2026 (master_kinds); 1.15 dal 24 ott 2026 (orizzonti e periodizzazioni); 1.14 dal 23 ott 2026 (end_reasons; 1.12-1.13 SF/RSF/VSF, serVSF; 1.11 study_took_place_at; 1.10 label_author / label_author_ai)
 
 
 def test_combines_reads_of_in_english():
