@@ -39,6 +39,7 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from . import functional_units as FU
 from .functional_matrix import home_lane, matrix_lanes
+from .nodes.group_node import FUNCTIONAL_SCALES
 
 Interval = Tuple[Optional[float], Optional[float]]
 
@@ -158,6 +159,23 @@ def cube_view(graph: Any, *, footprints: Optional[Dict[str, Dict[str, Any]]] = N
     * ``chains`` — the chain of identities between the planes
       (:func:`s3dgraphy.functional_units.transformations`).
 
+    MICRO-MF08 (the cube at a FUNCTIONAL SCALE — territory · complex ·
+    building · room · component, :data:`~s3dgraphy.nodes.group_node.
+    FUNCTIONAL_SCALES`): one answer serves every scale, the page chooses.
+
+    * every item carries ``by_scale`` ``{scale: fu}`` — the functional unit OF
+      THAT SCALE that reads it in the plane (the most specific of that scale);
+    * every symbol carries its ``scale``, its ``ancestors`` (the functional
+      units it is in, recursively, the nearest first), its ``children`` (the
+      units directly in it) and ``z_range`` — the heights of its members'
+      proxies, the VOLUME the page extrudes;
+    * every plane carries ``absent`` — the functional units whose DECLARED life
+      meets the plane and that have no hull there ``{fu, name, scale,
+      evidence, why, ancestors}`` (``why`` ``no_members``: none alive there;
+      ``no_outline``: members, none with an outline): drawn as a symbol;
+    * ``functional_units`` carries ``ancestors`` and ``children`` too, and
+      ``scales`` counts the functional units of each scale.
+
     ``footprints`` the outlines (:func:`unit_footprints`); or
     ``proxy_footprints`` and they are read from it and the properties."""
     chron = graph.chronology() if chronology is None else chronology
@@ -196,6 +214,24 @@ def cube_view(graph: Any, *, footprints: Optional[Dict[str, Dict[str, Any]]] = N
                 stack.extend(FU.children(graph, c))
             descendants[fid] = seen
         return descendants[fid]
+
+    lineage: Dict[str, List[str]] = {}
+
+    def ancestors(fid: str) -> List[str]:
+        """the functional units ``fid`` is in, recursively, the nearest first"""
+        if fid not in lineage:
+            out: List[str] = []
+            todo = list(FU.parents(graph, fid))
+            while todo:
+                p = todo.pop(0)
+                if p in out or p == fid:
+                    continue
+                out.append(p)
+                todo.extend(FU.parents(graph, p))
+            lineage[fid] = out
+        return lineage[fid]
+
+    scale_of = {f.node_id: FU.scale_of(f) for f in fus}
 
     presence_ev: Dict[Tuple[str, str], Optional[str]] = {}
 
@@ -275,7 +311,15 @@ def cube_view(graph: Any, *, footprints: Optional[Dict[str, Dict[str, Any]]] = N
             if here:
                 read_in.setdefault(uid, []).append(ln["id"])
             inst = older(home[uid], ln["id"])
-            items.append({"id": uid, "reader": reader, "readers": leaves,
+            # MF08 · the reader at each functional scale (the most specific of that scale)
+            by_scale: Dict[str, str] = {}
+            for sc in FUNCTIONAL_SCALES:
+                at = [f for f in here if scale_of.get(f) == sc]
+                at_leaves = [f for f in at if not (below(f) & set(at))]
+                at_leaves.sort(key=lambda f: (graph.find_node_by_id(f).name or "", f))
+                if at_leaves:
+                    by_scale[sc] = at_leaves[0]
+            items.append({"id": uid, "reader": reader, "readers": leaves, "by_scale": by_scale,
                           "evidence": evidence_in(reader, ln) if reader else None,
                           "instance": inst, "from_lane": home[uid] if inst else None,
                           "visibility": seen(uid, ln)})
@@ -290,19 +334,33 @@ def cube_view(graph: Any, *, footprints: Optional[Dict[str, Dict[str, Any]]] = N
         # the SYMBOLIC layer: the hull of the members living here, per unit
         here_ids = {it["id"] for it in items}
         symbols = []
+        absent: List[Dict[str, Any]] = []
         for f in fus:
             if not fu_in(f.node_id, ln):
                 continue
-            ms = [m for m in FU.members(graph, f.node_id, recursive=True) if m in here_ids]
+            every = FU.members(graph, f.node_id, recursive=True)
+            ms = [m for m in every if m in here_ids]
             pts_ = [p for m in ms for r in fps[m]["rings"] for p in r]
             ring = _hull(pts_)
             if not ring:
+                # MF08 · a unit whose DECLARED life meets the plane and has no
+                # hull there: a symbol (never for a unit with no declared life)
+                if fu_life[f.node_id] != (None, None):
+                    alive_here = [m for m in every if lives_in(chron.get(m) or {}, ln)]
+                    absent.append({"fu": f.node_id, "name": f.name, "scale": scale_of.get(f.node_id),
+                                   "evidence": evidence_in(f.node_id, ln),
+                                   "why": "no_outline" if alive_here else "no_members",
+                                   "ancestors": ancestors(f.node_id)})
                 continue
             ps = FU.parents(graph, f.node_id)
+            zs = [fps[m].get("z_range") for m in ms if fps[m].get("z_range")]
             symbols.append({"fu": f.node_id, "name": f.name, "ring": ring,
                             "evidence": evidence_in(f.node_id, ln),
                             "container": bool(FU.children(graph, f.node_id)),
-                            "parent": ps[0] if ps else None, "members": ms})
+                            "parent": ps[0] if ps else None, "members": ms,
+                            "scale": scale_of.get(f.node_id), "ancestors": ancestors(f.node_id),
+                            "children": FU.children(graph, f.node_id),
+                            "z_range": [min(z[0] for z in zs), max(z[1] for z in zs)] if zs else None})
         # containers first: drawn below their rooms
         symbols.sort(key=lambda x: (not x["container"], -len(x["members"])))
         rm, unread = [], []
@@ -321,7 +379,7 @@ def cube_view(graph: Any, *, footprints: Optional[Dict[str, Dict[str, Any]]] = N
                     elif mid in unread_by_id:
                         unread.append(dict(unread_by_id[mid], epoch=ep))
         planes.append({"lane": ln["id"], "name": ln["name"], "start": ln["start"], "end": ln["end"],
-                       "items": items, "without": without, "symbols": symbols,
+                       "items": items, "without": without, "symbols": symbols, "absent": absent,
                        "rm": rm, "rm_unread": unread})
     for uid, u in units.items():
         u["lane"] = home.get(uid)
@@ -335,7 +393,10 @@ def cube_view(graph: Any, *, footprints: Optional[Dict[str, Dict[str, Any]]] = N
             "verticals": verticals, "bbox": _bbox(r for u in units.values() for r in u["rings"]),
             "crs": crs,
             "functional_units": {f.node_id: {"name": f.name, "scale": FU.scale_of(f),
-                                             "parent": (FU.parents(graph, f.node_id) or [None])[0]} for f in fus},
+                                             "parent": (FU.parents(graph, f.node_id) or [None])[0],
+                                             "ancestors": ancestors(f.node_id),
+                                             "children": FU.children(graph, f.node_id)} for f in fus},
+            "scales": {sc: sum(1 for f in fus if scale_of.get(f.node_id) == sc) for sc in FUNCTIONAL_SCALES},
             "chains": [{"latter": c["latter"], "former": c["former"], "change_type": c["change_type"]}
                        for c in FU.transformations(graph)]}
 
@@ -378,6 +439,14 @@ def landscape_cube(landscape: Any, *, header: Optional[Dict[str, Any]] = None,
     * else a SYMBOL ``{kind: "symbol", id, evidence, why}`` — ``why``
       ``no_members`` (an identity no member reads) or ``no_outline`` (members,
       none with an outline). A UT is a symbol unless it has a footprint.
+
+    MICRO-MF08: every row carries its ``scale`` and its ``handles`` — the
+    bound handle in each cited graph (``identity`` rule), so the page can find
+    the same identity when it goes down a scale (the temple of S15 → the
+    temple of the graph bound to S15) — and every shape its ``hull_by_lane``
+    (the symbolic layer: the hull of the presence). The outlines of a cited
+    graph come in ITS frame (its GeoPosition: shift and CRS), the same frame
+    as its own cube: the two scales share their coordinates.
 
     ``proxy_dirs`` ``{graph_id: folder of its em.json}`` (default: the
     composition's path, relative to ``base_dir``); ``proxy_footprints_of``
@@ -477,6 +546,9 @@ def landscape_cube(landscape: Any, *, header: Optional[Dict[str, Any]] = None,
                 why = "no_members" if (r["kind"] == "ut" or not (members or r["members"])) else "no_outline"
                 item = {"kind": "symbol", "id": r["id"], "evidence": r["evidence"], "why": why}
             plane_of[lid]["items"].append(item)
+    # MF08 · the SYMBOLIC layer of the landscape: the hull of a presence per plane
+    for s_ in shapes.values():
+        s_["hull_by_lane"] = {lid: _hull([p for r in rs for p in r]) for lid, rs in s_["rings_by_lane"].items()}
     crossing = []
     for rid, s in shapes.items():
         ls = list(s["rings_by_lane"])
@@ -486,7 +558,12 @@ def landscape_cube(landscape: Any, *, header: Optional[Dict[str, Any]] = None,
     crs = sorted({c for p in planes for it in p["items"] if it["kind"] == "footprint" for c in it["crs"]})
     return {"scale": "landscape", "lanes": L, "planes": planes,
             "rows": {rid: {"name": r["name"], "kind": r["kind"], "site": r["site"], "evidence": r["evidence"],
-                           "lanes": r["lanes"]} for rid, r in rows.items()},
+                           "lanes": r["lanes"], "scale": r.get("scale"),
+                           # MF08 · the bound handle in each cited graph: the
+                           # same identity when the cube goes down a scale
+                           "handles": [{"graph_id": m["graph_id"], "handle": m["handle"]}
+                                       for m in r.get("members_from") or [] if m.get("handle")]}
+                     for rid, r in rows.items()},
             "shapes": shapes, "verticals": crossing, "bbox": bbox, "crs": crs,
             "sites": view["sites"], "bindings": view["bindings"]}
 
