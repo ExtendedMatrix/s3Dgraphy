@@ -469,10 +469,17 @@ def coherence(graph: Any, *, chronology: Optional[Dict[str, Any]] = None,
     they are members (recursively, through nested units), and the ids of the
     others. A MEASURE, not an error.
 
-    ``visibility_conflicts`` (MICRO-LG4) — ``[{unit, kind, property_id,
-    declared, derived, start, end, by}]``: a declared visibility against the
-    stratigraphy, outside the life of its unit, or against another
-    declaration as strong (:func:`s3dgraphy.visibility.visibility_conflicts`).
+    ``obliteration_conflicts`` (MICRO-LG6, was ``visibility_conflicts``) —
+    ``[{unit, kind, property_id, declared, start, end}]``: a declared
+    obliteration outside the life of its unit, or against another declaration
+    as strong (:func:`s3dgraphy.obliteration.obliteration_conflicts`); one
+    warning each.
+
+    ``obliteration_hints`` (MICRO-LG6) — ``[{kind, unit, start, end, by}]``:
+    the physical cover read as a HINT only, never as a state and never as a
+    warning — an obliteration declared where nothing more recent covers, a
+    unit covered for which nobody declared anything, a member a container's
+    window does not reach (:func:`s3dgraphy.obliteration.obliteration_hints`).
 
     ``warnings`` — one sentence per incoherence, in ``lang`` (en | it)."""
     from .periodization import overlaps
@@ -542,31 +549,25 @@ def coherence(graph: Any, *, chronology: Optional[Dict[str, Any]] = None,
                                        "alive": len(alive), "read": len(read),
                                        "unread": [u for u in alive if u not in read_by]}
 
-    # MICRO-LG4 · a declared visibility against the stratigraphy (or outside
-    # the life of its unit, or against another declaration as strong):
-    # reported, never corrected
-    from . import visibility as _vis
-    out["visibility_conflicts"] = _vis.visibility_conflicts(graph, chronology=chron)
-    for c in out["visibility_conflicts"]:
+    # MICRO-LG6 · the obliteration: its conflicts are warnings (outside the
+    # life of the unit, two declarations as strong that disagree); the
+    # physical cover is only a hint, listed and never said aloud
+    from . import obliteration as _ob
+    out["obliteration_conflicts"] = _ob.obliteration_conflicts(graph, chronology=chron)
+    out["obliteration_hints"] = _ob.obliteration_hints(graph, chronology=chron)
+    for c in out["obliteration_conflicts"]:
         where = _fmt((c.get("start"), c.get("end")))
-        if c["kind"] == "stratigraphy":
-            covers = ", ".join(name(b) for b in c.get("by") or []) or "—"
+        if c["kind"] == "outside_life":
             out["warnings"].append(
-                (f"[visibilità] {name(c['unit'])}: dichiarata {c['declared']} in {where}, "
-                 f"la stratigrafia dice {c['derived']} (copertura: {covers})") if it else
-                (f"[visibility] {name(c['unit'])}: declared {c['declared']} in {where}, "
-                 f"the stratigraphy says {c['derived']} (cover: {covers})"))
-        elif c["kind"] == "outside_life":
-            out["warnings"].append(
-                (f"[visibilità] {name(c['unit'])}: una finestra {c['declared']} ({where}) "
+                (f"[obliterazione] {name(c['unit'])}: una finestra {c['declared']} ({where}) "
                  f"esce dalla vita dell'unità") if it else
-                (f"[visibility] {name(c['unit'])}: a window {c['declared']} ({where}) "
+                (f"[obliteration] {name(c['unit'])}: a window {c['declared']} ({where}) "
                  f"lies outside the life of the unit"))
         else:
             out["warnings"].append(
-                (f"[visibilità] {name(c['unit'])}: due dichiarazioni dicono {c['declared']} e "
+                (f"[obliterazione] {name(c['unit'])}: due dichiarazioni dicono {c['declared']} e "
                  f"{c.get('other')} in {where}") if it else
-                (f"[visibility] {name(c['unit'])}: two declarations say {c['declared']} and "
+                (f"[obliteration] {name(c['unit'])}: two declarations say {c['declared']} and "
                  f"{c.get('other')} in {where}"))
     return out
 
@@ -636,16 +637,18 @@ def presence(graph: Any, fu_id: str, horizon: Any = None, *,
     from; ``proxies`` the ``geometry`` properties of the members alive (their
     proxies).
 
-    MICRO-LG4 · ``members_visible`` (in view and partly in view),
-    ``members_buried``, ``members_by_visibility`` ``{exposed, buried,
-    partially_exposed, undetermined: [ids]}``, ``member_visibility`` ``{id:
-    state}`` and ``visibility_counts`` ``{alive, exposed, buried,
-    partially_exposed, undetermined}``: what of the identity could be SEEN on
-    the interval (:func:`s3dgraphy.visibility.visibility` — declared, else
-    derived from the stratigraphy). The membership does not change: a buried
-    member is still a member (the buried ruin is still the ruin).
-    ``covering`` replaces the edges read as a cover
-    (:data:`s3dgraphy.visibility.COVERING_EDGES`).
+    MICRO-LG6 · ``members_obliterated`` (obliterated on the interval,
+    declared or inherited), ``members_not_obliterated`` (the rest: nothing
+    said, or partially obliterated — never «in view»: the absence says
+    nothing), ``members_partially_obliterated``, ``member_obliteration``
+    ``{id: obliterated | partially_obliterated | None}``,
+    ``members_obliteration_uncertain`` (the change falls in the interval only
+    through a scissor, a doubtful start) and ``obliteration_counts`` ``{alive,
+    obliterated, partially_obliterated, not_said}``
+    (:func:`s3dgraphy.obliteration.obliteration`). No state is derived from
+    the stratigraphy. The membership does not change: an obliterated member
+    is still a member (the buried ruin is still the ruin). ``covering`` is
+    accepted and ignored (MICRO-LG4/LG5 callers).
 
     ``proxy_footprints`` (MICRO-MF04): ``{unit_id: {wkt, …}}`` — the LOD0
     outlines COMPUTED from the members' proxies
@@ -716,27 +719,36 @@ def presence(graph: Any, fu_id: str, horizon: Any = None, *,
         except WktError:
             footprint = None
     proxies = [p for m in alive for p in _geometry_proxies(graph, m)]
-    # MICRO-LG4 · the members alive split by what could be seen on the
+    # MICRO-LG6 · the members alive split by their obliteration on the
     # interval: the ruin exists in the post-antique period, its members are
-    # alive and buried («rudere in H4: 8 membri, 0 in vista»)
-    from . import visibility as _vis
-    by_visibility: Dict[str, List[str]] = {s: [] for s in _vis.STATES + (_vis.UNDETERMINED,)}
-    member_visibility: Dict[str, Optional[str]] = {}
+    # alive and obliterated (declared on the ruin, inherited by them)
+    from . import obliteration as _ob
+    member_obliteration: Dict[str, Optional[str]] = {}
+    uncertain_ob: List[str] = []
     if interval is not None:
         v_interval = interval if interval != (None, None) else h
+        owners = _ob._owners(graph)
         for m in alive:
-            v = _vis.visibility(graph, m, v_interval, chronology=chron, covering=covering)
-            state = v["state"] if v["state"] in _vis.STATES else _vis.UNDETERMINED
-            member_visibility[m] = state
-            by_visibility[state].append(m)
-    visibility_counts = {"alive": len(alive), **{s: len(ids) for s, ids in by_visibility.items()}}
+            diary = (_ob.obliteration_windows(graph, m, chronology=chron, owners=owners)
+                     if owners else {"windows": []})
+            v = _ob.obliteration(graph, m, v_interval, chronology=chron, diary=diary)
+            member_obliteration[m] = v["state"]
+            if v["uncertain"] and v["state"]:
+                uncertain_ob.append(m)
+    obliterated = [m for m in alive if member_obliteration.get(m) == _ob.OBLITERATED]
+    partial = [m for m in alive if member_obliteration.get(m) == _ob.PARTIALLY_OBLITERATED]
+    obliteration_counts = {"alive": len(alive), "obliterated": len(obliterated),
+                           "partially_obliterated": len(partial),
+                           "not_said": len(alive) - len(obliterated) - len(partial)}
     return {"identity": fu_id, "name": node.name, "scale": scale_of(node),
             "life": fu_life, "interval": interval, "members_alive": alive,
             "members_by_degree": by_degree,
-            "members_visible": by_visibility[_vis.EXPOSED] + by_visibility[_vis.PARTIALLY_EXPOSED],
-            "members_buried": by_visibility[_vis.BURIED],
-            "members_by_visibility": by_visibility, "member_visibility": member_visibility,
-            "visibility_counts": visibility_counts,
+            "members_obliterated": obliterated,
+            "members_not_obliterated": [m for m in alive if m not in obliterated],
+            "members_partially_obliterated": partial,
+            "member_obliteration": member_obliteration,
+            "members_obliteration_uncertain": uncertain_ob,
+            "obliteration_counts": obliteration_counts,
             "evidence": evidence(graph, alive) if interval is not None else None,
             "footprint": footprint, "footprint_parts": parts,
             "crs": crs if not mixed else None, "proxies": proxies,

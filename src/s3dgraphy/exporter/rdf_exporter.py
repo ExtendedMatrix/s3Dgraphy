@@ -284,8 +284,9 @@ class _Datamodel:
         self._qualia_unit_predicates: Dict[str, Tuple[str, str]] = {}
         self._build_qualia_index(self.qualia_types)
         #: MICRO-LG4 · a PROPERTY NAME (not a quale) that declares its own
-        #: projection (em_qualia_types property_names.<name>.rdf): visibility
-        #: → crm:E3_Condition_State reached from the unit by P44
+        #: projection (em_qualia_types property_names.<name>.rdf): obliteration
+        #: (MICRO-LG6; visibility before) → crm:E3_Condition_State reached
+        #: from the unit by P44
         self.property_name_rdf: Dict[str, Dict[str, Any]] = {
             name: spec["rdf"]
             for name, spec in (self.qualia_types.get("property_names") or {}).items()
@@ -1191,7 +1192,7 @@ class RDFExporter:
                 ctx.add((unit_iri, _resolve_prefixed(pred[1]), Literal(value)))
 
         # MICRO-LG4 · a dated property that is a CONDITION STATE of its unit
-        # (visibility): declared in em_qualia_types, read here
+        # (obliteration, MICRO-LG6): declared in em_qualia_types, read here
         self._emit_condition_states(g, ctx)
 
         # CRMinf belief propositions (J4 → I17) — needs the full edge
@@ -1201,11 +1202,12 @@ class RDFExporter:
     def _emit_condition_states(self, g: S3DGraph, ctx) -> None:
         """MICRO-LG4 (E.D., 22 Nov 2026) · the PropertyNode of a property name
         that declares a projection (``property_names.<name>.rdf``, today
-        ``visibility``) IS a ``crm:E3_Condition_State`` of its unit:
+        ``obliteration`` — MICRO-LG6, the ``visibility`` of LG4 before) IS a
+        ``crm:E3_Condition_State`` of its unit:
 
             <unit> crm:P44_has_condition <property> .
             <property> a crm:E3_Condition_State ;
-                crm:P2_has_type em:VisibilityBuried ;
+                crm:P2_has_type em:Obliterated ;
                 crm:P4_has_time-span <time-span> .
 
         The time-span: a window from the start to the end of ONE epoch
@@ -1215,8 +1217,12 @@ class RDFExporter:
         the epoch. Otherwise the window has its own ``<property>/time-span``:
         its absolute ends as P82a / P81a / P81b / P82b (the scissor), and the
         time-span of each epoch it is anchored to ``crm:P86_falls_within``
-        it. No node of the graph is minted (no dcterms:identifier): the
-        importer does not read them back as nodes."""
+        it. A DOUBTFUL start (``valid_from_doubtful``, MICRO-LG6) never
+        shares the period's time-span: the window has its own, P82a the
+        earliest start and P81a the latest — for a start inside an epoch, the
+        epoch's start and end (a snapshot of its dates) —, nothing when the
+        start is not known. No node of the graph is minted (no
+        dcterms:identifier): the importer does not read them back as nodes."""
         rules = self.datamodel.property_name_rdf
         if not rules:
             return
@@ -1272,7 +1278,9 @@ class RDFExporter:
             f_ep, t_ep = data.get("valid_from_epoch"), data.get("valid_to_epoch")
             years = {k: data.get(k) for k in ("valid_from", "valid_from_latest",
                                                "valid_to_earliest", "valid_to")}
-            if f_ep and f_ep == t_ep and data.get("valid_from") is None and data.get("valid_to") is None:
+            doubtful = bool(data.get("valid_from_doubtful"))
+            if f_ep and f_ep == t_ep and data.get("valid_from") is None and data.get("valid_to") is None \
+                    and not doubtful:
                 ts = epoch_span(f_ep)
                 if ts is not None:
                     ctx.add((p_iri, time_pred, ts))
@@ -1288,7 +1296,17 @@ class RDFExporter:
                                   ("valid_to", "P82b_end_of_the_end")):
                 if years[key] is not None:
                     ctx.add((ts, CRM[crm_pred], Literal(years[key])))
+            if doubtful and f_ep and data.get("valid_from") is None:
+                # the start fell at some point INSIDE the epoch: its bounds
+                epoch = g.find_node_by_id(f_ep)
+                for attr, crm_pred in (("start_time", "P82a_begin_of_the_begin"),
+                                       ("end_time", "P81a_end_of_the_begin")):
+                    v = getattr(epoch, attr, None) if epoch is not None else None
+                    if v is not None:
+                        ctx.add((ts, CRM[crm_pred], Literal(v)))
             for ep, year_key in ((f_ep, "valid_from"), (t_ep, "valid_to")):
+                if ep and doubtful and ep == f_ep and year_key == "valid_from":
+                    continue
                 if ep and data.get(year_key) is None:
                     e_ts = epoch_span(ep)
                     if e_ts is not None:

@@ -5,6 +5,27 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Changed
+- **From the visibility to the obliteration** (MICRO-LG6, 22 November 2026,
+  decisions of E.D.). The property name `visibility` becomes `obliteration`
+  (em_qualia_types 1.6.17): what was part of the perceivable configuration of
+  its time stops being so while it goes on existing; a property that normally
+  is not there — its ABSENCE says nothing (never «in view»). Values
+  `obliterated` · `partially_obliterated`; a DOUBTFUL start
+  (`data.valid_from_doubtful`, node datamodel 1.6.54: inside an epoch, not
+  before a year, not known). New `s3dgraphy.obliteration`
+  (`obliteration_windows`, `obliteration`, `horizon_obliteration`,
+  `perceivable_units`, `obliteration_conflicts`, `obliteration_hints`,
+  `migrate_visibility`): the propagation of LG5 stays (a member born at or
+  after the window's start is not reached); NO STATE DERIVED FROM THE
+  STRATIGRAPHY — the physical cover is a hint of coherence only.
+  `functional_units.presence`: `members_obliterated` /
+  `members_not_obliterated` (the `members_visible` / `members_buried` keys are
+  gone); `coherence`: `obliteration_conflicts`, `obliteration_hints`.
+  `functional_cube` items: `obliteration` (and a deprecated `visibility`).
+  em.ttl 1.6.29: `em:Obliterated`, `em:PartiallyObliterated`;
+  `em:Visibility*` deprecated. Translations 1.22. The em.json loader migrates
+  the old `visibility` properties with a warning; `s3dgraphy.visibility` keeps
+  deprecated aliases. Mappings re-stamped; tests/test_obliteration_lg6.py.
 - **The visibility in the Inspector with propagation; time and stratigraphy do
   not mix; what still exists stays** (MICRO-LG5, 22 November 2026, decisions of
   E.D.). `s3dgraphy.visibility`: `covering=` takes physical relations only

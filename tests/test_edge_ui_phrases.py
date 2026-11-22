@@ -231,7 +231,7 @@ def test_the_version_went_up():
     # badge's {owner}, no refresh_instance — the instance is a view
     # 1.9 (2026-10-09, night): the `property_names` section — see
     # test_datamodel_i18n.test_property_names_are_labelled_and_are_not_qualia
-    assert _translations()["version"] == "1.21"  # 1.21 dal 22 nov 2026 (MICRO-LG5: visibility, la propagazione e tempo/stratigrafia nei testi EN + IT); 1.20 dal 22 nov 2026 (MICRO-LG4: la proprietà visibility, testi e valori); 1.19 dal 22 nov 2026 (MICRO-LG3: description e scope_note di changed_from); 1.18 dal 21 nov 2026 (MICRO-LG2: is_observed_in, property_names use e phase, la descrizione dell'unità funzionale); 1.17 dal 17 nov 2026 (property_names.interpretation); 1.16 dal 6 nov 2026 (master_kinds); 1.15 dal 24 ott 2026 (orizzonti e periodizzazioni); 1.14 dal 23 ott 2026 (end_reasons; 1.12-1.13 SF/RSF/VSF, serVSF; 1.11 study_took_place_at; 1.10 label_author / label_author_ai)
+    assert _translations()["version"] == "1.22"  # 1.22 dal 22 nov 2026 (MICRO-LG6: obliteration sostituisce visibility, EN + IT); 1.21 dal 22 nov 2026 (MICRO-LG5: visibility, la propagazione e tempo/stratigrafia nei testi EN + IT); 1.20 dal 22 nov 2026 (MICRO-LG4: la proprietà visibility, testi e valori); 1.19 dal 22 nov 2026 (MICRO-LG3: description e scope_note di changed_from); 1.18 dal 21 nov 2026 (MICRO-LG2: is_observed_in, property_names use e phase, la descrizione dell'unità funzionale); 1.17 dal 17 nov 2026 (property_names.interpretation); 1.16 dal 6 nov 2026 (master_kinds); 1.15 dal 24 ott 2026 (orizzonti e periodizzazioni); 1.14 dal 23 ott 2026 (end_reasons; 1.12-1.13 SF/RSF/VSF, serVSF; 1.11 study_took_place_at; 1.10 label_author / label_author_ai)
 
 
 def test_combines_reads_of_in_english():

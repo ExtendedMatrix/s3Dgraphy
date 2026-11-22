@@ -68,6 +68,13 @@ EM_TTL_EXCEPTIONS = {
     "wasReusedFrom": _NO_EDGE + (
         " (is_part_of from an RSF is the host it sits in now, not the context "
         "it was taken from)"),
+    # MICRO-LG6 (E.D. 22 Nov 2026): the visibility became the obliteration;
+    # the three concepts of em.ttl 1.6.28 stay, owl:deprecated, for the triples
+    # already published (em:VisibilityBuried dcterms:isReplacedBy em:Obliterated);
+    # no datamodel cites them any more.
+    "VisibilityExposed": "deprecated (em.ttl 1.6.29, MICRO-LG6): kept for what was published, no longer emitted",
+    "VisibilityBuried": "deprecated (em.ttl 1.6.29, MICRO-LG6): replaced by em:Obliterated, kept for what was published",
+    "VisibilityPartiallyExposed": "deprecated (em.ttl 1.6.29, MICRO-LG6): replaced by em:PartiallyObliterated, kept for what was published",
 }
 
 

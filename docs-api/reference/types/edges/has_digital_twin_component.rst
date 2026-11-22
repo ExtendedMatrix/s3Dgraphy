@@ -5,7 +5,7 @@ has_digital_twin_component
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.53, connections 1.6.59) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.54, connections 1.6.59) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *Hierarchical containment between HDTs.*
 

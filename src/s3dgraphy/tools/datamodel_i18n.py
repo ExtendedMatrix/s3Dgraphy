@@ -97,9 +97,10 @@ says a displacement in space (MICRO-LG3): ``edge_text(edge, field, lang)``.
 `property_names.<name>.description` / `.scope_note` / `.value_<key>` (1.20,
 em_qualia_types 1.6.15) are the definition, the scope note and the label of
 each value of the property names listed in :data:`PROPERTY_TEXT_NAMES` — today
-``visibility`` (MICRO-LG4: exposed «in vista», buried «sepolta»,
-partially_exposed «parzialmente in vista»): ``property_value_label(name, value,
-lang)``, ``property_name_text(name, field, lang)``.
+``obliteration`` (1.22, MICRO-LG6: obliterated «obliterata»,
+partially_obliterated «parzialmente obliterata»; it replaces ``visibility`` of
+1.20–1.21): ``property_value_label(name, value, lang)``,
+``property_name_text(name, field, lang)``.
 
 `edge_types` (connections 1.6.22: `edge_types.<edge>.ui_phrase`) are the phrases of a menu entry that
 creates a node linked to an existing one («US sopra X», «Proprietà di X»):
@@ -181,8 +182,9 @@ EDGE_TEXT_FIELDS = ("description", "scope_note")
 #: 1.20 (em_qualia_types 1.6.15, MICRO-LG4): the property names whose
 #: DEFINITION (``description``) and ``scope_note`` are translated, and whose
 #: VALUES (``values.<key>.name``) have a label each, ``value_<key>`` — the
-#: visibility of a unit: exposed, buried, partially_exposed
-PROPERTY_TEXT_NAMES = ("visibility",)
+#: visibility of a unit: exposed, buried, partially_exposed. 1.22 (MICRO-LG6):
+#: the obliteration replaces it — obliterated, partially_obliterated
+PROPERTY_TEXT_NAMES = ("obliteration",)
 PROPERTY_TEXT_FIELDS = ("description", "scope_note")
 _PREFIX_TO_SECTION = {v: k for k, v in SECTIONS.items()}
 
@@ -548,7 +550,7 @@ def qualia_label(qualia_id: str, lang: str = "en",
 
 def property_value_label(name: str, value: str, lang: str = "en") -> Optional[str]:
     """Label of a VALUE of a property name that has a closed list (1.20,
-    MICRO-LG4: ``visibility`` exposed → «in vista»)."""
+    MICRO-LG6: ``obliteration`` obliterated → «obliterata»)."""
     return translate("property_names", name, f"value_{value}", lang)
 
 

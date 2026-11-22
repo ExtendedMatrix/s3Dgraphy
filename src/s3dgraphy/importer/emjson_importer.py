@@ -478,6 +478,13 @@ def parse_emjson(doc: Dict[str, Any], *,
     from ..geometry.transform import migrate_graph_transforms
     warnings.extend(migrate_graph_transforms(graph)["warnings"])
 
+    # MICRO-LG6 (E.D. 22 Nov 2026) · the visibility (EMStudio dev.149)
+    # became the obliteration: the old properties are read in memory
+    # (buried → obliterated, partially_exposed → partially_obliterated,
+    # exposed → none), ONE warning; the next save writes obliteration only.
+    from ..obliteration import migrate_visibility
+    warnings.extend(migrate_visibility(graph)["warnings"])
+
     return graph, warnings
 
 

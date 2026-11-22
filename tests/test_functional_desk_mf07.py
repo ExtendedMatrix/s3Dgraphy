@@ -65,18 +65,26 @@ def _with_models(g, tmp_path):
 def test_visibility_symbols_and_chains_in_the_cube(tmp_path):
     PF.clear_cache()
     g = _building(tmp_path)
-    # a cover of Post antiquity over F1: the foundation exists and is BURIED there
+    # a cover of Post antiquity over F1. MICRO-LG6 (E.D. 22 Nov 2026): the
+    # cover gives no state (was: F1 «buried» there) — F1 is OBLITERATED in
+    # Post antiquity because it is declared so
     g.add_node(StratigraphicUnit("COVER", "COVER"))
     g.add_edge("COVER_fe", "COVER", "E3", "has_first_epoch")
     g.add_edge("COVER_ov_F1", "COVER", "F1", "overlies")
+    from s3dgraphy.nodes.property_node import PropertyNode
+    g.add_node(PropertyNode("F1.ob", "obliteration", value="obliterated", property_type="obliteration",
+                            data={"valid_from_epoch": "E3", "valid_to_epoch": "E3"}))
+    g.add_edge("F1_hp_ob", "F1", "F1.ob", "has_property")
     g.add_edge("RU_from_T", "RU", "T", "changed_from")
     g.add_edge("RE_from_RU", "RE", "RU", "changed_from")
     v = C.cube_view(g, proxy_footprints=PF.proxy_footprints(g, str(tmp_path)))
     planes = {p["name"]: p for p in v["planes"]}
     items = {n: {it["id"]: it for it in p["items"]} for n, p in planes.items()}
-    assert items["II"]["F1"]["visibility"] == "exposed"
-    assert items["Post"]["F1"]["visibility"] == "buried"
-    assert {it["visibility"] for p in v["planes"] for it in p["items"]} <= {"exposed", "buried", "partially_exposed", "undetermined"}
+    assert items["II"]["F1"]["obliteration"] is None                       # nothing said
+    assert items["Post"]["F1"]["obliteration"] == "obliterated"
+    assert {it["obliteration"] for p in v["planes"] for it in p["items"]} <= {None, "obliterated", "partially_obliterated"}
+    # the deprecated key, for an EMStudio older than bridge level 95
+    assert items["Post"]["F1"]["visibility"] == "buried" and items["II"]["F1"]["visibility"] == "undetermined"
     # SYMBOLIC: a hull per functional unit alive in the plane, containers first
     sym = {s["fu"]: s for s in planes["II"]["symbols"]}
     assert set(sym) == {"T", "A"}
@@ -246,7 +254,7 @@ def test_real_fu_prova_cube_has_symbols_chains_and_visibility():
     assert len(v["chains"]) == 2
     assert {s["name"] for s in planes["II A.D."]["symbols"]} >= {"tempio", "cortile"}
     assert any(s["container"] for s in planes["II A.D."]["symbols"])
-    assert all("visibility" in it for p in v["planes"] for it in p["items"])
+    assert all("obliteration" in it for p in v["planes"] for it in p["items"])  # MICRO-LG6
     if (EM / "_master").is_dir():
         assert len(planes["II A.D."]["rm"]) == 87
         assert {u["why"] for u in planes["XX sec"]["rm_unread"]} <= {"tileset", "blend"}

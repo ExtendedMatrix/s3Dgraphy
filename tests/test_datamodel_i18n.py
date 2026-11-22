@@ -187,11 +187,12 @@ def test_property_names_are_labelled_and_are_not_qualia():
     t._doc.cache_clear()
     qualia = json.loads(t.QUALIA.read_text(encoding="utf-8"))
     en = t._collect_property_names_en(qualia)
-    assert set(en) == {"definition", "material", "interpretation", "use", "phase", "visibility"}  # interpretation: 1.6.12; use, phase: 1.6.14 (MICRO-LG2, 21 Nov 2026); visibility: 1.6.15 (MICRO-LG4, 22 Nov 2026)
-    # 1.20 (MICRO-LG4): visibility carries its definition, scope note and the
-    # label of each value, the other names only their label
-    assert set(en["visibility"]) == {"label", "description", "scope_note", "value_exposed",
-                                     "value_buried", "value_partially_exposed"}
+    assert set(en) == {"definition", "material", "interpretation", "use", "phase", "obliteration"}  # interpretation: 1.6.12; use, phase: 1.6.14 (MICRO-LG2, 21 Nov 2026); visibility: 1.6.15 (MICRO-LG4, 22 Nov 2026) → obliteration: 1.6.17 (MICRO-LG6, 22 Nov 2026)
+    # 1.20 (MICRO-LG4): visibility carried its definition, scope note and the
+    # label of each value, the other names only their label; 1.22 (MICRO-LG6):
+    # the obliteration in its place
+    assert set(en["obliteration"]) == {"label", "description", "scope_note", "value_obliterated",
+                                       "value_partially_obliterated"}
     assert set(en["use"]) == {"label"}
     assert not any(k.startswith("_") for k in en)
     ids = set(t._collect_qualia_en(qualia)["qualia"])

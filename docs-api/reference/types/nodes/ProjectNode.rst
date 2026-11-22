@@ -5,7 +5,7 @@ ProjectNode
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.53, connections 1.6.59) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.54, connections 1.6.59) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *HC13 Project (HDT-O, ECHOES D7.1): the coordinated activities of institutions/research groups producing heritage-related outcomes; the organizational context under which studies are carried out and under which HDTs are created and curated (HC11 maintenance is carried out under a project, HP20).*
 

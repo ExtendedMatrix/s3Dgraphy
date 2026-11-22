@@ -10,10 +10,10 @@ Every figure on this page is read off the datamodels and the installed package a
 
 | Component | Version |
 | --- | --- |
-| s3dgraphy (library) | 1.6.0.dev137 |
-| nodes datamodel | 1.6.53 |
+| s3dgraphy (library) | 1.6.0.dev138 |
+| nodes datamodel | 1.6.54 |
 | connections datamodel | 1.6.59 |
-| qualia datamodel | 1.6.16 |
+| qualia datamodel | 1.6.17 |
 | CIDOC-CRM | 7.1.3 |
 | CRMarchaeo | 2.1.1 |
 | CRMsci | 3.2 |
@@ -22,7 +22,7 @@ Every figure on this page is read off the datamodels and the installed package a
 | CRMinf | 1.2.1 |
 | HDT-O | 1.0 |
 | PROV-O | W3C Recommendation 2013-04-30 |
-| CRMem | 1.6.28 |
+| CRMem | 1.6.29 |
 
 ## Node types
 
@@ -63,7 +63,7 @@ Classes present in the registry with no entry in the node datamodel, and therefo
 | What | Count |
 | --- | --- |
 | public API callables | 291 |
-| test modules in tests/ | 273 |
+| test modules in tests/ | 274 |
 | test modules in tests/*/ | 77 |
 
 ## Alignment by ontology

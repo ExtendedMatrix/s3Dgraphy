@@ -146,9 +146,13 @@ def cube_view(graph: Any, *, footprints: Optional[Dict[str, Dict[str, Any]]] = N
 
     MICRO-MF07 (the four layers of the Cube, the plan by horizon):
 
-    * every item carries its ``visibility`` in the plane (MICRO-LG4,
-      :func:`s3dgraphy.visibility.visibility` on the plane's interval):
-      ``exposed`` · ``buried`` · ``partially_exposed`` · ``undetermined``;
+    * every item carries its ``obliteration`` in the plane (MICRO-LG6,
+      :func:`s3dgraphy.obliteration.obliteration` on the plane's interval):
+      ``obliterated`` · ``partially_obliterated`` · None (nothing said — drawn
+      as usual), ``obliteration_uncertain`` when the change falls in the
+      plane only through a scissor; and, deprecated for an EMStudio older than
+      bridge level 95, ``visibility`` (``buried`` · ``partially_exposed`` ·
+      ``undetermined``) — to be removed;
     * every plane carries ``symbols`` — the SYMBOLIC layer: per functional
       unit alive in the plane, the hull of the outlines of its members
       (recursively) living there ``{fu, name, ring, evidence, container,
@@ -246,23 +250,33 @@ def cube_view(graph: Any, *, footprints: Optional[Dict[str, Dict[str, Any]]] = N
         life = fu_life[fid]
         return life == (None, None) or _meets(life, ln)
 
-    from . import visibility as V
+    from . import obliteration as OB
     from .periodization import overlaps
     intervals = graph.epoch_intervals()
+    ob_owners = OB._owners(graph)
     diaries: Dict[str, Dict[str, Any]] = {}
 
-    def seen(uid: str, ln: Dict[str, Any]) -> str:
+    def seen(uid: str, ln: Dict[str, Any]) -> Tuple[Optional[str], bool]:
+        if not ob_owners:
+            return None, False
         if uid not in diaries:
             try:
-                diaries[uid] = V.visibility_windows(graph, uid, chronology=chron, epoch_intervals=intervals)
-            except Exception:  # noqa: BLE001 — a diary that cannot be read is undetermined
+                diaries[uid] = OB.obliteration_windows(graph, uid, chronology=chron,
+                                                       epoch_intervals=intervals, owners=ob_owners)
+            except Exception:  # noqa: BLE001 — a diary that cannot be read says nothing
                 diaries[uid] = {"windows": [], "conflicts": []}
         try:
-            v = V.visibility(graph, uid, (ln["start"], ln["end"]), chronology=chron,
-                             epoch_intervals=intervals, diary=diaries[uid])
+            v = OB.obliteration(graph, uid, (ln["start"], ln["end"]), chronology=chron,
+                                epoch_intervals=intervals, diary=diaries[uid])
         except Exception:  # noqa: BLE001
-            return V.UNDETERMINED
-        return v["state"] or V.UNDETERMINED
+            return None, False
+        return v["state"], bool(v["uncertain"] and v["state"])
+
+    def _seen_item(sv: Tuple[Optional[str], bool]) -> Dict[str, Any]:
+        return {"obliteration": sv[0], "obliteration_uncertain": sv[1],
+                "visibility": _LEGACY_SEEN[sv[0]]}
+
+    _LEGACY_SEEN = {OB.OBLITERATED: "buried", OB.PARTIALLY_OBLITERATED: "partially_exposed", None: "undetermined"}
 
     # the models of the epochs that meet a plane (MF07, the layer «RM»)
     models_of_epoch: Dict[str, List[str]] = {}
@@ -322,7 +336,7 @@ def cube_view(graph: Any, *, footprints: Optional[Dict[str, Dict[str, Any]]] = N
             items.append({"id": uid, "reader": reader, "readers": leaves, "by_scale": by_scale,
                           "evidence": evidence_in(reader, ln) if reader else None,
                           "instance": inst, "from_lane": home[uid] if inst else None,
-                          "visibility": seen(uid, ln)})
+                          **_seen_item(seen(uid, ln))})
             if uid not in units:
                 fp = fps[uid]
                 units[uid] = {"name": node.name, "type": getattr(node, "node_type", None),

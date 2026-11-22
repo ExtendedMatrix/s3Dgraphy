@@ -86,7 +86,7 @@ def _pkg(tmp_path, combiners, extra_points=None):
 def test_the_datamodel_describes_a_declared_computation():
     dm = json.loads((Path(api.__file__).parent / "JSON_config" /
                      "s3Dgraphy_node_datamodel.json").read_text(encoding="utf-8"))
-    assert dm["s3Dgraphy_data_model_version"] == "1.6.53"  # 1.6.53 dal 22 nov 2026 (MICRO-LG4: le finestre della visibilità, PropertyNode valid_*_epoch e forbice); 1.6.52 dal 21 nov 2026 (MICRO-LG2: l'unità funzionale nel tempo); 1.6.51 i combinatori dichiarati
+    assert dm["s3Dgraphy_data_model_version"] == "1.6.54"  # 1.6.54 dal 22 nov 2026 (MICRO-LG6: PropertyNode valid_from_doubtful, l'obliterazione); 1.6.53 dal 22 nov 2026 (MICRO-LG4: le finestre della visibilità, PropertyNode valid_*_epoch e forbice); 1.6.52 dal 21 nov 2026 (MICRO-LG2: l'unità funzionale nel tempo); 1.6.51 i combinatori dichiarati
     sub = dm["paradata_nodes"]["ParadataNode"]["subtypes"]
     comb = sub["CombinerNode"]["properties"]
     assert comb["combiner"]["em_json"] == "data.combiner"

@@ -496,62 +496,73 @@ The system relies solely on ``changed_from`` edges to identify chains, never on 
 In the EM-tools Blender interface, instance chain members are marked with a three-dots
 icon and can be filtered to show only the chain members.
 
-Visibility in Time
-------------------
+Obliteration
+------------
 
-A unit can **exist and be buried** (MICRO-LG4, E.D., 22 Nov 2026). In the post-antique
-period the foundations of a temple are the same US as in the 2nd century and members of
-the functional identity «ruin», but nobody sees them: what is seen is the earth that
-covers them. The representation model of an epoch rests on what was *visible*, so
-visibility is kept apart from life (a buried unit is alive) and from conservation (a
-well-preserved wall can be buried).
+**What it is** (MICRO-LG6, E.D., 22 Nov 2026; it replaces the *visibility* of MICRO-LG4
+and LG5). «Visible / buried» said of one unit in absolute is slippery: a foundation is
+under the earth *by function*, and calling it «buried» while the villa is in use is true
+and says nothing. What counts is the **obliteration**: something that was part of the
+*perceivable* configuration of its time — the walking surface and what stood on it or
+emerged from it — stops being so, while it goes on existing (the buried villa exists; the
+ruin of a temple exists through the post-antique period). Obliteration is kept apart from
+life (an obliterated unit is alive) and from conservation.
 
-The **declared** visibility is a dated ``PropertyNode`` named ``visibility`` (like
-``use`` and ``phase``), its value ``exposed``, ``buried`` or ``partially_exposed``, with
-its paradata like any property. The properties of one unit make its **diary**: windows
-whose ends are either an absolute year with its scissor (``data.valid_from`` /
-``valid_from_latest``, ``data.valid_to_earliest`` / ``valid_to``) or anchored to an epoch
+**A property that is normally not there.** It is a dated ``PropertyNode`` named
+``obliteration`` (like ``use`` and ``phase``), its value ``obliterated`` or
+``partially_obliterated``. One writes it only to say and annotate this. **Its absence
+does not mean «in view»: it means nothing is said.** There is no value «exposed»: the
+end of a window is the return to perception (an excavation, for instance).
+
+**The diary.** The properties of a unit make its diary: windows whose ends are either an
+absolute year with its scissor (``data.valid_from`` / ``valid_from_latest``,
+``data.valid_to_earliest`` / ``valid_to``) or anchored to an epoch
 (``data.valid_from_epoch``, ``data.valid_to_epoch``: the reference is saved, never the
-dates, so the window follows the epoch).
+dates). The **start is often doubtful**: ``data.valid_from_doubtful`` (node datamodel
+1.6.54) says it fell somewhere between its earliest and its latest — anchored to an epoch,
+at some point *inside* that epoch («obliterated at some point of the post-antique
+period»: the scissor is the epoch and follows it); with a year only, *not before* that
+year; with neither, *not known*. The paradata say the much there is to say: who states
+it, on which source, and the doubts in the extractor's text.
 
-The **derived** visibility is computed from the stratigraphy and never saved: a unit is
-buried while a more recent unit, alive then, covers it (``overlies``, ``fills`` and their
-reverse spellings), in view when nothing covers it or what covered it was taken away (a
-BR: the excavation), partly in view while a cut through the cover that reaches it is
-open. Precedence: declared absolute > declared by epoch > derived; contiguous windows of
-the same state merge; a declaration against the stratigraphy is reported, never
-corrected.
+**On the functional unit, inherited by the members.** It is declared preferably on the
+functional unit (the villa, the temple, the ruin), also on a unit when needed. The
+propagation of LG5 stays: a window declared on a container — a functional unit (and the
+ones containing it), an activity, a time branch, every epoch the unit's life reaches —
+is **inherited** by its members with its origin and its paradata; a window declared on
+the member overrides it locally. A member that comes into being at or after the start of
+the container's window is *not reached*: the obliteration is of what was there (the earth
+that covers the ruin is a member of the ruin, and is not obliterated by it).
 
-``s3dgraphy.visibility.visibility_windows(graph, unit)`` gives the diary,
-``visibility(graph, unit, horizon)`` the state on an horizon, ``visible_units(graph,
-horizon)`` what the representation model of that horizon shows; ``functional_units.
-presence`` counts the members in view and buried. In RDF the property is a
+**No state derived from the stratigraphy.** The physical cover (``overlies``,
+``fills`` and their reverse) is only a **hint of coherence**, information and never a
+loud warning (``obliteration.obliteration_hints``): an obliteration declared where
+nothing more recent covers (``declared_uncovered``); a unit covered for which nobody
+declared anything (``covered_undeclared``) — neutral the units under the earth by
+function: a fill, a unit covered by its own fill or by a unit of the same functional
+unit; a member a container's window does not reach (``not_reached``). Time and
+stratigraphy still do not mix (MICRO-LG5): ``is_after``, ``is_before`` and
+``has_same_time`` are never a cover.
+
+**Reading it.** ``s3dgraphy.obliteration.obliteration_windows(graph, unit)`` gives the
+diary (``level`` own or inherited, ``inherited_from``, ``doubtful_start``, the
+paradata), ``obliteration(graph, unit, horizon)`` the state on an horizon (``None`` when
+nothing is said; ``uncertain`` when the change falls in the horizon only through a
+scissor), ``perceivable_units(graph, horizon)`` the units alive minus the obliterated
+ones — what the representation model of that horizon rests on;
+``functional_units.presence`` gives ``members_obliterated`` and
+``members_not_obliterated``; ``functional_units.coherence`` the conflicts (outside the
+life, two declarations that disagree) and the hints. In RDF the property is a
 ``crm:E3_Condition_State`` the unit reaches by ``crm:P44_has_condition``, typed
-``em:VisibilityExposed`` / ``em:VisibilityBuried`` / ``em:VisibilityPartiallyExposed``,
-with its ``crm:P4_has_time-span`` (the time-span of the period itself when the window is
-one whole epoch).
+``em:Obliterated`` / ``em:PartiallyObliterated`` (em.ttl 1.6.29), with its
+``crm:P4_has_time-span``. EMStudio shows the diary in the Inspector, section
+«Obliteration».
 
-**Time and stratigraphy do not mix** (MICRO-LG5, E.D., 22 Nov 2026). The stratigraphic
-relations (``overlies``, ``fills``, ``cuts``, ``abuts``…) are the ground of the temporal
-ones and both are recorded, but nothing goes back from time to stratigraphy:
-``is_after``, ``is_before`` and ``has_same_time`` are never a cover nor any other
-physical relation. The ``covering=`` parameter takes physical relations only — a
-temporal edge there raises ``ValueError`` (``visibility.check_covering``) — and a unit
-whose only relations are temporal has an *undetermined* derived visibility: declare it.
-
-**Propagation from a container**, as the author is inherited. A window declared on a
-container reaches its members as an **inherited** window, with its origin and its
-paradata (who declared it on the container stays its author): a functional unit (and the
-ones that contain it, one step farther each), an activity, a time branch (both may hold
-a property since connections 1.6.59), and — always the farthest — every epoch the
-unit's life reaches. An open end of a container's window is the container's span (the
-epoch's, the functional unit's declared life). Precedence: declared on the unit >
-inherited from the nearest container > derived from the stratigraphy; a window declared
-on the member overrides the inherited one locally. Each window of the diary says its
-``level`` (``own``, ``inherited``, ``derived``) and ``inherited_from``; two containers at
-the same distance saying different states are an ``inherited_overlap`` conflict.
-``visibility.containers_of`` lists the containers of a unit, ``inherited_windows`` what
-it inherits. EMStudio shows the diary in the Inspector, section «Visibility».
+**Migration.** The ``visibility`` property came out with EMStudio dev.149. The em.json
+loader reads it as an obliteration (``buried`` → ``obliterated``,
+``partially_exposed`` → ``partially_obliterated``, ``exposed`` → no obliteration: the
+property is dropped) with one migration warning; only ``obliteration`` is written. The
+module ``s3dgraphy.visibility`` keeps deprecated aliases of its functions, to be removed.
 
 Comment Node Skipping
 ---------------------
