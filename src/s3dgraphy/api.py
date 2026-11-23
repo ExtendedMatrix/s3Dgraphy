@@ -1957,6 +1957,28 @@ def create_geometry_proxy(graph: Graph, unit_id: str, shape: Dict[str, Any],
     return out
 
 
+def proxy_from_points(graph: Graph, unit_id: str, points: List[Dict[str, Any]], *,
+                      purpose: str = "proxy_box_creator", proxy_name: Optional[str] = None,
+                      property_description: Optional[str] = None,
+                      combiner_description: Optional[str] = None,
+                      author: Optional[str] = None):
+    """The paradata of a proxy drawn from clicked points — ONE chain for EM
+    Tools' Proxy Box Creator and EMStudio's «Wall from plan» (MICRO-PX1): one
+    extractor per point (``extracted_from`` the document it fell on; point_type,
+    x/y/z in Blender's frame, purpose; the place of the reading when the point
+    brings ``coords``), a combiner ``C.<n>``, the unit's «Proxy Geometry»
+    property (reused), all in the unit's ``<US>_PD`` group. Returns a
+    :class:`s3dgraphy.geometry.proxy_points.ProxyPointsResult`. See
+    :mod:`s3dgraphy.geometry.proxy_points`."""
+    from .geometry.proxy_points import proxy_from_points as _make
+    before = _ids(graph)
+    out = _make(graph, unit_id, points, purpose=purpose, proxy_name=proxy_name,
+                property_description=property_description,
+                combiner_description=combiner_description, author=author)
+    _born(graph, before)
+    return out
+
+
 # ── project → TTL / RDF ────────────────────────────────────────────────────────
 def project_ttl(graph: Graph, *, base_uri: Optional[str] = None,
                 fmt: str = "turtle", mode: str = "round_trip",

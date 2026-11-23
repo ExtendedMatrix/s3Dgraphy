@@ -5,6 +5,20 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Changed
+- **One chain for a proxy drawn from points: `proxy_from_points`** (MICRO-PX1,
+  23 November 2026). New `s3dgraphy.geometry.proxy_points` and `api.proxy_from_points`:
+  the paradata EM Tools' Proxy Box Creator writes (`create_enhanced.py`), now written
+  in one place so EMStudio's «Wall from plan» and EM Tools produce the same graph —
+  one extractor per point, `extracted_from` the document the point fell on (several
+  documents: the hybrid case), with EM Tools' `point_type`, `x`/`y`/`z` (Blender's
+  frame), `purpose`, `read_from`; the place of the reading (`place_reading`, an
+  AnnotationRegion point on the model) when the point brings `coords`; a combiner
+  `C.<highest + 1>` (EM Tools' rule, `next_combiner_name`); the unit's «Proxy
+  Geometry» (`proxy_geometry`) reused or made; the unit's `<US>_PD` group reused or
+  made, the unit's activity mirrored on it; nothing written when the unit, a document
+  or a coordinate is wrong. Where EM Tools differs, em.json 1.6 wins: no cloned
+  document «instance» (the instance is the view of the paradata group), descriptions
+  on the nodes only. No datamodel change. Tests `test_proxy_points_px1` (10).
 - **«Without number»: block only the declared unit, warn for a name without digits**
   (MICRO-LG13, 23 November 2026, correction of E.D. to choice 5 of LG11).
   `serialize_rapporti_from_edges` and `GraphIngestor.populate_list` keep out of

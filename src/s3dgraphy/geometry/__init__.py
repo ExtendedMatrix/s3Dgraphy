@@ -57,7 +57,10 @@ from .gltf import convex_hull_triangles, geometry_to_gltf, gltf_to_geometry
 from .aton import (aton_semanticgraph, export_aton_scene, import_aton_scene,
                    model_of_scene, promote_region_to_proxy)
 
-__all__ = ["create_geometry_proxy", "GeometryProxyResult", "migrate_legacy_proxies",
+# MICRO-PX1 · the paradata of a proxy drawn from points (EM Tools' Proxy Box, EMStudio's wall)
+from .proxy_points import ProxyPointsResult, proxy_from_points
+
+__all__ = ["create_geometry_proxy", "GeometryProxyResult", "proxy_from_points", "ProxyPointsResult", "migrate_legacy_proxies",
            "migrate_shape_urls", "PROXY_RESOURCE_TYPE", "proxy_resource_id",
            "link_proxy_resource", "linked_proxy_resources",
            "store_backed_geometry", "geometry_summary", "record_for",
