@@ -33,6 +33,20 @@ Where EM Tools (until PX4) differs, the graph of em.json 1.6 wins:
   · EM Tools puts the combiner's and extractors' descriptions also in their
     ``attributes``: here they are the nodes' ``description`` only.
 
+MICRO-PX1c (E.D., 23 Nov 2026) — two additions, no datamodel field:
+
+  · a point may bring its ANNOTATION (``"description"``: «quota 492,13»,
+    «spigolo rifatto in restauro»), written in the extractor's own
+    ``description`` (the datamodel's P3_has_note, the field the Inspector
+    edits) in place of the default «Extractor for <type> point»;
+  · ``document_id`` names the document the proxy as a WHOLE is extracted from
+    (the anchor of EM Tools' Proxy Box, step 1): when no point already reads
+    it — the points not annotated as extractors, or all of them on other
+    documents — ONE extractor ``point_type`` ``proxy`` (no coordinates) is
+    written ``extracted_from`` it. When it is the only extractor (no point),
+    the property reaches it directly (``has_data_provenance``), no combiner;
+    points keep EM Tools' rule, a combiner always.
+
 Ids: ``uuid4`` as EM Tools (a run is a new assertion, never the same as an
 earlier one), ``new_id`` to make them deterministic in a test. The edges'
 ids are EM Tools' ``<source>_<edge_type>_<target>``. An edge the connections
@@ -154,6 +168,9 @@ def proxy_from_points(
     combiner_description: Optional[str] = None,
     author: Optional[str] = None,
     new_id: Optional[Callable[[], str]] = None,
+    document_id: Optional[str] = None,
+    document_extractor_name: Optional[str] = None,
+    document_extractor_description: Optional[str] = None,
 ) -> ProxyPointsResult:
     """Write the paradata of a proxy drawn from `points` on the unit `unit_id`.
 
@@ -162,18 +179,27 @@ def proxy_from_points(
     extractor's; default ``<document>.<k>``), ``"read_from"`` (an extractor
     already in the graph the point was read from), ``"coords"`` ([x, y, z] in the
     model's glTF frame, Y up: the place of the reading) and ``"on_id"`` (the node
-    the reading is on: the document by default, or its model).
+    the reading is on: the document by default, or its model) and
+    ``"description"`` (the annotation written at the click: the extractor's
+    description).
+
+    ``document_id`` (MICRO-PX1c): the document the proxy as a whole is
+    extracted from; when no point reads it, one extractor of the whole proxy
+    (``point_type`` ``proxy``, named ``document_extractor_name`` or
+    ``<document>.<k>``) is written for it. ``points`` may then be empty.
 
     Raises ``ValueError`` before writing anything when the unit is not a
-    stratigraphic unit, there is no point, or a point's document is not a
-    DocumentNode of the graph.
+    stratigraphic unit, there is no point and no document, or a point's
+    document (or ``document_id``) is not a DocumentNode of the graph.
     """
     make = new_id or (lambda: str(uuid.uuid4()))
     unit = graph.find_node_by_id(unit_id)
     if not isinstance(unit, StratigraphicNode):
         raise ValueError(f"proxy from points: {unit_id!r} is not a stratigraphic unit of the graph")
     pts = list(points or [])
-    if not pts:
+    if document_id is not None and not isinstance(graph.find_node_by_id(str(document_id)), DocumentNode):
+        raise ValueError(f"proxy from points: the proxy's document {document_id!r} is not a document of the graph")
+    if not pts and not document_id:
         raise ValueError("proxy from points: no point")
     for k, p in enumerate(pts):
         doc = graph.find_node_by_id(str(p.get("document_id") or ""))
@@ -210,8 +236,9 @@ def proxy_from_points(
         doc_name = getattr(graph.find_node_by_id(doc_id), "name", "") or doc_id
         point_type = str(p.get("point_type") or "point")
         ext_id = make()
+        note = str(p.get("description") or "").strip()
         ext = ExtractorNode(node_id=ext_id, name=str(p.get("name") or f"{doc_name}.{per_doc[doc_id]}"),
-                            description=f"Extractor for {point_type} point")
+                            description=note or f"Extractor for {point_type} point")
         ext.attributes["point_type"] = point_type
         ext.attributes["x"] = float(p["x"])
         ext.attributes["y"] = float(p["y"])
@@ -237,19 +264,40 @@ def proxy_from_points(
             if rid:
                 region_ids.append(rid)
 
-    # ── the combiner ─────────────────────────────────────────────────────────
-    combiner_id = make()
-    combiner_name = next_combiner_name(graph)
-    combiner = CombinerNode(node_id=combiner_id, name=combiner_name,
-                            description=combiner_description or (
-                                f"Combiner for proxy {name!r} — aggregates the {len(extractor_ids)} "
-                                f"measurement-point extractors."))
-    combiner.attributes["purpose"] = purpose
-    if author:
-        combiner.data["author"] = author
-    graph.add_node(combiner)
-    for ext_id in extractor_ids:
-        _edge(graph, combiner_id, ext_id, "combines", warnings)
+    # ── MICRO-PX1c · the proxy as a whole, extracted from its document ───────
+    if document_id and str(document_id) not in documents:
+        doc_id = str(document_id)
+        documents.append(doc_id)
+        per_doc[doc_id] = per_doc.get(doc_id, 0) + 1
+        doc_name = getattr(graph.find_node_by_id(doc_id), "name", "") or doc_id
+        ext_id = make()
+        ext = ExtractorNode(node_id=ext_id, name=str(document_extractor_name or f"{doc_name}.{per_doc[doc_id]}"),
+                            description=document_extractor_description or (
+                                f"The proxy {name!r} as a whole, drawn on {doc_name}"))
+        ext.attributes["point_type"] = "proxy"
+        ext.attributes["purpose"] = purpose
+        if author:
+            ext.data["author"] = author
+        graph.add_node(ext)
+        _edge(graph, ext_id, doc_id, "extracted_from", warnings)
+        extractor_ids.append(ext_id)
+
+    # ── the combiner (only the proxy's document, no point: the property reaches it directly) ─
+    combiner_id: Optional[str] = None
+    combiner_name: Optional[str] = None
+    if pts or len(extractor_ids) > 1:
+        combiner_id = make()
+        combiner_name = next_combiner_name(graph)
+        combiner = CombinerNode(node_id=combiner_id, name=combiner_name,
+                                description=combiner_description or (
+                                    f"Combiner for proxy {name!r} — aggregates the {len(extractor_ids)} "
+                                    f"measurement-point extractors."))
+        combiner.attributes["purpose"] = purpose
+        if author:
+            combiner.data["author"] = author
+        graph.add_node(combiner)
+        for ext_id in extractor_ids:
+            _edge(graph, combiner_id, ext_id, "combines", warnings)
 
     # ── the property (reused when the unit has one) ──────────────────────────
     prop = proxy_geometry_property(graph, unit_id)
@@ -263,7 +311,7 @@ def proxy_from_points(
             prop.data["author"] = author
         graph.add_node(prop)
         _edge(graph, unit_id, prop.node_id, "has_property", warnings)
-    _edge(graph, prop.node_id, combiner_id, "has_data_provenance", warnings)
+    _edge(graph, prop.node_id, combiner_id or extractor_ids[0], "has_data_provenance", warnings)
 
     # ── the paradata group of the unit ───────────────────────────────────────
     group = paradata_group(graph, unit_id)
@@ -278,7 +326,7 @@ def proxy_from_points(
             if e.edge_source == unit_id and e.edge_type == "is_in_activity":
                 _edge(graph, group.node_id, e.edge_target, "is_in_activity", warnings)
                 break
-    for child in [prop.node_id, combiner_id, *extractor_ids]:
+    for child in [prop.node_id, *([combiner_id] if combiner_id else []), *extractor_ids]:
         _edge(graph, child, group.node_id, "is_in_paradata_nodegroup", warnings)
 
     return ProxyPointsResult(property_id=prop.node_id, combiner_id=combiner_id,

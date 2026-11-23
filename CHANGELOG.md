@@ -5,6 +5,22 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Changed
+- **The proxy's document and the annotation of its extractors; the semantic shape**
+  (MICRO-PX1c, 23 November 2026). `proxy_from_points` (and `api.proxy_from_points`)
+  take a point's `description` — the annotation written at the click («quota
+  492,13») — as its extractor's own description (the datamodel's P3_has_note, no new
+  field), and `document_id`: the document the proxy as a whole is extracted from (EM
+  Tools' anchor, step 1) — one extractor `point_type` `proxy` when no point reads it;
+  with no point at all the property reaches it directly, no combiner (points keep EM
+  Tools' rule, a combiner always). `em_qualia_types` 1.6.21: `proxy_status` gains the
+  value `to_refine` — a proxy drawn as a SEMANTIC SHAPE without a document, to refine
+  elsewhere; declared by the tool that draws it, never read (64 of the 65 proxies of
+  TempluMare v11 name no document). `proxy_status`: `TO_REFINE`, `status` says
+  `to_refine` for a drawn unit so declared, `to_draw` lists them apart (`to_refine`),
+  no `declared_but_drawn` hint for them. em.ttl 1.6.31 `em:ProxyToRefine` (the node
+  datamodel's CRMem reference follows; the node datamodel's own version does not
+  change); translations 1.27 (`value_to_refine`, EN + IT). Core concepts, generated
+  report; version pins said out loud. Tests `test_proxy_px1c` (9).
 - **One chain for a proxy drawn from points: `proxy_from_points`** (MICRO-PX1,
   23 November 2026). New `s3dgraphy.geometry.proxy_points` and `api.proxy_from_points`:
   the paradata EM Tools' Proxy Box Creator writes (`create_enhanced.py`), now written

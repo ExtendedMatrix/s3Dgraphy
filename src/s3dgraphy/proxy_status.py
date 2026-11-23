@@ -70,7 +70,11 @@ DRAWN = "drawn"
 NOT_YET_DRAWN = "not_yet_drawn"
 NOT_DRAWN_BY_CHOICE = "not_drawn_by_choice"
 DRAWABLE = "drawable"
-STATES = (DRAWN, NOT_YET_DRAWN, NOT_DRAWN_BY_CHOICE, DRAWABLE)
+#: MICRO-PX1c (em_qualia_types 1.6.21): the unit HAS a proxy, drawn as a
+#: semantic shape without a document — to refine elsewhere from sources.
+#: Declared by the tool that draws it, never read from the graph.
+TO_REFINE = "to_refine"
+STATES = (DRAWN, NOT_YET_DRAWN, NOT_DRAWN_BY_CHOICE, DRAWABLE, TO_REFINE)
 STRENGTHS = ("certain", "probable", "to_verify")
 STRENGTH_WEIGHT = {"certain": 3, "probable": 2, "to_verify": 1}
 #: the rule a deterministic proposal carries (data.origin «derived»)
@@ -93,6 +97,7 @@ _STATE_WORDS = {
     "not_drawn_by_choice": NOT_DRAWN_BY_CHOICE, "not drawn, by choice": NOT_DRAWN_BY_CHOICE,
     "non disegnato per scelta": NOT_DRAWN_BY_CHOICE,
     "drawable": DRAWABLE, "disegnabile": DRAWABLE,
+    "to_refine": TO_REFINE, "to refine": TO_REFINE, "da rifinire": TO_REFINE,
 }
 _STRENGTH_WORDS = {
     "certain": "certain", "certa": "certain", "certo": "certain",
@@ -270,8 +275,11 @@ def status(graph: Any, unit_id: str, *, doc_dir: Optional[str] = None,
         cand = os.path.join(doc_dir, "proxies", f"{getattr(unit, 'name', '')}.glb")
         if os.path.isfile(cand):
             unlinked = cand
+    # MICRO-PX1c · a proxy drawn as a semantic shape, without a document: drawn,
+    # and its state says what kind of drawing it is
+    state = (TO_REFINE if declared == TO_REFINE else DRAWN) if drawn else declared
     return {"unit": unit_id, "name": getattr(unit, "name", None), "type": getattr(unit, "node_type", None),
-            "drawn": drawn, "state": DRAWN if drawn else declared, "declared": declared,
+            "drawn": drawn, "state": state, "declared": declared,
             "property": getattr(p, "node_id", None), "placeholder": placeholder,
             "sources": sources, "statements": statements, "unlinked_file": unlinked}
 
@@ -288,16 +296,31 @@ def _weight(sources: Sequence[Dict[str, Any]]) -> int:
 def to_draw(graph: Any, *, doc_dir: Optional[str] = None,
             units: Optional[Iterable[str]] = None) -> Dict[str, Any]:
     """The units TO DRAW, for source-based modeling: ``{units: [...],
-    by_choice: [...], drawn_declared: [...]}``. ``units``: the units without
+    by_choice: [...], drawn_declared: [...], to_refine: [...]}``. ``units``: the units without
     a proxy not left out by choice, the ``drawable`` first, then by the
     weight of their candidate sources (certain 3, probable 2, to_verify 1),
     then by their number, then by name — each its :func:`status` plus
     ``weight``, ``rank`` and the unit's own ``description``. ``by_choice``:
     those not drawn by choice. ``drawn_declared``: those declared ``drawn``
-    with no proxy linked (drawn elsewhere: to link, not to draw)."""
+    with no proxy linked (drawn elsewhere: to link, not to draw).
+    ``to_refine`` (MICRO-PX1c): the units whose proxy is a SEMANTIC SHAPE
+    drawn without a document (declared ``to_refine`` by the tool that drew
+    it): drawn, but to refine from sources."""
     ix = _Index(graph)
     wanted = set(units) if units is not None else None
     rows, by_choice, drawn_declared = [], [], []
+    to_refine = []
+    for n in graph.nodes:
+        if not is_unit(n) or (wanted is not None and n.node_id not in wanted):
+            continue
+        p = _status_property(graph, n.node_id, ix)
+        if p is None or normalize_state(getattr(p, "value", None)) != TO_REFINE:
+            continue
+        if not has_proxy(graph, n.node_id, ix):
+            continue
+        st = status(graph, n.node_id, doc_dir=doc_dir, index=ix)
+        st["description"] = getattr(n, "description", None) or ""
+        to_refine.append(st)
     for uid in units_without_proxy(graph, ix):
         if wanted is not None and uid not in wanted:
             continue
@@ -317,7 +340,8 @@ def to_draw(graph: Any, *, doc_dir: Optional[str] = None,
     for i, s in enumerate(rows):
         s["rank"] = i + 1
     return {"units": rows, "by_choice": sorted(by_choice, key=lambda s: _natural(s["name"])),
-            "drawn_declared": sorted(drawn_declared, key=lambda s: _natural(s["name"]))}
+            "drawn_declared": sorted(drawn_declared, key=lambda s: _natural(s["name"])),
+            "to_refine": sorted(to_refine, key=lambda s: _natural(s["name"]))}
 
 
 def _natural(name: Any) -> List[Any]:
@@ -339,7 +363,8 @@ def hints(graph: Any, *, doc_dir: Optional[str] = None) -> List[Dict[str, Any]]:
         drawn = has_proxy(graph, n.node_id, ix)
         if p is not None and drawn:
             st = normalize_state(getattr(p, "value", None))
-            if st and st != DRAWN:
+            # a semantic shape (to_refine) is a drawing: no hint
+            if st and st not in (DRAWN, TO_REFINE):
                 out.append({"kind": "declared_but_drawn", "unit": n.node_id, "name": n.name,
                             "property": p.node_id, "declared": st})
         if doc_dir and not drawn:

@@ -1,6 +1,6 @@
 {
  "schema": "s3Dgraphy_datamodel_translations",
- "version": "1.26",
+ "version": "1.27",
  "languages": [
   "en",
   "it",
@@ -9772,6 +9772,18 @@
     "validated_fr": false,
     "validated_de": false,
     "it": "disegnabile"
+   },
+   "value_to_refine": {
+    "en": "to refine",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "da rifinire"
    },
    "strength_certain": {
     "en": "certain",

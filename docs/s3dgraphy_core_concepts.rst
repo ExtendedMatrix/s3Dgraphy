@@ -637,6 +637,18 @@ the thing) the unit reaches by ``crm:P140i_was_attributed_by``, typed ``em:Proxy
 ``em:ProxyNotYetDrawn`` · ``em:ProxyNotDrawnByChoice`` · ``em:ProxyDrawable`` (em.ttl
 1.6.30).
 
+**A semantic shape, no document** (MICRO-PX1c, E.D., 23 Nov 2026; ``em_qualia_types``
+1.6.21). A proxy can be drawn with no document behind it — a form that stands for the
+unit, to be refined elsewhere (for example in Blender) from the sources. It is still a
+proxy (the unit *is* drawn), and the tool that draws it declares ``proxy_status``
+``to_refine`` (with a placeholder that says so): ``status`` gives ``state`` ``to_refine``,
+``to_draw`` lists it apart (``to_refine``), no ``declared_but_drawn`` hint. It is declared,
+never read: a proxy without paradata is not a semantic shape by itself (64 of the 65
+proxies of TempluMare v11 name no document). RDF ``em:ProxyToRefine`` (em.ttl 1.6.31).
+The other mode, a proxy *from a document*, is written by ``proxy_from_points`` with
+``document_id``: the proxy as a whole ``extracted_from`` that document (one extractor
+when no clicked point reads it); a point's annotation is its extractor's description.
+
 Relations towards pyArchInit
 ----------------------------
 
