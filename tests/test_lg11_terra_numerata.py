@@ -117,6 +117,20 @@ def test_no_rapporto_towards_a_unit_without_a_number():
     assert rep["unnumbered"] == ["US non numerata — terra"]
 
 
+def test_a_name_without_digits_is_not_blocked():
+    """MICRO-LG13 (E.D., 23 Nov 2026) corrects LG11 choice 5: only a unit
+    DECLARED without a number is kept out; a name with no digit (X_TOPSOIL,
+    the StratiMiner units of Porta Nord) travels with its name and has only
+    the warning of the coherence check."""
+    g = _two_units("X_TOPSOIL")
+    g.add_edge("e1", "a", "b", "overlies")
+    rep = {}
+    out = R.serialize_rapporti_from_edges(g, "S", report=rep)
+    assert out["a"] == [["Copre", "X_TOPSOIL", "1", "S"]]
+    assert "unnumbered_target" not in rep["excluded"] and rep["unnumbered"] == []
+    assert [h["kind"] for h in unnumbered_hints(g)] == ["name_without_number"]
+
+
 def test_the_warning_of_the_coherence_check():
     g = _two_units("X_TOPSOIL")
     g.add_node(StratigraphicUnit(node_id="c", name="US non numerata"))

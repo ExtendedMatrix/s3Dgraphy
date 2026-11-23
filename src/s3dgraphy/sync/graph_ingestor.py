@@ -485,8 +485,8 @@ class GraphIngestor:
                      rapporti_report.get("exported", 0),
                      dict(sorted(rapporti_report["excluded"].items())))
         if rapporti_report.get("unnumbered"):
-            log.warning("rapporti: towards units without a number, left out: %s "
-                        "— assign a number first (MICRO-LG11)",
+            log.warning("rapporti: towards units declared without a number, left out: %s "
+                        "— assign a number first (MICRO-LG11/LG13)",
                         ", ".join(rapporti_report["unnumbered"]))
 
         # PG-C (5.7.2-alpha): engine.begin() opens an atomic transaction
@@ -538,10 +538,12 @@ class GraphIngestor:
                         node, "node_id", None)
                     if not node_uuid:
                         continue
-                    # MICRO-LG11: a unit WITHOUT a number is never written —
-                    # no «number» made of words in us_table. Said, not
-                    # invented: the number is assigned by a person.
-                    if _is_unnumbered_unit(node):
+                    # MICRO-LG11 / LG13: a unit DECLARED without a number
+                    # (data.unnumbered) is never written in us_table. Said,
+                    # not invented: the number is assigned by a person. A
+                    # name with no digit (X_TOPSOIL) is written with its
+                    # name — only a warning of the coherence check.
+                    if _is_declared_unnumbered(node):
                         unnumbered.append(str(getattr(node, "name", "") or node_uuid))
                         continue
                     # Make sure the node carries a `us` value. Priority:
@@ -672,7 +674,7 @@ class GraphIngestor:
                             node, "node_id", None)
                         if not node_uuid:
                             continue
-                        if _is_unnumbered_unit(node):   # MICRO-LG11, as above
+                        if _is_declared_unnumbered(node):   # MICRO-LG11/LG13, as above
                             continue
                         if "us" not in attrs or attrs["us"] is None:
                             fallback_us = getattr(node, "name", None)
@@ -1421,7 +1423,7 @@ from .rapporti import (
     select_rapporti_label as _select_rapporti_label,
     serialize_rapporti_from_edges as _build_rapporti_from_edges,
 )
-from ..rapporti import is_unnumbered_unit as _is_unnumbered_unit  # MICRO-LG11
+from ..rapporti import is_declared_unnumbered as _is_declared_unnumbered  # MICRO-LG11/LG13
 
 # The `re` module was historically imported here as `_re` (right above
 # the now-extracted `_strip_us_prefix` regex). Two unrelated call

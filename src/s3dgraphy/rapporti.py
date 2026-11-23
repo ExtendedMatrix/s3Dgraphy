@@ -556,7 +556,10 @@ def us_number_of(node) -> str | None:
 
 def is_unnumbered_unit(node) -> bool:
     """A STRATIGRAPHIC unit with no number (:func:`us_number_of` is
-    ``None``), or any node declared so. The paradata nodes (a property
+    ``None``), or any node declared so: the test of the WARNING
+    (:func:`s3dgraphy.diagnostics.unnumbered_hints`). Only the declared
+    ones (:func:`is_declared_unnumbered`) are kept out of pyArchInit; a
+    name with no digit is said, not blocked (MICRO-LG13, E.D. 23 Nov 2026). The paradata nodes (a property
     «definition», an extractor) are not units and are never «unnumbered»
     here: their name is not a number to begin with. Nor is the continuity
     node (BR), whose name «continuity_node» is a convention of EM, not a
@@ -883,7 +886,9 @@ def serialize_rapporti_from_edges(graph, default_sito: str, report=None):
       *report* and it receives ``excluded`` (``{edge_type: n}``) and
       ``exported`` (n), and ``unnumbered`` the names of the units without a
       number the edges pointed at (MICRO-LG11: such an edge is left out,
-      counted as ``unnumbered_target``). Until then a black list let ``is_in_activity``,
+      counted as ``unnumbered_target``; since MICRO-LG13 only a unit
+      DECLARED so, ``data.unnumbered`` — a name with no digit is a warning,
+      not a block). Until then a black list let ``is_in_activity``,
       ``has_author``… out as ``>>`` towards the target's name, and
       ``is_before`` / ``changed_from`` as their raw names.
     * Target US is read from ``tgt_node.attributes['us']`` when
@@ -918,9 +923,12 @@ def serialize_rapporti_from_edges(graph, default_sito: str, report=None):
         tgt_node = by_id.get(tgt)
         if tgt_node is None:
             continue
-        # MICRO-LG11: towards a unit WITHOUT a number there is no row to
-        # point at — never a «number» made of words. Left out and counted.
-        if is_unnumbered_unit(tgt_node):
+        # MICRO-LG11 / LG13: towards a unit DECLARED without a number
+        # (data.unnumbered) there is no row to point at. Left out and
+        # counted. A name with no digit (X_TOPSOIL) is only a warning of
+        # the coherence check (diagnostics.unnumbered_hints), never a block:
+        # it travels with its name, as it always has (MICRO-LG13, E.D.).
+        if is_declared_unnumbered(tgt_node):
             excluded["unnumbered_target"] = excluded.get("unnumbered_target", 0) + 1
             unnumbered.add(str(getattr(tgt_node, "name", "") or tgt))
             continue

@@ -5,6 +5,17 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Changed
+- **«Without number»: block only the declared unit, warn for a name without digits**
+  (MICRO-LG13, 23 November 2026, correction of E.D. to choice 5 of LG11).
+  `serialize_rapporti_from_edges` and `GraphIngestor.populate_list` keep out of
+  pyArchInit only a unit declared `data.unnumbered` (`unnumbered_target`,
+  `report["unnumbered"]`, `IngestResult.unnumbered` as before). A name with no digit
+  (the StratiMiner units of Porta Nord, `X_TOPSOIL`…) travels with its name, as in
+  pyArchInit's own code, and keeps only the warning of `diagnostics.unnumbered_hints`
+  / `api.validate` («[unnumbered] … assign one»). Porta Nord: 0 rapporti left out for
+  this reason (18 in LG11), 19 warnings. No datamodel change. Tests
+  `test_unnumbered_only_declared_lg13` (2, one on Porta Nord); the LG11 tests that
+  fixed the block by name follow, with the reason.
 - **The proxy not drawn yet: a placeholder for source-based modeling** (MICRO-LG12,
   23 November 2026, decisions of E.D.). `em_qualia_types` 1.6.20:
   `property_names.proxy_status` — the state of the proxy of a unit that has none

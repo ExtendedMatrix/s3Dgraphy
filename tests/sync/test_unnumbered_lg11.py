@@ -1,7 +1,12 @@
 """MICRO-LG11 §B (E.D., 23 Nov 2026) — a unit WITHOUT a number never becomes a
 row of pyArchInit's ``us_table``: no «number» made of words. Never invented:
 the number is assigned by a person; until then the unit is left out and named
-(``IngestResult.unnumbered``), and so are the rapporti towards it."""
+(``IngestResult.unnumbered``), and so are the rapporti towards it.
+
+MICRO-LG13 (E.D., 23 Nov 2026): only a unit DECLARED without a number
+(``data.unnumbered``) is kept out. A name with no digit (X_TOPSOIL) is written
+with its name — blocking on a heuristic of the name was too strong; the
+coherence check still warns about it."""
 from __future__ import annotations
 
 import shutil
@@ -57,7 +62,10 @@ def test_a_unit_without_a_number_is_not_written_and_is_named(mini_volterra):
                                         create_missing_epochs=True)
     rows = _rows(mini_volterra)
     assert "901" in rows
-    assert not [u for u in rows if "numerata" in str(u) or "TOPSOIL" in str(u)]
-    assert set(res.unnumbered) == {"US non numerata — terra", "X_TOPSOIL"}
-    # the rapporto of US901 towards the unit with no number is left out
-    assert "TOPSOIL" not in str(rows["901"] or "")
+    # the DECLARED one is not written, and is named
+    assert not [u for u in rows if "numerata" in str(u)]
+    assert set(res.unnumbered) == {"US non numerata — terra"}
+    # MICRO-LG13: the name without digits is written with its name, and the
+    # rapporto of US901 towards it goes out
+    assert "X_TOPSOIL" in rows
+    assert "X_TOPSOIL" in str(rows["901"] or "")

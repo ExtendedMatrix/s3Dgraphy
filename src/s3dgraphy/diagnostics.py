@@ -553,8 +553,9 @@ def unnumbered_hints(graph) -> List[dict]:
     ``kind`` ``declared`` — the unit says so (``data.unnumbered``, node
     datamodel 1.6.55): recognised and recorded, its number not assigned
     yet; ``name_without_number`` — not declared, but nothing in its name
-    is a number (:func:`s3dgraphy.rapporti.us_number_of`), so pyArchInit's
-    ``us_table`` could not hold it. A WARNING, never a correction: no
+    is a number (:func:`s3dgraphy.rapporti.us_number_of`): it goes to
+    pyArchInit with its name, and the warning asks for a number (MICRO-LG13:
+    only a DECLARED unit is kept out of the export). A WARNING, never a correction: no
     number is ever invented, the number is assigned by a person. The
     continuity node (BR) is not a unit with a number and is not listed.
     One record per unit: ``{unit, name, kind}``. Read-only."""
