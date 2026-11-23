@@ -31,6 +31,8 @@ Shape — one section per kind of key, each keyed by a STABLE identity::
       "dtc_kinds":            {"<dtc kind>":        {"label": {...}}},
       "stratigraphic_kinds":  {"<kind>":            {"label": {...}}},
       "end_reasons":          {"<end reason>":      {"label": {...}}},
+      "node_elements":        {"<element>":         {"label": {...}, "description": {...},
+                                                     "scope_note": {...}}},
       "packagings":           {"<packaging>":       {"label": {...}}},
       "master_kinds":         {"<master kind>":     {"label": {...}}},
       "property_names":       {"<property name>":   {"label": {...}}},
@@ -72,6 +74,12 @@ stamped» says beside a master in EMStudio, EM Tools and 3DSC.
 `end_reasons.<reason>.label` (1.14, node datamodel 1.6.36) is how a unit ends —
 the `end_reason` node element of the continuity node (BR), seeded from its
 `labels`: «destroyed» → «distrutta». `end_reason_label(reason, lang)` reads it.
+
+`node_elements.<element>` (1.25, node datamodel 1.6.55, MICRO-LG11) is a node
+element of StratigraphicNode that a client NAMES — today `unnumbered`, «Without
+number» → «Senza numero», with its description and scope_note — seeded from the
+element's `label`, `description` and `scope_note`. `node_element_label(name,
+lang)` reads the label.
 
 `stratigraphic_kinds.<kind>.label` (1.6) is the label of a genre of US — the
 `stratigraphic_kind` node element of the datamodel, seeded from its `labels`:
@@ -165,6 +173,7 @@ SECTIONS: Dict[str, str] = {
     "dtc_kinds": "dtc",
     "stratigraphic_kinds": "strat_kind",
     "end_reasons": "end_reason",
+    "node_elements": "node_element",
     "packagings": "packaging",
     "master_kinds": "master_kind",
     "reasoning": "reasoning",
@@ -361,6 +370,22 @@ def _collect_end_reasons_en(dm: Dict[str, Any]) -> Dict[str, Dict[str, str]]:
     return out
 
 
+def _collect_node_elements_en(dm: Dict[str, Any]) -> Dict[str, Dict[str, str]]:
+    """{element: {"label", "description", "scope_note"}} from the node elements
+    of StratigraphicNode that carry a ``label`` (1.6.55: ``unnumbered``)."""
+    props = (((dm.get("stratigraphic_nodes") or {}).get("StratigraphicNode") or {})
+             .get("properties") or {})
+    out: Dict[str, Dict[str, str]] = {}
+    for name, el in props.items():
+        if not isinstance(el, dict) or el.get("kind") != "node_element":
+            continue
+        if not (isinstance(el.get("label"), str) and el["label"].strip()):
+            continue
+        out[name] = {f: el[f] for f in ("label", "description", "scope_note")
+                     if isinstance(el.get(f), str) and el[f].strip()}
+    return out
+
+
 def _collect_packagings_en(dm: Dict[str, Any]) -> Dict[str, Dict[str, str]]:
     """{packaging: {"label": ...}} from the ``labels`` of ResourceNode's
     ``packaging`` field in the datamodel."""
@@ -408,6 +433,7 @@ def _collect_all_en() -> Dict[str, Dict[str, Dict[str, str]]]:
     out["dtc_kinds"] = _collect_dtc_kinds_en(_load(VISUAL_RULES))
     out["stratigraphic_kinds"] = _collect_stratigraphic_kinds_en(_load(DATAMODEL))
     out["end_reasons"] = _collect_end_reasons_en(_load(DATAMODEL))
+    out["node_elements"] = _collect_node_elements_en(_load(DATAMODEL))
     out["packagings"] = _collect_packagings_en(_load(DATAMODEL))
     out["master_kinds"] = _collect_master_kinds_en(_load(DATAMODEL))
     out["reasoning"] = _collect_reasoning_en(_load(CONNECTIONS))
@@ -474,6 +500,8 @@ def _rows(doc: Dict[str, Any]) -> List[Tuple[str, str, str]]:
     for section in ("entries", "qualia_categories", "qualia_subcategories", "qualia",
                     "edge_types", "dtc_kinds", "stratigraphic_kinds", "end_reasons",
                     "packagings", "master_kinds", "reasoning"):
+        # node_elements (1.25) and property_names are EN + IT, out of the
+        # partners' workbook like the property names
         entries = doc.get(section, {})
         for key in sorted(entries):
             for field in ("label", "description", "scope_note") + PHRASE_FIELDS:
@@ -613,6 +641,13 @@ def end_reason_label(reason: str, lang: str = "en") -> Optional[str]:
     """How a unit ends, in ``lang`` («destroyed» → «distrutta»), English
     fallback; ``None`` for a reason the datamodel does not have."""
     return translate("end_reasons", reason, "label", lang)
+
+
+def node_element_label(name: str, lang: str = "en") -> Optional[str]:
+    """The label of a node element of a unit in ``lang`` («unnumbered» →
+    «Senza numero», 1.25), English fallback; ``None`` for an element the
+    datamodel does not name."""
+    return translate("node_elements", name, "label", lang)
 
 
 def master_kind_label(kind: str, lang: str = "en") -> Optional[str]:
@@ -768,6 +803,10 @@ def export_xlsx(path: str, force: bool = False) -> None:
             note = (f"Label of the genre '{key}' of a stratigraphic unit, written after "
                     "the type in an inspector («US · masonry»); an adjective where the "
                     "language allows it")
+        elif section == "node_elements":
+            area = "elements of a unit"
+            note = (f"{field} of the element '{key}' of a stratigraphic unit (unnumbered: the "
+                    "unit has no number yet, a person will assign one), shown in an inspector")
         elif section == "end_reasons":
             area = "end of a unit"
             note = (f"How a stratigraphic unit ends: '{key}' (a type of the continuity "

@@ -5,6 +5,30 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Changed
+- **Units without a number; a negative unit in a functional unit; every edge
+  without a voice is not a rapporto** (MICRO-LG11, 23 November 2026, decisions
+  of E.D.). Node datamodel 1.6.55: StratigraphicNode `data.unnumbered` — a unit
+  recognised and recorded whose number nobody has assigned yet; NO number is
+  ever invented, a person assigns it (label «Without number» / «Senza numero»,
+  translations 1.25, new section `node_elements`, `datamodel_i18n.node_element_label`).
+  `s3dgraphy.rapporti`: `is_declared_unnumbered`, `us_number_of` (None when the
+  unit has no number — declared, or a name with no digit: never a «number» made
+  of words out of `strip_us_prefix`), `is_unnumbered_unit` (not the continuity
+  node, not the paradata); `serialize_rapporti_from_edges` leaves out the
+  rapporti towards such a unit (counted `unnumbered_target`, named in
+  `report["unnumbered"]`); `GraphIngestor.populate_list` does not write it in
+  `us_table` (`IngestResult.unnumbered`). `diagnostics.unnumbered_hints` and
+  `api.validate` warn «[unnumbered] … has no number: assign one».
+  `NON_RAPPORTI_EDGE_TYPES` now also names every edge of the connections
+  datamodel with no voice in pyArchInit (`changed_from` / `changed_to`,
+  `contrasts_with`, `is_in_activity`, `has_author`…, derived from the datamodel):
+  pyArchInit's `em_native_import` consults it before `select_rapporti_label`, so
+  it no longer writes `[None, …]`; `rapporti_edge_types()` unchanged.
+  Connections 1.6.61: `is_in_functional_unit` admits `NegativeStratigraphicUnit`
+  — the cut can be the act that founds a function; a functional unit with one
+  negative member, or none, is legitimate (scope_note). Mappings re-stamped,
+  version pins said out loud; tests `test_lg11_terra_numerata` (10),
+  `tests/sync/test_unnumbered_lg11` (1).
 - **The layer that obliterates is not inside the functional unit it
   obliterates** (MICRO-LG8, 22 November 2026, rule of E.D.). `s3dgraphy.obliteration`:
   the rule of MICRO-LG6 «an inherited window does not reach a member that comes

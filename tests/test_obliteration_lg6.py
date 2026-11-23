@@ -93,7 +93,7 @@ def test_the_datamodel_says_the_obliteration_its_values_and_its_projection():
     assert ob["rdf"]["concepts"] == {"obliterated": "em:Obliterated",
                                      "partially_obliterated": "em:PartiallyObliterated"}
     dm = json.loads((CONFIG / "s3Dgraphy_node_datamodel.json").read_text(encoding="utf-8"))
-    assert dm["s3Dgraphy_data_model_version"] == "1.6.54"
+    assert dm["s3Dgraphy_data_model_version"] == "1.6.55"  # 1.6.55 MICRO-LG11 (data.unnumbered); 1.6.54 MICRO-LG6
     assert dm["referenced_ontology_versions"]["CRMem"]["version"] == "1.6.29"
     props = dm["paradata_nodes"]["ParadataNode"]["subtypes"]["PropertyNode"]["properties"]
     assert props["valid_from_doubtful"]["em_json"] == "data.valid_from_doubtful"

@@ -5,7 +5,7 @@ is_in_functional_unit
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.54, connections 1.6.60) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.55, connections 1.6.61) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *Membership of a stratigraphic unit in a FunctionalUnitNodeGroup (DP-72): the units that together make up one recognisable architectural component — the column made of its US.*
 
@@ -19,7 +19,7 @@ is_in_functional_unit
    * - Reverse
      - ``includes_in_functional_unit``
    * - Source
-     - :ref:`SpecialFindUnit <type-SpecialFindUnit>`, :ref:`VirtualSpecialFindUnit <type-VirtualSpecialFindUnit>`, :ref:`SeriesOfVirtualSpecialFindUnit <type-SeriesOfVirtualSpecialFindUnit>`, :ref:`ReusedSpecialFind <type-ReusedSpecialFind>`, :ref:`StratigraphicUnit <type-StratigraphicUnit>`, :ref:`DocumentaryStratigraphicUnit <type-DocumentaryStratigraphicUnit>`, :ref:`VirtualStratigraphicUnit <type-VirtualStratigraphicUnit>`, :ref:`FunctionalUnitNodeGroup <type-FunctionalUnitNodeGroup>`
+     - :ref:`SpecialFindUnit <type-SpecialFindUnit>`, :ref:`VirtualSpecialFindUnit <type-VirtualSpecialFindUnit>`, :ref:`SeriesOfVirtualSpecialFindUnit <type-SeriesOfVirtualSpecialFindUnit>`, :ref:`ReusedSpecialFind <type-ReusedSpecialFind>`, :ref:`StratigraphicUnit <type-StratigraphicUnit>`, :ref:`NegativeStratigraphicUnit <type-NegativeStratigraphicUnit>`, :ref:`DocumentaryStratigraphicUnit <type-DocumentaryStratigraphicUnit>`, :ref:`VirtualStratigraphicUnit <type-VirtualStratigraphicUnit>`, :ref:`FunctionalUnitNodeGroup <type-FunctionalUnitNodeGroup>`
    * - Target
      - :ref:`FunctionalUnitNodeGroup <type-FunctionalUnitNodeGroup>`
    * - CIDOC

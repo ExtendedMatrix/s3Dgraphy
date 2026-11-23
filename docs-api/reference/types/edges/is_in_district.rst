@@ -5,7 +5,7 @@ is_in_district
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.54, connections 1.6.60) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.55, connections 1.6.61) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *A unit of the landscape (UT, UT0, another district) or a site (a LocationNodeGroup of level sito, virtual or not) belongs to a DISTRICT (DistrictNode, node datamodel 1.6.41).*
 

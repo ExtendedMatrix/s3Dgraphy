@@ -510,6 +510,71 @@ def strip_us_prefix(name: str) -> str:
 
 
 # ---------------------------------------------------------------------------
+# Units WITHOUT a number (node datamodel 1.6.55, MICRO-LG11)
+# ---------------------------------------------------------------------------
+_HAS_DIGIT = _re.compile(r"\d")
+
+
+def is_declared_unnumbered(node) -> bool:
+    """``True`` when the unit is DECLARED without a number: the node element
+    ``data.unnumbered`` (node datamodel 1.6.55, MICRO-LG11, E.D. 23 Nov
+    2026) — a unit recognised and recorded whose number nobody has assigned
+    yet (the earth over the foundations of the Great Temple, until SU051).
+    Read from ``node.data`` and, for a graph that came through the sync,
+    ``node.attributes``."""
+    if node is None:
+        return False
+    for bag in (getattr(node, "data", None), getattr(node, "attributes", None)):
+        if isinstance(bag, dict) and bag.get("unnumbered") in (True, "true", "True", 1):
+            return True
+    return False
+
+
+def us_number_of(node) -> str | None:
+    """The ``us`` value a unit can take in pyArchInit's ``us_table``, or
+    ``None`` when it has NO NUMBER.
+
+    The ``us`` attribute when there is one (a graph built by the sync),
+    otherwise :func:`strip_us_prefix` of the name. ``None`` when the unit
+    is declared without a number (:func:`is_declared_unnumbered`) or when
+    what is left of the name has no digit at all — «US non numerata — terra
+    che ricopre le fondazioni» would become the «number» «non numerata —
+    terra…». Never a number invented: the number is assigned by a person
+    (E.D., rule of MICRO-LG11)."""
+    if node is None or is_declared_unnumbered(node):
+        return None
+    attrs = getattr(node, "attributes", None) or {}
+    us = attrs.get("us")
+    if us is None or str(us).strip() == "":
+        name = getattr(node, "name", None)
+        if not name:
+            return None
+        us = strip_us_prefix(str(name))
+    us = str(us).strip()
+    return us if _HAS_DIGIT.search(us) else None
+
+
+def is_unnumbered_unit(node) -> bool:
+    """A STRATIGRAPHIC unit with no number (:func:`us_number_of` is
+    ``None``), or any node declared so. The paradata nodes (a property
+    «definition», an extractor) are not units and are never «unnumbered»
+    here: their name is not a number to begin with. Nor is the continuity
+    node (BR), whose name «continuity_node» is a convention of EM, not a
+    number left out: it keeps the way it has always travelled."""
+    if node is None:
+        return False
+    if is_declared_unnumbered(node):
+        return True
+    try:
+        from .nodes.stratigraphic_node import ContinuityNode, StratigraphicNode
+    except Exception:                                  # noqa: BLE001
+        return False
+    if not isinstance(node, StratigraphicNode) or isinstance(node, ContinuityNode):
+        return False
+    return us_number_of(node) is None
+
+
+# ---------------------------------------------------------------------------
 # Unita_tipo resolution helpers
 # ---------------------------------------------------------------------------
 
@@ -617,7 +682,18 @@ def rapporti_edge_types() -> frozenset:
 #: pyArchInit's ``em_native_import`` among them. ``has_same_time`` is
 #: here because pyArchInit has no voice for it yet: it is counted, never
 #: dropped in silence.
-NON_RAPPORTI_EDGE_TYPES: frozenset[str] = frozenset({
+#:
+#: 1.6 · MICRO-LG11 (E.D., 23 Nov 2026) — it also names EVERY other edge of
+#: the connections datamodel that has no voice in pyArchInit (those for which
+#: :func:`select_rapporti_label` gives ``None``: ``changed_from`` /
+#: ``changed_to``, ``contrasts_with``, ``is_in_activity``, ``has_author``…,
+#: reverses and older spellings included), derived from the datamodel and
+#: never typed here. pyArchInit's ``em_native_import.build_rapporti``
+#: consults this set BEFORE asking :func:`select_rapporti_label`: until then
+#: a ``changed_from`` between two US reached it and went into the column as
+#: ``[None, '28', '1', sito]``. Now such an edge is skipped there and
+#: counted here (``report=``), as the other exclusions of MICRO-LG7.
+_NON_RAPPORTI_DECLARED: frozenset[str] = frozenset({
     "has_first_epoch",
     "has_paradata_nodegroup",
     "has_property",
@@ -626,6 +702,22 @@ NON_RAPPORTI_EDGE_TYPES: frozenset[str] = frozenset({
     "survive_in_epoch",
     "has_same_time",
 })
+
+
+def _without_voice() -> frozenset:
+    """Every edge name of the connections datamodel (canonical, reverse,
+    older spelling) for which :func:`select_rapporti_label` has no token.
+    Empty if the datamodel cannot be read (the declared set still holds)."""
+    try:
+        from .edges.connections_loader import get_connections_datamodel
+        names = get_connections_datamodel().get_all_edge_names()
+    except Exception:                                  # noqa: BLE001
+        return frozenset()
+    return frozenset(n for n in names
+                     if select_rapporti_label(n, None, None) is None)
+
+
+NON_RAPPORTI_EDGE_TYPES: frozenset[str] = _NON_RAPPORTI_DECLARED | _without_voice()
 
 
 # ---------------------------------------------------------------------------
@@ -789,7 +881,9 @@ def serialize_rapporti_from_edges(graph, default_sito: str, report=None):
       / ``is_before`` as ``>`` / ``<``, the paradata chain as ``>>`` /
       ``<<``. Every other edge is left out — and COUNTED: pass a dict as
       *report* and it receives ``excluded`` (``{edge_type: n}``) and
-      ``exported`` (n). Until then a black list let ``is_in_activity``,
+      ``exported`` (n), and ``unnumbered`` the names of the units without a
+      number the edges pointed at (MICRO-LG11: such an edge is left out,
+      counted as ``unnumbered_target``). Until then a black list let ``is_in_activity``,
       ``has_author``… out as ``>>`` towards the target's name, and
       ``is_before`` / ``changed_from`` as their raw names.
     * Target US is read from ``tgt_node.attributes['us']`` when
@@ -808,6 +902,7 @@ def serialize_rapporti_from_edges(graph, default_sito: str, report=None):
             by_id[nid] = n
     allowed = rapporti_edge_types()
     excluded: dict[str, int] = {}
+    unnumbered: set[str] = set()
     exported = 0
     out: dict[str, list[list]] = {}
     for e in getattr(graph, "edges", None) or []:
@@ -822,6 +917,12 @@ def serialize_rapporti_from_edges(graph, default_sito: str, report=None):
         src_node = by_id.get(src)
         tgt_node = by_id.get(tgt)
         if tgt_node is None:
+            continue
+        # MICRO-LG11: towards a unit WITHOUT a number there is no row to
+        # point at — never a «number» made of words. Left out and counted.
+        if is_unnumbered_unit(tgt_node):
+            excluded["unnumbered_target"] = excluded.get("unnumbered_target", 0) + 1
+            unnumbered.add(str(getattr(tgt_node, "name", "") or tgt))
             continue
         src_unita_tipo = resolve_unita_tipo_for_dispatch(src_node)
         tgt_unita_tipo = resolve_unita_tipo_for_dispatch(tgt_node)
@@ -856,6 +957,7 @@ def serialize_rapporti_from_edges(graph, default_sito: str, report=None):
     if report is not None:
         report["excluded"] = excluded
         report["exported"] = exported
+        report["unnumbered"] = sorted(unnumbered)
     return out
 
 
@@ -873,6 +975,9 @@ __all__ = [
     "TEMPORAL_RAPPORTI_EDGE_TYPES",
     "PARADATA_RAPPORTI_EDGE_TYPES",
     "rapporti_edge_types",
+    "is_declared_unnumbered",
+    "us_number_of",
+    "is_unnumbered_unit",
     # Type / prefix helpers (commit 2)
     "S3DGRAPHY_TYPE_TO_UNITA_TIPO",
     "strip_us_prefix",

@@ -470,6 +470,7 @@ class GraphIngestor:
         applied = 0
         conflicts: list[ConflictRecord] = []
         errors: list[str] = []
+        unnumbered: list[str] = []
 
         # Pre-compute per-source rapporti from graph edges so the write
         # path can populate us_table.rapporti as JSON-list-of-lists.
@@ -483,6 +484,10 @@ class GraphIngestor:
             log.info("rapporti: %d written, left out %s",
                      rapporti_report.get("exported", 0),
                      dict(sorted(rapporti_report["excluded"].items())))
+        if rapporti_report.get("unnumbered"):
+            log.warning("rapporti: towards units without a number, left out: %s "
+                        "— assign a number first (MICRO-LG11)",
+                        ", ".join(rapporti_report["unnumbered"]))
 
         # PG-C (5.7.2-alpha): engine.begin() opens an atomic transaction
         # that commits on clean exit / rolls back on exception. Identical
@@ -532,6 +537,12 @@ class GraphIngestor:
                     node_uuid = attrs.get("node_uuid") or getattr(
                         node, "node_id", None)
                     if not node_uuid:
+                        continue
+                    # MICRO-LG11: a unit WITHOUT a number is never written —
+                    # no «number» made of words in us_table. Said, not
+                    # invented: the number is assigned by a person.
+                    if _is_unnumbered_unit(node):
+                        unnumbered.append(str(getattr(node, "name", "") or node_uuid))
                         continue
                     # Make sure the node carries a `us` value. Priority:
                     #   1. attrs["us"] (set by GraphProjector)
@@ -660,6 +671,8 @@ class GraphIngestor:
                         node_uuid = attrs.get("node_uuid") or getattr(
                             node, "node_id", None)
                         if not node_uuid:
+                            continue
+                        if _is_unnumbered_unit(node):   # MICRO-LG11, as above
                             continue
                         if "us" not in attrs or attrs["us"] is None:
                             fallback_us = getattr(node, "name", None)
@@ -857,6 +870,7 @@ class GraphIngestor:
             conflicts=tuple(conflicts), errors=tuple(errors),
             dry_run=dry_run,
             parsed_drafts=_yed_parsed_drafts,
+            unnumbered=tuple(unnumbered),
         )
 
 
@@ -1407,6 +1421,7 @@ from .rapporti import (
     select_rapporti_label as _select_rapporti_label,
     serialize_rapporti_from_edges as _build_rapporti_from_edges,
 )
+from ..rapporti import is_unnumbered_unit as _is_unnumbered_unit  # MICRO-LG11
 
 # The `re` module was historically imported here as `_re` (right above
 # the now-extracted `_strip_us_prefix` regex). Two unrelated call

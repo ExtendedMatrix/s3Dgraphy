@@ -62,3 +62,8 @@ class IngestResult:
     #    "folders": list[FolderCandidate]}
     # Forward-compat with yE-D pipeline.
     parsed_drafts: dict | None = None
+    #: MICRO-LG11 · the names of the units WITHOUT a number (node datamodel
+    #: 1.6.55, data.unnumbered, or a name with no digit) that were NOT
+    #: written: us_table needs a number and none is ever invented — the
+    #: number is assigned by a person, then the graph is synced again.
+    unnumbered: tuple[str, ...] = ()

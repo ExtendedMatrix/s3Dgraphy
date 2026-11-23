@@ -5,7 +5,7 @@ LandscapeSurfaceNode
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.54, connections 1.6.60) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.55, connections 1.6.61) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *The ground surface of a landscape: a DEM (a gis\_layer GeoTIFF of raster.kind dem) drawn as a mesh, and optionally an image (an orthophoto, raster.kind image) draped on it — the two layers reached by has\_linked\_resource, the site it is the ground of by is\_in\_location.*
 

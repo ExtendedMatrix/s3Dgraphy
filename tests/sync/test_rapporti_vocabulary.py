@@ -218,6 +218,10 @@ def test_module_dunder_all_exposed():
         "TEMPORAL_RAPPORTI_EDGE_TYPES",
         "PARADATA_RAPPORTI_EDGE_TYPES",
         "rapporti_edge_types",
+        # Units without a number (MICRO-LG11)
+        "is_declared_unnumbered",
+        "us_number_of",
+        "is_unnumbered_unit",
         # Type / prefix helpers (commit 2)
         "S3DGRAPHY_TYPE_TO_UNITA_TIPO",
         "strip_us_prefix",

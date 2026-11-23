@@ -5,7 +5,7 @@ dtc_derived_from
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.54, connections 1.6.60) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.55, connections 1.6.61) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *DTC chain: the produced RESOURCE (ResourceNode) was derived from an acquisition (DTCInput) — the direct provenance shortcut alongside the process.*
 

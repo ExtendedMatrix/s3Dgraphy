@@ -5,7 +5,7 @@ StratigraphicNode
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.54, connections 1.6.60) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.55, connections 1.6.61) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *Base class for all stratigraphic units within the graph structure.*
 
@@ -45,6 +45,8 @@ Fields
      - P1\_is\_identified\_by
    * - ``description``
      - P3\_has\_note
+   * - ``unnumbered``
+     - 1.6.55 (MICRO-LG11, E.D.
    * - ``definition``
      - DEPRECATED 1.6.48 (MICRO-K §A, E.D. (deprecated 1.6.48)
 

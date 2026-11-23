@@ -1,6 +1,6 @@
 {
  "schema": "s3Dgraphy_datamodel_translations",
- "version": "1.24",
+ "version": "1.25",
  "languages": [
   "en",
   "it",
@@ -9793,6 +9793,46 @@
     "ro": "necunoscut",
     "fr": "inconnue",
     "de": "unbekannt"
+   }
+  }
+ },
+ "node_elements": {
+  "unnumbered": {
+   "label": {
+    "en": "Without number",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Senza numero"
+   },
+   "description": {
+    "en": "1.6.55 (MICRO-LG11, E.D. 23 Nov 2026): the unit is recognised and recorded but has NO NUMBER yet — nobody has assigned it (the earth over the foundations of the Great Temple, recognised from an oral confirmation, until it became SU051). true = without a number; absent or false = the unit has its number, in its name as always. The NAME of such a unit is a provisional label, not a number («US non numerata — terra che ricopre le fondazioni»): no tool reads a number out of it. NO NUMBER IS EVER INVENTED AUTOMATICALLY: the number is assigned by a person, who then renames the unit and removes the flag; its paradata say who assigned it and when (a definition or the unit's own description: «number assigned while re-ordering the data, not in the excavation»). Read by s3dgraphy.rapporti (is_declared_unnumbered, us_number_of, is_unnumbered_unit), s3dgraphy.diagnostics.unnumbered_hints (the warning «unit without a number: assign one», also for a unit whose name holds no number at all) and the sync towards pyArchInit (GraphIngestor: the unit is NOT written in us_table, IngestResult.unnumbered names it; the rapporti towards it are left out and counted, unnumbered_target). Declared here on StratigraphicNode and therefore inherited by every stratigraphic subtype; the continuity node (BR), whose name is a convention, is never «unnumbered». Not projected to RDF: a state of the record, not of the unit.",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "1.6.55 (MICRO-LG11, E.D. 23 nov 2026): l'unità è riconosciuta e registrata ma NON HA ANCORA UN NUMERO — nessuno gliel'ha assegnato (la terra che ricopre le fondazioni del Tempio Grande, riconosciuta da una conferma orale, finché non è diventata SU051). true = senza numero; assente o false = l'unità ha il suo numero, nel nome come sempre. Il NOME di un'unità così è un'etichetta provvisoria, non un numero («US non numerata — terra che ricopre le fondazioni»): nessuno strumento ne legge un numero. NESSUN NUMERO VIENE MAI INVENTATO IN AUTOMATICO: il numero lo assegna una persona, che poi rinomina l'unità e toglie l'indicazione; i paradati dicono chi l'ha assegnato e quando (una definizione o la descrizione dell'unità: «numero assegnato in fase di riordino dei dati, non di scavo»). Letto da s3dgraphy.rapporti (is_declared_unnumbered, us_number_of, is_unnumbered_unit), da s3dgraphy.diagnostics.unnumbered_hints (l'avviso «unità senza numero: assegnarne uno», anche per un'unità il cui nome non contiene alcun numero) e dalla sincronizzazione verso pyArchInit (GraphIngestor: l'unità NON viene scritta in us_table, IngestResult.unnumbered la nomina; i rapporti verso di essa sono esclusi e contati, unnumbered_target). Dichiarato qui su StratigraphicNode e quindi ereditato da ogni sottotipo stratigrafico; il nodo di continuità (BR), il cui nome è una convenzione, non è mai «senza numero». Non proiettato in RDF: uno stato della scheda, non dell'unità."
+   },
+   "scope_note": {
+    "en": "USE when a unit must enter the graph before it has a number: recognised in a report, from an oral confirmation, while re-ordering old data. Give it a readable provisional NAME and set the flag; EMStudio shows «without number» beside it and the coherence check warns until a number is assigned. DO NOT USE to hide a number one already has, nor for a unit of a series that numbers differently (USV, SF, documents keep their own series). DO NOT invent a number to silence the warning: the first free number of the series is chosen by a person (E.D.: «the number is assigned by a person»).",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "USARE quando un'unità deve entrare nel grafo prima di avere un numero: riconosciuta in un rapporto, da una conferma orale, nel riordino di dati vecchi. Darle un NOME provvisorio leggibile e mettere l'indicazione; EMStudio mostra «senza numero» accanto all'unità e il controllo di coerenza avvisa finché il numero non è assegnato. NON USARE per nascondere un numero che c'è già, né per un'unità di una serie che si numera diversamente (USV, SF, documenti tengono le loro serie). NON inventare un numero per far tacere l'avviso: il primo numero libero della serie lo sceglie una persona (E.D.: «il numero lo assegna una persona»)."
    }
   }
  }

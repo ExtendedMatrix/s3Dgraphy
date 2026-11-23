@@ -543,6 +543,33 @@ def read_only_edge_hints(graph) -> List[dict]:
 
 
 # ---------------------------------------------------------------------------
+# Units without a number (node datamodel 1.6.55, MICRO-LG11)
+# ---------------------------------------------------------------------------
+
+def unnumbered_hints(graph) -> List[dict]:
+    """The stratigraphic units WITHOUT a number: «unit without a number:
+    assign one» (MICRO-LG11, E.D. 23 Nov 2026).
+
+    ``kind`` ``declared`` — the unit says so (``data.unnumbered``, node
+    datamodel 1.6.55): recognised and recorded, its number not assigned
+    yet; ``name_without_number`` — not declared, but nothing in its name
+    is a number (:func:`s3dgraphy.rapporti.us_number_of`), so pyArchInit's
+    ``us_table`` could not hold it. A WARNING, never a correction: no
+    number is ever invented, the number is assigned by a person. The
+    continuity node (BR) is not a unit with a number and is not listed.
+    One record per unit: ``{unit, name, kind}``. Read-only."""
+    from .rapporti import is_declared_unnumbered, is_unnumbered_unit
+    out: List[dict] = []
+    for n in graph.nodes:
+        if not is_unnumbered_unit(n):
+            continue
+        out.append({"unit": n.node_id,
+                    "name": getattr(n, "name", "") or n.node_id,
+                    "kind": "declared" if is_declared_unnumbered(n) else "name_without_number"})
+    return out
+
+
+# ---------------------------------------------------------------------------
 # Documents named outside the D.nn series (MICRO-FOTO-DOCUMENTI-BBOX, C)
 # ---------------------------------------------------------------------------
 

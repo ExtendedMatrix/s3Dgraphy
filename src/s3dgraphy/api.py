@@ -151,7 +151,9 @@ def validate(graph: Graph) -> Dict[str, Any]:
     feeds (connections 1.6.24, :func:`diagnostics.extraction_source_hints`);
     a property documented without an extractor (connections 1.6.51,
     :func:`diagnostics.read_only_edge_hints`); a document named outside the
-    D.nn series (:func:`diagnostics.document_series_hints`).
+    D.nn series (:func:`diagnostics.document_series_hints`). A unit
+    without a number is a WARNING (``[unnumbered]``, MICRO-LG11,
+    :func:`diagnostics.unnumbered_hints`).
     Minimal and extensible; adds no side effects."""
     nodes = list(getattr(graph, "nodes", []) or [])
     edges = list(getattr(graph, "edges", []) or [])
@@ -190,6 +192,12 @@ def validate(graph: Graph) -> Dict[str, Any]:
             f"document '{r['name']}' ({r['document']}) is named outside the "
             f"D.nn series: rename it {r['suggestion']}?")
     warnings = list(getattr(graph, "warnings", []) or [])
+    # MICRO-LG11: a unit without a number — assign one (never invented)
+    from .diagnostics import unnumbered_hints
+    for r in unnumbered_hints(graph):
+        warnings.append(
+            f"[unnumbered] unit '{r['name']}' ({r['unit']}) has no number: "
+            f"assign one ({'declared without a number' if r['kind'] == 'declared' else 'its name holds no number'})")
     # a property as a source (connections 1.6.36): the source changed, was
     # removed, the reasoning comes back to itself, two owners nobody declared
     from .property_source import diagnose, message

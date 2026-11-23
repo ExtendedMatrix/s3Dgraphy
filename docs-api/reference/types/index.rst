@@ -5,7 +5,7 @@ Types — nodes and edges
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.54, connections 1.6.60) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.55, connections 1.6.61) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 The types of the EM language: what ``em.graph`` returns as :class:`~s3dgraphy.em.NodeView` and :class:`~s3dgraphy.em.EdgeView`, and what ``tx.add_node`` / ``tx.add_edge`` accept. The edges a node may have are checked by the contract at every write.
 

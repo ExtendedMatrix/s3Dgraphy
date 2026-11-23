@@ -5,7 +5,7 @@ is_on_resource
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.54, connections 1.6.60) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.55, connections 1.6.61) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *The place a reading looked at (an AnnotationRegion) is ON something: a region2d on a specific image (or one page of a multi-page resource), a passage on a text document, a point/line/polyline on a 3D model.*
 
