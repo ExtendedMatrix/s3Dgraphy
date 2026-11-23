@@ -47,6 +47,17 @@ MICRO-PX1c (E.D., 23 Nov 2026) — two additions, no datamodel field:
     the property reaches it directly (``has_data_provenance``), no combiner;
     points keep EM Tools' rule, a combiner always.
 
+MICRO-PX3 (E.D., 23 Nov 2026) — the areal drawn on a model (EMStudio's
+«Annotate surface», EM Tools' «Surface Areale»): EM Tools' full chain
+(``surface_areale/postprocess.link_areale_to_graph``) writes ONE extractor for
+the whole surface, ``extracted_from`` the document, with ``purpose`` «3D
+drawing on surface» and ``source_rm``. ``document_reading`` gives that
+extractor what it needs, no datamodel field: its ``point_type``, attributes
+(``source_rm``, the area…) and the PLACE of the reading — the contour as an
+``AnnotationRegion`` ``surface`` (``place_reading``, ``is_on_resource`` the
+model), the form EM Tools' bridge ``empkg.areale_from_graph`` reads to make the
+areal again in Blender.
+
 Ids: ``uuid4`` as EM Tools (a run is a new assertion, never the same as an
 earlier one), ``new_id`` to make them deterministic in a test. The edges'
 ids are EM Tools' ``<source>_<edge_type>_<target>``. An edge the connections
@@ -171,6 +182,7 @@ def proxy_from_points(
     document_id: Optional[str] = None,
     document_extractor_name: Optional[str] = None,
     document_extractor_description: Optional[str] = None,
+    document_reading: Optional[Dict[str, Any]] = None,
 ) -> ProxyPointsResult:
     """Write the paradata of a proxy drawn from `points` on the unit `unit_id`.
 
@@ -188,6 +200,13 @@ def proxy_from_points(
     (``point_type`` ``proxy``, named ``document_extractor_name`` or
     ``<document>.<k>``) is written for it. ``points`` may then be empty.
 
+    ``document_reading`` (MICRO-PX3): for that extractor of the whole proxy,
+    ``{"point_type", "attributes": {...}, "geometry": {"geometry_kind":
+    "surface", "vertices": [[x, y, z], …]}, "on_id"}`` — its point_type
+    (``proxy`` by default), attributes added to EM Tools' (``source_rm``…) and
+    the place of the reading (the model's glTF frame, Y up; ``on_id`` the node
+    it is on, the document by default). Only with ``document_id``.
+
     Raises ``ValueError`` before writing anything when the unit is not a
     stratigraphic unit, there is no point and no document, or a point's
     document (or ``document_id``) is not a DocumentNode of the graph.
@@ -201,6 +220,19 @@ def proxy_from_points(
         raise ValueError(f"proxy from points: the proxy's document {document_id!r} is not a document of the graph")
     if not pts and not document_id:
         raise ValueError("proxy from points: no point")
+    reading = dict(document_reading or {})
+    if reading and not document_id:
+        raise ValueError("proxy from points: a document_reading needs the proxy's document_id")
+    if reading.get("geometry") is not None:
+        geo = reading["geometry"]
+        verts = geo.get("vertices") if isinstance(geo, dict) else None
+        try:
+            ok = (isinstance(verts, (list, tuple)) and len(verts) >= 1
+                  and all(isinstance(v, (list, tuple)) and len(v) == 3 and all(float(c) == float(c) for c in v) for v in verts))
+        except (TypeError, ValueError):
+            ok = False
+        if not ok:
+            raise ValueError("proxy from points: the document_reading's geometry has no [x, y, z] vertices")
     for k, p in enumerate(pts):
         doc = graph.find_node_by_id(str(p.get("document_id") or ""))
         if not isinstance(doc, DocumentNode):
@@ -274,13 +306,28 @@ def proxy_from_points(
         ext = ExtractorNode(node_id=ext_id, name=str(document_extractor_name or f"{doc_name}.{per_doc[doc_id]}"),
                             description=document_extractor_description or (
                                 f"The proxy {name!r} as a whole, drawn on {doc_name}"))
-        ext.attributes["point_type"] = "proxy"
+        ext.attributes["point_type"] = str(reading.get("point_type") or "proxy")
         ext.attributes["purpose"] = purpose
+        for k, v in dict(reading.get("attributes") or {}).items():
+            if k not in ("point_type", "purpose") and v is not None:
+                ext.attributes[str(k)] = v
         if author:
             ext.data["author"] = author
         graph.add_node(ext)
         _edge(graph, ext_id, doc_id, "extracted_from", warnings)
         extractor_ids.append(ext_id)
+        # MICRO-PX3 · the place of the reading of the whole (the areal's contour)
+        if reading.get("geometry") is not None:
+            from ..annotation.reading import place_reading
+            on = str(reading.get("on_id") or doc_id)
+            if graph.find_node_by_id(on) is None:
+                on = doc_id
+            geo = dict(reading["geometry"])
+            geo["vertices"] = [[float(c) for c in v] for v in geo["vertices"]]
+            placed = place_reading(graph, ext_id, on, geo, author=author)
+            rid = getattr(placed, "region_id", None) or (placed.get("region_id") if isinstance(placed, dict) else None)
+            if rid:
+                region_ids.append(rid)
 
     # ── the combiner (only the proxy's document, no point: the property reaches it directly) ─
     combiner_id: Optional[str] = None

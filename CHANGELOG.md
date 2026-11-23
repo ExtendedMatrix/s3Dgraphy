@@ -5,6 +5,19 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Changed
+- **The areal drawn on a model: one extractor of the whole surface, its place the
+  contour** (MICRO-PX3, 23 November 2026). `proxy_from_points` (and
+  `api.proxy_from_points`) take `document_reading` for the extractor of the whole proxy
+  (with `document_id`): its `point_type` (`proxy` by default), attributes added to EM
+  Tools' (`source_rm`, the area, the border, the triangles, the offset…; never
+  `point_type` nor `purpose`) and the PLACE of the reading — the contour as an
+  `AnnotationRegion` `surface` (`place_reading`, `is_on_resource` the model). It is EM
+  Tools' Surface Areale full chain (`surface_areale/postprocess.link_areale_to_graph`,
+  experimental features: ONE extractor, purpose «3D drawing on surface», the property
+  reaching it directly) in the form EM Tools' `empkg.areale_from_graph` reads to make
+  the areal again in Blender. Written by EMStudio's «Annotate surface». A reading
+  without the proxy's document, or vertices that are not `[x, y, z]`, write nothing. No
+  datamodel change. Tests `test_proxy_px3` (8).
 - **The proxy's document and the annotation of its extractors; the semantic shape**
   (MICRO-PX1c, 23 November 2026). `proxy_from_points` (and `api.proxy_from_points`)
   take a point's `description` — the annotation written at the click («quota

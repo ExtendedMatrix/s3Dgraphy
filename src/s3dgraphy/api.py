@@ -1964,7 +1964,8 @@ def proxy_from_points(graph: Graph, unit_id: str, points: List[Dict[str, Any]], 
                       author: Optional[str] = None,
                       document_id: Optional[str] = None,
                       document_extractor_name: Optional[str] = None,
-                      document_extractor_description: Optional[str] = None):
+                      document_extractor_description: Optional[str] = None,
+                      document_reading: Optional[Dict[str, Any]] = None):
     """The paradata of a proxy drawn from clicked points — ONE chain for EM
     Tools' Proxy Box Creator and EMStudio's «Wall from plan» (MICRO-PX1): one
     extractor per point (``extracted_from`` the document it fell on; point_type,
@@ -1973,7 +1974,9 @@ def proxy_from_points(graph: Graph, unit_id: str, points: List[Dict[str, Any]], 
     property (reused), all in the unit's ``<US>_PD`` group. MICRO-PX1c: a
     point's ``description`` (its annotation) is its extractor's description;
     ``document_id`` the document the proxy as a whole is extracted from (one
-    extractor when no point reads it; ``points`` may be empty). Returns a
+    extractor when no point reads it; ``points`` may be empty). MICRO-PX3:
+    ``document_reading`` gives that extractor its point_type, attributes and
+    the place of its reading (an areal's contour, ``surface``). Returns a
     :class:`s3dgraphy.geometry.proxy_points.ProxyPointsResult`. See
     :mod:`s3dgraphy.geometry.proxy_points`."""
     from .geometry.proxy_points import proxy_from_points as _make
@@ -1982,7 +1985,8 @@ def proxy_from_points(graph: Graph, unit_id: str, points: List[Dict[str, Any]], 
                 property_description=property_description,
                 combiner_description=combiner_description, author=author,
                 document_id=document_id, document_extractor_name=document_extractor_name,
-                document_extractor_description=document_extractor_description)
+                document_extractor_description=document_extractor_description,
+                document_reading=document_reading)
     _born(graph, before)
     return out
 
