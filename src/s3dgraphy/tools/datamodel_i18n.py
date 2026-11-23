@@ -107,7 +107,9 @@ em_qualia_types 1.6.15) are the definition, the scope note and the label of
 each value of the property names listed in :data:`PROPERTY_TEXT_NAMES` — today
 ``obliteration`` (1.22, MICRO-LG6: obliterated «obliterata»,
 partially_obliterated «parzialmente obliterata»; it replaces ``visibility`` of
-1.20–1.21): ``property_value_label(name, value, lang)``,
+1.20–1.21), ``observation`` (1.23) and ``proxy_status`` (1.26,
+MICRO-LG12: its values and, as ``strength_<key>``, the strengths of a candidate
+source — certain «certa», probable «probabile», to_verify «da verificare»): ``property_value_label(name, value, lang)``,
 ``property_name_text(name, field, lang)``.
 
 `edge_types` (connections 1.6.22: `edge_types.<edge>.ui_phrase`) are the phrases of a menu entry that
@@ -193,7 +195,7 @@ EDGE_TEXT_FIELDS = ("description", "scope_note")
 #: VALUES (``values.<key>.name``) have a label each, ``value_<key>`` — the
 #: visibility of a unit: exposed, buried, partially_exposed. 1.22 (MICRO-LG6):
 #: the obliteration replaces it — obliterated, partially_obliterated
-PROPERTY_TEXT_NAMES = ("obliteration", "observation")
+PROPERTY_TEXT_NAMES = ("obliteration", "observation", "proxy_status")
 PROPERTY_TEXT_FIELDS = ("description", "scope_note")
 _PREFIX_TO_SECTION = {v: k for k, v in SECTIONS.items()}
 
@@ -288,6 +290,11 @@ def _collect_property_names_en(qualia: Dict[str, Any]) -> Dict[str, Dict[str, st
             for key, value in (spec.get("values") or {}).items():
                 if isinstance(value, dict) and isinstance(value.get("name"), str):
                     entry[f"value_{key}"] = value["name"]
+            # 1.26 (MICRO-LG12): the strengths of a candidate source of
+            # proxy_status, ``strength_<key>``
+            for key, value in (spec.get("source_strengths") or {}).items():
+                if isinstance(value, dict) and isinstance(value.get("name"), str):
+                    entry[f"strength_{key}"] = value["name"]
     return out
 
 

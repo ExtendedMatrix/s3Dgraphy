@@ -5,7 +5,7 @@ has_file
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.55, connections 1.6.61) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.56, connections 1.6.61) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *A RESOURCE (the set, the handle a person stamps, cites and opens) has ONE OF ITS FILES (E.D.*
 

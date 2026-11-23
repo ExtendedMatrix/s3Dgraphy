@@ -596,6 +596,47 @@ by ``crmsci:O8i_was_observed_by``, with its ``crm:P4_has_time-span``.
 document's, else the record anchored to the epoch — with one warning
 (``observation.migrate_observed_in_campaign``).
 
+The proxy not drawn yet
+-----------------------
+
+**What it is** (MICRO-LG12, E.D., 23 Nov 2026). Many units have no 3D shape: nobody has
+tried to draw them, or somebody chose not to. In both cases it is worth saying so, with the
+little that is known and the places where the documents are — the unit is then ready for
+**source-based modeling**. The datum is a ``PropertyNode`` named ``proxy_status`` of the
+unit (``em_qualia_types`` 1.6.20): its value the state — ``not_yet_drawn`` (the
+documentation is not enough), ``not_drawn_by_choice``, ``drawable`` (the sources are there,
+the work is missing) —, ``data.placeholder`` the minimum description of the shape in words
+(node datamodel 1.6.56), and its paradata as for every property. An extractor with
+``data.source_strength`` (``certain`` · ``probable`` · ``to_verify``) is a **candidate
+source**: «look, you may find the shape here» — ``extracted_from`` the document (a report,
+a plan, the document of a survey), ``data.source_model`` a representation model inside it,
+its description the note («in the 2015 survey the area is covered»), ``has_author`` who
+proposes it. Several sources of one property may sit under a combiner, as EMStudio writes
+them. It holds for every stratigraphic unit (real, documentary, virtual, special finds),
+never for the continuity node.
+
+**Drawn is read, not declared.** A unit whose ``geometry`` property reaches a semantic
+shape *is* drawn (``proxy_status.has_proxy``); a placeholder left on it is a hint of
+coherence (``declared_but_drawn``), never corrected. A ``proxies/<name>.glb`` beside the
+em.json that the graph does not link is said too (``unlinked_file``).
+
+**Scouting.** ``proxy_status.scout_deterministic`` proposes, for every unit without a
+proxy, the documents its own extractors cite and the representation models of an epoch in
+which the unit exists whose footprint meets the area of its physical neighbours (or cannot
+be read here: a tileset, a .blend) — all ``to_verify``, each with its reason. The AI
+scouting (``ai_context``, ``build_ai_prompt``, ``parse_ai_reply``) runs through the model
+seam of the host (EMStudio's bridge, ``POST /proxy-status``): its proposals carry
+``author_ai`` (model, date) and a reason. Nothing is written until a person accepts
+(``accept_proposal``). No functional unit and no Landscape Graph is read.
+
+**The list to draw.** ``proxy_status.to_draw``: the units without a proxy, the drawable
+first, then by the weight of their candidate sources (certain 3, probable 2, to_verify 1),
+then by their number; the units not drawn by choice apart. In RDF the property is a
+``crm:E13_Attribute_Assignment`` (an assessment of our record of the unit, not a state of
+the thing) the unit reaches by ``crm:P140i_was_attributed_by``, typed ``em:ProxyDrawn`` ·
+``em:ProxyNotYetDrawn`` · ``em:ProxyNotDrawnByChoice`` · ``em:ProxyDrawable`` (em.ttl
+1.6.30).
+
 Relations towards pyArchInit
 ----------------------------
 

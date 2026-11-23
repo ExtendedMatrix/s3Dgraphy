@@ -5,7 +5,7 @@ has_digital_twin
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.55, connections 1.6.61) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.56, connections 1.6.61) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *Links a heritage entity to its Heritage Digital Twin (HDTNode), at ANY scale: a site, a building, a single unit (an inscription, US 100).*
 

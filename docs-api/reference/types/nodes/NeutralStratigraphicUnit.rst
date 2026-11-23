@@ -5,7 +5,7 @@ NeutralStratigraphicUnit
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.55, connections 1.6.61) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.56, connections 1.6.61) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *Neutral Stratigraphic Unit (Unità Stratigrafica Neutra, USNt) — a void that is part of the DESIGN and not the product of a destruction: the \`risparmi\` of masonry, a window or door opening, a niche, the empty volume of a room.*
 

@@ -5,6 +5,25 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Changed
+- **The proxy not drawn yet: a placeholder for source-based modeling** (MICRO-LG12,
+  23 November 2026, decisions of E.D.). `em_qualia_types` 1.6.20:
+  `property_names.proxy_status` — the state of the proxy of a unit that has none
+  (`not_yet_drawn` · `not_drawn_by_choice` · `drawable`; `drawn` read from the graph,
+  never declared), its candidate sources' strengths, scope note, RDF block. Node
+  datamodel 1.6.56: PropertyNode `data.placeholder` (the shape in words), ExtractorNode
+  `data.source_strength` (certain · probable · to_verify: a CANDIDATE SOURCE) and
+  `data.source_model`. em.ttl 1.6.30: `em:ProxyDrawn`, `em:ProxyNotYetDrawn`,
+  `em:ProxyNotDrawnByChoice`, `em:ProxyDrawable`; the property leaves as a
+  `crm:E13_Attribute_Assignment` (`crm:P140i_was_attributed_by`). Translations 1.26
+  (EN + IT; `datamodel_i18n` collects the strengths as `strength_<key>`). New
+  `s3dgraphy.proxy_status`: `has_proxy`, `status` (the extractors read directly or
+  through a combiner), `to_draw` (the drawable first, by the strength of the sources),
+  `hints` (`declared_but_drawn`, `unlinked_file`), `declare`, `add_source`,
+  `accept_proposal`, `scout_deterministic` (the documents the unit's extractors cite,
+  the models of its epochs whose footprint meets its neighbours'), the AI scouting's
+  `ai_context` / `build_ai_prompt` / `parse_ai_reply` / `echo_reply`. Mappings
+  re-stamped, node registry and generated report regenerated, version pins said out
+  loud; tests `test_proxy_status_lg12` (12, one on the Templu dataset).
 - **Units without a number; a negative unit in a functional unit; every edge
   without a voice is not a rapporto** (MICRO-LG11, 23 November 2026, decisions
   of E.D.). Node datamodel 1.6.55: StratigraphicNode `data.unnumbered` — a unit

@@ -5,7 +5,7 @@ is_bonded_to
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.55, connections 1.6.61) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.56, connections 1.6.61) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *Older spelling of 'bonded\_to' (see \`spelling\_of\`): this stratigraphic unit is physically bonded to the target stratigraphic unit (e.g., masonry bonding).*
 

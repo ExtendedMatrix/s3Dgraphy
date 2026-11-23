@@ -5,7 +5,7 @@ NegativeTopographicUnitNode
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.55, connections 1.6.61) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.56, connections 1.6.61) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *Negative topographic unit (−UT, token UT0): the area a survey walked where nothing was found, with the conditions of the observation (visibility, season, coverage).*
 

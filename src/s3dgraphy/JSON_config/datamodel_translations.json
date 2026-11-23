@@ -1,6 +1,6 @@
 {
  "schema": "s3Dgraphy_datamodel_translations",
- "version": "1.25",
+ "version": "1.26",
  "languages": [
   "en",
   "it",
@@ -9686,6 +9686,128 @@
     "validated_fr": false,
     "validated_de": false,
     "it": "USARE: quando un documento di un certo anno mostra l'unità — il rapporto della campagna 2006 descrive un muro che un BR successivo dice smontato; una USD disegnata nel rilievo del 1914. L'anno è quello dell'OSSERVAZIONE (del rapporto, della campagna), non dell'unità. NON USARE: per datare la NASCITA dell'unità o la sua fase (has_first_epoch, absolute_time_start); per la sua SOPRAVVIVENZA attraverso un'epoca detta dalla stratigrafia (survive_in_epoch); per l'obliterazione (obliteration). NARRATIVA: «Il rapporto del 2006 descrive ancora il muro: fu smontato dopo il 2006, qualunque cosa dica il BR che lo chiude.»"
+   }
+  },
+  "proxy_status": {
+   "label": {
+    "en": "Proxy status",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Stato del proxy"
+   },
+   "description": {
+    "en": "The STATE OF THE PROXY of a unit that has none yet (MICRO-LG12, E.D. 23 Nov 2026, 08:30–08:50): «not drawn yet, because the documentation is not enough», «not drawn, by choice», «it could be drawn: the sources are there, the work is missing». A PLACEHOLDER that makes a unit without a shape ready for SOURCE-BASED MODELING: a PropertyNode `proxy_status` of the unit — value the state, data.placeholder the minimum description of the shape that is known (in words, even only verbal: «a channel about 40 cm wide running north–south under the cella»), and its paradata as for every property: has_data_provenance → an extractor (who states it) → extracted_from → a document. The CANDIDATE SOURCES for drawing it are extractors of the same property marked with data.source_strength (node datamodel 1.6.56: certain · probable · to_verify) — «look, you may find the shape in this survey» — their description the note («in the 2015 survey the area is covered by the backfill»), extracted_from the document (a report, a plan, a photograph, the document of a survey: a photogrammetry, a RM, a tileset), data.source_model the representation model inside it when one is meant. A person declares it (has_author the person); a proposal of an AI scouting enters only when a person accepts it (has_author the AuthorAINode: model, act_start the date) and a deterministic scouting the same (data.origin «derived»). It holds for EVERY unit without a proxy — real units («red» US and USM) as well as documentary (USD), virtual or special finds —, never for the continuity node or the paradata. «Drawn» is read from the graph, not declared: a unit whose geometry property reaches a semantic shape IS drawn, whatever is written; a declaration left on a unit that is now drawn is a hint of coherence («the proxy is there: remove the placeholder?»), never corrected. Read by s3dgraphy.proxy_status (status, to_draw — the units to draw, the drawable first, by the strength of their sources —, scout_deterministic, the AI scouting's briefing and reply, hints).",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "Lo STATO DEL PROXY di un'unità che non ne ha ancora uno (MICRO-LG12, E.D. 23 nov 2026, 08:30–08:50): «non ancora disegnato, perché la documentazione non basta», «non disegnato, per scelta», «si potrebbe disegnare: le fonti ci sono, manca il lavoro». Un SEGNAPOSTO che rende pronta per il SOURCE-BASED MODELING un'unità senza forma: una PropertyNode `proxy_status` dell'unità — valore lo stato, data.placeholder il minimo di descrizione della forma che si conosce (a parole, anche solo verbale: «un canale largo circa 40 cm che corre nord–sud sotto la cella»), e i suoi paradati come ogni proprietà: has_data_provenance → un estrattore (chi lo afferma) → extracted_from → un documento. Le FONTI CANDIDATE per disegnarla sono estrattori della stessa proprietà segnati con data.source_strength (datamodel nodi 1.6.56: certa · probabile · da verificare) — «guarda, potresti trovare la forma in questo rilievo» —, la loro descrizione la nota («nel rilievo 2015 l'area è coperta dal reinterro»), extracted_from il documento (un rapporto, una pianta, una foto, il documento di un rilievo: una fotogrammetria, un RM, un tileset), data.source_model il modello di rappresentazione dentro di esso quando se ne intende uno. Lo dichiara una persona (has_author la persona); una proposta di uno scouting AI entra solo quando una persona la accetta (has_author l'AuthorAINode: modello, act_start la data), e così uno scouting deterministico (data.origin «derived»). Vale per OGNI unità senza proxy — le unità reali (US e USM «rosse») come le documentarie (USD), le virtuali o i reperti —, mai per il nodo di continuità o i paradati. «Disegnato» si legge dal grafo, non si dichiara: un'unità la cui proprietà geometry raggiunge una semantic shape È disegnata, qualunque cosa sia scritta; una dichiarazione rimasta su un'unità ora disegnata è un indizio di coerenza («il proxy c'è: togliere il segnaposto?»), mai corretto. Letto da s3dgraphy.proxy_status (stato, to_draw — le unità da disegnare, prima le disegnabili, per forza delle loro fonti —, scout_deterministic, il briefing e la risposta dello scouting AI, indizi)."
+   },
+   "scope_note": {
+    "en": "USE: for a unit with no proxy, to say WHY and WHAT IS KNOWN — a USD of an old plan not yet redrawn (not_yet_drawn, the plan as a candidate source, probable); a wall seen in the 2015 photogrammetry that nobody has modelled (drawable, the survey as a source, certain); a layer of earth deliberately left without a shape (not_drawn_by_choice: say why in the extractor). DO NOT USE: for the proxy itself (the geometry property and its SemanticShape); for a Representation Model of an epoch (has_representation_model: a reconstruction with another epistemic status, not the shape of one unit); for the OBLITERATION or the visibility of the unit (obliteration); to invent a shape: the placeholder says only what a source or a person says. NARRATIVE: «USD003, the post-Roman drainage channels: not drawn yet — the documentation is not enough; known: a network of channels with reused architectural pieces walled in, C08 a stretch of it; to look at: the plan of the 1975 report (probable), the 2015 photogrammetry (to verify).»",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "USARE: per un'unità senza proxy, per dire PERCHÉ e CHE COSA SI SA — una USD di una vecchia pianta non ancora ridisegnata (not_yet_drawn, la pianta come fonte candidata, probabile); un muro visibile nella fotogrammetria 2015 che nessuno ha modellato (drawable, il rilievo come fonte, certa); uno strato di terra lasciato di proposito senza forma (not_drawn_by_choice: il perché nell'estrattore). NON USARE: per il proxy stesso (la proprietà geometry e la sua SemanticShape); per un Representation Model di un'epoca (has_representation_model: una ricostruzione con un altro statuto epistemico, non la forma di un'unità); per l'OBLITERAZIONE o la visibilità dell'unità (obliteration); per inventare una forma: il segnaposto dice solo ciò che dice una fonte o una persona. NARRATIVA: «USD003, i canali di drenaggio post-romani: non ancora disegnati — la documentazione non basta; si sa: una rete di canali con pezzi architettonici murati, C08 ne è un tratto; da guardare: la pianta del rapporto 1975 (probabile), la fotogrammetria 2015 (da verificare).»"
+   },
+   "value_drawn": {
+    "en": "drawn",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "disegnato"
+   },
+   "value_not_yet_drawn": {
+    "en": "not drawn yet",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "non ancora disegnato"
+   },
+   "value_not_drawn_by_choice": {
+    "en": "not drawn, by choice",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "non disegnato per scelta"
+   },
+   "value_drawable": {
+    "en": "drawable",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "disegnabile"
+   },
+   "strength_certain": {
+    "en": "certain",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "certa"
+   },
+   "strength_probable": {
+    "en": "probable",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "probabile"
+   },
+   "strength_to_verify": {
+    "en": "to verify",
+    "validated_it": false,
+    "validated_el": false,
+    "validated_he": false,
+    "validated_es": false,
+    "validated_pl": false,
+    "validated_ro": false,
+    "validated_fr": false,
+    "validated_de": false,
+    "it": "da verificare"
    }
   }
  },

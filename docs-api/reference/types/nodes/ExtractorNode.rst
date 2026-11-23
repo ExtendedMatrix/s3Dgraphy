@@ -5,7 +5,7 @@ ExtractorNode
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.55, connections 1.6.61) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.56, connections 1.6.61) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *Node that represents the act of extracting information / adopting a belief FROM a single source (DocumentNode).*
 
@@ -49,6 +49,10 @@ Fields
      - —
    * - ``landmark``
      - —
+   * - ``source_strength``
+     - enum: certain \| probable \| to\_verify
+   * - ``source_model``
+     - string (node id)
    * - ``name``
      - P1\_is\_identified\_by
    * - ``description``

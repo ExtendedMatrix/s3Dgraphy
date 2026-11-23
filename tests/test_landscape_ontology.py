@@ -70,7 +70,7 @@ def test_the_three_units_are_declared_with_their_cidoc_class_and_no_crmem_class(
 def test_crmem_gets_two_concepts_and_still_one_landscape_class():
     ttl = (Path(load_json_mapping.__code__.co_filename).parent.parent
            / "JSON_config" / "em.ttl").read_text(encoding="utf-8")
-    assert 'owl:versionInfo "1.6.29"' in ttl  # 1.6.29: em:Obliterated, em:PartiallyObliterated, em:Visibility* deprecated (MICRO-LG6, 22 Nov); 1.6.28: the visibility concepts (MICRO-LG4, 22 Nov); 1.6.27: the scales of a functional unit (MICRO-LG2, 21 Nov); 1.6.26: em:masterKind (MICRO-TIMBRA-MASTER, 6 Nov); 1.6.25 the district kinds
+    assert 'owl:versionInfo "1.6.30"' in ttl  # 1.6.30: em:ProxyDrawn, em:ProxyNotYetDrawn, em:ProxyNotDrawnByChoice, em:ProxyDrawable (MICRO-LG12, 23 Nov); 1.6.29: em:Obliterated, em:PartiallyObliterated, em:Visibility* deprecated (MICRO-LG6, 22 Nov); 1.6.28: the visibility concepts (MICRO-LG4, 22 Nov); 1.6.27: the scales of a functional unit (MICRO-LG2, 21 Nov); 1.6.26: em:masterKind (MICRO-TIMBRA-MASTER, 6 Nov); 1.6.25 the district kinds
     assert "em:DistrictUrban\n    a crm:E55_Type" in ttl
     assert "em:DistrictRural\n    a crm:E55_Type" in ttl
     assert "em:VirtualSite\n    a owl:Class" in ttl

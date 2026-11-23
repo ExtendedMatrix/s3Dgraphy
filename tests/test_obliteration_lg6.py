@@ -79,7 +79,7 @@ def _rows(d):
 
 def test_the_datamodel_says_the_obliteration_its_values_and_its_projection():
     q = json.loads((CONFIG / "em_qualia_types.json").read_text(encoding="utf-8"))
-    assert q["metadata"]["version"] == "1.6.19"  # 1.6.19 MICRO-LG8 (the layer that obliterates); 1.6.18 MICRO-LG7 (observation)
+    assert q["metadata"]["version"] == "1.6.20"  # 1.6.20 MICRO-LG12 (proxy_status); 1.6.19 MICRO-LG8 (the layer that obliterates); 1.6.18 MICRO-LG7 (observation)
     pn = q["property_names"]
     assert "visibility" not in pn                      # replaced, read only by the migration
     ob = pn["obliteration"]
@@ -93,12 +93,12 @@ def test_the_datamodel_says_the_obliteration_its_values_and_its_projection():
     assert ob["rdf"]["concepts"] == {"obliterated": "em:Obliterated",
                                      "partially_obliterated": "em:PartiallyObliterated"}
     dm = json.loads((CONFIG / "s3Dgraphy_node_datamodel.json").read_text(encoding="utf-8"))
-    assert dm["s3Dgraphy_data_model_version"] == "1.6.55"  # 1.6.55 MICRO-LG11 (data.unnumbered); 1.6.54 MICRO-LG6
-    assert dm["referenced_ontology_versions"]["CRMem"]["version"] == "1.6.29"
+    assert dm["s3Dgraphy_data_model_version"] == "1.6.56"  # 1.6.56 MICRO-LG12 (placeholder, source_strength); 1.6.55 MICRO-LG11 (data.unnumbered); 1.6.54 MICRO-LG6
+    assert dm["referenced_ontology_versions"]["CRMem"]["version"] == "1.6.30"  # 1.6.30 MICRO-LG12 (em:Proxy*)
     props = dm["paradata_nodes"]["ParadataNode"]["subtypes"]["PropertyNode"]["properties"]
     assert props["valid_from_doubtful"]["em_json"] == "data.valid_from_doubtful"
     ttl = (CONFIG / "em.ttl").read_text(encoding="utf-8")
-    assert 'owl:versionInfo "1.6.29"' in ttl
+    assert 'owl:versionInfo "1.6.30"' in ttl  # 1.6.30 MICRO-LG12
     for c in ("em:Obliterated", "em:PartiallyObliterated"):
         assert f"\n{c}\n    a crm:E55_Type" in ttl
     # the old concepts stay, deprecated, for what was already published
