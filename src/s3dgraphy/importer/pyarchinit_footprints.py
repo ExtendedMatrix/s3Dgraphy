@@ -81,6 +81,65 @@ class FootprintReader:
         except Exception:  # noqa: BLE001
             return False
 
+    def _columns(self, table: str) -> set:
+        """The columns ``table`` has here (SQLite and PostgreSQL)."""
+        try:
+            if self.dialect == "postgres":
+                return {r[0] for r in self._q("SELECT column_name FROM information_schema.columns "
+                                               "WHERE table_name = ?", (table,))}
+            return {r[1] for r in self._q(f"PRAGMA table_info({table})")}
+        except Exception:  # noqa: BLE001
+            return set()
+
+    def _fit(self, spec: Optional[Dict[str, Any]], what: str) -> Optional[Dict[str, Any]]:
+        """``spec`` with each column named as it is in this database (#38).
+
+        A column may be given as a list of alternatives — pyArchInit's
+        PostGIS schema names ``pyarchinit_sondaggi``'s columns ``sito`` /
+        ``id_sondagg``, its SQLite one ``sito_sond`` / ``id_sondaggio`` — and
+        the first present is used. A layer still missing one is left out
+        with a warning, never queried: on PostgreSQL the failed query
+        aborted the transaction and no footprint at all was read."""
+        if not spec or not spec.get("table") or not self._has_table(spec["table"]):
+            return None
+        have = self._columns(spec["table"])
+        out = dict(spec)
+        for key in ("site_column", "key_column", "area_column", "type_column"):
+            want = spec.get(key)
+            if not want:
+                continue
+            options = [want] if isinstance(want, str) else list(want)
+            found = next((c for c in options if c in have), None)
+            if found is None:
+                self.report["warnings"].append(
+                    f"{spec['table']}: no column {' / '.join(options)} — {what} layer skipped")
+                return None
+            out[key] = found
+        return out
+
+    def _safely(self, table: str, read) -> None:
+        """One layer: its failure is reported, the others are still read."""
+        try:
+            read()
+        except Exception as e:  # noqa: BLE001
+            self.report["warnings"].append(f"{table}: not read ({type(e).__name__}: {e})")
+            if self.dialect == "postgres":
+                try:
+                    self.conn.rollback()     # an aborted transaction refuses every later query
+                except Exception:  # noqa: BLE001
+                    pass
+
+    def _site_uuid(self, name: str) -> Optional[str]:
+        """The site's stable identity (``site_table.entity_uuid``), so the
+        site the footprint lands on is the one the projector emits (#38)."""
+        if "entity_uuid" not in self._columns("site_table"):
+            return None
+        try:
+            rows = self._q("SELECT entity_uuid FROM site_table WHERE sito = ?", (name,))
+        except Exception:  # noqa: BLE001
+            return None
+        return (_norm(rows[0][0]) or None) if rows else None
+
     def _srid(self, table: str, column: str) -> Optional[int]:
         try:
             rows = self._q("SELECT srid FROM geometry_columns WHERE "
@@ -219,15 +278,20 @@ class FootprintReader:
     # ── the four kinds of layer ─────────────────────────────────────────
     def run(self) -> Dict[str, Any]:
         cfg = self.cfg
-        site_spec = cfg.get("site")
+        site_spec = self._fit(cfg.get("site"), "site")
         if site_spec:
             def site_target(row):
                 from ..gis.site import add_site
                 name = _norm(row.get(site_spec.get("site_column")))
-                return add_site(self.graph, name) if name else None
-            self._read_layer({**site_spec, "key_column": site_spec.get("site_column"),
-                              "site_column": site_spec.get("site_column")}, site_target)
-        for spec in cfg.get("places") or []:
+                # with its entity_uuid: without it add_site made a second,
+                # hashed site next to the one the projector emits (#38)
+                return add_site(self.graph, name, entity_uuid=self._site_uuid(name)) if name else None
+            self._safely(site_spec["table"], lambda: self._read_layer(
+                {**site_spec, "key_column": site_spec.get("site_column"),
+                 "site_column": site_spec.get("site_column")}, site_target))
+        for spec in (self._fit(p, "place") for p in cfg.get("places") or []):
+            if not spec:
+                continue
             def place_target(row, spec=spec):
                 key = _norm(row.get(spec.get("key_column")))
                 col = spec.get("location_column")
@@ -237,8 +301,9 @@ class FootprintReader:
                 if not col or not key:
                     return None
                 return self.graph.find_node_by_id(f"loc::{col}::study::{key}")
-            self._read_layer(spec, place_target)
-        units = cfg.get("units")
+            self._safely(spec["table"], lambda spec=spec, place_target=place_target:
+                         self._read_layer(spec, place_target))
+        units = self._fit(cfg.get("units"), "unit")
         if units:
             def unit_target(row):
                 k = (_norm(row.get(units.get("site_column"))),
@@ -246,7 +311,7 @@ class FootprintReader:
                      _norm(row.get(units.get("key_column"))))
                 nid = self.imp._unit_index.get(k)
                 return self.graph.find_node_by_id(nid) if nid else None
-            self._read_layer(units, unit_target)
+            self._safely(units["table"], lambda: self._read_layer(units, unit_target))
         self._link_places_to_site()
         return self.report
 
