@@ -382,15 +382,22 @@ class GraphProjector:
             raise ProjectionError(f"s3dgraphy import failed: {e}") from e
 
         # Stage 1: import the StratigraphicUnit nodes from us_table.
-        # PG → new SQLAlchemy native reader (PG-Bv2).
-        # SQLite → upstream PyArchInitImporter (unchanged for AC-2).
+        # Both backends go through PyArchInitImporter (#37): it speaks
+        # PostgreSQL through connection_url. The reduced PG reader
+        # (pyarchinit_pg_importer.import_from_pg) keyed nodes by the US
+        # number instead of node_uuid and left out locations, epochs,
+        # documents, authors and the voids, so the same site projected from
+        # PostgreSQL and from SQLite gave two different graphs.
         try:
             if handle.is_postgres:
-                from .pyarchinit_pg_importer import import_from_pg
-                imported = import_from_pg(
-                    handle, sito,
+                from s3dgraphy.importer.pyarchinit_importer import (
+                    PyArchInitImporter)
+                imported = PyArchInitImporter(
+                    connection_url=handle.engine.url.render_as_string(
+                        hide_password=False),
                     mapping_name="pyarchinit_us_mapping",
-                )
+                    filters={"sito": sito},
+                ).parse()
             else:
                 from s3dgraphy.importer.pyarchinit_importer import (
                     PyArchInitImporter)
