@@ -5,6 +5,12 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Changed
+- **A stamp's `declared.as_of` is when the declaration was said** (MICRO-BK1, 27
+  November 2026). `stamp.emit._declared_block` used the act's date (`by.at`); for a
+  capture deposited years later (a photograph of 2015 with a licence declared
+  today) the stamp said «CC-BY as of 3 July 2015». When the graph signs the
+  declaration with ONE dated signature (`attributed_at`), `as_of` is that date;
+  with none or two, the act's date as before. Tests `tests/test_bucket_dtc_declared.py` (2).
 - **The places speak EM: `quad_par` → `quadrato`, `ambient` → `ambiente`** (MICRO
   chiavi dei luoghi, 27 November 2026, decisions of E.D.). The `level` of a place the
   pyArchInit importer writes is the key of the vocabulary em-place-level (sito, area,

@@ -759,6 +759,9 @@ def _declared_block(graph: Any, resource: Any,
 
     `as_of` è l'istante della genesi e **non l'ora corrente**: chiedere l'ora qui
     renderebbe l'emissione impura e due emissioni dello stesso grafo diverse.
+    Quando il grafo data la dichiarazione con una sola firma (`attributed_at`),
+    `as_of` è quella data (MICRO-BK1): per una cattura depositata anni dopo, la
+    data dell'atto è lo scatto, non il giorno in cui la licenza fu detta.
 
     Quando il grafo vivo non dice niente si ripiega su ciò che il verbale aveva
     già registrato (`data.declared`, scritto dal riassorbimento): è quello che
@@ -778,10 +781,23 @@ def _declared_block(graph: Any, resource: Any,
     _put(block, "license", found.get("license"))
     _put(block, "embargo_until", found.get("embargo"))
     if block:
-        _put(block, "as_of", at)
+        # MICRO-BK1 · `as_of` è QUANDO È STATA DETTA la dichiarazione. Se il
+        # grafo la firma con una sola firma datata, la data è quella: una foto
+        # del 2015 depositata oggi con una licenza dichiarata oggi non può dire
+        # «CC-BY al 3 luglio 2015» — è la data dello scatto, non della
+        # dichiarazione. Senza una firma datata (o con due) si resta alla data
+        # dell'atto, com'era: è l'unico istante che il grafo offre.
+        _put(block, "as_of", _declared_at(found.get("attributed_by")) or at)
         _put(block, "by", _attributor_block(graph, found.get("attributed_by")))
         return block
     return _recorded_declaration(graph, resource)
+
+
+def _declared_at(signatures: Any) -> Optional[str]:
+    """L'istante della dichiarazione, quando una sola firma lo dice."""
+    if not isinstance(signatures, list) or len(signatures) != 1:
+        return None
+    return _text((signatures[0] or {}).get("at"))
 
 
 def _attributor_block(graph: Any, signatures: Any) -> Optional[Dict[str, Any]]:
