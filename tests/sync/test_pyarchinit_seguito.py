@@ -3,8 +3,9 @@
 
 2. ``source_code`` carries the code a unit came in with whenever it is not
    the EM code of its class (node datamodel 1.6.57);
-3. ``quad_par`` is a place (``LocationNodeGroup`` of level ``quad_par``),
-   not a field on the unit;
+3. ``quad_par`` is a place (``LocationNodeGroup`` of level ``quadrato``,
+   the key of em-place-level since mapping 1.6.8 — tests/sync/
+   test_chiavi_dei_luoghi.py), not a field on the unit;
 4. a pyArchInit ``CON`` row is the EM continuity node (EM code BR), its code
    kept in ``source_code`` and given back as CON;
 7. one edge per relation in the graph, the relation on both rows in
@@ -120,7 +121,7 @@ def test_3_quad_par_is_a_place_and_not_a_field(tmp_path):
     graph = GraphProjector().populate_graph(db, sito=SITO)
     places = {n.name: n for n in graph.nodes
               if type(n).__name__ == "LocationNodeGroup"
-              and (n.attributes or {}).get("level") == "quad_par"}
+              and (n.attributes or {}).get("level") == "quadrato"}
     assert set(places) == {"Q1", "Q2"}
     assert all(p.kind == "study" for p in places.values())
     reader = RowReader(graph)
@@ -141,7 +142,7 @@ def test_3_an_old_file_with_quad_par_in_data_reads_it_as_a_place(tmp_path):
     doc, _g, _w = _via_emjson(GraphProjector().populate_graph(db, sito=SITO))
     # the file as the projector wrote it up to dev143: quad_par in data, no place
     gone = {n["id"] for n in _nodes(doc)
-            if (n.get("data") or {}).get("level") == "quad_par"}
+            if (n.get("data") or {}).get("level") == "quadrato"}
     doc["graph"]["nodes"] = [n for n in _nodes(doc) if n["id"] not in gone]
     doc["graph"]["edges"] = [e for e in doc["graph"]["edges"]
                              if e["target"] not in gone]

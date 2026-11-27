@@ -5,6 +5,28 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Changed
+- **The places speak EM: `quad_par` → `quadrato`, `ambient` → `ambiente`** (MICRO
+  chiavi dei luoghi, 27 November 2026, decisions of E.D.). The `level` of a place the
+  pyArchInit importer writes is the key of the vocabulary em-place-level (sito, area,
+  saggio, settore, quadrato, ambiente), no longer the name of the column it was read
+  from. `pyarchinit_us_mapping` **1.6.8**: each place column says its `place_level` —
+  `quad_par` → `quadrato` (ICCD US 2021: QUADRATO/I; the «parete» of pyArchInit's
+  «Quadrato/Parete» is not a place and becomes no concept), `ambient` → `ambiente`
+  (until now a room, kind functional, carried no level); area, settore, saggio
+  unchanged. The column's name lives only in the translation: `unit_row.place_levels`
+  / `place_columns` read the mapping (a project's own copy counts) and put each level
+  back in its column; a level that is still a column's name is read as that column.
+  A group that takes the importer's place (`_absorb_place`) keeps its level. The ids
+  keep the column (`loc::quad_par::study::Q1`, `loc::ambient::functional::…`): they
+  are the stable identity of places already published (dev143, em.json in the rooms).
+  An older em.json is migrated on load (`unit_row.migrate_place_levels`, ONE warning):
+  `level: quad_par` → `quadrato`, a room with no level whose id or group kind says
+  `ambient` → `ambiente`; the next save writes the keys. Measured on the ten sites of
+  pyArchInit's demo and mini_volterra, way back by UPDATE and into an emptied table:
+  every column as on HEAD; the demo's 4 squares say `quadrato`, its 3 rooms
+  `ambiente`. `responsabile_us` is the revision act, confirmed by E.D. (the mapping's
+  comment no longer gives it as an open reading). Node datamodel unchanged. Tests
+  `tests/sync/test_chiavi_dei_luoghi.py` (7).
 - **The persons of a pyArchInit sheet are the authors of ACTS** (MICRO ruoli persone,
   27 November 2026, decisions of E.D.: first the acts, then the roles only for what is
   missing). `pyarchinit_us_mapping` **1.6.7**: `schedatore`, `direttore_us`,

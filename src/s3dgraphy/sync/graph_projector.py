@@ -771,8 +771,9 @@ class GraphProjector:
         attivita) are kept in ``self._rows`` for this projection only.
 
         ``quad_par`` is a place since 27 Nov 2026 (E.D.): the importer makes
-        it a ``LocationNodeGroup`` of level ``quad_par`` (mapping 1.6.6), and
-        nothing is left on the node but ``node_uuid``.
+        it a ``LocationNodeGroup`` of level ``quadrato`` (the key of
+        em-place-level; mapping 1.6.6, its level 1.6.8), and nothing is left
+        on the node but ``node_uuid``.
 
         Idempotent.
         """
@@ -1658,6 +1659,11 @@ def _absorb_place(graph, twin_id: str, group_id: str, members: set) -> None:
     group = graph.find_node_by_id(group_id)
     if group is not None and isinstance(getattr(group, "attributes", None), dict):
         group.attributes.setdefault("importer_id", twin_id)
+        # the twin's level (the key of em-place-level, 27 Nov 2026) goes
+        # with its place: the group says quadrato, ambiente… too
+        level = (getattr(twin, "attributes", None) or {}).get("level")
+        if level:
+            group.attributes.setdefault("level", level)
 
 
 def _link_across(full, graphs: dict) -> None:

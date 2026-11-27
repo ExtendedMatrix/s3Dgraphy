@@ -15,8 +15,9 @@ column                    read from
                           in with when that is not the class's own
                           (``source_code``: SU, WSU, USS…)
 ``area`` ``settore``      the places, ``is_in_location`` → ``LocationNodeGroup``
-``saggio`` ``ambient``    (the column is the place's ``level``, or its id)
-``quad_par``              (a place since 27 Nov 2026, level ``quad_par``)
+``saggio`` ``ambient``    (the place's ``level``, a key of em-place-level, says
+``quad_par``              the column — ``quadrato`` → quad_par, ``ambiente`` →
+                          ambient: :func:`place_columns`; else its id)
 ``d_stratigrafica``       the unit's ``description``
 ``d_interpretativa``      its properties, ``has_property`` → ``PropertyNode``
 ``attivita`` ``struttura``  (the property name of the mapping)
@@ -58,6 +59,19 @@ from typing import Any, Dict, Iterable, List, Optional, Tuple
 PLACE_COLUMNS: Tuple[str, ...] = ("area", "settore", "saggio", "ambient",
                                    "quad_par")
 
+#: The place column of us_table → the ``level`` its place says in the graph,
+#: the key of the vocabulary em-place-level (E.D., 27 Nov 2026: the graph
+#: speaks EM, the column's name lives in the translation), as
+#: pyarchinit_us_mapping 1.6.8 ships them. :func:`place_levels` reads the
+#: mapping itself; this is the fallback when the mapping cannot be read.
+PLACE_LEVELS: Dict[str, str] = {
+    "area": "area",
+    "settore": "settore",
+    "saggio": "saggio",
+    "quad_par": "quadrato",
+    "ambient": "ambiente",
+}
+
 #: The us_table columns this module rebuilds from the graph.
 ROW_COLUMNS: Tuple[str, ...] = (
     "us", "unita_tipo", "area", "settore", "saggio", "ambient", "quad_par",
@@ -96,6 +110,36 @@ def person_columns() -> Dict[str, Tuple[str, Optional[str]]]:
     except Exception:
         found = {}
     return found or dict(PERSON_COLUMNS)
+
+def place_levels() -> Dict[str, str]:
+    """``{column: level}`` of the place columns of the pyArchInit mapping
+    the importer uses (``pyarchinit_us_mapping`` through the mapping
+    registry, so a project's own copy counts): a column with ``node_type:
+    LocationNodeGroup`` and a ``place_level``. :data:`PLACE_LEVELS` for a
+    column the mapping does not say, or when it cannot be read."""
+    found: Dict[str, str] = dict(PLACE_LEVELS)
+    try:
+        from .mappings import mapping_registry
+        mapping = mapping_registry.load_mapping("pyarchinit_us_mapping",
+                                                "pyarchinit") or {}
+        for col, cfg in (mapping.get("column_mappings") or {}).items():
+            if col in PLACE_COLUMNS and cfg.get("node_type") == "LocationNodeGroup" \
+                    and cfg.get("place_level"):
+                found[col] = str(cfg["place_level"])
+    except Exception:
+        pass
+    return found
+
+
+def place_columns(levels: Optional[Dict[str, str]] = None) -> Dict[str, str]:
+    """``{level: column}``: the column a place of that ``level`` goes back
+    to. A level that is a column's own name (``quad_par``, ``ambient``: a
+    graph written before 27 Nov 2026 not yet migrated) reads as that
+    column too."""
+    out = {c: c for c in PLACE_COLUMNS}
+    out.update({lv: c for c, lv in (levels or place_levels()).items()})
+    return out
+
 
 #: The keys an older graph wrote on the unit's node (projector up to 1.6.0
 #: dev142, the em.json it saved): the columns above plus the copies that were
@@ -184,13 +228,19 @@ def is_generated_document(node, graph_edges_by_target=None) -> bool:
     return nid.startswith("doc::path::") or "_doc_" in nid
 
 
-def place_column(loc) -> Optional[str]:
-    """The us_table column a place stands for: its ``level`` (nodes 1.6.43),
-    else the column in its id (``loc::<column>::…``), else its group kind."""
-    for key in ("level", "group_kind"):
-        v = legacy_value(loc, key)
-        if v and str(v) in PLACE_COLUMNS:
-            return str(v)
+def place_column(loc, columns: Optional[Dict[str, str]] = None) -> Optional[str]:
+    """The us_table column a place stands for: its ``level`` (nodes 1.6.43;
+    a key of em-place-level, :func:`place_columns`), else its group kind
+    (pyArchInit's grouping dimension, the column's name), else the column
+    in its id (``loc::<column>::…``). *columns*: :func:`place_columns`,
+    when the caller reads many places."""
+    columns = columns if columns is not None else place_columns()
+    v = legacy_value(loc, "level")
+    if v and str(v) in columns:
+        return columns[str(v)]
+    v = legacy_value(loc, "group_kind")
+    if v and str(v) in PLACE_COLUMNS:
+        return str(v)
     m = _LOC_ID.match(str(getattr(loc, "node_id", "") or ""))
     if m and m.group(1) in PLACE_COLUMNS:
         return m.group(1)
@@ -297,6 +347,57 @@ LEGACY_EPOCH_KEYS: Tuple[str, ...] = ("cron_iniziale", "cron_finale",
                                       "datazione_estesa")
 
 
+def migrate_place_levels(graph) -> Dict[str, Any]:
+    """A place a graph wrote before 27 Nov 2026 says its level with the
+    pyArchInit column's name (``quad_par``), or says none (a room, kind
+    functional: ``ambient``). The graph speaks EM (E.D., 27 Nov 2026): the
+    level is the key of em-place-level (``quadrato``, ``ambiente``…,
+    :func:`place_levels`). Read in memory, ONE warning; the next save
+    writes the keys. A place with no level gets one only when its id or
+    its group kind says its column (``loc::ambient::…``, ``group_kind:
+    ambient``). Ids are not touched (``loc::<column>::…`` stays: an id is
+    the stable identity of a place already published). Idempotent."""
+    out: Dict[str, Any] = {"places": 0, "levels": {}, "warnings": []}
+    levels = place_levels()
+    for loc in list(getattr(graph, "nodes", None) or []):
+        if type(loc).__name__ != "LocationNodeGroup":
+            continue
+        attrs = getattr(loc, "attributes", None)
+        if not isinstance(attrs, dict):
+            continue
+        data = getattr(loc, "data", None)
+        have = attrs.get("level")
+        if have in (None, "") and isinstance(data, dict):
+            have = data.get("level")
+        col = None
+        if have not in (None, ""):
+            if str(have) in levels and levels[str(have)] != str(have):
+                col = str(have)
+        else:
+            gk = attrs.get("group_kind")
+            m = _LOC_ID.match(str(getattr(loc, "node_id", "") or ""))
+            if gk in PLACE_COLUMNS:
+                col = gk
+            elif m and m.group(1) in PLACE_COLUMNS:
+                col = m.group(1)
+        if col is None:
+            continue
+        # where the place says it: an em.json read back keeps it in data
+        if isinstance(data, dict) and "level" in data and "level" not in attrs:
+            data["level"] = levels[col]
+        else:
+            attrs["level"] = levels[col]
+        out["places"] += 1
+        key = f"{have or '—'} → {levels[col]}"
+        out["levels"][key] = out["levels"].get(key, 0) + 1
+    if out["places"]:
+        said = ", ".join(f"{k} {v}" for k, v in sorted(out["levels"].items()))
+        out["warnings"].append(
+            f"places written before 27 Nov 2026: their level is now the key "
+            f"of em-place-level ({said}) — the next save writes them.")
+    return out
+
+
 def migrate_legacy_epoch_fields(graph) -> Dict[str, Any]:
     """An em.json written by pyArchInit's projector up to 1.6.0.dev143
     carries an epoch's row in its ``data``: ``cron_iniziale``,
@@ -373,6 +474,8 @@ class RowReader:
         #: (act_kind, role) → the person column (MICRO ruoli persone)
         self.person_of: Dict[Tuple[str, Optional[str]], str] = {
             v: k for k, v in person_columns().items()}
+        #: level → place column (27 Nov 2026, the keys of em-place-level)
+        self.place_column_of: Dict[str, str] = place_columns()
         for e in getattr(graph, "edges", None) or []:
             tgt = self.by_id.get(getattr(e, "edge_target", None))
             if tgt is None:
@@ -399,7 +502,7 @@ class RowReader:
     def places(self, node) -> Dict[str, str]:
         found: Dict[str, str] = {}
         for loc in self._targets(node, "is_in_location", "LocationNodeGroup"):
-            col = place_column(loc)
+            col = place_column(loc, self.place_column_of)
             if col and col not in found:
                 name = str(getattr(loc, "name", "") or "").strip()
                 if name:
@@ -628,6 +731,8 @@ def migrate_legacy_row_fields(graph) -> Dict[str, Any]:
     if not candidates:
         return out
     moved, kept = out["moved"], out["kept"]
+    levels = place_levels()
+    columns = place_columns(levels)
 
     def _count(d, k):
         d[k] = d.get(k, 0) + 1
@@ -661,15 +766,15 @@ def migrate_legacy_row_fields(graph) -> Dict[str, Any]:
             if have.get(col) != v:
                 loc = next((n for n in graph.nodes
                             if type(n).__name__ == "LocationNodeGroup"
-                            and place_column(n) == col
+                            and place_column(n, columns) == col
                             and str(getattr(n, "name", "")).strip() == v), None)
                 if loc is None:
                     from .nodes.group_node import LocationNodeGroup
                     kind = _PLACE_KIND[col]
                     loc = LocationNodeGroup(node_id=f"loc::{col}::{kind}::{v}",
                                             name=v, kind=kind)
-                    if kind == "study":
-                        loc.attributes["level"] = col
+                    # the key of em-place-level, as the importer (1.6.8)
+                    loc.attributes["level"] = levels[col]
                     graph.add_node(loc)
                 _edge(node.node_id, loc.node_id, "is_in_location")
             bag.pop(col, None)

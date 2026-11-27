@@ -496,6 +496,11 @@ def parse_emjson(doc: Dict[str, Any], *,
     # the next save writes the nodes. See unit_row.
     from ..unit_row import migrate_legacy_row_fields
     warnings.extend(migrate_legacy_row_fields(graph)["warnings"])
+    # MICRO chiavi dei luoghi (E.D., 27 Nov 2026) · a place says its level
+    # with the key of em-place-level (quadrato, ambiente), not with the
+    # pyArchInit column's name (quad_par, ambient): ONE warning.
+    from ..unit_row import migrate_place_levels
+    warnings.extend(migrate_place_levels(graph)["warnings"])
 
     return graph, warnings
 

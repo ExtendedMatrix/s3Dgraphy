@@ -42,7 +42,8 @@ MAPPED_COLUMNS: tuple[str, ...] = (
     "saggio",
     "ambient",
     # 27 Nov 2026 (E.D.): quad_par is a place too (is_in_location, level
-    # quad_par), no longer a field on the unit's node.
+    # quadrato — the key of em-place-level; unit_row.place_columns says the
+    # column back), no longer a field on the unit's node.
     "quad_par",
     "doc_usv",
     "periodo_finale",

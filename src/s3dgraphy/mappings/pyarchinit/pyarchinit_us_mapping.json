@@ -1,7 +1,7 @@
 {
   "name": "pyArchInit US Table",
-  "description": "Mapping for pyArchInit us_table -> Extended Matrix graph. Tier 1: identity via node_uuid passthrough (#14; canonical UUID v7 column added by the pyArchInit node_uuid backfill migration), spatial via LocationNodeGroup (#24), and intrinsic qualia typed -> CIDOC (E54 Dimension / E55 Type / E57 Material) through em_qualia_types.json. Tier 2 (this version): periodo/fase -> EpochNode via has_first_epoch / survive_in_epoch (resolved against periodizzazione_table by epoch_mappings), documentazione/doc_usv -> DocumentNode via has_documentation, schedatore/direttore_us/responsabile_us -> AuthorNode, the author of an act (ActivityNodeGroup: recording / excavation / revision) via has_author, the unit is_in_activity of the act (1.6.7). Remaining deferred columns are in _tier2_pending_handlers (issue #26).",
-  "version": "1.6.7",
+  "description": "Mapping for pyArchInit us_table -> Extended Matrix graph. Tier 1: identity via node_uuid passthrough (#14; canonical UUID v7 column added by the pyArchInit node_uuid backfill migration), spatial via LocationNodeGroup (#24), and intrinsic qualia typed -> CIDOC (E54 Dimension / E55 Type / E57 Material) through em_qualia_types.json. Tier 2 (this version): periodo/fase -> EpochNode via has_first_epoch / survive_in_epoch (resolved against periodizzazione_table by epoch_mappings), documentazione/doc_usv -> DocumentNode via has_documentation, schedatore/direttore_us/responsabile_us -> AuthorNode, the author of an act (ActivityNodeGroup: recording / excavation / revision) via has_author, the unit is_in_activity of the act (1.6.7). 1.6.8: a place says its level with the key of em-place-level (place_level: quad_par → quadrato, ambient → ambiente), not the name of the column. Remaining deferred columns are in _tier2_pending_handlers (issue #26).",
+  "version": "1.6.8",
   "table_settings": {
     "format_type": "sqlite",
     "table_name": "us_table",
@@ -37,6 +37,7 @@
     "area": {
       "node_type": "LocationNodeGroup",
       "location_kind": "study",
+      "place_level": "area",
       "is_filter": true,
       "filter_required": false,
       "display_name": "Area",
@@ -45,27 +46,32 @@
     "settore": {
       "node_type": "LocationNodeGroup",
       "location_kind": "study",
+      "place_level": "settore",
       "display_name": "Sector",
       "description": "Excavation sector"
     },
     "saggio": {
       "node_type": "LocationNodeGroup",
       "location_kind": "study",
+      "place_level": "saggio",
       "display_name": "Trench",
       "description": "Sondage / trench"
     },
     "quad_par": {
       "node_type": "LocationNodeGroup",
       "location_kind": "study",
+      "place_level": "quadrato",
       "display_name": "Square",
       "description": "Grid square / quadrant (quadrato)",
-      "_comment": "1.6.6 (E.D., 27 Nov 2026): a place, like saggio — a LocationNodeGroup of kind study whose level is the column, quad_par; is_in_location from the unit. Until 1.6.5 it was copied on the unit's node.data by the projector."
+      "_comment": "1.6.6 (E.D., 27 Nov 2026): a place, like saggio — a LocationNodeGroup of kind study, is_in_location from the unit. Until 1.6.5 it was copied on the unit's node.data by the projector. 1.6.8 (E.D., 27 Nov 2026): its level is quadrato, the key of em-place-level (ICCD US 2021: QUADRATO/I) — the «parete» of pyArchInit's «Quadrato/Parete» is not a place and is no concept; the column's name lives only here and in the way back (unit_row.place_columns)."
     },
     "ambient": {
       "node_type": "LocationNodeGroup",
       "location_kind": "functional",
+      "place_level": "ambiente",
       "display_name": "Ambient",
-      "description": "Functional space / room"
+      "description": "Functional space / room",
+      "_comment": "1.6.8 (E.D., 27 Nov 2026): its level is ambiente, the key of em-place-level (a room: a place answering where). Until 1.6.7 a place of kind functional carried no level."
     },
     "d_interpretativa": {
       "node_type": "PropertyNode",
@@ -196,7 +202,7 @@
       "node_type": "AuthorNode",
       "act_kind": "revision",
       "display_name": "Revision",
-      "_comment": "The revision act, one per unit: pyArchInit's own sheet calls this box «Responsabile rielaborazione» (gui/ui/US_USM.ui, the grid of «Dati schedatura»; the printed sheet, pyarchinit_exp_USsheet_pdf.py: RESPONSABILE RIELABORAZIONE / RESPONSIBLE FOR REVISION). E.D.'s reading of 27 Nov 2026 was the sector supervisor: that is ONE LINE here — act_kind recording + person_role sector_supervisor — and the way back follows (unit_row.person_columns)."
+      "_comment": "The revision act, one per unit: pyArchInit's own sheet calls this box «Responsabile rielaborazione» (gui/ui/US_USM.ui, the grid of «Dati schedatura»; the printed sheet, pyarchinit_exp_USsheet_pdf.py: RESPONSABILE RIELABORAZIONE / RESPONSIBLE FOR REVISION). Confirmed by E.D., 27 Nov 2026."
     },
     "documentazione": {
       "node_type": "DocumentNode",

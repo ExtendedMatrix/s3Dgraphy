@@ -641,10 +641,18 @@ class PyArchInitImporter(BaseImporter):
                 loc = LocationNodeGroup(
                     node_id=loc_id, name=loc_name, kind=kind,
                     description=col_config.get('description', ''))
-                # nodes 1.6.43 · an operational place says its level — the
-                # column it comes from (area, settore, saggio) — so a reader
-                # (a map) tells a saggio from an area without parsing an id
-                if kind == 'study':
+                # nodes 1.6.43 · a place says its level, so a reader (a map,
+                # a context box) tells a saggio from an area without parsing
+                # an id. Mapping 1.6.8 (E.D., 27 Nov 2026): the level is the
+                # key of em-place-level the mapping gives (place_level:
+                # quad_par → quadrato, ambient → ambiente), not the column's
+                # name; a mapping without it: the column, on a study place.
+                # The id keeps the column (loc::<column>::…): ids published
+                # since dev143 stay stable.
+                level = col_config.get('place_level')
+                if level:
+                    loc.attributes['level'] = str(level)
+                elif kind == 'study':
                     loc.attributes['level'] = col_name
                 self.graph.add_node(loc)
             edge_id = f"{strat_node.node_id}_is_in_location_{loc_id}"

@@ -180,8 +180,10 @@ def test_an_update_writes_a_changed_person_back(tmp_path):
 
 @pytest.fixture
 def supervisor_mapping(monkeypatch):
-    """E.D.'s first reading of responsabile_us: the sector supervisor — the
-    one line of the mapping that says it (act_kind recording + person_role)."""
+    """A column whose person holds a ROLE the act does not say (act_kind
+    recording + person_role sector_supervisor, as iDAI.field's processor
+    would map): the way of the role on the edge. responsabile_us itself is
+    the revision act (confirmed by E.D., 27 Nov 2026)."""
     from s3dgraphy.mappings import mapping_registry
     real = mapping_registry.load_mapping
 
