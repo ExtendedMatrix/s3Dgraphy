@@ -28,6 +28,12 @@ column                    read from
 ``fase_iniziale``
 ``periodo_finale`` /      ``survive_in_epoch`` → the latest such epoch
 ``fase_finale``
+``schedatore``            the PERSONS (27 Nov 2026, MICRO ruoli persone): the
+``direttore_us``          author of the unit's act, ``is_in_activity`` →
+``responsabile_us``       ``ActivityNodeGroup`` (``act_kind`` recording /
+                          excavation / revision) ``has_author`` → the person;
+                          a role the act does not say is ``attributes.role``
+                          on that edge (:func:`person_columns`)
 ========================  =====================================================
 
 The EPOCH's own row of ``periodizzazione_table`` (27 Nov 2026, same rule) is
@@ -58,13 +64,46 @@ ROW_COLUMNS: Tuple[str, ...] = (
     "d_stratigrafica", "d_interpretativa", "attivita", "struttura",
     "documentazione", "doc_usv",
     "periodo_iniziale", "fase_iniziale", "periodo_finale", "fase_finale",
+    "schedatore", "direttore_us", "responsabile_us",
 )
+
+#: The person columns of us_table → (the act's kind, the role on the edge),
+#: as pyarchinit_us_mapping 1.6.7 ships them. :func:`person_columns` reads the
+#: mapping itself, so that changing a column's act or role there changes the
+#: way back too; this is the fallback when the mapping cannot be read.
+PERSON_COLUMNS: Dict[str, Tuple[str, Optional[str]]] = {
+    "schedatore": ("recording", None),
+    "direttore_us": ("excavation", None),
+    "responsabile_us": ("revision", None),
+}
+
+def person_columns() -> Dict[str, Tuple[str, Optional[str]]]:
+    """``{column: (act_kind, person_role)}`` of the person columns of the
+    pyArchInit mapping the importer uses (``pyarchinit_us_mapping`` through
+    the mapping registry, so a project's own copy counts): a column with
+    ``node_type: AuthorNode`` and an ``act_kind``. The importer writes the
+    person as the author of that act, with that role on the ``has_author``
+    edge; the way back reads it from there. :data:`PERSON_COLUMNS` when the
+    mapping cannot be read."""
+    found: Dict[str, Tuple[str, Optional[str]]] = {}
+    try:
+        from .mappings import mapping_registry
+        mapping = mapping_registry.load_mapping("pyarchinit_us_mapping",
+                                                "pyarchinit") or {}
+        for col, cfg in (mapping.get("column_mappings") or {}).items():
+            if cfg.get("node_type") == "AuthorNode" and cfg.get("act_kind"):
+                found[col] = (cfg["act_kind"], cfg.get("person_role") or None)
+    except Exception:
+        found = {}
+    return found or dict(PERSON_COLUMNS)
 
 #: The keys an older graph wrote on the unit's node (projector up to 1.6.0
 #: dev142, the em.json it saved): the columns above plus the copies that were
 #: only display (``datazione_estesa``) or are rebuilt from edges
 #: (``rapporti``). ``node_uuid`` is NOT here: it is the technical key that stays.
-LEGACY_ROW_KEYS: Tuple[str, ...] = ROW_COLUMNS + (
+#: Nor are the person columns: no projector wrote them on the node.
+LEGACY_ROW_KEYS: Tuple[str, ...] = tuple(
+    c for c in ROW_COLUMNS if c not in PERSON_COLUMNS) + (
     "sito", "rapporti", "datazione_estesa", "documentazione")
 
 #: Placeholder descriptions the importer writes when the row has none.
@@ -331,6 +370,9 @@ class RowReader:
             if nid:
                 self.by_id[nid] = n
         self.out: Dict[str, List[Tuple[str, Any, Any]]] = {}
+        #: (act_kind, role) → the person column (MICRO ruoli persone)
+        self.person_of: Dict[Tuple[str, Optional[str]], str] = {
+            v: k for k, v in person_columns().items()}
         for e in getattr(graph, "edges", None) or []:
             tgt = self.by_id.get(getattr(e, "edge_target", None))
             if tgt is None:
@@ -423,6 +465,28 @@ class RowReader:
             found["periodo_finale"], found["fase_finale"] = latest[1], latest[2]
         return found
 
+    def persons(self, node) -> Dict[str, str]:
+        """``schedatore`` / ``direttore_us`` / ``responsabile_us``: the
+        author of the unit's act of that kind, with the role the column
+        names on its ``has_author`` edge (none: the author the act's kind
+        says). The first one met, in edge order, when an act has two."""
+        found: Dict[str, str] = {}
+        wanted = self.person_of
+        for act in self._targets(node, "is_in_activity", "ActivityNodeGroup"):
+            kind = (getattr(act, "data", None) or {}).get("act_kind")
+            if not kind:
+                continue
+            for et, person, edge in self.out.get(getattr(act, "node_id", None), ()):
+                if et != "has_author" or type(person).__name__ not in (
+                        "AuthorNode", "AuthorAINode"):
+                    continue
+                role = (getattr(edge, "attributes", None) or {}).get("role") or None
+                col = wanted.get((kind, role))
+                name = str(getattr(person, "name", "") or "").strip()
+                if col and name and col not in found:
+                    found[col] = name
+        return found
+
     # ------------------------------------------------------------ the row
     def columns(self, node) -> Dict[str, Any]:
         """The us_table columns of *node* the graph says. A column the graph
@@ -449,6 +513,7 @@ class RowReader:
         row.update(self.properties(node))
         row.update(self.documents(node))
         row.update(self.epochs(node))
+        row.update(self.persons(node))
         # what an older graph carried on the node, where the graph is silent
         for key in ROW_COLUMNS:
             if key in row:

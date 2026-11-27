@@ -45,7 +45,7 @@ def test_the_datamodel_says_it():
     # MICRO-LG6: the qualia part (visibility, _covering_note) went with the
     # visibility (tests/test_obliteration_lg6.py); the connections stay
     cdm = get_connections_datamodel()
-    assert cdm.get_version() == "1.6.61"  # 1.6.61 MICRO-LG11 (USN in is_in_functional_unit); 1.6.60 MICRO-LG7 (la frase di is_after)
+    assert cdm.get_version() == "1.6.62"  # 1.6.62 MICRO-RUOLI-PERSONE (il ruolo in un atto); 1.6.61 MICRO-LG11 (USN in is_in_functional_unit); 1.6.60 MICRO-LG7 (la frase di is_after)
     for group in ("ActivityNodeGroup", "TimeBranchNodeGroup", "FunctionalUnitNodeGroup", "EpochNode"):
         assert cdm.validate_connection(group, "PropertyNode", "has_property"), group
 

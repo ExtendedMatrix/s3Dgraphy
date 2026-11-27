@@ -5,7 +5,7 @@ dtc_happened_on_device
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.57, connections 1.6.61) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.57, connections 1.6.62) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *The APPARATUS a DTC step happened on — the camera, the scanner, the drone, the workstation.*
 

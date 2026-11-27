@@ -5,6 +5,39 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Changed
+- **The persons of a pyArchInit sheet are the authors of ACTS** (MICRO ruoli persone,
+  27 November 2026, decisions of E.D.: first the acts, then the roles only for what is
+  missing). `pyarchinit_us_mapping` **1.6.7**: `schedatore`, `direttore_us`,
+  `responsabile_us` each name the act the person is the author of (`act_kind`), and
+  the importer makes it — an `ActivityNodeGroup` with `data.act_kind` (scheme
+  em-documentation-act), the unit `is_in_activity` of it, the act `has_author` the
+  person (one shared `AuthorNode` per name), as `templates/iccd-us-2021` does:
+  `schedatore` → the recording act (one per unit), `direttore_us` → the excavation act
+  (shared by site, year — `anno_scavo`, its `act_start` — and director),
+  `responsabile_us` → the revision act, which is what pyArchInit's own sheet calls the
+  box («Responsabile rielaborazione», `gui/ui/US_USM.ui`, the printed US sheet). Until
+  1.6.6 the edge went unit → person and the role was the person's description, the
+  first one met: a person who was compiler of one unit and director of another was
+  «compiler» everywhere. **Connections datamodel 1.6.62**: `has_author` gains
+  `attributes.role` (optional, scheme em-person-role, first concept
+  `sector_supervisor`) — the role of a person in an act when the act's kind does not
+  say it; a mapping column with `person_role` writes it. RDF: `has_author` out of an
+  act towards a person also says `crm:P14_carried_out_by`, and its role
+  `crm:P14.1_in_the_role_of` on an instance of `crm:PC14_carried_out_by` (the PC
+  extension of CIDOC CRM 7.1.3), the concept an `E55_Type`. The way back:
+  `RowReader.persons` reads the three columns from the authors of the unit's acts
+  (`unit_row.person_columns`, from the mapping, so changing a column's act or role
+  there changes the way back), `MAPPED_COLUMNS` writes them. The projector no longer
+  drops an edge's `attributes` when it moves the importer's edges into the site's
+  graph. The generic GraphML exporter no longer draws an act (`act_kind`) as a box
+  around its units; GraphML does not carry the acts, so the persons are not in it
+  (until now each unit drew its authors as paradata). Measured on the ten sites of
+  pyArchInit's demo and on mini_volterra, way back into an emptied table: the three
+  columns equal to the source on every row (dev143: 39 / 51 / 51 rows lost per demo
+  site); every other column as on HEAD. An older file's direct `has_author` unit →
+  person is not converted: which column a person came from is not in it. Mappings
+  re-stamped, generated report and docs-api regenerated, version pins said out loud;
+  tests `tests/sync/test_ruoli_persone.py` (10).
 - **pyArchInit, the sequel: `source_code` for every unit, `quad_par` a place, CON
   the continuity node, the relation on both rows, the epoch's own fields** (MICRO
   pyArchInit seguito, 27 November 2026, decisions of E.D.). **Node datamodel 1.6.57**:

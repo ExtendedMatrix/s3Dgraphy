@@ -5,7 +5,7 @@ DTCAcquisitionNode
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.57, connections 1.6.61) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.57, connections 1.6.62) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *A DTC ACQUISITION step: the digital event by which an asset ENTERS this study from an (opaque, Tier-0) external source — a data-transfer / ingestion event, DISTINCT from the genesis DTCProcessNode.*
 

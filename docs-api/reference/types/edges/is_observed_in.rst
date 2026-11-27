@@ -5,7 +5,7 @@ is_observed_in
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.57, connections 1.6.61) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.57, connections 1.6.62) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *A stratigraphic unit, a special find or a documentary unit is KNOWN THROUGH a topographic unit (UT): the wall seen in a cellar, the mosaic in a test pit, the roof tiles picked up on the surface are observed in the UT that frames that observation.*
 

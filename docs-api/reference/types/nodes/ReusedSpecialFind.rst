@@ -5,7 +5,7 @@ ReusedSpecialFind
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.57, connections 1.6.61) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.57, connections 1.6.62) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *Repositioned Special Find: a physical object, FIXED and IMMOVABLE, INTENTIONALLY put back into a stable unit — a wall (spolia: a Roman column in a medieval church wall) — or into a new functional placement (a column drum set as street furniture).*
 

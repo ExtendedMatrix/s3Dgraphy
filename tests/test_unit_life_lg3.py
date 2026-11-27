@@ -356,7 +356,7 @@ def test_a_bound_against_a_window_is_a_warning():
 def test_the_datamodel_says_the_dotted_line_is_a_displacement():
     from s3dgraphy.tools.datamodel_i18n import CONNECTIONS, edge_text
     raw = json.loads(Path(CONNECTIONS).read_text(encoding="utf-8"))
-    assert raw["s3Dgraphy_connections_model_version"] == "1.6.61"  # LG11: USN membro di unità funzionale; LG3b: abuts; LG5: has_property da attività e time branch; LG7: la frase di is_after
+    assert raw["s3Dgraphy_connections_model_version"] == "1.6.62"  # RUOLI-PERSONE: has_author.attributes.role; LG11: USN membro di unità funzionale; LG3b: abuts; LG5: has_property da attività e time branch; LG7: la frase di is_after
     e = raw["edge_types"]["changed_from"]
     assert "POSITION IN SPACE" in e["description"]
     assert "CHANGE OF FUNCTION WITHOUT DISPLACEMENT" in e["description"]

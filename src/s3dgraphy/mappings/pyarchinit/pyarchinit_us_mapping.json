@@ -1,7 +1,7 @@
 {
   "name": "pyArchInit US Table",
-  "description": "Mapping for pyArchInit us_table -> Extended Matrix graph. Tier 1: identity via node_uuid passthrough (#14; canonical UUID v7 column added by the pyArchInit node_uuid backfill migration), spatial via LocationNodeGroup (#24), and intrinsic qualia typed -> CIDOC (E54 Dimension / E55 Type / E57 Material) through em_qualia_types.json. Tier 2 (this version): periodo/fase -> EpochNode via has_first_epoch / survive_in_epoch (resolved against periodizzazione_table by epoch_mappings), documentazione/doc_usv -> DocumentNode via has_documentation, schedatore/direttore_us/responsabile_us -> AuthorNode via has_author. Remaining deferred columns are in _tier2_pending_handlers (issue #26).",
-  "version": "1.6.6",
+  "description": "Mapping for pyArchInit us_table -> Extended Matrix graph. Tier 1: identity via node_uuid passthrough (#14; canonical UUID v7 column added by the pyArchInit node_uuid backfill migration), spatial via LocationNodeGroup (#24), and intrinsic qualia typed -> CIDOC (E54 Dimension / E55 Type / E57 Material) through em_qualia_types.json. Tier 2 (this version): periodo/fase -> EpochNode via has_first_epoch / survive_in_epoch (resolved against periodizzazione_table by epoch_mappings), documentazione/doc_usv -> DocumentNode via has_documentation, schedatore/direttore_us/responsabile_us -> AuthorNode, the author of an act (ActivityNodeGroup: recording / excavation / revision) via has_author, the unit is_in_activity of the act (1.6.7). Remaining deferred columns are in _tier2_pending_handlers (issue #26).",
+  "version": "1.6.7",
   "table_settings": {
     "format_type": "sqlite",
     "table_name": "us_table",
@@ -181,19 +181,22 @@
     },
     "schedatore": {
       "node_type": "AuthorNode",
-      "author_role": "compiler",
+      "act_kind": "recording",
       "display_name": "Compiler",
-      "_comment": "Tier-2: person -> shared AuthorNode (deduped by name), has_author edge. Role kept as provenance only."
+      "_comment": "1.6.7 (27 Nov 2026, E.D.: FIRST THE ACTS): the person is the AUTHOR OF AN ACT, not of the unit — a shared AuthorNode (deduped by name), has_author from the act; the unit is_in_activity of the act (ActivityNodeGroup, data.act_kind from em-documentation-act). schedatore = the recording act, one per unit (pyArchInit's sheet: «Responsabile compilazione sul campo»). act_kind says which act; person_role (a key of em-person-role) the role on the has_author edge when the act does not say it. Until 1.6.6: has_author unit -> person, the role in the description."
     },
     "direttore_us": {
       "node_type": "AuthorNode",
-      "author_role": "director",
-      "display_name": "Director"
+      "act_kind": "excavation",
+      "act_year_column": "anno_scavo",
+      "display_name": "Director",
+      "_comment": "The excavation act, SHARED by the units of the same site, year (anno_scavo, its act_start) and director (pyArchInit's sheet: «Responsabile scientifico delle indagini»)."
     },
     "responsabile_us": {
       "node_type": "AuthorNode",
-      "author_role": "supervisor",
-      "display_name": "Supervisor"
+      "act_kind": "revision",
+      "display_name": "Revision",
+      "_comment": "The revision act, one per unit: pyArchInit's own sheet calls this box «Responsabile rielaborazione» (gui/ui/US_USM.ui, the grid of «Dati schedatura»; the printed sheet, pyarchinit_exp_USsheet_pdf.py: RESPONSABILE RIELABORAZIONE / RESPONSIBLE FOR REVISION). E.D.'s reading of 27 Nov 2026 was the sector supervisor: that is ONE LINE here — act_kind recording + person_role sector_supervisor — and the way back follows (unit_row.person_columns)."
     },
     "documentazione": {
       "node_type": "DocumentNode",
@@ -260,7 +263,7 @@
     "_comment": "Handlers mirror _process_location_memberships. See issue #26.",
     "periodo_iniziale / fase_iniziale / periodo_finale / fase_finale": "v1.6.2 EpochNode via epoch_mappings (has_first_epoch / survive_in_epoch), span resolved through the periodizzazione_table join.",
     "documentazione / doc_usv": "v1.6.2 DocumentNode via has_documentation (checklist -> per-US docs; file path -> shared doc).",
-    "schedatore / direttore_us / responsabile_us": "v1.6.2 AuthorNode via has_author (deduped per person).",
+    "schedatore / direttore_us / responsabile_us": "v1.6.2 AuthorNode via has_author (deduped per person); v1.6.7 the author of an ACT — recording, excavation (shared by site, year, director), revision — the unit is_in_activity of it; the role on the edge (em-person-role) only where the act does not say it.",
     "quota_abs / quota_relativa / quota_min_abs / quota_max_abs / quota_min_rel / quota_max_rel / quota_min_usm / quota_max_usm": "v1.6.3 spatial qualia E54 Dimension, each a distinct property_name == em_qualia_types.json elevation* id (no collision). Empty on the demo DB (quote live in pyarchinit_quote)."
   },
   "_tier2_pending_handlers": {
@@ -272,7 +275,7 @@
     "s3dgraphy": "1.6.0.dev137",
     "schema_version": "1",
     "node_datamodel": "1.6.57",
-    "connections_datamodel": "1.6.61",
+    "connections_datamodel": "1.6.62",
     "on": "2026-11-22"
   }
 }

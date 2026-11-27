@@ -421,14 +421,19 @@ class GraphProjector:
                 pass
         for edge in list(imported.edges):
             try:
-                graph.add_edge(
+                moved = graph.add_edge(
                     edge_id=edge.edge_id,
                     edge_source=edge.edge_source,
                     edge_target=edge.edge_target,
                     edge_type=edge.edge_type,
                 )
             except Exception:
-                pass
+                continue
+            # 27 Nov 2026 · an edge's own data comes with it: the role of a
+            # person in an act (has_author.attributes.role, connections
+            # 1.6.62) was dropped here
+            if getattr(edge, "attributes", None):
+                moved.attributes.update(edge.attributes)
 
         # Bug N (2026-05-15 user feedback): run _propagate_node_uuid_and_us
         # BEFORE _enrich_into. The propagation pass creates the right

@@ -876,21 +876,39 @@ class PyArchInitImporter(BaseImporter):
 
     def _process_author_memberships(self, row_dict: Dict[str, Any],
                                     strat_node: Node):
-        """Columns flagged ``node_type == 'AuthorNode'`` become ONE shared
-        :class:`AuthorNode` each (deduped by person name across rows),
-        linked from ``strat_node`` via a ``has_author`` edge.
+        """Columns flagged ``node_type == 'AuthorNode'`` name a PERSON, the
+        author of an ACT of the unit's documentation (E.D., 27 Nov 2026:
+        «first the acts, then the roles only for what is missing»).
 
-        ``schedatore`` / ``direttore_us`` / ``responsabile_us`` all name a
-        *person*; the same person fills different roles on different US, so
-        identity is the person (shared node), not the (US, role) pair. The
-        ``has_author`` edge is deduped per (US, person): if one person is
-        both compiler and director of the same US, the two columns collapse
-        to a single edge. Role is recorded only as provenance in the
-        author's description on first creation (a richer role-on-edge model
-        is a future enhancement).
+        The person is ONE shared :class:`AuthorNode` (``author::<slug>``,
+        deduped by name across rows). The act is an
+        :class:`ActivityNodeGroup` with ``data.act_kind`` (the column's
+        ``act_kind``, a key of em-documentation-act); the unit
+        ``is_in_activity`` of it and the act ``has_author`` the person —
+        the shape of ``templates/iccd-us-2021`` (anchors ``recording_act``,
+        ``excavation_activity``, ``revision_act``) that EMStudio and
+        StratiField read:
+
+        - ``recording`` / ``revision``: one act per unit
+          (``act::<kind>::<unit id>``);
+        - ``excavation``: shared by the units of the same site, year (the
+          column's ``act_year_column``, the act's ``act_start``) and person
+          (``act::excavation::<site>::<year>::<person>``) — a unit says
+          its director and the way back reads it, never the director of
+          another unit of the same campaign.
+
+        A ``person_role`` on the column (a key of em-person-role) goes on
+        the ``has_author`` edge as ``attributes.role`` (connections
+        1.6.62): the role the act's kind does not say. The same person in
+        different roles on different units is right on each: the role is
+        on the act of that unit, not on the person. Until mapping 1.6.6 the
+        edge went unit -> person and the role was the person's
+        description, the first one met.
         """
         from ..nodes.author_node import AuthorNode
+        from ..nodes.group_node import ActivityNodeGroup
 
+        site = str(row_dict.get('sito') or '').strip()
         for col_name, col_config in self.mapping.get(
                 'column_mappings', {}).items():
             if col_config.get('node_type') != 'AuthorNode':
@@ -900,17 +918,65 @@ class PyArchInitImporter(BaseImporter):
                 continue
             person = str(value).strip()
             author_id = f"author::{self._slug(person)}"
+            kind = col_config.get('act_kind')
             if self.graph.find_node_by_id(author_id) is None:
-                role = col_config.get('author_role')
-                desc = (f"pyArchInit {role}: {person}" if role
-                        else f"pyArchInit author: {person}")
+                # a mapping without acts keeps its old description (the role
+                # of the first column met); with acts the role is on the act
+                old_role = None if kind else col_config.get('author_role')
                 self.graph.add_node(AuthorNode(
-                    node_id=author_id, name=person, description=desc))
-            edge_id = f"{strat_node.node_id}_has_author_{author_id}"
+                    node_id=author_id, name=person,
+                    description=(f"pyArchInit {old_role}: {person}" if old_role
+                                 else f"pyArchInit: {person}")))
+            if not kind:
+                # a mapping without acts (before 1.6.7): the old shape
+                self._link_author(strat_node, author_id)
+                continue
+            if not self._link_allowed(strat_node, "ActivityNodeGroup",
+                                      "is_in_activity"):
+                continue
+            year = None
+            year_col = col_config.get('act_year_column')
+            if year_col:
+                year = self._coerce_time(row_dict.get(year_col))
+            if kind == 'excavation':
+                act_id = (f"act::excavation::{self._slug(site) or '_'}::"
+                          f"{'' if year is None else year}::"
+                          f"{self._slug(person)}")
+                act_name = " ".join(x for x in (
+                    "excavation", site, "" if year is None else str(year)) if x)
+            else:
+                act_id = f"act::{kind}::{strat_node.node_id}"
+                act_name = f"{kind} {strat_node.name}"
+            act = self.graph.find_node_by_id(act_id)
+            if act is None:
+                act = ActivityNodeGroup(node_id=act_id, name=act_name)
+                act.data['act_kind'] = kind
+                if year is not None:
+                    act.data['act_start'] = year
+                self.graph.add_node(act)
+            edge_id = f"{strat_node.node_id}_is_in_activity_{act_id}"
             if not self.graph.find_edge_by_id(edge_id):
                 self.graph.add_edge(
                     edge_id=edge_id, edge_source=strat_node.node_id,
+                    edge_target=act_id, edge_type="is_in_activity")
+            role = col_config.get('person_role')
+            edge_id = (f"{act_id}_has_author_{author_id}"
+                       + (f"_as_{role}" if role else ""))
+            if not self.graph.find_edge_by_id(edge_id):
+                edge = self.graph.add_edge(
+                    edge_id=edge_id, edge_source=act_id,
                     edge_target=author_id, edge_type="has_author")
+                if role:
+                    edge.attributes['role'] = role
+
+    def _link_author(self, strat_node: Node, author_id: str) -> None:
+        """``has_author`` unit -> person, deduped (a mapping column with no
+        ``act_kind``)."""
+        edge_id = f"{strat_node.node_id}_has_author_{author_id}"
+        if not self.graph.find_edge_by_id(edge_id):
+            self.graph.add_edge(
+                edge_id=edge_id, edge_source=strat_node.node_id,
+                edge_target=author_id, edge_type="has_author")
 
     def _process_document_memberships(self, row_dict: Dict[str, Any],
                                       strat_node: Node):

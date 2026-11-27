@@ -5,7 +5,7 @@ DistrictNode
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.57, connections 1.6.61) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.57, connections 1.6.62) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *District: the declared portion of territory that holds what stands on it — sites, virtual sites, topographic units, other districts — as a TRAY holds its objects («il rapporto fra terreno e resti è quello fra un vassoio e gli oggetti che ci sono sopra», 2017).*
 

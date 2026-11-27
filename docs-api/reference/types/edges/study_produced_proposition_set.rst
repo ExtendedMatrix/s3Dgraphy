@@ -5,7 +5,7 @@ study_produced_proposition_set
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.57, connections 1.6.61) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.57, connections 1.6.62) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *Links an HC9 Study to the documentary output it created — in EM the proposition set (HC16 / em:EMGraph / GraphNode).*
 

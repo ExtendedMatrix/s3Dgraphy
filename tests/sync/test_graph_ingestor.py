@@ -38,6 +38,8 @@ def test_mapped_columns_constant_present():
         "periodo_finale", "fase_finale",
         # 27 Nov 2026 (seguito) · quad_par is a place
         "quad_par",
+        # 27 Nov 2026 (ruoli persone) · the authors of the unit's acts
+        "schedatore", "direttore_us", "responsabile_us",
     }
     assert set(MAPPED_COLUMNS) == expected
     assert isinstance(MAPPED_COLUMNS, tuple)  # immutable

@@ -147,7 +147,7 @@ def test_the_warning_of_the_coherence_check():
 
 def test_a_negative_unit_can_be_the_only_member_of_a_functional_unit():
     cdm = get_connections_datamodel()
-    assert cdm.get_version() == "1.6.61"
+    assert cdm.get_version() == "1.6.62"  # 1.6.62 MICRO-RUOLI-PERSONE (27 nov 2026): il ruolo in un atto
     assert "NegativeStratigraphicUnit" in cdm.get_allowed_sources("is_in_functional_unit")
     raw = json.loads((CONFIG / "s3Dgraphy_connections_datamodel.json").read_text(encoding="utf-8"))
     assert "functional STATE" in raw["edge_types"]["is_in_functional_unit"]["scope_note"]

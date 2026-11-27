@@ -2618,6 +2618,40 @@ class RDFExporter:
             return False
         return True
 
+    #: em-person-role (ExtendedMatrix/vocabularies): the role of a person in an
+    #: act, the value of has_author.attributes.role (connections 1.6.62)
+    PERSON_ROLE_NS = "https://w3id.org/extendedmatrix/vocab/person-role/"
+
+    def _serialize_act_author(self, g: S3DGraph, edge: Any, act_iri, person_iri,
+                              ctx) -> None:
+        """``has_author`` out of an ACT (an ActivityNodeGroup, E7) towards a
+        person (AuthorNode, E21) — connections 1.6.62, ``mapping._act_comment``:
+        ``<act> crm:P14_carried_out_by <person>``; with ``attributes.role``,
+        CIDOC's n-ary form of P14 (CIDOC_CRM_v7.1.3_PC.rdfs): an instance of
+        ``crm:PC14_carried_out_by`` with ``P01_has_domain`` the act,
+        ``P02_has_range`` the person and ``P14.1_in_the_role_of`` the concept
+        of em-person-role, an ``E55_Type``. prov:wasAttributedTo goes out
+        beside it as for any author. Not towards an AuthorAINode: P14 implies
+        causal or legal responsibility."""
+        source = g.find_node_by_id(edge.edge_source)
+        target = g.find_node_by_id(edge.edge_target)
+        if type(source).__name__ != "ActivityNodeGroup" \
+                or type(target).__name__ != "AuthorNode":
+            return
+        ctx.add((act_iri, CRM.P14_carried_out_by, person_iri))
+        self.stats["acts_carried_out_by"] = self.stats.get("acts_carried_out_by", 0) + 1
+        role = (getattr(edge, "attributes", None) or {}).get("role")
+        if not role or not re.fullmatch(r"[a-z][a-z0-9_]*", str(role)):
+            return
+        role_iri = URIRef(self.PERSON_ROLE_NS + str(role))
+        pc = URIRef(f"{act_iri}/pc14/{re.sub(r'[^A-Za-z0-9_.-]+', '_', str(edge.edge_id))}")
+        ctx.add((pc, RDF.type, CRM.PC14_carried_out_by))
+        ctx.add((pc, CRM.P01_has_domain, act_iri))
+        ctx.add((pc, CRM.P02_has_range, person_iri))
+        ctx.add((pc, CRM["P14.1_in_the_role_of"], role_iri))
+        ctx.add((role_iri, RDF.type, CRM.E55_Type))
+        self.stats["acts_roles"] = self.stats.get("acts_roles", 0) + 1
+
     def _serialize_projection(self, g: S3DGraph, edge: Any, ctx) -> bool:
         """``mapping.projection_when`` (connections 1.6.45): when the RECENT end
         of the edge — its source as drawn, the target of a reverse-named edge —
@@ -2765,6 +2799,9 @@ class RDFExporter:
                 ctx.add((source_iri, PROV.wasInformedBy, target_iri))
                 self.stats["edges_emitted"] += 1
                 return
+
+        if edge_type == "has_author" and not inverted:
+            self._serialize_act_author(g, edge, source_iri, target_iri, ctx)
 
         if predicate is not None:
             ctx.add((source_iri, predicate, target_iri))

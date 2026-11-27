@@ -391,8 +391,16 @@ class GraphMLExporter:
         # group's placement (step 7, keyed on the PD group's us_node, which
         # shares the activity).
         from ...nodes.group_node import ActivityNodeGroup
+        # 27 Nov 2026 (MICRO ruoli persone): an ACT of the documentation
+        # (data.act_kind: the recording, the excavation, the revision of a
+        # unit — nodes 1.6.47) is not a narrative activity and is not drawn
+        # as a box around its units: one per unit would wrap every unit of a
+        # pyArchInit import in its own «recording» box. Like the sheet's
+        # ATTIVITÀ (templates/iccd-us-2021) and EMStudio, only the
+        # activities without act_kind nest. GraphML does not carry the acts.
         activity_by_id = {n.node_id: n for n in self.graph.nodes
-                          if isinstance(n, ActivityNodeGroup)}
+                          if isinstance(n, ActivityNodeGroup)
+                          and not (getattr(n, "data", None) or {}).get("act_kind")}
         activity_of = {}                 # member_node_id -> activity id
         activity_members_present = set()  # activity ids that get a box
         for e in self.graph.edges:

@@ -47,6 +47,13 @@ MAPPED_COLUMNS: tuple[str, ...] = (
     "doc_usv",
     "periodo_finale",
     "fase_finale",
+    # 27 Nov 2026 (MICRO ruoli persone, E.D.): the persons, read back from
+    # the authors of the unit's acts (unit_row.RowReader.persons) — the
+    # recording act → schedatore, the excavation act → direttore_us, the
+    # revision act → responsabile_us (pyarchinit_us_mapping 1.6.7).
+    "schedatore",
+    "direttore_us",
+    "responsabile_us",
 )
 
 
