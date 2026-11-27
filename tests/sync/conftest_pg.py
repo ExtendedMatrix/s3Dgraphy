@@ -71,6 +71,22 @@ def _apply_pyarchinit_schema(engine: Engine) -> None:
                 node_uuid TEXT
             )
         """))
+        conn.execute(text("""
+            CREATE TABLE IF NOT EXISTS periodizzazione_table (
+                id_perfas SERIAL PRIMARY KEY,
+                sito TEXT,
+                periodo INTEGER,
+                fase TEXT,
+                cron_iniziale INTEGER,
+                cron_finale INTEGER,
+                descrizione TEXT,
+                datazione_estesa TEXT,
+                node_uuid TEXT,
+                CONSTRAINT pg_periodizzazione_unico UNIQUE (sito, periodo, fase)
+            )
+        """))
+        # After every CREATE: on a brand-new test database the ALTER on
+        # periodizzazione_table ran before the table existed (#37).
         # A database built by an older copy of this fixture keeps the table
         # it was given: CREATE TABLE IF NOT EXISTS adds no column to it. So
         # say the columns added since, each one idempotently, or a reused
@@ -86,20 +102,6 @@ def _apply_pyarchinit_schema(engine: Engine) -> None:
             conn.execute(text(
                 "ALTER TABLE %s ADD COLUMN IF NOT EXISTS %s %s"
                 % (tabella, colonna, tipo)))
-        conn.execute(text("""
-            CREATE TABLE IF NOT EXISTS periodizzazione_table (
-                id_perfas SERIAL PRIMARY KEY,
-                sito TEXT,
-                periodo INTEGER,
-                fase TEXT,
-                cron_iniziale INTEGER,
-                cron_finale INTEGER,
-                descrizione TEXT,
-                datazione_estesa TEXT,
-                node_uuid TEXT,
-                CONSTRAINT pg_periodizzazione_unico UNIQUE (sito, periodo, fase)
-            )
-        """))
 
 
 @pytest.fixture(scope="session")

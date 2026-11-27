@@ -50,6 +50,10 @@ def import_from_pg(
 ) -> "Graph":
     """Build a stratigraphic Graph from a PG us_table via SQLAlchemy.
 
+    No longer used by GraphProjector (#37), which reads PostgreSQL with
+    PyArchInitImporter(connection_url=...) like SQLite. Kept for direct
+    callers: its node ids are the US numbers, not node_uuid.
+
     Replaces the upstream PyArchInitImporter call in
     graph_projector.populate_graph() when backend is PG. Mirrors
     the upstream contract (StratigraphicNode + PropertyNode +
