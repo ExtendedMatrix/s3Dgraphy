@@ -587,6 +587,7 @@ class BaseImporter(ABC):
         if existing_node:
             if self.overwrite:
                 existing_node.name = base_attrs['name']
+                self._names = None          # the name index no longer holds (#27)
                 existing_node.description = base_attrs['description']
                 self.warnings.append(f"Updated existing node: {node_id}")
             strat_node = existing_node
@@ -798,13 +799,51 @@ class BaseImporter(ABC):
         """
         Find existing node by name in current graph.
         Used when working with existing graphs (node matching by name instead of ID).
+
+        The FIRST node, in list order, whose name or ``original_name`` is
+        ``target_name`` — through an index (#27): the linear scan per row made
+        an import O(n²) (2.8 s of a 10 s projection of 1,020 units).
         """
+        pos = self._name_lookup().get(target_name)
+        if pos is None:
+            return None
+        node = self.graph.nodes[pos]
+        if node.name == target_name or self._original_name(node) == target_name:
+            return node
+        # renamed outside the importer's knowledge: the scan, and a fresh index
+        self._names = None
         for node in self.graph.nodes:
-            # Check both current name and original_name attribute
-            original_name = getattr(node, 'attributes', {}).get('original_name')
-            if node.name == target_name or original_name == target_name:
+            if node.name == target_name or self._original_name(node) == target_name:
                 return node
         return None
+
+    @staticmethod
+    def _original_name(node):
+        return (getattr(node, 'attributes', None) or {}).get('original_name')
+
+    def _name_lookup(self) -> dict:
+        """``{name: position of its first node}``, kept in step with
+        ``graph.nodes``: extended when nodes were appended, rebuilt when the
+        list was replaced or changed otherwise (``add_node(overwrite=True)``
+        removes and appends, so the last node changes)."""
+        nodes = self.graph.nodes
+        cache = getattr(self, '_names', None)
+        n = len(nodes)
+        if (cache is not None and cache['list'] is nodes and cache['len'] <= n
+                and (cache['len'] == 0 or nodes[cache['len'] - 1] is cache['last'])):
+            start = cache['len']
+        else:
+            cache = {'list': nodes, 'map': {}, 'len': 0, 'last': None}
+            start = 0
+        names = cache['map']
+        for i in range(start, n):
+            node = nodes[i]
+            for key in (node.name, self._original_name(node)):
+                if key is not None and key not in names:
+                    names[key] = i
+        cache['len'], cache['last'] = n, (nodes[n - 1] if n else None)
+        self._names = cache
+        return names
 
     def _process_stratigraphic_relations(self):
         """Second pass: create topological Edge objects from relationship columns.

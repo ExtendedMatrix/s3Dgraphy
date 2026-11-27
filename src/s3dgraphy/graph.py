@@ -606,6 +606,15 @@ class Graph:
         """
         self.edges = [edge for edge in self.edges if edge.edge_id != edge_id]
 
+    def remove_edges(self, edge_ids):
+        """Removes every edge whose id is in ``edge_ids``, in ONE pass over the
+        list (#27): ``remove_edge`` rebuilds the list on each call, so removing
+        k edges one by one costs k·E — 1.95 s for 1,620 removals on a
+        1,020-unit pyArchInit projection."""
+        ids = set(edge_ids)
+        if ids:
+            self.edges = [edge for edge in self.edges if edge.edge_id not in ids]
+
     def update_node(self, node_id, **kwargs):
         """Updates attributes of an existing node."""
         node = self.find_node_by_id(node_id)
