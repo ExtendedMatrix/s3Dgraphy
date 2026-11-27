@@ -36,6 +36,8 @@ def test_mapped_columns_constant_present():
         # 27 Nov 2026 · read back from the graph (unit_row)
         "settore", "saggio", "ambient", "doc_usv",
         "periodo_finale", "fase_finale",
+        # 27 Nov 2026 (seguito) · quad_par is a place
+        "quad_par",
     }
     assert set(MAPPED_COLUMNS) == expected
     assert isinstance(MAPPED_COLUMNS, tuple)  # immutable

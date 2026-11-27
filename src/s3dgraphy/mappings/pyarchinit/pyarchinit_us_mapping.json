@@ -1,7 +1,7 @@
 {
   "name": "pyArchInit US Table",
   "description": "Mapping for pyArchInit us_table -> Extended Matrix graph. Tier 1: identity via node_uuid passthrough (#14; canonical UUID v7 column added by the pyArchInit node_uuid backfill migration), spatial via LocationNodeGroup (#24), and intrinsic qualia typed -> CIDOC (E54 Dimension / E55 Type / E57 Material) through em_qualia_types.json. Tier 2 (this version): periodo/fase -> EpochNode via has_first_epoch / survive_in_epoch (resolved against periodizzazione_table by epoch_mappings), documentazione/doc_usv -> DocumentNode via has_documentation, schedatore/direttore_us/responsabile_us -> AuthorNode via has_author. Remaining deferred columns are in _tier2_pending_handlers (issue #26).",
-  "version": "1.6.5",
+  "version": "1.6.6",
   "table_settings": {
     "format_type": "sqlite",
     "table_name": "us_table",
@@ -53,6 +53,13 @@
       "location_kind": "study",
       "display_name": "Trench",
       "description": "Sondage / trench"
+    },
+    "quad_par": {
+      "node_type": "LocationNodeGroup",
+      "location_kind": "study",
+      "display_name": "Square",
+      "description": "Grid square / quadrant (quadrato)",
+      "_comment": "1.6.6 (E.D., 27 Nov 2026): a place, like saggio — a LocationNodeGroup of kind study whose level is the column, quad_par; is_in_location from the unit. Until 1.6.5 it was copied on the unit's node.data by the projector."
     },
     "ambient": {
       "node_type": "LocationNodeGroup",
@@ -264,7 +271,7 @@
   "_validated_against": {
     "s3dgraphy": "1.6.0.dev137",
     "schema_version": "1",
-    "node_datamodel": "1.6.56",
+    "node_datamodel": "1.6.57",
     "connections_datamodel": "1.6.61",
     "on": "2026-11-22"
   }

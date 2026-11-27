@@ -463,12 +463,12 @@ class PyArchInitImporter(BaseImporter):
     def _keep_source_code(node: Node, unita_tipo: str) -> None:
         """Keep the row's code on the node when its class (and kind) do not
         say it back: a localized ``SU`` / ``SE`` / ``UE`` / ``ΣΜ`` US, a code
-        the library has no class for. ``source_code`` is the node element the
-        masonry / coating codes already use (datamodel 1.6.13)."""
-        if not unita_tipo:
-            return
-        from ..unit_row import row_code
-        if row_code(node) != unita_tipo:
+        the library has no class for — and pyArchInit's ``CON``, whose node
+        is the EM continuity node, EM code ``BR`` (E.D., 27 Nov 2026).
+        ``source_code`` is the node element the masonry / coating codes
+        already used (datamodel 1.6.13), widened to every unit in 1.6.57."""
+        from ..unit_row import keeps_source_code
+        if keeps_source_code(node, unita_tipo):
             node.source_code = unita_tipo
 
     @staticmethod

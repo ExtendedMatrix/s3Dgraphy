@@ -97,7 +97,7 @@ def test_only_the_technical_key_is_on_the_node(mini_volterra):
     graph = GraphProjector().populate_graph(mini_volterra, sito=SITO)
     for node in _unita(graph):
         attrs = getattr(node, "attributes", None) or {}
-        assert set(attrs) <= {"node_uuid", "quad_par"}, (node.name, attrs)
+        assert set(attrs) <= {"node_uuid"}, (node.name, attrs)
         assert attrs.get("node_uuid")
 
 

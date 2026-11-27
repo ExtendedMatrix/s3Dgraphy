@@ -91,7 +91,7 @@ def test_the_unit_carries_only_its_technical_key(tmp_path):
     units = _units(graph)
     assert len(units) == 6
     for n in units:
-        assert set(n.attributes) <= {"node_uuid", "quad_par"}, (n.name, n.attributes)
+        assert set(n.attributes) <= {"node_uuid"}, (n.name, n.attributes)
         assert n.attributes.get("node_uuid")
     doc = build_emjson(graph)
     nodes = doc["graph"]["nodes"]
@@ -210,7 +210,7 @@ def test_an_old_file_with_the_fields_in_data_is_read_as_nodes(tmp_path):
     said = [w for w in warnings if "pyArchInit row fields in node.data" in w]
     assert len(said) == 1, warnings
     for n in _units(back):
-        left = set(getattr(n, "data", None) or {}) - {"node_uuid", "quad_par"}
+        left = set(getattr(n, "data", None) or {}) - {"node_uuid"}
         assert not left & {"sito", "area", "settore", "saggio", "ambient",
                            "unita_tipo", "us", "documentazione"}, (n.name, left)
     usvs = [n for n in _units(back) if row_code(n) == "USVs"]

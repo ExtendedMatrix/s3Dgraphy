@@ -5,7 +5,7 @@ RegistrationTransformNode
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.56, connections 1.6.61) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.57, connections 1.6.61) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *The 7-parameter similarity (rotation 3x3 row-major, translation [x,y,z], positive scale) that places a produced model, with data.rms and data.residuals — the error bar, stored beside the claim rather than in a log nobody keeps.*
 

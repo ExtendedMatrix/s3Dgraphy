@@ -5,7 +5,7 @@ StratigraphicUnit
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.56, connections 1.6.61) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.57, connections 1.6.61) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *Stratigraphic Unit (SU) or negative stratigraphic unit.*
 
@@ -48,7 +48,7 @@ Fields
    * - ``stratigraphic_kind``
      - The GENRE of a US, when it has one.
    * - ``source_code``
-     - The CODE a US of a kind came in with, when it is not its kind's \`default\_code\` (USS for a coating, WSU for a masonry…).
+     - The CODE a unit came in with, whenever it is not the EM code of its class (and kind).
 
 Edges
 -----

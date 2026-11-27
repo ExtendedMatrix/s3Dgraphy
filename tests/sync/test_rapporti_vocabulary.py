@@ -230,5 +230,9 @@ def test_module_dunder_all_exposed():
         # Parser / serialiser (commit 2)
         "parse_rapporti",
         "serialize_rapporti_from_edges",
+        # the reverse voice on the target row (27 Nov 2026)
+        "inverse_rapporti_label",
+        "rapporti_language",
+        "voice_in_language",
     }
     assert set(rapporti.__all__) == expected

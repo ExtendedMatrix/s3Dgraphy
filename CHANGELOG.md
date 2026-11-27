@@ -5,6 +5,42 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Changed
+- **pyArchInit, the sequel: `source_code` for every unit, `quad_par` a place, CON
+  the continuity node, the relation on both rows, the epoch's own fields** (MICRO
+  pyArchInit seguito, 27 November 2026, decisions of E.D.). **Node datamodel 1.6.57**:
+  the description of `source_code` is widened — the code a unit came in with whenever
+  it is not the EM code of its class (localized SU / SE / UE / ΣΜ / ΤΣΜ, a code with no
+  class such as VA, pyArchInit's own CON), what goes back as `unita_tipo`; no new
+  element. **`quad_par`** is a place: the shipped `pyarchinit_us_mapping` (1.6.6) maps
+  it to a `LocationNodeGroup` of kind study and level `quad_par`, the projector no
+  longer writes it on the unit, `RowReader` reads it from `is_in_location`,
+  `MAPPED_COLUMNS` writes it back, and an older em.json's `data.quad_par` becomes the
+  place on load — a unit's data is `node_uuid` only (measured on the demo: 4 places
+  Q1–Q4, 51 edges). **CON**: a pyArchInit CON row is a `ContinuityNode` (EM code BR,
+  unchanged) with `source_code` CON, given back as CON (`unit_row.keeps_source_code`,
+  `NOT_EM_CODES`). **Rapporti**: ONE edge per relation in the graph — the projector
+  reads a reverse voice (Coperto da, Tagliato da, `<`…) as its canonical edge swapped,
+  and a symmetric one said from both rows once (the demo site had 81 physical
+  relations twice, `overlies` + `is_overlain_by`); `serialize_rapporti_from_edges(...,
+  inverse=True)` (used by `GraphIngestor`) writes each relation on the target row too,
+  with the reverse voice (`inverse_rapporti_label`), said in the row's language (its
+  own voice, else its row's / site's language — `rapporti_language`, `voice_in_language`
+  — else the language its localized code says). A relation the DB says on one row only
+  is not added to the other row of an existing row (mini_volterra unchanged). Measured
+  on the ten sites of pyArchInit's demo, way back over the same rows: rapporti equal on
+  all 51 rows of each site (dev143: 9 to 47 rows differed per site — the `<` / `<<`
+  voices of the target rows were lost). `strip_us_prefix` reads UEM, USZ, ΣΜ, ΤΣΜ
+  (`1.UEM6` was read «M6», `1.ΣΜ2` not read). **Epochs**: the periodizzazione row is in
+  the EpochNode's own fields — `cron_iniziale` / `cron_finale` its `start_time` /
+  `end_time`, `descrizione` its `name`, `datazione_estesa` its `description` (P3, read
+  from the column, which the projector did not read before); only `periodo` / `fase`,
+  the technical key, stay in its data. `unit_row.epoch_columns` reads the row back
+  (GraphIngestor's missing-epoch INSERT, the GraphML writer); an older file's
+  `cron_*` / `datazione_estesa` in data are read into the fields on load
+  (`unit_row.migrate_legacy_epoch_fields`, ONE warning). The AI03 GraphML baseline of
+  mini_volterra is regenerated (it predates the rapporti of mini_volterra as edges).
+  Mappings re-stamped, node registry and generated report regenerated, version pins
+  said out loud; tests `tests/sync/test_pyarchinit_seguito.py` (11).
 - **The fields of a pyArchInit US sheet are nodes and edges, not `node.data`; the
   epoch is not copied by number** (MICRO pyArchInit campi in nodi, 27 November 2026;
   #40). E.D.'s rule: a unit's data keeps only the technical key (`node_uuid`). The

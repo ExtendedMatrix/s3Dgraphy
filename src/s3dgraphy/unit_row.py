@@ -16,6 +16,7 @@ column                    read from
                           (``source_code``: SU, WSU, USS…)
 ``area`` ``settore``      the places, ``is_in_location`` → ``LocationNodeGroup``
 ``saggio`` ``ambient``    (the column is the place's ``level``, or its id)
+``quad_par``              (a place since 27 Nov 2026, level ``quad_par``)
 ``d_stratigrafica``       the unit's ``description``
 ``d_interpretativa``      its properties, ``has_property`` → ``PropertyNode``
 ``attivita`` ``struttura``  (the property name of the mapping)
@@ -28,6 +29,12 @@ column                    read from
 ``periodo_finale`` /      ``survive_in_epoch`` → the latest such epoch
 ``fase_finale``
 ========================  =====================================================
+
+The EPOCH's own row of ``periodizzazione_table`` (27 Nov 2026, same rule) is
+read from the EpochNode's fields — :func:`epoch_columns`: ``periodo`` /
+``fase`` are its technical key (they stay in its data), ``cron_iniziale`` /
+``cron_finale`` its ``start_time`` / ``end_time``, ``descrizione`` its
+``name``, ``datazione_estesa`` its ``description``.
 
 A value the graph does not have falls back to what an older graph carried in
 ``attributes`` / ``node.data`` (a GraphML hydrated by the ingestor, a file
@@ -42,11 +49,12 @@ import re
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 #: The place columns of us_table that the importer maps to LocationNodeGroup.
-PLACE_COLUMNS: Tuple[str, ...] = ("area", "settore", "saggio", "ambient")
+PLACE_COLUMNS: Tuple[str, ...] = ("area", "settore", "saggio", "ambient",
+                                   "quad_par")
 
 #: The us_table columns this module rebuilds from the graph.
 ROW_COLUMNS: Tuple[str, ...] = (
-    "us", "unita_tipo", "area", "settore", "saggio", "ambient",
+    "us", "unita_tipo", "area", "settore", "saggio", "ambient", "quad_par",
     "d_stratigrafica", "d_interpretativa", "attivita", "struttura",
     "documentazione", "doc_usv",
     "periodo_iniziale", "fase_iniziale", "periodo_finale", "fase_finale",
@@ -78,6 +86,22 @@ PARADATA_CODE_TO_CLASS: Dict[str, str] = {
     "property": "PropertyNode",
 }
 PARADATA_CLASS_TO_CODE: Dict[str, str] = {v: k for k, v in PARADATA_CODE_TO_CLASS.items()}
+
+#: pyArchInit codes that are NOT the EM code of the class they make
+#: (27 Nov 2026, E.D.): a ``CON`` row is the EM continuity node, whose EM
+#: code stays ``BR``. The row's code is kept in ``source_code`` and goes
+#: back as it came.
+NOT_EM_CODES: Dict[str, str] = {"CON": "BR"}
+
+
+def keeps_source_code(node, code: Optional[str]) -> bool:
+    """Whether a row's *code* is kept on its node as ``source_code``: when
+    the class (and kind) do not say it back (a localized SU / SE / UE / ΣΜ,
+    a code with no class — VA…), or when it is pyArchInit's own code and not
+    the EM one (``CON`` for the EM ``BR``). Node datamodel 1.6.57."""
+    if not code:
+        return False
+    return code in NOT_EM_CODES or row_code(node) != code
 
 _EPOCH_ID = re.compile(r"^epoch_([^_]+)_(.+?)(_synthetic)?$")
 _IMPORTER_EPOCH_ID = re.compile(r"^epoch::.*::([^:]*)::([^:]*)$")
@@ -176,6 +200,121 @@ def row_code(node) -> Optional[str]:
     if kind_code:
         return kind_code
     return class_code
+
+
+def _year(value) -> Optional[int]:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, (int, float)):
+        return int(value)
+    try:
+        return int(float(str(value).strip()))
+    except (TypeError, ValueError):
+        return None
+
+
+def epoch_columns(epoch) -> Dict[str, Any]:
+    """The ``periodizzazione_table`` row of an epoch, read from the
+    EpochNode's own fields (27 Nov 2026, E.D.: the rule of the units holds
+    for the epochs too):
+
+    - ``periodo`` / ``fase``: the technical key of the row, the only row
+      fields kept in the epoch's data (or read from its id);
+    - ``cron_iniziale`` / ``cron_finale``: ``start_time`` / ``end_time``
+      (P82a / P82b), as whole years;
+    - ``descrizione``: the ``name`` (P1);
+    - ``datazione_estesa``: the ``description`` (P3_has_note), else the
+      name.
+
+    A value the fields do not have falls back to what an older graph
+    carried in ``attributes`` / ``data`` (projector ≤ 1.6.0.dev143)."""
+    out: Dict[str, Any] = {}
+    p, f = epoch_key(epoch)
+    if p is not None:
+        out["periodo"], out["fase"] = p, f
+    for col, field in (("cron_iniziale", "start_time"), ("cron_finale", "end_time")):
+        year = _year(getattr(epoch, field, None))
+        if year is None:
+            year = _year(legacy_value(epoch, col))
+        if year is not None:
+            out[col] = year
+    name = getattr(epoch, "name", None)
+    if isinstance(name, str) and name.strip():
+        out["descrizione"] = name
+    desc = getattr(epoch, "description", None)
+    if isinstance(desc, str) and desc.strip():
+        out["datazione_estesa"] = desc
+    else:
+        old = legacy_value(epoch, "datazione_estesa")
+        if old is not None:
+            out["datazione_estesa"] = str(old)
+        elif "descrizione" in out:
+            out["datazione_estesa"] = out["descrizione"]
+    return out
+
+
+#: what an older projector wrote on an epoch besides its key
+LEGACY_EPOCH_KEYS: Tuple[str, ...] = ("cron_iniziale", "cron_finale",
+                                      "datazione_estesa")
+
+
+def migrate_legacy_epoch_fields(graph) -> Dict[str, Any]:
+    """An em.json written by pyArchInit's projector up to 1.6.0.dev143
+    carries an epoch's row in its ``data``: ``cron_iniziale``,
+    ``cron_finale``, ``datazione_estesa`` (the last one holding the
+    ``descrizione`` column, the epoch's name). Read into the EpochNode's own
+    fields — ``start_time`` / ``end_time`` when they are not set, the
+    ``description`` when it is empty and the text is not the name — and
+    dropped when the fields say them. ``periodo`` / ``fase`` stay: the
+    technical key. A value the fields contradict stays, and is counted. ONE
+    warning. Idempotent."""
+    out: Dict[str, Any] = {"epochs": 0, "moved": {}, "kept": {}, "warnings": []}
+    for ep in list(getattr(graph, "nodes", None) or []):
+        if type(ep).__name__ != "EpochNode":
+            continue
+        bags = [b for b in _bags(ep) if any(k in b for k in LEGACY_EPOCH_KEYS)]
+        if not bags:
+            continue
+        out["epochs"] += 1
+        for bag in bags:
+            for col, field in (("cron_iniziale", "start_time"),
+                               ("cron_finale", "end_time")):
+                if col not in bag:
+                    continue
+                year = _year(bag[col])
+                have = getattr(ep, field, None)
+                if year is not None and (have is None or (
+                        _year(have) == 0 and year != 0)):
+                    setattr(ep, field, float(year))
+                    have = getattr(ep, field)
+                if year is None or _year(have) == year:
+                    bag.pop(col)
+                    out["moved"][col] = out["moved"].get(col, 0) + 1
+                else:
+                    out["kept"][col] = out["kept"].get(col, 0) + 1
+            if "datazione_estesa" in bag:
+                text = str(bag["datazione_estesa"] or "")
+                desc = str(getattr(ep, "description", "") or "")
+                if text and text != str(getattr(ep, "name", "") or "") and not desc:
+                    ep.description = text
+                    desc = text
+                if not text or text in (desc, str(getattr(ep, "name", "") or "")):
+                    bag.pop("datazione_estesa")
+                    out["moved"]["datazione_estesa"] = \
+                        out["moved"].get("datazione_estesa", 0) + 1
+                else:
+                    out["kept"]["datazione_estesa"] = \
+                        out["kept"].get("datazione_estesa", 0) + 1
+    if out["epochs"]:
+        said = ", ".join(f"{k} {v}" for k, v in sorted(out["moved"].items()))
+        line = (f"periodizzazione fields in an epoch's data: {out['epochs']} "
+                f"epoch(s) read into start_time / end_time / name / description "
+                f"({said or 'nothing to move'})")
+        if out["kept"]:
+            line += "; left in data, the fields say otherwise: " + ", ".join(
+                f"{k} {v}" for k, v in sorted(out["kept"].items()))
+        out["warnings"].append(line + " — the next save writes the fields.")
+    return out
 
 
 class RowReader:
@@ -348,7 +487,7 @@ def documentation_entries(value: Any) -> List[str]:
 
 #: kind of the place each column makes (pyarchinit_us_mapping)
 _PLACE_KIND = {"area": "study", "settore": "study", "saggio": "study",
-               "ambient": "functional"}
+               "quad_par": "study", "ambient": "functional"}
 
 #: the keys that are dropped once the graph says them (or that were only a
 #: copy: the site is the graph's, the epoch's label is the epoch's, the
@@ -408,13 +547,19 @@ def migrate_legacy_row_fields(graph) -> Dict[str, Any]:
 
     A field the graph cannot say (an epoch code the file has no epoch for, a
     number that is not the name's) stays where it was, and is counted. The
-    next save writes the nodes. Idempotent. ``node_uuid`` and ``quad_par``
-    stay (the technical key; quad_par has no node yet)."""
+    next save writes the nodes. Idempotent. ``node_uuid`` stays (the
+    technical key); ``quad_par`` is a place like the others (27 Nov 2026).
+
+    The epochs of such a file are read the same way
+    (:func:`migrate_legacy_epoch_fields`)."""
     from .nodes.stratigraphic_node import StratigraphicNode
     from .rapporti import canonical_unita_tipo, strip_us_prefix
     out: Dict[str, Any] = {"units": 0, "moved": {}, "kept": {}, "warnings": []}
     candidates = [n for n in list(getattr(graph, "nodes", None) or [])
                   if _row_bag(n) is not None]
+    epochs = migrate_legacy_epoch_fields(graph)
+    if epochs["epochs"]:
+        out["warnings"].extend(epochs["warnings"])
     if not candidates:
         return out
     moved, kept = out["moved"], out["kept"]
@@ -596,6 +741,6 @@ def _migrate_class(graph, node, code: str):
         node = _reclass(graph, node, klass, **extra)
     if type(node).__name__ == "StratigraphicUnit":
         apply_legacy_kind(node, code)
-    if row_code(node) != code:
+    if keeps_source_code(node, code):
         node.source_code = code
     return node

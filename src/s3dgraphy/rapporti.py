@@ -462,6 +462,11 @@ _US_PREFIX_PATTERN = _re.compile(
     # «Combinar900». Only before a digit («Documento12» stays a name).
     r"(?:Combinar|Extractor|property|DOC)(?=\d)|"
     r"CON|"
+    # every localized code of UNITA_TIPO_CANONICAL (27 Nov 2026, measured on
+    # pyArchInit's demo: «1.UEM6» read as «M6», «1.USZ6» as «Z6», «1.ΣΜ2»
+    # not read — the rapporti of the es / ca / pt / ro / el sites pointed
+    # at numbers no row has). The longer code first.
+    r"UEM|USZ|ΤΣΜ|ΣΜ|"
     r"WSU|MSE|TSU|SUS|UE|UM|UC|UL|"
     r"D\.|C\.|"
     r"US|SU|SE"
@@ -874,7 +879,84 @@ def _source_rapporti_label(src_node, target_us: str, edge_type: str):
     return None
 
 
-def serialize_rapporti_from_edges(graph, default_sito: str, report=None):
+#: The reverse VOICE of a rapporti voice (27 Nov 2026): what the target row
+#: says of the same relation. The arrows flip; a verbose voice becomes the
+#: voice of the reverse reading (Copre → Coperto da); the symmetric ones
+#: (Uguale a, Si lega a) stay.
+_INVERSE_ARROW: dict[str, str] = {">": "<", "<": ">", ">>": "<<", "<<": ">>"}
+
+
+def inverse_rapporti_label(label: str) -> str | None:
+    """The voice the TARGET row of a rapporto writes for the same relation:
+    ``>`` ↔ ``<``, ``>>`` ↔ ``<<``, «Copre» ↔ «Coperto da» (in the label's
+    own language, any of the ten of :data:`_REL_TERMS_BY_LANG`), «Uguale a» →
+    «Uguale a». ``None`` for a voice this module does not read."""
+    text = str(label or "").strip()
+    if text in _INVERSE_ARROW:
+        return _INVERSE_ARROW[text]
+    low = text.lower()
+    for terms in _REL_TERMS_BY_LANG.values():
+        for i, term in enumerate(terms):
+            if term.lower() != low:
+                continue
+            et = _REL_INDEX_EDGE_TYPE[i]
+            rev = _REVERSE_EDGE_TYPE.get(et, et)
+            j = _REL_INDEX_EDGE_TYPE.index(rev)
+            return terms[j]
+    et = RAPPORTI_TO_EDGE_TYPE.get(low)
+    if et is None:
+        return None
+    rev = _REVERSE_EDGE_TYPE.get(et, et)
+    return EDGE_TYPE_TO_RAPPORTI_IT.get(rev)
+
+
+#: canonical ↔ reverse reading of the relations that have a voice
+_REVERSE_EDGE_TYPE: dict[str, str] = {
+    "overlies": "is_overlain_by", "cuts": "is_cut_by", "fills": "is_filled_by",
+    "abuts": "is_abutted_by", "is_after": "is_before",
+}
+_REVERSE_EDGE_TYPE.update({v: k for k, v in list(_REVERSE_EDGE_TYPE.items())})
+
+
+def rapporti_language(entries) -> str | None:
+    """The UI language of a row's ``rapporti`` (a list or its string), read
+    from its verbose voices: the language of :data:`_REL_TERMS_BY_LANG` with
+    the most voices in it (Italian on a tie with it), or ``None`` when the
+    row has no verbose voice."""
+    counts: dict[str, int] = {}
+    for entry in _coerce_to_list(entries):
+        if not isinstance(entry, (list, tuple)) or not entry:
+            continue
+        low = str(entry[0] or "").strip().lower()
+        if not low or low in _INVERSE_ARROW:
+            continue
+        for lang, terms in _REL_TERMS_BY_LANG.items():
+            if low in (t.lower() for t in terms):
+                counts[lang] = counts.get(lang, 0) + 1
+    if not counts:
+        return None
+    best = max(counts.values())
+    if counts.get("it") == best:
+        return "it"
+    return next(lang for lang, n in counts.items() if n == best)
+
+
+def voice_in_language(label: str, lang: str | None) -> str:
+    """*label* (a verbose voice in any language) said in *lang*; an arrow, an
+    unknown voice or an unknown language unchanged."""
+    if not lang or lang not in _REL_TERMS_BY_LANG:
+        return label
+    text = str(label or "").strip()
+    if text in _INVERSE_ARROW:
+        return label
+    et = RAPPORTI_TO_EDGE_TYPE.get(text.lower())
+    if et is None or et not in _REL_INDEX_EDGE_TYPE:
+        return label
+    return _REL_TERMS_BY_LANG[lang][_REL_INDEX_EDGE_TYPE.index(et)]
+
+
+def serialize_rapporti_from_edges(graph, default_sito: str, report=None,
+                                  inverse: bool = False):
     """Walk *graph*'s edges and produce per-US rapporti lists ready
     for the pyarchinit ``us_table.rapporti`` column.
 
@@ -910,6 +992,16 @@ def serialize_rapporti_from_edges(graph, default_sito: str, report=None):
     * Duplicates within a source are dropped — external graphml may
       carry redundant edges for the same ``(label, target)`` and we
       keep the column clean.
+    * ``inverse=True`` (27 Nov 2026, E.D.; the way back to us_table,
+      :class:`GraphIngestor`): the graph keeps ONE edge per relation, and a
+      pyArchInit sheet expects the relation on BOTH rows — so every rapporto
+      also goes on the TARGET's list with the reverse voice
+      (:func:`inverse_rapporti_label`: «Coperto da» for «Copre», ``<`` for
+      ``>``, ``<<`` for ``>>``), towards the source's number and area. The
+      voice is the canonical Italian one; the ingestor says it in the row's
+      language. A relation already said on that row (an older graph with
+      both readings as two edges) is not said twice. *report* receives
+      ``inverse`` (n).
     """
     by_id = {}
     for n in graph.nodes:
@@ -926,7 +1018,26 @@ def serialize_rapporti_from_edges(graph, default_sito: str, report=None):
     excluded: dict[str, int] = {}
     unnumbered: set[str] = set()
     exported = 0
+    inverses = 0
     out: dict[str, list[list]] = {}
+    said: dict[str, set] = {}
+
+    def _relation(label, target):
+        low = str(label).strip()
+        if low in RAPPORTI_SHORTHAND:
+            return (RAPPORTI_SHORTHAND[low], str(target))
+        et = RAPPORTI_TO_EDGE_TYPE.get(low.lower())
+        return ((_as_written(et) if et else low, False), str(target))
+
+    def _put(node_id, rapporto):
+        bucket = out.setdefault(node_id, [])
+        rel = _relation(rapporto[0], rapporto[1])
+        seen = said.setdefault(node_id, set())
+        if rel in seen:
+            return False
+        seen.add(rel)
+        bucket.append(rapporto)
+        return True
     for e in getattr(graph, "edges", None) or []:
         src = getattr(e, "edge_source", None)
         tgt = getattr(e, "edge_target", None)
@@ -979,14 +1090,28 @@ def serialize_rapporti_from_edges(graph, default_sito: str, report=None):
                        or tgt_attrs.get("area") or "1")
         tgt_sito = default_sito
         rapporto = [rapporti_label, str(tgt_us), tgt_area, tgt_sito]
-        bucket = out.setdefault(src, [])
-        if rapporto not in bucket:
-            bucket.append(rapporto)
+        if _put(src, rapporto):
             exported += 1
+        if not inverse or src_node is None or is_declared_unnumbered(src_node):
+            continue
+        rev_label = inverse_rapporti_label(rapporti_label)
+        if rev_label is None:
+            continue
+        src_attrs = getattr(src_node, "attributes", None) or {}
+        src_us = src_attrs.get("us") or strip_us_prefix(
+            str(getattr(src_node, "name", "") or ""))
+        if not src_us:
+            continue
+        src_area = str(reader.places(src_node).get("area")
+                       or src_attrs.get("area") or "1")
+        if _put(tgt, [rev_label, str(src_us), src_area, tgt_sito]):
+            inverses += 1
     if report is not None:
         report["excluded"] = excluded
         report["exported"] = exported
         report["unnumbered"] = sorted(unnumbered)
+        if inverse:
+            report["inverse"] = inverses
     return out
 
 
@@ -1015,5 +1140,8 @@ __all__ = [
     # Parser / serialiser (commit 2)
     "parse_rapporti",
     "serialize_rapporti_from_edges",
+    "inverse_rapporti_label",
+    "rapporti_language",
+    "voice_in_language",
 ]
 

@@ -201,6 +201,28 @@ def _adopt_importer_epoch(graph, node_id, sito, key):
     graph.remove_node(twin_id)
 
 
+#: the symmetric relations of the rapporti: said from either row, one edge
+_SYMMETRIC_RAPPORTI = frozenset({"equals", "bonded_to", "is_bonded_to",
+                                 "is_physically_equal_to"})
+
+
+def _canonical_reading(edge_type, swap):
+    """``(edge_type, swap)`` with a REVERSE reading (``is_overlain_by``,
+    ``is_cut_by``, ``is_before``…) turned into its canonical edge with the
+    direction flipped, as the connections datamodel declares it. Anything
+    else unchanged (27 Nov 2026: one edge per relation)."""
+    try:
+        from ..edges.connections_loader import get_connections_datamodel
+        entry = get_connections_datamodel().get_edge_definition(edge_type) or {}
+    except Exception:                                   # noqa: BLE001
+        return edge_type, swap
+    canonical = entry.get("canonical_name")
+    if entry.get("is_canonical") is False and canonical and \
+            canonical != edge_type and not entry.get("spelling_of"):
+        return canonical, not swap
+    return edge_type, swap
+
+
 def _is_us_node(node) -> bool:
     """Return True if *node* is a stratigraphic unit (US/USM/USVs/...)."""
     cls_name = type(node).__name__
@@ -743,8 +765,9 @@ class GraphProjector:
         The row's columns the projection itself needs (us, area, unita_tipo,
         attivita) are kept in ``self._rows`` for this projection only.
 
-        ``quad_par`` stays on the node: no node or edge says it yet (decision
-        for E.D., referto MICRO pyArchInit campi in nodi).
+        ``quad_par`` is a place since 27 Nov 2026 (E.D.): the importer makes
+        it a ``LocationNodeGroup`` of level ``quad_par`` (mapping 1.6.6), and
+        nothing is left on the node but ``node_uuid``.
 
         Idempotent.
         """
@@ -757,19 +780,16 @@ class GraphProjector:
         from ._db_handle import _columns_of
         cols = _columns_of(handle.engine, "us_table")
         has_uuid = "node_uuid" in cols
-        has_quad = "quad_par" in cols
         with handle.engine.connect() as conn:
             rows = conn.execute(
                 text(
                     "SELECT us, sito, area, unita_tipo, attivita, "
-                    + ("node_uuid, " if has_uuid else "NULL, ")
-                    + ("quad_par " if has_quad else "NULL ")
+                    + ("node_uuid " if has_uuid else "NULL ")
                     + "FROM us_table WHERE sito = :sito"
                 ),
                 {"sito": sito},
             ).fetchall()
-        for (us_val, sito_v, area, unita_tipo, attivita, node_uuid,
-             quad_par) in rows:
+        for (us_val, sito_v, area, unita_tipo, attivita, node_uuid) in rows:
             if us_val is None or not str(us_val).strip():
                 continue
             key = tuple(str(v if v is not None else "").strip()
@@ -789,8 +809,6 @@ class GraphProjector:
                 if not isinstance(getattr(node, "attributes", None), dict):
                     node.attributes = {}
                 node.attributes["node_uuid"] = str(node_uuid)
-            if quad_par is not None and str(quad_par).strip():
-                node.attributes["quad_par"] = str(quad_par)
 
     def _enrich_into(self, graph, db_path, sito_filter=None):
         """Phase 2 / Strategy A — full-class implementation.
@@ -879,11 +897,19 @@ class GraphProjector:
             # Schema columns vary slightly across pyArchInit releases;
             # we read defensively. Each (periodo, fase) is one epoch.
             epoch_by_key = {}  # (periodo:int, fase:str) -> EpochNode
+            from ._db_handle import _columns_of
+            try:
+                has_datazione = "datazione_estesa" in _columns_of(
+                    handle.engine, "periodizzazione_table")
+            except Exception:
+                has_datazione = False
             try:
                 raw_rows = conn.execute(
                     text(
                         "SELECT periodo, fase, cron_iniziale, cron_finale, "
-                        "descrizione FROM periodizzazione_table"
+                        "descrizione, "
+                        + ("datazione_estesa " if has_datazione else "NULL ")
+                        + "FROM periodizzazione_table"
                         + (" WHERE sito = :sito" if sito_filter is not None
                            else "")
                     ),
@@ -912,7 +938,8 @@ class GraphProjector:
             rows_sorted = sorted(raw_rows, key=_sort_key)
 
             try:
-                for periodo, fase, cron_ini, cron_fin, descr in rows_sorted:
+                for periodo, fase, cron_ini, cron_fin, descr, datazione \
+                        in rows_sorted:
                     if periodo is None:
                         continue
                     key = (int(periodo), str(fase) if fase is not None else "")
@@ -935,15 +962,26 @@ class GraphProjector:
                     # verdino".
                     row_color = _EPOCH_ROW_PALETTE[
                         len(epoch_by_key) % len(_EPOCH_ROW_PALETTE)]
+                    # 27 Nov 2026 (E.D.): the periodisation row is in the
+                    # EpochNode's OWN fields — cron_iniziale / cron_finale
+                    # are start_time / end_time, descrizione the name,
+                    # datazione_estesa the description (P3_has_note). Only
+                    # the technical key of the row, periodo / fase, stays in
+                    # its data (unit_row.epoch_columns reads it back). Until
+                    # 1.6.0.dev143 cron_* and the descrizione were copied in
+                    # attributes too (as «datazione_estesa»).
                     ep = EpochNode(
                         node_id=node_id,
                         name=str(label),
                         start_time=start,
                         end_time=end,
                         color=row_color,
+                        description=(str(datazione).strip()
+                                     if datazione and str(datazione).strip()
+                                     else ""),
                     )
-                    # Stash periodo/fase on the EpochNode so the AI04
-                    # graphml round-trip can recover them via the
+                    # periodo/fase: the row's key, so the AI04 graphml
+                    # round-trip can recover them via the
                     # _embed_pyarchinit_data_keys post-processor (which
                     # reads from `attributes` rather than parsing node_id —
                     # node_id may be reassigned by GraphMLExporter).
@@ -952,12 +990,6 @@ class GraphProjector:
                     _adopt_importer_epoch(graph, node_id, sito_filter, key)
                     ep.attributes["periodo"] = str(key[0])
                     ep.attributes["fase"] = str(key[1])
-                    if cron_ini is not None:
-                        ep.attributes["cron_iniziale"] = str(int(cron_ini))
-                    if cron_fin is not None:
-                        ep.attributes["cron_finale"] = str(int(cron_fin))
-                    if descr:
-                        ep.attributes["datazione_estesa"] = str(descr)
                     graph.add_node(ep)
                     epoch_by_key[key] = ep
             except Exception:
@@ -1068,6 +1100,15 @@ class GraphProjector:
                         sorted(set(map(str, unread))))
                 for (edge_type, target_us, _area, _sito, swap) in \
                         parsed_rapporti:
+                    # 27 Nov 2026 (E.D.): ONE edge per relation. «US2 Coperto
+                    # da 1» is the same fact as «US1 Copre 2»: the reverse
+                    # reading goes in as its canonical edge, swapped, and the
+                    # stable id below makes the two rows one edge (until
+                    # dev143 the demo site had 81 physical relations twice,
+                    # overlies + is_overlain_by). The way back writes the
+                    # reverse voice on the target row (serialize_rapporti_
+                    # from_edges, inverse=True).
+                    edge_type, swap = _canonical_reading(edge_type, swap)
                     target_node = self._rapporto_target(
                         graph, us_node, edge_type, str(target_us).strip(),
                         str(_area or "").strip() or src_area,
@@ -1086,6 +1127,11 @@ class GraphProjector:
                     edge_id = (
                         f"rap_{src_node.node_id}_{dst_node.node_id}_"
                         f"{edge_type}")
+                    if edge_type in _SYMMETRIC_RAPPORTI and \
+                            graph.find_edge_by_id(
+                                f"rap_{dst_node.node_id}_{src_node.node_id}_"
+                                f"{edge_type}") is not None:
+                        continue  # «4 uguale a 5» and «5 uguale a 4»: one
                     if graph.find_edge_by_id(edge_id) is None:
                         graph.add_edge(
                             edge_id=edge_id,

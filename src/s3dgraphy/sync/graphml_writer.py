@@ -962,10 +962,11 @@ _PYARCHINIT_EPOCH_DATA_KEYS = (
 
 def _first_epoch_label(reader, node):
     """The datazione_estesa of the unit's first epoch (the projector put it
-    on the unit until 27 Nov 2026; it is the epoch's)."""
+    on the unit until 27 Nov 2026; it is the epoch's: its description, else
+    its name — unit_row.epoch_columns)."""
+    from ..unit_row import epoch_columns
     for epoch in reader._targets(node, "has_first_epoch", "EpochNode"):
-        a = getattr(epoch, "attributes", None) or {}
-        return a.get("datazione_estesa") or getattr(epoch, "name", None)
+        return epoch_columns(epoch).get("datazione_estesa")
     return None
 
 
@@ -1055,16 +1056,15 @@ def _embed_pyarchinit_data_keys(graph, xml_path: Path) -> None:
     for n in graph.nodes:
         if type(n).__name__ != "EpochNode":
             continue
-        nattrs = getattr(n, "attributes", None) or {}
+        # 27 Nov 2026 · the periodisation row from the epoch's own fields
+        # (unit_row.epoch_columns): periodo / fase its key, cron_* its
+        # start / end, datazione_estesa its description
+        from ..unit_row import epoch_columns
         meta = {"name": getattr(n, "name", "")}
-        for key in ("periodo", "fase", "cron_iniziale",
-                    "cron_finale", "datazione_estesa"):
-            if nattrs.get(key) is not None:
-                meta[key] = str(nattrs[key])
-        if getattr(n, "start_time", None) not in (None, 0, 0.0):
-            meta.setdefault("cron_iniziale", str(int(n.start_time)))
-        if getattr(n, "end_time", None) not in (None, 0, 0.0):
-            meta.setdefault("cron_finale", str(int(n.end_time)))
+        for key, value in epoch_columns(n).items():
+            if key == "descrizione" or (key.startswith("cron_") and value == 0):
+                continue
+            meta[key] = str(value)
         if len(meta) > 1:
             epoch_meta.append(meta)
     if epoch_meta:
@@ -1120,15 +1120,11 @@ def _embed_pyarchinit_data_keys(graph, xml_path: Path) -> None:
                 attrs = dict(attrs)
                 attrs.setdefault("periodo", m.group(1))
                 attrs.setdefault("fase", m.group(2))
-            cron_ini = getattr(n, "start_time", None)
-            cron_fin = getattr(n, "end_time", None)
-            if cron_ini not in (None, 0, 0.0):
-                attrs.setdefault("cron_iniziale", str(int(cron_ini)))
-            if cron_fin not in (None, 0, 0.0):
-                attrs.setdefault("cron_finale", str(int(cron_fin)))
-            datazione = attrs.get("datazione_estesa") or getattr(n, "name", "")
-            if datazione:
-                attrs.setdefault("datazione_estesa", str(datazione))
+            from ..unit_row import epoch_columns
+            for key, value in epoch_columns(n).items():
+                if key == "descrizione" or (key.startswith("cron_") and value == 0):
+                    continue
+                attrs.setdefault(key, str(value))
         else:
             attrname_to_kid = node_attrname_to_keyid
             if isinstance(n, StratigraphicNode) or is_row_born(n):

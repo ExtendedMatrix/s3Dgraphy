@@ -41,6 +41,9 @@ MAPPED_COLUMNS: tuple[str, ...] = (
     "settore",
     "saggio",
     "ambient",
+    # 27 Nov 2026 (E.D.): quad_par is a place too (is_in_location, level
+    # quad_par), no longer a field on the unit's node.
+    "quad_par",
     "doc_usv",
     "periodo_finale",
     "fase_finale",
@@ -496,8 +499,12 @@ class GraphIngestor:
         # Pre-compute per-source rapporti from graph edges so the write
         # path can populate us_table.rapporti as JSON-list-of-lists.
         rapporti_report: dict = {}
+        # 27 Nov 2026 (E.D.): ONE edge per relation in the graph, the
+        # relation on BOTH rows in us_table — the target row gets the
+        # reverse voice («Coperto da», «<», «<<»), as pyArchInit's sheet
+        # expects (inverse=True).
         rapporti_by_source = _build_rapporti_from_edges(
-            graph, sito, report=rapporti_report)
+            graph, sito, report=rapporti_report, inverse=True)
         # MICRO-LG7: what is not a rapporto is left out and SAID, never
         # dropped in silence (has_same_time above all: pyArchInit has no
         # voice for it yet).
@@ -539,6 +546,8 @@ class GraphIngestor:
                             {"sito": sito},
                         )
                     sito_created = True
+                # the rapporti the site's rows already say, and their language
+                site_rapporti = _SiteRapporti(conn, sito)
                 for node in graph.nodes:
                     # 27 Nov 2026 · the row is READ FROM THE GRAPH (unit_row):
                     # class, places, documents, epochs, properties — not
@@ -556,6 +565,9 @@ class GraphIngestor:
                     db_row, _eff_uuid = _resolve_target_row(
                         conn, node_uuid, sito, attrs.get("area") or "1",
                         attrs.get("us"), attrs.get("unita_tipo"))
+                    if attrs.get("rapporti"):
+                        attrs["rapporti"] = site_rapporti.fit(
+                            attrs["rapporti"], attrs, db_row)
                     if db_row is None:
                         inserted += 1
                         continue
@@ -671,9 +683,9 @@ class GraphIngestor:
                         existing, eff_uuid = _resolve_target_row(
                             conn, node_uuid, sito, attrs.get("area") or "1",
                             attrs.get("us"), attrs.get("unita_tipo"))
-                        if existing is not None and attrs.get("rapporti"):
-                            attrs["rapporti"] = _relabel_like(
-                                attrs["rapporti"], existing.get("rapporti"))
+                        if attrs.get("rapporti"):
+                            attrs["rapporti"] = site_rapporti.fit(
+                                attrs["rapporti"], attrs, existing)
                         col_payload = {col: attrs.get(col)
                                        for col in writable
                                        if col in attrs}
@@ -754,20 +766,22 @@ class GraphIngestor:
                                     str(fase) if fase is not None else "")
                             if ekey in existing_epochs:
                                 continue
-                            descrizione = getattr(node, "name", "") or ""
-                            cron_ini = getattr(node, "start_time", None)
-                            cron_fin = getattr(node, "end_time", None)
-                            # cron columns are INTEGER in pyarchinit
-                            cron_ini_i = (int(cron_ini)
-                                          if cron_ini not in (None, 0, 0.0)
-                                          else None)
-                            cron_fin_i = (int(cron_fin)
-                                          if cron_fin not in (None, 0, 0.0)
-                                          else None)
-                            # datazione_estesa: free-text human label,
-                            # often the epoch name for external graphs.
+                            # 27 Nov 2026 (E.D.): the row is read from the
+                            # EpochNode's own fields (unit_row.epoch_columns):
+                            # start_time / end_time, name, description.
+                            from ..unit_row import epoch_columns
+                            ecols = epoch_columns(node)
+                            descrizione = ecols.get("descrizione", "")
+                            cron_ini = ecols.get("cron_iniziale")
+                            cron_fin = ecols.get("cron_finale")
+                            # cron columns are INTEGER in pyarchinit; 0 is
+                            # the placeholder of an epoch with no span
+                            cron_ini_i = cron_ini if cron_ini not in (None, 0) else None
+                            cron_fin_i = cron_fin if cron_fin not in (None, 0) else None
+                            # datazione_estesa: the epoch's description,
+                            # else its name (external graphs).
                             datazione = (eattrs.get("datazione")
-                                         or eattrs.get("datazione_estesa")
+                                         or ecols.get("datazione_estesa")
                                          or descrizione)
                             # The UNIQUE constraint on periodizzazione_table
                             # is (sito, periodo, fase), so populate sito.
@@ -1135,7 +1149,7 @@ def _values_equal(col: str, a, b) -> bool:
         ea, eb = documentation_entries(a), documentation_entries(b)
         if ea or eb:
             return sorted(ea) == sorted(eb)
-    if col in ("area", "settore", "saggio", "ambient"):
+    if col in ("area", "settore", "saggio", "ambient", "quad_par"):
         # a place's name is the column's value without its padding
         return str(a).strip() == str(b).strip()
     return str(a) == str(b)
@@ -1152,14 +1166,101 @@ def _rapporti_relations(value) -> frozenset:
         return frozenset({("?", str(value), False)})
 
 
-def _relabel_like(new_value: str, db_value) -> str:
+#: the language of a unit's localized code (pyArchInit's UNIT_TYPE_ABBREV):
+#: a hint for a row whose rapporti — and whose site's — say no voice yet
+_LANG_OF_CODE = {"SU": "en", "WSU": "en", "SE": "de", "MSE": "de",
+                 "UE": "es", "UEM": "es", "USZ": "ro", "ΣΜ": "el", "ΤΣΜ": "el"}
+
+
+def _fact(row_us: str, label, target) -> Optional[tuple]:
+    """The relation a rapporti entry of row *row_us* says, as ONE fact
+    whichever row says it: ``(a, b, edge)`` in the canonical reading, the
+    pair sorted for a symmetric relation. ``None`` when unreadable."""
+    from .rapporti import parse_rapporti
+    from .graph_projector import _canonical_reading, _SYMMETRIC_RAPPORTI
+    parsed = parse_rapporti([[label, target]])
+    if not parsed:
+        return None
+    et, tgt, _a, _s, swap = parsed[0]
+    et, swap = _canonical_reading(et, swap)
+    a, b = (str(tgt).strip(), str(row_us).strip()) if swap else \
+        (str(row_us).strip(), str(tgt).strip())
+    if et in _SYMMETRIC_RAPPORTI:
+        a, b = sorted((a, b))
+    return (a, b, et)
+
+
+class _SiteRapporti:
+    """What the site's rows already say in ``rapporti`` (27 Nov 2026).
+
+    The graph has one edge per relation and the serialiser writes it on both
+    rows (``inverse=True``). Two things are read from the DB so that this
+    changes no row that was right:
+
+    - a relation the DB says on ONE row only (a site written that way —
+      mini_volterra: «1 copre 2», nothing on 2) is not added to the other
+      row of an existing row: the DB already says it. A NEW relation goes on
+      both;
+    - the voice is said in the row's language: the row's own voice for that
+      relation, else the language of its voices, else the site's, else the
+      language its localized code says (SU → en…), else Italian."""
+
+    def __init__(self, conn, sito):
+        from .rapporti import _coerce_to_list, rapporti_language
+        self.by_fact: dict = {}
+        entries: list = []
+        try:
+            rows = conn.execute(
+                text("SELECT us, rapporti FROM us_table WHERE sito = :sito"),
+                {"sito": sito}).fetchall()
+        except Exception:                               # noqa: BLE001
+            rows = []
+        for us, rap in rows:
+            u = str(us).strip() if us is not None else ""
+            for entry in _coerce_to_list(rap):
+                if not (isinstance(entry, (list, tuple)) and len(entry) >= 2):
+                    continue
+                entries.append(entry)
+                f = _fact(u, entry[0], entry[1])
+                if f is not None:
+                    self.by_fact.setdefault(f, set()).add(u)
+        self.language = rapporti_language(entries)
+
+    def fit(self, value: str, attrs: dict, db_row) -> str:
+        import ast
+        from .rapporti import rapporti_language
+        try:
+            entries = ast.literal_eval(str(value))
+        except (ValueError, SyntaxError):
+            return value
+        if not isinstance(entries, list):
+            return value
+        us = str(attrs.get("us") or "").strip()
+        db_value = (db_row or {}).get("rapporti") if db_row is not None else None
+        if db_row is not None:
+            kept = []
+            for entry in entries:
+                f = (_fact(us, entry[0], entry[1])
+                     if isinstance(entry, (list, tuple)) and len(entry) >= 2 else None)
+                rows = self.by_fact.get(f, set()) if f else set()
+                if rows and us not in rows:
+                    continue  # the DB says it on the other row only
+                kept.append(entry)
+            entries = kept
+        lang = (rapporti_language(db_value) or self.language
+                or _LANG_OF_CODE.get(str(attrs.get("unita_tipo") or "")))
+        return _relabel_like(str(entries), db_value, lang)
+
+
+def _relabel_like(new_value: str, db_value, lang: Optional[str] = None) -> str:
     """*new_value* with each verbose voice in the language of the row's own
     ``rapporti`` (*db_value*): the node no longer carries the row's string
     (27 Nov 2026), so the language of «Covers» / «Copre» / «Recouvre» is
     read from the row the value goes into. A relation the row does not have
-    keeps the canonical voice."""
+    is said in *lang* (the row's, or its site's, language), else keeps the
+    canonical voice."""
     import ast
-    from .rapporti import parse_rapporti, RAPPORTI_TO_EDGE_TYPE
+    from .rapporti import parse_rapporti, RAPPORTI_TO_EDGE_TYPE, voice_in_language
     try:
         new = ast.literal_eval(str(new_value))
         old = ast.literal_eval(str(db_value)) if db_value else []
@@ -1180,6 +1281,8 @@ def _relabel_like(new_value: str, db_value) -> str:
             voice = voice_of.get((et, str(entry[1]).strip()))
             if voice:
                 entry = [voice] + list(entry[1:])
+            elif lang:
+                entry = [voice_in_language(str(entry[0]), lang)] + list(entry[1:])
         out.append(entry)
     return str(out)
 
@@ -1305,6 +1408,11 @@ def _hydrate_pyarchinit_data_keys(graph, graphml_path: Path) -> None:
                                         and not attrs.get(key)):
                                     attrs[key] = meta[key]
                             break
+                # 27 Nov 2026 · cron_* / datazione_estesa are the epoch's
+                # own fields (start_time, end_time, description): read in
+                # there, only periodo / fase stay in its data
+                from ..unit_row import migrate_legacy_epoch_fields
+                migrate_legacy_epoch_fields(graph)
                 break
 
     if not key_id_to_attr:

@@ -76,7 +76,7 @@ def test_changed_from_between_two_units_is_left_out_and_counted():
 
 def test_the_node_element_and_its_label():
     dm = json.loads((CONFIG / "s3Dgraphy_node_datamodel.json").read_text(encoding="utf-8"))
-    assert dm["s3Dgraphy_data_model_version"] == "1.6.56"  # 1.6.56 MICRO-LG12 (the proxy not drawn yet); 1.6.55 this MICRO
+    assert dm["s3Dgraphy_data_model_version"] == "1.6.57"  # 1.6.57 MICRO pyArchInit seguito (source_code for every unit); 1.6.56 MICRO-LG12 (the proxy not drawn yet); 1.6.55 this MICRO
     el = dm["stratigraphic_nodes"]["StratigraphicNode"]["properties"]["unnumbered"]
     assert el["em_json"] == "data.unnumbered" and el["value"] == "boolean"
     assert "assigned by a person" in el["description"] and el["scope_note"]

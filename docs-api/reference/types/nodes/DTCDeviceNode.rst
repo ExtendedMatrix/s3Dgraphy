@@ -5,7 +5,7 @@ DTCDeviceNode
 
 .. note::
 
-   Generated from the datamodels (nodes 1.6.56, connections 1.6.61) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
+   Generated from the datamodels (nodes 1.6.57, connections 1.6.61) for em API 1.2.0 by ``docs-api/_tools/gen_types.py``.
 
 *The APPARATUS a DTC step happened on — camera, sensor, drone, computer, scanner, total station, GNSS receiver.*
 
