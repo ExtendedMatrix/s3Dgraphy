@@ -5,6 +5,17 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Changed
+- **A point taken on a Gaussian splat says how; the splat files at the door**
+  (MICRO-PX7, 27 November 2026). `proxy_from_points` (and `api.proxy_from_points`)
+  take a point's `attributes`: more attributes of its extractor — EMStudio's
+  `pick_rule` `splat_alpha_isosurface` and `pick_opacity` (0.5) for a point read on a
+  Gaussian splat (the first place along the ray where a splat's alpha reaches the
+  threshold) — never overwriting what the library writes (`point_type`, `purpose`,
+  `x`/`y`/`z`, `read_from`); a point without them is written as before. No new type,
+  no datamodel change: a proposal for a controlled term in EMStudio's report.
+  `door.kind_of`: `.spz`, `.sog`, `.rad`, `.lcc2` and a SOG `lod-meta.json` are models
+  (EMStudio's `door.ts`, the same answer, `check-door.mjs` parity). Tests
+  `test_proxy_px7` (3).
 - **The areal drawn on a model: one extractor of the whole surface, its place the
   contour** (MICRO-PX3, 23 November 2026). `proxy_from_points` (and
   `api.proxy_from_points`) take `document_reading` for the extractor of the whole proxy

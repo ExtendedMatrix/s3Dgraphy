@@ -193,7 +193,10 @@ def proxy_from_points(
     model's glTF frame, Y up: the place of the reading) and ``"on_id"`` (the node
     the reading is on: the document by default, or its model) and
     ``"description"`` (the annotation written at the click: the extractor's
-    description).
+    description) and ``"attributes"`` (MICRO-PX7: more attributes of the
+    extractor — how the point was taken, e.g. on a Gaussian splat
+    ``{"pick_rule": "splat_alpha_isosurface", "pick_opacity": 0.5}``; never
+    ``point_type``, ``purpose``, ``x``/``y``/``z`` nor ``read_from``).
 
     ``document_id`` (MICRO-PX1c): the document the proxy as a whole is
     extracted from; when no point reads it, one extractor of the whole proxy
@@ -278,6 +281,12 @@ def proxy_from_points(
         ext.attributes["purpose"] = purpose
         if p.get("read_from"):
             ext.attributes["read_from"] = str(p["read_from"])
+        # MICRO-PX7 · how the point was taken, when the caller says it (a point
+        # on a Gaussian splat: pick_rule, pick_opacity) — the extractor's own
+        # attributes, never the ones written above
+        for k, v in dict(p.get("attributes") or {}).items():
+            if k not in ("point_type", "purpose", "x", "y", "z", "read_from") and v is not None:
+                ext.attributes[str(k)] = v
         if author:
             ext.data["author"] = author
         graph.add_node(ext)

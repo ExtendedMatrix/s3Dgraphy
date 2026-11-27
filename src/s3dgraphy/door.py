@@ -38,7 +38,11 @@ import uuid
 from typing import Any, Dict, Iterable, List, Mapping, Optional
 
 GIS_EXT = {".tif", ".tiff", ".jpg", ".jpeg", ".png", ".shp", ".gpkg", ".geojson", ".json", ".dxf"}
-MODEL_EXT = {".obj", ".glb", ".gltf", ".ply", ".fbx", ".stl", ".las", ".laz", ".e57", ".blend"}
+MODEL_EXT = {".obj", ".glb", ".gltf", ".ply", ".fbx", ".stl", ".las", ".laz", ".e57", ".blend",
+             # MICRO-PX7 · Gaussian splats (EMStudio draws them with Gaussian Splat Lite)
+             ".spz", ".sog", ".rad", ".lcc2"}
+#: MICRO-PX7 · a streamed SOG scene is entered by its index
+SPLAT_INDEX = {"lod-meta.json"}
 TILESET_EXT = {".3tz"}
 IMAGE_EXT = {".jpg", ".jpeg", ".png", ".tif", ".tiff", ".webp", ".heic"}
 TROPY_EXT = {".tpy", ".jsonld"}
@@ -59,7 +63,7 @@ def kind_of(path: str, *, georeferenced: Optional[bool] = None) -> str:
         return "tileset"
     if ext in TROPY_EXT:
         return "tropy"
-    if ext in MODEL_EXT:
+    if ext in MODEL_EXT or base in SPLAT_INDEX:
         return "model"
     if ext == ".dxf":
         return "dxf"
