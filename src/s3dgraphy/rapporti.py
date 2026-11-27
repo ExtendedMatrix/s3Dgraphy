@@ -456,6 +456,11 @@ _US_PREFIX_PATTERN = _re.compile(
     # pyArchInit's own code for the negativa, which is why it was already here.
     r"USNt|USM|USR|USS|USD|USN|"
     r"VSF|SF|"
+    # the paradata rows of us_table, as the 1.6 name template writes them
+    # (``1.Combinar900``, ``1.Extractor400``, ``1.DOC4001``,
+    # ``1.property800``): measured 27 Nov 2026, the number came back as
+    # «Combinar900». Only before a digit («Documento12» stays a name).
+    r"(?:Combinar|Extractor|property|DOC)(?=\d)|"
     r"CON|"
     r"WSU|MSE|TSU|SUS|UE|UM|UC|UL|"
     r"D\.|C\.|"
@@ -605,6 +610,12 @@ def resolve_unita_tipo_for_dispatch(node) -> str | None:
     ut = attrs.get("unita_tipo")
     if ut:
         return str(ut)
+    # 27 Nov 2026 · the class says it (with the code it came in with, a
+    # localized SU / WSU): sync.unit_row.row_code
+    from .unit_row import row_code
+    code = row_code(node)
+    if code:
+        return code
     # 1.6.12 · a masonry US is a USM for pyArchInit (its us_table keeps the
     # recording practice as unita_tipo); 1.6.13 · a coating US a USR, or the
     # code it came in with (USS, WSU…)
@@ -905,6 +916,12 @@ def serialize_rapporti_from_edges(graph, default_sito: str, report=None):
         nid = getattr(n, "node_id", None)
         if nid:
             by_id[nid] = n
+    # 27 Nov 2026 · the target's number and area are read from the graph (its
+    # name, its place), not from its attributes; a document the importer
+    # GENERATED from a row's columns is not a row and no rapporto points at it
+    # (until then «>> Fotografie», «>> zioni» went into every unit's rapporti)
+    from .unit_row import RowReader, is_generated_document
+    reader = RowReader(graph)
     allowed = rapporti_edge_types()
     excluded: dict[str, int] = {}
     unnumbered: set[str] = set()
@@ -932,6 +949,9 @@ def serialize_rapporti_from_edges(graph, default_sito: str, report=None):
             excluded["unnumbered_target"] = excluded.get("unnumbered_target", 0) + 1
             unnumbered.add(str(getattr(tgt_node, "name", "") or tgt))
             continue
+        if is_generated_document(tgt_node) or reader.is_layer_document(tgt_node):
+            excluded["generated_document"] = excluded.get("generated_document", 0) + 1
+            continue
         src_unita_tipo = resolve_unita_tipo_for_dispatch(src_node)
         tgt_unita_tipo = resolve_unita_tipo_for_dispatch(tgt_node)
         tgt_attrs = getattr(tgt_node, "attributes", None) or {}
@@ -955,7 +975,8 @@ def serialize_rapporti_from_edges(graph, default_sito: str, report=None):
             original = _source_rapporti_label(src_node, str(tgt_us), et)
             if original:
                 rapporti_label = original
-        tgt_area = str(tgt_attrs.get("area") or "1")
+        tgt_area = str(reader.places(tgt_node).get("area")
+                       or tgt_attrs.get("area") or "1")
         tgt_sito = default_sito
         rapporto = [rapporti_label, str(tgt_us), tgt_area, tgt_sito]
         bucket = out.setdefault(src, [])

@@ -490,6 +490,12 @@ def parse_emjson(doc: Dict[str, Any], *,
     # records in memory, ONE warning; the next save writes the records only.
     from ..observation import migrate_observed_in_campaign
     warnings.extend(migrate_observed_in_campaign(graph)["warnings"])
+    # MICRO pyArchInit campi in nodi (E.D., 27 Nov 2026) · a unit's row
+    # fields an older pyArchInit projector left in node.data (sito, area,
+    # unita_tipo, documentazione…) are read as nodes and edges, ONE warning;
+    # the next save writes the nodes. See unit_row.
+    from ..unit_row import migrate_legacy_row_fields
+    warnings.extend(migrate_legacy_row_fields(graph)["warnings"])
 
     return graph, warnings
 

@@ -14,6 +14,13 @@ share a label, so across sites it also carries a site code
 The columns travel in ``attributes``, identity travels in ``node_uuid``,
 and the node the importer built already has that identity as its
 ``node_id`` — which makes it the key to match on.
+
+27 Nov 2026 (MICRO pyArchInit campi in nodi, E.D.: no row fields in
+node.data): the columns no longer travel in ``attributes``. The node carries
+only ``node_uuid``; the row's ``us`` is the number of its name (the 1.6
+template, E.D. 12 Nov 2026: «no data.us»), its ``unita_tipo`` its class,
+its ``area`` its place. These tests read them through ``unit_row.RowReader``,
+the reading the ingestor makes.
 """
 from __future__ import annotations
 
@@ -28,9 +35,15 @@ from s3dgraphy.sync.graph_projector import GraphProjector
 FIXTURES = Path(__file__).parent / "fixtures"
 SITO = "TestSite"
 
-#: The mapped columns a projected node must carry for the ingestor to be
-#: able to write it back and for the group projector to place it.
+#: The columns a projected node must give back for the ingestor to be able
+#: to write it (read from the graph, unit_row).
 ATTESI = ("us", "area", "unita_tipo", "node_uuid")
+
+
+def _colonne(graph):
+    from s3dgraphy.unit_row import RowReader
+    reader = RowReader(graph)
+    return {n.node_id: reader.columns(n) for n in _unita(graph)}
 
 
 @pytest.fixture
@@ -67,38 +80,45 @@ def test_every_unit_carries_its_row(mini_volterra):
 
     unita = _unita(graph)
     assert len(unita) == len(righe), "one node per row, no more and no fewer"
+    colonne = _colonne(graph)
     for node in unita:
-        attrs = getattr(node, "attributes", None) or {}
+        row = colonne[node.node_id]
         for campo in ATTESI:
-            assert attrs.get(campo), \
-                "%s has no %s: %r" % (node.name, campo, attrs.get(campo))
-        atteso = righe[attrs["node_uuid"]]
-        assert attrs["us"] == atteso["us"], node.name
-        assert attrs["area"] == atteso["area"], node.name
-        assert attrs["unita_tipo"] == atteso["unita_tipo"], node.name
+            assert row.get(campo), \
+                "%s has no %s: %r" % (node.name, campo, row.get(campo))
+        atteso = righe[row["node_uuid"]]
+        assert row["us"] == atteso["us"], node.name
+        assert row["area"] == atteso["area"], node.name
+        assert row["unita_tipo"] == atteso["unita_tipo"], node.name
+
+
+def test_only_the_technical_key_is_on_the_node(mini_volterra):
+    """E.D., 27 Nov 2026: in the unit's data only the technical keys."""
+    graph = GraphProjector().populate_graph(mini_volterra, sito=SITO)
+    for node in _unita(graph):
+        attrs = getattr(node, "attributes", None) or {}
+        assert set(attrs) <= {"node_uuid", "quad_par"}, (node.name, attrs)
+        assert attrs.get("node_uuid")
 
 
 def test_the_us_column_is_the_number_not_the_label(mini_volterra):
-    """What goes into ``attributes['us']`` is the column, so a round trip
-    writes ``1`` back and not the node's label ``1.US1``."""
+    """What goes back into ``us`` is the number, so a round trip writes
+    ``1`` back and not the node's label ``1.US1``."""
     graph = GraphProjector().populate_graph(mini_volterra, sito=SITO)
 
     for node in _unita(graph):
-        attrs = node.attributes
-        assert attrs["us"] != node.name, \
-            "the label leaked into the us column: %r" % attrs["us"]
-        assert attrs["us"] in {"1", "2", "3", "4", "5"}, attrs["us"]
+        us = _colonne(graph)[node.node_id]["us"]
+        assert us != node.name, "the label leaked into the us column: %r" % us
+        assert us in {"1", "2", "3", "4", "5"}, us
 
 
 def test_the_match_is_idempotent(mini_volterra):
-    """Projecting twice gives the same attributes: the match keys on
-    identity, so nothing is claimed in a different order the second time."""
-    primo = {n.attributes["node_uuid"]: dict(n.attributes)
-             for n in _unita(GraphProjector().populate_graph(
-                 mini_volterra, sito=SITO))}
-    secondo = {n.attributes["node_uuid"]: dict(n.attributes)
-               for n in _unita(GraphProjector().populate_graph(
-                   mini_volterra, sito=SITO))}
+    """Projecting twice gives the same rows: the match keys on identity, so
+    nothing is claimed in a different order the second time."""
+    def _rows(g):
+        return {r["node_uuid"]: r for r in _colonne(g).values()}
+    primo = _rows(GraphProjector().populate_graph(mini_volterra, sito=SITO))
+    secondo = _rows(GraphProjector().populate_graph(mini_volterra, sito=SITO))
     assert set(primo) == set(secondo)
     for uid in primo:
         for campo in ATTESI:

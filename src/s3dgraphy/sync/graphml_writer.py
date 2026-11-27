@@ -744,15 +744,23 @@ def _apply_pyarchinit_visual_overrides(
     NS_Y = "http://www.yworks.com/xml/graphml"
 
     meta_by_emid = {}
+    # 27 Nov 2026 · a unit's type and description are read from the graph
+    # (its class, its description: unit_row), no longer copied on the node
+    from ..unit_row import RowReader, is_row_born
+    from ..nodes.stratigraphic_node import StratigraphicNode
+    reader = RowReader(graph)
     for n in graph.nodes:
         emid = getattr(n, "node_id", None)
         if not emid:
             continue
         attrs = getattr(n, "attributes", {}) or {}
+        row = (reader.columns(n)
+               if isinstance(n, StratigraphicNode) or is_row_born(n) else {})
         meta_by_emid[emid] = {
-            "unita_tipo": attrs.get("unita_tipo"),
+            "unita_tipo": attrs.get("unita_tipo") or row.get("unita_tipo"),
             "name": getattr(n, "name", ""),
-            "descrizione": attrs.get("d_stratigrafica", ""),
+            "descrizione": attrs.get("d_stratigrafica",
+                                     row.get("d_stratigrafica", "")),
         }
 
     parser = etree.XMLParser(remove_blank_text=False)
@@ -952,6 +960,15 @@ _PYARCHINIT_EPOCH_DATA_KEYS = (
 )
 
 
+def _first_epoch_label(reader, node):
+    """The datazione_estesa of the unit's first epoch (the projector put it
+    on the unit until 27 Nov 2026; it is the epoch's)."""
+    for epoch in reader._targets(node, "has_first_epoch", "EpochNode"):
+        a = getattr(epoch, "attributes", None) or {}
+        return a.get("datazione_estesa") or getattr(epoch, "name", None)
+    return None
+
+
 def _embed_pyarchinit_data_keys(graph, xml_path: Path) -> None:
     """Append custom <data> entries on each <node> in the produced
     GraphML so AI04's import path can recover the pyarchinit columns
@@ -1072,6 +1089,12 @@ def _embed_pyarchinit_data_keys(graph, xml_path: Path) -> None:
     # Walk every <node>, look up its EMID in emid_to_node, attach the
     # corresponding pyarchinit data values when present.
     known_emids = set(emid_to_node.keys())
+    # 27 Nov 2026 · a unit's columns are read from the graph (unit_row): the
+    # projector no longer copies them on the node. The site is the graph's.
+    from ..unit_row import RowReader, is_row_born
+    from ..nodes.stratigraphic_node import StratigraphicNode
+    _reader = RowReader(graph)
+    _site = getattr(graph, "graph_id", None)
     for node_el in root.iter(f"{{{NS_GRAPHML}}}node"):
         emid = None
         for d_el in node_el.findall(f"{{{NS_GRAPHML}}}data"):
@@ -1108,6 +1131,14 @@ def _embed_pyarchinit_data_keys(graph, xml_path: Path) -> None:
                 attrs.setdefault("datazione_estesa", str(datazione))
         else:
             attrname_to_kid = node_attrname_to_keyid
+            if isinstance(n, StratigraphicNode) or is_row_born(n):
+                row = _reader.columns(n)
+                if _site and is_row_born(n):
+                    row.setdefault("sito", str(_site))
+                epoch_label = _first_epoch_label(_reader, n)
+                if epoch_label:
+                    row.setdefault("datazione_estesa", epoch_label)
+                attrs = {**row, **attrs}
             # DocumentNode: copy `url` field into a documentazione
             # attribute so the data-key emitter picks it up. AI04.1 #6.
             if type(n).__name__ == "DocumentNode":

@@ -209,24 +209,21 @@ def test_projector_handles_paradata_name_collisions(tmp_path):
     proj = GraphProjector()
     graph = proj.populate_graph(db, sito="S")
 
+    # 27 Nov 2026 (E.D.: what a row says is nodes and edges, not node.data)
+    # · each row's node has the CLASS its unita_tipo names, read back by
+    # unit_row.row_code. Bug P (2026-05-15) had made the paradata rows
+    # StratigraphicUnit + attributes['unita_tipo'] for the GraphML swimlane;
+    # a reader of the em.json (EMStudio, Heriverse) saw five US.
+    from s3dgraphy.unit_row import row_code, is_row_born
     by_class_and_ut = Counter()
     for n in graph.nodes:
-        cls = type(n).__name__
-        ut = (getattr(n, "attributes", None) or {}).get("unita_tipo", "")
-        by_class_and_ut[(cls, ut)] += 1
+        if is_row_born(n):
+            by_class_and_ut[(type(n).__name__, row_code(n))] += 1
 
-    # Bug P (2026-05-15 v2): row-paradata are StratigraphicNode-class
-    # instances (StratigraphicUnit) with ``attributes['unita_tipo']``
-    # carrying the EM semantic identity. The writer dispatches BPMN
-    # shape / colour by unita_tipo, not by Python class.
-    assert by_class_and_ut[("StratigraphicUnit", "DOC")] == 1
-    assert by_class_and_ut[("StratigraphicUnit", "Combinar")] == 1
-    assert by_class_and_ut[("StratigraphicUnit", "Extractor")] == 1
-    assert by_class_and_ut[("StratigraphicUnit", "property")] == 1
+    assert by_class_and_ut[("DocumentNode", "DOC")] == 1
+    assert by_class_and_ut[("CombinerNode", "Combinar")] == 1
+    assert by_class_and_ut[("ExtractorNode", "Extractor")] == 1
+    assert by_class_and_ut[("PropertyNode", "property")] == 1
     assert by_class_and_ut[("StratigraphicUnit", "US")] == 1
-    # No duplicates: total row-derived StratigraphicUnit nodes = 5.
-    row_derived = sum(
-        v for (cls, ut), v in by_class_and_ut.items()
-        if cls == "StratigraphicUnit" and ut
-    )
-    assert row_derived == 5
+    # No duplicates: one node per row.
+    assert sum(by_class_and_ut.values()) == 5

@@ -127,8 +127,11 @@ def test_sqlite_projection_keeps_only_the_site(tmp_path):
     assert per_site == {"TestSite": 5, "AltroSito": 5}
 
     graph = GraphProjector().populate_graph(db, sito="TestSite")
-    units = [n for n in graph.nodes if type(n).__name__ == "StratigraphicUnit"
-             or getattr(n, "node_type", None) == "US"]
+    # 27 Nov 2026 · every row's node, whatever class its unita_tipo gives it
+    # (the USVs row is a StructuralVirtualStratigraphicUnit now)
+    from s3dgraphy.nodes.stratigraphic_node import StratigraphicNode
+    units = [n for n in graph.nodes if isinstance(n, StratigraphicNode)
+             and (getattr(n, "attributes", {}) or {}).get("node_uuid")]
     assert len(units) == 5
     assert not any(str(n.name).endswith(("101", "102", "103", "104", "105"))
                    for n in units)

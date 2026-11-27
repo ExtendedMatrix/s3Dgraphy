@@ -33,6 +33,9 @@ def test_mapped_columns_constant_present():
         "struttura", "sito", "area", "unita_tipo",
         "periodo_iniziale", "fase_iniziale", "rapporti", "node_uuid",
         "documentazione",  # AI04.1 #6 — DocumentNode.url
+        # 27 Nov 2026 · read back from the graph (unit_row)
+        "settore", "saggio", "ambient", "doc_usv",
+        "periodo_finale", "fase_finale",
     }
     assert set(MAPPED_COLUMNS) == expected
     assert isinstance(MAPPED_COLUMNS, tuple)  # immutable
@@ -165,8 +168,9 @@ def test_populate_list_dry_run_counts_skipped_when_unchanged(mini_volterra):
         graph, mini_volterra, sito=sito, dry_run=True)
     # Every projected node is already in DB, no value differences →
     # all skipped.
+    # 27 Nov 2026 · a row's node carries only its technical key, node_uuid
     n_strat = sum(1 for n in graph.nodes
-                  if (getattr(n, "attributes", None) or {}).get("us") is not None)
+                  if (getattr(n, "attributes", None) or {}).get("node_uuid") is not None)
     assert result.skipped == n_strat
     assert result.inserted == 0
     assert result.updated == 0
@@ -229,11 +233,12 @@ def test_populate_list_atomic_on_failure(mini_volterra):
 
     sito = _read_sito(mini_volterra)
     graph = GraphProjector().populate_graph(mini_volterra, sito=sito)
-    # Force a conflict: mutate one node's d_stratigrafica
+    # Force a conflict: mutate one unit's d_stratigrafica — its description
+    # (27 Nov 2026: no copy in the attributes)
     for n in graph.nodes:
         attrs = getattr(n, "attributes", None) or {}
-        if attrs.get("us"):
-            attrs["d_stratigrafica"] = "MUTATED FOR TEST"
+        if attrs.get("node_uuid"):
+            n.description = "MUTATED FOR TEST"
             break
 
     sha_before = hashlib.sha256(mini_volterra.read_bytes()).hexdigest()
@@ -319,7 +324,9 @@ def test_update_preserves_unmapped_columns(mini_volterra):
         # graphs constructed outside the projector.
         nuid = attrs.get("node_uuid") or getattr(n, "node_id", None)
         if nuid == target_uuid:
-            attrs["d_stratigrafica"] = "AI04_NEW_VALUE"
+            # 27 Nov 2026 · d_stratigrafica is the unit's description (no
+            # copy in its attributes any more): that is what one edits
+            n.description = "AI04_NEW_VALUE"
             found = True
             break
     assert found, "test setup: target node not found in graph"

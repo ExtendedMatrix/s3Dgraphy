@@ -34,6 +34,16 @@ MAPPED_COLUMNS: tuple[str, ...] = (
     # AI04.1: DOC nodes carry a URL/path in s3dgraphy DocumentNode.url
     # → us_table.documentazione (#6 H.4 fix).
     "documentazione",
+    # 27 Nov 2026 (MICRO pyArchInit campi in nodi): the columns the graph
+    # now says as nodes and edges, read back by unit_row — the other places
+    # (is_in_location), the file of a DOC row or of a unit (doc_usv), the
+    # final period (survive_in_epoch). Written only where us_table has them.
+    "settore",
+    "saggio",
+    "ambient",
+    "doc_usv",
+    "periodo_finale",
+    "fase_finale",
 )
 
 
@@ -472,6 +482,17 @@ class GraphIngestor:
         errors: list[str] = []
         unnumbered: list[str] = []
 
+        # 27 Nov 2026 · one reading of the graph for every row (unit_row)
+        from ..unit_row import RowReader
+        reader = RowReader(graph)
+        from ._db_handle import _columns_of
+        try:
+            db_cols = set(_columns_of(handle.engine, "us_table"))
+        except Exception:
+            db_cols = set()
+        writable = tuple(c for c in MAPPED_COLUMNS
+                         if not db_cols or c in db_cols)
+
         # Pre-compute per-source rapporti from graph edges so the write
         # path can populate us_table.rapporti as JSON-list-of-lists.
         rapporti_report: dict = {}
@@ -519,64 +540,16 @@ class GraphIngestor:
                         )
                     sito_created = True
                 for node in graph.nodes:
-                    # Skip wrapper / metadata node types that have no SQL
-                    # counterpart in us_table (PropertyNode etc. land in
-                    # paradata.graphml under AI05; GeoPositionNode and
-                    # ParadataNodeGroup are layout-only; EpochNode is
-                    # handled in its own loop below).
-                    type_name = type(node).__name__
-                    if type_name in _NON_STRAT_TYPES:
+                    # 27 Nov 2026 · the row is READ FROM THE GRAPH (unit_row):
+                    # class, places, documents, epochs, properties — not
+                    # from the node's attributes (E.D.: no row fields in
+                    # node.data). See _row_payload.
+                    payload = _row_payload(reader, node, sito, unnumbered)
+                    if payload is None:
                         continue
-                    if _is_synthetic_node(node):
-                        continue
-                    attrs = dict(getattr(node, "attributes", None) or {})
-                    # Look up by node_uuid. Prefer the explicit attribute
-                    # (set by GraphProjector._propagate_node_uuid_and_us);
-                    # fall back to node_id when the graph was built outside
-                    # the projector and node_id IS the DB uuid.
-                    node_uuid = attrs.get("node_uuid") or getattr(
-                        node, "node_id", None)
-                    if not node_uuid:
-                        continue
-                    # MICRO-LG11 / LG13: a unit DECLARED without a number
-                    # (data.unnumbered) is never written in us_table. Said,
-                    # not invented: the number is assigned by a person. A
-                    # name with no digit (X_TOPSOIL) is written with its
-                    # name — only a warning of the coherence check.
-                    if _is_declared_unnumbered(node):
-                        unnumbered.append(str(getattr(node, "name", "") or node_uuid))
-                        continue
-                    # Make sure the node carries a `us` value. Priority:
-                    #   1. attrs["us"] (set by GraphProjector)
-                    #   2. node.name with prefix stripped (graphml-imported)
-                    # Examples of stripping:
-                    #   "USM6"   → "6"
-                    #   "USV102" → "102"
-                    #   "US103a" → "103a"  (us column is TEXT)
-                    if "us" not in attrs or attrs["us"] is None:
-                        fallback_us = getattr(node, "name", None)
-                        if not fallback_us:
-                            continue
-                        attrs["us"] = _strip_us_prefix(str(fallback_us))
-                    # Always force sito to the populate_list parameter so
-                    # the user can import a graph (made for ANY sito) into
-                    # the chosen target sito (#3 H.4 fix).
-                    attrs["sito"] = sito
-                    # unita_tipo is best resolved from the s3dgraphy class
-                    # name when attrs has lost it via round-trip.
-                    if "unita_tipo" not in attrs or attrs["unita_tipo"] is None:
-                        resolved_tipo = _resolve_unita_tipo(node, attrs)
-                        if resolved_tipo:
-                            attrs["unita_tipo"] = resolved_tipo
-                    # DocumentNode: stash its `url` field into the
-                    # documentazione column (#6 H.4 fix). Path is typically
-                    # relative, e.g. "documents/scheda_1.pdf".
-                    if (type_name == "DocumentNode"
-                            and not attrs.get("documentazione")):
-                        doc_url = (getattr(node, "url", None)
-                                   or attrs.get("url"))
-                        if doc_url:
-                            attrs["documentazione"] = str(doc_url)
+                    node_uuid, attrs = payload
+                    if node_uuid in rapporti_by_source:
+                        attrs["rapporti"] = str(rapporti_by_source[node_uuid])
                     # Same resolution as the apply loop below: same-site
                     # UPDATE, another site's row left alone, a copy already in
                     # the target site updated in place.
@@ -587,7 +560,7 @@ class GraphIngestor:
                         inserted += 1
                         continue
                     row_changed = False
-                    for col in MAPPED_COLUMNS:
+                    for col in writable:
                         if col not in attrs or col == "node_uuid":
                             # node_uuid is the identity, never a payload: a
                             # copy matched by natural key has its own by
@@ -660,41 +633,10 @@ class GraphIngestor:
                 # detection loop above, this time issuing actual SQL writes.
                 if not dry_run:
                     for node in graph.nodes:
-                        type_name = type(node).__name__
-                        if type_name in _NON_STRAT_TYPES:
+                        payload = _row_payload(reader, node, sito, None)
+                        if payload is None:
                             continue
-                        if _is_synthetic_node(node):
-                            continue
-                        attrs = dict(getattr(node, "attributes", None) or {})
-                        # Same priority as the detection loop above:
-                        # explicit attrs.node_uuid wins (projector-built graphs),
-                        # node_id is the fallback (graphs built outside the
-                        # projector where node_id IS the DB uuid).
-                        node_uuid = attrs.get("node_uuid") or getattr(
-                            node, "node_id", None)
-                        if not node_uuid:
-                            continue
-                        if _is_declared_unnumbered(node):   # MICRO-LG11/LG13, as above
-                            continue
-                        if "us" not in attrs or attrs["us"] is None:
-                            fallback_us = getattr(node, "name", None)
-                            if not fallback_us:
-                                continue
-                            attrs["us"] = _strip_us_prefix(str(fallback_us))
-                        # Force sito to parameter (override anything the
-                        # graph carried — the user's choice is authoritative).
-                        attrs["sito"] = sito
-                        if ("unita_tipo" not in attrs
-                                or attrs["unita_tipo"] is None):
-                            resolved_tipo = _resolve_unita_tipo(node, attrs)
-                            if resolved_tipo:
-                                attrs["unita_tipo"] = resolved_tipo
-                        if (type_name == "DocumentNode"
-                                and not attrs.get("documentazione")):
-                            doc_url = (getattr(node, "url", None)
-                                       or attrs.get("url"))
-                            if doc_url:
-                                attrs["documentazione"] = str(doc_url)
+                        node_uuid, attrs = payload
                         # area is part of the UNIQUE constraint
                         # (sito, area, us, unita_tipo) — default to "1"
                         # if the graph doesn't carry it.
@@ -729,13 +671,20 @@ class GraphIngestor:
                         existing, eff_uuid = _resolve_target_row(
                             conn, node_uuid, sito, attrs.get("area") or "1",
                             attrs.get("us"), attrs.get("unita_tipo"))
+                        if existing is not None and attrs.get("rapporti"):
+                            attrs["rapporti"] = _relabel_like(
+                                attrs["rapporti"], existing.get("rapporti"))
                         col_payload = {col: attrs.get(col)
-                                       for col in MAPPED_COLUMNS
+                                       for col in writable
                                        if col in attrs}
                         col_payload["node_uuid"] = eff_uuid
                         col_payload["sito"] = sito
                         if existing is None:
-                            # INSERT
+                            # INSERT. A new row whose unit has no relation
+                            # says so as pyArchInit does, «[]» (27 Nov 2026:
+                            # it was NULL — the graph knows all its edges)
+                            if "rapporti" in writable:
+                                col_payload.setdefault("rapporti", "[]")
                             cols = list(col_payload.keys())
                             placeholders = ",".join(f":{c}" for c in cols)
                             col_list = ",".join(cols)
@@ -757,7 +706,7 @@ class GraphIngestor:
                             db_row = existing
                             diff_cols = []
                             diff_vals = []
-                            for col in MAPPED_COLUMNS:
+                            for col in writable:
                                 if col not in attrs or col == "node_uuid":
                                     continue
                                 if _values_equal(col, db_row.get(col),
@@ -1173,12 +1122,66 @@ def _values_equal(col: str, a, b) -> bool:
     if a is None or b is None:
         return False
     if col == "rapporti":
-        try:
-            import ast
-            return ast.literal_eval(str(a)) == ast.literal_eval(str(b))
-        except (ValueError, SyntaxError):
-            return str(a) == str(b)
+        # the same RELATIONS, whatever their order, the casing of the voice
+        # and its language («copre» / «Copre» / «Covers»): 27 Nov 2026 —
+        # measured on mini_volterra, every row was rewritten for a capital
+        # letter. Read through parse_rapporti: (edge, target, direction).
+        return _rapporti_relations(a) == _rapporti_relations(b)
+    if col == "documentazione":
+        # the graph says the documentation PRESENT (one document per «Si»):
+        # a checklist whose «Si» are the same is the same checklist, its
+        # «No» entries untouched (27 Nov 2026)
+        from ..unit_row import documentation_entries
+        ea, eb = documentation_entries(a), documentation_entries(b)
+        if ea or eb:
+            return sorted(ea) == sorted(eb)
+    if col in ("area", "settore", "saggio", "ambient"):
+        # a place's name is the column's value without its padding
+        return str(a).strip() == str(b).strip()
     return str(a) == str(b)
+
+
+def _rapporti_relations(value) -> frozenset:
+    """The relations a ``rapporti`` string says, as
+    ``(edge_type, target_us, swap)``, or the raw string when unreadable."""
+    from .rapporti import parse_rapporti
+    try:
+        return frozenset((et, str(t).strip(), bool(sw))
+                         for et, t, _a, _s, sw in parse_rapporti(value))
+    except Exception:                                   # noqa: BLE001
+        return frozenset({("?", str(value), False)})
+
+
+def _relabel_like(new_value: str, db_value) -> str:
+    """*new_value* with each verbose voice in the language of the row's own
+    ``rapporti`` (*db_value*): the node no longer carries the row's string
+    (27 Nov 2026), so the language of «Covers» / «Copre» / «Recouvre» is
+    read from the row the value goes into. A relation the row does not have
+    keeps the canonical voice."""
+    import ast
+    from .rapporti import parse_rapporti, RAPPORTI_TO_EDGE_TYPE
+    try:
+        new = ast.literal_eval(str(new_value))
+        old = ast.literal_eval(str(db_value)) if db_value else []
+    except (ValueError, SyntaxError):
+        return new_value
+    voice_of: dict = {}
+    for entry in old if isinstance(old, list) else []:
+        if not (isinstance(entry, (list, tuple)) and len(entry) >= 2):
+            continue
+        label = str(entry[0]).strip()
+        et = RAPPORTI_TO_EDGE_TYPE.get(label.lower())
+        if et and not label.startswith((">", "<")):
+            voice_of[(et, str(entry[1]).strip())] = label[:1].upper() + label[1:].lower()
+    out = []
+    for entry in new if isinstance(new, list) else []:
+        if isinstance(entry, list) and len(entry) >= 2:
+            et = RAPPORTI_TO_EDGE_TYPE.get(str(entry[0]).strip().lower())
+            voice = voice_of.get((et, str(entry[1]).strip()))
+            if voice:
+                entry = [voice] + list(entry[1:])
+        out.append(entry)
+    return str(out)
 
 
 def _is_synthetic_node(node) -> bool:
@@ -1431,6 +1434,64 @@ from ..rapporti import is_declared_unnumbered as _is_declared_unnumbered  # MICR
 # periodizzazione-row matcher at ~line 1233) still reach for `_re`,
 # so we keep the local alias to avoid name-error regressions.
 import re as _re
+
+
+def _row_payload(reader, node, sito, unnumbered):
+    """``(node_uuid, columns)`` of the us_table row *node* stands for, or
+    ``None`` when it stands for none.
+
+    A row is a unit or a paradata row born from one (``node_uuid``): the
+    stratigraphic classes, a DocumentNode that is not one the importer
+    GENERATED from a row's columns (the checklist ``<unit>_doc_<label>``,
+    the file ``doc::path::…`` — written as rows until 27 Nov 2026: 130 rows
+    named «Fotografie», «Planimetrie», «zioni» on pyArchInit's demo), and
+    the Combinar / Extractor / property / CON rows, now of their own class,
+    when they carry ``node_uuid``. The columns are read from the graph
+    (:class:`unit_row.RowReader`), the site is the caller's."""
+    from ..unit_row import is_generated_document, is_row_born
+    from ..nodes.stratigraphic_node import StratigraphicNode
+    type_name = type(node).__name__
+    if type_name in _NON_STRAT_TYPES and not (
+            type_name in _ROW_BORN_TYPES and is_row_born(node)):
+        return None
+    # only units, documents and the rows born as paradata: a ResourceNode
+    # (the GIS layer the footprints cite) became a row «US» until 27 Nov 2026
+    if not (isinstance(node, StratigraphicNode) or type_name == "DocumentNode"
+            or is_row_born(node)):
+        return None
+    if _is_synthetic_node(node):
+        return None
+    if is_generated_document(node) or reader.is_layer_document(node):
+        return None
+    attrs = reader.columns(node)
+    node_uuid = attrs.get("node_uuid") or getattr(node, "node_id", None)
+    if not node_uuid:
+        return None
+    # MICRO-LG11 / LG13: a unit DECLARED without a number (data.unnumbered)
+    # is never written in us_table. Said, not invented.
+    if _is_declared_unnumbered(node):
+        if unnumbered is not None:
+            unnumbered.append(str(getattr(node, "name", "") or node_uuid))
+        return None
+    if not attrs.get("us"):
+        return None
+    # the site is the caller's (#3 H.4): a graph made for ANY site goes in
+    attrs["sito"] = sito
+    legacy_rapporti = None
+    for bag in (getattr(node, "attributes", None), getattr(node, "data", None)):
+        if isinstance(bag, dict) and bag.get("rapporti"):
+            legacy_rapporti = bag["rapporti"]
+            break
+    if legacy_rapporti and "rapporti" not in attrs:
+        attrs["rapporti"] = str(legacy_rapporti)
+    return str(node_uuid), attrs
+
+
+#: Classes skipped unless the node was born from a us_table row (27 Nov
+#: 2026): the paradata rows and the CON row now come in with their class.
+_ROW_BORN_TYPES: frozenset = frozenset({
+    "CombinerNode", "ExtractorNode", "PropertyNode", "ContinuityNode",
+})
 
 
 def _resolve_unita_tipo(node, attrs: dict) -> str | None:

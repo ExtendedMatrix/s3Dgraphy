@@ -152,6 +152,9 @@ class PyArchInitImporter(BaseImporter):
         # (sito, area, us) → node id of every row imported or enriched: the
         # key a pyArchInit layer (pyunitastratigrafiche) names a unit by
         self._unit_index: Dict[Tuple[str, str, str], str] = {}
+        #: (sito, area, us, unita_tipo) → node id of every row imported or
+        #: enriched: the projector's way from a row to its node (27 Nov 2026)
+        self.row_index: Dict[Tuple[str, str, str, str], str] = {}
         self._sites_seen: set = set()
         self._footprints = footprints
         self._layer_url = layer_url
@@ -345,17 +348,19 @@ class PyArchInitImporter(BaseImporter):
                 # Get node type from id column mapping
                 id_col_config = self.mapping['column_mappings'][id_column]
                 strat_type = id_col_config.get('node_type', 'US')
-                node_class = get_stratigraphic_node_class(strat_type)
-                # 12 Nov 2026 · the two VOIDS by the row's own unita_tipo: a
-                # 'USN' row is a cut (NegativeStratigraphicUnit) and 'USNt' a
-                # neutral void — measured, they came in as plain US because
-                # only the mapping's 'US' was read, and a cut that is a US
-                # cannot carry its footprint. The other unita_tipo (USV…) are
-                # left as they were (kinds via apply_legacy_kind below).
                 _ut = str(row_dict.get('unita_tipo') or '').strip()
-                if _ut in self._VOID_TYPES:
-                    node_class = get_stratigraphic_node_class(_ut)
-                
+                # 27 Nov 2026 (E.D.: what a row says is nodes and edges, not
+                # node.data) · the row's own unita_tipo DECIDES THE CLASS:
+                # a USVs row is a StructuralVirtualStratigraphicUnit, an SF a
+                # SpecialFindUnit, a CON a ContinuityNode, a Combinar a
+                # CombinerNode… Measured on pyArchInit's demo: every row but
+                # the two voids came in as a StratigraphicUnit and only
+                # data.unita_tipo told a USVs from a US — so a reader of the
+                # em.json (EMStudio, Heriverse) saw 51 US. The code that the
+                # class does not say back (a localized SU / SE, a code with
+                # no class) is kept as the node's ``source_code``.
+                node_class, extra = self._class_of_row(_ut, strat_type)
+
                 # Create new node. Identity: if a column is flagged
                 # ``is_passthrough`` (e.g. node_uuid / EMid, UUID v7), carry its
                 # value into node_id so export->edit->re-import is idempotent;
@@ -369,15 +374,21 @@ class PyArchInitImporter(BaseImporter):
                 new_node = node_class(
                     node_id=node_id,
                     name=node_name,
-                    description=str(description)
+                    description=self._description_of(description),
+                    **extra
                 )
                 # the row's own unita_tipo says the genre (USM, USR, USS…):
                 # the mapping's node_type is the class, always 'US' here.
                 # Measured 1.6.13: before, only the mapping's type was read,
                 # and a USM row from SQLite came in as a plain US.
-                apply_legacy_kind(new_node,
-                                  str(row_dict.get('unita_tipo') or '').strip()
-                                  or strat_type)
+                apply_legacy_kind(new_node, _ut or strat_type)
+                self._keep_source_code(new_node, _ut)
+                # a DOC row's file is the document's own address (doc_usv):
+                # the document itself, never a second one beside it
+                if type(new_node).__name__ == 'DocumentNode':
+                    _file = str(row_dict.get('doc_usv') or '').strip()
+                    if _file and not getattr(new_node, 'url', None):
+                        new_node.url = _file
                 
                 self.graph.add_node(new_node)
                 # print(f"  → Node created with ID: {new_node.node_id}")
@@ -397,6 +408,76 @@ class PyArchInitImporter(BaseImporter):
 
     #: the unita_tipo that make their own class (the two voids, POL6)
     _VOID_TYPES = ("USN", "USNt")
+
+    #: the paradata rows of us_table and their classes (27 Nov 2026)
+    _PARADATA_ROW_CLASSES = {
+        "DOC": ("..nodes.document_node", "DocumentNode"),
+        "Combinar": ("..nodes.combiner_node", "CombinerNode"),
+        "Extractor": ("..nodes.extractor_node", "ExtractorNode"),
+        "property": ("..nodes.property_node", "PropertyNode"),
+    }
+
+    def _class_of_row(self, unita_tipo: str, strat_type: str):
+        """``(class, extra constructor kwargs)`` for a row of *unita_tipo*.
+
+        The paradata codes give their paradata class; a stratigraphic code
+        (localized US / USM codes read through their canonical form) gives
+        its stratigraphic class; an unknown or empty code gives the mapping's
+        class (``US``). ``CON`` is the continuity node (``BR``)."""
+        import importlib
+        from ..rapporti import canonical_unita_tipo
+        if unita_tipo in self._PARADATA_ROW_CLASSES:
+            mod, cls = self._PARADATA_ROW_CLASSES[unita_tipo]
+            klass = getattr(importlib.import_module(mod, __package__), cls)
+            extra = {"property_type": "string"} if cls == "PropertyNode" else {}
+            return klass, extra
+        code = canonical_unita_tipo(unita_tipo) if unita_tipo else strat_type
+        if code == "CON":
+            code = "BR"
+        from ..utils.utils import STRATIGRAPHIC_CLASS_MAP
+        from ..nodes.stratigraphic_node import KIND_OF_CODE
+        if code in STRATIGRAPHIC_CLASS_MAP or code in KIND_OF_CODE:
+            return get_stratigraphic_node_class(code), {}
+        return get_stratigraphic_node_class(strat_type), {}
+
+    def _link_allowed(self, node: Node, target_type: str, edge_type: str) -> bool:
+        """Whether the connections datamodel lets *edge_type* go from *node*
+        to a *target_type*. A paradata row (Combinar, Extractor, property)
+        has no ``has_property`` nor ``survive_in_epoch`` (27 Nov 2026):
+        Graph.add_edge would have turned them into generic connections —
+        counted in the warnings instead, once per row and edge."""
+        if Graph.validate_connection(getattr(node, "node_type", None),
+                                     target_type, edge_type):
+            return True
+        said = self.__dict__.setdefault("_not_linked", set())
+        key = (node.node_id, edge_type)
+        if key not in said:
+            said.add(key)
+            self.warnings.append(
+                f"'{node.name}' ({type(node).__name__}): its row's "
+                f"{edge_type} not linked — the datamodel has no {edge_type} "
+                f"out of a {type(node).__name__}")
+        return False
+
+    @staticmethod
+    def _keep_source_code(node: Node, unita_tipo: str) -> None:
+        """Keep the row's code on the node when its class (and kind) do not
+        say it back: a localized ``SU`` / ``SE`` / ``UE`` / ``ΣΜ`` US, a code
+        the library has no class for. ``source_code`` is the node element the
+        masonry / coating codes already use (datamodel 1.6.13)."""
+        if not unita_tipo:
+            return
+        from ..unit_row import row_code
+        if row_code(node) != unita_tipo:
+            node.source_code = unita_tipo
+
+    @staticmethod
+    def _description_of(description: Any) -> str:
+        """The unit's description: the row's ``d_stratigrafica``. An empty
+        one stays empty — it was written «None» (27 Nov 2026)."""
+        if description is None:
+            return ""
+        return str(description)
 
     def _number_unit(self, row_dict: Dict[str, Any], node: Node) -> None:
         """The row CLASSIFIED (15 Nov 2026, unit_numbers): ``unita_tipo`` and
@@ -426,6 +507,10 @@ class PyArchInitImporter(BaseImporter):
         key = tuple(str(row_dict.get(c) if row_dict.get(c) is not None else "").strip()
                     for c in ("sito", "area", "us"))
         self._unit_index[key] = node.node_id
+        # the ROW's node, by the UNIQUE key of us_table (sito, area, us,
+        # unita_tipo): (sito, area, us) alone names two units when a Combinar
+        # 900 and a US 900 share the area (#40)
+        self.row_index[key + (str(row_dict.get("unita_tipo") or "").strip(),)] = node.node_id
         if key[0]:
             self._sites_seen.add(key[0])
 
@@ -459,6 +544,8 @@ class PyArchInitImporter(BaseImporter):
         Only creates properties if they have non-empty values.
         """
         # print(f"\n  Processing properties for node: {strat_node.name}")
+        if not self._link_allowed(strat_node, "property", "has_property"):
+            return
         
         for col_name, col_config in self.mapping.get('column_mappings', {}).items():
             # Skip ID and description columns
@@ -745,6 +832,8 @@ class PyArchInitImporter(BaseImporter):
                 continue
             edge_type = em.get('edge_type', 'has_first_epoch')
             site_col = em.get('site_column', 'sito')
+            if not self._link_allowed(strat_node, "EpochNode", edge_type):
+                continue
 
             per_val = row_dict.get(per_col)
             if not (per_val and str(per_val).strip()):
@@ -839,6 +928,7 @@ class PyArchInitImporter(BaseImporter):
           file is a real, shareable document, so it is deduped by path
           across rows and carries the path as its ``url``.
         """
+        is_document = type(strat_node).__name__ == 'DocumentNode'
         for col_name, col_config in self.mapping.get(
                 'column_mappings', {}).items():
             if col_config.get('node_type') != 'DocumentNode':
@@ -847,6 +937,21 @@ class PyArchInitImporter(BaseImporter):
             if not (value and str(value).strip()):
                 continue
             doc_format = col_config.get('doc_format', 'path')
+            # 27 Nov 2026 · a DOC row's file is the document itself (its url,
+            # set in process_row): a second DocumentNode beside it would be
+            # the same document twice.
+            if is_document and doc_format == 'path':
+                continue
+            # has_documentation goes out of a unit (connections datamodel:
+            # StratigraphicNode / SpecialFindUnit / VirtualStratigraphicUnit);
+            # a paradata row (Combinar, Extractor, DOC, property) has no edge
+            # for its checklist — said, not drawn.
+            if not isinstance(strat_node, StratigraphicNode):
+                self.warnings.append(
+                    f"'{strat_node.name}' ({type(strat_node).__name__}): "
+                    f"{col_name} not linked — has_documentation does not go "
+                    f"out of a {type(strat_node).__name__}")
+                continue
             if doc_format == 'pyarchinit_checklist':
                 self._add_checklist_documents(value, col_config, strat_node)
             elif doc_format == 'path':

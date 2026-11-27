@@ -85,55 +85,6 @@ def _resolve_target_for_folder(target_canonical_node, source_folder, graph):
     return target_canonical_node
 
 
-def _create_paradata_node_for_unita_tipo(
-    unita_tipo: str,
-    name: str,
-    node_uuid: str,
-):
-    """Instantiate a StratigraphicUnit-class node for a row-paradata
-    record (DOC / Combinar / Extractor / property).
-
-    Bug P (2026-05-15 v2 user feedback): row-paradata are us_table
-    records — they must be rendered IN the swimlane alongside US/USV/
-    SF/VSF, with their rapporti edges. The s3dgraphy GraphMLExporter
-    achieves this for StratigraphicNode subclasses; isolated
-    DocumentNode/CombinerNode/ExtractorNode/PropertyNode get dropped
-    (or appended outside the swimlane via _inject_isolated_paradata_nodes,
-    which is the wrong UX for row records).
-
-    We return a StratigraphicUnit instance and rely on
-    ``attributes['unita_tipo']`` to drive per-row visual style in the
-    writer (it dispatches BPMN shape / colour by unita_tipo value:
-    ``DOC`` → data-object, ``property`` → annotation, etc.). The
-    Python class is the swimlane-rendering target; the unita_tipo
-    attr carries the EM semantic identity.
-
-    Returns ``None`` for ``unita_tipo`` values that aren't row-paradata
-    (callers continue with their own creation path).
-    """
-    if unita_tipo not in _PARADATA_UNITA_TIPO_TO_CLASS_PATH:
-        return None
-    try:
-        from s3dgraphy.nodes.stratigraphic_node import StratigraphicUnit
-    except Exception:
-        return None
-    try:
-        node = StratigraphicUnit(
-            node_id=str(node_uuid),
-            name=str(name),
-            description="",
-        )
-        # Stash the EM-semantic unita_tipo so the writer renders the
-        # right BPMN shape; downstream consumers (round-trip importer,
-        # CIDOC mapper) read this attribute, not the Python class.
-        if not hasattr(node, "attributes") or node.attributes is None:
-            node.attributes = {}
-        node.attributes["unita_tipo"] = str(unita_tipo)
-        return node
-    except Exception:
-        return None
-
-
 def _create_stratigraphic_node_for_unita_tipo(
     unita_tipo: str,
     name: str,
@@ -253,7 +204,18 @@ def _adopt_importer_epoch(graph, node_id, sito, key):
 def _is_us_node(node) -> bool:
     """Return True if *node* is a stratigraphic unit (US/USM/USVs/...)."""
     cls_name = type(node).__name__
-    return cls_name == "USNode" or cls_name.startswith("Stratigraphic")
+    if cls_name == "USNode" or cls_name.startswith("Stratigraphic"):
+        return True
+    # 27 Nov 2026 · a row's node has the class its unita_tipo names (a
+    # USVs, an SF, a CON, a Combinar…): every stratigraphic class, and the
+    # paradata rows born from us_table (they carry node_uuid), are the rows
+    # a site, a saggio, a container are made of — as they were when every
+    # row came in as a StratigraphicUnit.
+    from ..nodes.stratigraphic_node import StratigraphicNode
+    if isinstance(node, StratigraphicNode):
+        return True
+    from ..unit_row import is_row_born
+    return is_row_born(node)
 
 
 class GraphProjector:
@@ -392,12 +354,13 @@ class GraphProjector:
             if handle.is_postgres:
                 from s3dgraphy.importer.pyarchinit_importer import (
                     PyArchInitImporter)
-                imported = PyArchInitImporter(
+                importer = PyArchInitImporter(
                     connection_url=handle.engine.url.render_as_string(
                         hide_password=False),
                     mapping_name="pyarchinit_us_mapping",
                     filters={"sito": sito},
-                ).parse()
+                )
+                imported = importer.parse()
             else:
                 from s3dgraphy.importer.pyarchinit_importer import (
                     PyArchInitImporter)
@@ -413,6 +376,14 @@ class GraphProjector:
         except Exception as e:
             raise ProjectionError(
                 f"Importer failed for db={db_path}: {e}") from e
+        # each row → its node (27 Nov 2026): the projection finds a row's
+        # node by the UNIQUE key of us_table, never by a name or a number
+        self._row_index = dict(getattr(importer, "row_index", {}) or {})
+        #: row columns of each node, for this projection only (they are NOT
+        #: written on the node: E.D., 27 Nov 2026)
+        self._rows: dict = {}
+        #: what the projection could not settle (#40), said here
+        self.warnings: list = []
 
         graph = Graph(graph_id=sito)
         # Transplant imported nodes/edges into the sito-keyed graph.
@@ -746,257 +717,80 @@ class GraphProjector:
                     pass
 
     def _propagate_node_uuid_and_us(self, graph, db_path, sito) -> None:
-        """Set attributes['node_uuid'], 'us' and the remaining mapped
-        columns on each StratigraphicUnit-family node.
+        """Tie each us_table row of *sito* to its node, and write on the
+        node ONLY the technical key ``node_uuid``.
 
-        Match a row to its node by ``node_uuid``: the importer gives
-        each row's node the row's own ``node_uuid`` as its ``node_id``.
-        The node's NAME is not a key — since 1.6 it comes from
-        ``node_name_template`` and carries the area and, across sites, a
-        site code (``1.US1``, ``TM16.1.USM100``), so it never equals the
-        ``us`` column. Matching by name alone therefore found nothing on
-        any graph built by the importer, the fallback node could not be
-        added (its id was already in the graph) and every row was dropped
-        in silence. Name stays as the fallback, for graphs built outside
-        the importer where the name IS the ``us`` value.
+        27 Nov 2026 (E.D.): what a row says about a unit is in the graph as
+        nodes and edges — its class (``unita_tipo``), its places
+        (``is_in_location``), its documents (``has_documentation``), its
+        epochs, its properties, its description — and NOT copied on the
+        unit's node. Until 1.6.0.dev142 this pass copied sito, area,
+        unita_tipo, settore, saggio, ambient, documentazione, d_stratigrafica,
+        d_interpretativa, attivita, struttura, periodo / fase, rapporti,
+        datazione_estesa and us into ``node.attributes``: the em.json carried
+        them as ``data``, and on reload they were fields nobody else in the
+        ecosystem reads (EMStudio, EM Tools, server, Heriverse). The way back
+        (:mod:`s3dgraphy.unit_row`) reads them from the graph.
 
-        Idempotent: re-running yields the same attribute values.
+        The row's node is the one the importer made for it, found by the
+        UNIQUE key of us_table ``(sito, area, us, unita_tipo)``
+        (``PyArchInitImporter.row_index``), else by ``node_uuid`` (== the
+        node id). Never by name or number: a Combinar 900 and a US 900 of
+        the same area are two rows and two nodes (#40). Since the importer
+        gives each row the class its ``unita_tipo`` names, the stand-ins
+        this pass used to create for collapsed rows (Bug K / N) are gone.
+
+        The row's columns the projection itself needs (us, area, unita_tipo,
+        attivita) are kept in ``self._rows`` for this projection only.
+
+        ``quad_par`` stays on the node: no node or edge says it yet (decision
+        for E.D., referto MICRO pyArchInit campi in nodi).
+
+        Idempotent.
         """
-        # Bug K (2026-05-15 user feedback): same ``us`` value can appear
-        # across DIFFERENT unita_tipo (e.g. us='01' with US, DOC,
-        # Combinar — all valid simultaneous records per the UNIQUE
-        # (sito, area, us, unita_tipo) constraint). The pyarchinit
-        # bridge's ``_find_node_by_name`` collapses them to ONE node
-        # because it doesn't disambiguate by unita_tipo. We compensate
-        # here by:
-        #   1. Building a composite index ``(name, unita_tipo) → node``
-        #      so we can look up by the right tuple. Stratigraphic-
-        #      family nodes are claimed by the first matching row; we
-        #      keep a ``__STRAT__`` slot per name to support that.
-        #   2. Creating on-the-fly DocumentNode / CombinerNode /
-        #      ExtractorNode / PropertyNode for paradata rows whose
-        #      node the bridge collapsed — otherwise these rows are
-        #      silently dropped on re-export.
-        nodes_by_key: dict[tuple[str, str], object] = {}
-        #: node_id → node, for the match by identity. The importer uses the
-        #: row's node_uuid as the node_id, so this is the key that holds
-        #: whatever the node ends up being called.
-        nodes_by_uuid: dict[str, object] = {}
-        for n in graph.nodes:
-            cls = type(n).__name__
-            name = str(getattr(n, "name", ""))
-            paradata_ut = _PARADATA_CLASS_TO_UNITA_TIPO.get(cls)
-            if paradata_ut is not None:
-                nodes_by_key[(name, paradata_ut)] = n
-                continue
-            if cls.startswith("Stratigraphic") or cls == "USNode":
-                nodes_by_key[(name, "__STRAT__")] = n
-                nid = getattr(n, "node_id", None)
-                if nid:
-                    nodes_by_uuid[str(nid)] = n
-        if not nodes_by_key:
-            return  # nothing to propagate
-
+        rows_of = getattr(self, "_rows", None)
+        if rows_of is None:
+            rows_of = self._rows = {}
+        row_index = getattr(self, "_row_index", None) or {}
+        by_id = {getattr(n, "node_id", None): n for n in graph.nodes}
         handle = _resolve_db_handle(db_path)
+        from ._db_handle import _columns_of
+        cols = _columns_of(handle.engine, "us_table")
+        has_uuid = "node_uuid" in cols
+        has_quad = "quad_par" in cols
         with handle.engine.connect() as conn:
             rows = conn.execute(
                 text(
-                    "SELECT us, node_uuid, sito, area, unita_tipo, "
-                    "periodo_iniziale, fase_iniziale, rapporti, "
-                    "d_stratigrafica, d_interpretativa, attivita, struttura, "
-                    "settore, ambient, saggio, quad_par, documentazione "
-                    "FROM us_table WHERE sito = :sito"
+                    "SELECT us, sito, area, unita_tipo, attivita, "
+                    + ("node_uuid, " if has_uuid else "NULL, ")
+                    + ("quad_par " if has_quad else "NULL ")
+                    + "FROM us_table WHERE sito = :sito"
                 ),
                 {"sito": sito},
             ).fetchall()
-
-            # AI08-F2 hotfix: lookup datazione_estesa per (periodo, fase)
-            # from periodizzazione_table so each US can carry its
-            # period's full date string.
-            period_datazione: dict = {}
-            try:
-                for p_per, p_fase, p_dat in conn.execute(
-                    text(
-                        "SELECT periodo, fase, datazione_estesa "
-                        "FROM periodizzazione_table WHERE sito = :sito"
-                    ),
-                    {"sito": sito},
-                ).fetchall():
-                    if p_dat:
-                        period_datazione[
-                            (str(p_per), str(p_fase))
-                        ] = str(p_dat)
-            except Exception:
-                period_datazione = {}
-
-        # Localized US/USM → canonical alias map (the single source in
-        # sync.rapporti) so non-Italian unita_tipo codes are recognised as
-        # stratigraphic units in the gating + node-class factory below.
-        from .rapporti import canonical_unita_tipo
-
-        for (us_val, node_uuid, sito_v, area, unita_tipo,
-             periodo_ini, fase_ini, rapporti_raw, d_strat,
-             d_interp, attivita, struttura,
-             settore, ambient, saggio, quad_par, documentazione) in rows:
-            us_name = str(us_val) if us_val is not None else None
-            if not us_name:
+        for (us_val, sito_v, area, unita_tipo, attivita, node_uuid,
+             quad_par) in rows:
+            if us_val is None or not str(us_val).strip():
                 continue
-            ut_str = str(unita_tipo) if unita_tipo is not None else ""
-            # Canonical US/USM code for the structural decisions below
-            # (stratigraphic gating + node-class factory), so localized
-            # codes (SU/WSU/SE/…) are recognised as real stratigraphic
-            # units. attributes['unita_tipo'] keeps the ORIGINAL code
-            # (set further down) for round-trip + the language-aware
-            # rapporti dispatch.
-            ut_canon = canonical_unita_tipo(ut_str)
-            node = None
-            # The row's own node, by identity. A paradata row is left to
-            # the branch further down, which builds it a freshly typed
-            # node on purpose: binding it to the generic unit the importer
-            # made would alias the edges ``_enrich_into`` already added
-            # onto a document / combiner class (Bug N, 2026-05-15).
-            if node_uuid and ut_str not in _PARADATA_UNITA_TIPO_TO_CLASS_PATH:
-                node = nodes_by_uuid.get(str(node_uuid))
-            # Direct hit by composite key (paradata that the bridge
-            # correctly classified OR a stratigraphic node already
-            # claimed by a prior row of the same unita_tipo).
-            if node is None and ut_str:
-                node = nodes_by_key.get((us_name, ut_str))
-            # Stratigraphic-family row: try to claim the bridge's
-            # generic StratigraphicUnit for this name; if it's already
-            # been claimed (or replaced) by an earlier paradata row
-            # with the same name, CREATE a fresh stratigraphic-class
-            # node so the US/USM/SF/... row doesn't get silently
-            # dropped. The bridge collapses by name only and can be
-            # outpaced by paradata rows that appear FIRST in DB rowid
-            # order (e.g. yEd document order interleaves US01 and
-            # DOC.01 — DOC.01 might claim the bridge's '01' placeholder
-            # before US01 row is iterated).
-            if ut_canon in (
-                "US", "USM", "USR", "USD", "USV", "USVs", "USVn", "USVc",
-                "SF", "VSF", "RSF",
-            ):
-                if node is None:
-                    node = nodes_by_key.pop((us_name, "__STRAT__"), None)
-                if node is None:
-                    node = _create_stratigraphic_node_for_unita_tipo(
-                        ut_canon, us_name, node_uuid or us_name,
-                    )
-                    if node is not None:
-                        try:
-                            graph.add_node(node)
-                        except Exception:
-                            pass
-                if node is not None:
-                    # a USM row claims the bridge's US: it is a masonry US (a
-                    # USR / USS row: a coating US). The ORIGINAL code, so a
-                    # USS or a WSU is kept as the code it came in with.
-                    from s3dgraphy.utils.utils import apply_legacy_kind
-                    apply_legacy_kind(node, ut_str)
-                    nodes_by_key[(us_name, ut_str)] = node
-                    # Claimed: no later row may take it by name as well.
-                    if nodes_by_key.get((us_name, "__STRAT__")) is node:
-                        del nodes_by_key[(us_name, "__STRAT__")]
-            # Paradata row (DOC / Combinar / Extractor / property):
-            # ALWAYS create a fresh node of the right class. Don't
-            # reuse the bridge's StratigraphicUnit uuid — that would
-            # silently aliase edges added by ``_enrich_into`` (which
-            # ran before this function) to the new paradata class,
-            # producing semantically-invalid edges (e.g. ``US →
-            # document`` with ``overlies``). Bug N (2026-05-15 user
-            # feedback): keep the placeholder alongside; the orphan
-            # cleanup below removes it after all rows have had a
-            # chance to claim it.
-            if node is None and ut_str in _PARADATA_UNITA_TIPO_TO_CLASS_PATH:
-                fresh_uuid = node_uuid or f"para_{us_name}_{ut_str}"
-                node = _create_paradata_node_for_unita_tipo(
-                    ut_str, us_name, fresh_uuid,
-                )
-                if node is not None:
-                    try:
-                        graph.add_node(node)
-                    except Exception:
-                        pass
-                    nodes_by_key[(us_name, ut_str)] = node
+            key = tuple(str(v if v is not None else "").strip()
+                        for v in (sito_v, area, us_val, unita_tipo))
+            node = by_id.get(row_index.get(key))
+            if node is None and node_uuid:
+                node = by_id.get(str(node_uuid))
             if node is None:
                 continue
-            attrs = node.attributes
-            # Always set node_uuid + us (these are the lookup keys).
-            if node_uuid is not None:
-                attrs["node_uuid"] = str(node_uuid)
-            attrs["us"] = us_name
-            # Also propagate any other MAPPED_COLUMNS not already set
-            # by _enrich (defensive overwrite — projector wins by
-            # definition for round-trip identity).
-            if sito_v is not None:
-                attrs["sito"] = str(sito_v)
-            if area is not None:
-                attrs["area"] = str(area)
-            if unita_tipo is not None:
-                attrs["unita_tipo"] = str(unita_tipo)
-            if periodo_ini is not None:
-                attrs["periodo_iniziale"] = str(periodo_ini)
-            if fase_ini is not None:
-                attrs["fase_iniziale"] = str(fase_ini)
-            if rapporti_raw is not None:
-                attrs["rapporti"] = str(rapporti_raw)
-            if d_strat is not None:
-                attrs["d_stratigrafica"] = str(d_strat)
-            if d_interp is not None:
-                attrs["d_interpretativa"] = str(d_interp)
-            if attivita is not None:
-                attrs["attivita"] = str(attivita)
-            if struttura is not None:
-                attrs["struttura"] = str(struttura)
-            # AI08-F2 hotfix: also propagate the 4 grouping dimensions
-            # + documentazione + datazione_estesa per-US so they show
-            # in yEd's node properties panel.
-            if settore is not None and str(settore).strip():
-                attrs["settore"] = str(settore)
-            if ambient is not None and str(ambient).strip():
-                attrs["ambient"] = str(ambient)
-            if saggio is not None and str(saggio).strip():
-                attrs["saggio"] = str(saggio)
+            rows_of[node.node_id] = {
+                "us": str(us_val).strip(),
+                "area": str(area).strip() if area is not None else "",
+                "unita_tipo": str(unita_tipo).strip() if unita_tipo else "",
+                "attivita": str(attivita) if attivita is not None else None,
+            }
+            if node_uuid is not None and str(node_uuid).strip():
+                if not isinstance(getattr(node, "attributes", None), dict):
+                    node.attributes = {}
+                node.attributes["node_uuid"] = str(node_uuid)
             if quad_par is not None and str(quad_par).strip():
-                attrs["quad_par"] = str(quad_par)
-            if documentazione is not None and str(documentazione).strip() \
-                    and str(documentazione).strip() != "[]":
-                attrs["documentazione"] = str(documentazione)
-            # datazione_estesa from periodizzazione_table (matched on
-            # this US's periodo_iniziale + fase_iniziale).
-            dat_key = (str(periodo_ini) if periodo_ini is not None else "",
-                       str(fase_ini) if fase_ini is not None else "")
-            dat_value = period_datazione.get(dat_key)
-            if dat_value:
-                attrs["datazione_estesa"] = dat_value
-
-        # Bug N cleanup (2026-05-15 user feedback): the bridge always
-        # emits a StratigraphicUnit per unique us_table name, but for
-        # paradata-only names (e.g. ``01.03`` exists only as an
-        # ExtractorNode row) my fix above creates the right paradata
-        # class alongside. That leaves the bridge's StratigraphicUnit
-        # as an orphan — never claimed by any stratigraphic-family
-        # row.
-        #
-        # ONLY remove orphans that are DUPLICATES of paradata nodes we
-        # created for the same name; bridge nodes that no row of the
-        # current sito touched (e.g. cross-sito rows the bridge picked
-        # up via its global SELECT) stay alone in the graph and are
-        # filtered out later by ``_filter_by_site``. This avoids
-        # nuking the toponym test's fixture (which has rows for a
-        # different sito than the one we're projecting).
-        paradata_names = {
-            name for (name, ut) in nodes_by_key
-            if ut in _PARADATA_UNITA_TIPO_TO_CLASS_PATH
-        }
-        for (name, ut), n in list(nodes_by_key.items()):
-            if ut == "__STRAT__" and name in paradata_names:
-                try:
-                    graph.nodes.remove(n)
-                    if hasattr(graph, "invalidate_indices"):
-                        graph.invalidate_indices()
-                except (ValueError, AttributeError):
-                    pass
+                node.attributes["quad_par"] = str(quad_par)
 
     def _enrich_into(self, graph, db_path, sito_filter=None):
         """Phase 2 / Strategy A — full-class implementation.
@@ -1037,52 +831,39 @@ class GraphProjector:
         # cycling palette of swimlane background colours lives.
         from .graphml_writer import _EPOCH_ROW_PALETTE
 
-        # Bug N (2026-05-15 user feedback): build TWO indexes:
-        #   - ``nodes_by_us_ut``: keyed by (name, unita_tipo) for exact
-        #     source lookup per us_table row. The unita_tipo is derived
-        #     from the node class via _PARADATA_CLASS_TO_UNITA_TIPO,
-        #     or from ``node.attributes['unita_tipo']`` for the
-        #     stratigraphic family (set by the prior
-        #     _propagate_node_uuid_and_us pass).
-        #   - ``nodes_by_name``: keyed by name, mapping to a list of
-        #     candidate nodes for target-side lookup (rapporti targets
-        #     are unita_tipo-less in the JSON tuple). The resolver
-        #     prefers same-family-as-source first, then any match.
-        nodes_by_us_ut: dict[tuple[str, str], object] = {}
+        # 27 Nov 2026 · the row's node comes from ``self._rows`` (filled by
+        # _propagate_node_uuid_and_us from the importer's row index): a row
+        # is found by its UNIQUE key, a rapporto's target by its NUMBER and
+        # area. Nothing is read from — or written on — the node's
+        # attributes. Until dev142 a row whose (name, unita_tipo) missed fell
+        # back to ANY stratigraphic node with its number: the Combinar 900's
+        # epoch landed on US 900 (#40).
+        rows_of = getattr(self, "_rows", None) or {}
+        by_id = {getattr(n, "node_id", None): n for n in graph.nodes}
+        if not getattr(self, "_row_index", None) and not rows_of:
+            # a graph not made by populate_graph: index what it has
+            for n in graph.nodes:
+                nclass = type(n).__name__
+                if _is_us_node(n) or nclass in _PARADATA_CLASS_TO_UNITA_TIPO:
+                    from ..rapporti import us_number_of
+                    num = us_number_of(n)
+                    if num:
+                        rows_of[n.node_id] = {
+                            "us": num, "area": "",
+                            "unita_tipo": _PARADATA_CLASS_TO_UNITA_TIPO.get(
+                                nclass, "US"),
+                            "attivita": None}
+        node_by_row: dict = {}
         nodes_by_name: dict[str, list] = {}
-        for n in graph.nodes:
-            nclass = type(n).__name__
-            name = str(getattr(n, "name", ""))
-            if not name:
+        for nid, r in rows_of.items():
+            n = by_id.get(nid)
+            if n is None:
                 continue
-            paradata_ut = _PARADATA_CLASS_TO_UNITA_TIPO.get(nclass)
-            if paradata_ut is not None:
-                nodes_by_us_ut[(name, paradata_ut)] = n
-                nodes_by_name.setdefault(name, []).append(n)
-                continue
-            if nclass.startswith("Stratigraphic") or nclass == "USNode":
-                attrs = getattr(n, "attributes", None) or {}
-                ut = attrs.get("unita_tipo") or "US"
-                nodes_by_us_ut[(name, ut)] = n
-                nodes_by_name.setdefault(name, []).append(n)
-                # The name is not the key since 1.6 (``1.US3``, see
-                # _propagate_node_uuid_and_us): a rapporto names the ``us``
-                # column, so the unit is found by it too. Measured on
-                # 11 Oct 2026: on mini_volterra no rapporto became an edge.
-                us_key = str(attrs.get("us") or "").strip()
-                if us_key and us_key != name:
-                    nodes_by_name.setdefault(us_key, []).append(n)
-
-        # Keep the legacy alias used by the has_first_epoch logic
-        # below — it just needs ANY stratigraphic node per name (epoch
-        # edges aren't unita_tipo-discriminated).
-        strat_by_name: dict[str, object] = {}
-        for name, candidates in nodes_by_name.items():
-            for c in candidates:
-                ccls = type(c).__name__
-                if ccls.startswith("Stratigraphic") or ccls == "USNode":
-                    strat_by_name[name] = c
-                    break
+            node_by_row[(r["us"], r["area"], r["unita_tipo"])] = n
+            nodes_by_name.setdefault(r["us"], []).append(n)
+        nodes_by_us_ut = node_by_row
+        if not self.__dict__.get("warnings"):
+            self.warnings = []
 
         if not nodes_by_us_ut:
             return  # nothing to enrich
@@ -1216,33 +997,16 @@ class GraphProjector:
                 us_name = str(us_val) if us_val is not None else None
                 if not us_name:
                     continue
-                # Bug N composite-key source lookup: each us_table row has
-                # its own (us, unita_tipo) tuple → resolve the EXACT node
-                # of the right class (StratigraphicUnit for US/USM/...,
-                # DocumentNode for DOC, CombinerNode for Combinar,
-                # ExtractorNode for Extractor, PropertyNode for property).
-                ut_str = str(unita_tipo) if unita_tipo is not None else "US"
-                us_node = nodes_by_us_ut.get((us_name, ut_str))
-                if us_node is None:
-                    # Defensive fallback to name-only stratigraphic
-                    # lookup (handles legacy fixtures without paradata
-                    # rows where the bridge already produced everything).
-                    us_node = strat_by_name.get(us_name)
+                # The row's OWN node, by its key (us, area, unita_tipo) —
+                # never a node of another unita_tipo with the same number
+                # (#40, E.D. 27 Nov 2026: an epoch is never copied from one
+                # unit to another at import). Nothing is written on it.
+                ut_str = str(unita_tipo).strip() if unita_tipo is not None else ""
+                area_str = str(area).strip() if area is not None else ""
+                us_node = (nodes_by_us_ut.get((us_name.strip(), area_str, ut_str))
+                           or nodes_by_us_ut.get((us_name.strip(), "", ut_str or "US")))
                 if us_node is None:
                     continue
-
-                # Propagate identity attributes so site/area filters work
-                # and so the post-processor can drive per-type styling.
-                if sito is not None:
-                    us_node.attributes["sito"] = str(sito)
-                if area is not None:
-                    us_node.attributes["area"] = str(area)
-                if unita_tipo is not None:
-                    us_node.attributes["unita_tipo"] = str(unita_tipo)
-                # d_stratigrafica is the user-friendly description used as
-                # the LABEL for property nodes (e.g. "Materiale").
-                if d_stratigrafica is not None:
-                    us_node.attributes["d_stratigrafica"] = str(d_stratigrafica)
 
                 # 2a. has_first_epoch edge
                 if periodo_ini is not None:
@@ -1290,14 +1054,9 @@ class GraphProjector:
                 # 5-tuples `(edge_type, target_us, area, sito, swap)`.
                 # Returns [] for empty / malformed inputs, so no
                 # try/except needed at this layer.
-                _PARADATA_UTS: frozenset[str] = frozenset({
-                    "DOC", "Combinar", "Extractor", "property",
-                })
-                def _ut_family(ut: str) -> str:
-                    return "paradata" if ut in _PARADATA_UTS else "strat"
-                src_attrs = getattr(us_node, "attributes", None) or {}
-                src_family = _ut_family(src_attrs.get("unita_tipo") or "US")
-                src_folder = src_attrs.get("attivita")
+                src_row = rows_of.get(us_node.node_id) or {}
+                src_area = str(src_row.get("area") or area_str).strip()
+                src_folder = src_row.get("attivita")
                 unread: list = []
                 parsed_rapporti = parse_rapporti(rapporti_raw, skipped=unread)
                 if unread:
@@ -1309,51 +1068,10 @@ class GraphProjector:
                         sorted(set(map(str, unread))))
                 for (edge_type, target_us, _area, _sito, swap) in \
                         parsed_rapporti:
-                    # Bug P (2026-05-15 v2): all row records are
-                    # StratigraphicNode-class now; family is
-                    # discriminated by ``attributes['unita_tipo']``:
-                    #   - canonical stratigraphic (US/USM/USD/USV*/SF/VSF/RSF)
-                    #   - row-paradata (DOC/Combinar/Extractor/property)
-                    # Same-family preference picks the right target
-                    # when multiple us_table rows share a name.
-                    candidates = nodes_by_name.get(target_us, [])
-                    # the same us in two areas: the rapporto's area decides
-                    if len(candidates) > 1 and str(_area or "").strip():
-                        same_area = [c for c in candidates
-                                     if str((getattr(c, "attributes", None) or {})
-                                            .get("area") or "").strip()
-                                     == str(_area).strip()]
-                        candidates = same_area or candidates
-                    target_node = None
-                    # yE-F resolver: when the target has multi-folder
-                    # copies via _apply_yef_fan_out, pick the copy in
-                    # the source's folder. Falls through to family-
-                    # preference for non-multi-folder targets (the
-                    # resolver returns the input unchanged when
-                    # ``_yef_copies_by_canonical`` is empty/absent).
-                    if candidates and src_folder:
-                        for c in candidates:
-                            resolved = _resolve_target_for_folder(
-                                c, src_folder, graph,
-                            )
-                            if resolved is not c:
-                                target_node = resolved
-                                break
-                    # Fallback: existing family-preference logic.
-                    if target_node is None:
-                        if candidates:
-                            # 1st pass: same unita_tipo family.
-                            for c in candidates:
-                                c_attrs = getattr(c, "attributes", None) or {}
-                                c_family = _ut_family(
-                                    c_attrs.get("unita_tipo") or "US")
-                                if c_family == src_family:
-                                    target_node = c
-                                    break
-                            # 2nd pass: cross-family fallback (rare —
-                            # e.g. US → property links).
-                            if target_node is None:
-                                target_node = candidates[0]
+                    target_node = self._rapporto_target(
+                        graph, us_node, edge_type, str(target_us).strip(),
+                        str(_area or "").strip() or src_area,
+                        nodes_by_name, rows_of, src_folder)
                     if target_node is None:
                         continue
 
@@ -1377,6 +1095,62 @@ class GraphProjector:
                         )
         finally:
             conn.close()
+
+    #: unita_tipo of the paradata rows (their nodes are paradata classes)
+    _PARADATA_ROW_CODES = frozenset({"DOC", "Combinar", "Extractor", "property"})
+
+    def _rapporto_target(self, graph, src_node, edge_type, target_us,
+                         target_area, nodes_by_name, rows_of, src_folder):
+        """The ONE node a rapporto ``[type, us, area, sito]`` points at, or
+        ``None``.
+
+        pyArchInit names the target by number and area, without unita_tipo,
+        and two rows may share both (a Combinar 900 and a US 900, #40). The
+        relation's FAMILY chooses (E.D., 27 Nov 2026): the paradata arrows
+        ``>>`` / ``<<`` (PARADATA_RAPPORTI_EDGE_TYPES) towards a paradata
+        node, the physical and temporal relations towards a stratigraphic
+        one. What is still more than one node is SAID in ``self.warnings``
+        and linked to none — never twice. Until dev142 the first of the
+        source's family was taken, and the reverse rapporto of the other row
+        drew a second edge to the other unit."""
+        from .rapporti import PARADATA_RAPPORTI_EDGE_TYPES
+        candidates = [c for c in nodes_by_name.get(target_us, [])
+                      if c is not src_node]
+        if not candidates:
+            return None
+        if len(candidates) > 1 and target_area:
+            same_area = [c for c in candidates
+                         if (rows_of.get(c.node_id) or {}).get("area", "")
+                         == target_area]
+            candidates = same_area or candidates
+        if len(candidates) > 1 and src_folder:
+            for c in candidates:
+                resolved = _resolve_target_for_folder(c, src_folder, graph)
+                if resolved is not c:
+                    return resolved
+
+        def _is_paradata(c) -> bool:
+            ut = (rows_of.get(c.node_id) or {}).get("unita_tipo", "")
+            return (ut in self._PARADATA_ROW_CODES
+                    or type(c).__name__ in _PARADATA_CLASS_TO_UNITA_TIPO)
+
+        if len(candidates) > 1:
+            wants_paradata = edge_type in PARADATA_RAPPORTI_EDGE_TYPES
+            same_family = [c for c in candidates
+                           if _is_paradata(c) == wants_paradata]
+            if same_family:
+                candidates = same_family
+        if len(candidates) > 1:
+            self.warnings.append(
+                "rapporto %s of %s towards %s (area %s): %d units with that "
+                "number (%s) — not linked, choose by hand" % (
+                    edge_type, getattr(src_node, "name", "?"), target_us,
+                    target_area or "?", len(candidates),
+                    ", ".join(sorted(str(getattr(c, "name", c.node_id))
+                                     for c in candidates))))
+            logging.getLogger(__name__).warning(self.warnings[-1])
+            return None
+        return candidates[0]
 
     def _merge_groups(self, graph, db_path, sito, dimensions,
                       primary_priority=None):

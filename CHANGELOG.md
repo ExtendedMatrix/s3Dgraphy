@@ -5,6 +5,42 @@ All notable changes to **s3dgraphy** are documented here.
 ## [Unreleased] — after 1.6.0.dev34 (MICRO un solo vocabolario, 4 October 2026)
 
 ### Changed
+- **The fields of a pyArchInit US sheet are nodes and edges, not `node.data`; the
+  epoch is not copied by number** (MICRO pyArchInit campi in nodi, 27 November 2026;
+  #40). E.D.'s rule: a unit's data keeps only the technical key (`node_uuid`). The
+  projector (`GraphProjector`) no longer copies sito, area, settore, saggio, ambient,
+  unita_tipo, documentazione, d_stratigrafica, d_interpretativa, attivita, struttura,
+  periodo / fase, rapporti, datazione_estesa and us onto the unit (measured on
+  pyArchInit's demo: 18 such keys on 45 units, in every em.json); the graph already
+  said them, or now does: the **class** is the row's `unita_tipo` (a USVs row is a
+  `StructuralVirtualStratigraphicUnit`, SF a `SpecialFindUnit`, CON a `ContinuityNode`,
+  DOC / Combinar / Extractor / property their paradata classes — every row but the two
+  voids came in as a `StratigraphicUnit`), a localized or unknown code kept as
+  `source_code` (SU, SE, UE…); the places `is_in_location`; the documents
+  `has_documentation` (a DOC row's file is the document's own `url`, never a second
+  document); the epochs; the properties; the description. New module
+  `s3dgraphy.unit_row` (no SQL): `RowReader.columns()` reads a unit's us_table row from
+  the graph, `row_code()` its `unita_tipo`. `GraphIngestor` writes the rows from it —
+  `MAPPED_COLUMNS` gains settore, saggio, ambient, doc_usv, periodo_finale,
+  fase_finale (only where us_table has them); the documents the importer GENERATES
+  (checklist, file, GIS layer) and other non-units (a `ResourceNode`) are no longer
+  written as rows (130 rows «Fotografie» / «zioni» on the demo), nor into `rapporti`;
+  `rapporti` compared as relations (the casing and the language of the voice no longer
+  rewrite a row; a changed row keeps its language, read from the row). The GraphML
+  writer reads the same. **#40**: a row finds its node by the UNIQUE key of us_table
+  (`PyArchInitImporter.row_index`), never by number: `has_first_epoch` /
+  `survive_in_epoch` only from the unit's own row; a rapporto whose number names
+  several units is chosen by the relation's family (`>>` / `<<` towards a paradata
+  node, physical / temporal towards a stratigraphic one), and what is still ambiguous
+  is said (`GraphProjector.warnings`) and not linked. A paradata row gets no edge the
+  connections datamodel does not allow it (`has_property`, `survive_in_epoch`,
+  `has_documentation` out of a combiner…): said in the importer's warnings instead of
+  degrading to `generic_connection`. **Old files**: an em.json with these fields in a
+  unit's data opens with them as nodes and edges (`unit_row.migrate_legacy_row_fields`,
+  in the em.json loader, ONE warning). `strip_us_prefix` reads the paradata names of the
+  1.6 template (`1.Combinar900` → `900`). No datamodel change. Tests
+  `test_pyarchinit_row_in_nodes` (10); the tests that read the copied fields read the
+  graph. Two tests red on HEAD are green (`test_round_trip`, the paradata collisions).
 - **A point taken on a Gaussian splat says how; the splat files at the door**
   (MICRO-PX7, 27 November 2026). `proxy_from_points` (and `api.proxy_from_points`)
   take a point's `attributes`: more attributes of its extractor — EMStudio's

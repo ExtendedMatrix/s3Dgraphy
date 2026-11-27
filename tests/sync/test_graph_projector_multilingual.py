@@ -46,10 +46,13 @@ def test_projector_recognizes_localized_su_wsu(tmp_path):
     from s3dgraphy.sync.graph_projector import GraphProjector
     g = GraphProjector().populate_graph(dst, sito=sito)
 
+    # 27 Nov 2026 · a row's node carries only node_uuid; the number is in
+    # its name, the code in its class (+ source_code for a localized one)
+    from s3dgraphy.unit_row import row_code
     us_nodes = [n for n in g.nodes
-                if (getattr(n, "attributes", {}) or {}).get("us")]
+                if (getattr(n, "attributes", {}) or {}).get("node_uuid")]
     assert len(us_nodes) >= 4, (
-        f"SU/WSU rows must build stratigraphic nodes with a us attr, "
+        f"SU/WSU rows must build stratigraphic nodes with their node_uuid, "
         f"got {len(us_nodes)}")
     strat = [e for e in g.edges
              if getattr(e, "edge_type", None) not in R.NON_RAPPORTI_EDGE_TYPES
@@ -57,10 +60,18 @@ def test_projector_recognizes_localized_su_wsu(tmp_path):
     assert strat, "no stratigraphic edges created for English SU/WSU data"
 
     # Original code preserved on the node (round-trip safety).
-    assert any((getattr(n, "attributes", {}) or {}).get("unita_tipo") == "SU"
-               for n in us_nodes), "original SU code must survive on the node"
+    assert any(row_code(n) == "SU" for n in us_nodes), \
+        "original SU code must survive on the node"
+    assert any(row_code(n) == "WSU" for n in us_nodes), \
+        "original WSU code must survive on the node"
 
-    labels = {e[0] for lst in R.serialize_rapporti_from_edges(g, sito).values()
-              for e in lst}
-    assert "Covers" in labels, f"expected localized 'Covers' in d13, got {labels}"
-    assert "Copre" not in labels, f"d13 leaked Italian canonical: {labels}"
+    # The way back keeps the row's language: the relations are the same, so
+    # the English voices of the row stay (the language is the row's, read
+    # from the database the graph goes back into)
+    from s3dgraphy.sync.graph_ingestor import GraphIngestor
+    GraphIngestor().populate_list(g, dst, sito=sito, dry_run=False)
+    con = sqlite3.connect(dst)
+    back = con.execute("SELECT rapporti FROM us_table WHERE us='1'").fetchone()[0]
+    con.close()
+    assert "Covers" in back, f"expected localized 'Covers' back, got {back}"
+    assert "Copre" not in back, f"Italian canonical leaked: {back}"
